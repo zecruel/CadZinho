@@ -123,8 +123,20 @@ typedef struct Dxf_ltype dxf_ltype;
 
 struct Dxf_tfont{
 	char name[DXF_MAX_CHARS];
-	void *shx_font;
+	char file[DXF_MAX_CHARS];
+	char big_file[DXF_MAX_CHARS];
+	char subst_file[DXF_MAX_CHARS];
+	
+	int flags1;
+	int flags2;
 	int num_el;
+	
+	double fixed_h;
+	double width_f;
+	double oblique;
+	
+	void *shx_font;
+	
 	dxf_node *obj;
 };
 typedef struct Dxf_tfont dxf_tfont;

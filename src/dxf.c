@@ -994,11 +994,21 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 }
 
 void dxf_fonts_assemb (dxf_drawing *drawing){
-	int i, flags;
+	int i;
 	dxf_node *current = NULL, *curr_font = NULL;
 	
 	char name[DXF_MAX_CHARS];
 	char file_name[DXF_MAX_CHARS];
+	char big_file[DXF_MAX_CHARS];
+	char subst_file[DXF_MAX_CHARS];
+	
+	int flags1;
+	int flags2;
+	int num_el;
+	
+	double fixed_h;
+	double width_f;
+	double oblique;
 	
 	drawing->num_fonts = 0;
 	
@@ -1009,6 +1019,16 @@ void dxf_fonts_assemb (dxf_drawing *drawing){
 		/* always set the index 0 as the default font*/
 		drawing->num_fonts = 1;
 		drawing->text_fonts[0].name[0] = 0;
+		drawing->text_fonts[0].file[0] = 0;
+		drawing->text_fonts[0].big_file[0] = 0;
+		drawing->text_fonts[0].subst_file[0] = 0;
+		
+		drawing->text_fonts[0].flags1 = 0;
+		drawing->text_fonts[0].flags2 = 0;
+		drawing->text_fonts[0].fixed_h = 0.0;
+		drawing->text_fonts[0].width_f = 1.0;
+		drawing->text_fonts[0].oblique = 0.0;
+		
 		drawing->text_fonts[0].shx_font = shx_font;
 		drawing->text_fonts[0].num_el = 0;
 		drawing->text_fonts[0].obj = NULL;
@@ -1019,6 +1039,14 @@ void dxf_fonts_assemb (dxf_drawing *drawing){
 	
 		name[0] = 0;
 		file_name[0] = 0;
+		big_file[0] = 0;
+		subst_file[0] = 0;
+		
+		flags1 = 0;
+		flags2 = 0;
+		fixed_h = 0.0;
+		width_f = 1.0;
+		oblique = 0.0;
 			
 		if (curr_font->obj.content) current = curr_font->obj.content->next;
 		
@@ -1026,24 +1054,50 @@ void dxf_fonts_assemb (dxf_drawing *drawing){
 			if (current->type == DXF_ATTR){
 				switch (current->value.group){
 					case 2: /* font name */
-						strcpy(name, current->value.s_data);
+						strncpy(name, current->value.s_data, DXF_MAX_CHARS);
 						break;
 					case 3: /* file name */
-						strcpy(file_name, current->value.s_data);
+						strncpy(file_name, current->value.s_data, DXF_MAX_CHARS);
+						break;
+					case 4: /* bigfont file name */
+						strncpy(big_file, current->value.s_data, DXF_MAX_CHARS);
+						break;
+					case 40: /* fixed height*/
+						fixed_h = current->value.d_data;
+						break;
+					case 41: /* width factor*/
+						width_f = current->value.d_data;
+						break;
+					case 50: /* oblique angle*/
+						oblique = current->value.d_data;
 						break;
 					case 70: /* flags */
-						flags = current->value.i_data;
+						flags1 = current->value.i_data;
+						break;
+					case 71: /* flags */
+						flags2 = current->value.i_data;
 				}
 			}
 			current = current->next;
 		}
 		if ((i + 1) < DXF_MAX_FONTS){
 			/* set the variables on the current font in drawing structure */
-			strcpy(drawing->text_fonts[i+1].name, name);
+			strncpy(drawing->text_fonts[i+1].name, name, DXF_MAX_CHARS);
+			strncpy(drawing->text_fonts[i+1].file, file_name, DXF_MAX_CHARS);
+			strncpy(drawing->text_fonts[i+1].big_file, big_file, DXF_MAX_CHARS);
+			
+			drawing->text_fonts[i+1].flags1 = flags1;
+			drawing->text_fonts[i+1].flags2 = flags2;
+			drawing->text_fonts[i+1].fixed_h = fixed_h;
+			drawing->text_fonts[i+1].width_f = width_f;
+			drawing->text_fonts[i+1].oblique = oblique;
+			
 			shx_font = shx_font_open(file_name);
 			drawing->text_fonts[i+1].shx_font = shx_font;
 			drawing->text_fonts[i+1].num_el = 0;
 			drawing->text_fonts[i+1].obj = curr_font;
+			
+			strncpy(drawing->text_fonts[i+1].subst_file, subst_file, DXF_MAX_CHARS);
 		}
 		i++;
 	}

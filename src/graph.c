@@ -2523,7 +2523,7 @@ void draw_line_antialias( bmp_img * img, int x1, int y1, int x2, int y2){
 	}
 }
 #undef swap_
-#undef plot_
+//#undef plot_
 #undef ipart_
 #undef fpart_
 #undef round_
@@ -2643,6 +2643,7 @@ double ofs_x, double ofs_y, double scale){
 	
 }
 
+
 /*
 https://stackoverflow.com/questions/11907947/how-to-check-if-a-point-lies-on-a-line-between-2-other-points
 by https://stackoverflow.com/users/688624/imallett
@@ -2662,4 +2663,12 @@ v3 = p3 - p2
 if (fabs(dot(v2,v1)-1.0)<EPS and dot(v3,v1)<0) return between
 else return not between
 
+
+Define function PlotAntiAliasedPoint ( number x, number y )
+    For roundedx = floor ( x ) to ceil ( x ) do
+         For roundedy = floor ( y ) to ceil ( y ) do
+              percent_x = 1 - abs ( x - roundedx )
+              percent_y = 1 - abs ( y - roundedy )
+              percent = percent_x * percent_y
+              DrawPixel ( coordinates roundedx, roundedy, color percent (range 0-1) )
 */

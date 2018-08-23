@@ -346,6 +346,7 @@ int main(int argc, char** argv){
 	int file_path_len = 0;
 	
 	int show_lay_mng = 0, sel_tmp = 0, show_color_pick = 0, show_lay_name = 0;
+	int show_fonts_mng = 0;
 	
 	int ev_type;
 	struct nk_color background;
@@ -560,8 +561,8 @@ int main(int argc, char** argv){
 	
 	
 	/*===================== teste ===============*/
-	//list_node * tt_test = list_new(NULL, PRG_LIFE);
-	//tt_parse4(tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
+	list_node * tt_test = list_new(NULL, PRG_LIFE);
+	tt_parse4(tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
 	
 	//graph_obj * hers = hershey_test (PRG_LIFE);
 	/*===================== teste ===============*/
@@ -769,7 +770,8 @@ int main(int argc, char** argv){
 					//sel_tmp = -1;
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_FONT]))){
-					printf("FONT\n");
+					//printf("FONT\n");
+					show_fonts_mng = 1;
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LTYPE]))){
 					printf("Line types\n");
@@ -1243,6 +1245,10 @@ int main(int argc, char** argv){
 		
 		if (show_info){
 			show_info = info_win(gui);
+		}
+		
+		if (show_fonts_mng){
+			show_fonts_mng = fonts_mng (gui);
 		}
 		
 		if (progr_win){
@@ -1821,7 +1827,7 @@ int main(int argc, char** argv){
 			dxf_ents_draw(gui->drawing, img, gui->ofs_x, gui->ofs_y, gui->zoom); /* redraw */
 			
 			/*===================== teste ===============*/
-			//graph_list_draw(tt_test, img, gui->ofs_x, gui->ofs_y, gui->zoom);
+			graph_list_draw(tt_test, img, gui->ofs_x, gui->ofs_y, gui->zoom);
 			
 			//graph_draw(hers, img, gui->ofs_x, gui->ofs_y, gui->zoom);
 			/*===================== teste ===============*/

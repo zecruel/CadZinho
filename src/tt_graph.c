@@ -299,7 +299,7 @@ int tt_parse4(list_node *list_ret, int pool_idx, const char *txt){
 	
 	//if(tt_load_font("C:/Windows/Fonts/arialbd.ttf", &font, &scale)){
 	//if(tt_load_font("Lato-Light.ttf", &font, &scale)){
-	if (font = tt_init ("C:/Windows/Fonts/arial.ttf")){
+	if (font = tt_init ("OpenSans-Light.ttf")){
 		
 		ok = tt_parse_str(font, list_ret, pool_idx, txt);
 	}

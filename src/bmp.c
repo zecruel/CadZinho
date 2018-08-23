@@ -613,7 +613,7 @@ void bmp_rect_fill(bmp_img *img, int vert_x[4], int vert_y[4]){
 	int i, w = img->width, h = img->height;
 	int x0, y0, x1, y1;
 	int min_x, max_x, min_y, max_y;
-	int nodes = 0, node_x[2], swap;
+	int nodes = 0, node_x[4], swap;
 	int pix_x, pix_y;
 	
 	

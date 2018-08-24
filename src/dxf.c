@@ -64,6 +64,7 @@ char *get_ext(char *path){
 	char *ret = NULL;
 	int i;
 	
+	
 	strncpy(buf, path, DXF_MAX_CHARS);
 	ret = strrchr(buf, '.');
 	

@@ -46,6 +46,12 @@ enum dxf_pool_action{
 	FREE_DXF
 };
 
+enum dxf_font_type{
+	FONT_SHP,
+	FONT_TT,
+	FONT_HER
+};
+
 enum dxf_pool_life{
 	DWG_LIFE = 0,
 	FRAME_LIFE = 1,
@@ -123,21 +129,9 @@ typedef struct Dxf_ltype dxf_ltype;
 
 struct Dxf_tfont{
 	char name[DXF_MAX_CHARS];
-	char file[DXF_MAX_CHARS];
-	char big_file[DXF_MAX_CHARS];
-	char subst_file[DXF_MAX_CHARS];
+	enum dxf_font_type type;
 	
-	int flags1;
-	int flags2;
-	int num_el;
-	
-	double fixed_h;
-	double width_f;
-	double oblique;
-	
-	void *shx_font;
-	
-	dxf_node *obj;
+	void *data;
 };
 typedef struct Dxf_tfont dxf_tfont;
 
@@ -156,6 +150,7 @@ struct Dxf_tstyle{
 	double oblique;
 	
 	void *shx_font;
+	dxf_tfont font;
 	
 	dxf_node *obj;
 };

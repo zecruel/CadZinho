@@ -161,7 +161,10 @@ struct Gui_obj {
 	
 	list_node * sel_list;
 	list_node *phanton;
+	
 	struct do_list list_do;
+	
+	list_node font_list;
 	
 	struct h_pattern list_pattern;
 	struct hatch_line user_patt;

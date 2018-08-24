@@ -129,4 +129,6 @@ int pool_idx);
 int graph_fill(graph_obj * ref, bmp_img * img,
 double ofs_x, double ofs_y, double scale);
 
+void graph_draw_aa(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, double scale);
+
 #endif

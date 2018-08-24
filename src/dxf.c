@@ -993,9 +993,9 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 	else drawing->num_ltypes = DXF_MAX_LTYPES;
 }
 
-void dxf_fonts_assemb (dxf_drawing *drawing){
+void dxf_tstyles_assemb (dxf_drawing *drawing){
 	int i;
-	dxf_node *current = NULL, *curr_font = NULL;
+	dxf_node *current = NULL, *curr_tstyle = NULL;
 	
 	char name[DXF_MAX_CHARS];
 	char file_name[DXF_MAX_CHARS];
@@ -1010,32 +1010,32 @@ void dxf_fonts_assemb (dxf_drawing *drawing){
 	double width_f;
 	double oblique;
 	
-	drawing->num_fonts = 0;
+	drawing->num_tstyles = 0;
 	
 	/* open default font */
 	shape *shx_font = shx_font_open("txt.shx");
 	
 	if (shx_font){
 		/* always set the index 0 as the default font*/
-		drawing->num_fonts = 1;
-		drawing->text_fonts[0].name[0] = 0;
-		drawing->text_fonts[0].file[0] = 0;
-		drawing->text_fonts[0].big_file[0] = 0;
-		drawing->text_fonts[0].subst_file[0] = 0;
+		drawing->num_tstyles = 1;
+		drawing->text_styles[0].name[0] = 0;
+		drawing->text_styles[0].file[0] = 0;
+		drawing->text_styles[0].big_file[0] = 0;
+		drawing->text_styles[0].subst_file[0] = 0;
 		
-		drawing->text_fonts[0].flags1 = 0;
-		drawing->text_fonts[0].flags2 = 0;
-		drawing->text_fonts[0].fixed_h = 0.0;
-		drawing->text_fonts[0].width_f = 1.0;
-		drawing->text_fonts[0].oblique = 0.0;
+		drawing->text_styles[0].flags1 = 0;
+		drawing->text_styles[0].flags2 = 0;
+		drawing->text_styles[0].fixed_h = 0.0;
+		drawing->text_styles[0].width_f = 1.0;
+		drawing->text_styles[0].oblique = 0.0;
 		
-		drawing->text_fonts[0].shx_font = shx_font;
-		drawing->text_fonts[0].num_el = 0;
-		drawing->text_fonts[0].obj = NULL;
+		drawing->text_styles[0].shx_font = shx_font;
+		drawing->text_styles[0].num_el = 0;
+		drawing->text_styles[0].obj = NULL;
 	}
 	
 	i = 0;
-	while (curr_font = dxf_find_obj_i(drawing->t_style, "STYLE", i)){/* get the next layer */
+	while (curr_tstyle = dxf_find_obj_i(drawing->t_style, "STYLE", i)){/* get the next layer */
 	
 		name[0] = 0;
 		file_name[0] = 0;
@@ -1048,12 +1048,12 @@ void dxf_fonts_assemb (dxf_drawing *drawing){
 		width_f = 1.0;
 		oblique = 0.0;
 			
-		if (curr_font->obj.content) current = curr_font->obj.content->next;
+		if (curr_tstyle->obj.content) current = curr_tstyle->obj.content->next;
 		
 		while (current){
 			if (current->type == DXF_ATTR){
 				switch (current->value.group){
-					case 2: /* font name */
+					case 2: /* tstyle name */
 						strncpy(name, current->value.s_data, DXF_MAX_CHARS);
 						break;
 					case 3: /* file name */
@@ -1082,27 +1082,27 @@ void dxf_fonts_assemb (dxf_drawing *drawing){
 		}
 		if ((i + 1) < DXF_MAX_FONTS){
 			/* set the variables on the current font in drawing structure */
-			strncpy(drawing->text_fonts[i+1].name, name, DXF_MAX_CHARS);
-			strncpy(drawing->text_fonts[i+1].file, file_name, DXF_MAX_CHARS);
-			strncpy(drawing->text_fonts[i+1].big_file, big_file, DXF_MAX_CHARS);
+			strncpy(drawing->text_styles[i+1].name, name, DXF_MAX_CHARS);
+			strncpy(drawing->text_styles[i+1].file, file_name, DXF_MAX_CHARS);
+			strncpy(drawing->text_styles[i+1].big_file, big_file, DXF_MAX_CHARS);
 			
-			drawing->text_fonts[i+1].flags1 = flags1;
-			drawing->text_fonts[i+1].flags2 = flags2;
-			drawing->text_fonts[i+1].fixed_h = fixed_h;
-			drawing->text_fonts[i+1].width_f = width_f;
-			drawing->text_fonts[i+1].oblique = oblique;
+			drawing->text_styles[i+1].flags1 = flags1;
+			drawing->text_styles[i+1].flags2 = flags2;
+			drawing->text_styles[i+1].fixed_h = fixed_h;
+			drawing->text_styles[i+1].width_f = width_f;
+			drawing->text_styles[i+1].oblique = oblique;
 			
 			shx_font = shx_font_open(file_name);
-			drawing->text_fonts[i+1].shx_font = shx_font;
-			drawing->text_fonts[i+1].num_el = 0;
-			drawing->text_fonts[i+1].obj = curr_font;
+			drawing->text_styles[i+1].shx_font = shx_font;
+			drawing->text_styles[i+1].num_el = 0;
+			drawing->text_styles[i+1].obj = curr_tstyle;
 			
-			strncpy(drawing->text_fonts[i+1].subst_file, subst_file, DXF_MAX_CHARS);
+			strncpy(drawing->text_styles[i+1].subst_file, subst_file, DXF_MAX_CHARS);
 		}
 		i++;
 	}
-	if ((i + 1) < DXF_MAX_FONTS) drawing->num_fonts += i;
-	else drawing->num_fonts = DXF_MAX_FONTS;
+	if ((i + 1) < DXF_MAX_FONTS) drawing->num_tstyles += i;
+	else drawing->num_tstyles = DXF_MAX_FONTS;
 }
 
 int dxf_lay_idx (dxf_drawing *drawing, char *name){
@@ -1187,17 +1187,17 @@ int dxf_ltype_idx (dxf_drawing *drawing, char *name){
 	return 0; /*if search fails, return the standard layer */
 }
 
-int dxf_font_idx (dxf_drawing *drawing, char *name){
+int dxf_tstyle_idx (dxf_drawing *drawing, char *name){
 	int i;
 	if (drawing){
-		for (i=1; i < drawing->num_fonts; i++){
-			if (strcmp(drawing->text_fonts[i].name, name) == 0){
+		for (i=1; i < drawing->num_tstyles; i++){
+			if (strcmp(drawing->text_styles[i].name, name) == 0){
 				return i;
 			}
 		}
 	}
 	
-	return 0; /*if search fails, return the standard font */
+	return 0; /*if search fails, return the standard tstyle */
 }
 
 int dxf_save (char *path, dxf_drawing *drawing){
@@ -1624,7 +1624,7 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 		dxf_ltype_assemb (drawing);
 		
 		/* assemble the fonts list */
-		dxf_fonts_assemb(drawing);
+		dxf_tstyles_assemb(drawing);
 		
 		/*find the handle seed */
 		drawing->hand_seed = dxf_find_attr2(drawing->head, 5);

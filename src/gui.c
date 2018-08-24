@@ -124,7 +124,7 @@ void set_style(struct nk_context *ctx, enum theme theme){
         table[NK_COLOR_TAB_HEADER] = nk_rgba(48, 83, 111, 255);
         nk_style_from_table(ctx, table);
     } else if (theme == THEME_ZE) {
-        table[NK_COLOR_TEXT] = nk_rgba(210, 210, 210, 255);
+        table[NK_COLOR_TEXT] = nk_rgba(250, 250, 250, 255);
         table[NK_COLOR_WINDOW] = nk_rgba(57, 71, 58, 215);
         table[NK_COLOR_HEADER] = nk_rgba(52, 57, 52, 220);
         table[NK_COLOR_BORDER] = nk_rgba(46, 46, 46, 255);
@@ -544,7 +544,7 @@ NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
 
 					/* apply the scales, offsets and rotation to graphs */
 					graph_modify(curr_graph, t->x, t->y + t->font->height, font->scale, -font->scale, 0);
-					graph_draw(curr_graph, img, 0, 0, 1);
+					graph_draw_aa(curr_graph, img, 0.0, 0.0, 1.0);
 				} break;
 				
 				case NK_COMMAND_CURVE: {

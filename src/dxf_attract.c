@@ -869,13 +869,13 @@ int *alin_v, int *alin_h){
 			current = current->next; /* go to the next in the list */
 		}
 		
-		/* find the font index and font*/
-		*fnt_idx = dxf_font_idx(drawing, t_style);
-		shx_font = drawing->text_fonts[*fnt_idx].shx_font;
+		/* find the tstyle index and font*/
+		*fnt_idx = dxf_tstyle_idx(drawing, t_style);
+		shx_font = drawing->text_styles[*fnt_idx].shx_font;
 		
 		if(shx_font == NULL){ /* if font not loaded*/
 			/* use the deafault font*/
-			shx_font = drawing->text_fonts[0].shx_font;
+			shx_font = drawing->text_styles[0].shx_font;
 		}
 		
 		/* find the dimentions of SHX font */

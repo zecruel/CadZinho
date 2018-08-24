@@ -1,34 +1,34 @@
 #include "gui.h"
 
-int fonts_mng (gui_obj *gui){
-	int i, show_font_mng = 1;
-	static int show_color_pick = 0, show_font_name = 0;
+int tstyles_mng (gui_obj *gui){
+	int i, show_tstyle_mng = 1;
+	static int show_color_pick = 0, show_tstyle_name = 0;
 	static int sel_t_sty, t_sty_idx;
 	
 	static struct sort_by_idx sort_t_sty[DXF_MAX_LAYERS];
-	dxf_tfont *t_sty = gui->drawing->text_fonts;
+	dxf_tstyle *t_sty = gui->drawing->text_styles;
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
 	gui->next_win_w = 810;
 	gui->next_win_h = 310;
 	
-	enum font_op {
-		FONT_OP_NONE,
-		FONT_OP_CREATE,
-		FONT_OP_RENAME,
-		FONT_OP_UPDATE
+	enum tstyle_op {
+		TSTYLE_OP_NONE,
+		TSTYLE_OP_CREATE,
+		TSTYLE_OP_RENAME,
+		TSTYLE_OP_UPDATE
 	};
-	static int font_change = FONT_OP_UPDATE;
+	static int tstyle_change = TSTYLE_OP_UPDATE;
 	
 	//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Info", NK_WINDOW_CLOSABLE, nk_rect(310, 50, 200, 300))){
-	if (nk_begin(gui->ctx, "Font Manager", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
+	if (nk_begin(gui->ctx, "Text Styles Manager", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
-		t_sty = gui->drawing->text_fonts;
+		t_sty = gui->drawing->text_styles;
 		
 		nk_layout_row_dynamic(gui->ctx, 32, 1);
-		if (nk_group_begin(gui->ctx, "font_head", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, "tstyle_head", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row(gui->ctx, NK_STATIC, 22, 8, (float[]){175, 175, 175, 25, 25, 50, 50, 50});
 			if (nk_button_label(gui->ctx, "Name")){
 				
@@ -58,13 +58,13 @@ int fonts_mng (gui_obj *gui){
 			nk_group_end(gui->ctx);
 		}
 		nk_layout_row_dynamic(gui->ctx, 200, 1);
-		if (nk_group_begin(gui->ctx, "font_prop", NK_WINDOW_BORDER)) {
+		if (nk_group_begin(gui->ctx, "tstyle_prop", NK_WINDOW_BORDER)) {
 			
 			nk_layout_row(gui->ctx, NK_STATIC, 22, 8, (float[]){175, 175, 175, 25, 25, 50, 50, 50});
-			int num_fonts = gui->drawing->num_fonts;
+			int num_tstyles = gui->drawing->num_tstyles;
 			char txt[DXF_MAX_CHARS];
 				
-			for (i = 0; i < num_fonts; i++){
+			for (i = 0; i < num_tstyles; i++){
 				
 				//t_sty_idx = sort_t_sty[i].idx;
 				t_sty_idx = i;
@@ -131,10 +131,10 @@ int fonts_mng (gui_obj *gui){
 		}
 		
 	} else {
-		show_font_mng = 0;
-		font_change = FONT_OP_UPDATE;
+		show_tstyle_mng = 0;
+		tstyle_change = TSTYLE_OP_UPDATE;
 	}
 	nk_end(gui->ctx);
 	
-	return show_font_mng;
+	return show_tstyle_mng;
 }

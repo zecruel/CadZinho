@@ -1097,13 +1097,13 @@ graph_obj * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 		}
 		if (((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))){
 			
-			/* find the font index and font*/
-			fnt_idx = dxf_font_idx(drawing, t_style);
-			shx_font = drawing->text_fonts[fnt_idx].shx_font;
+			/* find the tstyle index and font*/
+			fnt_idx = dxf_tstyle_idx(drawing, t_style);
+			shx_font = drawing->text_styles[fnt_idx].shx_font;
 			
 			if(shx_font == NULL){ /* if font not loaded*/
 				/* use the deafault font*/
-				shx_font = drawing->text_fonts[0].shx_font;
+				shx_font = drawing->text_styles[0].shx_font;
 			}
 			
 			/* find the dimentions of SHX font */
@@ -1378,12 +1378,12 @@ graph_obj * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 		if (((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))){
 			
 			/* find the font index and font*/
-			fnt_idx = dxf_font_idx(drawing, t_style);
-			shx_font = drawing->text_fonts[fnt_idx].shx_font;
+			fnt_idx = dxf_tstyle_idx(drawing, t_style);
+			shx_font = drawing->text_styles[fnt_idx].shx_font;
 			
 			if(shx_font == NULL){ /* if font not loaded*/
 				/* use the deafault font*/
-				shx_font = drawing->text_fonts[0].shx_font;
+				shx_font = drawing->text_styles[0].shx_font;
 			}
 			
 			/* find the dimentions of SHX font */

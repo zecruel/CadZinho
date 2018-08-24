@@ -346,7 +346,7 @@ int main(int argc, char** argv){
 	int file_path_len = 0;
 	
 	int show_lay_mng = 0, sel_tmp = 0, show_color_pick = 0, show_lay_name = 0;
-	int show_fonts_mng = 0;
+	int show_tstyles_mng = 0;
 	
 	int ev_type;
 	struct nk_color background;
@@ -405,7 +405,7 @@ int main(int argc, char** argv){
 	
 	/* init Nuklear GUI */
 	struct font_obj font;
-	font.shx_font = shx_font_open("txt.shx");
+	font.shx_font = shx_font_open("romans.shx");
 	font.scale = 1.4;
 	
 	struct nk_user_font default_font;
@@ -771,7 +771,7 @@ int main(int argc, char** argv){
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_FONT]))){
 					//printf("FONT\n");
-					show_fonts_mng = 1;
+					show_tstyles_mng = 1;
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LTYPE]))){
 					printf("Line types\n");
@@ -1247,8 +1247,8 @@ int main(int argc, char** argv){
 			show_info = info_win(gui);
 		}
 		
-		if (show_fonts_mng){
-			show_fonts_mng = fonts_mng (gui);
+		if (show_tstyles_mng){
+			show_tstyles_mng = tstyles_mng (gui);
 		}
 		
 		if (progr_win){
@@ -1923,8 +1923,8 @@ int main(int argc, char** argv){
 	i_svg_free_curves(gui->svg_curves);
 	
 	
-	for (i = 0; i<gui->drawing->num_fonts; i++){
-		shx_font_free(gui->drawing->text_fonts[i].shx_font);
+	for (i = 0; i<gui->drawing->num_tstyles; i++){
+		shx_font_free(gui->drawing->text_styles[i].shx_font);
 	}
 	
 	//dxf_hatch_free(gui->list_pattern.next);

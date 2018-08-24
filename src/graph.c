@@ -2458,9 +2458,9 @@ font: http://rosettacode.org/wiki/Xiaolin_Wu%27s_line_algorithm#C */
 #define rfpart_(X) (1.0-fpart_(X))
  
 #define swap_(a, b) do{ __typeof__(a) tmp;  tmp = a; a = b; b = tmp; }while(0)
-void draw_line_antialias( bmp_img * img, int x1, int y1, int x2, int y2){
-	double dx = (double)x2 - (double)x1;
-	double dy = (double)y2 - (double)y1;
+void draw_line_antialias( bmp_img * img, double x1, double y1, double x2, double y2){
+	double dx = x2 - x1;
+	double dy = y2 - y1;
 	
 	if ( fabs(dx) > fabs(dy) ) {
 		if ( x2 < x1 ) {
@@ -2546,8 +2546,8 @@ double ofs_x, double ofs_y, double scale){
 	int nodes = 0, steps = 0;
 	
 	//double  start, end, swap;
-	int x0, y0, x1, y1, swap;
-	int node_x[1000];//, node_y[1000];
+	double x0, y0, x1, y1, swap;
+	double node_x[1000];//, node_y[1000];
 	int pix_x, pix_y;
 	
 	
@@ -2555,10 +2555,10 @@ double ofs_x, double ofs_y, double scale){
 	line_node *current = ref->list->next;
 	
 	while(current){ /*sweep the list content */
-		x0 = BMP_U(current->x0, ofs_x, scale);
-		y0 = BMP_U(current->y0, ofs_y, scale);
-		x1 = BMP_U(current->x1, ofs_x, scale);
-		y1 = BMP_U(current->y1, ofs_y, scale);
+		x0 = (current->x0 - ofs_x) * scale;
+		y0 = (current->y0 - ofs_y) * scale;
+		x1 = (current->x1 - ofs_x) * scale;
+		y1 = (current->y1 - ofs_y) * scale;
 		
 		draw_line_antialias(img, x0, y0, x1, y1);
 		
@@ -2595,7 +2595,7 @@ double ofs_x, double ofs_y, double scale){
 					if(((y0 < pix_y) && (y1 >= pix_y)) || 
 						((y1 < pix_y) && (y0 >= pix_y))){
 						/* find x coord of intersection and add to list */
-						node_x[nodes] = (int) (x1 + (double) (pix_y - y1)/(y0 - y1)*(x0 - x1));
+						node_x[nodes] = (x1 + (double) (pix_y - y1)/(y0 - y1)*(x0 - x1));
 						node_x[nodes] = (node_x[nodes] >= 0) ? node_x[nodes] : -1;
 						node_x[nodes] = (node_x[nodes] <= max_x) ? node_x[nodes] : max_x + 1;
 						nodes++;
@@ -2643,6 +2643,51 @@ double ofs_x, double ofs_y, double scale){
 	
 }
 
+void graph_draw_aa(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, double scale){
+	if ((master != NULL) && (img != NULL)){
+		if(master->list->next){ /* check if list is not empty */
+			double xd0, yd0, xd1, yd1;
+			line_node *current = master->list->next;
+			int ok = 1;
+			
+			/* set the pattern */
+			patt_change(img, master->pattern, master->patt_size);
+			/* set the color */
+			img->frg = master->color;
+			
+			/* set the tickness */
+			if (master->thick_const) img->tick = (int) round(master->tick);
+			else img->tick = (int) round(master->tick * scale);
+			
+			/* draw the lines */
+			while(current){ /*sweep the list content */
+				/* apply the scale and offset */
+				ok = 1;
+				
+				ok &= !(isnan(xd0 = ((current->x0 - ofs_x) * scale)));
+				ok &= !(isnan(yd0 = ((current->y0 - ofs_y) * scale)));
+				ok &= !(isnan(xd1 = ((current->x1 - ofs_x) * scale)));
+				ok &= !(isnan(yd1 = ((current->y1 - ofs_y) * scale)));
+					
+				//y0 = (int) round((current->y0 - ofs_y) * scale);
+				//x1 = (int) round((current->x1 - ofs_x) * scale);
+				//y1 = (int) round((current->y1 - ofs_y) * scale);
+				
+				if (ok){
+					
+					
+					//bmp_line(img, xd0, yd0, xd1, yd1);
+					draw_line_antialias(img, xd0, yd0, xd1, yd1);
+					
+					
+				}
+				current = current->next; /* go to next */
+			}
+			
+			
+		}
+	}
+}
 
 /*
 https://stackoverflow.com/questions/11907947/how-to-check-if-a-point-lies-on-a-line-between-2-other-points

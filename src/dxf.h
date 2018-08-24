@@ -141,6 +141,26 @@ struct Dxf_tfont{
 };
 typedef struct Dxf_tfont dxf_tfont;
 
+struct Dxf_tstyle{
+	char name[DXF_MAX_CHARS];
+	char file[DXF_MAX_CHARS];
+	char big_file[DXF_MAX_CHARS];
+	char subst_file[DXF_MAX_CHARS];
+	
+	int flags1;
+	int flags2;
+	int num_el;
+	
+	double fixed_h;
+	double width_f;
+	double oblique;
+	
+	void *shx_font;
+	
+	dxf_node *obj;
+};
+typedef struct Dxf_tstyle dxf_tstyle;
+
 struct Dxf_drawing{
 	/* DXF main sections */
 	dxf_node 	
@@ -172,8 +192,8 @@ struct Dxf_drawing{
 	dxf_ltype ltypes[DXF_MAX_LTYPES];
 	int num_ltypes;
 	
-	dxf_tfont text_fonts[DXF_MAX_FONTS];
-	int num_fonts;
+	dxf_tstyle text_styles[DXF_MAX_FONTS];
+	int num_tstyles;
 	
 };
 typedef struct Dxf_drawing dxf_drawing;
@@ -223,7 +243,7 @@ int dxf_lay_idx (dxf_drawing *drawing, char *name);
 
 int dxf_ltype_idx (dxf_drawing *drawing, char *name);
 
-int dxf_font_idx (dxf_drawing *drawing, char *name);
+int dxf_tstyle_idx (dxf_drawing *drawing, char *name);
 
 int dxf_layer_get(dxf_drawing *drawing, dxf_node * obj);
 

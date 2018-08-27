@@ -1,3 +1,6 @@
+#ifndef _TTFONT_LIB
+#define _TTFONT_LIB
+
 #include "stb_truetype.h"
 
 struct tt_glyph{
@@ -25,3 +28,5 @@ struct tt_font * tt_init (char *path);
 void tt_font_free(struct tt_font * font);
 
 int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char *txt);
+
+#endif

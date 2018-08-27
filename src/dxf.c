@@ -48,7 +48,7 @@ char *get_filename(char *path){
 	
 	if (ret) ret++;
 	else {
-		buf[0] = 0;
+		//buf[0] = 0;
 		ret = buf;
 	}
 	
@@ -95,6 +95,15 @@ void strip_ext(char *filename){
 			filename[pos] = 0;
 		}
 	}
+}
+
+int file_exists(char *fname){
+	FILE *file;
+	if (file = fopen(fname, "r")){
+		fclose(file);
+		return 1;
+	}
+	return 0;
 }
 
 char *str_replace(char *orig, char *rep, char *with) {

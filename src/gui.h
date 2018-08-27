@@ -11,6 +11,7 @@
 #include "dxf_create.h"
 #include "dxf_attract.h"
 #include "dxf_hatch.h"
+#include "font.h"
 
 #include <SDL.h>
 
@@ -164,7 +165,7 @@ struct Gui_obj {
 	
 	struct do_list list_do;
 	
-	list_node font_list;
+	list_node *font_list;
 	
 	struct h_pattern list_pattern;
 	struct hatch_line user_patt;

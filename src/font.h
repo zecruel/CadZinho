@@ -21,4 +21,6 @@ struct tfont{
 	void *data;
 };
 
+int add_font_list(list_node *list, char *path);
+
 #endif

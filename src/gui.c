@@ -647,13 +647,6 @@ NK_API int nk_sdl_init(gui_obj* gui, struct nk_user_font *font){
 	gui->ctx->clip.paste = nk_sdl_clipbard_paste;
 	gui->ctx->clip.userdata = nk_handle_ptr(0);
 	
-	gui->font_list = list_new(NULL, PRG_LIFE);
-	if(add_font_list(gui->font_list, "romans.shx")){
-		struct tfont *font = get_font_list(gui->font_list, "romans.shx");
-		if (font){
-			printf("\n------------------------------------------\n         FONT OK - type = %d\n---------------------------------\n", font->type);
-		}
-	}
 	
 	nk_style_set_font(gui->ctx, font);
 	return 1;
@@ -818,6 +811,9 @@ NK_API
 void nk_sdl_shutdown(gui_obj *gui)
 {
 	if(gui){
+		
+		
+		
 		//nk_free(gui->ctx);
 		free(gui->ctx);
 		gui->ctx = NULL;
@@ -966,6 +962,20 @@ int gui_start(gui_obj *gui){
 	gui->patt_descr[0] = 0;
 	gui->h_fam_name[0] = 0;
 	gui->h_fam_descr[0] = 0;
+	
+	gui->font_list = list_new(NULL, PRG_LIFE);
+	if(add_font_list(gui->font_list, "romans.shx")){
+		struct tfont *font = get_font_list(gui->font_list, "romans.shx");
+		if (font){
+			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
+		}
+	}
+	if(add_font_list(gui->font_list, "OpenSans-Light.ttf")){
+		struct tfont *font = get_font_list(gui->font_list, "OpenSans-Light.ttf");
+		if (font){
+			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
+		}
+	}
 	
 	return 1;
 }

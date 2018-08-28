@@ -562,7 +562,13 @@ int main(int argc, char** argv){
 	
 	/*===================== teste ===============*/
 	list_node * tt_test = list_new(NULL, PRG_LIFE);
-	tt_parse4(tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
+	//tt_parse4(tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
+	
+	struct tfont *font_teste = get_font_list(gui->font_list, "OpenSans-Light.ttf");
+	font_parse_str(font_teste, tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
+	font_teste = get_font_list(gui->font_list, "romans.shx");
+	font_parse_str(font_teste, tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
+	
 	
 	//graph_obj * hers = hershey_test (PRG_LIFE);
 	/*===================== teste ===============*/
@@ -1901,6 +1907,10 @@ int main(int argc, char** argv){
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+	
+	if(free_font_list(gui->font_list)){
+		printf("\n------------------------------------------\n         FREE FONT OK\n---------------------------------\n");
+	}
 	
 	list_mem_pool(FREE_LIST, 0);
 	list_mem_pool(FREE_LIST, 1);

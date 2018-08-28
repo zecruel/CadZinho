@@ -107,3 +107,74 @@ int add_font_list(list_node *list, char *path){
 	return 1;
 
 }
+
+int free_font_list(list_node *list){
+	if (list == NULL) return 0;
+	
+	struct tfont * font;
+	int type;
+	
+	/* sweep the list */
+	list_node *current = list->next;
+	
+	while (current != NULL){
+		if (current->data){
+			font = (struct tfont *)current->data;
+			type = font->type;
+			
+			if(type == FONT_SHP){
+				shx_font_free((shape *)font->data);
+			}
+			else if (type == FONT_TT){
+				tt_font_free((struct tt_font *)font->data);
+			}
+			
+			free(font);
+			
+		}
+		current = current->next;
+	}
+	
+	return 1;
+
+}
+
+int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char *txt){
+	if (!font || !list_ret || !txt) return 0;
+	
+	int num_graph = 0;
+	int type = font->type;
+	list_node *new_node = NULL;
+	
+	double fnt_size, fnt_above, fnt_below, txt_size;
+	
+	if(type == FONT_SHP){
+		shape *shx_font = font->data;
+		/* find the dimentions of SHX font */
+		if(shx_font->next){ /* the font descriptor is stored in first iten of list */
+			if(shx_font->next->cmd_size > 1){ /* check if the font is valid */
+				fnt_above = shx_font->next->cmds[0]; /* size above the base line of text */
+				fnt_below = shx_font->next->cmds[1]; /* size below the base line of text */
+				if((fnt_above + fnt_below) > 0){
+					fnt_size = fnt_above + fnt_below;
+				}
+				if(fnt_above > 0) txt_size = 1/fnt_above;
+
+				graph_obj * graph = shx_font_parse(shx_font , pool_idx, txt, NULL);
+				
+				if (graph) new_node = list_new ((void *)graph, pool_idx);
+				if (new_node){
+					graph_modify(graph, 0.0, 0.0, txt_size, txt_size, 0.0);
+					list_push(list_ret, new_node);
+					num_graph++;
+				}
+			}
+		}
+		
+	}
+	else if (type == FONT_TT){
+		num_graph += tt_parse_str((struct tt_font *) font->data, list_ret, pool_idx, txt);
+	}
+	
+	return num_graph;
+}

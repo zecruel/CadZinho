@@ -10,76 +10,6 @@
 /* number of segments for the curve */
 #define N_SEG 5
 
-int utf8_to_codepoint(char *utf8_s, int *uni_c){
-	int ofs = 0;
-	
-	if (!utf8_s || !uni_c) return 0;
-	
-	char c = utf8_s[ofs];
-	if (!c) return 0; /*string end*/
-	
-	if ( (c & 0x80) == 0 ){
-		*uni_c = c;
-		ofs++;
-	}
-	else if ( (c & 0xE0) == 0xC0 ){
-		if (!utf8_s[ofs+1]) return 0; /* error -> string end*/
-		*uni_c = (utf8_s[ofs] & 0x1F) << 6;
-		*uni_c |= (utf8_s[ofs+1] & 0x3F);
-		ofs += 2;
-	}
-	else if ( (c & 0xF0) == 0xE0 ){
-		if (!utf8_s[ofs+1] || !utf8_s[ofs+2]) return 0; /* error -> string end*/
-		*uni_c = (utf8_s[ofs] & 0xF) << 12;
-		*uni_c |= (utf8_s[ofs+1] & 0x3F) << 6;
-		*uni_c |= (utf8_s[ofs+2] & 0x3F);
-		ofs += 3;
-	}
-	else if ( (c & 0xF8) == 0xF0 ){
-		if (!utf8_s[ofs+1] || !utf8_s[ofs+2] || !utf8_s[ofs+3]) return 0; /* error -> string end*/
-		*uni_c = (utf8_s[ofs] & 0x7) << 18;
-		*uni_c |= (utf8_s[ofs+1] & 0x3F) << 12;
-		*uni_c |= (utf8_s[ofs+2] & 0x3F) << 6;
-		*uni_c |= (utf8_s[ofs+3] & 0x3F);
-		ofs += 4;
-	}
-
-	return ofs;
-
-}
-
-int codepoint_to_utf8(int uni_c, char utf8_s[5]){
-	
-	if (!utf8_s) return 0;
-	
-	int len = 0;
-	utf8_s[4] = 0;
-	if ( 0 <= uni_c && uni_c <= 0x7f ){
-		utf8_s[0] = (char)uni_c;
-		len++;
-	}
-	else if ( 0x80 <= uni_c && uni_c <= 0x7ff ){
-		utf8_s[0] = ( 0xc0 | (uni_c >> 6) );
-		utf8_s[1] = ( 0x80 | (uni_c & 0x3f) );
-		len += 2;
-	}
-	else if ( 0x800 <= uni_c && uni_c <= 0xffff ){
-		utf8_s[0] = ( 0xe0 | (uni_c >> 12) );
-		utf8_s[1] = ( 0x80 | ((uni_c >> 6) & 0x3f) );
-		utf8_s[2] = ( 0x80 | (uni_c & 0x3f) );
-		len += 3;
-	}
-	else if ( 0x10000 <= uni_c && uni_c <= 0x1fffff ){
-		utf8_s[0] = ( 0xf0 | (uni_c >> 18) );
-		utf8_s[1] = ( 0x80 | ((uni_c >> 12) & 0x3f) );
-		utf8_s[2] = ( 0x80 | ((uni_c >> 6) & 0x3f) );
-		utf8_s[3] = ( 0x80 | (uni_c & 0x3f) );
-		len += 4;
-	}
-	
-	return len;
-}
-
 graph_obj * tt_parse_v(stbtt_vertex *vertices, int num_verts, double scale, int pool_idx, double *curr_pos){
 	int i, j;
 	graph_obj *line_list = NULL;
@@ -135,7 +65,13 @@ int tt_load_font (char *path, stbtt_fontinfo *font, double *scale){
 	ttf_buffer = dxf_load_file(path, &fsize);
 	if (ttf_buffer){
 		ok = stbtt_InitFont(font, ttf_buffer, stbtt_GetFontOffsetForIndex(ttf_buffer,0));
-		*scale = stbtt_ScaleForPixelHeight(font, 1);
+		//*scale = stbtt_ScaleForPixelHeight(font, 1);
+		if (ok) {
+			int ascent, descent, lineGap;
+			stbtt_GetFontVMetrics(font, &ascent, &descent, &lineGap);
+			printf("\n**************\na=%d,d=%d,g=%d\n************\n",ascent, descent, lineGap);
+			*scale = 1.0/(ascent + descent + lineGap);
+		}
 	}
 	
 	return ok;
@@ -257,7 +193,7 @@ struct tt_glyph * tt_find_cp (struct tt_font * font, int code_point){
 int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char *txt){
 	if (!font || !list_ret || !txt) return 0;
 	
-	int ofs = 0, str_start = 0, code_p;
+	int ofs = 0, str_start = 0, code_p, num_graph = 0;
 	struct tt_glyph *curr_glyph = NULL, *prev_glyph = NULL;
 	graph_obj *curr_graph = NULL;
 	
@@ -283,13 +219,13 @@ int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char 
 			if (curr_graph){
 				graph_modify(curr_graph, ofs_x, 0.0, 1.0, 1.0, 0.0);
 				/* store the graph in the return vector */
-				list_push(list_ret, list_new((void *)curr_graph, pool_idx));
+				if (list_push(list_ret, list_new((void *)curr_graph, pool_idx))) num_graph++;
 			}
 			ofs_x += curr_glyph->adv;
 			prev_glyph = curr_glyph;
 		}
 	}
-	return 1;
+	return num_graph;
 }
 
 int tt_parse4(list_node *list_ret, int pool_idx, const char *txt){

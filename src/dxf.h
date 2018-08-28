@@ -192,6 +192,10 @@ void strip_ext(char *filename);
 
 int file_exists(char *fname);
 
+int utf8_to_codepoint(char *utf8_s, int *uni_c);
+
+int codepoint_to_utf8(int uni_c, char utf8_s[5]);
+
 void dxf_ent_print2 (dxf_node *ent);
 
 void dxf_ent_print_f (dxf_node *ent, char *path);

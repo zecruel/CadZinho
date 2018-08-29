@@ -2080,6 +2080,27 @@ graph_obj * graph_list_isect(list_node *list, double rect_pt1[2], double rect_pt
 	return NULL;
 }
 
+int graph_list_color(list_node *list, bmp_color color){
+	list_node *current = NULL;
+	graph_obj *curr_graph = NULL;
+	int ok = 0;
+		
+	if (list != NULL){
+		current = list->next;
+		
+		/* sweep the main list */
+		while (current != NULL){
+			if (current->data){
+				curr_graph = (graph_obj *)current->data;
+				curr_graph->color = color;
+			}
+			current = current->next;
+		}
+		ok = 1;
+	}
+	return ok;
+}
+
 double pt_dist(double x0, double y0, double x1, double y1){
 	return sqrt(pow(x1-x0, 2) + pow(y1-y0, 2));
 }
@@ -2567,6 +2588,11 @@ double ofs_x, double ofs_y, double scale){
 	
 	
 	/* find min and max by reference graph rectangle*/
+	/*
+	min_x = (int)ceil((ref->ext_min_x - ofs_x) * scale);
+	max_x = (int)floor((ref->ext_max_x - ofs_x) * scale);
+	min_y = (int)ceil((ref->ext_min_y - ofs_y) * scale);
+	max_y = (int)floor((ref->ext_max_y - ofs_y) * scale);*/
 	min_x = BMP_U(ref->ext_min_x, ofs_x, scale);
 	max_x = BMP_U(ref->ext_max_x, ofs_x, scale);
 	min_y = BMP_U(ref->ext_min_y, ofs_y, scale);

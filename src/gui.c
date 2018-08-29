@@ -124,7 +124,7 @@ void set_style(struct nk_context *ctx, enum theme theme){
         table[NK_COLOR_TAB_HEADER] = nk_rgba(48, 83, 111, 255);
         nk_style_from_table(ctx, table);
     } else if (theme == THEME_ZE) {
-        table[NK_COLOR_TEXT] = nk_rgba(250, 250, 250, 255);
+        table[NK_COLOR_TEXT] = nk_rgba(210, 210, 210, 255);
         table[NK_COLOR_WINDOW] = nk_rgba(57, 71, 58, 215);
         table[NK_COLOR_HEADER] = nk_rgba(52, 57, 52, 220);
         table[NK_COLOR_BORDER] = nk_rgba(46, 46, 46, 255);
@@ -171,7 +171,7 @@ float nk_user_font_get_text_width(nk_handle handle, float height, const char *te
 		//txt_cpy[len - 1] = ' ';
 		txt_cpy[len] = '\0';
 		
-		
+		/*
 		nk_rune str_uni[255];
 		char str[255];
 		int glyph_size, char_size, pos = 0;
@@ -202,14 +202,36 @@ float nk_user_font_get_text_width(nk_handle handle, float height, const char *te
 		else{
 			str[254] = 0;
 		}
-		
+		*/
 		double txt_w;
-		graph_obj *curr_graph = shx_font_parse(font->shx_font, 1, str, &txt_w);
+		//graph_obj *curr_graph = shx_font_parse(font->shx_font, 1, str, &txt_w);
+		graph_obj *curr_graph = shx_font_parse(font->shx_font, 1, txt_cpy, &txt_w);
 		if (curr_graph){
 			return (float) font->scale * txt_w;
 		}
 	}
 	return 0;
+}
+
+float nk_user_font_get_text_width2(nk_handle handle, float height, const char *text, int len){
+	struct tfont *font = (struct tfont *)handle.ptr;
+	if ((text!= NULL) && (font!=NULL)) {
+		
+	
+		/* We must copy into a new buffer with exact length null-terminated
+		as nuklear uses variable size buffers and shx_fonts routines doesn't
+		accept a length, it infers length from null-termination */
+		char txt_cpy[len+2];
+		strncpy((char*)&txt_cpy, text, len);
+		//txt_cpy[len - 1] = ' ';
+		txt_cpy[len] = '\0';
+		
+		double txt_w;
+		if (font_str_w(font, txt_cpy, &txt_w)){
+			return (float) height * txt_w;
+		}
+	}
+	return 0.0;
 }
 
 bmp_color nk_to_bmp_color(struct nk_color color){
@@ -504,7 +526,7 @@ NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
 				case NK_COMMAND_TEXT: {
 					const struct nk_command_text *t = (const struct nk_command_text*)cmd;
 					color = nk_to_bmp_color(t->foreground);
-					nk_rune str_uni[255];
+					/*nk_rune str_uni[255];
 					char str[255];
 					int glyph_size, char_size, pos = 0;
 					
@@ -533,10 +555,11 @@ NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
 					}
 					else{
 						str[254] = 0;
-					}
-					
+					}*/
+					#if 0
 					struct font_obj *font = (struct font_obj *)t->font->userdata.ptr;
-					graph_obj *curr_graph = shx_font_parse(font->shx_font, 1, (const char*)str, NULL);
+					//graph_obj *curr_graph = shx_font_parse(font->shx_font, 1, (const char*)str, NULL);
+					graph_obj *curr_graph = shx_font_parse(font->shx_font, 1, (char *)t->string, NULL);
 					/*change the color */
 					if(curr_graph){
 						curr_graph->color = color;
@@ -545,6 +568,20 @@ NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
 					/* apply the scales, offsets and rotation to graphs */
 					graph_modify(curr_graph, t->x, t->y + t->font->height, font->scale, -font->scale, 0);
 					graph_draw_aa(curr_graph, img, 0.0, 0.0, 1.0);
+					//graph_draw2(curr_graph, img, 0.0, 0.0, 1.0);
+					#endif
+					struct tfont *font = (struct tfont *)t->font->userdata.ptr;
+					
+					list_node * graph = list_new(NULL, FRAME_LIFE);
+	
+					if (graph) {
+						if (font_parse_str(font, graph, FRAME_LIFE, (char *)t->string)){
+							graph_list_color(graph, color);
+							graph_list_modify(graph, t->x, t->y + t->font->height, t->font->height, -t->font->height, 0.0);
+							graph_list_draw(graph, img, 0.0, 0.0, 1.0);
+						}
+					}
+						
 				} break;
 				
 				case NK_COMMAND_CURVE: {
@@ -642,13 +679,25 @@ NK_API int nk_sdl_init(gui_obj* gui, struct nk_user_font *font){
 	
 	
 	//nk_init_default(gui->ctx, font);
-	nk_init_fixed(gui->ctx, gui->buf, FIXED_MEM, font);
+	//nk_init_fixed(gui->ctx, gui->buf, FIXED_MEM, font);
+	nk_init_fixed(gui->ctx, gui->buf, FIXED_MEM, NULL);
 	gui->ctx->clip.copy = nk_sdl_clipbard_copy;
 	gui->ctx->clip.paste = nk_sdl_clipbard_paste;
 	gui->ctx->clip.userdata = nk_handle_ptr(0);
 	
 	
-	nk_style_set_font(gui->ctx, font);
+	//nk_style_set_font(gui->ctx, font);
+	
+	//struct tfont *ui_font = get_font_list(gui->font_list, "OpenSans-Light.ttf");
+	struct tfont *ui_font = get_font_list(gui->font_list, "romans.shx");
+	
+	gui->ui_font.userdata = nk_handle_ptr(ui_font);
+	gui->ui_font.height = 10.0;
+	//font.scale = font_scale(font.shx_font, gui->ui_font.height);
+	gui->ui_font.width = nk_user_font_get_text_width2;
+	
+	nk_style_set_font(gui->ctx, &(gui->ui_font));
+	
 	return 1;
 }
 
@@ -972,6 +1021,25 @@ int gui_start(gui_obj *gui){
 	}
 	if(add_font_list(gui->font_list, "OpenSans-Light.ttf")){
 		struct tfont *font = get_font_list(gui->font_list, "OpenSans-Light.ttf");
+		if (font){
+			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
+			//gui->ui_font = font;
+		}
+	}
+	if(add_font_list(gui->font_list, "romans.shx")){
+		struct tfont *font = get_font_list(gui->font_list, "romans.shx");
+		if (font){
+			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
+		}
+	}
+	if(add_font_list(gui->font_list, "Lato-Light.ttf")){
+		struct tfont *font = get_font_list(gui->font_list, "Lato-Light.ttf");
+		if (font){
+			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
+		}
+	}
+	if(add_font_list(gui->font_list, "ProggyClean.ttf")){
+		struct tfont *font = get_font_list(gui->font_list, "ProggyClean.ttf");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 		}

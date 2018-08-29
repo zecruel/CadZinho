@@ -7,6 +7,7 @@
 #include <string.h>
 #include <locale.h>
 #include "graph.h"
+#include "dxf.h"
 
 struct Shape{
 	long num;
@@ -27,6 +28,6 @@ shape *shx_font_find(shape *shx_font, long num);
 
 shape *shx_font_open(char *path);
 
-graph_obj *shx_font_parse(shape *shx_font, int pool_idx, const char *txt, double *w);
+graph_obj *shx_font_parse(shape *shx_font, int pool_idx, char *txt, double *w);
 
 #endif

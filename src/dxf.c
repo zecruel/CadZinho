@@ -176,6 +176,17 @@ int codepoint_to_utf8(int uni_c, char utf8_s[5]){
 	return len;
 }
 
+int str_utf2cp(char *str, int *cp, int max){
+	int ofs = 0, str_start = 0, code_p, size = 0;
+	
+	while ((ofs = utf8_to_codepoint(str + str_start, &code_p)) && (size < max)){
+		str_start += ofs;
+		cp[size] = code_p;
+		size++;
+	}
+	return size;
+}
+
 char *str_replace(char *orig, char *rep, char *with) {
 	/*
 	Author: jmucchiello

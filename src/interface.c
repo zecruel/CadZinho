@@ -476,10 +476,14 @@ int main(int argc, char** argv){
 	font_tiny.scale = 1.4;
 	
 	struct nk_user_font font_tiny_nk;
+	#if 0
 	font_tiny_nk.userdata = nk_handle_ptr(&font_tiny);
 	font_tiny_nk.height = 8.0;
 	font_tiny.scale = font_scale(font_tiny.shx_font, font_tiny_nk.height);
 	font_tiny_nk.width = nk_user_font_get_text_width;
+	#endif
+	font_tiny_nk = gui->ui_font;
+	font_tiny_nk.height = 8.0;
 	
 	//int show_blk_pp = 0;
 	//bmp_img * gui->preview_img;
@@ -562,11 +566,17 @@ int main(int argc, char** argv){
 	
 	/*===================== teste ===============*/
 	list_node * tt_test = list_new(NULL, PRG_LIFE);
+	double w_teste;
 	//tt_parse4(tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
 	
 	struct tfont *font_teste = get_font_list(gui->font_list, "OpenSans-Light.ttf");
+	font_str_w(font_teste, "Ezequiel Rabelo de Aguiar  AV çβμπ", &w_teste);
+	printf("\ntext w1 = %0.2f\n", w_teste);
 	font_parse_str(font_teste, tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
 	font_teste = get_font_list(gui->font_list, "romans.shx");
+	
+	font_str_w(font_teste, "Ezequiel Rabelo de Aguiar  AV çβμπ", &w_teste);
+	printf("\ntext w1 = %0.2f\n", w_teste);
 	font_parse_str(font_teste, tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
 	
 	

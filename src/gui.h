@@ -166,6 +166,8 @@ struct Gui_obj {
 	struct do_list list_do;
 	
 	list_node *font_list;
+	//struct tfont * ui_font;
+	struct nk_user_font ui_font;
 	
 	struct h_pattern list_pattern;
 	struct hatch_line user_patt;

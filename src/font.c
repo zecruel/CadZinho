@@ -178,3 +178,26 @@ int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char 
 	
 	return num_graph;
 }
+
+int font_str_w(struct tfont * font, char *txt, double *w){
+	if (!font || !w|| !txt) return 0;
+	
+	int ok = 0;
+	int type = font->type;
+	list_node * graph = list_new(NULL, FRAME_LIFE);
+	
+	if (!graph) return 0;
+	
+	*w = 0.0;
+	
+	if (font_parse_str(font, graph, FRAME_LIFE, txt)){
+		int init = 0;
+		double min_x, min_y, max_x, max_y;
+		ok = graph_list_ext(graph, &init, &min_x, &min_y, &max_x, &max_y);
+		//*w = fabs(max_x - min_x);
+		*w = fabs(max_x);
+	}
+	
+	
+	return ok;
+}

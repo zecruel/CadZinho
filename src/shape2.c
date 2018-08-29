@@ -205,7 +205,7 @@ shape *shx_font_open(char *path){
 	return(shx_font); // retorna a shx_font
 }
 
-graph_obj *shx_font_parse(shape *shx_font, int pool_idx, const char *txt, double *w){
+graph_obj *shx_font_parse(shape *shx_font, int pool_idx, char *txt, double *w){
 	double pre_x = 0;
 	double pre_y = 0;
 	double px = 0;
@@ -235,8 +235,8 @@ graph_obj *shx_font_parse(shape *shx_font, int pool_idx, const char *txt, double
 	double length, center_x, center_y, ang_ini;
 	int vector, octant, direction, num_oct, radius;
 	
-	wchar_t str_uni[255];
-	int tam_str;
+	int str_uni[255];
+	int str_size;
 	
 	int i, j, ii;
 	
@@ -251,12 +251,13 @@ graph_obj *shx_font_parse(shape *shx_font, int pool_idx, const char *txt, double
 	}*/
 	
 	//converte o texto em uma string unicode
-	tam_str = mbstowcs(str_uni, txt, 255); //tamanho maximo de 255
-	//printf("tamanho str = %d\n", tam_str);
+	//str_size = mbstowcs(str_uni, txt, 255); //tamanho maximo de 255
+	str_size = str_utf2cp(txt, str_uni, 255);
+	//printf("tamanho str = %d\n", str_size);
 	//printf("str = %s\n", str_uni);
 
 	
-	for(i = 0; i < tam_str; i++){
+	for(i = 0; i < str_size; i++){
 		//procura a letra na shx_font
 		shape *shp = shx_font_find(shx_font, (long) str_uni[i]);
 		if(shp){

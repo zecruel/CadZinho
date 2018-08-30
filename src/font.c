@@ -32,7 +32,7 @@ struct tfont * get_font_list(list_node *list, char *name){
 }
 
 
-int add_font_list(list_node *list, char *path){
+int add_font_list(list_node *list, char *path, char *opt_dirs){
 	if (list == NULL) return 0;
 	if (path == NULL) return 0;
 	
@@ -46,7 +46,41 @@ int add_font_list(list_node *list, char *path){
 		strncat(full_path, ".SHX", DXF_MAX_CHARS);
 	}
 	
-	if (!file_exists(full_path)) return 0;
+	if (!file_exists(full_path)){
+		if (opt_dirs){
+			char dirs[DXF_MAX_CHARS];
+			char try_path[DXF_MAX_CHARS] = "";
+			char s[2] = {PATH_SEPARATOR, 0};
+			char *token;
+			int ok = 0;
+			strncpy(dirs, opt_dirs, DXF_MAX_CHARS);
+			/* get the first token */
+			token = strtok(dirs, s);
+			
+			/* walk through other tokens */
+			while( token != NULL ) {
+				try_path[0] = 0;
+				strncat(try_path, token, DXF_MAX_CHARS);
+				
+				if (try_path[strlen(try_path) - 1] != DIR_SEPARATOR){
+					char sep[2] = {DIR_SEPARATOR, 0};
+					strncat(try_path, sep, DXF_MAX_CHARS);
+				}
+				
+				strncat(try_path, full_path, DXF_MAX_CHARS);
+				if (file_exists(try_path)){
+					strncpy(full_path, try_path, DXF_MAX_CHARS);
+					ok = 1;
+					break;
+				}
+				
+				token = strtok(NULL, s);
+			}
+			if (!ok) return 0;
+			
+		}
+		else return 0;
+	}
 	
 	name = get_filename(full_path);
 	str_upp(name);

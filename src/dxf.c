@@ -43,8 +43,7 @@ char *get_filename(char *path){
 	char *ret = NULL;
 	
 	strncpy(buf, path, DXF_MAX_CHARS);
-	ret = strrchr(buf, '/');
-	if (ret == NULL) ret = strrchr(buf, '\\');
+	ret = strrchr(buf, DIR_SEPARATOR);
 	
 	if (ret) ret++;
 	else {

@@ -2715,6 +2715,27 @@ void graph_draw_aa(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y
 	}
 }
 
+int graph_list_draw_aa(list_node *list, bmp_img * img, double ofs_x, double ofs_y, double scale){
+	list_node *current = NULL;
+	graph_obj *curr_graph = NULL;
+	int ok = 0;
+		
+	if (list != NULL){
+		current = list->next;
+		
+		/* sweep the main list */
+		while (current != NULL){
+			if (current->data){
+				curr_graph = (graph_obj *)current->data;
+				graph_draw_aa(curr_graph, img, ofs_x, ofs_y, scale);
+			}
+			current = current->next;
+		}
+		ok = 1;
+	}
+	return ok;
+}
+
 /*
 https://stackoverflow.com/questions/11907947/how-to-check-if-a-point-lies-on-a-line-between-2-other-points
 by https://stackoverflow.com/users/688624/imallett

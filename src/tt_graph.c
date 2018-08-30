@@ -27,8 +27,8 @@ graph_obj * tt_parse_v(stbtt_vertex *vertices, int num_verts, double scale, int 
 		if(line_list) line_list->fill = 1;
 		for (i=0; i < num_verts; i++){
 			//printf ("vert %d = %d,%d\n", vertices[i].type, vertices[i].x, vertices[i].y);
-			px = vertices[i].x * scale;
-			py = vertices[i].y * scale;
+			px = (double) vertices[i].x * scale;
+			py = (double) vertices[i].y * scale;
 			if (vertices[i].type == 3){ /*quadratic bezier curve */
 				for (j = 1; j <= N_SEG; j++){
 					t = (double)j / (double)N_SEG;
@@ -36,8 +36,8 @@ graph_obj * tt_parse_v(stbtt_vertex *vertices, int num_verts, double scale, int 
 					b = 2.0 * t * (1.0 - t);
 					c = pow(t, 2.0);
 					
-					px = (a * vertices[i-1].x + b * vertices[i].cx + c * vertices[i].x) * scale;
-					py = (a * vertices[i-1].y + b * vertices[i].cy + c * vertices[i].y) * scale;
+					px = (a * (double) vertices[i-1].x + b * (double) vertices[i].cx + c * (double) vertices[i].x) * scale;
+					py = (a * (double) vertices[i-1].y + b * (double) vertices[i].cy + c * (double) vertices[i].y) * scale;
 					
 					line_add(line_list, pre_x, pre_y, 0.0, px, py, 0.0);
 					
@@ -70,7 +70,7 @@ int tt_load_font (char *path, stbtt_fontinfo *font, double *scale){
 			int ascent, descent, lineGap;
 			stbtt_GetFontVMetrics(font, &ascent, &descent, &lineGap);
 			printf("\n**************\na=%d,d=%d,g=%d\n************\n",ascent, descent, lineGap);
-			*scale = 1.0/(ascent + descent + lineGap);
+			*scale = 1.0/(double) (ascent + descent + lineGap);
 		}
 	}
 	
@@ -95,7 +95,7 @@ struct tt_glyph * tt_get_glyph (struct tt_font * font, int code_point){
 			main_str->num_verts = stbtt_GetGlyphShape(font->info, g_idx, &(main_str->vertices));
 			int adv;
 			stbtt_GetGlyphHMetrics(font->info, g_idx, &adv, NULL);
-			main_str->adv = adv * font->scale;
+			main_str->adv = (double) adv * font->scale;
 		//}
 	
 	}

@@ -320,7 +320,7 @@ int main(int argc, char** argv){
 	strncat(fonts_path, "fonts/", DXF_MAX_CHARS - strlen(fonts_path));
 	
 	#ifdef OS_WIN
-	char *sys_fonts_path = "C:/Windows/Fonts/";
+	char *sys_fonts_path = "C:\\Windows\\Fonts\\";
 	#elif defined(OS_LINUX)
 	char *sys_fonts_path = "/usr/share/fonts/";
 	#else
@@ -569,16 +569,17 @@ int main(int argc, char** argv){
 	double w_teste;
 	//tt_parse4(tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
 	
-	struct tfont *font_teste = get_font_list(gui->font_list, "OpenSans-Light.ttf");
+	//struct tfont *font_teste = get_font_list(gui->font_list, "OpenSans-Light.ttf");
+	struct tfont *font_teste = get_font_list(gui->font_list, "Roboto-LightItalic.ttf");
 	font_str_w(font_teste, "Ezequiel Rabelo de Aguiar  AV çβμπ", &w_teste);
 	printf("\ntext w1 = %0.2f\n", w_teste);
 	font_parse_str(font_teste, tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
-	font_teste = get_font_list(gui->font_list, "romans.shx");
+	/*font_teste = get_font_list(gui->font_list, "romans.shx");
 	
 	font_str_w(font_teste, "Ezequiel Rabelo de Aguiar  AV çβμπ", &w_teste);
 	printf("\ntext w1 = %0.2f\n", w_teste);
 	font_parse_str(font_teste, tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
-	
+	*/
 	
 	//graph_obj * hers = hershey_test (PRG_LIFE);
 	/*===================== teste ===============*/

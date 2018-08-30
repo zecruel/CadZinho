@@ -15,6 +15,14 @@
 #define DXF_MAX_PAT 10
 #define DXF_POOL_PAGES 1000
 
+#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+#define PATH_SEPARATOR ';'
+#define DIR_SEPARATOR '\\'
+#else
+#define PATH_SEPARATOR ':'
+#define DIR_SEPARATOR '/'
+#endif
+
 /* supportable graphic entities */
 enum dxf_graph {
 	DXF_NONE,

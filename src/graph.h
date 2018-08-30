@@ -133,4 +133,6 @@ double ofs_x, double ofs_y, double scale);
 
 void graph_draw_aa(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, double scale);
 
+int graph_list_draw_aa(list_node *list, bmp_img * img, double ofs_x, double ofs_y, double scale);
+
 #endif

@@ -578,7 +578,8 @@ NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
 						if (font_parse_str(font, graph, FRAME_LIFE, (char *)t->string)){
 							graph_list_color(graph, color);
 							graph_list_modify(graph, t->x, t->y + t->font->height, t->font->height, -t->font->height, 0.0);
-							graph_list_draw(graph, img, 0.0, 0.0, 1.0);
+							//graph_list_draw(graph, img, 0.0, 0.0, 1.0);
+							graph_list_draw_aa(graph, img, 0.0, 0.0, 1.0);
 						}
 					}
 						
@@ -688,7 +689,7 @@ NK_API int nk_sdl_init(gui_obj* gui, struct nk_user_font *font){
 	
 	//nk_style_set_font(gui->ctx, font);
 	
-	//struct tfont *ui_font = get_font_list(gui->font_list, "OpenSans-Light.ttf");
+	//struct tfont *ui_font = get_font_list(gui->font_list, "Lato-Hairline.ttf");
 	struct tfont *ui_font = get_font_list(gui->font_list, "romans.shx");
 	
 	gui->ui_font.userdata = nk_handle_ptr(ui_font);
@@ -1013,33 +1014,40 @@ int gui_start(gui_obj *gui){
 	gui->h_fam_descr[0] = 0;
 	
 	gui->font_list = list_new(NULL, PRG_LIFE);
-	if(add_font_list(gui->font_list, "romans.shx")){
+	if(add_font_list(gui->font_list, "romans.shx", "C:\\Windows\\Fonts\\")){
 		struct tfont *font = get_font_list(gui->font_list, "romans.shx");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 		}
 	}
-	if(add_font_list(gui->font_list, "OpenSans-Light.ttf")){
+	if(add_font_list(gui->font_list, "OpenSans-Light.ttf", "C:\\Windows\\Fonts\\")){
 		struct tfont *font = get_font_list(gui->font_list, "OpenSans-Light.ttf");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 			//gui->ui_font = font;
 		}
 	}
-	if(add_font_list(gui->font_list, "romans.shx")){
-		struct tfont *font = get_font_list(gui->font_list, "romans.shx");
+	if(add_font_list(gui->font_list, "Lato-Hairline.ttf", "C:\\Windows\\Fonts\\")){
+		struct tfont *font = get_font_list(gui->font_list, "Lato-Hairline.ttf");
+		if (font){
+			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
+			//gui->ui_font = font;
+		}
+	}
+	if(add_font_list(gui->font_list, "arialbd.ttf", "C:\\Windows\\Fonts")){
+		struct tfont *font = get_font_list(gui->font_list, "arialbd.ttf");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 		}
 	}
-	if(add_font_list(gui->font_list, "Lato-Light.ttf")){
+	if(add_font_list(gui->font_list, "Lato-Light.ttf", "C:\\Windows\\Fonts\\")){
 		struct tfont *font = get_font_list(gui->font_list, "Lato-Light.ttf");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 		}
 	}
-	if(add_font_list(gui->font_list, "ProggyClean.ttf")){
-		struct tfont *font = get_font_list(gui->font_list, "ProggyClean.ttf");
+	if(add_font_list(gui->font_list, "Roboto-LightItalic.ttf", "C:\\Windows\\Fonts\\;E:\\documentos\\cadzinho\\res\\fonts\\tt\\Roboto")){
+		struct tfont *font = get_font_list(gui->font_list, "Roboto-LightItalic.ttf");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 		}

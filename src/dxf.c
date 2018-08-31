@@ -3,6 +3,7 @@
 #include "shape2.h"
 #define DXF_NUM_POOL 5
 #define DXF_PAGE 500000
+#include "font.h"
 
 void str_upp(char *str) { /* upper case the string */
 	while (*str= toupper(*str)) str++;

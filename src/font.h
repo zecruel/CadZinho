@@ -27,7 +27,7 @@ int free_font_list(list_node *list);
 
 struct tfont * get_font_list(list_node *list, char *name);
 
-int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char *txt);
+int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char *txt, double *w);
 
 int font_str_w(struct tfont * font, char *txt, double *w);
 

@@ -27,6 +27,6 @@ struct tt_font * tt_init (char *path);
 
 void tt_font_free(struct tt_font * font);
 
-int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char *txt);
+int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char *txt, double *w);
 
 #endif

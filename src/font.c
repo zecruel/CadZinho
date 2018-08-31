@@ -1,9 +1,5 @@
 #include "font.h"
 
-struct tfont * font_load(char *name){
-	
-}
-
 struct tfont * get_font_list(list_node *list, char *name){
 	if (list == NULL) return NULL;
 	if (name == NULL) return NULL;
@@ -173,7 +169,7 @@ int free_font_list(list_node *list){
 
 }
 
-int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char *txt){
+int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char *txt, double *w){
 	if (!font || !list_ret || !txt) return 0;
 	
 	int num_graph = 0;
@@ -194,7 +190,7 @@ int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char 
 				}
 				if(fnt_above > 0) txt_size = 1/fnt_above;
 
-				graph_obj * graph = shx_font_parse(shx_font , pool_idx, txt, NULL);
+				graph_obj * graph = shx_font_parse(shx_font , pool_idx, txt, w);
 				
 				if (graph) new_node = list_new ((void *)graph, pool_idx);
 				if (new_node){
@@ -207,7 +203,7 @@ int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char 
 		
 	}
 	else if (type == FONT_TT){
-		num_graph += tt_parse_str((struct tt_font *) font->data, list_ret, pool_idx, txt);
+		num_graph += tt_parse_str((struct tt_font *) font->data, list_ret, pool_idx, txt, w);
 	}
 	
 	return num_graph;
@@ -224,13 +220,28 @@ int font_str_w(struct tfont * font, char *txt, double *w){
 	
 	*w = 0.0;
 	
-	if (font_parse_str(font, graph, FRAME_LIFE, txt)){
-		int init = 0;
-		double min_x, min_y, max_x, max_y;
-		ok = graph_list_ext(graph, &init, &min_x, &min_y, &max_x, &max_y);
-		//*w = fabs(max_x - min_x);
-		*w = fabs(max_x);
+	font_parse_str(font, graph, FRAME_LIFE, txt, w);
+	if(type == FONT_SHP){
+		shape *shx_font = font->data;
+		/* find the dimentions of SHX font */
+		if(shx_font->next){ /* the font descriptor is stored in first iten of list */
+			if(shx_font->next->cmd_size > 1){ /* check if the font is valid */
+				 double fnt_above = shx_font->next->cmds[0]; /* size above the base line of text */
+				//double fnt_below = shx_font->next->cmds[1]; /* size below the base line of text */
+				
+				if(fnt_above > 0){
+					*w /= fnt_above;
+					ok =1;
+				}
+				
+			}
+		}
+		
 	}
+	else if (type == FONT_TT){
+		ok =1;
+	}
+	
 	
 	
 	return ok;

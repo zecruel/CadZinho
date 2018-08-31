@@ -575,7 +575,7 @@ NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
 					list_node * graph = list_new(NULL, FRAME_LIFE);
 	
 					if (graph) {
-						if (font_parse_str(font, graph, FRAME_LIFE, (char *)t->string)){
+						if (font_parse_str(font, graph, FRAME_LIFE, (char *)t->string, NULL)){
 							graph_list_color(graph, color);
 							graph_list_modify(graph, t->x, t->y + t->font->height, t->font->height, -t->font->height, 0.0);
 							//graph_list_draw(graph, img, 0.0, 0.0, 1.0);
@@ -689,8 +689,8 @@ NK_API int nk_sdl_init(gui_obj* gui, struct nk_user_font *font){
 	
 	//nk_style_set_font(gui->ctx, font);
 	
-	//struct tfont *ui_font = get_font_list(gui->font_list, "Lato-Hairline.ttf");
-	struct tfont *ui_font = get_font_list(gui->font_list, "romans.shx");
+	struct tfont *ui_font = get_font_list(gui->font_list, "Lato-Hairline.ttf");
+	//struct tfont *ui_font = get_font_list(gui->font_list, "romans.shx");
 	
 	gui->ui_font.userdata = nk_handle_ptr(ui_font);
 	gui->ui_font.height = 10.0;

@@ -573,12 +573,12 @@ int main(int argc, char** argv){
 	struct tfont *font_teste = get_font_list(gui->font_list, "Roboto-LightItalic.ttf");
 	font_str_w(font_teste, "Ezequiel Rabelo de Aguiar  AV çβμπ", &w_teste);
 	printf("\ntext w1 = %0.2f\n", w_teste);
-	font_parse_str(font_teste, tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
+	font_parse_str(font_teste, tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ", NULL);
 	/*font_teste = get_font_list(gui->font_list, "romans.shx");
 	
 	font_str_w(font_teste, "Ezequiel Rabelo de Aguiar  AV çβμπ", &w_teste);
 	printf("\ntext w1 = %0.2f\n", w_teste);
-	font_parse_str(font_teste, tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
+	font_parse_str(font_teste, tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ", NULL);
 	*/
 	
 	//graph_obj * hers = hershey_test (PRG_LIFE);

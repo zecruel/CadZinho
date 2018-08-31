@@ -190,7 +190,7 @@ struct tt_glyph * tt_find_cp (struct tt_font * font, int code_point){
 	return NULL;
 }
 
-int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char *txt){
+int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char *txt, double *w){
 	if (!font || !list_ret || !txt) return 0;
 	
 	int ofs = 0, str_start = 0, code_p, num_graph = 0;
@@ -212,7 +212,7 @@ int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char 
 		}
 		if (curr_glyph){
 			if (prev_glyph){
-				ofs += stbtt_GetGlyphKernAdvance(font->info,
+				ofs_x += stbtt_GetGlyphKernAdvance(font->info,
 				prev_glyph->g_idx, curr_glyph->g_idx) * font->scale;
 			}
 			curr_graph = tt_parse_v(curr_glyph->vertices, curr_glyph->num_verts, font->scale, pool_idx, NULL);
@@ -225,6 +225,7 @@ int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char 
 			prev_glyph = curr_glyph;
 		}
 	}
+	if (w != NULL) *w = ofs_x;
 	return num_graph;
 }
 
@@ -238,7 +239,7 @@ int tt_parse4(list_node *list_ret, int pool_idx, const char *txt){
 	//if (font = tt_init ("Lato-Light.ttf")){
 	if (font = tt_init ("OpenSans-Light.ttf")){
 		
-		ok = tt_parse_str(font, list_ret, pool_idx, txt);
+		ok = tt_parse_str(font, list_ret, pool_idx, txt, NULL);
 	}
 	tt_font_free(font);
 	return ok;

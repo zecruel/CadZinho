@@ -160,6 +160,8 @@ struct Gui_obj {
 	char h_fam_name[DXF_MAX_CHARS];
 	char h_fam_descr[DXF_MAX_CHARS];
 	
+	char dflt_fonts_path[5 * DXF_MAX_CHARS];
+	
 	list_node * sel_list;
 	list_node *phanton;
 	
@@ -168,6 +170,7 @@ struct Gui_obj {
 	list_node *font_list;
 	//struct tfont * ui_font;
 	struct nk_user_font ui_font;
+	struct tfont * dflt_font;
 	
 	struct h_pattern list_pattern;
 	struct hatch_line user_patt;

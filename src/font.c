@@ -28,12 +28,12 @@ struct tfont * get_font_list(list_node *list, char *name){
 }
 
 
-int add_font_list(list_node *list, char *path, char *opt_dirs){
-	if (list == NULL) return 0;
-	if (path == NULL) return 0;
+struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
+	if (list == NULL) return NULL;
+	if (path == NULL) return NULL;
 	
 	char *name, *ext, full_path[DXF_MAX_CHARS];
-	struct tfont * font;
+	struct tfont * font = NULL;
 	
 	strncpy(full_path, path, DXF_MAX_CHARS);
 	ext = get_ext(full_path);
@@ -72,17 +72,17 @@ int add_font_list(list_node *list, char *path, char *opt_dirs){
 				
 				token = strtok(NULL, s);
 			}
-			if (!ok) return 0;
+			if (!ok) return NULL;
 			
 		}
-		else return 0;
+		else return NULL;
 	}
 	
 	name = get_filename(full_path);
 	str_upp(name);
 	
 	font = get_font_list(list, name);
-	if (font) return 0;
+	if (font) return font;
 	
 	ext = get_ext(full_path);
 	
@@ -92,7 +92,7 @@ int add_font_list(list_node *list, char *path, char *opt_dirs){
 			font = malloc(sizeof(struct tfont));
 			if (font == NULL) {
 				shx_font_free(shx_tfont);
-				return 0;
+				return NULL;
 			}
 			strncpy(font->path, full_path, DXF_MAX_CHARS);
 			strncpy(font->name, name, DXF_MAX_CHARS);
@@ -103,7 +103,7 @@ int add_font_list(list_node *list, char *path, char *opt_dirs){
 			if (new_node == NULL) {
 				shx_font_free(shx_tfont);
 				free(font);
-				return 0;
+				return NULL;
 			}
 			list_push(list, new_node);
 		}
@@ -114,7 +114,7 @@ int add_font_list(list_node *list, char *path, char *opt_dirs){
 			font = malloc(sizeof(struct tfont));
 			if (font == NULL) {
 				tt_font_free(tt_tfont);
-				return 0;
+				return NULL;
 			}
 			strncpy(font->path, full_path, DXF_MAX_CHARS);
 			strncpy(font->name, name, DXF_MAX_CHARS);
@@ -125,16 +125,16 @@ int add_font_list(list_node *list, char *path, char *opt_dirs){
 			if (new_node == NULL) {
 				tt_font_free(tt_tfont);
 				free(font);
-				return 0;
+				return NULL;
 			}
 			list_push(list, new_node);
 		}
 	}
 	else{
-		return 0;
+		return NULL;
 	}
 	
-	return 1;
+	return font;
 
 }
 

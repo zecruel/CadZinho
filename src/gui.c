@@ -1013,34 +1013,41 @@ int gui_start(gui_obj *gui){
 	gui->h_fam_name[0] = 0;
 	gui->h_fam_descr[0] = 0;
 	
+	#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+	strncpy(gui->dflt_fonts_path, "C:\\Windows\\Fonts\\", 5 * DXF_MAX_CHARS);
+	#else
+	strncpy(gui->dflt_fonts_path, "/usr/share/fonts/", 5 * DXF_MAX_CHARS);
+	#endif
+	
 	gui->font_list = list_new(NULL, PRG_LIFE);
-	if(add_font_list(gui->font_list, "romans.shx", "C:\\Windows\\Fonts\\")){
+	if(add_font_list(gui->font_list, "romans.shx", gui->dflt_fonts_path)){
 		struct tfont *font = get_font_list(gui->font_list, "romans.shx");
 		if (font){
+			gui->dflt_font = font;
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 		}
 	}
-	if(add_font_list(gui->font_list, "OpenSans-Light.ttf", "C:\\Windows\\Fonts\\")){
+	if(add_font_list(gui->font_list, "OpenSans-Light.ttf", gui->dflt_fonts_path)){
 		struct tfont *font = get_font_list(gui->font_list, "OpenSans-Light.ttf");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 			//gui->ui_font = font;
 		}
 	}
-	if(add_font_list(gui->font_list, "Lato-Hairline.ttf", "C:\\Windows\\Fonts\\")){
+	if(add_font_list(gui->font_list, "Lato-Hairline.ttf", gui->dflt_fonts_path)){
 		struct tfont *font = get_font_list(gui->font_list, "Lato-Hairline.ttf");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 			//gui->ui_font = font;
 		}
 	}
-	if(add_font_list(gui->font_list, "arialbd.ttf", "C:\\Windows\\Fonts")){
+	if(add_font_list(gui->font_list, "arialbd.ttf", gui->dflt_fonts_path)){
 		struct tfont *font = get_font_list(gui->font_list, "arialbd.ttf");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 		}
 	}
-	if(add_font_list(gui->font_list, "Lato-Light.ttf", "C:\\Windows\\Fonts\\")){
+	if(add_font_list(gui->font_list, "Lato-Light.ttf", gui->dflt_fonts_path)){
 		struct tfont *font = get_font_list(gui->font_list, "Lato-Light.ttf");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
@@ -1052,6 +1059,31 @@ int gui_start(gui_obj *gui){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 		}
 	}
+	
+	return 1;
+}
+
+int gui_tstyle(gui_obj *gui){
+	if(!gui) return 0;
+	
+	int i = 0;
+	
+	int num_tstyles = gui->drawing->num_tstyles;
+	dxf_tstyle *t_sty = gui->drawing->text_styles;
+	struct tfont * font;
+		
+	for (i = 0; i < num_tstyles; i++){
+		if(font = add_font_list(gui->font_list, t_sty[i].file, gui->dflt_fonts_path)){
+			t_sty[i].font = font;
+		}
+		else{
+			t_sty[i].font = gui->dflt_font;
+			strncpy(t_sty[i].subst_file, gui->dflt_font->name, DXF_MAX_CHARS);
+		}
+		
+	}
+	
+	
 	
 	return 1;
 }

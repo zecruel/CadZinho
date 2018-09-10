@@ -502,6 +502,7 @@ int main(int argc, char** argv){
 	while (dxf_read (gui->drawing, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &progress) > 0){
 		
 	}
+	gui_tstyle(gui);
 	
 	
 	//printf(dxf_seed_r12);
@@ -1402,7 +1403,7 @@ int main(int argc, char** argv){
 				file_size = 0;
 				
 				//dxf_ent_print2(gui->drawing->blks);
-				
+				gui_tstyle(gui);
 				dxf_ents_parse(gui->drawing);				
 				gui->action = VIEW_ZOOM_EXT;
 				gui->layer_idx = 0;

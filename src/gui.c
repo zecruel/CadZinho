@@ -689,8 +689,8 @@ NK_API int nk_sdl_init(gui_obj* gui, struct nk_user_font *font){
 	
 	//nk_style_set_font(gui->ctx, font);
 	
-	struct tfont *ui_font = get_font_list(gui->font_list, "Lato-Hairline.ttf");
-	//struct tfont *ui_font = get_font_list(gui->font_list, "romans.shx");
+	//struct tfont *ui_font = get_font_list(gui->font_list, "Lato-Hairline.ttf");
+	struct tfont *ui_font = get_font_list(gui->font_list, "romans.shx");
 	
 	gui->ui_font.userdata = nk_handle_ptr(ui_font);
 	gui->ui_font.height = 10.0;

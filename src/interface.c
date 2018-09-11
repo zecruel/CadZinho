@@ -566,15 +566,15 @@ int main(int argc, char** argv){
 	
 	
 	/*===================== teste ===============*/
-	list_node * tt_test = list_new(NULL, PRG_LIFE);
-	double w_teste;
+	//list_node * tt_test = list_new(NULL, PRG_LIFE);
+	//double w_teste;
 	//tt_parse4(tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
 	
 	//struct tfont *font_teste = get_font_list(gui->font_list, "OpenSans-Light.ttf");
-	struct tfont *font_teste = get_font_list(gui->font_list, "Roboto-LightItalic.ttf");
-	font_str_w(font_teste, "Ezequiel Rabelo de Aguiar  AV çβμπ", &w_teste);
-	printf("\ntext w1 = %0.2f\n", w_teste);
-	font_parse_str(font_teste, tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ", NULL);
+	//struct tfont *font_teste = get_font_list(gui->font_list, "Roboto-LightItalic.ttf");
+	//font_str_w(font_teste, "Ezequiel Rabelo de Aguiar  AV çβμπ", &w_teste);
+	//printf("\ntext w1 = %0.2f\n", w_teste);
+	//font_parse_str(font_teste, tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ", NULL);
 	/*font_teste = get_font_list(gui->font_list, "romans.shx");
 	
 	font_str_w(font_teste, "Ezequiel Rabelo de Aguiar  AV çβμπ", &w_teste);
@@ -1845,7 +1845,7 @@ int main(int argc, char** argv){
 			dxf_ents_draw(gui->drawing, img, gui->ofs_x, gui->ofs_y, gui->zoom); /* redraw */
 			
 			/*===================== teste ===============*/
-			graph_list_draw(tt_test, img, gui->ofs_x, gui->ofs_y, gui->zoom);
+			//graph_list_draw(tt_test, img, gui->ofs_x, gui->ofs_y, gui->zoom);
 			
 			//graph_draw(hers, img, gui->ofs_x, gui->ofs_y, gui->zoom);
 			/*===================== teste ===============*/

@@ -17,6 +17,7 @@ struct tfont{
 	char path[DXF_MAX_CHARS];
 	enum font_type type;
 	double std_size;
+	double above, below;
 	
 	void *data;
 };

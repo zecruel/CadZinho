@@ -1280,9 +1280,14 @@ int dxf_ltype_idx (dxf_drawing *drawing, char *name){
 
 int dxf_tstyle_idx (dxf_drawing *drawing, char *name){
 	int i;
+	char name1[DXF_MAX_CHARS], name2[DXF_MAX_CHARS];
+	strncpy(name1, name, DXF_MAX_CHARS); /* preserve original string */
+	str_upp(name1); /*upper case */
 	if (drawing){
 		for (i=1; i < drawing->num_tstyles; i++){
-			if (strcmp(drawing->text_styles[i].name, name) == 0){
+			strncpy(name2, drawing->text_styles[i].name, DXF_MAX_CHARS); /* preserve original string */
+			str_upp(name2); /*upper case */
+			if (strcmp(name1, name2) == 0){
 				return i;
 			}
 		}

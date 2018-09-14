@@ -11,6 +11,7 @@
 #define N_SEG 5
 
 graph_obj * tt_parse_v(stbtt_vertex *vertices, int num_verts, double scale, int pool_idx, double *curr_pos){
+/* convert vertices information from Stb_truetype to graph object*/
 	int i, j;
 	graph_obj *line_list = NULL;
 	
@@ -25,10 +26,10 @@ graph_obj * tt_parse_v(stbtt_vertex *vertices, int num_verts, double scale, int 
 		
 		line_list = graph_new(pool_idx);
 		if(line_list) line_list->fill = 1;
-		for (i=0; i < num_verts; i++){
-			//printf ("vert %d = %d,%d\n", vertices[i].type, vertices[i].x, vertices[i].y);
+		for (i=0; i < num_verts; i++){ /*sweep the vertex list*/
 			px = (double) vertices[i].x * scale;
 			py = (double) vertices[i].y * scale;
+			
 			if (vertices[i].type == 3){ /*quadratic bezier curve */
 				for (j = 1; j <= N_SEG; j++){
 					t = (double)j / (double)N_SEG;
@@ -45,7 +46,8 @@ graph_obj * tt_parse_v(stbtt_vertex *vertices, int num_verts, double scale, int 
 					pre_y = py;
 				}
 			}
-			else if (vertices[i].type>1){
+			else if (vertices[i].type > 1){ /* single segment */
+				
 				line_add(line_list, pre_x, pre_y, 0.0, px, py, 0.0);
 			}
 			
@@ -57,20 +59,23 @@ graph_obj * tt_parse_v(stbtt_vertex *vertices, int num_verts, double scale, int 
 	return line_list;
 }
 
-int tt_load_font (char *path, stbtt_fontinfo *font, double *scale){
+int tt_load_font (char *path, stbtt_fontinfo *font, double *scale, double *asc, double *desc, double *lgap){
+/* Load a truetype type font from path. Return the font metrics to unit size.*/
 	int ok = 0;
 	char *ttf_buffer = NULL;
 	long fsize;
 	
-	ttf_buffer = dxf_load_file(path, &fsize);
+	ttf_buffer = dxf_load_file(path, &fsize); /* load file in buffer */
 	if (ttf_buffer){
+		/* init font */
 		ok = stbtt_InitFont(font, ttf_buffer, stbtt_GetFontOffsetForIndex(ttf_buffer,0));
-		//*scale = stbtt_ScaleForPixelHeight(font, 1);
-		if (ok) {
+		if (ok) { /* get and calcule font metrics for unit size*/
 			int ascent, descent, lineGap;
 			stbtt_GetFontVMetrics(font, &ascent, &descent, &lineGap);
-			printf("\n**************\na=%d,d=%d,g=%d\n************\n",ascent, descent, lineGap);
 			*scale = 1.0/(double) (ascent + descent + lineGap);
+			*asc = *scale * ascent;
+			*desc = *scale * descent;
+			*lgap = *scale * lineGap;
 		}
 	}
 	
@@ -78,6 +83,7 @@ int tt_load_font (char *path, stbtt_fontinfo *font, double *scale){
 }
 
 struct tt_glyph * tt_get_glyph (struct tt_font * font, int code_point){
+/* Init and parse a glyph form a code point (UTF). */
 	struct tt_glyph *main_str = NULL;
 	if (font){
 		main_str = malloc(sizeof(struct tt_glyph));
@@ -88,12 +94,15 @@ struct tt_glyph * tt_get_glyph (struct tt_font * font, int code_point){
 		main_str->vertices = NULL;
 		main_str->next = NULL;
 		
+		/* get the glyph index for speed */
 		int g_idx = stbtt_FindGlyphIndex(font->info, code_point);
 		main_str->g_idx = g_idx;
 		
 		//if (g_idx){
+			/* get the graphics information*/
 			main_str->num_verts = stbtt_GetGlyphShape(font->info, g_idx, &(main_str->vertices));
 			int adv;
+			/* get glyph advance */
 			stbtt_GetGlyphHMetrics(font->info, g_idx, &adv, NULL);
 			main_str->adv = (double) adv * font->scale;
 		//}
@@ -103,8 +112,11 @@ struct tt_glyph * tt_get_glyph (struct tt_font * font, int code_point){
 }
 
 struct tt_font * tt_init (char *path){
+/*Init the font structure from path. For speed, the most useful glyphs are parsed too*/
+	
 	struct tt_font *main_str = NULL;
 	if (path){
+		/* alloc the structures*/
 		main_str = malloc(sizeof(struct tt_font));
 		if(!main_str) return NULL;
 		
@@ -113,13 +125,14 @@ struct tt_font * tt_init (char *path){
 			free(main_str);
 			return NULL;
 		}
-		
-		if(!tt_load_font(path, main_str->info, &(main_str->scale))){
+		/* load font info*/
+		if(!tt_load_font(path, main_str->info, &(main_str->scale), &(main_str->ascent), &(main_str->descent), &(main_str->line_gap))){
 			free(main_str->info);
 			free(main_str);
 			return NULL;
 		}
 		
+		/* For speed, parse the most useful glyphs (in english) and add to list */
 		if(main_str->list = tt_get_glyph (main_str, 0)){
 			main_str->end = main_str->list;
 			int i;
@@ -134,6 +147,7 @@ struct tt_font * tt_init (char *path){
 				}
 				else break;
 			}
+			/* For speed, parse the most useful glyphs (latin) and add to list */
 			for (i = 160; i < 256; i++){
 				curr_glyph = tt_get_glyph (main_str, i);
 				if(curr_glyph){
@@ -143,6 +157,7 @@ struct tt_font * tt_init (char *path){
 				}
 				else break;
 			}
+			/* For speed, parse the most useful glyphs (greek) and add to list */
 			/*for (i = 913; i < 970; i++){
 				curr_glyph = tt_get_glyph (main_str, i);
 				if(curr_glyph){
@@ -158,39 +173,44 @@ struct tt_font * tt_init (char *path){
 }
 
 void tt_font_free(struct tt_font * font){
+/* free memory of font*/
 	if(font){
 		struct tt_glyph *curr_glyph = NULL, *next_glyph = NULL;
 		curr_glyph = font->list;
+		/*first, free all glyphs*/
 		while (curr_glyph){
 			next_glyph = curr_glyph->next;
 			stbtt_FreeShape((const stbtt_fontinfo *)font, curr_glyph->vertices);
 			free(curr_glyph);
 			curr_glyph = next_glyph;
 		}
-		
+		/* free the font info*/
 		if(font->info){
 			free(font->info->data);
 			free(font->info);
 		}
+		/* last, free the main struct */
 		free(font);
 	}
 }
 
 struct tt_glyph * tt_find_cp (struct tt_font * font, int code_point){
+/* try to find the glyph previously loaded by its code point (UTF) */
 	if (!font) return NULL;
 	
 	struct tt_glyph *curr_glyph = NULL;
 	if (font->list) curr_glyph = font->list->next;
-	while (curr_glyph){
-		if (curr_glyph->cp == code_point) return curr_glyph;
+	while (curr_glyph){ /* sweep the list*/
+		if (curr_glyph->cp == code_point) return curr_glyph; /* glyph found*/
 		
 		curr_glyph = curr_glyph->next;
 	}
 	
-	return NULL;
+	return NULL; /* fail the search*/
 }
 
 int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char *txt, double *w){
+/* parse full string to graph*/
 	if (!font || !list_ret || !txt) return 0;
 	
 	int ofs = 0, str_start = 0, code_p, num_graph = 0;
@@ -199,10 +219,12 @@ int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char 
 	
 	double ofs_x = 0.0;
 	
+	/*sweep the string, decoding utf8 */
 	while (ofs = utf8_to_codepoint(txt + str_start, &code_p)){
 		str_start += ofs;
 		/* try to find the glyph previously loaded */
 		curr_glyph = tt_find_cp (font, code_p);
+		
 		if (!curr_glyph){/* if not found, add the glyph in list*/
 			curr_glyph = tt_get_glyph (font, code_p);
 			if(curr_glyph){
@@ -210,219 +232,63 @@ int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char 
 				font->end = curr_glyph;
 			}
 		}
-		if (curr_glyph){
-			if (prev_glyph){
+		
+		if (curr_glyph){ /* glyph found*/
+			
+			if (prev_glyph){/* get additional custom advance, relative to previous glyph*/
 				ofs_x += stbtt_GetGlyphKernAdvance(font->info,
 				prev_glyph->g_idx, curr_glyph->g_idx) * font->scale;
 			}
+			/* get final graphics of each glyph*/
 			curr_graph = tt_parse_v(curr_glyph->vertices, curr_glyph->num_verts, font->scale, pool_idx, NULL);
 			if (curr_graph){
 				graph_modify(curr_graph, ofs_x, 0.0, 1.0, 1.0, 0.0);
 				/* store the graph in the return vector */
 				if (list_push(list_ret, list_new((void *)curr_graph, pool_idx))) num_graph++;
 			}
+			/* update the ofset */
 			ofs_x += curr_glyph->adv;
 			prev_glyph = curr_glyph;
 		}
 	}
-	if (w != NULL) *w = ofs_x;
+	if (w != NULL) *w = ofs_x; /* return the text width*/
 	return num_graph;
 }
 
-int tt_parse4(list_node *list_ret, int pool_idx, const char *txt){
-	int ok = 0, i = 0;
+graph_obj * tt_parse_cp(struct tt_font * font, int cp, int prev_cp, int pool_idx, double *w){
+/* parse single code point to graph*/
+	if (!font) return 0;
 	
-	struct tt_font *font;
+	struct tt_glyph *curr_glyph = NULL, *prev_glyph = NULL;
+	graph_obj *curr_graph = NULL;
 	
+	double ofs_x = 0.0;
 	
-	//if (font = tt_init ("C:/Windows/Fonts/arialbd.ttf")){
-	//if (font = tt_init ("Lato-Light.ttf")){
-	if (font = tt_init ("OpenSans-Light.ttf")){
-		
-		ok = tt_parse_str(font, list_ret, pool_idx, txt, NULL);
-	}
-	tt_font_free(font);
-	return ok;
-}
-
-int tt_parse3(list_node *list_ret, int pool_idx, const char *txt){
-	int ok = 0, i = 0;
-	struct tt_glyph *curr_glyph = NULL;
-	graph_obj *curr = NULL;
-	struct tt_font *font;
+	/* try to find the glyph previously loaded */
+	curr_glyph = tt_find_cp (font, cp);
+	prev_glyph = tt_find_cp (font, prev_cp);
 	
-	//if(tt_load_font("C:/Windows/Fonts/arialbd.ttf", &font, &scale)){
-	//if(tt_load_font("Lato-Light.ttf", &font, &scale)){
-	if (font = tt_init ("Lato-Light.ttf")){
-		double ofs_x = 0.0, ofs_y = 0.0, curr_pos, new_ofs_x = 0.0;
-		if (font->list) curr_glyph = font->list->next;
-		while (curr_glyph){
-			
-			curr = tt_parse_v(curr_glyph->vertices, curr_glyph->num_verts, font->scale, pool_idx, &curr_pos);
-			
-			if (curr){
-				
-				graph_modify(curr, ofs_x, ofs_y, 1.0, 1.0, 0.0);
-				/* store the graph in the return vector */
-				list_push(list_ret, list_new((void *)curr, pool_idx));
-				
-				ofs_x += curr_glyph->adv;
-				i++;
-				if (i >= 20){
-					i=0;
-					ofs_x = 0;
-					ofs_y -=1;
-				}
-				
-			}
-			
-			
-			curr_glyph = curr_glyph->next;
+	if (!curr_glyph){/* if not found, add the glyph in list*/
+		curr_glyph = tt_get_glyph (font, cp);
+		if(curr_glyph){
+			if (font->end) font->end->next = curr_glyph;
+			font->end = curr_glyph;
 		}
-		ok = 1;
 	}
-	tt_font_free(font);
-	return ok;
-}
-
-int tt_parse2(list_node *list_ret, int pool_idx, const char *txt){
-	int ok = 0;
-	stbtt_fontinfo font;
-	double scale;
-	graph_obj *curr = NULL;
 	
-	//if(tt_load_font("C:/Windows/Fonts/arialbd.ttf", &font, &scale)){
-	if(tt_load_font("Lato-Light.ttf", &font, &scale)){
-		int i, str_len, num_verts = 0;
-		wchar_t str_uni[255];
-		double ofs_x = 0.0, ofs_y = 0.0, curr_pos, new_ofs_x = 0.0;
-		stbtt_vertex *vertices = NULL;
-		int prev_glyph, glyph;
-	
-		//converte o texto em uma string unicode
-		str_len = mbstowcs(str_uni, txt, 255);
+	if (curr_glyph){ /* glyph found*/
 		
-		int adv = 0, ls = 0, kadv = 0;
-	
-		for(i = 0; i < str_len; i++){
-			
-			glyph = stbtt_FindGlyphIndex(&font, (int)str_uni[i]);
-			
-			if ((str_uni[i] != 9) && (str_uni[i] != 32)){
-				num_verts = stbtt_GetGlyphShape(&font, glyph, &vertices);
-				
-				curr = tt_parse_v(vertices, num_verts, scale, pool_idx, &curr_pos);
-				
-				stbtt_GetGlyphHMetrics(&font, glyph, &adv, &ls);
-				if(i>0) kadv = stbtt_GetGlyphKernAdvance(&font, prev_glyph, glyph);
-				
-				stbtt_FreeShape(&font, vertices);
-				if (curr){
-					
-					//ofs_x += kadv * scale + 0.05;
-					//new_ofs_x = ofs_x + curr->ext_max_x;
-					
-					ofs_x += kadv * scale;
-					new_ofs_x = ofs_x + adv * scale;
-					
-					graph_modify(curr, ofs_x, 0.0, 1.0, 1.0, 0.0);
-					/* store the graph in the return vector */
-					list_push(list_ret, list_new((void *)curr, pool_idx));
-					
-					ofs_x = new_ofs_x;
-					
-					
-				}
-			}
-			else if ((str_uni[i] == 9)){/* TAB*/
-				ofs_x += 1.5;
-			}
-			else if ((str_uni[i] == 32)){ /* SPACE */
-				ofs_x += 0.3;
-			}
-			
-			prev_glyph = glyph;
+		if (prev_glyph){/* get additional custom advance, relative to previous glyph*/
+			ofs_x += stbtt_GetGlyphKernAdvance(font->info,
+			prev_glyph->g_idx, curr_glyph->g_idx) * font->scale;
 		}
-		ok = 1;
+		/* get final graphics of  glyph*/
+		curr_graph = tt_parse_v(curr_glyph->vertices, curr_glyph->num_verts, font->scale, pool_idx, NULL);
+		
+		/* update the ofset */
+		ofs_x += curr_glyph->adv;
 	}
 	
-	free(font.data);
-	
-	return ok;
-}
-
-graph_obj * tt_parse(int pool_idx, const char *txt, double *w)
-{
-	char *ttf_buffer;
-	long fsize;
-	
-	stbtt_fontinfo font;
-	stbtt_vertex *vertices;
-	
-	int i, j, str_len, num_vert;
-	
-	wchar_t str_uni[255];
-	double pre_x = 0;
-	double pre_y = 0;
-	double px = 0;
-	double py = 0;
-	double max_x = 0;
-	double max_y = 0;
-	double min_x = 0;
-	double min_y = 0;
-	
-	double ofs_x = 0.0, ofs_y = 0.0;
-	
-	//converte o texto em uma string unicode
-	str_len = mbstowcs(str_uni, txt, 255);
-	
-	ttf_buffer = dxf_load_file("c:/windows/fonts/arialbd.ttf", &fsize);
-	stbtt_InitFont(&font, ttf_buffer, stbtt_GetFontOffsetForIndex(ttf_buffer,0));
-	free(ttf_buffer);
-	float scale = stbtt_ScaleForPixelHeight(&font, 20);
-	
-	//cria a lista de retorno
-	graph_obj *line_list = graph_new(pool_idx);
-	if(line_list) line_list->fill = 1;
-	
-	for(i = 0; i < str_len; i++){
-		num_vert = stbtt_GetCodepointShape(&font, str_uni[i], &vertices);
-		//printf("Num verts = %d\n", num_vert);
-		
-
-		for (j=0; j < num_vert; j++){
-
-			//printf ("t=%d (%0.2f,%0.2f)\n", vertices[j].type, vertices[j].x*scale, vertices[j].y*scale);
-			px = vertices[j].x * scale + ofs_x;
-			py = vertices[j].y * scale + ofs_y;
-			
-			if (vertices[j].type>1) line_add(line_list, pre_x, pre_y, 0.0, px, py, 0.0);
-			
-			pre_x = px;
-			pre_y = py;
-			
-			if (j>0){
-				max_x = (max_x > pre_x) ? max_x : pre_x;
-				max_y = (max_y > pre_y) ? max_y : pre_y;
-				min_x = (min_x < pre_x) ? min_x : pre_x;
-				min_y = (min_y < pre_y) ? min_y : pre_y;
-			}
-			else{
-				max_x = pre_x;
-				max_y = pre_y;
-				min_x = pre_x;
-				min_y = pre_y;
-			}
-		}
-		stbtt_FreeShape(&font, vertices);
-		
-		ofs_x = max_x;
-		
-	}
-	
-	
-	
-	if (w != NULL) *w = max_x - min_x;
-
-	return line_list;
+	if (w != NULL) *w = ofs_x; /* return the text width*/
+	return curr_graph;
 }

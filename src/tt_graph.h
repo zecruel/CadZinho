@@ -18,7 +18,7 @@ struct tt_glyph{
 struct tt_font{
 	char *name;
 	stbtt_fontinfo *info;
-	double scale;
+	double scale, ascent, descent, line_gap;
 	
 	struct tt_glyph *list, *end;
 };

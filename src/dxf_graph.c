@@ -1381,30 +1381,14 @@ list_node * dxf_text_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		if (((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))){
 			
 			/* find the tstyle index and font*/
-			fnt_idx = dxf_tstyle_idx(drawing, t_style);
-			font = drawing->text_styles[fnt_idx].font;
-			
-			#if (0)
-			shx_font = drawing->text_styles[fnt_idx].shx_font;
-			
-			if(shx_font == NULL){ /* if font not loaded*/
-				/* use the default font*/
-				shx_font = drawing->text_styles[0].shx_font;
+			if (strlen(t_style) > 0){
+				fnt_idx = dxf_tstyle_idx(drawing, t_style);
+				font = drawing->text_styles[fnt_idx].font;
 			}
-			
-			/* find the dimentions of SHX font */
-			if(shx_font){ /* if the font exists */
-				if(shx_font->next){ /* the font descriptor is stored in first iten of list */
-					if(shx_font->next->cmd_size > 1){ /* check if the font is valid */
-						fnt_above = shx_font->next->cmds[0]; /* size above the base line of text */
-						fnt_below = shx_font->next->cmds[1]; /* size below the base line of text */
-						if((fnt_above + fnt_below) > 0){
-							fnt_size = fnt_above + fnt_below;
-						}
-					}
-				}
+			else {
+				fnt_idx = dxf_tstyle_idx(drawing, "STANDARD");
+				font = drawing->text_styles[fnt_idx].font;
 			}
-			#endif
 			
 			/* find and replace special symbols in the text*/
 			under_l = 0; /* under line flag*/
@@ -1464,27 +1448,16 @@ list_node * dxf_text_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			}
 			/* copy the rest of text after the last control string */
 			strcpy(pos_tmp, pos_st);
-			//printf("%s\n", tmp_str);
 			
 			list_node * graph = list_new(NULL, FRAME_LIFE);
 			
-			
-			//curr_graph = shx_font_parse(shx_font, pool_idx, tmp_str, NULL);
-			
-			
 			if (num_graph = font_parse_str(font, graph, pool_idx, tmp_str, NULL)){
-				
-				/* find the dimentions of text 
-				txt_size = t_size/fnt_above;
-				txt_w = fabs(curr_graph->ext_max_x - curr_graph->ext_min_x);
-				txt_h = fabs(curr_graph->ext_max_y - curr_graph->ext_min_y);
-				*/
 				
 				txt_size = t_size;
 				double min_x, min_y, max_x, max_y;
 				int init = 0;
 				graph_list_ext(graph, &init, &min_x, &min_y, &max_x, &max_y);
-				txt_w = fabs(max_x - min_x);
+				txt_w = fabs(max_x);
 				txt_h = fabs(max_y - min_y);
 				
 				#if(0)
@@ -1526,8 +1499,8 @@ list_node * dxf_text_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				}
 				else{ 
 					if(t_alin_h == 4){
-						//t_center_y = (fnt_above + fnt_below)* txt_size/2;
-						t_center_y = txt_h* txt_size/2;
+						t_center_y = (font->above + font->below)* txt_size/2;
+						
 					}
 					else{
 						t_scale_x = sqrt(pow((pt2_x - pt1_x), 2) + pow((pt2_y - pt1_y), 2))/(txt_w * txt_size);
@@ -1542,12 +1515,10 @@ list_node * dxf_text_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				}
 				if(t_alin_v >0){
 					if(t_alin_v != 1){
-						//t_center_y = (double)(t_alin_v - 1) * fnt_above * txt_size/2;
-						t_center_y = (double)(t_alin_v - 1) * txt_size/2;
+						t_center_y = (double)(t_alin_v - 1) * font->above * txt_size/2;
 					}
 					else{
-						//t_center_y = - fnt_below * txt_size;
-						t_center_y = 0;
+						t_center_y = - font->below * txt_size;
 					}
 				}
 				

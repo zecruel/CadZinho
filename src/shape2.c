@@ -521,10 +521,9 @@ graph_obj *shx_font_parse(shape *shx_font, int pool_idx, char *txt, double *w){
 						center_x = pre_x - radius * shp_oct_x[octant];
 						center_y = pre_y - radius * shp_oct_y[octant];
 						ang_ini = octant * M_PI/4;
-						for(ii=1; ii <= num_oct+1; ii++){
-							px = center_x + radius * cos(2 * M_PI * i * direction/ 8 + ang_ini);
-							py = center_y + radius * sin(2 * M_PI * i * direction/ 8 + ang_ini);
-							//line_list.append(((pre_x,pre_y),(px,py)))
+						for(ii=1; ii <= num_oct * 5; ii++){
+							px = center_x + radius * cos(2 * M_PI * ii * direction/ 40.0 + ang_ini);
+							py = center_y + radius * sin(2 * M_PI * ii * direction/ 40.0 + ang_ini);
 							line_add(line_list, pre_x, pre_y, 0.0, px, py, 0.0);
 							pre_x=px;
 							pre_y=py;
@@ -583,6 +582,349 @@ graph_obj *shx_font_parse(shape *shx_font, int pool_idx, char *txt, double *w){
 	if (w != NULL) *w = max_x - min_x;
 	return(line_list);
 }
+
+graph_obj *shx_parse_cp(shape *shx_font, int pool_idx, int cp, double *w){
+	double pre_x = 0;
+	double pre_y = 0;
+	double px = 0;
+	double py = 0;
+	int pen = 1;
+	int exec = 0;
+	graph_obj * line_list = NULL;
+	/*
+	double max_x = 0;
+	double max_y = 0;
+	double min_x = 0;
+	double min_y = 0;
+	*/
+	double stack_x[50];
+	double stack_y[50];
+	int stk_size = 0;
+	
+	long index = 0;
+	long next_index = 0;
+	int cmd = 0; //sem cmd
+	int coord_y = 0; //indica que eh a coordenada y
+	int bypass = 0;
+	int bulge_f = 0;
+	double bulge = 0;
+	int arc_f = 0;
+	double tmp_scale = 1.0;
+	double scale = 1.0;
+	
+	double length, center_x, center_y, ang_ini;
+	int vector, octant, direction, num_oct, radius;
+
+	
+	int i, j, ii;
+	
+	//cria a lista de retorno
+	line_list = graph_new(pool_idx);
+		
+	shape *shp = shx_font_find(shx_font, (long) cp);
+	if(shp){
+		//printf("\nCod. %d\n", shp->num);
+	//}
+	//else: i = [42, 'asterisco', [0, 2, 14, 8, 254, 251, 33, 1, 68, 2, 46, 1, 72, 2, 65, 1, 74, 2, 68, 1, 78, 2, 47, 14, 8, 252, 253]]
+	
+	next_index = 0;
+	for(index = 0; index < shp->cmd_size; index++){
+		j = shp->cmds[index];
+		if (index == next_index){
+			exec = 0;
+			cmd = j;
+			//printf("%d,", cmd);
+			
+			if(cmd > 14){
+				//cmd imediato de movimento
+				next_index = index + 1;
+				//obtem o comprimento do nibble maior
+				length = (cmd & 240)/16;
+				//obtem o indice do vetor do nibble menor
+				vector = cmd & 15;
+				// o vetor eh obtido da consultando o indice na tabela
+				px = length * shp_dir_x[vector];
+				py = length * shp_dir_y[vector];
+				//print length, vetor
+				exec = 1;
+			}
+			else if(cmd == 1){
+				//desenho ativado
+				next_index = index + 1;
+				if (bypass){
+					bypass = 0;
+					continue;
+				}
+				pen = 1;
+				continue;
+			}
+			else if(cmd == 2){
+				//desenho desligado
+				next_index = index + 1;
+				if (bypass){ 
+					bypass = 0;
+					continue;
+				}
+				pen = 0;
+				continue;
+			}
+			else if(cmd == 3){
+				//escala divide
+				next_index = index + 2;
+				continue;
+			}
+			else if(cmd == 4){
+				//escala multiplica
+				next_index = index + 2;
+				continue;
+			}
+			else if(cmd == 5){
+				//salva posicao current
+				next_index = index + 1;
+				if(bypass){ 
+					bypass = 0;
+					continue;
+				}
+				stack_x[stk_size] = pre_x;
+				stack_y[stk_size] = pre_y;
+				stk_size++;
+				
+				continue;
+			}
+			else if(cmd == 6){
+				//restaura posicao current
+				next_index = index + 1;
+				if(bypass){ 
+					bypass = 0;
+					continue;
+				}
+				if(stk_size>0){
+					stk_size--;
+					pre_x = stack_x[stk_size];
+					pre_y = stack_y[stk_size];
+				}
+				continue;
+			}
+			else if(cmd == 7){
+				//subshape
+				next_index = index + 3; //unicode pula 2 bytes
+				if(bypass){ 
+					bypass = 0;
+					continue;
+				}
+				//
+				continue;
+			}
+			else if(cmd == 8){
+				//uma coordenada (x,y)
+				next_index = index + 3;
+				coord_y = 0;
+				continue;
+			}
+			else if(cmd == 9){
+				// sequencia de coordenadas (x,y), terminada em (0,0)
+				next_index = index + 3;
+				coord_y = 0;
+				continue;
+			}
+			else if(cmd == 10){
+				//arc por octante
+				next_index = index + 3;
+				continue;
+			}
+			else if(cmd == 11){
+				//arc fracionario
+				next_index = index + 6;
+				if(bypass){ 
+					bypass = 0;
+					continue;
+				}
+				//
+				continue;
+			}
+			else if(cmd == 12){
+				//arc por bulge
+				next_index = index + 4;
+				if(bypass){ 
+					bypass = 0;
+					continue;
+				}
+				//
+				continue;
+			}
+			else if(cmd == 13){
+				//sequencia de arcs por bulge, terminada em (0,0)
+				next_index = index + 3;
+				if(bypass){ 
+					bypass = 0;
+					continue;
+				}
+				//
+				continue;
+			}
+			else if(cmd == 14){
+				// salta o nextimo cmd se eh um texto horizontal
+				next_index = index + 1;
+				bypass = 1;
+				continue;
+			}
+		}
+		else{
+			//print cmd
+			if(cmd == 3){
+				if(abs(j) > 0){ tmp_scale = scale/j; }
+				exec = 1;
+			}
+			if(cmd == 4){
+				tmp_scale = scale*j;
+				exec = 1;
+			}
+			if(cmd == 8){
+				if(!coord_y){
+					px = (double)((signed char) j);
+					coord_y = 1;
+					continue;
+				}
+				else{
+					py = (double)((signed char) j);
+					coord_y = 0;
+					exec = 1;
+				}
+			}
+			else if(cmd == 9){
+				if(!coord_y){
+					px = (double)((signed char) j);
+					coord_y = 1;
+					continue;
+				}
+				else{
+					py = (double)((signed char) j);
+					if(!((px==0) && (py==0))){
+						coord_y = 0;
+						next_index = index + 3;
+						exec = 1;
+						//print px, py
+					}
+				}
+			}
+			if(cmd == 10){
+				if(!coord_y){
+					radius = j;
+					coord_y = 1;
+				}
+				else{
+					//obtem o primeiro octante e o sentido do nibble maior
+					octant = (j & 112)/16;
+					direction = (j & 128)/16;
+					if(direction){ direction = -1;}
+					else{ direction =1;}
+					
+					//obtem a quantidade de octantes do nibble menor
+					num_oct = j & 15;
+					if(num_oct == 0){ num_oct = 8;} //circulo completo
+					
+					coord_y = 0;
+					arc_f = 1;
+					exec = 1;
+				}
+			}
+			if(cmd == 12){
+				if(!coord_y){
+					px = (double)((signed char) j);
+					coord_y = 1;
+					continue;
+				}
+				else if(!bulge_f){
+					py = (double)((signed char) j);
+					bulge_f = 1;
+				}
+				else{
+					bulge = (double)((signed char) j);
+					coord_y = 0;
+					bulge_f = 0;
+					exec = 1;
+				}
+			}
+			else if(cmd == 13){
+				if(!coord_y){
+					px = (double)((signed char) j);
+					coord_y = 1;
+					continue;
+				}
+				else if(!bulge_f){
+					py = (double)((signed char) j);
+					if(!((px==0) && (py==0))){
+						next_index = index + 2;
+						bulge_f = 1;
+					}
+					continue;
+				}
+				else{
+					bulge = (double)((signed char) j);
+					coord_y = 0;
+					next_index = index + 3;
+					exec = 1;
+					bulge_f = 0;
+				}
+			}
+		}
+		if(exec){
+			exec = 0;
+			//print cmd
+			if(bypass){ 
+				bypass = 0;
+				tmp_scale = scale;
+				arc_f = 0;
+			}
+			else{
+				if(scale != tmp_scale){ scale = tmp_scale; }
+				else if(arc_f){
+					arc_f = 0;
+					center_x = pre_x - radius * shp_oct_x[octant];
+					center_y = pre_y - radius * shp_oct_y[octant];
+					ang_ini = octant * M_PI/4;
+					for(ii=1; ii <= num_oct * 5; ii++){
+						px = center_x + radius * cos(2 * M_PI * ii * direction/ 40.0 + ang_ini);
+						py = center_y + radius * sin(2 * M_PI * ii * direction/ 40.0 + ang_ini);
+						line_add(line_list, pre_x, pre_y, 0.0, px, py, 0.0);
+						pre_x=px;
+						pre_y=py;
+					}
+					//print center_x, center_y, radius
+					//print octant, num_oct
+				}
+				else{
+					px *= scale;
+					py *= scale;
+					if(pen){
+						//adiciona a linha na lista de retorno
+						line_add(line_list, pre_x, pre_y, 0.0, pre_x+px, pre_y+py, 0.0);
+						
+					}
+					pre_x += px;
+					pre_y += py;
+					
+					/*calcula os valores maximo e minimo de cada coordenada
+					
+					max_x = (max_x > pre_x) ? max_x : pre_x;
+					max_y = (max_y > pre_y) ? max_y : pre_y;
+					min_x = (min_x < pre_x) ? min_x : pre_x;
+					min_y = (min_y < pre_y) ? min_y : pre_y;
+					*/
+				}
+			}
+		}
+	}
+	}//temporario ate implementar o else
+	
+	
+	if (w != NULL) *w = pre_x;
+	return(line_list);
+}
+
+
+
+
 /*
 int main (){
 	setlocale(LC_ALL,""); //seta a localidade como a current do computador para aceitar acentuacao

@@ -1,5 +1,5 @@
-#ifndef _SHAPE_LIB
-#define _SHAPE_LIB
+#ifndef _SHAPE2_LIB
+#define _SHAPE2_LIB
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -6,46 +6,51 @@ const double shp_arc_x[8] = {1, 0.707106781, 0, -0.707106781, -1, -0.707106781, 
 const double shp_arc_y[8] = {0, 0.707106781, 1, 0.707106781, 0, -0.707106781, -1, -0.707106781};
 
 void shp_font_add(shape *shp_font, long num, char *name, unsigned char *cmds, unsigned int cmd_size){
+/* create shape structure and add to font list */
 	if (shp_font){
-		shape *new_font = (shape *) malloc(sizeof(shape));
-		if (new_font){
-			new_font->num = num;
+		/* create structure */
+		shape *new_shp = (shape *) malloc(sizeof(shape));
+		if (new_shp){
+			/* initialize structure */
+			new_shp->num = num; /*code point */
 			
-			if (name){
-				new_font->name = malloc(strlen(name)+1);
-				strcpy(new_font->name, name);
-			} else new_font->name = NULL;
-			if (cmds){
-				new_font->cmds = calloc(cmd_size, sizeof(unsigned char));
-				memcpy(new_font->cmds, cmds, cmd_size);
-			} else new_font->cmds = NULL;
+			if (name){ /* allocate name string */
+				new_shp->name = malloc(strlen(name)+1);
+				strcpy(new_shp->name, name);
+			} else new_shp->name = NULL;
 			
-			new_font->cmd_size = cmd_size;
-			new_font->unicode = 1;
+			if (cmds){/* allocate commands chunck */
+				new_shp->cmds = calloc(cmd_size, sizeof(unsigned char));
+				memcpy(new_shp->cmds, cmds, cmd_size);
+			} else new_shp->cmds = NULL;
 			
-			new_font->next = NULL;
+			new_shp->cmd_size = cmd_size;
+			new_shp->unicode = 1;
+			new_shp->next = NULL;
 			
-			
-			if(shp_font->next == NULL){ //verifica se a lista esta vazia
-				shp_font->next=new_font;} // o novo elemento e o ultimo
-			else{ // lista nao vazia
-				//busca o final da lista
+			/* append shape in font list */
+			if(shp_font->next == NULL){ /* empty list */
+				shp_font->next=new_shp;
+			}
+			else{ /* look for list end */
 				shape *tmp = shp_font->next;
 				while(tmp->next != NULL){
 					tmp = tmp->next;}
-				tmp->next = new_font; //acrescenta o novo elemento no final
+				tmp->next = new_shp; /* append shape at end */
 			}
 		}
 	}
 }
 
 void shp_font_free(shape *shp_font){
+/* free structures in font list */
 	if (shp_font){
-		if(shp_font->next){ //verifica se a lista esta vazia
+		if(shp_font->next){
 			shape *next_shp, *current;
 			
 			current = shp_font->next;
 			shp_font->next = NULL;
+			/*sweep the font list */
 			while(current){
 				next_shp = current->next;
 				free(current->name);
@@ -58,42 +63,42 @@ void shp_font_free(shape *shp_font){
 }
 
 shape *shp_font_find(shape *shp_font, long num){
-	if (shp_font){ //verifica se existe a shp_font
-		if(shp_font->next){ //verifica se a lista esta vazia
-			//pula o primeiro shape da shp_font que eh a descricao da propria shp_font
-			if(shp_font->next->next){
-				shape *current;
-				current = shp_font->next->next;
-				while(current){
-					if(current->num == num){
-						return(current);}
-					current = current->next;
-				}
+/* get shape by code point */
+	if (shp_font){ /* verify if is a valid list */
+		if(shp_font->next){
+			/* sweep the list */
+			shape *current;
+			current = shp_font->next;
+			while(current){
+				if(current->num == num){ /* match */
+					return(current);}
+				current = current->next;
 			}
 		}
 	}
-	return(NULL);
+	return(NULL); /* fail */
 }
 
-shape *shp_idx(shape *shp_font, int idx){
-	if (shp_font){ //verifica se existe a shp_font
-		if(shp_font->next){ //verifica se a lista esta vazia
-			//pula o primeiro shape da shp_font que eh a descricao da propria shp_font
-			//if(shp_font->next->next){
-				shape *current;
-				int pos = 0;
-				current = shp_font->next;
-				while(current){
-					if(pos == idx){
-						return(current);}
-					current = current->next;
-					pos ++;
+shape *shp_idx(shape *list, int idx){
+/* get shape by position in list */
+	if (list){ /* verify if is a valid list */
+		if(list->next){
+			shape *current;
+			int pos = 0;
+			/* sweep the list */
+			current = list->next;
+			while(current){
+				if(pos == idx){ /* match */
+					return(current);
 				}
-			//}
+				current = current->next;
+				pos ++;
+			}
 		}
 	}
-	return(NULL);
+	return(NULL); /* fail */
 }
+
 shape *shp_font_open(char *path){
 	FILE *file;
 	shape *shp_font;
@@ -282,74 +287,64 @@ shape *shp_font_open(char *path){
 			}
 		}
 		else if(type == SHP_UNIFONT){
-			
-			//a partir deste ponto comeca a ler as definicoes de cada letra
-			// as rotinas abaixo serao repetidas para cada letra
-			if (!head){
-				//busca o cabecalho da letra
+			/* for unicode shape font file */ 
+			if (!head){ /* get head of each shape */
 				if (index != next_index){
-					buffer[buf_size] = curr; //armazena no buffer
+					buffer[buf_size] = curr;
 					buf_size++;
 				}
-				else{ //termina quando atinge o comprimento de 4 bytes (ou 6, se for a definicao da shp_font)
-					//verifica se o ultimo byte eh igual a zero, senao para por erro
-					if (curr != 0){
-						break; //<=erro
-					}
+				else{ /* ends at 4 bytes for regular shape and 6 bytes for font descriptor */
+					if (curr != 0) break;  /* error */
 					
-					//o ultimo byte eh o comprimento do campo de dados da letra
+					/* last byte indicates the data length for next step */
 					next_index = index + buffer[buf_size - 1];
 					
-					// combina os dois primeiros bytes como um inteiro, que eh a especificacao unicode
-					num = ((buffer[1]&255) << 8)|(buffer[0]&255);
+					/* get the code point for current shape */
+					num = ((buffer[buf_size - 2]&255) << 8)|(buffer[buf_size - 3]&255);
 					
-					//prepara para a leitura dos dados
+					/* prepare for next step */
 					head = 1;
 					name = 0;
 					buf_size = 0;
 				}
 			}	
 			else if (head){
-				//busca os dados da letra
+				/* get shape data */
 				if (index != next_index){
-					if (!name){ //busca o name do shape
-						if (curr != 0){ //o valor 00 indica o fim do name
-							str_tmp[buf_size] = curr; //armazena na string temporaria
+					if (!name){ /* get name and comments of glyph */
+						if (curr != 0){ /* until string end (0x00) */
+							str_tmp[buf_size] = curr;
 							buf_size++;
 						}
 						else{
-							str_tmp[buf_size] = curr; // completa a string
+							str_tmp[buf_size] = curr; /* terminate string */
 							
-							//prepara para leitura dos cmds de desenho
+							/* prepare for next step */
 							buf_size = 0;
 							name = 1;
 						}
 					}
-					else{ //cmds de desenho
-						buffer[buf_size] = curr; //armazena no buffer
+					else{ /* next, get shape commands */
+						buffer[buf_size] = curr;
 						buf_size++;
 					}
 				}
-				else{ //termina quando atinge o comprimento especificado
-					//verifica se o ultimo byte eh igual a zero, senao para por erro
-					if (curr != 0){
-						break; //<=erro
-					}
-					//adiciona o shape a lista da shp_font
+				else{ /*last step for current shape */
+					if (curr != 0) break;  /* error */
+					/* add shape in list */
 					shp_font_add(shp_font, num, str_tmp, buffer, buf_size);
 					
-					// prepara para a nextima letra
-					next_index = index + 4; //cabecalho com 4 bytes de compr
+					/* go to next code point */
+					next_index = index + 4; /* shape head is 4 bytes long */
 					head = 0;
 					buf_size = 0;
 				}
 			}
 		}
 	}
-	//printf ("\nbytes: %d\n", index);
 	
-	fclose(file); // fecha o arquivo	
-	return(shp_font); // retorna a shp_font
+	fclose(file); /* close file */
+	return(shp_font);
 }
 
 graph_obj *shp_parse_cp(shape *shp_font, int pool_idx, int cp, double *w){
@@ -359,18 +354,13 @@ graph_obj *shp_parse_cp(shape *shp_font, int pool_idx, int cp, double *w){
 	double py = 0;
 	int pen = 1;
 	graph_obj * line_list = NULL;
-	/*
-	double max_x = 0;
-	double max_y = 0;
-	double min_x = 0;
-	double min_y = 0;
-	*/
+	
 	double stack_x[50];
 	double stack_y[50];
 	int stk_size = 0;
 	
 	long index = 0;
-	int cmd = 0; //sem cmd
+	int cmd = 0;
 	int bypass = 0;
 	double bulge = 0;
 	double scale = 1.0;
@@ -383,14 +373,14 @@ graph_obj *shp_parse_cp(shape *shp_font, int pool_idx, int cp, double *w){
 	
 	int i;
 	
-	//cria a lista de retorno
+	/* create returned list */
 	line_list = graph_new(pool_idx);
 		
 	shape *shp = shp_font_find(shp_font, (long) cp);
-	if(shp){
-		//printf("\nCod. %d\n", shp->num);
-	//}
-	//else: i = [42, 'asterisco', [0, 2, 14, 8, 254, 251, 33, 1, 68, 2, 46, 1, 72, 2, 65, 1, 74, 2, 68, 1, 78, 2, 47, 14, 8, 252, 253]]
+	if(!shp){
+		//i = [42, 'asterisco', [0, 2, 14, 8, 254, 251, 33, 1, 68, 2, 46, 1, 72, 2, 65, 1, 74, 2, 68, 1, 78, 2, 47, 14, 8, 252, 253]]
+		return NULL;
+	}
 	
 	while (index < shp->cmd_size){
 		cmd = shp->cmds[index];
@@ -685,8 +675,6 @@ graph_obj *shp_parse_cp(shape *shp_font, int pool_idx, int cp, double *w){
 		}
 		
 	}
-	}//temporario ate implementar o else
-	
 	
 	if (w != NULL) *w = pre_x;
 	return(line_list);
@@ -700,13 +688,14 @@ int shp_parse_str(shape *font, list_node *list_ret, int pool_idx, char *txt, dou
 	graph_obj *curr_graph = NULL;
 	
 	double ofs_x = 0.0, width = 0.0;
-	double fnt_above, fnt_below, fnt_size, txt_size = 1.0;
+	double fnt_above = 1.0 , fnt_below = 0.0, fnt_size = 1.0, txt_size = 1.0;
 	
 	/* find the dimentions of SHX font */
-	if(font->next){ /* the font descriptor is stored in first iten of list */
-		if(font->next->cmd_size > 1){ /* check if the font is valid */
-			fnt_above = font->next->cmds[0]; /* size above the base line of text */
-			fnt_below = font->next->cmds[1]; /* size below the base line of text */
+	shape *fnt_descr = shp_font_find(font, 0); /* font descriptor is in 0 codepoint */
+	if (fnt_descr){
+		if(fnt_descr->cmd_size > 1){ /* check if the font is valid */
+			fnt_above = fnt_descr->cmds[0]; /* size above the base line of text */
+			fnt_below = fnt_descr->cmds[1]; /* size below the base line of text */
 			if((fnt_above + fnt_below) > 0){
 				fnt_size = fnt_above + fnt_below;
 			}

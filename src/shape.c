@@ -348,6 +348,7 @@ shp_typ *shp_font_open(char *path){
 }
 
 shp_typ *shp_font_load(char *buf){
+/* parse shape font from ASCII string */ 
 	shp_typ *shp_font = NULL;
 	shp_typ *curr_shp;
 	char *curr_line, *next_line, str_tmp[255];
@@ -376,10 +377,11 @@ shp_typ *shp_font_load(char *buf){
 	while (curr_line){
 		if (strlen(curr_line) < 5) break;
 		curr_line++;
-		
+		/* look for next shape descriptor */
 		next_line = strchr(curr_line, '*');
-		curr_mark = strpbrk(curr_line, ",\n");
 		
+		/* get code point of current shape */
+		curr_mark = strpbrk(curr_line, ",\n");
 		if (curr_mark){
 			str_size = curr_mark - curr_line;
 			curr_mark++;
@@ -393,7 +395,8 @@ shp_typ *shp_font_load(char *buf){
 			cp = strtol(curr_line, NULL, 10);
 		}
 		
-		if (curr_mark != NULL && (next_line - curr_mark) > 1){
+		/* get commands size of current shape */
+		if (curr_mark != NULL){// && (next_line - curr_mark) > 1){
 			next_mark = strpbrk(curr_mark, ",\n");
 			if (next_mark){
 				str_size = next_mark - curr_mark;
@@ -407,8 +410,10 @@ shp_typ *shp_font_load(char *buf){
 			else{
 				cmd_size = strtol(curr_mark, NULL, 10);
 			}
+			
+			/* get name and comments of current shape */
 			curr_mark = next_mark;
-			if (curr_mark != NULL && (next_line - curr_mark) > 1){
+			if (curr_mark != NULL){// && (next_line - curr_mark) > 1){
 				next_mark = strchr(curr_mark, '\n');
 				if (next_mark){
 					str_size = next_mark - curr_mark;
@@ -421,11 +426,11 @@ shp_typ *shp_font_load(char *buf){
 				strncpy(str_tmp, curr_mark, str_size);
 				str_tmp[str_size] = 0; /*terminate string */
 				
-				
 				curr_mark = next_mark;
 				
 			}
 		}
+		/* get commands of current shape */
 		cmd_pos = 0;
 		while ((curr_mark != NULL) && (cmd_pos < cmd_size) && (cmd_pos < 255)){
 			
@@ -439,8 +444,6 @@ shp_typ *shp_font_load(char *buf){
 			/*ignore non numeric chars*/
 			if(ignore = strpbrk(curr_mark, "-+0123456789abcdefABCDEF"))
 				curr_mark = ignore;
-			//if(curr_mark[0] == '(') curr_mark++; /* ignore  '(' in string*/
-			//if(curr_mark[0] == '\n') curr_mark++; /* ignore  '\n' in string*/
 			
 			if(curr_mark[0] == '0') { /* hexadecimal */
 				cmds[cmd_pos] = strtol(curr_mark, NULL, 16);
@@ -450,14 +453,15 @@ shp_typ *shp_font_load(char *buf){
 			}
 			curr_mark = next_mark;
 			
-			
 			cmd_pos++;
 		}
 		if (cmd_size > 0){ 
-			cmd_size--;
+			cmd_size--; /* ignore last command (always 0x00) */
+			/* add shape in list */
 			shp_font_add(shp_font, cp, str_tmp, cmds, cmd_size);
 		}
 		
+		/* prepare for next shape */
 		curr_mark = NULL;
 		next_mark = NULL;
 		str_tmp[0] =0;
@@ -469,9 +473,10 @@ shp_typ *shp_font_load(char *buf){
 }
 
 void shp_font_print(shp_typ *shp_font){
+/*print shape list in stdout - useful for debug*/
 	int i;
 	if (shp_font){
-		if(shp_font->next){ //verifica se a lista esta vazia
+		if(shp_font->next){
 			shp_typ *current;
 			
 			current = shp_font->next;
@@ -488,6 +493,7 @@ void shp_font_print(shp_typ *shp_font){
 }
 
 graph_obj *shp_parse_cp(shp_typ *shp_font, int pool_idx, int cp, double *w){
+/* parse one code point */
 	double pre_x = 0;
 	double pre_y = 0;
 	double px = 0;

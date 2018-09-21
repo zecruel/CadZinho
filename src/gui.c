@@ -1022,7 +1022,7 @@ int gui_start(gui_obj *gui){
 	//if(add_font_list(gui->font_list, "romans.shx", gui->dflt_fonts_path)){
 	//struct tfont * add_shp_font_list(list_node *list, char *name, char *buf);
 	
-	if(add_shp_font_list(gui->font_list, "romans.shx", shp_font_romans)){
+	if(add_shp_font_list(gui->font_list, "romans.shx", (char *)shp_font_romans)){
 		struct tfont *font = get_font_list(gui->font_list, "romans.shx");
 		if (font){
 			gui->dflt_font = font;
@@ -1030,7 +1030,7 @@ int gui_start(gui_obj *gui){
 			//shp_font_print(font->data);
 		}
 	}
-	if(add_shp_font_list(gui->font_list, "txt.shx", shp_font_txt)){
+	if(add_shp_font_list(gui->font_list, "txt.shx", (char *)shp_font_txt)){
 		struct tfont *font = get_font_list(gui->font_list, "txt.shx");
 		if (font){
 			gui->dflt_font = font;

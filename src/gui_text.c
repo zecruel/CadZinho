@@ -89,7 +89,7 @@ int gui_text_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Place an text", NK_TEXT_LEFT);
 		//nk_edit_string(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER, comm, &comm_len, 64, nk_filter_default);
-		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->txt, DXF_MAX_CHARS, nk_filter_default);
+		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->txt, DXF_MAX_CHARS, nk_filter_default);
 		gui->txt_h = nk_propertyd(gui->ctx, "Text Height", 0.0d, gui->txt_h, 100.0d, 0.1d, 0.1d);
 		gui->t_al_v = nk_combo(gui->ctx, text_al_v, T_AL_V_LEN, gui->t_al_v, 20, nk_vec2(100,105));
 		gui->t_al_h = nk_combo(gui->ctx, text_al_h, T_AL_H_LEN, gui->t_al_h, 20, nk_vec2(100,105));

@@ -182,12 +182,18 @@ struct tfont * add_shp_font_list(list_node *list, char *name, char *buf){
 			return NULL;
 		}
 		
-		if(shp_tfont->next){ /* check if the font is valid */
-			double fnt_above = shp_tfont->next->cmds[0]; /* size above the base line of text */
-			double fnt_below = shp_tfont->next->cmds[1]; /* size below the base line of text */
-			
-			if(fnt_above > 0) font->below = fabs(fnt_below/fnt_above);
-			font->above = 1.0;
+		font->above = 1.0;
+		font->below = 0.0;
+		
+		/* find the dimentions of SHX font */
+		shp_typ *fnt_descr = shp_font_find(shp_tfont, 0); /* font descriptor is in 0 codepoint */
+		if (fnt_descr){
+			if(fnt_descr->cmd_size > 1){ /* check if the font is valid */
+				double fnt_above = fnt_descr->cmds[0]; /* size above the base line of text */
+				double fnt_below = fnt_descr->cmds[1]; /* size below the base line of text */
+		
+				if(fnt_above > 0) font->below = fabs(fnt_below/fnt_above);
+			}
 		}
 		
 		strncpy(font->path, "internal", DXF_MAX_CHARS);
@@ -256,33 +262,7 @@ int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char 
 	
 	if(type == FONT_SHP){
 		shp_typ *shp_font = font->data;
-		
-		#if (0)
-		/* find the dimentions of SHX font */
-		if(shp_font->next){ /* the font descriptor is stored in first iten of list */
-			if(shp_font->next->cmd_size > 1){ /* check if the font is valid */
-				fnt_above = shp_font->next->cmds[0]; /* size above the base line of text */
-				fnt_below = shp_font->next->cmds[1]; /* size below the base line of text */
-				if((fnt_above + fnt_below) > 0){
-					fnt_size = fnt_above + fnt_below;
-				}
-				if(fnt_above > 0) txt_size = 1/fnt_above;
-
-				graph_obj * graph = shp_font_parse(shp_font , pool_idx, txt, w);
-				
-				if (graph) new_node = list_new ((void *)graph, pool_idx);
-				if (new_node){
-					/*scale the result graph to unit size */
-					graph_modify(graph, 0.0, 0.0, txt_size, txt_size, 0.0);
-					/* add to list */
-					list_push(list_ret, new_node);
-					num_graph++;
-				}
-			}
-		}
-		#endif
 		num_graph += shp_parse_str(shp_font, list_ret, pool_idx, txt, w);
-		
 	}
 	else if (type == FONT_TT){
 		num_graph += tt_parse_str((struct tt_font *) font->data, list_ret, pool_idx, txt, w);
@@ -295,8 +275,6 @@ int font_str_w(struct tfont * font, char *txt, double *w){
 /* get width of an string*/
 	if (!font || !w|| !txt) return 0;
 	
-	int ok = 0;
-	int type = font->type;
 	list_node * graph = list_new(NULL, FRAME_LIFE);
 	
 	if (!graph) return 0;
@@ -304,32 +282,7 @@ int font_str_w(struct tfont * font, char *txt, double *w){
 	*w = 0.0;
 	
 	font_parse_str(font, graph, FRAME_LIFE, txt, w); /* temporary list */
-	if(type == FONT_SHP){
-		#if(0)
-		shape *shp_font = font->data;
-		/* find the dimentions of SHX font */
-		if(shp_font->next){ /* the font descriptor is stored in first iten of list */
-			if(shp_font->next->cmd_size > 1){ /* check if the font is valid */
-				 double fnt_above = shp_font->next->cmds[0]; /* size above the base line of text */
-				//double fnt_below = shp_font->next->cmds[1]; /* size below the base line of text */
-				
-				/* scale width to unit size */
-				if(fnt_above > 0){
-					*w /= fnt_above;
-					ok =1;
-				}
-				
-			}
-		}
-		#endif
-		ok =1;
-		
-	}
-	else if (type == FONT_TT){
-		ok =1;
-	}
 	
-	
-	
-	return ok;
+	if(fabs(*w) > 1e-9) return 1;
+	else return 0;
 }

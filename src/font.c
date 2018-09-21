@@ -92,7 +92,7 @@ struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 	ext = get_ext(full_path); /* get file extension to determine type of font */
 	
 	if (strncmp(ext, "shx", DXF_MAX_CHARS) == 0){ /* SHX font */
-		shape * shp_tfont = shp_font_open(full_path);
+		shp_typ * shp_tfont = shp_font_open(full_path);
 		if (shp_tfont){
 			/* alloc the structures */
 			font = malloc(sizeof(struct tfont));
@@ -164,6 +164,53 @@ struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 
 }
 
+struct tfont * add_shp_font_list(list_node *list, char *name, char *buf){
+/* add to list a shape font from string*/
+	if (list == NULL) return NULL;
+	if (buf == NULL) return NULL;
+	if (name == NULL) return NULL;
+	
+	struct tfont * font = NULL;
+	
+	shp_typ * shp_tfont = shp_font_load(buf);
+	if (shp_tfont){
+		/* alloc the structures */
+		font = malloc(sizeof(struct tfont));
+		if (font == NULL) {
+			/* fail in allocation*/
+			shp_font_free(shp_tfont);
+			return NULL;
+		}
+		
+		if(shp_tfont->next){ /* check if the font is valid */
+			double fnt_above = shp_tfont->next->cmds[0]; /* size above the base line of text */
+			double fnt_below = shp_tfont->next->cmds[1]; /* size below the base line of text */
+			
+			if(fnt_above > 0) font->below = fabs(fnt_below/fnt_above);
+			font->above = 1.0;
+		}
+		
+		strncpy(font->path, "internal", DXF_MAX_CHARS);
+		strncpy(font->name, name, DXF_MAX_CHARS);
+		str_upp(font->name); /* upper case the name */
+		font->type = FONT_SHP;
+		font->data = shp_tfont;
+		font->std_size = 12.0;
+		/* add to list */
+		list_node *new_node = list_new ((void *)font, PRG_LIFE);
+		if (new_node == NULL) {
+			/* fail to add in list*/
+			shp_font_free(shp_tfont);
+			free(font);
+			return NULL;
+		}
+		list_push(list, new_node);
+	}
+	
+	return font;
+
+}
+
 int free_font_list(list_node *list){
 /* free fonts in list */
 	if (list == NULL) return 0;
@@ -180,7 +227,7 @@ int free_font_list(list_node *list){
 			type = font->type;
 			
 			if(type == FONT_SHP){
-				shp_font_free((shape *)font->data);
+				shp_font_free((shp_typ *)font->data);
 			}
 			else if (type == FONT_TT){
 				tt_font_free((struct tt_font *)font->data);
@@ -208,7 +255,7 @@ int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char 
 	double fnt_size, fnt_above, fnt_below, txt_size;
 	
 	if(type == FONT_SHP){
-		shape *shp_font = font->data;
+		shp_typ *shp_font = font->data;
 		
 		#if (0)
 		/* find the dimentions of SHX font */

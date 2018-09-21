@@ -566,6 +566,7 @@ int main(int argc, char** argv){
 	
 	
 	/*===================== teste ===============*/
+	
 	//list_node * tt_test = list_new(NULL, PRG_LIFE);
 	//double w_teste;
 	//tt_parse4(tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");

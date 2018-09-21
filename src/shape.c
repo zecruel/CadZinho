@@ -5,11 +5,11 @@ const double shp_vec_y[16] = {0, 0.5, 1, 1, 1, 1, 1, 0.5, 0, -0.5, -1, -1, -1, -
 const double shp_arc_x[8] = {1, 0.707106781, 0, -0.707106781, -1, -0.707106781, 0, 0.707106781};	
 const double shp_arc_y[8] = {0, 0.707106781, 1, 0.707106781, 0, -0.707106781, -1, -0.707106781};
 
-void shp_font_add(shape *shp_font, long num, char *name, unsigned char *cmds, unsigned int cmd_size){
+void shp_font_add(shp_typ *shp_font, long num, char *name, unsigned char *cmds, unsigned int cmd_size){
 /* create shape structure and add to font list */
 	if (shp_font){
 		/* create structure */
-		shape *new_shp = (shape *) malloc(sizeof(shape));
+		shp_typ *new_shp = (shp_typ *) malloc(sizeof(shp_typ));
 		if (new_shp){
 			/* initialize structure */
 			new_shp->num = num; /*code point */
@@ -33,7 +33,7 @@ void shp_font_add(shape *shp_font, long num, char *name, unsigned char *cmds, un
 				shp_font->next=new_shp;
 			}
 			else{ /* look for list end */
-				shape *tmp = shp_font->next;
+				shp_typ *tmp = shp_font->next;
 				while(tmp->next != NULL){
 					tmp = tmp->next;}
 				tmp->next = new_shp; /* append shape at end */
@@ -42,11 +42,11 @@ void shp_font_add(shape *shp_font, long num, char *name, unsigned char *cmds, un
 	}
 }
 
-void shp_font_free(shape *shp_font){
+void shp_font_free(shp_typ *shp_font){
 /* free structures in font list */
 	if (shp_font){
 		if(shp_font->next){
-			shape *next_shp, *current;
+			shp_typ *next_shp, *current;
 			
 			current = shp_font->next;
 			shp_font->next = NULL;
@@ -62,12 +62,12 @@ void shp_font_free(shape *shp_font){
 	}
 }
 
-shape *shp_font_find(shape *shp_font, long num){
+shp_typ *shp_font_find(shp_typ *shp_font, long num){
 /* get shape by code point */
 	if (shp_font){ /* verify if is a valid list */
 		if(shp_font->next){
 			/* sweep the list */
-			shape *current;
+			shp_typ *current;
 			current = shp_font->next;
 			while(current){
 				if(current->num == num){ /* match */
@@ -79,11 +79,11 @@ shape *shp_font_find(shape *shp_font, long num){
 	return(NULL); /* fail */
 }
 
-shape *shp_idx(shape *list, int idx){
+shp_typ *shp_idx(shp_typ *list, int idx){
 /* get shape by position in list */
 	if (list){ /* verify if is a valid list */
 		if(list->next){
-			shape *current;
+			shp_typ *current;
 			int pos = 0;
 			/* sweep the list */
 			current = list->next;
@@ -99,10 +99,10 @@ shape *shp_idx(shape *list, int idx){
 	return(NULL); /* fail */
 }
 
-shape *shp_font_open(char *path){
+shp_typ *shp_font_open(char *path){
 	FILE *file;
-	shape *shp_font;
-	shape *curr_shp;
+	shp_typ *shp_font;
+	shp_typ *curr_shp;
 	
 	int curr; /* current readed byte in file */
 	long index = 0; /* current position in file */
@@ -129,7 +129,7 @@ shape *shp_font_open(char *path){
 	}
 	
 	/* create list of shapes*/
-	shp_font = (shape *) malloc(sizeof(shape));
+	shp_font = (shp_typ *) malloc(sizeof(shp_typ));
 	if(shp_font == NULL) { /*error */
 		fclose(file);
 		return(NULL);
@@ -347,7 +347,147 @@ shape *shp_font_open(char *path){
 	return(shp_font);
 }
 
-graph_obj *shp_parse_cp(shape *shp_font, int pool_idx, int cp, double *w){
+shp_typ *shp_font_load(char *buf){
+	shp_typ *shp_font = NULL;
+	shp_typ *curr_shp;
+	char *curr_line, *next_line, str_tmp[255];
+	char *curr_mark, *next_mark, *ignore;
+	int str_size, cp, cmd_size, cmd_pos;
+	char cmds[255];
+	
+	/* create list of shapes*/
+	shp_font = (shp_typ *) malloc(sizeof(shp_typ));
+	if(shp_font == NULL) { /*error */
+		return(NULL);
+	}
+	shp_font->next = NULL; /* empty list */
+	
+	/*get start of first shape description */
+	curr_line = strchr(buf, '*');
+	if (!curr_line){
+		free(shp_font);
+		return NULL;
+	}
+	else if (strlen(curr_line) < 5) {
+		free(shp_font);
+		return NULL;
+	}
+	
+	while (curr_line){
+		if (strlen(curr_line) < 5) break;
+		curr_line++;
+		
+		next_line = strchr(curr_line, '*');
+		curr_mark = strpbrk(curr_line, ",\n");
+		
+		if (curr_mark){
+			str_size = curr_mark - curr_line;
+			curr_mark++;
+		}
+		else str_size = 0;
+		
+		if(curr_line[0] == '0') { /* hexadecimal */
+			cp = strtol(curr_line, NULL, 16);
+		}
+		else{
+			cp = strtol(curr_line, NULL, 10);
+		}
+		
+		if (curr_mark != NULL && (next_line - curr_mark) > 1){
+			next_mark = strpbrk(curr_mark, ",\n");
+			if (next_mark){
+				str_size = next_mark - curr_mark;
+				next_mark++;
+			}
+			else str_size = 0;
+			
+			if(curr_mark[0] == '0') { /* hexadecimal */
+				cmd_size = strtol(curr_mark, NULL, 16);
+			}
+			else{
+				cmd_size = strtol(curr_mark, NULL, 10);
+			}
+			curr_mark = next_mark;
+			if (curr_mark != NULL && (next_line - curr_mark) > 1){
+				next_mark = strchr(curr_mark, '\n');
+				if (next_mark){
+					str_size = next_mark - curr_mark;
+					next_mark++;
+				}
+				else str_size = 0;
+				
+				str_size = (str_size < 255)? str_size : 255;
+		
+				strncpy(str_tmp, curr_mark, str_size);
+				str_tmp[str_size] = 0; /*terminate string */
+				
+				
+				curr_mark = next_mark;
+				
+			}
+		}
+		cmd_pos = 0;
+		while ((curr_mark != NULL) && (cmd_pos < cmd_size) && (cmd_pos < 255)){
+			
+			next_mark = strchr(curr_mark, ',');
+			if (next_mark){
+				str_size = next_mark - curr_mark;
+				next_mark++;
+			}
+			else str_size = 0;
+			
+			/*ignore non numeric chars*/
+			if(ignore = strpbrk(curr_mark, "-+0123456789abcdefABCDEF"))
+				curr_mark = ignore;
+			//if(curr_mark[0] == '(') curr_mark++; /* ignore  '(' in string*/
+			//if(curr_mark[0] == '\n') curr_mark++; /* ignore  '\n' in string*/
+			
+			if(curr_mark[0] == '0') { /* hexadecimal */
+				cmds[cmd_pos] = strtol(curr_mark, NULL, 16);
+			}
+			else{
+				cmds[cmd_pos] = strtol(curr_mark, NULL, 10);
+			}
+			curr_mark = next_mark;
+			
+			
+			cmd_pos++;
+		}
+		if (cmd_size > 0){ 
+			cmd_size--;
+			shp_font_add(shp_font, cp, str_tmp, cmds, cmd_size);
+		}
+		
+		curr_mark = NULL;
+		next_mark = NULL;
+		str_tmp[0] =0;
+		cmd_size = 0;
+		curr_line = next_line;
+	}
+	
+	return(shp_font);
+}
+
+void shp_font_print(shp_typ *shp_font){
+	int i;
+	if (shp_font){
+		if(shp_font->next){ //verifica se a lista esta vazia
+			shp_typ *current;
+			
+			current = shp_font->next;
+			while(current){
+				printf("%lc %d [", current->num, current->num);
+				for(i=0; i < current->cmd_size; i++){
+					printf("%u,", current->cmds[i]);
+				}
+				printf("]\n");
+				current = current->next;
+			}
+		}
+	}
+}
+
+graph_obj *shp_parse_cp(shp_typ *shp_font, int pool_idx, int cp, double *w){
 	double pre_x = 0;
 	double pre_y = 0;
 	double px = 0;
@@ -376,7 +516,7 @@ graph_obj *shp_parse_cp(shape *shp_font, int pool_idx, int cp, double *w){
 	/* create returned list */
 	line_list = graph_new(pool_idx);
 		
-	shape *shp = shp_font_find(shp_font, (long) cp);
+	shp_typ *shp = shp_font_find(shp_font, (long) cp);
 	if(!shp){
 		//i = [42, 'asterisco', [0, 2, 14, 8, 254, 251, 33, 1, 68, 2, 46, 1, 72, 2, 65, 1, 74, 2, 68, 1, 78, 2, 47, 14, 8, 252, 253]]
 		return NULL;
@@ -680,7 +820,7 @@ graph_obj *shp_parse_cp(shape *shp_font, int pool_idx, int cp, double *w){
 	return(line_list);
 }
 
-int shp_parse_str(shape *font, list_node *list_ret, int pool_idx, char *txt, double *w){
+int shp_parse_str(shp_typ *font, list_node *list_ret, int pool_idx, char *txt, double *w){
 /* parse full string to graph*/
 	if (!font || !list_ret || !txt) return 0;
 	
@@ -691,7 +831,7 @@ int shp_parse_str(shape *font, list_node *list_ret, int pool_idx, char *txt, dou
 	double fnt_above = 1.0 , fnt_below = 0.0, fnt_size = 1.0, txt_size = 1.0;
 	
 	/* find the dimentions of SHX font */
-	shape *fnt_descr = shp_font_find(font, 0); /* font descriptor is in 0 codepoint */
+	shp_typ *fnt_descr = shp_font_find(font, 0); /* font descriptor is in 0 codepoint */
 	if (fnt_descr){
 		if(fnt_descr->cmd_size > 1){ /* check if the font is valid */
 			fnt_above = fnt_descr->cmds[0]; /* size above the base line of text */

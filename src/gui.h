@@ -210,6 +210,8 @@ extern bmp_color dxf_colors[];
 extern const char *text_al_h[];
 extern const char *text_al_v[];
 extern const char *std_h_pat;
+extern const char *shp_font_romans;
+extern const char *shp_font_txt;
 
 #ifndef DXF_LW_LEN
 	#define DXF_LW_LEN 24

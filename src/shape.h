@@ -16,24 +16,26 @@ enum shp_file_type{
 	SHP_BIGFONT
 };
 
-struct Shape{
+struct Shp_typ{
 	long num;
 	char *name;
 	int unicode;
 	unsigned char *cmds;
 	unsigned int cmd_size;
-	struct Shape *next;
+	struct Shp_typ *next;
 }; 
-typedef struct Shape shape;
+typedef struct Shp_typ shp_typ;
 
-void shp_font_add(shape *shx_font, long num, char *name, unsigned char *cmds, unsigned int cmd_size);
+void shp_font_add(shp_typ *shx_font, long num, char *name, unsigned char *cmds, unsigned int cmd_size);
 
-void shp_font_free(shape *shx_font);
+void shp_font_free(shp_typ *shx_font);
 
-shape *shp_font_find(shape *shx_font, long num);
+shp_typ *shp_font_find(shp_typ *shx_font, long num);
 
-shape *shp_font_open(char *path);
+shp_typ *shp_font_open(char *path);
 
-int shp_parse_str(shape *font, list_node *list_ret, int pool_idx, char *txt, double *w);
+shp_typ *shp_font_load(char *buf);
+
+int shp_parse_str(shp_typ *font, list_node *list_ret, int pool_idx, char *txt, double *w);
 
 #endif

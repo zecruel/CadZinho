@@ -25,6 +25,8 @@ struct tfont{
 
 struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs);
 
+struct tfont * add_shp_font_list(list_node *list, char *name, char *buf);
+
 int free_font_list(list_node *list);
 
 struct tfont * get_font_list(list_node *list, char *name);

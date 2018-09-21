@@ -1,6 +1,5 @@
 #include "gui.h"
 
-
 void set_style(struct nk_context *ctx, enum theme theme){
     struct nk_color table[NK_COLOR_COUNT];
     if (theme == THEME_WHITE) {
@@ -1020,18 +1019,38 @@ int gui_start(gui_obj *gui){
 	#endif
 	
 	gui->font_list = list_new(NULL, PRG_LIFE);
-	if(add_font_list(gui->font_list, "romans.shx", gui->dflt_fonts_path)){
+	//if(add_font_list(gui->font_list, "romans.shx", gui->dflt_fonts_path)){
+	//struct tfont * add_shp_font_list(list_node *list, char *name, char *buf);
+	
+	if(add_shp_font_list(gui->font_list, "romans.shx", shp_font_romans)){
 		struct tfont *font = get_font_list(gui->font_list, "romans.shx");
 		if (font){
 			gui->dflt_font = font;
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
+			//shp_font_print(font->data);
 		}
 	}
+	if(add_shp_font_list(gui->font_list, "txt.shx", shp_font_txt)){
+		struct tfont *font = get_font_list(gui->font_list, "txt.shx");
+		if (font){
+			gui->dflt_font = font;
+			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
+			//shp_font_print(font->data);
+		}
+	}
+	/*if(add_font_list(gui->font_list, "romans.shx", gui->dflt_fonts_path)){
+		struct tfont *font = get_font_list(gui->font_list, "romans.shx");
+		if (font){
+			gui->dflt_font = font;
+			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
+			shp_font_print(font->data);
+		}
+	}*/
 	if(add_font_list(gui->font_list, "OpenSans-Light.ttf", gui->dflt_fonts_path)){
 		struct tfont *font = get_font_list(gui->font_list, "OpenSans-Light.ttf");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
-			//gui->ui_font = font;
+			//gui->dflt_font = font;
 		}
 	}
 	if(add_font_list(gui->font_list, "Lato-Hairline.ttf", gui->dflt_fonts_path)){
@@ -1057,6 +1076,7 @@ int gui_start(gui_obj *gui){
 		struct tfont *font = get_font_list(gui->font_list, "Roboto-LightItalic.ttf");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
+			
 		}
 	}
 	

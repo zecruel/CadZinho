@@ -1033,7 +1033,7 @@ int gui_start(gui_obj *gui){
 	if(add_shp_font_list(gui->font_list, "txt.shx", (char *)shp_font_txt)){
 		struct tfont *font = get_font_list(gui->font_list, "txt.shx");
 		if (font){
-			gui->dflt_font = font;
+			//gui->dflt_font = font;
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 			//shp_font_print(font->data);
 		}

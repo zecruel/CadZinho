@@ -1104,10 +1104,11 @@ void dxf_tstyles_assemb (dxf_drawing *drawing){
 	drawing->num_tstyles = 0;
 	
 	/* open default font */
-	shape *shx_font = shx_font_open("txt.shx");
+	//shape *shx_font = shx_font_open("txt.shx");
+	shape *shx_font = NULL;
 	
-	if (shx_font){
-		/* always set the index 0 as the default font*/
+	//if (shx_font){
+		/* always set the index 0 as the default font
 		drawing->num_tstyles = 1;
 		drawing->text_styles[0].name[0] = 0;
 		drawing->text_styles[0].file[0] = 0;
@@ -1123,10 +1124,10 @@ void dxf_tstyles_assemb (dxf_drawing *drawing){
 		drawing->text_styles[0].shx_font = shx_font;
 		drawing->text_styles[0].num_el = 0;
 		drawing->text_styles[0].obj = NULL;
-	}
+	//}*/
 	
 	i = 0;
-	while (curr_tstyle = dxf_find_obj_i(drawing->t_style, "STYLE", i)){/* get the next layer */
+	while (curr_tstyle = dxf_find_obj_i(drawing->t_style, "STYLE", i)){/* get the next text style */
 	
 		name[0] = 0;
 		file_name[0] = 0;
@@ -1171,28 +1172,28 @@ void dxf_tstyles_assemb (dxf_drawing *drawing){
 			}
 			current = current->next;
 		}
-		if ((i + 1) < DXF_MAX_FONTS){
+		if (i < DXF_MAX_FONTS){
 			/* set the variables on the current font in drawing structure */
-			strncpy(drawing->text_styles[i+1].name, name, DXF_MAX_CHARS);
-			strncpy(drawing->text_styles[i+1].file, file_name, DXF_MAX_CHARS);
-			strncpy(drawing->text_styles[i+1].big_file, big_file, DXF_MAX_CHARS);
+			strncpy(drawing->text_styles[i].name, name, DXF_MAX_CHARS);
+			strncpy(drawing->text_styles[i].file, file_name, DXF_MAX_CHARS);
+			strncpy(drawing->text_styles[i].big_file, big_file, DXF_MAX_CHARS);
 			
-			drawing->text_styles[i+1].flags1 = flags1;
-			drawing->text_styles[i+1].flags2 = flags2;
-			drawing->text_styles[i+1].fixed_h = fixed_h;
-			drawing->text_styles[i+1].width_f = width_f;
-			drawing->text_styles[i+1].oblique = oblique;
+			drawing->text_styles[i].flags1 = flags1;
+			drawing->text_styles[i].flags2 = flags2;
+			drawing->text_styles[i].fixed_h = fixed_h;
+			drawing->text_styles[i].width_f = width_f;
+			drawing->text_styles[i].oblique = oblique;
 			
 			shx_font = shx_font_open(file_name);
-			drawing->text_styles[i+1].shx_font = shx_font;
-			drawing->text_styles[i+1].num_el = 0;
-			drawing->text_styles[i+1].obj = curr_tstyle;
+			drawing->text_styles[i].shx_font = shx_font;
+			drawing->text_styles[i].num_el = 0;
+			drawing->text_styles[i].obj = curr_tstyle;
 			
-			strncpy(drawing->text_styles[i+1].subst_file, subst_file, DXF_MAX_CHARS);
+			strncpy(drawing->text_styles[i].subst_file, subst_file, DXF_MAX_CHARS);
 		}
 		i++;
 	}
-	if ((i + 1) < DXF_MAX_FONTS) drawing->num_tstyles += i;
+	if (i < DXF_MAX_FONTS) drawing->num_tstyles += i;
 	else drawing->num_tstyles = DXF_MAX_FONTS;
 }
 

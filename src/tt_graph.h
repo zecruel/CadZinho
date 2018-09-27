@@ -29,4 +29,6 @@ void tt_font_free(struct tt_font * font);
 
 int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char *txt, double *w);
 
+graph_obj * tt_parse_cp(struct tt_font * font, int cp, int prev_cp, int pool_idx, double *w);
+
 #endif

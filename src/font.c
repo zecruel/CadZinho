@@ -44,6 +44,12 @@ struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 		strncat(full_path, ".SHX", DXF_MAX_CHARS);
 	}
 	
+	name = get_filename(full_path); /* font name is the filename*/
+	str_upp(name); /* upper case the name */
+	
+	font = get_font_list(list, name); /* verify if font was previously loaded */
+	if (font) return font;
+	
 	/* try to open file */
 	if (!file_exists(full_path)){
 		/* if file not found */
@@ -82,12 +88,6 @@ struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 		}
 		else return NULL; /* fail open font */
 	}
-	
-	name = get_filename(full_path); /* font name is the filename*/
-	str_upp(name); /* upper case the name */
-	
-	font = get_font_list(list, name); /* verify if font was previously loaded */
-	if (font) return font;
 	
 	ext = get_ext(full_path); /* get file extension to determine type of font */
 	
@@ -172,6 +172,9 @@ struct tfont * add_shp_font_list(list_node *list, char *name, char *buf){
 	
 	struct tfont * font = NULL;
 	
+	font = get_font_list(list, name); /* verify if font was previously loaded */
+	if (font) return font;
+	
 	shp_typ * shp_tfont = shp_font_load(buf);
 	if (shp_tfont){
 		/* alloc the structures */
@@ -251,7 +254,7 @@ int free_font_list(list_node *list){
 }
 
 int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char *txt, double *w){
-/* parse string and return list of grpahs */
+/* parse string and return list of graphs */
 	if (!font || !list_ret || !txt) return 0;
 	
 	int num_graph = 0;
@@ -271,8 +274,44 @@ int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char 
 	return num_graph;
 }
 
+graph_obj * font_parse_cp(struct tfont * font, int cp, int prev_cp, int pool_idx, double *w){
+/* parse single code point to graph*/
+	if (!font || !cp) return NULL;
+	int type = font->type;
+	graph_obj *curr_graph = NULL;
+	
+	//double fnt_size, fnt_above, fnt_below, txt_size;
+	
+	if(type == FONT_SHP){
+		/* find the dimentions of SHX font */
+		double fnt_above = 1.0 , fnt_below = 0.0, fnt_size = 1.0, txt_size = 1.0;
+		shp_typ *fnt_descr = shp_font_find((shp_typ *) font->data, 0); /* font descriptor is in 0 codepoint */
+		
+		if (fnt_descr){
+			if(fnt_descr->cmd_size > 1){ /* check if the font is valid */
+				fnt_above = fnt_descr->cmds[0]; /* size above the base line of text */
+				fnt_below = fnt_descr->cmds[1]; /* size below the base line of text */
+				if((fnt_above + fnt_below) > 0){
+					fnt_size = fnt_above + fnt_below;
+				}
+				if(fnt_above > 0) txt_size = 1/fnt_above;
+			}
+		}
+		curr_graph = shp_parse_cp((shp_typ *) font->data, pool_idx, cp, w);
+		*w *= txt_size;
+		if (curr_graph){
+			graph_modify(curr_graph, 0.0, 0.0, txt_size, txt_size, 0.0);
+		}
+	}
+	else if (type == FONT_TT){
+		curr_graph =  tt_parse_cp((struct tt_font *) font->data, cp, prev_cp, pool_idx, w);
+	}
+	
+	return curr_graph;
+}
+
 int font_str_w(struct tfont * font, char *txt, double *w){
-/* get width of an string*/
+/* get width of an string */
 	if (!font || !w|| !txt) return 0;
 	
 	list_node * graph = list_new(NULL, FRAME_LIFE);

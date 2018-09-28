@@ -1571,7 +1571,7 @@ list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		
 		/*flags*/
 		int pt1 = 0, pt2 = 0;
-		int under_l = 0, over_l = 0;
+		int under_l = 0, over_l = 0, stike = 0;
 		
 		
 		/* clear the strings */
@@ -1675,28 +1675,30 @@ list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				if ((str_start < txt_len - 2) && (text[str_start] == '%') && (text[str_start + 1] == '%')){
 					/*get the control character */
 					special = text[str_start + 2];
+					ofs = 3;
+					code_p = 0;
 					/* verify the action to do */
 					switch (special){
 						/* put the  diameter simbol (unicode D8 Hex) in text*/
 						case 'c':
-							//pos_tmp += wctomb(pos_tmp, L'\xd8');
+							code_p = 216;
 							break;
 						case 'C':
-							//pos_tmp += wctomb(pos_tmp, L'\xd8');
+							code_p = 216;
 							break;
 						/* put the degrees simbol in text*/
 						case 'd':
-							//pos_tmp += wctomb(pos_tmp, L'\xb0');
+							code_p = 176;
 							break;
 						case 'D':
-							//pos_tmp += wctomb(pos_tmp, L'\xb0');
+							code_p = 176;
 							break;
 						/* put the plus/minus tolerance simbol in text*/
 						case 'p':
-							//pos_tmp += wctomb(pos_tmp, L'\xb1');
+							code_p = 177;
 							break;
 						case 'P':
-							//pos_tmp += wctomb(pos_tmp, L'\xb1');
+							code_p = 177;
 							break;
 						/* under line */
 						case 'u':
@@ -1714,33 +1716,90 @@ list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							break;
 					}
 					
-					str_start += 3;
-					continue;
 				}
-				else {
+				if ((str_start < txt_len - 1) && (text[str_start] == '\\')){
+					/*get the control character */
+					special = text[str_start + 1];
+					ofs = 2;
+					code_p = 0;
+					/* verify the action to do */
+					switch (special){
+						case '\\':
+							code_p = '\\';
+							break;
+						case '{':
+							code_p = '{';
+							break;
+						case '}':
+							code_p = '}';
+							break;
+						/* under line */
+						case 'l':
+							under_l = 0;
+							break;
+						case 'L':
+							under_l = 1;
+							break;
+						/* over line */
+						case 'o':
+							over_l = 0;
+							break;
+						case 'O':
+							over_l = 1;
+							break;
+						/* stikethrough */
+						case 'k':
+							stike = 0;
+							break;
+						case 'K':
+							stike = 1;
+							break;
+					}
+					
+					
+					
+				}
+				if (code_p) {
 					w = 0.0;
 					curr_graph = font_parse_cp(font, code_p, prev_cp, pool_idx, &w);
-					if (w > 0.0 && ((under_l) || (over_l))){
-						double y = 0.0;
-						
-						/* add the under line */
-						if (under_l) y = -0.2;
-						if (over_l) y = 1.2;
-						
-						graph_obj * txt_line = graph_new(pool_idx);
-						line_add(txt_line, ofs_x, y, pt1_z, ofs_x + w, y, pt1_z);
-						if (txt_line){
-							/* store the graph in the return vector */
-							if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
-						}
-						
-					}
 					
 					if (curr_graph){
 						graph_modify(curr_graph, ofs_x, 0.0, 1.0, 1.0, 0.0);
 						/* store the graph in the return vector */
 						if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
 					}
+					
+					if (w > 0.0 && (under_l)){
+						/* add the under line */
+						double y = -0.2;
+						graph_obj * txt_line = graph_new(pool_idx);
+						line_add(txt_line, ofs_x, y, pt1_z, ofs_x + w, y, pt1_z);
+						if (txt_line){
+							/* store the graph in the return vector */
+							if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
+						}
+					}
+					if (w > 0.0 && (over_l)){
+						/* add the over line */
+						double y = 1.2;
+						graph_obj * txt_line = graph_new(pool_idx);
+						line_add(txt_line, ofs_x, y, pt1_z, ofs_x + w, y, pt1_z);
+						if (txt_line){
+							/* store the graph in the return vector */
+							if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
+						}
+					}
+					if (w > 0.0 && (stike)){
+						/* add stikethough */
+						double y = 0.5;
+						graph_obj * txt_line = graph_new(pool_idx);
+						line_add(txt_line, ofs_x, y, pt1_z, ofs_x + w, y, pt1_z);
+						if (txt_line){
+							/* store the graph in the return vector */
+							if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
+						}
+					}
+					
 					/* update the ofset */
 					ofs_x += w;
 					

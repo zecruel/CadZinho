@@ -2119,7 +2119,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		double elev = 0.0;
 		
 		//shape *shx_font = NULL;
-		struct tfont *font = NULL;
+		//struct tfont *font = NULL;
 		
 		double t_size = 0, t_rot = 0;
 		
@@ -2140,7 +2140,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		
 		/*flags*/
 		int pt1 = 0, pt2 = 0;
-		int under_l = 0, over_l = 0, stike = 0;
+		//int under_l = 0, over_l = 0, stike = 0;
 		int num_str = 0;
 		
 		struct param{
@@ -2155,11 +2155,11 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		stack[0].over_l = 0;
 		stack[0].stike = 0;
 		stack[0].color = 0;
-		stack[0].w_fac= 1.0;
-		stack[0].spc_fac= 1.0;
-		stack[0].h_fac= 1.0;
-		stack[0].o_ang= 0.0;
-		stack[0].font= NULL;
+		stack[0].w_fac = 1.0;
+		stack[0].spc_fac = 1.0;
+		stack[0].h_fac = 1.0;
+		stack[0].o_ang = 0.0;
+		stack[0].font = NULL;
 		
 		
 		/* clear the strings */
@@ -2246,11 +2246,11 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			/* find the tstyle index and font*/
 			if (strlen(t_style) > 0){
 				fnt_idx = dxf_tstyle_idx(drawing, t_style);
-				font = drawing->text_styles[fnt_idx].font;
+				stack[0].font = drawing->text_styles[fnt_idx].font;
 			}
 			else {
 				fnt_idx = dxf_tstyle_idx(drawing, "STANDARD");
-				font = drawing->text_styles[fnt_idx].font;
+				stack[0].font = drawing->text_styles[fnt_idx].font;
 			}
 			
 			list_node * graph = list_new(NULL, FRAME_LIFE);
@@ -2258,7 +2258,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			/*sweep the string, decoding utf8 */
 			int ofs = 0, str_start = 0, code_p, prev_cp = 0, txt_len;
 			double w = 0.0, ofs_x = 0.0, ofs_y = 0.0;
-			double w_fac = 1.0, spc_fac = 1.0, h_fac = 1.0;
+			//double w_fac = 1.0, spc_fac = 1.0, h_fac = 1.0;
 			current = NULL;
 			
 			for (i = 0; i < num_str; i++){
@@ -2297,14 +2297,14 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							/* under line */
 							case 'u':
 							case 'U':
-								under_l = !under_l;
+								stack[stack_pos].under_l = !(stack[stack_pos].under_l);
 								ofs = 3;
 								code_p = 0;
 								break;
 							/* over line */
 							case 'o':
 							case 'O':
-								over_l = !over_l;
+								stack[stack_pos].over_l = !(stack[stack_pos].over_l);
 								ofs = 3;
 								code_p = 0;
 								break;
@@ -2341,34 +2341,34 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 								break;
 							/* under line */
 							case 'l':
-								under_l = 0;
+								stack[stack_pos].under_l = 0;
 								ofs = 2;
 								code_p = 0;
 								break;
 							case 'L':
-								under_l = 1;
+								stack[stack_pos].under_l = 1;
 								ofs = 2;
 								code_p = 0;
 								break;
 							/* over line */
 							case 'o':
-								over_l = 0;
+								stack[stack_pos].over_l = 0;
 								ofs = 2;
 								code_p = 0;
 								break;
 							case 'O':
-								over_l = 1;
+								stack[stack_pos].over_l = 1;
 								ofs = 2;
 								code_p = 0;
 								break;
 							/* stikethrough */
 							case 'k':
-								stike = 0;
+								stack[stack_pos].stike = 0;
 								ofs = 2;
 								code_p = 0;
 								break;
 							case 'K':
-								stike = 1;
+								stack[stack_pos].stike = 1;
 								ofs = 2;
 								code_p = 0;
 								break;
@@ -2452,7 +2452,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 									char *cont;
 									double factor = strtod(text + str_start + 2, &cont);
 									if (factor > 0.0){
-										spc_fac = factor;
+										stack[stack_pos].spc_fac = factor;
 									}
 									code_p = 0;
 									ofs = cont - text - str_start;
@@ -2480,7 +2480,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 									char *cont;
 									double factor = strtod(text + str_start + 2, &cont);
 									if (factor > 0.0){
-										w_fac = factor;
+										stack[stack_pos].w_fac = factor;
 									}
 									code_p = 0;
 									ofs = cont - text - str_start;
@@ -2516,16 +2516,16 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 					}
 					if (code_p) {
 						w = 0.0;
-						curr_graph = font_parse_cp(font, code_p, prev_cp, pool_idx, &w);
-						w *= w_fac;
+						curr_graph = font_parse_cp(stack[stack_pos].font, code_p, prev_cp, pool_idx, &w);
+						w *= stack[stack_pos].w_fac;
 						
 						if (curr_graph){
-							graph_modify(curr_graph, ofs_x, ofs_y, w_fac, h_fac, 0.0);
+							graph_modify(curr_graph, ofs_x, ofs_y, stack[stack_pos].w_fac, stack[stack_pos].h_fac, 0.0);
 							/* store the graph in the return vector */
 							if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
 						}
 						
-						if (w > 0.0 && (under_l)){
+						if (w > 0.0 && (stack[stack_pos].under_l)){
 							/* add the under line */
 							double y = -0.2;
 							graph_obj * txt_line = graph_new(pool_idx);
@@ -2535,7 +2535,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 								if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
 							}
 						}
-						if (w > 0.0 && (over_l)){
+						if (w > 0.0 && (stack[stack_pos].over_l)){
 							/* add the over line */
 							double y = 1.2;
 							graph_obj * txt_line = graph_new(pool_idx);
@@ -2545,7 +2545,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 								if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
 							}
 						}
-						if (w > 0.0 && (stike)){
+						if (w > 0.0 && (stack[stack_pos].stike)){
 							/* add stikethough */
 							double y = 0.5;
 							graph_obj * txt_line = graph_new(pool_idx);
@@ -2557,7 +2557,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						}
 						
 						/* update the ofset */
-						ofs_x += w * spc_fac;
+						ofs_x += w * stack[stack_pos].spc_fac;
 						
 						prev_cp = code_p;
 					}
@@ -2579,10 +2579,10 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			
 			
 			if(t_alin_v[t_alin] != 1){
-				t_center_y = (double)(t_alin_v[t_alin] - 1) * font->above * txt_size/2;
+				t_center_y = (double)(t_alin_v[t_alin] - 1) * stack[stack_pos].font->above * txt_size/2;
 			}
 			else{
-				t_center_y = - font->below * txt_size;
+				t_center_y = - stack[stack_pos].font->below * txt_size;
 			}
 			
 			

@@ -1797,11 +1797,11 @@ list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						case 'C':
 						case 'c':
 							{
-								char *next_mark = strchr(text + str_start + 2, ';');
-								if (next_mark){
-									code_p = 0;
-									ofs = next_mark - text - str_start + 1;
-								}
+								char *cont;
+								long new_color = strtol(text + str_start + 2, &cont, 10);
+								code_p = 0;
+								ofs = cont - text - str_start;
+								if ((cont) && (cont[0] == ';')) ofs++;
 							}
 							break;
 						/* change font */
@@ -1819,10 +1819,20 @@ list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						case 'H':
 						case 'h':
 							{
-								char *next_mark = strchr(text + str_start + 2, ';');
-								if (next_mark){
-									code_p = 0;
-									ofs = next_mark - text - str_start + 1;
+								char *cont;
+								double factor = strtod(text + str_start + 2, &cont);
+								if (factor > 0.0){
+									//spc_fac = factor;
+								}
+								code_p = 0;
+								ofs = cont - text - str_start;
+								if (cont){
+									if (cont[0] == 'x' || cont[0] == 'X'){
+										//
+										cont++;
+										ofs++;
+									}
+									if (cont[0] == ';') ofs++;
 								}
 							}
 							break;
@@ -1841,52 +1851,53 @@ list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						case 'T':
 						case 't':
 							{
-								char *next_mark = strchr(text + str_start + 2, ';');
-								if (next_mark){
-									double factor = strtod(text + str_start + 2, NULL);
-									if (factor > 0.0){
-										spc_fac = factor;
-									}
-									code_p = 0;
-									ofs = next_mark - text - str_start + 1;
+								char *cont;
+								double factor = strtod(text + str_start + 2, &cont);
+								if (factor > 0.0){
+									spc_fac = factor;
 								}
+								code_p = 0;
+								ofs = cont - text - str_start;
+								if ((cont) && (cont[0] == ';')) ofs++;
 							}
 							break;
 						/* change obliquing angle */
 						case 'Q':
 						case 'q':
 							{
-								char *next_mark = strchr(text + str_start + 2, ';');
-								if (next_mark){
-									code_p = 0;
-									ofs = next_mark - text - str_start + 1;
+								char *cont;
+								double factor = strtod(text + str_start + 2, &cont);
+								if (factor > 0.0){
+									//spc_fac = factor;
 								}
+								code_p = 0;
+								ofs = cont - text - str_start;
+								if ((cont) && (cont[0] == ';')) ofs++;
 							}
 							break;
 						/* width factor */
 						case 'W':
 						case 'w':
 							{
-								char *next_mark = strchr(text + str_start + 2, ';');
-								if (next_mark){
-									double factor = strtod(text + str_start + 2, NULL);
-									if (factor > 0.0){
-										w_fac = factor;
-									}
-									code_p = 0;
-									ofs = next_mark - text - str_start + 1;
+								char *cont;
+								double factor = strtod(text + str_start + 2, &cont);
+								if (factor > 0.0){
+									w_fac = factor;
 								}
+								code_p = 0;
+								ofs = cont - text - str_start;
+								if ((cont) && (cont[0] == ';')) ofs++;
 							}
 							break;
 						/* vertical alignment (0 - bottm, 1 - center, 2 - top) */
 						case 'A':
 						case 'a':
 							{
-								char *next_mark = strchr(text + str_start + 2, ';');
-								if (next_mark){
-									code_p = 0;
-									ofs = next_mark - text - str_start + 1;
-								}
+								char *cont;
+								long new_al = strtol(text + str_start + 2, &cont, 10);
+								code_p = 0;
+								ofs = cont - text - str_start;
+								if ((cont) && (cont[0] == ';')) ofs++;
 							}
 							break;
 					}
@@ -2130,6 +2141,25 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		/*flags*/
 		int pt1 = 0, pt2 = 0;
 		int under_l = 0, over_l = 0, stike = 0;
+		int num_str = 0;
+		
+		struct param{
+			int under_l, over_l, stike, color;
+			double w_fac, spc_fac, h_fac, o_ang;
+			struct tfont *font;
+		} stack[10];
+		
+		int stack_pos = 0;
+		
+		stack[0].under_l = 0;
+		stack[0].over_l = 0;
+		stack[0].stike = 0;
+		stack[0].color = 0;
+		stack[0].w_fac= 1.0;
+		stack[0].spc_fac= 1.0;
+		stack[0].h_fac= 1.0;
+		stack[0].o_ang= 0.0;
+		stack[0].font= NULL;
 		
 		
 		/* clear the strings */
@@ -2147,7 +2177,12 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			if (current->type == DXF_ATTR){ /* DXF attibute */
 				switch (current->value.group){
 					case 1:
-						strcpy(text, current->value.s_data);
+						//strcpy(text, current->value.s_data);
+						num_str++;
+						break;
+					case 3:
+						//strcpy(text, current->value.s_data);
+						num_str++;
 						break;
 					case 7:
 						strcpy(t_style, current->value.s_data);
@@ -2222,186 +2257,313 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			
 			/*sweep the string, decoding utf8 */
 			int ofs = 0, str_start = 0, code_p, prev_cp = 0, txt_len;
-			double w = 0.0, ofs_x = 0.0;
+			double w = 0.0, ofs_x = 0.0, ofs_y = 0.0;
+			double w_fac = 1.0, spc_fac = 1.0, h_fac = 1.0;
+			current = NULL;
 			
-			txt_len = strlen(text);
-			while (ofs = utf8_to_codepoint(text + str_start, &code_p)){
-				
-				if ((str_start < txt_len - 2) && (text[str_start] == '%') && (text[str_start + 1] == '%')){
-					/*get the control character */
-					special = text[str_start + 2];
-					/* verify the action to do */
-					switch (special){
-						/* put the  diameter simbol (unicode D8 Hex) in text*/
-						case 'c':
-						case 'C':
-							code_p = 216;
-							ofs = 3;
-							break;
-						/* put the degrees simbol in text*/
-						case 'd':
-						case 'D':
-							code_p = 176;
-							ofs = 3;
-							break;
-						/* put the plus/minus tolerance simbol in text*/
-						case 'p':
-						case 'P':
-							code_p = 177;
-							ofs = 3;
-							break;
-						/* under line */
-						case 'u':
-						case 'U':
-							under_l = !under_l;
-							ofs = 3;
-							code_p = 0;
-							break;
-						/* over line */
-						case 'o':
-						case 'O':
-							over_l = !over_l;
-							ofs = 3;
-							code_p = 0;
-							break;
-						default:
-						{
-							char *cont;
-							long cp = strtol(text + str_start + 2, &cont, 10);
-							if (cp){
-								code_p = cp;
-								ofs = cont - text - str_start;
-							}
-						}
-							break;
-					}
+			for (i = 0; i < num_str; i++){
+				if (i < num_str - 1) current = dxf_find_attr_i(ent, 3, i);
+				else current = dxf_find_attr_i(ent, 1, 0);
+				if (!current) continue;
+				ofs = 0;
+				str_start = 0;
+				strcpy(text, current->value.s_data);
+				txt_len = strlen(text);
+				while (ofs = utf8_to_codepoint(text + str_start, &code_p)){
 					
-				}
-				if ((str_start < txt_len - 1) && (text[str_start] == '\\')){
-					/*get the control character */
-					special = text[str_start + 1];
-					
-					/* verify the action to do */
-					switch (special){
-						case '\\':
-							code_p = '\\';
-							ofs = 2;
-							break;
-						case '{':
-							code_p = '{';
-							ofs = 2;
-							break;
-						case '}':
-							code_p = '}';
-							ofs = 2;
-							break;
-						/* under line */
-						case 'l':
-							under_l = 0;
-							ofs = 2;
-							code_p = 0;
-							break;
-						case 'L':
-							under_l = 1;
-							ofs = 2;
-							code_p = 0;
-							break;
-						/* over line */
-						case 'o':
-							over_l = 0;
-							ofs = 2;
-							code_p = 0;
-							break;
-						case 'O':
-							over_l = 1;
-							ofs = 2;
-							code_p = 0;
-							break;
-						/* stikethrough */
-						case 'k':
-							stike = 0;
-							ofs = 2;
-							code_p = 0;
-							break;
-						case 'K':
-							stike = 1;
-							ofs = 2;
-							code_p = 0;
-							break;
-						case 'U':
-						case 'u':
-							if (text[str_start + 2] == '+'){
+					if ((str_start < txt_len - 2) && (text[str_start] == '%') && (text[str_start + 1] == '%')){
+						/*get the control character */
+						special = text[str_start + 2];
+						/* verify the action to do */
+						switch (special){
+							/* put the  diameter simbol (unicode D8 Hex) in text*/
+							case 'c':
+							case 'C':
+								code_p = 216;
+								ofs = 3;
+								break;
+							/* put the degrees simbol in text*/
+							case 'd':
+							case 'D':
+								code_p = 176;
+								ofs = 3;
+								break;
+							/* put the plus/minus tolerance simbol in text*/
+							case 'p':
+							case 'P':
+								code_p = 177;
+								ofs = 3;
+								break;
+							/* under line */
+							case 'u':
+							case 'U':
+								under_l = !under_l;
+								ofs = 3;
+								code_p = 0;
+								break;
+							/* over line */
+							case 'o':
+							case 'O':
+								over_l = !over_l;
+								ofs = 3;
+								code_p = 0;
+								break;
+							default:
+							{
 								char *cont;
-								long cp = strtol(text + str_start + 3, &cont, 16);
+								long cp = strtol(text + str_start + 2, &cont, 10);
 								if (cp){
 									code_p = cp;
 									ofs = cont - text - str_start;
 								}
 							}
-							break;
-						case 'C':
-						case 'c':
-							{
-								char *next_mark = strchr(text + str_start + 2, ';');
-								if (next_mark){
-									ofs = next_mark - text - str_start;
+								break;
+						}
+						
+					}
+					if ((str_start < txt_len - 1) && (text[str_start] == '\\')){
+						/*get the control character */
+						special = text[str_start + 1];
+						
+						/* verify the action to do */
+						switch (special){
+							case '\\':
+								code_p = '\\';
+								ofs = 2;
+								break;
+							case '{':
+								code_p = '{';
+								ofs = 2;
+								break;
+							case '}':
+								code_p = '}';
+								ofs = 2;
+								break;
+							/* under line */
+							case 'l':
+								under_l = 0;
+								ofs = 2;
+								code_p = 0;
+								break;
+							case 'L':
+								under_l = 1;
+								ofs = 2;
+								code_p = 0;
+								break;
+							/* over line */
+							case 'o':
+								over_l = 0;
+								ofs = 2;
+								code_p = 0;
+								break;
+							case 'O':
+								over_l = 1;
+								ofs = 2;
+								code_p = 0;
+								break;
+							/* stikethrough */
+							case 'k':
+								stike = 0;
+								ofs = 2;
+								code_p = 0;
+								break;
+							case 'K':
+								stike = 1;
+								ofs = 2;
+								code_p = 0;
+								break;
+							/* new paragraph */
+							case 'P':
+							case 'p':
+								ofs_x = 0.0;
+								ofs_y -= 1.1;
+								ofs = 2;
+								code_p = 0;
+								break;
+							case 'U':
+							case 'u':
+								if (text[str_start + 2] == '+'){
+									char *cont;
+									long cp = strtol(text + str_start + 3, &cont, 16);
+									if (cp){
+										code_p = cp;
+										ofs = cont - text - str_start;
+									}
 								}
+								break;
+							/* change color */
+							case 'C':
+							case 'c':
+								{
+									char *cont;
+									long new_color = strtol(text + str_start + 2, &cont, 10);
+									code_p = 0;
+									ofs = cont - text - str_start;
+									if ((cont) && (cont[0] == ';')) ofs++;
+								}
+								break;
+							/* change font */
+							case 'F':
+							case 'f':
+								{
+									char *next_mark = strchr(text + str_start + 2, ';');
+									if (next_mark){
+										code_p = 0;
+										ofs = next_mark - text - str_start + 1;
+									}
+								}
+								break;
+							/* change height */
+							case 'H':
+							case 'h':
+								{
+									char *cont;
+									double factor = strtod(text + str_start + 2, &cont);
+									if (factor > 0.0){
+										//spc_fac = factor;
+									}
+									code_p = 0;
+									ofs = cont - text - str_start;
+									if (cont){
+										if (cont[0] == 'x' || cont[0] == 'X'){
+											//
+											cont++;
+											ofs++;
+										}
+										if (cont[0] == ';') ofs++;
+									}
+								}
+								break;
+							/* stacks text */
+							case 'S':
+							case 's':
+								{
+									char *next_mark = strchr(text + str_start + 2, ';');
+									if (next_mark){
+										code_p = 0;
+										ofs = next_mark - text - str_start + 1;
+									}
+								}
+								break;
+							/* adjust the space between chars */
+							case 'T':
+							case 't':
+								{
+									char *cont;
+									double factor = strtod(text + str_start + 2, &cont);
+									if (factor > 0.0){
+										spc_fac = factor;
+									}
+									code_p = 0;
+									ofs = cont - text - str_start;
+									if ((cont) && (cont[0] == ';')) ofs++;
+								}
+								break;
+							/* change obliquing angle */
+							case 'Q':
+							case 'q':
+								{
+									char *cont;
+									double factor = strtod(text + str_start + 2, &cont);
+									if (factor > 0.0){
+										//spc_fac = factor;
+									}
+									code_p = 0;
+									ofs = cont - text - str_start;
+									if ((cont) && (cont[0] == ';')) ofs++;
+								}
+								break;
+							/* width factor */
+							case 'W':
+							case 'w':
+								{
+									char *cont;
+									double factor = strtod(text + str_start + 2, &cont);
+									if (factor > 0.0){
+										w_fac = factor;
+									}
+									code_p = 0;
+									ofs = cont - text - str_start;
+									if ((cont) && (cont[0] == ';')) ofs++;
+								}
+								break;
+							/* vertical alignment (0 - bottm, 1 - center, 2 - top) */
+							case 'A':
+							case 'a':
+								{
+									char *cont;
+									long new_al = strtol(text + str_start + 2, &cont, 10);
+									code_p = 0;
+									ofs = cont - text - str_start;
+									if ((cont) && (cont[0] == ';')) ofs++;
+								}
+								break;
+						}
+						
+						
+						
+					}
+					else if(text[str_start] == '{') {
+						if (stack_pos < 9) {
+							stack_pos++;
+							stack[stack_pos] = stack[stack_pos - 1];
+						}
+						code_p = 0;
+					}
+					else if(text[str_start] == '}') {
+						if (stack_pos > 0) stack_pos--;
+						code_p = 0;
+					}
+					if (code_p) {
+						w = 0.0;
+						curr_graph = font_parse_cp(font, code_p, prev_cp, pool_idx, &w);
+						w *= w_fac;
+						
+						if (curr_graph){
+							graph_modify(curr_graph, ofs_x, ofs_y, w_fac, h_fac, 0.0);
+							/* store the graph in the return vector */
+							if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
+						}
+						
+						if (w > 0.0 && (under_l)){
+							/* add the under line */
+							double y = -0.2;
+							graph_obj * txt_line = graph_new(pool_idx);
+							line_add(txt_line, ofs_x, ofs_y + y, pt1_z, ofs_x + w, ofs_y + y, pt1_z);
+							if (txt_line){
+								/* store the graph in the return vector */
+								if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
 							}
-							break;
+						}
+						if (w > 0.0 && (over_l)){
+							/* add the over line */
+							double y = 1.2;
+							graph_obj * txt_line = graph_new(pool_idx);
+							line_add(txt_line, ofs_x, ofs_y + y, pt1_z, ofs_x + w, ofs_y + y, pt1_z);
+							if (txt_line){
+								/* store the graph in the return vector */
+								if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
+							}
+						}
+						if (w > 0.0 && (stike)){
+							/* add stikethough */
+							double y = 0.5;
+							graph_obj * txt_line = graph_new(pool_idx);
+							line_add(txt_line, ofs_x, ofs_y + y, pt1_z, ofs_x + w, ofs_y + y, pt1_z);
+							if (txt_line){
+								/* store the graph in the return vector */
+								if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
+							}
+						}
+						
+						/* update the ofset */
+						ofs_x += w * spc_fac;
+						
+						prev_cp = code_p;
 					}
-					
-					
-					
+					str_start += ofs;
 				}
-				if (code_p) {
-					w = 0.0;
-					curr_graph = font_parse_cp(font, code_p, prev_cp, pool_idx, &w);
-					
-					if (curr_graph){
-						graph_modify(curr_graph, ofs_x, 0.0, 1.0, 1.0, 0.0);
-						/* store the graph in the return vector */
-						if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
-					}
-					
-					if (w > 0.0 && (under_l)){
-						/* add the under line */
-						double y = -0.2;
-						graph_obj * txt_line = graph_new(pool_idx);
-						line_add(txt_line, ofs_x, y, pt1_z, ofs_x + w, y, pt1_z);
-						if (txt_line){
-							/* store the graph in the return vector */
-							if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
-						}
-					}
-					if (w > 0.0 && (over_l)){
-						/* add the over line */
-						double y = 1.2;
-						graph_obj * txt_line = graph_new(pool_idx);
-						line_add(txt_line, ofs_x, y, pt1_z, ofs_x + w, y, pt1_z);
-						if (txt_line){
-							/* store the graph in the return vector */
-							if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
-						}
-					}
-					if (w > 0.0 && (stike)){
-						/* add stikethough */
-						double y = 0.5;
-						graph_obj * txt_line = graph_new(pool_idx);
-						line_add(txt_line, ofs_x, y, pt1_z, ofs_x + w, y, pt1_z);
-						if (txt_line){
-							/* store the graph in the return vector */
-							if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
-						}
-					}
-					
-					/* update the ofset */
-					ofs_x += w;
-					
-					prev_cp = code_p;
-				}
-				str_start += ofs;
 			}
-			
 			txt_size = t_size;
 			double min_x, min_y, max_x, max_y;
 			int init = 0;

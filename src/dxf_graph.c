@@ -2276,7 +2276,6 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			/*sweep the string, decoding utf8 */
 			int ofs = 0, str_start = 0, code_p, prev_cp = 0, txt_len;
 			double w = 0.0, ofs_x = 0.0, ofs_y = 0.0;
-			//double w_fac = 1.0, spc_fac = 1.0, h_fac = 1.0;
 			current = NULL;
 			
 			for (i = 0; i < num_str; i++){
@@ -2457,7 +2456,27 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							case 'S':
 							case 's':
 								{
+									char *end_top = strpbrk(text + str_start + 2, "^/#");
 									char *next_mark = strchr(text + str_start + 2, ';');
+									
+									if ((end_top) && (next_mark)){
+										char top[DXF_MAX_CHARS];
+										char bottom[DXF_MAX_CHARS];
+										int len_top = end_top - (text + str_start + 2);
+										len_top = (len_top < DXF_MAX_CHARS)? len_top : DXF_MAX_CHARS - 1;
+										int len_bot = next_mark - end_top - 1;
+										len_bot = (len_bot < DXF_MAX_CHARS)? len_bot : DXF_MAX_CHARS - 1;
+										strncpy(top, text + str_start + 2, len_top);
+										strncpy(bottom, end_top + 1, len_bot);
+										top[len_top] = 0;
+										bottom[len_bot] = 0;
+										
+										
+										//list_node * graph = list_new(NULL, FRAME_LIFE);
+										//if (num_graph = font_parse_str(font, graph, pool_idx, tmp_str, NULL)){
+										printf("%s  /  %s\n", top, bottom);
+									}
+									
 									if (next_mark){
 										code_p = 0;
 										ofs = next_mark - text - str_start + 1;

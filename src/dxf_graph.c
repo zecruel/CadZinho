@@ -2108,7 +2108,7 @@ list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 	return NULL;
 }
 
-list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
+list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx, int ins_color){
 	if(ent){
 		int num_graph = 0;
 		dxf_node *current = NULL;
@@ -2126,6 +2126,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		int t_alin = 0;
 		int t_alin_v[10] = {0, 3, 3, 3, 2, 2, 2, 1, 1, 1};
 		int t_alin_h[10] = {0, 0, 1, 2, 0, 1, 2, 0, 1, 2};
+		int color = 256, lay_color = 7;
 		
 		double fnt_size, fnt_above, fnt_below, txt_size;
 		double t_pos_x, t_pos_y, t_center_x = 0, t_center_y = 0, t_base_x = 0, t_base_y = 0;
@@ -2134,6 +2135,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		
 		char text[DXF_MAX_CHARS], t_style[DXF_MAX_CHARS];
 		char tmp_str[DXF_MAX_CHARS];
+		char layer[DXF_MAX_CHARS];
 		char *pos_st, *pos_curr, *pos_tmp, special;
 		
 		int fnt_idx, i, paper = 0;
@@ -2166,6 +2168,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		text[0] = 0;
 		t_style[0] = 0;
 		tmp_str[0] = 0;
+		layer[0] = 0;
 		
 		if (ent->type == DXF_ENT){
 			if (ent->obj.content){
@@ -2186,6 +2189,10 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						break;
 					case 7:
 						strcpy(t_style, current->value.s_data);
+						break;
+					case 8:
+						strcpy(layer, current->value.s_data);
+						str_upp(layer);
 						break;
 					case 10:
 						pt1_x = current->value.d_data;
@@ -2223,6 +2230,9 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 					case 50:
 						t_rot = current->value.d_data;
 						break;
+					case 62:
+						color = current->value.i_data;
+						break;
 					case 67:
 						paper = current->value.i_data;
 						break;
@@ -2252,6 +2262,14 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				fnt_idx = dxf_tstyle_idx(drawing, "STANDARD");
 				stack[0].font = drawing->text_styles[fnt_idx].font;
 			}
+			
+			if (strlen(layer)>0){
+				/* find the layer index */
+				int lay_idx = dxf_lay_idx(drawing, layer);
+				lay_color = drawing->layers[lay_idx].color;
+			}
+			stack[0].color = color;
+			
 			
 			list_node * graph = list_new(NULL, FRAME_LIFE);
 			
@@ -2376,7 +2394,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							case 'P':
 							case 'p':
 								ofs_x = 0.0;
-								ofs_y -= 1.1;
+								ofs_y -= 1.1 * stack[stack_pos].h_fac;
 								ofs = 2;
 								code_p = 0;
 								break;
@@ -2397,6 +2415,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 								{
 									char *cont;
 									long new_color = strtol(text + str_start + 2, &cont, 10);
+									stack[stack_pos].color = new_color;
 									code_p = 0;
 									ofs = cont - text - str_start;
 									if ((cont) && (cont[0] == ';')) ofs++;
@@ -2420,13 +2439,13 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 									char *cont;
 									double factor = strtod(text + str_start + 2, &cont);
 									if (factor > 0.0){
-										//spc_fac = factor;
+										stack[stack_pos].h_fac = factor/t_size;
 									}
 									code_p = 0;
 									ofs = cont - text - str_start;
 									if (cont){
 										if (cont[0] == 'x' || cont[0] == 'X'){
-											//
+											stack[stack_pos].h_fac = factor;
 											cont++;
 											ofs++;
 										}
@@ -2518,39 +2537,64 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						w = 0.0;
 						curr_graph = font_parse_cp(stack[stack_pos].font, code_p, prev_cp, pool_idx, &w);
 						w *= stack[stack_pos].w_fac;
+						w *= stack[stack_pos].h_fac;
 						
 						if (curr_graph){
-							graph_modify(curr_graph, ofs_x, ofs_y, stack[stack_pos].w_fac, stack[stack_pos].h_fac, 0.0);
+							int curr_color = stack[stack_pos].color;
+							if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
+							else if (color == 0) curr_color = ins_color; /* color is by block */
+							if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
+							curr_graph->color = dxf_colors[curr_color];
+							
+							graph_modify(curr_graph, ofs_x, ofs_y, stack[stack_pos].w_fac * stack[stack_pos].h_fac, stack[stack_pos].h_fac, 0.0);
 							/* store the graph in the return vector */
 							if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
 						}
 						
 						if (w > 0.0 && (stack[stack_pos].under_l)){
 							/* add the under line */
-							double y = -0.2;
+							double y = -0.2 * stack[stack_pos].h_fac;
 							graph_obj * txt_line = graph_new(pool_idx);
 							line_add(txt_line, ofs_x, ofs_y + y, pt1_z, ofs_x + w, ofs_y + y, pt1_z);
 							if (txt_line){
+								int curr_color = stack[stack_pos].color;
+								if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
+								else if (color == 0) curr_color = ins_color; /* color is by block */
+								if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
+								txt_line->color = dxf_colors[curr_color];
+								
 								/* store the graph in the return vector */
 								if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
 							}
 						}
 						if (w > 0.0 && (stack[stack_pos].over_l)){
 							/* add the over line */
-							double y = 1.2;
+							double y = 1.2 * stack[stack_pos].h_fac;
 							graph_obj * txt_line = graph_new(pool_idx);
 							line_add(txt_line, ofs_x, ofs_y + y, pt1_z, ofs_x + w, ofs_y + y, pt1_z);
 							if (txt_line){
+								int curr_color = stack[stack_pos].color;
+								if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
+								else if (color == 0) curr_color = ins_color; /* color is by block */
+								if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
+								txt_line->color = dxf_colors[curr_color];
+								
 								/* store the graph in the return vector */
 								if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
 							}
 						}
 						if (w > 0.0 && (stack[stack_pos].stike)){
 							/* add stikethough */
-							double y = 0.5;
+							double y = 0.5 * stack[stack_pos].h_fac;
 							graph_obj * txt_line = graph_new(pool_idx);
 							line_add(txt_line, ofs_x, ofs_y + y, pt1_z, ofs_x + w, ofs_y + y, pt1_z);
 							if (txt_line){
+								int curr_color = stack[stack_pos].color;
+								if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
+								else if (color == 0) curr_color = ins_color; /* color is by block */
+								if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
+								txt_line->color = dxf_colors[curr_color];
+								
 								/* store the graph in the return vector */
 								if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
 							}
@@ -3315,7 +3359,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			}
 			else if (strcmp(current->obj.name, "MTEXT") == 0){
 				ent_type = DXF_MTEXT;
-				list_node * text_list = dxf_mtext_parse(drawing, current, p_space, pool_idx);
+				list_node * text_list = dxf_mtext_parse(drawing, current, p_space, pool_idx, ins_stack[ins_stack_pos].color);
 				
 				if ((text_list != NULL)){
 					list_node *curr_node = text_list->next;
@@ -3326,7 +3370,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 							curr_graph = (graph_obj *)curr_node->data;
 							/* store the graph in the return vector */
 							list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+							//proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
 							mod_idx++;
 						}
 						curr_node = curr_node->next;

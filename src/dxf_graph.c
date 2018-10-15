@@ -2467,14 +2467,115 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 										int len_bot = next_mark - end_top - 1;
 										len_bot = (len_bot < DXF_MAX_CHARS)? len_bot : DXF_MAX_CHARS - 1;
 										strncpy(top, text + str_start + 2, len_top);
-										strncpy(bottom, end_top + 1, len_bot);
+										
+										if (end_top[0] == '^' && end_top[1] == ' '){
+											len_bot--;
+											strncpy(bottom, end_top + 2, len_bot);
+										}
+										else strncpy(bottom, end_top + 1, len_bot);
+										
 										top[len_top] = 0;
 										bottom[len_bot] = 0;
 										
+										double top_w = 0.0, bot_w = 0.0, max_w = 0.0;
+										double pos_t = 0.0, pos_b = 0;
+										list_node * top_list = list_new(NULL, FRAME_LIFE);
+										font_parse_str(stack[stack_pos].font, top_list, pool_idx, top, &top_w);
+										list_node * bot_list = list_new(NULL, FRAME_LIFE);
+										font_parse_str(stack[stack_pos].font, bot_list, pool_idx, bottom, &bot_w);
 										
-										//list_node * graph = list_new(NULL, FRAME_LIFE);
-										//if (num_graph = font_parse_str(font, graph, pool_idx, tmp_str, NULL)){
-										printf("%s  /  %s\n", top, bottom);
+										if (end_top[0] == '^') {
+											pos_t = 1.1* stack[stack_pos].h_fac;
+										}
+										else if (end_top[0] == '/') {
+											pos_t = 1.2 * stack[stack_pos].h_fac;
+										}
+										else if (end_top[0] == '#') {
+											pos_t = 0.8 * stack[stack_pos].h_fac;
+											pos_b = top_w;
+										}
+										
+										max_w = (top_w > bot_w)? top_w : bot_w;
+										
+										list_node *curr_node = top_list->next;
+										/* starts the content sweep  */
+										while (curr_node != NULL){
+											if (curr_node->data){
+												curr_graph = (graph_obj *)curr_node->data;
+												/* move to top */
+												graph_modify(curr_graph, ofs_x, ofs_y + pos_t, stack[stack_pos].w_fac * stack[stack_pos].h_fac, stack[stack_pos].h_fac, 0.0);
+												
+												/* change color */
+												int curr_color = stack[stack_pos].color;
+												if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
+												else if (color == 0) curr_color = ins_color; /* color is by block */
+												if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
+												curr_graph->color = dxf_colors[curr_color];
+												
+												/* store the graph in the return vector */
+												if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
+											}
+											curr_node = curr_node->next;
+										}
+										
+										curr_node = bot_list->next;
+										/* starts the content sweep  */
+										while (curr_node != NULL){
+											if (curr_node->data){
+												curr_graph = (graph_obj *)curr_node->data;
+												/* move to bottom */
+												graph_modify(curr_graph, ofs_x + pos_b, ofs_y, stack[stack_pos].w_fac * stack[stack_pos].h_fac, stack[stack_pos].h_fac, 0.0);
+												
+												/* change color */
+												int curr_color = stack[stack_pos].color;
+												if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
+												else if (color == 0) curr_color = ins_color; /* color is by block */
+												if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
+												curr_graph->color = dxf_colors[curr_color];
+												
+												/* store the graph in the return vector */
+												if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
+											}
+											curr_node = curr_node->next;
+										}
+										/* draw horizontal bar */
+										if (end_top[0] == '/') {
+											double y = 1.1 * stack[stack_pos].h_fac;
+											graph_obj * txt_line = graph_new(pool_idx);
+											line_add(txt_line, ofs_x, ofs_y + y, 0.0, ofs_x + max_w, ofs_y + y, 0.0);
+											if (txt_line){
+												int curr_color = stack[stack_pos].color;
+												if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
+												else if (color == 0) curr_color = ins_color; /* color is by block */
+												if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
+												txt_line->color = dxf_colors[curr_color];
+												
+												/* store the graph in the return vector */
+												if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
+											}
+										}
+										/* draw inclined bar */
+										if (end_top[0] == '#') {
+											double y = stack[stack_pos].h_fac;
+											double base = top_w * stack[stack_pos].w_fac;
+											graph_obj * txt_line = graph_new(pool_idx);
+											line_add(txt_line, ofs_x + base - 0.4 * y, ofs_y + 0.1 * y, 0.0, ofs_x + base + 0.4 * y, ofs_y + 1.5 * y, 0.0);
+											if (txt_line){
+												int curr_color = stack[stack_pos].color;
+												if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
+												else if (color == 0) curr_color = ins_color; /* color is by block */
+												if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
+												txt_line->color = dxf_colors[curr_color];
+												
+												/* store the graph in the return vector */
+												if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
+											}
+										}
+										if (end_top[0] == '^' || end_top[0] == '/') {
+											ofs_x += max_w;
+										}
+										else ofs_x += top_w + bot_w;
+										
 									}
 									
 									if (next_mark){
@@ -2574,7 +2675,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							/* add the under line */
 							double y = -0.2 * stack[stack_pos].h_fac;
 							graph_obj * txt_line = graph_new(pool_idx);
-							line_add(txt_line, ofs_x, ofs_y + y, pt1_z, ofs_x + w, ofs_y + y, pt1_z);
+							line_add(txt_line, ofs_x, ofs_y + y, 0.0, ofs_x + w, ofs_y + y, 0.0);
 							if (txt_line){
 								int curr_color = stack[stack_pos].color;
 								if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
@@ -2590,7 +2691,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							/* add the over line */
 							double y = 1.2 * stack[stack_pos].h_fac;
 							graph_obj * txt_line = graph_new(pool_idx);
-							line_add(txt_line, ofs_x, ofs_y + y, pt1_z, ofs_x + w, ofs_y + y, pt1_z);
+							line_add(txt_line, ofs_x, ofs_y + y, 0.0, ofs_x + w, ofs_y + y, 0.0);
 							if (txt_line){
 								int curr_color = stack[stack_pos].color;
 								if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */

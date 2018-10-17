@@ -184,6 +184,9 @@ struct Dxf_drawing{
 	dxf_tstyle text_styles[DXF_MAX_FONTS];
 	int num_tstyles;
 	
+	void *font_list;
+	void *dflt_font;
+	
 };
 typedef struct Dxf_drawing dxf_drawing;
 

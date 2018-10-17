@@ -27,6 +27,36 @@ struct tfont * get_font_list(list_node *list, char *name){
 	
 }
 
+struct tfont * get_font_list2(list_node *list, char *name){
+/* get a specific font from list, by its name without extension*/
+	if (list == NULL) return NULL;
+	if (name == NULL) return NULL;
+	
+	char nam[DXF_MAX_CHARS], nam_cmp[DXF_MAX_CHARS];
+	struct tfont * font;
+	
+	strncpy(nam, name, DXF_MAX_CHARS); /* preserve original string */
+	strip_ext(nam); /* strip extension, if exist */
+	str_upp(nam); /* change to upper case */
+	
+	list_node *current = list->next;
+	while (current != NULL){ /* sweep the list */
+		if (current->data){
+			font = (struct tfont *)current->data;
+			strncpy(nam_cmp, font->name, DXF_MAX_CHARS); /* preserve original string */
+			strip_ext(nam_cmp); /* strip extension */
+			if (strncmp(nam, nam_cmp, DXF_MAX_CHARS) == 0)
+				/* font found */
+				return font;
+			
+		}
+		current = current->next;
+	}
+	
+	return NULL; /* fail the search */
+	
+}
+
 
 struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 /* add to list a font from path or name*/

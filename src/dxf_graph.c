@@ -39,6 +39,13 @@ int dxf_ent_get_color(dxf_drawing *drawing, dxf_node * ent, int ins_color){
 	return color;
 }
 
+bmp_color dxf_get_color (int curr_color, int lay_color, int ins_color){
+	if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
+	else if (curr_color == 0) curr_color = ins_color; /* color is by block */
+	if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
+	return dxf_colors[curr_color];
+}
+
 int dxf_ent_get_ltype(dxf_drawing *drawing, dxf_node * ent, int ins_ltype){
 	int ltype_default = dxf_ltype_idx(drawing, "Continuous");
 	int ltype = ltype_default, by_layer = 0;
@@ -1100,7 +1107,8 @@ graph_obj * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 			
 			/* find the tstyle index and font*/
 			fnt_idx = dxf_tstyle_idx(drawing, t_style);
-			shx_font = drawing->text_styles[fnt_idx].shx_font;
+			if (fnt_idx >= 0) shx_font = drawing->text_styles[fnt_idx].shx_font;
+			else shx_font = NULL;
 			
 			if(shx_font == NULL){ /* if font not loaded*/
 				/* use the deafault font*/
@@ -1383,11 +1391,13 @@ list_node * dxf_text_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			/* find the tstyle index and font*/
 			if (strlen(t_style) > 0){
 				fnt_idx = dxf_tstyle_idx(drawing, t_style);
-				font = drawing->text_styles[fnt_idx].font;
+				if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
+				else font = drawing->dflt_font;
 			}
 			else {
 				fnt_idx = dxf_tstyle_idx(drawing, "STANDARD");
-				font = drawing->text_styles[fnt_idx].font;
+				if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
+				else font = drawing->dflt_font;
 			}
 			
 			/* find and replace special symbols in the text*/
@@ -1656,11 +1666,13 @@ list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			/* find the tstyle index and font*/
 			if (strlen(t_style) > 0){
 				fnt_idx = dxf_tstyle_idx(drawing, t_style);
-				font = drawing->text_styles[fnt_idx].font;
+				if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
+				else font = drawing->dflt_font;
 			}
 			else {
 				fnt_idx = dxf_tstyle_idx(drawing, "STANDARD");
-				font = drawing->text_styles[fnt_idx].font;
+				if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
+				else font = drawing->dflt_font;
 			}
 			
 			list_node * graph = list_new(NULL, FRAME_LIFE);
@@ -2256,11 +2268,13 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			/* find the tstyle index and font*/
 			if (strlen(t_style) > 0){
 				fnt_idx = dxf_tstyle_idx(drawing, t_style);
-				stack[0].font = drawing->text_styles[fnt_idx].font;
+				if (fnt_idx >= 0) stack[0].font = drawing->text_styles[fnt_idx].font;
+				else stack[0].font = drawing->dflt_font;
 			}
 			else {
 				fnt_idx = dxf_tstyle_idx(drawing, "STANDARD");
-				stack[0].font = drawing->text_styles[fnt_idx].font;
+				if (fnt_idx >= 0) stack[0].font = drawing->text_styles[fnt_idx].font;
+				else stack[0].font = drawing->dflt_font;
 			}
 			
 			if (strlen(layer)>0){
@@ -2389,9 +2403,20 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 								ofs = 2;
 								code_p = 0;
 								break;
+							/*paragraph parameters*/
+							case 'p':
+								{
+									char *next_mark = strchr(text + str_start + 2, ';');
+									
+									if (next_mark){
+										
+										code_p = 0;
+										ofs = next_mark - text - str_start + 1;
+									}
+								}
+								break;
 							/* new paragraph */
 							case 'P':
-							case 'p':
 								ofs_x = 0.0;
 								ofs_y -= 1.1 * stack[stack_pos].h_fac;
 								ofs = 2;
@@ -2425,7 +2450,20 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							case 'f':
 								{
 									char *next_mark = strchr(text + str_start + 2, ';');
-									if (next_mark){
+									char *end_name = strpbrk(text + str_start + 2, "|;");
+									
+									if ((end_name) && (next_mark)){
+										char fnt_nam[DXF_MAX_CHARS];
+										int len_name = end_name - (text + str_start + 2);
+										len_name = (len_name < DXF_MAX_CHARS)? len_name : DXF_MAX_CHARS - 1;
+										strncpy(fnt_nam, text + str_start + 2, len_name);
+										fnt_nam[len_name] = 0;
+										
+										struct tfont *new_font = get_font_list2(drawing->font_list, fnt_nam);
+										if (new_font){
+											stack[stack_pos].font = new_font;
+										}
+										
 										code_p = 0;
 										ofs = next_mark - text - str_start + 1;
 									}
@@ -2506,11 +2544,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 												graph_modify(curr_graph, ofs_x, ofs_y + pos_t, stack[stack_pos].w_fac * stack[stack_pos].h_fac, stack[stack_pos].h_fac, 0.0);
 												
 												/* change color */
-												int curr_color = stack[stack_pos].color;
-												if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
-												else if (color == 0) curr_color = ins_color; /* color is by block */
-												if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
-												curr_graph->color = dxf_colors[curr_color];
+												curr_graph->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
 												
 												/* store the graph in the return vector */
 												if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
@@ -2527,11 +2561,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 												graph_modify(curr_graph, ofs_x + pos_b, ofs_y, stack[stack_pos].w_fac * stack[stack_pos].h_fac, stack[stack_pos].h_fac, 0.0);
 												
 												/* change color */
-												int curr_color = stack[stack_pos].color;
-												if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
-												else if (color == 0) curr_color = ins_color; /* color is by block */
-												if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
-												curr_graph->color = dxf_colors[curr_color];
+												curr_graph->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
 												
 												/* store the graph in the return vector */
 												if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
@@ -2544,11 +2574,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 											graph_obj * txt_line = graph_new(pool_idx);
 											line_add(txt_line, ofs_x, ofs_y + y, 0.0, ofs_x + max_w, ofs_y + y, 0.0);
 											if (txt_line){
-												int curr_color = stack[stack_pos].color;
-												if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
-												else if (color == 0) curr_color = ins_color; /* color is by block */
-												if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
-												txt_line->color = dxf_colors[curr_color];
+												txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
 												
 												/* store the graph in the return vector */
 												if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
@@ -2561,11 +2587,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 											graph_obj * txt_line = graph_new(pool_idx);
 											line_add(txt_line, ofs_x + base - 0.4 * y, ofs_y + 0.1 * y, 0.0, ofs_x + base + 0.4 * y, ofs_y + 1.5 * y, 0.0);
 											if (txt_line){
-												int curr_color = stack[stack_pos].color;
-												if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
-												else if (color == 0) curr_color = ins_color; /* color is by block */
-												if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
-												txt_line->color = dxf_colors[curr_color];
+												txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
 												
 												/* store the graph in the return vector */
 												if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
@@ -2660,11 +2682,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						w *= stack[stack_pos].h_fac;
 						
 						if (curr_graph){
-							int curr_color = stack[stack_pos].color;
-							if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
-							else if (color == 0) curr_color = ins_color; /* color is by block */
-							if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
-							curr_graph->color = dxf_colors[curr_color];
+							curr_graph->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
 							
 							graph_modify(curr_graph, ofs_x, ofs_y, stack[stack_pos].w_fac * stack[stack_pos].h_fac, stack[stack_pos].h_fac, 0.0);
 							/* store the graph in the return vector */
@@ -2677,11 +2695,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							graph_obj * txt_line = graph_new(pool_idx);
 							line_add(txt_line, ofs_x, ofs_y + y, 0.0, ofs_x + w, ofs_y + y, 0.0);
 							if (txt_line){
-								int curr_color = stack[stack_pos].color;
-								if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
-								else if (color == 0) curr_color = ins_color; /* color is by block */
-								if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
-								txt_line->color = dxf_colors[curr_color];
+								txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
 								
 								/* store the graph in the return vector */
 								if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
@@ -2693,11 +2707,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							graph_obj * txt_line = graph_new(pool_idx);
 							line_add(txt_line, ofs_x, ofs_y + y, 0.0, ofs_x + w, ofs_y + y, 0.0);
 							if (txt_line){
-								int curr_color = stack[stack_pos].color;
-								if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
-								else if (color == 0) curr_color = ins_color; /* color is by block */
-								if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
-								txt_line->color = dxf_colors[curr_color];
+								txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
 								
 								/* store the graph in the return vector */
 								if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
@@ -2709,11 +2719,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							graph_obj * txt_line = graph_new(pool_idx);
 							line_add(txt_line, ofs_x, ofs_y + y, pt1_z, ofs_x + w, ofs_y + y, pt1_z);
 							if (txt_line){
-								int curr_color = stack[stack_pos].color;
-								if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
-								else if (color == 0) curr_color = ins_color; /* color is by block */
-								if ((curr_color == 0) || (abs(curr_color) >= 256)) curr_color = 7; /* invalid  color*/
-								txt_line->color = dxf_colors[curr_color];
+								txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
 								
 								/* store the graph in the return vector */
 								if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
@@ -2881,7 +2887,9 @@ graph_obj * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 			
 			/* find the font index and font*/
 			fnt_idx = dxf_tstyle_idx(drawing, t_style);
-			shx_font = drawing->text_styles[fnt_idx].shx_font;
+			if (fnt_idx >= 0) shx_font = drawing->text_styles[fnt_idx].shx_font;
+			else shx_font = NULL;
+			
 			
 			if(shx_font == NULL){ /* if font not loaded*/
 				/* use the deafault font*/

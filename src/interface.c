@@ -497,6 +497,9 @@ int main(int argc, char** argv){
 	
 	/* init the drawing */
 	gui->drawing = malloc(sizeof(dxf_drawing));
+	gui->drawing->font_list = gui->font_list;
+	gui->drawing->dflt_font = gui->dflt_font;
+	
 	url = NULL; /* pass a null file only for initialize the drawing structure */
 	//dxf_open(gui->drawing, url);
 	while (dxf_read (gui->drawing, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &progress) > 0){

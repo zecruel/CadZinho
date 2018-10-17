@@ -1285,7 +1285,7 @@ int dxf_tstyle_idx (dxf_drawing *drawing, char *name){
 	strncpy(name1, name, DXF_MAX_CHARS); /* preserve original string */
 	str_upp(name1); /*upper case */
 	if (drawing){
-		for (i=1; i < drawing->num_tstyles; i++){
+		for (i=0; i < drawing->num_tstyles; i++){
 			strncpy(name2, drawing->text_styles[i].name, DXF_MAX_CHARS); /* preserve original string */
 			str_upp(name2); /*upper case */
 			if (strcmp(name1, name2) == 0){
@@ -1294,7 +1294,7 @@ int dxf_tstyle_idx (dxf_drawing *drawing, char *name){
 		}
 	}
 	
-	return 0; /*if search fails, return the standard tstyle */
+	return -1; /*search fails */
 }
 
 int dxf_save (char *path, dxf_drawing *drawing){

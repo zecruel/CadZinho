@@ -139,3 +139,21 @@ int list_clear(list_node * list){
 	}
 	return 0; /* return fail */
 }
+
+int list_merge(list_node * dest, list_node * src){
+	
+	if (!dest || !src) return 0; /* return fail */
+	
+	list_node *next = src->next;
+	list_node *end = dest->end;
+	
+	if (next && end){
+		next->prev = end;
+		end->next = next;
+		dest->end = src->end;
+		
+		return 1; /* return success */
+	}
+	
+	return 0; /* return fail */
+}

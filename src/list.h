@@ -45,4 +45,6 @@ list_node *list_find_data(list_node * list, void *data);
 
 int list_clear(list_node * list);
 
+int list_merge(list_node * dest, list_node * src);
+
 #endif

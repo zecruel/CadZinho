@@ -2120,7 +2120,7 @@ list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 	return NULL;
 }
 
-list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx, int ins_color){
+list_node * dxf_mtext_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx, int ins_color){
 	if(ent){
 		int num_graph = 0;
 		dxf_node *current = NULL;
@@ -2547,10 +2547,13 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 												curr_graph->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
 												
 												/* store the graph in the return vector */
-												if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
+												//if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
 											}
 											curr_node = curr_node->next;
+											
 										}
+										/* store the graph in the return vector */
+										if (list_merge(graph, top_list)) num_graph++;
 										
 										curr_node = bot_list->next;
 										/* starts the content sweep  */
@@ -2564,10 +2567,13 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 												curr_graph->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
 												
 												/* store the graph in the return vector */
-												if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
+												//if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
 											}
 											curr_node = curr_node->next;
 										}
+										/* store the graph in the return vector */
+										if (list_merge(graph, bot_list)) num_graph++;
+										
 										/* draw horizontal bar */
 										if (end_top[0] == '/') {
 											double y = 1.1 * stack[stack_pos].h_fac;
@@ -2734,6 +2740,731 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 					str_start += ofs;
 				}
 			}
+			txt_size = t_size;
+			double min_x, min_y, max_x, max_y;
+			int init = 0;
+			graph_list_ext(graph, &init, &min_x, &min_y, &max_x, &max_y);
+			txt_w = fabs(max_x);
+			txt_h = fabs(max_y - min_y);
+			
+			t_base_x =  pt1_x;
+			t_base_y =  pt1_y;
+			
+			/* find the insert point of text, in function of its aling */
+			t_center_x = (double)t_alin_h[t_alin] * (t_scale_x*txt_w * txt_size/2);
+			
+			
+			if(t_alin_v[t_alin] != 1){
+				t_center_y = (double)(t_alin_v[t_alin] - 1) * stack[stack_pos].font->above * txt_size/2;
+			}
+			else{
+				t_center_y = - stack[stack_pos].font->below * txt_size;
+			}
+			
+			
+			t_pos_x = t_base_x - t_center_x;
+			t_pos_y = t_base_y - t_center_y;
+			
+			/* apply the scales, offsets and rotation to graphs */
+			graph_list_modify(graph, t_pos_x, t_pos_y, t_scale_x*txt_size, txt_size, 0.0);
+			graph_list_rot(graph, t_base_x, t_base_y, t_rot);
+			
+			/* convert OCS to WCS */
+			normal[0] = extru_x;
+			normal[1] = extru_y;
+			normal[2] = extru_z;
+			graph_list_mod_ax(graph, normal, elev, 0, num_graph - 1);
+			
+			
+			return graph;
+		}
+	}
+	return NULL;
+}
+
+list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx, int ins_color){
+	if(ent){
+		int num_graph = 0;
+		dxf_node *current = NULL;
+		graph_obj *curr_graph = NULL;
+		double pt1_x = 0, pt1_y = 0, pt1_z = 0;
+		double pt2_x = 0, pt2_y = 0, pt2_z = 0;
+		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
+		double elev = 0.0;
+		
+		//shape *shx_font = NULL;
+		//struct tfont *font = NULL;
+		
+		double t_size = 0, t_rot = 0;
+		
+		int t_alin = 0;
+		int t_alin_v[10] = {0, 3, 3, 3, 2, 2, 2, 1, 1, 1};
+		int t_alin_h[10] = {0, 0, 1, 2, 0, 1, 2, 0, 1, 2};
+		int color = 256, lay_color = 7;
+		
+		double fnt_size, fnt_above, fnt_below, txt_size;
+		double t_pos_x, t_pos_y, t_center_x = 0, t_center_y = 0, t_base_x = 0, t_base_y = 0;
+		double t_scale_x = 1, t_scale_y = 1, txt_w, txt_h;
+		double rect_w = 0.0;
+		
+		char text[DXF_MAX_CHARS], t_style[DXF_MAX_CHARS];
+		char tmp_str[DXF_MAX_CHARS];
+		char layer[DXF_MAX_CHARS];
+		char *pos_st, *pos_curr, *pos_tmp, special;
+		
+		int fnt_idx, i, paper = 0;
+		
+		/*flags*/
+		int pt1 = 0, pt2 = 0;
+		//int under_l = 0, over_l = 0, stike = 0;
+		int num_str = 0;
+		
+		struct param{
+			int under_l, over_l, stike, color;
+			double w_fac, spc_fac, h_fac, o_ang;
+			struct tfont *font;
+		} stack[10];
+		
+		int stack_pos = 0;
+		
+		stack[0].under_l = 0;
+		stack[0].over_l = 0;
+		stack[0].stike = 0;
+		stack[0].color = 0;
+		stack[0].w_fac = 1.0;
+		stack[0].spc_fac = 1.0;
+		stack[0].h_fac = 1.0;
+		stack[0].o_ang = 0.0;
+		stack[0].font = NULL;
+		
+		
+		/* clear the strings */
+		text[0] = 0;
+		t_style[0] = 0;
+		tmp_str[0] = 0;
+		layer[0] = 0;
+		
+		if (ent->type == DXF_ENT){
+			if (ent->obj.content){
+				current = ent->obj.content->next;
+				//printf("%s\n", ent->obj.name);
+			}
+		}
+		while (current){
+			if (current->type == DXF_ATTR){ /* DXF attibute */
+				switch (current->value.group){
+					case 1:
+						//strcpy(text, current->value.s_data);
+						num_str++;
+						break;
+					case 3:
+						//strcpy(text, current->value.s_data);
+						num_str++;
+						break;
+					case 7:
+						strcpy(t_style, current->value.s_data);
+						break;
+					case 8:
+						strcpy(layer, current->value.s_data);
+						str_upp(layer);
+						break;
+					case 10:
+						pt1_x = current->value.d_data;
+						pt1 = 1; /* set flag */
+						break;
+					case 11:
+						pt2_x = current->value.d_data;
+						pt2 = 1; /* set flag */
+						break;
+					case 20:
+						pt1_y = current->value.d_data;
+						pt1 = 1; /* set flag */
+						break;
+					case 21:
+						pt2_y = current->value.d_data;
+						pt2 = 1; /* set flag */
+						break;
+					case 30:
+						pt1_z = current->value.d_data;
+						pt1 = 1; /* set flag */
+						break;
+					case 38:
+						elev = current->value.d_data;
+						break;
+					case 31:
+						pt2_z = current->value.d_data;
+						pt2 = 1; /* set flag */
+						break;
+					case 40:
+						t_size = current->value.d_data;
+						break;
+					case 41:
+						rect_w = current->value.d_data;
+						break;
+					case 50:
+						t_rot = current->value.d_data;
+						break;
+					case 62:
+						color = current->value.i_data;
+						break;
+					case 67:
+						paper = current->value.i_data;
+						break;
+					case 71:
+						t_alin = current->value.i_data;
+						break;
+					case 210:
+						extru_x = current->value.d_data;
+						break;
+					case 220:
+						extru_y = current->value.d_data;
+						break;
+					case 230:
+						extru_z = current->value.d_data;
+				}
+			}
+			current = current->next; /* go to the next in the list */
+		}
+		if (((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))){
+			
+			/* find the tstyle index and font*/
+			if (strlen(t_style) > 0){
+				fnt_idx = dxf_tstyle_idx(drawing, t_style);
+				if (fnt_idx >= 0) stack[0].font = drawing->text_styles[fnt_idx].font;
+				else stack[0].font = drawing->dflt_font;
+			}
+			else {
+				fnt_idx = dxf_tstyle_idx(drawing, "STANDARD");
+				if (fnt_idx >= 0) stack[0].font = drawing->text_styles[fnt_idx].font;
+				else stack[0].font = drawing->dflt_font;
+			}
+			
+			if (strlen(layer)>0){
+				/* find the layer index */
+				int lay_idx = dxf_lay_idx(drawing, layer);
+				lay_color = drawing->layers[lay_idx].color;
+			}
+			stack[0].color = color;
+			
+			
+			list_node * graph = list_new(NULL, FRAME_LIFE);
+			list_node * line = list_new(NULL, FRAME_LIFE);
+			list_node * word = list_new(NULL, FRAME_LIFE);
+			
+			int terminate_word = 0;
+			int ofs = 0, str_start = 0, code_p, prev_cp = 0, txt_len;
+			double w = 0.0, word_x = 0.0, word_y = 0.0, word_w = 0.0;
+			double line_x = 0.0, line_y = 0.0, line_w = 0.0;
+			double spacing = 0.5;
+			current = NULL;
+			
+			for (i = 0; i < num_str; i++){
+				if (i < num_str - 1) current = dxf_find_attr_i(ent, 3, i);
+				else current = dxf_find_attr_i(ent, 1, 0);
+				if (!current) continue;
+				ofs = 0;
+				str_start = 0;
+				strcpy(text, current->value.s_data);
+				txt_len = strlen(text);
+				
+				/*sweep the string, decoding utf8 */
+				while (ofs = utf8_to_codepoint(text + str_start, &code_p)){
+					
+					if ((str_start < txt_len - 2) && (text[str_start] == '%') && (text[str_start + 1] == '%')){
+						/*get the control character */
+						special = text[str_start + 2];
+						/* verify the action to do */
+						switch (special){
+							/* put the  diameter simbol (unicode D8 Hex) in text*/
+							case 'c':
+							case 'C':
+								code_p = 216;
+								ofs = 3;
+								break;
+							/* put the degrees simbol in text*/
+							case 'd':
+							case 'D':
+								code_p = 176;
+								ofs = 3;
+								break;
+							/* put the plus/minus tolerance simbol in text*/
+							case 'p':
+							case 'P':
+								code_p = 177;
+								ofs = 3;
+								break;
+							/* under line */
+							case 'u':
+							case 'U':
+								stack[stack_pos].under_l = !(stack[stack_pos].under_l);
+								ofs = 3;
+								code_p = 0;
+								break;
+							/* over line */
+							case 'o':
+							case 'O':
+								stack[stack_pos].over_l = !(stack[stack_pos].over_l);
+								ofs = 3;
+								code_p = 0;
+								break;
+							default:
+							{
+								char *cont;
+								long cp = strtol(text + str_start + 2, &cont, 10);
+								if (cp){
+									code_p = cp;
+									ofs = cont - text - str_start;
+								}
+							}
+								break;
+						}
+						
+					}
+					if ((str_start < txt_len - 1) && (text[str_start] == '\\')){
+						/*get the control character */
+						special = text[str_start + 1];
+						
+						/* verify the action to do */
+						switch (special){
+							case '\\':
+								code_p = '\\';
+								ofs = 2;
+								break;
+							case '{':
+								code_p = '{';
+								ofs = 2;
+								break;
+							case '}':
+								code_p = '}';
+								ofs = 2;
+								break;
+							/* under line */
+							case 'l':
+								stack[stack_pos].under_l = 0;
+								ofs = 2;
+								code_p = 0;
+								break;
+							case 'L':
+								stack[stack_pos].under_l = 1;
+								ofs = 2;
+								code_p = 0;
+								break;
+							/* over line */
+							case 'o':
+								stack[stack_pos].over_l = 0;
+								ofs = 2;
+								code_p = 0;
+								break;
+							case 'O':
+								stack[stack_pos].over_l = 1;
+								ofs = 2;
+								code_p = 0;
+								break;
+							/* stikethrough */
+							case 'k':
+								stack[stack_pos].stike = 0;
+								ofs = 2;
+								code_p = 0;
+								break;
+							case 'K':
+								stack[stack_pos].stike = 1;
+								ofs = 2;
+								code_p = 0;
+								break;
+							/*paragraph parameters*/
+							case 'p':
+								{
+									char *next_mark = strchr(text + str_start + 2, ';');
+									
+									if (next_mark){
+										
+										code_p = 0;
+										ofs = next_mark - text - str_start + 1;
+									}
+								}
+								break;
+							/* new paragraph */
+							case 'P':
+								/*append remaining word in current line*/
+								/* positioning current word */
+								graph_list_modify(word, word_x, word_y, 1.0, 1.0, 0.0);
+								list_merge (line, word);
+								list_clear (word); /* prepare to next word */
+								/* positioning current line */
+								graph_list_modify(line, line_x, line_y, 1.0, 1.0, 0.0);
+								/* append current line in main graph */
+								list_merge (graph, line);
+								list_clear (line); /* prepare to next line */
+							
+								word_x = 0.0; word_y = 0.0;
+								word_w = 0.0;
+								line_x = 0.0;
+								line_y -= 1.1 * stack[stack_pos].h_fac;
+								ofs = 2;
+								code_p = 0;
+								break;
+							case 'U':
+							case 'u':
+								if (text[str_start + 2] == '+'){
+									char *cont;
+									long cp = strtol(text + str_start + 3, &cont, 16);
+									if (cp){
+										code_p = cp;
+										ofs = cont - text - str_start;
+									}
+								}
+								break;
+							/* change color */
+							case 'C':
+							case 'c':
+								{
+									char *cont;
+									long new_color = strtol(text + str_start + 2, &cont, 10);
+									stack[stack_pos].color = new_color;
+									code_p = 0;
+									ofs = cont - text - str_start;
+									if ((cont) && (cont[0] == ';')) ofs++;
+								}
+								break;
+							/* change font */
+							case 'F':
+							case 'f':
+								{
+									char *next_mark = strchr(text + str_start + 2, ';');
+									char *end_name = strpbrk(text + str_start + 2, "|;");
+									
+									if ((end_name) && (next_mark)){
+										char fnt_nam[DXF_MAX_CHARS];
+										int len_name = end_name - (text + str_start + 2);
+										len_name = (len_name < DXF_MAX_CHARS)? len_name : DXF_MAX_CHARS - 1;
+										strncpy(fnt_nam, text + str_start + 2, len_name);
+										fnt_nam[len_name] = 0;
+										
+										struct tfont *new_font = get_font_list2(drawing->font_list, fnt_nam);
+										if (new_font){
+											stack[stack_pos].font = new_font;
+										}
+										
+										code_p = 0;
+										ofs = next_mark - text - str_start + 1;
+									}
+								}
+								break;
+							/* change height */
+							case 'H':
+							case 'h':
+								{
+									char *cont;
+									double factor = strtod(text + str_start + 2, &cont);
+									if (factor > 0.0){
+										stack[stack_pos].h_fac = factor/t_size;
+									}
+									code_p = 0;
+									ofs = cont - text - str_start;
+									if (cont){
+										if (cont[0] == 'x' || cont[0] == 'X'){
+											stack[stack_pos].h_fac = factor;
+											cont++;
+											ofs++;
+										}
+										if (cont[0] == ';') ofs++;
+									}
+								}
+								break;
+							/* stacks text */
+							case 'S':
+							case 's':
+								{
+									char *end_top = strpbrk(text + str_start + 2, "^/#");
+									char *next_mark = strchr(text + str_start + 2, ';');
+									
+									if ((end_top) && (next_mark)){
+										char top[DXF_MAX_CHARS];
+										char bottom[DXF_MAX_CHARS];
+										int len_top = end_top - (text + str_start + 2);
+										len_top = (len_top < DXF_MAX_CHARS)? len_top : DXF_MAX_CHARS - 1;
+										int len_bot = next_mark - end_top - 1;
+										len_bot = (len_bot < DXF_MAX_CHARS)? len_bot : DXF_MAX_CHARS - 1;
+										strncpy(top, text + str_start + 2, len_top);
+										
+										if (end_top[0] == '^' && end_top[1] == ' '){
+											len_bot--;
+											strncpy(bottom, end_top + 2, len_bot);
+										}
+										else strncpy(bottom, end_top + 1, len_bot);
+										
+										top[len_top] = 0;
+										bottom[len_bot] = 0;
+										
+										double top_w = 0.0, bot_w = 0.0, max_w = 0.0;
+										double pos_t = 0.0, pos_b = 0;
+										list_node * top_list = list_new(NULL, FRAME_LIFE);
+										font_parse_str(stack[stack_pos].font, top_list, pool_idx, top, &top_w);
+										list_node * bot_list = list_new(NULL, FRAME_LIFE);
+										font_parse_str(stack[stack_pos].font, bot_list, pool_idx, bottom, &bot_w);
+										
+										if (end_top[0] == '^') {
+											pos_t = 1.1* stack[stack_pos].h_fac;
+										}
+										else if (end_top[0] == '/') {
+											pos_t = 1.2 * stack[stack_pos].h_fac;
+										}
+										else if (end_top[0] == '#') {
+											pos_t = 0.8 * stack[stack_pos].h_fac;
+											pos_b = top_w;
+										}
+										
+										max_w = (top_w > bot_w)? top_w : bot_w;
+										
+										list_node *curr_node = top_list->next;
+										/* starts the content sweep  */
+										while (curr_node != NULL){
+											if (curr_node->data){
+												curr_graph = (graph_obj *)curr_node->data;
+												/* move to top */
+												graph_modify(curr_graph, word_w, word_y + pos_t, stack[stack_pos].w_fac * stack[stack_pos].h_fac, stack[stack_pos].h_fac, 0.0);
+												
+												/* change color */
+												curr_graph->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+												
+												/* store the graph in the return vector */
+												//if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
+											}
+											curr_node = curr_node->next;
+											
+										}
+										/* store the graph in the return vector */
+										if (list_merge(word, top_list)) num_graph++;
+										
+										curr_node = bot_list->next;
+										/* starts the content sweep  */
+										while (curr_node != NULL){
+											if (curr_node->data){
+												curr_graph = (graph_obj *)curr_node->data;
+												/* move to bottom */
+												graph_modify(curr_graph, word_w + pos_b, word_y, stack[stack_pos].w_fac * stack[stack_pos].h_fac, stack[stack_pos].h_fac, 0.0);
+												
+												/* change color */
+												curr_graph->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+												
+												/* store the graph in the return vector */
+												//if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
+											}
+											curr_node = curr_node->next;
+										}
+										/* store the graph in the return vector */
+										if (list_merge(word, bot_list)) num_graph++;
+										
+										/* draw horizontal bar */
+										if (end_top[0] == '/') {
+											double y = 1.1 * stack[stack_pos].h_fac;
+											graph_obj * txt_line = graph_new(pool_idx);
+											line_add(txt_line, word_w, word_y + y, 0.0, word_w + max_w, word_y + y, 0.0);
+											if (txt_line){
+												txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+												
+												/* store the graph in the return vector */
+												if (list_push(word, list_new((void *)txt_line, pool_idx))) num_graph++;
+											}
+										}
+										/* draw inclined bar */
+										if (end_top[0] == '#') {
+											double y = stack[stack_pos].h_fac;
+											double base = top_w * stack[stack_pos].w_fac;
+											graph_obj * txt_line = graph_new(pool_idx);
+											line_add(txt_line, word_w + base - 0.4 * y, word_y + 0.1 * y, 0.0, word_w + base + 0.4 * y, word_y + 1.5 * y, 0.0);
+											if (txt_line){
+												txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+												
+												/* store the graph in the return vector */
+												if (list_push(word, list_new((void *)txt_line, pool_idx))) num_graph++;
+											}
+										}
+										if (end_top[0] == '^' || end_top[0] == '/') {
+											word_w += max_w;
+										}
+										else word_w += top_w + bot_w;
+										
+									}
+									
+									if (next_mark){
+										code_p = 0;
+										ofs = next_mark - text - str_start + 1;
+									}
+								}
+								break;
+							/* adjust the space between chars */
+							case 'T':
+							case 't':
+								{
+									char *cont;
+									double factor = strtod(text + str_start + 2, &cont);
+									if (factor > 0.0){
+										stack[stack_pos].spc_fac = factor;
+									}
+									code_p = 0;
+									ofs = cont - text - str_start;
+									if ((cont) && (cont[0] == ';')) ofs++;
+								}
+								break;
+							/* change obliquing angle */
+							case 'Q':
+							case 'q':
+								{
+									char *cont;
+									double factor = strtod(text + str_start + 2, &cont);
+									if (factor > 0.0){
+										//spc_fac = factor;
+									}
+									code_p = 0;
+									ofs = cont - text - str_start;
+									if ((cont) && (cont[0] == ';')) ofs++;
+								}
+								break;
+							/* width factor */
+							case 'W':
+							case 'w':
+								{
+									char *cont;
+									double factor = strtod(text + str_start + 2, &cont);
+									if (factor > 0.0){
+										stack[stack_pos].w_fac = factor;
+									}
+									code_p = 0;
+									ofs = cont - text - str_start;
+									if ((cont) && (cont[0] == ';')) ofs++;
+								}
+								break;
+							/* vertical alignment (0 - bottm, 1 - center, 2 - top) */
+							case 'A':
+							case 'a':
+								{
+									char *cont;
+									long new_al = strtol(text + str_start + 2, &cont, 10);
+									code_p = 0;
+									ofs = cont - text - str_start;
+									if ((cont) && (cont[0] == ';')) ofs++;
+								}
+								break;
+						}
+						
+						
+						
+					}
+					else if(text[str_start] == '{') {
+						if (stack_pos < 9) {
+							stack_pos++;
+							stack[stack_pos] = stack[stack_pos - 1];
+						}
+						code_p = 0;
+					}
+					else if(text[str_start] == '}') {
+						if (stack_pos > 0) stack_pos--;
+						code_p = 0;
+					}
+					else if(text[str_start] == ' ') {
+						spacing = 0.4;
+						terminate_word = 1;
+						code_p = 0;
+					}
+					else if(text[str_start] == '\t') {
+						spacing = 0.4 * 4;
+						terminate_word = 1;
+						code_p = 0;
+					}
+					if (terminate_word){
+						terminate_word = 0;
+						if ((rect_w > 0.0) && (word_x + word_w > rect_w/t_size)){
+							/* positioning current line */
+							graph_list_modify(line, line_x, line_y, 1.0, 1.0, 0.0);
+							/* append current line in main graph */
+							list_merge (graph, line);
+							list_clear (line); /* prepare to next line */
+						
+							word_x = 0.0; word_y = 0.0;
+							line_x = 0.0;
+							line_y -= 1.1 * stack[stack_pos].h_fac;
+						}
+						
+						/* positioning current word */
+						graph_list_modify(word, word_x, word_y, 1.0, 1.0, 0.0);
+						list_merge (line, word);
+						list_clear (word); /* prepare to next word */
+						word_x += word_w + spacing;
+						word_w = 0.0;
+					}
+					
+					
+					if (code_p) {
+						w = 0.0;
+						curr_graph = font_parse_cp(stack[stack_pos].font, code_p, prev_cp, pool_idx, &w);
+						w *= stack[stack_pos].w_fac;
+						w *= stack[stack_pos].h_fac;
+						
+						if (curr_graph){
+							curr_graph->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+							
+							graph_modify(curr_graph, word_w, word_y, stack[stack_pos].w_fac * stack[stack_pos].h_fac, stack[stack_pos].h_fac, 0.0);
+							/* store the graph in the return vector */
+							if (list_push(word, list_new((void *)curr_graph, pool_idx))) num_graph++;
+						}
+						
+						if (w > 0.0 && (stack[stack_pos].under_l)){
+							/* add the under line */
+							double y = -0.2 * stack[stack_pos].h_fac;
+							graph_obj * txt_line = graph_new(pool_idx);
+							line_add(txt_line, word_w, word_y + y, 0.0, word_w + w, word_y + y, 0.0);
+							if (txt_line){
+								txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+								
+								/* store the graph in the return vector */
+								if (list_push(word, list_new((void *)txt_line, pool_idx))) num_graph++;
+							}
+						}
+						if (w > 0.0 && (stack[stack_pos].over_l)){
+							/* add the over line */
+							double y = 1.2 * stack[stack_pos].h_fac;
+							graph_obj * txt_line = graph_new(pool_idx);
+							line_add(txt_line, word_w, word_y + y, 0.0, word_w + w, word_y + y, 0.0);
+							if (txt_line){
+								txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+								
+								/* store the graph in the return vector */
+								if (list_push(word, list_new((void *)txt_line, pool_idx))) num_graph++;
+							}
+						}
+						if (w > 0.0 && (stack[stack_pos].stike)){
+							/* add stikethough */
+							double y = 0.5 * stack[stack_pos].h_fac;
+							graph_obj * txt_line = graph_new(pool_idx);
+							line_add(txt_line, word_w, word_y + y, pt1_z, word_w + w, word_y + y, pt1_z);
+							if (txt_line){
+								txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+								
+								/* store the graph in the return vector */
+								if (list_push(word, list_new((void *)txt_line, pool_idx))) num_graph++;
+							}
+						}
+						
+						/* update the ofset */
+						word_w += w * stack[stack_pos].spc_fac;
+						
+						prev_cp = code_p;
+					}
+					str_start += ofs;
+				}
+			}
+			/*append last word and last line*/
+			/* positioning current word */
+			graph_list_modify(word, word_x, word_y, 1.0, 1.0, 0.0);
+			list_merge (line, word);
+			list_clear (word); /* clear word*/
+			/* positioning last line */
+			graph_list_modify(line, line_x, line_y, 1.0, 1.0, 0.0);
+			/* append in main graph */
+			list_merge (graph, line);
+			list_clear (line); /* clear line*/
+			
 			txt_size = t_size;
 			double min_x, min_y, max_x, max_y;
 			int init = 0;

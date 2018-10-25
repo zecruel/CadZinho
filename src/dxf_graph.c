@@ -2820,7 +2820,8 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		int num_str = 0;
 		
 		struct param{
-			int under_l, over_l, stike, color;
+			int under_l, over_l, stike, color, p_x;
+			double p_i, p_l, p_q, p_a, p_b, p_t;
 			double w_fac, spc_fac, h_fac, o_ang;
 			struct tfont *font;
 		} stack[10];
@@ -2831,6 +2832,15 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		stack[0].over_l = 0;
 		stack[0].stike = 0;
 		stack[0].color = 0;
+		stack[0].p_x = 0;
+		stack[0].p_i = 0;
+		stack[0].p_l = 0;
+		stack[0].p_q = 0;
+		stack[0].p_a = 0;
+		stack[0].p_b= 0;
+		
+		stack[0].p_t = 0;
+		
 		stack[0].w_fac = 1.0;
 		stack[0].spc_fac = 1.0;
 		stack[0].h_fac = 1.0;
@@ -2951,7 +2961,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			list_node * line = list_new(NULL, FRAME_LIFE);
 			list_node * word = list_new(NULL, FRAME_LIFE);
 			
-			int terminate_word = 0;
+			int terminate_word = 0, column = 0;
 			int ofs = 0, str_start = 0, code_p, prev_cp = 0, txt_len;
 			double w = 0.0, word_x = 0.0, word_y = 0.0, word_w = 0.0;
 			double line_x = 0.0, line_y = 0.0, line_w = 0.0;
@@ -3077,10 +3087,68 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 									char *next_mark = strchr(text + str_start + 2, ';');
 									
 									if (next_mark){
+										char *param;
 										
+										//printf("\n");
+										
+										for (param = text + str_start + 2; param < next_mark; param++){
+											/*
+											parameters, where n is a number (numeric parameters are separated by commas) and $ is a char:
+											
+											in = h spacing for first line in paragraph.
+											ln = h spacing for all lines in paragraph.
+											x = relative to text size
+											tn = tab stops (columns spacing). Alow multiple definitions, for diferent columns sizes.
+											q$ = h alingment-> r - rigth, l - left, c - centered, j - justified.
+											an = vertical spacing after paragraph.
+											bn = vertical spacing before paragraph.
+											*/
+											
+											char *cont;
+											if (*param == 'i'){
+												stack[stack_pos].p_i = strtol(param+1, &cont, 10);
+												param = cont;
+												if(!(stack[stack_pos].p_x)) stack[stack_pos].p_i /= t_size;
+											}
+											else if (*param == 'l'){
+												stack[stack_pos].p_l = strtol(param+1, &cont, 10);
+												param = cont;
+												if(!(stack[stack_pos].p_x)) stack[stack_pos].p_l /= t_size;
+											}
+											else if (*param == 't'){
+												stack[stack_pos].p_t = strtol(param+1, &cont, 10);
+												param = cont;
+												if(!(stack[stack_pos].p_x)) stack[stack_pos].p_t /= t_size;
+											}
+											else if (*param == 'a'){
+												stack[stack_pos].p_a = strtol(param+1, &cont, 10);
+												param = cont;
+												if(!(stack[stack_pos].p_x)) stack[stack_pos].p_a /= t_size;
+											}
+											else if (*param == 'b'){
+												stack[stack_pos].p_b = strtol(param+1, &cont, 10);
+												param = cont;
+												if(!(stack[stack_pos].p_x)) stack[stack_pos].p_b /= t_size;
+											}
+											else if (*param == 'q'){
+												char p_alin;
+												p_alin = param[1];
+												stack[stack_pos].p_q = 0;
+												if (p_alin == 'c') stack[stack_pos].p_q = 1;
+												if (p_alin == 'r') stack[stack_pos].p_q = 2;
+												//printf("alin = %c \n", p_alin);
+												param++;
+											}
+											else if (*param == 'x'){
+												stack[stack_pos].p_x = 1;
+											}
+										}
+										line_x = stack[stack_pos].p_i + stack[stack_pos].p_l;
+										if (line_x < 0.0) line_x = 0.0;
 										code_p = 0;
 										ofs = next_mark - text - str_start + 1;
 									}
+									
 								}
 								break;
 							/* new paragraph */
@@ -3098,7 +3166,8 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							
 								word_x = 0.0; word_y = 0.0;
 								word_w = 0.0;
-								line_x = 0.0;
+								if (stack[stack_pos].p_i + stack[stack_pos].p_l >= 0) line_x = stack[stack_pos].p_i + stack[stack_pos].p_l;
+								//line_x = 0.0;
 								line_y -= 1.1 * stack[stack_pos].h_fac;
 								ofs = 2;
 								code_p = 0;
@@ -3355,6 +3424,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						if (stack_pos < 9) {
 							stack_pos++;
 							stack[stack_pos] = stack[stack_pos - 1];
+							stack[stack_pos].p_x = 0;
 						}
 						code_p = 0;
 					}
@@ -3363,12 +3433,31 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						code_p = 0;
 					}
 					else if(text[str_start] == ' ') {
-						spacing = 0.4;
+						/* get width of a space char in current font*/
+						w = 0.0;
+						curr_graph = font_parse_cp(stack[stack_pos].font, ' ', prev_cp, FRAME_LIFE, &w);
+						/* apply current parameters */
+						w *= stack[stack_pos].w_fac;
+						w *= stack[stack_pos].h_fac;
+						prev_cp = ' ';
+						
+						spacing = w;
 						terminate_word = 1;
 						code_p = 0;
 					}
 					else if(text[str_start] == '\t') {
-						spacing = 0.4 * 4;
+						column = 1;
+						
+						/* get width of a space char in current font*/
+						w = 0.0;
+						curr_graph = font_parse_cp(stack[stack_pos].font, ' ', prev_cp, FRAME_LIFE, &w);
+						/* apply current parameters */
+						w *= stack[stack_pos].w_fac;
+						w *= stack[stack_pos].h_fac;
+						prev_cp = ' ';
+						/* initial tab space is 4 x space width */
+						spacing = w * 4;
+						if (stack[stack_pos].p_t > 0) spacing = stack[stack_pos].p_t;
 						terminate_word = 1;
 						code_p = 0;
 					}
@@ -3382,7 +3471,8 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							list_clear (line); /* prepare to next line */
 						
 							word_x = 0.0; word_y = 0.0;
-							line_x = 0.0;
+							line_x = stack[stack_pos].p_l;
+							//line_x = 0.0;
 							line_y -= 1.1 * stack[stack_pos].h_fac;
 						}
 						
@@ -3390,6 +3480,16 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						graph_list_modify(word, word_x, word_y, 1.0, 1.0, 0.0);
 						list_merge (line, word);
 						list_clear (word); /* prepare to next word */
+						
+						if(column){
+							column = 0;
+							
+							double num_col = 0.0;
+							modf((line_x + word_x + word_w)/spacing, &num_col);
+							num_col += 1.0;
+							spacing = num_col * spacing - (line_x + word_x + word_w);
+						}
+						
 						word_x += word_w + spacing;
 						word_w = 0.0;
 					}

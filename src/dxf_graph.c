@@ -3129,6 +3129,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 												stack[stack_pos].p_b = strtol(param+1, &cont, 10);
 												param = cont;
 												if(!(stack[stack_pos].p_x)) stack[stack_pos].p_b /= t_size;
+												line_y -= stack[stack_pos].p_b;
 											}
 											else if (*param == 'q'){
 												char p_alin;
@@ -3144,6 +3145,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 											}
 										}
 										line_x = stack[stack_pos].p_i + stack[stack_pos].p_l;
+										
 										if (line_x < 0.0) line_x = 0.0;
 										code_p = 0;
 										ofs = next_mark - text - str_start + 1;
@@ -3154,6 +3156,19 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							/* new paragraph */
 							case 'P':
 								/*append remaining word in current line*/
+								/* adjust text in rectangle with break lines*/
+								if ((rect_w > 0.0) && (word_x + word_w > rect_w/t_size)){
+									/* positioning current line */
+									graph_list_modify(line, line_x, line_y, 1.0, 1.0, 0.0);
+									/* append current line in main graph */
+									list_merge (graph, line);
+									list_clear (line); /* prepare to next line */
+								
+									word_x = 0.0; word_y = 0.0;
+									line_x = stack[stack_pos].p_l;
+									//line_x = 0.0;
+									line_y -= 1.1 * stack[stack_pos].h_fac;
+								}
 								/* positioning current word */
 								graph_list_modify(word, word_x, word_y, 1.0, 1.0, 0.0);
 								list_merge (line, word);
@@ -3168,7 +3183,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 								word_w = 0.0;
 								if (stack[stack_pos].p_i + stack[stack_pos].p_l >= 0) line_x = stack[stack_pos].p_i + stack[stack_pos].p_l;
 								//line_x = 0.0;
-								line_y -= 1.1 * stack[stack_pos].h_fac;
+								line_y -= 1.1 * stack[stack_pos].h_fac + stack[stack_pos].p_a + stack[stack_pos].p_b;
 								ofs = 2;
 								code_p = 0;
 								break;
@@ -3383,7 +3398,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 									char *cont;
 									double factor = strtod(text + str_start + 2, &cont);
 									if (factor > 0.0){
-										//spc_fac = factor;
+										stack[stack_pos].o_ang = factor;
 									}
 									code_p = 0;
 									ofs = cont - text - str_start;
@@ -3463,6 +3478,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 					}
 					if (terminate_word){
 						terminate_word = 0;
+						/* adjust text in rectangle with break lines*/
 						if ((rect_w > 0.0) && (word_x + word_w > rect_w/t_size)){
 							/* positioning current line */
 							graph_list_modify(line, line_x, line_y, 1.0, 1.0, 0.0);
@@ -3502,6 +3518,18 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						w *= stack[stack_pos].h_fac;
 						
 						if (curr_graph){
+							/* oblique angle*/
+							if(fabs(stack[stack_pos].o_ang) > 1e-9){
+								double matrix[3][3] = {
+									{1.0, 0.0, 0.0},
+									{0.0, 1.0, 0.0},
+									{0.0, 0.0, 1.0}
+								};
+								
+								matrix[0][1] = sin(stack[stack_pos].o_ang*M_PI/180.0);
+								graph_matrix(curr_graph, matrix);
+							}
+							
 							curr_graph->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
 							
 							graph_modify(curr_graph, word_w, word_y, stack[stack_pos].w_fac * stack[stack_pos].h_fac, stack[stack_pos].h_fac, 0.0);
@@ -3555,6 +3583,19 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				}
 			}
 			/*append last word and last line*/
+			/* adjust text in rectangle with break lines*/
+			if ((rect_w > 0.0) && (word_x + word_w > rect_w/t_size)){
+				/* positioning current line */
+				graph_list_modify(line, line_x, line_y, 1.0, 1.0, 0.0);
+				/* append current line in main graph */
+				list_merge (graph, line);
+				list_clear (line); /* prepare to next line */
+			
+				word_x = 0.0; word_y = 0.0;
+				line_x = stack[stack_pos].p_l;
+				//line_x = 0.0;
+				line_y -= 1.1 * stack[stack_pos].h_fac;
+			}
 			/* positioning current word */
 			graph_list_modify(word, word_x, word_y, 1.0, 1.0, 0.0);
 			list_merge (line, word);

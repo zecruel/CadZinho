@@ -2764,3 +2764,57 @@ Define function PlotAntiAliasedPoint ( number x, number y )
               percent = percent_x * percent_y
               DrawPixel ( coordinates roundedx, roundedy, color percent (range 0-1) )
 */
+
+void graph_matrix(graph_obj * master, double matrix[3][3]){
+	if ((master != NULL)){
+		if(master->list->next){ /* check if list is not empty */
+			double x0, y0, z0, x1, y1, z1;
+			double sine = 0, cosine = 1;
+			double min_x, min_y, max_x, max_y;
+			line_node *current = master->list->next;
+			master->ext_ini = 0;
+			
+			/* apply changes to each point */
+			while(current){ /*sweep the list content */
+				
+				x0 = current->x0 * matrix[0][0] + current->y0 * matrix[0][1] +current->z0 * matrix[0][2];
+				y0 = current->x0 * matrix[1][0] + current->y0 * matrix[1][1] +current->z0 * matrix[1][2];
+				z0 = current->x0 * matrix[2][0] + current->y0 * matrix[2][1] +current->z0 * matrix[2][2];
+				
+				x1 = current->x1 * matrix[0][0] + current->y1 * matrix[0][1] +current->z1 * matrix[0][2];
+				y1 = current->x1 * matrix[1][0] + current->y1 * matrix[1][1] +current->z1 * matrix[1][2];
+				z1 = current->x1 * matrix[2][0] + current->y1 * matrix[2][1] +current->z1 * matrix[2][2];
+				
+				/* update the graph */
+				current->x0 = x0;
+				current->y0 = y0;
+				current->z0 = z0;
+				current->x1 = x1;
+				current->y1 = y1;
+				current->z1 = z1;
+				
+				/*update the extent of graph */
+				/* sort the coordinates of entire line*/
+				min_x = (x0 < x1) ? x0 : x1;
+				min_y = (y0 < y1) ? y0 : y1;
+				max_x = (x0 > x1) ? x0 : x1;
+				max_y = (y0 > y1) ? y0 : y1;
+				if (master->ext_ini == 0){
+					master->ext_ini = 1;
+					master->ext_min_x = min_x;
+					master->ext_min_y = min_y;
+					master->ext_max_x = max_x;
+					master->ext_max_y = max_y;
+				}
+				else{
+					master->ext_min_x = (master->ext_min_x < min_x) ? master->ext_min_x : min_x;
+					master->ext_min_y = (master->ext_min_y < min_y) ? master->ext_min_y : min_y;
+					master->ext_max_x = (master->ext_max_x > max_x) ? master->ext_max_x : max_x;
+					master->ext_max_y = (master->ext_max_y > max_y) ? master->ext_max_y : max_y;
+				}
+				
+				current = current->next; /* go to next */
+			}
+		}
+	}
+}

@@ -1218,6 +1218,9 @@ int main(int argc, char** argv){
 				gui->modal = HATCH;
 				gui->step = 0;
 			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_I_TEXT]))){
+				
+			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BOOK]))){
 				recv_comm_flag = 1;
 				snprintf(recv_comm, 64, "%s","INSERT");

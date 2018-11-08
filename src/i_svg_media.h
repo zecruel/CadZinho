@@ -36,6 +36,7 @@ enum {
     SVG_IMAGE,
     SVG_IMPORT,
     SVG_INFO,
+    SVG_I_TEXT,
     SVG_LAYERS,
     SVG_LEFT,
     SVG_LINE,

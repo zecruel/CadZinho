@@ -2394,6 +2394,10 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 								code_p = '}';
 								ofs = 2;
 								break;
+							case '~':
+								code_p = ' ';
+								ofs = 2;
+								break;
 							/* under line */
 							case 'l':
 								stack[stack_pos].under_l = 0;
@@ -2978,30 +2982,17 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			double min_x, min_y, max_x, max_y;
 			int init = 0;
 			graph_list_ext(graph, &init, &min_x, &min_y, &max_x, &max_y);
-			txt_w = fabs(max_x);
+			txt_w = fabs(max_x - min_x);
 			txt_h = fabs(max_y - min_y);
 			
-			t_base_x =  pt1_x;
-			t_base_y =  pt1_y;
 			
-			/* find the insert point of text, in function of its aling */
-			t_center_x = (double)t_alin_h[t_alin] * (t_scale_x*txt_w * txt_size/2);
+			graph_list_modify(graph, 0.0,
+				-min_y - (double)(t_alin_v[t_alin] - 1) * txt_h/2,
+				1.0, 1.0, 0.0);
 			
+			graph_list_modify(graph, pt1_x, pt1_y, t_scale_x*txt_size, txt_size, 0.0);
+			graph_list_rot(graph, pt1_x, pt1_y, t_rot);
 			
-			if(t_alin_v[t_alin] != 1){
-				t_center_y = (double)(t_alin_v[t_alin] - 1) * stack[stack_pos].font->above * txt_size/2;
-			}
-			else{
-				t_center_y = - stack[stack_pos].font->below * txt_size;
-			}
-			
-			
-			t_pos_x = t_base_x - t_center_x;
-			t_pos_y = t_base_y - t_center_y;
-			
-			/* apply the scales, offsets and rotation to graphs */
-			graph_list_modify(graph, t_pos_x, t_pos_y, t_scale_x*txt_size, txt_size, 0.0);
-			graph_list_rot(graph, t_base_x, t_base_y, t_rot);
 			
 			/* convert OCS to WCS */
 			normal[0] = extru_x;

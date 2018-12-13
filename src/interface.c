@@ -483,7 +483,7 @@ int main(int argc, char** argv){
 	font_tiny_nk.width = nk_user_font_get_text_width;
 	#endif
 	font_tiny_nk = gui->ui_font;
-	font_tiny_nk.height = 8.0;
+	font_tiny_nk.height = 10.0;
 	
 	//int show_blk_pp = 0;
 	//bmp_img * gui->preview_img;

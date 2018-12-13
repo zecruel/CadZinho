@@ -23,6 +23,10 @@ struct tt_font{
 	struct tt_glyph *list, *end;
 };
 
+struct tt_glyph * tt_find_cp (struct tt_font * font, int code_point);
+
+struct tt_glyph * tt_get_glyph (struct tt_font * font, int code_point);
+
 struct tt_font * tt_init (char *path);
 
 void tt_font_free(struct tt_font * font);

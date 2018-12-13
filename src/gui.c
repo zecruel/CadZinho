@@ -571,15 +571,85 @@ NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
 					#endif
 					struct tfont *font = (struct tfont *)t->font->userdata.ptr;
 					
-					list_node * graph = list_new(NULL, FRAME_LIFE);
-	
-					if (graph) {
-						if (font_parse_str(font, graph, FRAME_LIFE, (char *)t->string, NULL)){
-							graph_list_color(graph, color);
-							graph_list_modify(graph, t->x, t->y + t->font->height, t->font->height, -t->font->height, 0.0);
-							//graph_list_draw(graph, img, 0.0, 0.0, 1.0);
-							graph_list_draw_aa(graph, img, 0.0, 0.0, 1.0);
+					if (font->type != FONT_TT){
+						
+						list_node * graph = list_new(NULL, FRAME_LIFE);
+		
+						if (graph) {
+							if (font_parse_str(font, graph, FRAME_LIFE, (char *)t->string, NULL)){
+								graph_list_color(graph, color);
+								graph_list_modify(graph, t->x, t->y + t->font->height, t->font->height, -t->font->height, 0.0);
+								//graph_list_draw(graph, img, 0.0, 0.0, 1.0);
+								graph_list_draw_aa(graph, img, 0.0, 0.0, 1.0);
+							}
 						}
+					}
+					else {
+						unsigned char rast_glyph[20*25];
+						struct tt_font *tt_fnt = font->data;
+						img->frg = color;
+						
+						//float scale = stbtt_ScaleForPixelHeight((stbtt_fontinfo *) tt_fnt->info, 15);
+						float scale = tt_fnt->scale * t->font->height;
+						//int codepoint = 'a';
+						
+						int x0, y0, x1, y1, w, h;
+						
+						int ofs = 0, str_start = 0, code_p;//, num_graph = 0;
+						struct tt_glyph *curr_glyph = NULL, *prev_glyph = NULL;
+						//graph_obj *curr_graph = NULL;
+						
+						double ofs_x = 0.0;
+						char txt[DXF_MAX_CHARS];
+						txt[0] = 0;
+						strncpy(txt, (char *) t->string, DXF_MAX_CHARS);
+						
+						/*sweep the string, decoding utf8 */
+						while (ofs = utf8_to_codepoint(txt + str_start, &code_p)){
+							str_start += ofs;
+							/* try to find the glyph previously loaded */
+							curr_glyph = tt_find_cp (tt_fnt, code_p);
+							
+							if (!curr_glyph){/* if not found, add the glyph in list*/
+								curr_glyph = tt_get_glyph (tt_fnt, code_p);
+								if(curr_glyph){
+									if (tt_fnt->end) tt_fnt->end->next = curr_glyph;
+									tt_fnt->end = curr_glyph;
+								}
+							}
+							
+							if (curr_glyph){ /* glyph found*/
+								
+								if (prev_glyph){/* get additional custom advance, relative to previous glyph*/
+									ofs_x += stbtt_GetGlyphKernAdvance(tt_fnt->info,
+									prev_glyph->g_idx, curr_glyph->g_idx) * scale;
+								}
+								/* get final graphics of each glyph*/
+								stbtt_GetGlyphBitmapBox((stbtt_fontinfo *) tt_fnt->info, curr_glyph->g_idx, scale, scale, &x0, &y0, &x1, &y1);
+								w = x1 - x0; h = y1 - y0;
+								w = (w < 25)? w : 25;
+								h = (h < 20)? h : 20;
+								stbtt_MakeGlyphBitmap((stbtt_fontinfo *) tt_fnt->info, rast_glyph, w, h, 25, scale, scale, curr_glyph->g_idx);
+								int i = 0, j = 0, x, y;
+								
+								x = t->x + x0 + (int) ofs_x;
+								y = t->y + y0 + (int) t->font->height;
+								
+								for (j = 0; j < h; j++){
+									for (i = 0; i < w; i++){
+										img->frg.a = rast_glyph[j * 25 + i];
+										bmp_point_raw (img, x + i, y + j);
+									}
+								}
+								
+
+								/* update the ofset */
+								ofs_x += curr_glyph->adv * t->font->height;
+								prev_glyph = curr_glyph;
+							}
+						}
+						
+						
 					}
 						
 				} break;
@@ -688,11 +758,12 @@ NK_API int nk_sdl_init(gui_obj* gui, struct nk_user_font *font){
 	
 	//nk_style_set_font(gui->ctx, font);
 	
-	//struct tfont *ui_font = get_font_list(gui->font_list, "Lato-Hairline.ttf");
-	struct tfont *ui_font = get_font_list(gui->font_list, "romans.shx");
+	struct tfont *ui_font = get_font_list(gui->font_list, "OpenSans-Regular.ttf");
+	
+	//struct tfont *ui_font = get_font_list(gui->font_list, "romans.shx");
 	
 	gui->ui_font.userdata = nk_handle_ptr(ui_font);
-	gui->ui_font.height = 10.0;
+	gui->ui_font.height = 12.0;
 	//font.scale = font_scale(font.shx_font, gui->ui_font.height);
 	gui->ui_font.width = nk_user_font_get_text_width2;
 	
@@ -1046,8 +1117,8 @@ int gui_start(gui_obj *gui){
 			shp_font_print(font->data);
 		}
 	}*/
-	if(add_font_list(gui->font_list, "OpenSans-Light.ttf", gui->dflt_fonts_path)){
-		struct tfont *font = get_font_list(gui->font_list, "OpenSans-Light.ttf");
+	if(add_font_list(gui->font_list, "OpenSans-Regular.ttf", gui->dflt_fonts_path)){
+		struct tfont *font = get_font_list(gui->font_list, "OpenSans-Regular.ttf");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 			//gui->dflt_font = font;
@@ -1068,6 +1139,12 @@ int gui_start(gui_obj *gui){
 	}
 	if(add_font_list(gui->font_list, "Lato-Light.ttf", gui->dflt_fonts_path)){
 		struct tfont *font = get_font_list(gui->font_list, "Lato-Light.ttf");
+		if (font){
+			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
+		}
+	}
+	if(add_font_list(gui->font_list, "ProggyClean.ttf", gui->dflt_fonts_path)){
+		struct tfont *font = get_font_list(gui->font_list, "ProggyClean.ttf");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 		}

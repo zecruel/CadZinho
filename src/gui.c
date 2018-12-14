@@ -637,7 +637,7 @@ NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
 								
 								for (j = 0; j < h; j++){
 									for (i = 0; i < w; i++){
-										img->frg.a = rast_glyph[j * 25 + i];
+										img->frg.a = (rast_glyph[j * 25 + i] * color.a) / 255;
 										bmp_point_raw (img, x + i, y + j);
 									}
 								}
@@ -756,15 +756,14 @@ NK_API int nk_sdl_init(gui_obj* gui, struct nk_user_font *font){
 	gui->ctx->clip.userdata = nk_handle_ptr(0);
 	
 	
-	//nk_style_set_font(gui->ctx, font);
 	
-	struct tfont *ui_font = get_font_list(gui->font_list, "OpenSans-Regular.ttf");
+	//struct tfont *ui_font = get_font_list(gui->font_list, "OpenSans-Regular.ttf");
 	
 	//struct tfont *ui_font = get_font_list(gui->font_list, "romans.shx");
 	
-	gui->ui_font.userdata = nk_handle_ptr(ui_font);
-	gui->ui_font.height = 12.0;
-	//font.scale = font_scale(font.shx_font, gui->ui_font.height);
+	//gui->ui_font.userdata = nk_handle_ptr(ui_font);
+	//gui->ui_font.height = 11.0;
+	
 	gui->ui_font.width = nk_user_font_get_text_width2;
 	
 	nk_style_set_font(gui->ctx, &(gui->ui_font));
@@ -1083,10 +1082,12 @@ int gui_start(gui_obj *gui){
 	gui->h_fam_name[0] = 0;
 	gui->h_fam_descr[0] = 0;
 	
+	#if(0)
 	#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 	strncpy(gui->dflt_fonts_path, "C:\\Windows\\Fonts\\", 5 * DXF_MAX_CHARS);
 	#else
 	strncpy(gui->dflt_fonts_path, "/usr/share/fonts/", 5 * DXF_MAX_CHARS);
+	#endif
 	#endif
 	
 	gui->font_list = list_new(NULL, PRG_LIFE);
@@ -1097,17 +1098,19 @@ int gui_start(gui_obj *gui){
 		struct tfont *font = get_font_list(gui->font_list, "romans.shx");
 		if (font){
 			gui->dflt_font = font;
-			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
+			//printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 			//shp_font_print(font->data);
 		}
 	}
 	if(add_shp_font_list(gui->font_list, "txt.shx", (char *)shp_font_txt)){
+		/*
 		struct tfont *font = get_font_list(gui->font_list, "txt.shx");
 		if (font){
 			//gui->dflt_font = font;
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 			//shp_font_print(font->data);
 		}
+		*/
 	}
 	/*if(add_font_list(gui->font_list, "romans.shx", gui->dflt_fonts_path)){
 		struct tfont *font = get_font_list(gui->font_list, "romans.shx");
@@ -1117,20 +1120,25 @@ int gui_start(gui_obj *gui){
 			shp_font_print(font->data);
 		}
 	}*/
-	if(add_font_list(gui->font_list, "OpenSans-Regular.ttf", gui->dflt_fonts_path)){
+	//if(add_font_list(gui->font_list, "OpenSans-Regular.ttf", gui->dflt_fonts_path)){
+		/*
 		struct tfont *font = get_font_list(gui->font_list, "OpenSans-Regular.ttf");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 			//gui->dflt_font = font;
 		}
-	}
-	if(add_font_list(gui->font_list, "Lato-Hairline.ttf", gui->dflt_fonts_path)){
-		struct tfont *font = get_font_list(gui->font_list, "Lato-Hairline.ttf");
+		*/
+	//}
+	
+	
+	//if(add_font_list(gui->font_list, "NotoSans-Regular.ttf", gui->dflt_fonts_path)){
+		/*struct tfont *font = get_font_list(gui->font_list, "Lato-Hairline.ttf");
 		if (font){
 			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
 			//gui->ui_font = font;
-		}
-	}
+		}*/
+	//}
+	/*
 	if(add_font_list(gui->font_list, "arialbd.ttf", gui->dflt_fonts_path)){
 		struct tfont *font = get_font_list(gui->font_list, "arialbd.ttf");
 		if (font){
@@ -1156,7 +1164,7 @@ int gui_start(gui_obj *gui){
 			
 		}
 	}
-	
+	*/
 	return 1;
 }
 

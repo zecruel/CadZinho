@@ -619,7 +619,10 @@ int main(int argc, char** argv){
 	//dxf_new_block(gui->drawing, "teste", "0");
 	//dxf_ent_print2(gui->drawing->blks);
 	//dxf_ent_print2(gui->drawing->blks_rec);
-	
+	//dxf_ent_print2(gui->drawing->head);
+	/*-------------------- test -----------------------*/
+	//printf("version = %d\n", gui->drawing->version);
+	/*---------------------------------------*/
 	
 	dxf_ents_parse(gui->drawing);
 	

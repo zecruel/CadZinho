@@ -998,6 +998,8 @@ graph_obj * dxf_spline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 
 graph_obj * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
 	if(ent){
+		int force_ascii = drawing->version < 1021;
+		
 		dxf_node *current = NULL;
 		graph_obj *curr_graph = NULL;
 		double pt1_x = 0, pt1_y = 0, pt1_z = 0;
@@ -1279,6 +1281,8 @@ graph_obj * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 
 list_node * dxf_text_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
 	if(ent){
+		int force_ascii = drawing->version < 1021;
+		
 		int num_graph = 0;
 		dxf_node *current = NULL;
 		//graph_obj *curr_graph = NULL;
@@ -1461,7 +1465,7 @@ list_node * dxf_text_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			
 			list_node * graph = list_new(NULL, FRAME_LIFE);
 			
-			if (num_graph = font_parse_str(font, graph, pool_idx, tmp_str, NULL)){
+			if (num_graph = font_parse_str(font, graph, pool_idx, tmp_str, NULL, force_ascii)){
 				
 				txt_size = t_size;
 				double min_x, min_y, max_x, max_y;
@@ -1554,6 +1558,8 @@ list_node * dxf_text_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 
 list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
 	if(ent){
+		int force_ascii = drawing->version < 1021;
+		
 		int num_graph = 0;
 		dxf_node *current = NULL;
 		graph_obj *curr_graph = NULL;
@@ -2122,6 +2128,8 @@ list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 
 list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx, int ins_color){
 	if(ent){
+		int force_ascii = drawing->version < 1021;
+		
 		int num_graph = 0;
 		dxf_node *current = NULL;
 		graph_obj *curr_graph = NULL;
@@ -2323,8 +2331,16 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				strcpy(text, current->value.s_data);
 				txt_len = strlen(text);
 				
-				/*sweep the string, decoding utf8 */
-				while (ofs = utf8_to_codepoint(text + str_start, &code_p)){
+				/*sweep the string, decoding utf8 or ascii (cp1252)*/
+				if (force_ascii){ /* decode ascii cp1252 */
+					code_p = (int) cp1252[(unsigned char)text[str_start]];
+					if (code_p > 0) ofs = 1;
+					else ofs = 0;
+				}
+				else{ /* decode utf-8 */
+					ofs = utf8_to_codepoint(text + str_start, &code_p);
+				}
+				while (ofs){
 					
 					if ((str_start < txt_len - 2) && (text[str_start] == '%') && (text[str_start + 1] == '%')){
 						/*get the control character */
@@ -2639,9 +2655,9 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 										double top_w = 0.0, bot_w = 0.0, max_w = 0.0;
 										double pos_tx = 0.0, pos_ty = 0.0, pos_bx = 0.0, pos_by = 0.0;
 										list_node * top_list = list_new(NULL, FRAME_LIFE);
-										font_parse_str(stack[stack_pos].font, top_list, pool_idx, top, &top_w);
+										font_parse_str(stack[stack_pos].font, top_list, pool_idx, top, &top_w, force_ascii);
 										list_node * bot_list = list_new(NULL, FRAME_LIFE);
-										font_parse_str(stack[stack_pos].font, bot_list, pool_idx, bottom, &bot_w);
+										font_parse_str(stack[stack_pos].font, bot_list, pool_idx, bottom, &bot_w, force_ascii);
 										
 										double alx_frac_b = 0.0;
 										double alx_frac_t = 0.0;
@@ -2948,7 +2964,16 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						
 						prev_cp = code_p;
 					}
+					/* get next codepoint */
 					str_start += ofs;
+					if (force_ascii){ /* decode ascii cp1252 */
+						code_p = (int) cp1252[(unsigned char)text[str_start]];
+						if (code_p > 0) ofs = 1;
+						else ofs = 0;
+					}
+					else{/* decode utf-8 */
+						ofs = utf8_to_codepoint(text + str_start, &code_p);
+					}
 				}
 			}
 			/*append last word and last line*/
@@ -3009,6 +3034,8 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 
 graph_obj * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
 	if(ent){
+		int force_ascii = drawing->version < 1021;
+		
 		dxf_node *current = NULL;
 		graph_obj *curr_graph = NULL;
 		double pt1_x = 0, pt1_y = 0, pt1_z = 0;

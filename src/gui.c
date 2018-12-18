@@ -226,7 +226,7 @@ float nk_user_font_get_text_width2(nk_handle handle, float height, const char *t
 		txt_cpy[len] = '\0';
 		
 		double txt_w;
-		if (font_str_w(font, txt_cpy, &txt_w)){
+		if (font_str_w(font, txt_cpy, &txt_w, 0)){
 			return (float) height * txt_w;
 		}
 	}
@@ -576,7 +576,7 @@ NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
 						list_node * graph = list_new(NULL, FRAME_LIFE);
 		
 						if (graph) {
-							if (font_parse_str(font, graph, FRAME_LIFE, (char *)t->string, NULL)){
+							if (font_parse_str(font, graph, FRAME_LIFE, (char *)t->string, NULL, 0)){
 								graph_list_color(graph, color);
 								graph_list_modify(graph, t->x, t->y + t->font->height, t->font->height, -t->font->height, 0.0);
 								//graph_list_draw(graph, img, 0.0, 0.0, 1.0);

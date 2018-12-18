@@ -36,7 +36,7 @@ shp_typ *shp_font_open(char *path);
 
 shp_typ *shp_font_load(char *buf);
 
-int shp_parse_str(shp_typ *font, list_node *list_ret, int pool_idx, char *txt, double *w);
+int shp_parse_str(shp_typ *font, list_node *list_ret, int pool_idx, char *txt, double *w, int force_ascii);
 
 graph_obj *shp_parse_cp(shp_typ *shp_font, int pool_idx, int cp, double *w);
 

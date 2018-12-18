@@ -187,6 +187,8 @@ struct Dxf_drawing{
 	void *font_list;
 	void *dflt_font;
 	
+	int version;
+	
 };
 typedef struct Dxf_drawing dxf_drawing;
 
@@ -227,6 +229,8 @@ dxf_node * dxf_find_attr2(dxf_node * obj, int attr);
 
 dxf_node * dxf_find_attr_i(dxf_node * obj, int attr, int idx);
 
+dxf_node * dxf_find_attr_i2(dxf_node * start, dxf_node * end, int attr, int idx);
+
 //vector_p dxf_find_obj(dxf_node * obj, char *name);
 
 dxf_node * dxf_find_obj_i(dxf_node * obj, char *name, int idx);
@@ -258,5 +262,7 @@ dxf_node * dxf_find_obj2(dxf_node * obj, char *name);
 void * dxf_mem_pool(enum dxf_pool_action action, int idx);
 
 void dxf_append(dxf_node *master, dxf_node *new_node);
+
+int dxf_find_head_var(dxf_node *obj, char *var, dxf_node **start, dxf_node **end);
 
 #endif

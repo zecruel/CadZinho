@@ -5,6 +5,8 @@ const double shp_vec_y[16] = {0, 0.5, 1, 1, 1, 1, 1, 0.5, 0, -0.5, -1, -1, -1, -
 const double shp_arc_x[8] = {1, 0.707106781, 0, -0.707106781, -1, -0.707106781, 0, 0.707106781};	
 const double shp_arc_y[8] = {0, 0.707106781, 1, 0.707106781, 0, -0.707106781, -1, -0.707106781};
 
+extern int cp1252[];
+
 void shp_font_add(shp_typ *shp_font, long num, char *name, unsigned char *cmds, unsigned int cmd_size){
 /* create shape structure and add to font list */
 	if (shp_font){
@@ -826,7 +828,7 @@ graph_obj *shp_parse_cp(shp_typ *shp_font, int pool_idx, int cp, double *w){
 	return(line_list);
 }
 
-int shp_parse_str(shp_typ *font, list_node *list_ret, int pool_idx, char *txt, double *w){
+int shp_parse_str(shp_typ *font, list_node *list_ret, int pool_idx, char *txt, double *w, int force_ascii){
 /* parse full string to graph*/
 	if (!font || !list_ret || !txt) return 0;
 	
@@ -848,10 +850,19 @@ int shp_parse_str(shp_typ *font, list_node *list_ret, int pool_idx, char *txt, d
 			if(fnt_above > 0) txt_size = 1/fnt_above;
 		}
 	}
+	if (!font->unicode) force_ascii = 1;
+
 	
-	/*sweep the string, decoding utf8 */
-	while (ofs = utf8_to_codepoint(txt + str_start, &code_p)){
-		str_start += ofs;
+	/*sweep the string, decoding utf8 or ascii (cp1252)*/
+	if (force_ascii){ /* decode ascii cp1252 */
+		code_p = (int) cp1252[(unsigned char)txt[str_start]];
+		if (code_p > 0) ofs = 1;
+		else ofs = 0;
+	}
+	else{ /* decode utf-8 */
+		ofs = utf8_to_codepoint(txt + str_start, &code_p);
+	}
+	while (ofs){
 		
 		/* get final graphics of each code point*/
 		curr_graph = shp_parse_cp(font, pool_idx, code_p, &width);
@@ -864,6 +875,16 @@ int shp_parse_str(shp_typ *font, list_node *list_ret, int pool_idx, char *txt, d
 		/* update the ofset */
 		ofs_x += width;
 		
+		/* get next codepoint */
+		str_start += ofs;
+		if (force_ascii){ /* decode ascii cp1252 */
+			code_p = (int) cp1252[(unsigned char)txt[str_start]];
+			if (code_p > 0) ofs = 1;
+			else ofs = 0;
+		}
+		else{/* decode utf-8 */
+			ofs = utf8_to_codepoint(txt + str_start, &code_p);
+		}
 	}
 	if (w != NULL) *w = ofs_x; /* return the text width*/
 	return num_graph;

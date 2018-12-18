@@ -10,6 +10,8 @@
 /* number of segments for the curve */
 #define N_SEG 5
 
+extern int cp1252[];
+
 graph_obj * tt_parse_v(stbtt_vertex *vertices, int num_verts, double scale, int pool_idx, double *curr_pos){
 /* convert vertices information from Stb_truetype to graph object*/
 	int i, j;
@@ -209,7 +211,7 @@ struct tt_glyph * tt_find_cp (struct tt_font * font, int code_point){
 	return NULL; /* fail the search*/
 }
 
-int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char *txt, double *w){
+int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char *txt, double *w, int force_ascii){
 /* parse full string to graph*/
 	if (!font || !list_ret || !txt) return 0;
 	
@@ -219,9 +221,17 @@ int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char 
 	
 	double ofs_x = 0.0;
 	
-	/*sweep the string, decoding utf8 */
-	while (ofs = utf8_to_codepoint(txt + str_start, &code_p)){
-		str_start += ofs;
+	/*sweep the string, decoding utf8 or ascii (cp1252)*/
+	if (force_ascii){ /* decode ascii cp1252 */
+		code_p = (int) cp1252[(unsigned char)txt[str_start]];
+		if (code_p > 0) ofs = 1;
+		else ofs = 0;
+	}
+	else{ /* decode utf-8 */
+		ofs = utf8_to_codepoint(txt + str_start, &code_p);
+	}
+	while (ofs){
+		
 		/* try to find the glyph previously loaded */
 		curr_glyph = tt_find_cp (font, code_p);
 		
@@ -249,6 +259,16 @@ int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char 
 			/* update the ofset */
 			ofs_x += curr_glyph->adv;
 			prev_glyph = curr_glyph;
+		}
+		/* get next codepoint */
+		str_start += ofs;
+		if (force_ascii){ /* decode ascii cp1252 */
+			code_p = (int) cp1252[(unsigned char)txt[str_start]];
+			if (code_p > 0) ofs = 1;
+			else ofs = 0;
+		}
+		else{/* decode utf-8 */
+			ofs = utf8_to_codepoint(txt + str_start, &code_p);
 		}
 	}
 	if (w != NULL) *w = ofs_x; /* return the text width*/

@@ -34,10 +34,12 @@ struct tfont * get_font_list(list_node *list, char *name);
 
 struct tfont * get_font_list2(list_node *list, char *name);
 
-int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char *txt, double *w);
+int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char *txt, double *w, int force_ascii);
 
-int font_str_w(struct tfont * font, char *txt, double *w);
+int font_str_w(struct tfont * font, char *txt, double *w, int force_ascii);
 
 graph_obj * font_parse_cp(struct tfont * font, int cp, int prev_cp, int pool_idx, double *w);
+
+extern int cp1252[];
 
 #endif

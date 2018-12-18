@@ -283,7 +283,7 @@ int free_font_list(list_node *list){
 
 }
 
-int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char *txt, double *w){
+int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char *txt, double *w, int force_ascii){
 /* parse string and return list of graphs */
 	if (!font || !list_ret || !txt) return 0;
 	
@@ -295,10 +295,10 @@ int font_parse_str(struct tfont * font, list_node *list_ret, int pool_idx, char 
 	
 	if(type == FONT_SHP){
 		shp_typ *shp_font = font->data;
-		num_graph += shp_parse_str(shp_font, list_ret, pool_idx, txt, w);
+		num_graph += shp_parse_str(shp_font, list_ret, pool_idx, txt, w, force_ascii);
 	}
 	else if (type == FONT_TT){
-		num_graph += tt_parse_str((struct tt_font *) font->data, list_ret, pool_idx, txt, w);
+		num_graph += tt_parse_str((struct tt_font *) font->data, list_ret, pool_idx, txt, w, force_ascii);
 	}
 	
 	return num_graph;
@@ -340,7 +340,7 @@ graph_obj * font_parse_cp(struct tfont * font, int cp, int prev_cp, int pool_idx
 	return curr_graph;
 }
 
-int font_str_w(struct tfont * font, char *txt, double *w){
+int font_str_w(struct tfont * font, char *txt, double *w, int force_ascii){
 /* get width of an string */
 	if (!font || !w|| !txt) return 0;
 	
@@ -350,7 +350,7 @@ int font_str_w(struct tfont * font, char *txt, double *w){
 	
 	*w = 0.0;
 	
-	font_parse_str(font, graph, FRAME_LIFE, txt, w); /* temporary list */
+	font_parse_str(font, graph, FRAME_LIFE, txt, w, force_ascii); /* temporary list */
 	
 	if(fabs(*w) > 1e-9) return 1;
 	else return 0;

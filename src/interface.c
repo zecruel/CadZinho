@@ -1,4 +1,3 @@
-
 #include <SDL.h>
 
 

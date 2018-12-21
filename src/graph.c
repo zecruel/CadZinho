@@ -1189,34 +1189,40 @@ void graph_arc_bulge(graph_obj * master,
 			double pt2_x, double pt2_y, double pt2_z, 
 			double bulge){
 	
-	double theta, alfa, d, radius, ang_c, ang_start, ang_end, center_x, center_y;
-	int sig;
-	
-	theta = 2 * atan(bulge);
-	alfa = atan2(pt2_y-pt1_y, pt2_x-pt1_x);
-	d = sqrt((pt2_y-pt1_y)*(pt2_y-pt1_y) + (pt2_x-pt1_x)*(pt2_x-pt1_x)) / 2;
-	radius = d*(bulge*bulge + 1)/(2*bulge);
-	
-	ang_c = M_PI+(alfa - M_PI/2 - theta);
-	center_x = radius*cos(ang_c) + pt1_x;
-	center_y = radius*sin(ang_c) + pt1_y;
-	
-	//angulo inicial e final obtidos das coordenadas iniciais
-	ang_start = atan2(pt1_y-center_y,pt1_x-center_x);
-	ang_end = atan2(pt2_y-center_y,pt2_x-center_x);
-	
-	sig = 1;
-	if (bulge < 0){
-		ang_start += M_PI;
-		ang_end += M_PI;
-		sig = -1;
+	if (fabs(bulge) > TOLERANCE){ /*bulge is non zero*/
+		double theta, alfa, d, radius, ang_c, ang_start, ang_end, center_x, center_y;
+		int sig;
+		
+		
+		theta = 2 * atan(bulge);
+		alfa = atan2(pt2_y-pt1_y, pt2_x-pt1_x);
+		d = sqrt((pt2_y-pt1_y)*(pt2_y-pt1_y) + (pt2_x-pt1_x)*(pt2_x-pt1_x)) / 2;
+		radius = d*(bulge*bulge + 1)/(2*bulge);
+		
+		ang_c = M_PI+(alfa - M_PI/2 - theta);
+		center_x = radius*cos(ang_c) + pt1_x;
+		center_y = radius*sin(ang_c) + pt1_y;
+		
+		//angulo inicial e final obtidos das coordenadas iniciais
+		ang_start = atan2(pt1_y-center_y,pt1_x-center_x);
+		ang_end = atan2(pt2_y-center_y,pt2_x-center_x);
+		
+		sig = 1;
+		if (bulge < 0){
+			ang_start += M_PI;
+			ang_end += M_PI;
+			sig = -1;
+		}
+		//converte para garus
+		ang_start *= 180/M_PI;
+		ang_end *= 180/M_PI;
+		
+		//arco(entidade, camada, center, radius, ang_start, ang_end, cor, esp, sig);
+		graph_arc(master, center_x, center_y, pt1_z, radius, ang_start, ang_end, sig);
 	}
-	//converte para garus
-	ang_start *= 180/M_PI;
-	ang_end *= 180/M_PI;
-	
-	//arco(entidade, camada, center, radius, ang_start, ang_end, cor, esp, sig);
-	graph_arc(master, center_x, center_y, pt1_z, radius, ang_start, ang_end, sig);
+	else{
+		line_add(master, pt1_x, pt1_y, pt1_z, pt2_x, pt2_y, pt2_z);
+	}
 }
 
 void graph_ellipse(graph_obj * master,

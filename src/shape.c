@@ -118,7 +118,7 @@ shp_typ *shp_font_open(char *path){
 	
 	int num; /* shape number */
 	char str_tmp[255];
-	unsigned char buffer[255];
+	unsigned char buffer[10000];
 	unsigned int buf_size = 0;
 	
 	int first_cp, last_cp, num_cp = 0, cp_idx = 0;
@@ -172,10 +172,11 @@ shp_typ *shp_font_open(char *path){
 			}
 		}
 		else if(type == SHP_SHAPES){
+			shp_font->unicode = 0;
 			if (!file_head){
 				/* header for shapes files */
 				if (index != next_index){
-					if (buf_size < 255){
+					if (buf_size < 10000){
 						buffer[buf_size] = curr;
 						buf_size++;
 					}
@@ -199,13 +200,13 @@ shp_typ *shp_font_open(char *path){
 				if (cp_idx < num_cp){
 					/* read list of code point id */
 					if (index != next_index){
-						if (buf_size < 255){
+						if (buf_size < 10000){
 							buffer[buf_size] = curr;
 							buf_size++;
 						}
 					}
 					else {
-						if (buf_size < 255){
+						if (buf_size < 10000){
 							buffer[buf_size] = curr;
 							buf_size++;
 						}
@@ -240,7 +241,7 @@ shp_typ *shp_font_open(char *path){
 				if (index != next_index){
 					if (!name){ /* get name and comments of glyph */
 						if (curr != 0){ /* until string end (0x00) */
-							if (buf_size < 255){
+							if (buf_size < 10000){
 								str_tmp[buf_size] = curr;
 								buf_size++;
 							}
@@ -254,7 +255,7 @@ shp_typ *shp_font_open(char *path){
 						}
 					}
 					else{ /* shape commands */
-						if (buf_size < 255){
+						if (buf_size < 10000){
 							buffer[buf_size] = curr;
 							buf_size++;
 						}
@@ -289,7 +290,8 @@ shp_typ *shp_font_open(char *path){
 			}
 		}
 		else if(type == SHP_UNIFONT){
-			/* for unicode shape font file */ 
+			/* for unicode shape font file */
+			shp_font->unicode = 1;
 			if (!head){ /* get head of each shape */
 				if (index != next_index){
 					buffer[buf_size] = curr;
@@ -356,7 +358,7 @@ shp_typ *shp_font_load(char *buf){
 	char *curr_line, *next_line, str_tmp[255];
 	char *curr_mark, *next_mark, *ignore;
 	int str_size, cp, cmd_size, cmd_pos;
-	char cmds[255];
+	char cmds[10000];
 	
 	/* create list of shapes*/
 	shp_font = (shp_typ *) malloc(sizeof(shp_typ));
@@ -365,8 +367,10 @@ shp_typ *shp_font_load(char *buf){
 	}
 	shp_font->next = NULL; /* empty list */
 	
+	
 	/*get start of first shape description */
 	curr_line = strchr(buf, '*');
+	/* verify integrity of font */
 	if (!curr_line){
 		free(shp_font);
 		return NULL;
@@ -376,6 +380,18 @@ shp_typ *shp_font_load(char *buf){
 		return NULL;
 	}
 	
+	/*verify the type of font */
+	shp_font->unicode = 0; /* initially, presume type as a regular shp file, non unicode */
+	curr_line = strchr(buf, '*');
+	curr_line++;
+	{
+		char type[8];
+		strncpy(type, curr_line, 7);
+		str_upp (type);
+		if (strcmp(type, "UNIFONT") == 0) shp_font->unicode = 1;
+	}
+	
+	curr_line = strchr(buf, '*');
 	while (curr_line){
 		if (strlen(curr_line) < 5) break;
 		curr_line++;
@@ -434,7 +450,7 @@ shp_typ *shp_font_load(char *buf){
 		}
 		/* get commands of current shape */
 		cmd_pos = 0;
-		while ((curr_mark != NULL) && (cmd_pos < cmd_size) && (cmd_pos < 255)){
+		while ((curr_mark != NULL) && (cmd_pos < cmd_size) && (cmd_pos < 10000)){
 			
 			next_mark = strchr(curr_mark, ',');
 			if (next_mark){
@@ -447,8 +463,12 @@ shp_typ *shp_font_load(char *buf){
 			if(ignore = strpbrk(curr_mark, "-+0123456789abcdefABCDEF"))
 				curr_mark = ignore;
 			
-			if(curr_mark[0] == '0') { /* hexadecimal */
+			if (curr_mark[0] == '0'){ /* hexadecimal */
 				cmds[cmd_pos] = strtol(curr_mark, NULL, 16);
+			}
+			else if((curr_mark[0] == '-') && (curr_mark[1] == '0')){ /* negative hexadecimal */
+				cmds[cmd_pos] = strtol(curr_mark + 1, NULL, 16);
+				cmds[cmd_pos] |= 1 << 7;
 			}
 			else{
 				cmds[cmd_pos] = strtol(curr_mark, NULL, 10);
@@ -698,70 +718,10 @@ graph_obj *shp_parse_cp(shp_typ *shp_font, int pool_idx, int cp, double *w){
 				py *= scale;
 				px += pre_x;
 				py += pre_y;
-				
-				/* get radius and center of arc */
-				
-				theta = 2 * atan(bulge);
-				alfa = atan2(py-pre_y, px-pre_x);
-				d = sqrt((py-pre_y)*(py-pre_y) + (px-pre_x)*(px-pre_x)) / 2;
-				radius = d*(bulge*bulge + 1)/(2*bulge);
-				
-				ang_c = M_PI+(alfa - M_PI/2 - theta);
-				center_x = radius*cos(ang_c) + pre_x;
-				center_y = radius*sin(ang_c) + pre_y;
-				
-				/* start and end angles obtained from points */
-				ang_ini = atan2(pre_y-center_y,pre_x-center_x);
-				double ang_end = atan2(py-center_y,px-center_x);
-				direction = 1;
-				if (bulge < 0){
-					ang_ini += M_PI;
-					ang_end += M_PI;
-					direction = -1;
-				}
-				
-				double ang = (ang_end - ang_ini) * direction; /* total angle */
-				if (ang <= 0){ ang = ang + 2*M_PI;}
-				
-				/* sample arc in 64 points for full circle */
-				int steps = (int) 64.0 * ang/(2 * M_PI);
-				
-				direction = 1;
-				if (bulge < 0){
-					direction = -1;
-				}
-				
 				double final_x = px;
 				double final_y = py;
-				/* do arc */
-				for(i=1; i < steps; i++){
-					px = center_x + radius * cos(2/64.0 * M_PI * i * direction + ang_ini);
-					py = center_y + radius * sin(2/64.0 * M_PI * i * direction + ang_ini);
-					if(pen) line_add(line_list, pre_x, pre_y, 0.0, px, py, 0.0);
-					pre_x=px;
-					pre_y=py;
-				}
-				/* last point */
-				if(pen) line_add(line_list, pre_x, pre_y, 0.0, final_x, final_y, 0.0);
-				pre_x = final_x;
-				pre_y = final_y;
-			}
-			index += 4;
-		}
-		else if(cmd == 13){
-			/* sequence of bulge arcs, ended by (0,0) */
-			
-			index ++;
-			while (!((shp->cmds[index] == 0) && (shp->cmds[index + 1] == 0))){
-				if(!bypass){
-					px = (double)((signed char) shp->cmds[index]);
-					py = (double)((signed char) shp->cmds[index + 1]);
-					bulge = (double)((signed char) shp->cmds[index + 2])/127.0;
-					px *= scale;
-					py *= scale;
-					px += pre_x;
-					py += pre_y;
-					
+				if (fabs(bulge) > 1e-6){ /*bulge is non zero*/
+				
 					/* get radius and center of arc */
 					
 					theta = 2 * atan(bulge);
@@ -785,6 +745,7 @@ graph_obj *shp_parse_cp(shp_typ *shp_font, int pool_idx, int cp, double *w){
 					
 					double ang = (ang_end - ang_ini) * direction; /* total angle */
 					if (ang <= 0){ ang = ang + 2*M_PI;}
+					ang = fmod(ang, 2 *M_PI);
 					
 					/* sample arc in 64 points for full circle */
 					int steps = (int) 64.0 * ang/(2 * M_PI);
@@ -794,8 +755,8 @@ graph_obj *shp_parse_cp(shp_typ *shp_font, int pool_idx, int cp, double *w){
 						direction = -1;
 					}
 					
-					double final_x = px;
-					double final_y = py;
+					
+					
 					/* do arc */
 					for(i=1; i < steps; i++){
 						px = center_x + radius * cos(2/64.0 * M_PI * i * direction + ang_ini);
@@ -804,10 +765,80 @@ graph_obj *shp_parse_cp(shp_typ *shp_font, int pool_idx, int cp, double *w){
 						pre_x=px;
 						pre_y=py;
 					}
+				}
+				/* last point */
+				if(pen) line_add(line_list, pre_x, pre_y, 0.0, final_x, final_y, 0.0);
+				pre_x = final_x;
+				pre_y = final_y;
+			}
+			index += 4;
+		}
+		else if(cmd == 13){
+			/* sequence of bulge arcs, ended by (0,0) */
+			
+			index ++;
+			while (!((shp->cmds[index] == 0) && (shp->cmds[index + 1] == 0))){
+				if(!bypass){
+					px = (double)((signed char) shp->cmds[index]);
+					py = (double)((signed char) shp->cmds[index + 1]);
+					bulge = (double)((signed char) shp->cmds[index + 2])/127.0;
+					px *= scale;
+					py *= scale;
+					px += pre_x;
+					py += pre_y;
+					double final_x = px;
+					double final_y = py;
+					if (fabs(bulge) > 1e-6){ /*bulge is non zero*/
+					
+						/* get radius and center of arc */
+						
+						theta = 2 * atan(bulge);
+						alfa = atan2(py-pre_y, px-pre_x);
+						d = sqrt((py-pre_y)*(py-pre_y) + (px-pre_x)*(px-pre_x)) / 2;
+						radius = d*(bulge*bulge + 1)/(2*bulge);
+						
+						ang_c = M_PI+(alfa - M_PI/2 - theta);
+						center_x = radius*cos(ang_c) + pre_x;
+						center_y = radius*sin(ang_c) + pre_y;
+						
+						/* start and end angles obtained from points */
+						ang_ini = atan2(pre_y-center_y,pre_x-center_x);
+						double ang_end = atan2(py-center_y,px-center_x);
+						direction = 1;
+						if (bulge < 0){
+							ang_ini += M_PI;
+							ang_end += M_PI;
+							direction = -1;
+						}
+						
+						double ang = (ang_end - ang_ini) * direction; /* total angle */
+						if (ang <= 0){ ang = ang + 2*M_PI;}
+						ang = fmod(ang, 2 *M_PI);
+						
+						/* sample arc in 64 points for full circle */
+						int steps = (int) 64.0 * ang/(2 * M_PI);
+						
+						direction = 1;
+						if (bulge < 0){
+							direction = -1;
+						}
+						
+						
+						
+						/* do arc */
+						for(i=1; i < steps; i++){
+							px = center_x + radius * cos(2/64.0 * M_PI * i * direction + ang_ini);
+							py = center_y + radius * sin(2/64.0 * M_PI * i * direction + ang_ini);
+							if(pen) line_add(line_list, pre_x, pre_y, 0.0, px, py, 0.0);
+							pre_x=px;
+							pre_y=py;
+						}
+					}
 					/* last point */
 					if(pen) line_add(line_list, pre_x, pre_y, 0.0, final_x, final_y, 0.0);
 					pre_x = final_x;
 					pre_y = final_y;
+					
 				}
 				index += 3;
 			}

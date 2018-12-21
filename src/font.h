@@ -20,6 +20,7 @@ struct tfont{
 	enum font_type type;
 	double std_size;
 	double above, below;
+	int unicode;
 	
 	void *data;
 };

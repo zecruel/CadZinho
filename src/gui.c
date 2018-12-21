@@ -1180,6 +1180,7 @@ int gui_tstyle(gui_obj *gui){
 	for (i = 0; i < num_tstyles; i++){
 		if(font = add_font_list(gui->font_list, t_sty[i].file, gui->dflt_fonts_path)){
 			t_sty[i].font = font;
+			//if (font->type == FONT_SHP) shp_font_print((shp_typ *) font->data);
 		}
 		else{
 			t_sty[i].font = gui->dflt_font;

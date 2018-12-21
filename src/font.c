@@ -121,7 +121,7 @@ struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 	
 	ext = get_ext(full_path); /* get file extension to determine type of font */
 	
-	if (strncmp(ext, "shx", DXF_MAX_CHARS) == 0){ /* SHX font */
+	if (strncmp(ext, "shx", DXF_MAX_CHARS) == 0){ /* Shape font - binary format */
 		shp_typ * shp_tfont = shp_font_open(full_path);
 		if (shp_tfont){
 			/* alloc the structures */
@@ -145,6 +145,46 @@ struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 			font->type = FONT_SHP;
 			font->data = shp_tfont;
 			font->std_size = 12.0;
+			font->unicode = shp_tfont->unicode;
+			/* add to list */
+			list_node *new_node = list_new ((void *)font, PRG_LIFE);
+			if (new_node == NULL) {
+				/* fail to add in list*/
+				shp_font_free(shp_tfont);
+				free(font);
+				return NULL;
+			}
+			list_push(list, new_node);
+		}
+	}
+	else if (strncmp(ext, "shp", DXF_MAX_CHARS) == 0){ /* Shape font - text format */
+		long fsize = 0;
+		char *buf = dxf_load_file(full_path, &fsize);
+		shp_typ * shp_tfont = shp_font_load(buf);
+		if (buf) free(buf);
+		if (shp_tfont){
+			/* alloc the structures */
+			font = malloc(sizeof(struct tfont));
+			if (font == NULL) {
+				/* fail in allocation*/
+				shp_font_free(shp_tfont);
+				return NULL;
+			}
+			
+			if(shp_tfont->next){ /* check if the font is valid */
+				double fnt_above = shp_tfont->next->cmds[0]; /* size above the base line of text */
+				double fnt_below = shp_tfont->next->cmds[1]; /* size below the base line of text */
+				
+				if(fnt_above > 0) font->below = fabs(fnt_below/fnt_above);
+				font->above = 1.0;
+			}
+			
+			strncpy(font->path, full_path, DXF_MAX_CHARS);
+			strncpy(font->name, name, DXF_MAX_CHARS);
+			font->type = FONT_SHP;
+			font->data = shp_tfont;
+			font->std_size = 12.0;
+			font->unicode = shp_tfont->unicode;
 			/* add to list */
 			list_node *new_node = list_new ((void *)font, PRG_LIFE);
 			if (new_node == NULL) {
@@ -175,6 +215,7 @@ struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 			font->below = fabs(tt_tfont->descent);
 			
 			font->std_size = 12.0;
+			font->unicode = 1;
 			/* add to list */
 			list_node *new_node = list_new ((void *)font, PRG_LIFE);
 			if (new_node == NULL) {
@@ -235,6 +276,7 @@ struct tfont * add_shp_font_list(list_node *list, char *name, char *buf){
 		font->type = FONT_SHP;
 		font->data = shp_tfont;
 		font->std_size = 12.0;
+		font->unicode = shp_tfont->unicode;
 		/* add to list */
 		list_node *new_node = list_new ((void *)font, PRG_LIFE);
 		if (new_node == NULL) {

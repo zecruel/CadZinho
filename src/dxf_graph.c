@@ -1683,14 +1683,21 @@ list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			
 			list_node * graph = list_new(NULL, FRAME_LIFE);
 			
-			/*sweep the string, decoding utf8 */
 			int ofs = 0, str_start = 0, code_p, prev_cp = 0, txt_len;
 			double w = 0.0, ofs_x = 0.0, ofs_y = 0.0;
 			double w_fac = 1.0, spc_fac = 1.0, h_fac = 1.0;
 			
 			txt_len = strlen(text);
-			while (ofs = utf8_to_codepoint(text + str_start, &code_p)){
-				
+			/*sweep the string, decoding utf8 or ascii (cp1252)*/
+			if ((force_ascii) || (!font->unicode)){ /* decode ascii cp1252 */
+				code_p = (int) cp1252[(unsigned char)text[str_start]];
+				if (code_p > 0) ofs = 1;
+				else ofs = 0;
+			}
+			else{ /* decode utf-8 */
+				ofs = utf8_to_codepoint(text + str_start, &code_p);
+			}
+			while (ofs){
 				if ((str_start < txt_len - 2) && (text[str_start] == '%') && (text[str_start + 1] == '%')){
 					/*get the control character */
 					special = text[str_start + 2];
@@ -1970,7 +1977,16 @@ list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 					
 					prev_cp = code_p;
 				}
+				/* get next codepoint */
 				str_start += ofs;
+				if ((force_ascii) || (!font->unicode)){ /* decode ascii cp1252 */
+					code_p = (int) cp1252[(unsigned char)text[str_start]];
+					if (code_p > 0) ofs = 1;
+					else ofs = 0;
+				}
+				else{/* decode utf-8 */
+					ofs = utf8_to_codepoint(text + str_start, &code_p);
+				}
 			}
 			
 			#if(0)
@@ -2332,7 +2348,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				txt_len = strlen(text);
 				
 				/*sweep the string, decoding utf8 or ascii (cp1252)*/
-				if (force_ascii){ /* decode ascii cp1252 */
+				if ((force_ascii) || (!stack[stack_pos].font->unicode)){ /* decode ascii cp1252 */
 					code_p = (int) cp1252[(unsigned char)text[str_start]];
 					if (code_p > 0) ofs = 1;
 					else ofs = 0;
@@ -2966,7 +2982,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 					}
 					/* get next codepoint */
 					str_start += ofs;
-					if (force_ascii){ /* decode ascii cp1252 */
+					if ((force_ascii) || (!stack[stack_pos].font->unicode)){ /* decode ascii cp1252 */
 						code_p = (int) cp1252[(unsigned char)text[str_start]];
 						if (code_p > 0) ofs = 1;
 						else ofs = 0;

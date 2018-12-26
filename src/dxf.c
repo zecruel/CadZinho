@@ -1,6 +1,5 @@
 #include "dxf.h"
 #include <math.h>
-#include "shape2.h"
 #define DXF_NUM_POOL 5
 #define DXF_PAGE 500000
 #include "font.h"
@@ -1136,7 +1135,7 @@ void dxf_tstyles_assemb (dxf_drawing *drawing){
 	
 	/* open default font */
 	//shape *shx_font = shx_font_open("txt.shx");
-	shape *shx_font = NULL;
+	//shape *shx_font = NULL;
 	
 	//if (shx_font){
 		/* always set the index 0 as the default font
@@ -1215,8 +1214,8 @@ void dxf_tstyles_assemb (dxf_drawing *drawing){
 			drawing->text_styles[i].width_f = width_f;
 			drawing->text_styles[i].oblique = oblique;
 			
-			shx_font = shx_font_open(file_name);
-			drawing->text_styles[i].shx_font = shx_font;
+			//shx_font = shx_font_open(file_name);
+			//drawing->text_styles[i].shx_font = shx_font;
 			drawing->text_styles[i].num_el = 0;
 			drawing->text_styles[i].obj = curr_tstyle;
 			

@@ -5,7 +5,6 @@
 #include "dxf.h"
 #include "bmp.h"
 #include "graph.h"
-#include "shape2.h"
 #include "i_svg_media.h"
 #include "list.h"
 #include "dxf_create.h"
@@ -83,7 +82,6 @@ struct sort_by_idx{
 
 
 struct font_obj{
-	shape *shx_font;
 	double scale;
 };
 
@@ -196,7 +194,7 @@ static void nk_sdl_clipbard_paste(nk_handle usr, struct nk_text_edit *edit);
 
 static void nk_sdl_clipbard_copy(nk_handle usr, const char *text, int len);
 
-NK_API int nk_sdl_init(gui_obj* gui, struct nk_user_font *font);
+NK_API int nk_sdl_init(gui_obj* gui);
 
 NK_API int nk_sdl_handle_event(gui_obj *gui, SDL_Window *win, SDL_Event *evt);
 

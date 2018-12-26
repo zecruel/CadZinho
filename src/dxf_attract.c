@@ -266,6 +266,7 @@ double *ret_x, double *ret_y){
 	return 0;
 }
 
+#if (0)
 double dxf_text_width(shape *font, char *text){
 	if ((text!= NULL) && (font!=NULL)) {
 		graph_obj *curr_graph = shx_font_parse(font, ONE_TIME, text, NULL);
@@ -279,6 +280,7 @@ double dxf_text_width(shape *font, char *text){
 	}
 	return 0;
 }
+#endif
 
 int dxf_line_get (dxf_drawing *drawing, dxf_node * obj, 
 double *pt1_x, double *pt1_y, double *pt1_z, 
@@ -778,7 +780,7 @@ double *alin_x, double *alin_y, double *alin_z,
 double *w, double *h, double *rot, 
 int *alin_v, int *alin_h){
 	int ok = 0;
-	
+	#if(0)
 	if(obj){
 		dxf_node *current = NULL;
 		double pt1_x = 0, pt1_y = 0, pt1_z = 0;
@@ -979,6 +981,7 @@ int *alin_v, int *alin_h){
 		*above *= txt_size;
 		*below *= txt_size;
 	}
+	#endif
 	return ok;
 }
 

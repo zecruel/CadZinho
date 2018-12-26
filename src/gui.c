@@ -157,61 +157,6 @@ void set_style(struct nk_context *ctx, enum theme theme){
     }
 }
 
-float nk_user_font_get_text_width(nk_handle handle, float height, const char *text, int len){
-	struct font_obj *font = (struct font_obj *)handle.ptr;
-	if ((text!= NULL) && (font!=NULL)) {
-		
-	
-		/* We must copy into a new buffer with exact length null-terminated
-		as nuklear uses variable size buffers and shx_fonts routines doesn't
-		accept a length, it infers length from null-termination */
-		char txt_cpy[len+2];
-		strncpy((char*)&txt_cpy, text, len);
-		//txt_cpy[len - 1] = ' ';
-		txt_cpy[len] = '\0';
-		
-		/*
-		nk_rune str_uni[255];
-		char str[255];
-		int glyph_size, char_size, pos = 0;
-		
-		char *curr = 0, *curr_pos =0;
-		
-		curr = (char *)txt_cpy;
-		curr_pos = str;
-		pos = 0;
-		
-		while ((*curr != 0) && (pos < 254)){
-		
-			glyph_size = nk_utf_decode(curr, str_uni, 2);
-			if (glyph_size){
-				char_size = wctomb(curr_pos, (wchar_t)str_uni[0]);
-				curr += glyph_size;
-				pos += char_size;
-				curr_pos += char_size;
-			}
-			else {
-				curr = 0;
-			}
-		}
-		
-		if(pos<255){
-			str[pos] = 0;
-		}
-		else{
-			str[254] = 0;
-		}
-		*/
-		double txt_w;
-		//graph_obj *curr_graph = shx_font_parse(font->shx_font, 1, str, &txt_w);
-		graph_obj *curr_graph = shx_font_parse(font->shx_font, 1, txt_cpy, &txt_w);
-		if (curr_graph){
-			return (float) font->scale * txt_w;
-		}
-	}
-	return 0;
-}
-
 float nk_user_font_get_text_width2(nk_handle handle, float height, const char *text, int len){
 	struct tfont *font = (struct tfont *)handle.ptr;
 	if ((text!= NULL) && (font!=NULL)) {
@@ -731,16 +676,15 @@ static void nk_sdl_clipbard_copy(nk_handle usr, const char *text, int len){
 	free(str);
 }
 
-NK_API int nk_sdl_init(gui_obj* gui, struct nk_user_font *font){
+NK_API int nk_sdl_init(gui_obj* gui){
 	
 	//gui_obj *gui = malloc(sizeof(gui_obj));
 	
 	if (gui){
 		gui->ctx = malloc(sizeof(struct nk_context));
-		gui->font = font;
 		gui->buf = calloc(1,FIXED_MEM);
 		gui->last = calloc(1,FIXED_MEM);
-		if((gui->ctx == NULL) || (gui->font == NULL) || (gui->buf == NULL) || (gui->last == NULL)){
+		if((gui->ctx == NULL) || (gui->buf == NULL) || (gui->last == NULL)){
 			return 0;
 		}
 	}

@@ -143,7 +143,6 @@ struct Dxf_tstyle{
 	double width_f;
 	double oblique;
 	
-	void *shx_font;
 	void *font;
 	
 	dxf_node *obj;

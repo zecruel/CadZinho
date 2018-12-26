@@ -4,7 +4,6 @@
 #include "dxf.h"
 #include "bmp.h"
 #include "graph.h"
-#include "shape2.h"
 #include "list.h"
 
 /* for insert objects */

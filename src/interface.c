@@ -4,7 +4,6 @@
 #include "dxf.h"
 #include "bmp.h"
 #include "graph.h"
-#include "shape2.h"
 #include "dxf_graph.h"
 #include "list.h"
 #include "dxf_create.h"
@@ -227,25 +226,6 @@ void zoom_ext2(dxf_drawing *drawing, int x, int y, int width, int height, double
 	*ofs_y = min_y - ((fabs((max_y - min_y)*(*zoom) - height)/2)+y)/(*zoom);
 }
 
-double font_scale(shape *font, float height){
-	double fnt_scale = 0;
-	/* find the dimentions of SHX font */
-	double fnt_size = 0, fnt_above, fnt_below;
-	if(font){ /* if the font exists */
-		if(font->next){ /* the font descriptor is stored in first iten of list */
-			if(font->next->cmd_size > 1){ /* check if the font is valid */
-				fnt_above = font->next->cmds[0]; /* size above the base line of text */
-				fnt_below = font->next->cmds[1]; /* size below the base line of text */
-				if((fnt_above + fnt_below) > 0){
-					fnt_size = fnt_above + fnt_below;
-				}
-			}
-		}
-	}
-	if (fnt_size != 0) fnt_scale = height/fnt_size;
-	return fnt_scale;
-}
-
 int getglobint (lua_State *L, const char *var) {
 	int isnum, result;
 	lua_getglobal(L, var);
@@ -325,6 +305,9 @@ void load_conf (lua_State *L, const char *fname, gui_obj *gui) {
 		if (lua_isstring(L, -1)){
 			//printf("%s\n", lua_tostring(L, -1));
 			struct tfont *ui_font = get_font_list(gui->font_list, (char *)lua_tostring(L, -1));
+			if (!ui_font) { /* default font, if fail to find in list*/
+				ui_font = get_font_list(gui->font_list, "romans.shx");
+			}
 			gui->ui_font.userdata = nk_handle_ptr(ui_font);
 		}
 		else{ /* default value, if not definied in file*/
@@ -509,17 +492,8 @@ int main(int argc, char** argv){
 	bmp_img * img = bmp_new(gui->main_w, gui->main_h, grey, red);
 	
 	/* init Nuklear GUI */
-	struct font_obj font;
-	font.shx_font = shx_font_open("romans.shx");
-	font.scale = 1.4;
 	
-	struct nk_user_font default_font;
-	default_font.userdata = nk_handle_ptr(&font);
-	default_font.height = 12.0;
-	font.scale = font_scale(font.shx_font, default_font.height);
-	default_font.width = nk_user_font_get_text_width;
-	
-	nk_sdl_init(gui, &default_font);
+	nk_sdl_init(gui);
 	
 	set_style(gui->ctx, THEME_ZE);
 	
@@ -576,9 +550,7 @@ int main(int argc, char** argv){
 	struct nk_image i_color = nk_image_ptr(color_img);
 	
 	/* other font */
-	struct font_obj font_tiny;
-	font_tiny.shx_font = font.shx_font;
-	font_tiny.scale = 1.4;
+	
 	
 	struct nk_user_font font_tiny_nk;
 	#if 0
@@ -2060,9 +2032,7 @@ int main(int argc, char** argv){
 	i_svg_free_curves(gui->svg_curves);
 	
 	
-	for (i = 0; i<gui->drawing->num_tstyles; i++){
-		shx_font_free(gui->drawing->text_styles[i].shx_font);
-	}
+	
 	
 	//dxf_hatch_free(gui->list_pattern.next);
 	dxf_h_fam_free(gui->hatch_fam.next);
@@ -2070,7 +2040,6 @@ int main(int argc, char** argv){
 	
 	free(gui->drawing);
 	nk_sdl_shutdown(gui);
-	shx_font_free(font.shx_font);
 	
 	
 	lua_close(Lua1);

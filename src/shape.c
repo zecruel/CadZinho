@@ -175,11 +175,12 @@ shp_typ *shp_font_open(char *path){
 			shp_font->unicode = 0;
 			if (!file_head){
 				/* header for shapes files */
+				if (buf_size < 10000){
+					buffer[buf_size] = curr;
+					buf_size++;
+				}
 				if (index != next_index){
-					if (buf_size < 10000){
-						buffer[buf_size] = curr;
-						buf_size++;
-					}
+					continue;
 				}
 				else {
 					/* first code point in file */

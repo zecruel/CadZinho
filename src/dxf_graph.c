@@ -996,6 +996,7 @@ graph_obj * dxf_spline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 	return NULL;
 }
 
+#if(0)
 graph_obj * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
 	if(ent){
 		int force_ascii = drawing->version < 1021;
@@ -1278,7 +1279,7 @@ graph_obj * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 	}
 	return NULL;
 }
-
+#endif
 list_node * dxf_text_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
 	if(ent){
 		int force_ascii = drawing->version < 1021;
@@ -3049,6 +3050,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 }
 
 graph_obj * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
+	#if(0)
 	if(ent){
 		int force_ascii = drawing->version < 1021;
 		
@@ -3329,6 +3331,7 @@ graph_obj * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 			return curr_graph;
 		}
 	}
+	#endif
 	return NULL;
 }
 

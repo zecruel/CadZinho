@@ -996,568 +996,7 @@ graph_obj * dxf_spline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 	return NULL;
 }
 
-#if(0)
-graph_obj * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
-	if(ent){
-		int force_ascii = drawing->version < 1021;
-		
-		dxf_node *current = NULL;
-		graph_obj *curr_graph = NULL;
-		double pt1_x = 0, pt1_y = 0, pt1_z = 0;
-		double pt2_x = 0, pt2_y = 0, pt2_z = 0;
-		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
-		double elev = 0.0;
-		
-		shape *shx_font = NULL;
-		
-		double t_size = 0, t_rot = 0;
-		
-		int t_alin_v = 0, t_alin_h = 0;
-		
-		double fnt_size, fnt_above, fnt_below, txt_size;
-		double t_pos_x, t_pos_y, t_center_x = 0, t_center_y = 0, t_base_x = 0, t_base_y = 0;
-		double t_scale_x = 1, t_scale_y = 1, txt_w, txt_h;
-		
-		char text[DXF_MAX_CHARS], t_style[DXF_MAX_CHARS];
-		char tmp_str[DXF_MAX_CHARS];
-		char *pos_st, *pos_curr, *pos_tmp, special;
-		
-		int fnt_idx, i, paper = 0;
-		
-		/*flags*/
-		int pt1 = 0, pt2 = 0;
-		int under_l, over_l;
-		
-		
-		/* clear the strings */
-		text[0] = 0;
-		t_style[0] = 0;
-		tmp_str[0] = 0;
-		
-		if (ent->type == DXF_ENT){
-			if (ent->obj.content){
-				current = ent->obj.content->next;
-				//printf("%s\n", ent->obj.name);
-			}
-		}
-		while (current){
-			if (current->type == DXF_ATTR){ /* DXF attibute */
-				switch (current->value.group){
-					case 1:
-						strcpy(text, current->value.s_data);
-						break;
-					case 7:
-						strcpy(t_style, current->value.s_data);
-						break;
-					case 10:
-						pt1_x = current->value.d_data;
-						pt1 = 1; /* set flag */
-						break;
-					case 11:
-						pt2_x = current->value.d_data;
-						pt2 = 1; /* set flag */
-						break;
-					case 20:
-						pt1_y = current->value.d_data;
-						pt1 = 1; /* set flag */
-						break;
-					case 21:
-						pt2_y = current->value.d_data;
-						pt2 = 1; /* set flag */
-						break;
-					case 30:
-						pt1_z = current->value.d_data;
-						pt1 = 1; /* set flag */
-						break;
-					case 38:
-						elev = current->value.d_data;
-						break;
-					case 31:
-						pt2_z = current->value.d_data;
-						pt2 = 1; /* set flag */
-						break;
-					case 40:
-						t_size = current->value.d_data;
-						break;
-					case 41:
-						t_scale_x = current->value.d_data;
-						break;
-					case 50:
-						t_rot = current->value.d_data;
-						break;
-					case 67:
-						paper = current->value.i_data;
-						break;
-					case 72:
-						t_alin_h = current->value.i_data;
-						break;
-					case 73:
-						t_alin_v = current->value.i_data;
-						break;
-					case 210:
-						extru_x = current->value.d_data;
-						break;
-					case 220:
-						extru_y = current->value.d_data;
-						break;
-					case 230:
-						extru_z = current->value.d_data;
-				}
-			}
-			current = current->next; /* go to the next in the list */
-		}
-		if (((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))){
-			
-			/* find the tstyle index and font*/
-			fnt_idx = dxf_tstyle_idx(drawing, t_style);
-			if (fnt_idx >= 0) shx_font = drawing->text_styles[fnt_idx].shx_font;
-			else shx_font = NULL;
-			
-			if(shx_font == NULL){ /* if font not loaded*/
-				/* use the deafault font*/
-				shx_font = drawing->text_styles[0].shx_font;
-			}
-			
-			/* find the dimentions of SHX font */
-			if(shx_font){ /* if the font exists */
-				if(shx_font->next){ /* the font descriptor is stored in first iten of list */
-					if(shx_font->next->cmd_size > 1){ /* check if the font is valid */
-						fnt_above = shx_font->next->cmds[0]; /* size above the base line of text */
-						fnt_below = shx_font->next->cmds[1]; /* size below the base line of text */
-						if((fnt_above + fnt_below) > 0){
-							fnt_size = fnt_above + fnt_below;
-						}
-					}
-				}
-			}
-			
-			/* find and replace special symbols in the text*/
-			under_l = 0; /* under line flag*/
-			over_l = 0; /* over line flag*/
-			pos_curr = strstr(text, "%%");
-			pos_st = text;
-			pos_tmp = tmp_str;
-			while (pos_curr){
-				/* copy the part of text until the control string */
-				strncpy(pos_tmp, pos_st, pos_curr - pos_st);
-				/*control string is stripped in new string */
-				pos_tmp += pos_curr - pos_st;
-				/*get the control character */
-				special = *(pos_curr + 2);
-				/* verify the action to do */
-				switch (special){
-					/* put the  diameter simbol (unicode D8 Hex) in text*/
-					case 'c':
-						pos_tmp += wctomb(pos_tmp, L'\xd8');
-						break;
-					case 'C':
-						pos_tmp += wctomb(pos_tmp, L'\xd8');
-						break;
-					/* put the degrees simbol in text*/
-					case 'd':
-						pos_tmp += wctomb(pos_tmp, L'\xb0');
-						break;
-					case 'D':
-						pos_tmp += wctomb(pos_tmp, L'\xb0');
-						break;
-					/* put the plus/minus tolerance simbol in text*/
-					case 'p':
-						pos_tmp += wctomb(pos_tmp, L'\xb1');
-						break;
-					case 'P':
-						pos_tmp += wctomb(pos_tmp, L'\xb1');
-						break;
-					/* under line */
-					case 'u':
-						under_l = 1;
-						break;
-					case 'U':
-						under_l = 1;
-						break;
-					/* over line */
-					case 'o':
-						over_l = 1;
-						break;
-					case 'O':
-						over_l = 1;
-						break;
-				}
-				/*try to find new  control sequences in the rest of text*/
-				pos_curr += 3;
-				pos_st = pos_curr;
-				pos_curr = strstr(pos_curr, "%%");
-			}
-			/* copy the rest of text after the last control string */
-			strcpy(pos_tmp, pos_st);
-			//printf("%s\n", tmp_str);
-			
-			curr_graph = shx_font_parse(shx_font, pool_idx, tmp_str, NULL);
-			
-			
-			if (curr_graph){
-				
-				/* find the dimentions of text */
-				txt_size = t_size/fnt_above;
-				txt_w = fabs(curr_graph->ext_max_x - curr_graph->ext_min_x);
-				txt_h = fabs(curr_graph->ext_max_y - curr_graph->ext_min_y);
-				
-				if (under_l){
-					/* add the under line */
-					line_add(curr_graph, 
-						curr_graph->ext_min_x,
-						(double)fnt_size * -0.1,
-						pt1_z,
-						curr_graph->ext_max_x, 
-						(double)fnt_size * -0.1,
-						pt1_z);
-				}
-				if (over_l){
-					/* add the over line */
-					line_add(curr_graph, 
-						curr_graph->ext_min_x,
-						(double)fnt_size * 1.1,
-						pt1_z,
-						curr_graph->ext_max_x, 
-						(double)fnt_size * 1.1,
-						pt1_z);
-				}
-				
-				t_base_x =  pt2_x;
-				t_base_y =  pt2_y;
-				
-				if ((t_alin_v == 0) && (t_alin_h == 0)){
-					t_base_x =  pt1_x;
-					t_base_y =  pt1_y;
-				}
-				
-				/* find the insert point of text, in function of its aling */
-				else if(t_alin_h < 3){
-					t_center_x = (double)t_alin_h * (t_scale_x*txt_w * txt_size/2);
-					//t_base_x =  (double)t_alin_h * (pt2_x - pt1_x)/2;
-					//t_base_y =  (double)t_alin_h * (pt2_y - pt1_y)/2;
-				}
-				else{ 
-					if(t_alin_h == 4){
-						t_center_y = (fnt_above + fnt_below)* txt_size/2;
-					}
-					else{
-						t_scale_x = sqrt(pow((pt2_x - pt1_x), 2) + pow((pt2_y - pt1_y), 2))/(txt_w * txt_size);
-						t_base_x =  pt1_x + (pt2_x - pt1_x)/2;
-						t_base_y =  pt1_y + (pt2_y - pt1_y)/2;
-					}
-					
-					t_center_x = (t_scale_x*txt_w * txt_size/2);
-					//rot = atan2((pt2_y - pt1_y),(pt2_x - pt1_x)) * 180/M_PI;
-					
-					//printf("alinhamento=%d\n", t_alin_h);
-				}
-				if(t_alin_v >0){
-					if(t_alin_v != 1){
-						t_center_y = (double)(t_alin_v - 1) * fnt_above * txt_size/2;
-					}
-					else{
-						t_center_y = - fnt_below * txt_size;
-					}
-				}
-				
-				t_pos_x = t_base_x - t_center_x;
-				t_pos_y = t_base_y - t_center_y;
-				
-				/* apply the scales, offsets and rotation to graphs */
-				graph_modify(curr_graph, t_pos_x, t_pos_y, t_scale_x*txt_size, txt_size, 0.0);
-				graph_rot(curr_graph, t_base_x, t_base_y, t_rot);
-				
-				/* convert OCS to WCS */
-				normal[0] = extru_x;
-				normal[1] = extru_y;
-				normal[2] = extru_z;
-				graph_mod_axis(curr_graph, normal, elev);
-				
-			}
-			return curr_graph;
-		}
-	}
-	return NULL;
-}
-#endif
-list_node * dxf_text_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
-	if(ent){
-		int force_ascii = drawing->version < 1021;
-		
-		int num_graph = 0;
-		dxf_node *current = NULL;
-		//graph_obj *curr_graph = NULL;
-		double pt1_x = 0, pt1_y = 0, pt1_z = 0;
-		double pt2_x = 0, pt2_y = 0, pt2_z = 0;
-		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
-		double elev = 0.0;
-		
-		//shape *shx_font = NULL;
-		struct tfont *font = NULL;
-		
-		double t_size = 0, t_rot = 0;
-		
-		int t_alin_v = 0, t_alin_h = 0;
-		
-		double fnt_size, fnt_above, fnt_below, txt_size;
-		double t_pos_x, t_pos_y, t_center_x = 0, t_center_y = 0, t_base_x = 0, t_base_y = 0;
-		double t_scale_x = 1, t_scale_y = 1, txt_w, txt_h;
-		
-		char text[DXF_MAX_CHARS], t_style[DXF_MAX_CHARS];
-		char tmp_str[DXF_MAX_CHARS];
-		char *pos_st, *pos_curr, *pos_tmp, special;
-		
-		int fnt_idx, i, paper = 0;
-		
-		/*flags*/
-		int pt1 = 0, pt2 = 0;
-		int under_l, over_l;
-		
-		
-		/* clear the strings */
-		text[0] = 0;
-		t_style[0] = 0;
-		tmp_str[0] = 0;
-		
-		if (ent->type == DXF_ENT){
-			if (ent->obj.content){
-				current = ent->obj.content->next;
-				//printf("%s\n", ent->obj.name);
-			}
-		}
-		while (current){
-			if (current->type == DXF_ATTR){ /* DXF attibute */
-				switch (current->value.group){
-					case 1:
-						strcpy(text, current->value.s_data);
-						break;
-					case 7:
-						strcpy(t_style, current->value.s_data);
-						break;
-					case 10:
-						pt1_x = current->value.d_data;
-						pt1 = 1; /* set flag */
-						break;
-					case 11:
-						pt2_x = current->value.d_data;
-						pt2 = 1; /* set flag */
-						break;
-					case 20:
-						pt1_y = current->value.d_data;
-						pt1 = 1; /* set flag */
-						break;
-					case 21:
-						pt2_y = current->value.d_data;
-						pt2 = 1; /* set flag */
-						break;
-					case 30:
-						pt1_z = current->value.d_data;
-						pt1 = 1; /* set flag */
-						break;
-					case 38:
-						elev = current->value.d_data;
-						break;
-					case 31:
-						pt2_z = current->value.d_data;
-						pt2 = 1; /* set flag */
-						break;
-					case 40:
-						t_size = current->value.d_data;
-						break;
-					case 41:
-						t_scale_x = current->value.d_data;
-						break;
-					case 50:
-						t_rot = current->value.d_data;
-						break;
-					case 67:
-						paper = current->value.i_data;
-						break;
-					case 72:
-						t_alin_h = current->value.i_data;
-						break;
-					case 73:
-						t_alin_v = current->value.i_data;
-						break;
-					case 210:
-						extru_x = current->value.d_data;
-						break;
-					case 220:
-						extru_y = current->value.d_data;
-						break;
-					case 230:
-						extru_z = current->value.d_data;
-				}
-			}
-			current = current->next; /* go to the next in the list */
-		}
-		if (((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))){
-			
-			/* find the tstyle index and font*/
-			if (strlen(t_style) > 0){
-				fnt_idx = dxf_tstyle_idx(drawing, t_style);
-				if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
-				else font = drawing->dflt_font;
-			}
-			else {
-				fnt_idx = dxf_tstyle_idx(drawing, "STANDARD");
-				if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
-				else font = drawing->dflt_font;
-			}
-			
-			/* find and replace special symbols in the text*/
-			under_l = 0; /* under line flag*/
-			over_l = 0; /* over line flag*/
-			pos_curr = strstr(text, "%%");
-			pos_st = text;
-			pos_tmp = tmp_str;
-			while (pos_curr){
-				/* copy the part of text until the control string */
-				strncpy(pos_tmp, pos_st, pos_curr - pos_st);
-				/*control string is stripped in new string */
-				pos_tmp += pos_curr - pos_st;
-				/*get the control character */
-				special = *(pos_curr + 2);
-				/* verify the action to do */
-				switch (special){
-					/* put the  diameter simbol (unicode D8 Hex) in text*/
-					case 'c':
-						pos_tmp += wctomb(pos_tmp, L'\xd8');
-						break;
-					case 'C':
-						pos_tmp += wctomb(pos_tmp, L'\xd8');
-						break;
-					/* put the degrees simbol in text*/
-					case 'd':
-						pos_tmp += wctomb(pos_tmp, L'\xb0');
-						break;
-					case 'D':
-						pos_tmp += wctomb(pos_tmp, L'\xb0');
-						break;
-					/* put the plus/minus tolerance simbol in text*/
-					case 'p':
-						pos_tmp += wctomb(pos_tmp, L'\xb1');
-						break;
-					case 'P':
-						pos_tmp += wctomb(pos_tmp, L'\xb1');
-						break;
-					/* under line */
-					case 'u':
-						under_l = 1;
-						break;
-					case 'U':
-						under_l = 1;
-						break;
-					/* over line */
-					case 'o':
-						over_l = 1;
-						break;
-					case 'O':
-						over_l = 1;
-						break;
-				}
-				/*try to find new  control sequences in the rest of text*/
-				pos_curr += 3;
-				pos_st = pos_curr;
-				pos_curr = strstr(pos_curr, "%%");
-			}
-			/* copy the rest of text after the last control string */
-			strcpy(pos_tmp, pos_st);
-			
-			list_node * graph = list_new(NULL, FRAME_LIFE);
-			
-			if (num_graph = font_parse_str(font, graph, pool_idx, tmp_str, NULL, force_ascii)){
-				
-				txt_size = t_size;
-				double min_x, min_y, max_x, max_y;
-				int init = 0;
-				graph_list_ext(graph, &init, &min_x, &min_y, &max_x, &max_y);
-				txt_w = fabs(max_x);
-				txt_h = fabs(max_y - min_y);
-				
-				#if(0)
-				if (under_l){
-					/* add the under line */
-					line_add(curr_graph, 
-						curr_graph->ext_min_x,
-						(double)fnt_size * -0.1,
-						pt1_z,
-						curr_graph->ext_max_x, 
-						(double)fnt_size * -0.1,
-						pt1_z);
-				}
-				if (over_l){
-					/* add the over line */
-					line_add(curr_graph, 
-						curr_graph->ext_min_x,
-						(double)fnt_size * 1.1,
-						pt1_z,
-						curr_graph->ext_max_x, 
-						(double)fnt_size * 1.1,
-						pt1_z);
-				}
-				#endif
-				
-				t_base_x =  pt2_x;
-				t_base_y =  pt2_y;
-				
-				if ((t_alin_v == 0) && (t_alin_h == 0)){
-					t_base_x =  pt1_x;
-					t_base_y =  pt1_y;
-				}
-				
-				/* find the insert point of text, in function of its aling */
-				else if(t_alin_h < 3){
-					t_center_x = (double)t_alin_h * (t_scale_x*txt_w * txt_size/2);
-					//t_base_x =  (double)t_alin_h * (pt2_x - pt1_x)/2;
-					//t_base_y =  (double)t_alin_h * (pt2_y - pt1_y)/2;
-				}
-				else{ 
-					if(t_alin_h == 4){
-						t_center_y = (font->above + font->below)* txt_size/2;
-						
-					}
-					else{
-						t_scale_x = sqrt(pow((pt2_x - pt1_x), 2) + pow((pt2_y - pt1_y), 2))/(txt_w * txt_size);
-						t_base_x =  pt1_x + (pt2_x - pt1_x)/2;
-						t_base_y =  pt1_y + (pt2_y - pt1_y)/2;
-					}
-					
-					t_center_x = (t_scale_x*txt_w * txt_size/2);
-					//rot = atan2((pt2_y - pt1_y),(pt2_x - pt1_x)) * 180/M_PI;
-					
-					//printf("alinhamento=%d\n", t_alin_h);
-				}
-				if(t_alin_v >0){
-					if(t_alin_v != 1){
-						t_center_y = (double)(t_alin_v - 1) * font->above * txt_size/2;
-					}
-					else{
-						t_center_y = - font->below * txt_size;
-					}
-				}
-				
-				t_pos_x = t_base_x - t_center_x;
-				t_pos_y = t_base_y - t_center_y;
-				
-				/* apply the scales, offsets and rotation to graphs */
-				graph_list_modify(graph, t_pos_x, t_pos_y, t_scale_x*txt_size, txt_size, 0.0);
-				graph_list_rot(graph, t_base_x, t_base_y, t_rot);
-				
-				/* convert OCS to WCS */
-				normal[0] = extru_x;
-				normal[1] = extru_y;
-				normal[2] = extru_z;
-				graph_list_mod_ax(graph, normal, elev, 0, num_graph - 1);
-				
-			}
-			return graph;
-		}
-	}
-	return NULL;
-}
-
-list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
+list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
 	if(ent){
 		int force_ascii = drawing->version < 1021;
 		
@@ -1751,185 +1190,15 @@ list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				}
 				if ((str_start < txt_len - 1) && (text[str_start] == '\\')){
 					/*get the control character */
-					special = text[str_start + 1];
 					
-					/* verify the action to do */
-					switch (special){
-						case '\\':
-							code_p = '\\';
-							ofs = 2;
-							break;
-						case '{':
-							code_p = '{';
-							ofs = 2;
-							break;
-						case '}':
-							code_p = '}';
-							ofs = 2;
-							break;
-						/* under line */
-						case 'l':
-							under_l = 0;
-							ofs = 2;
-							code_p = 0;
-							break;
-						case 'L':
-							under_l = 1;
-							ofs = 2;
-							code_p = 0;
-							break;
-						/* over line */
-						case 'o':
-							over_l = 0;
-							ofs = 2;
-							code_p = 0;
-							break;
-						case 'O':
-							over_l = 1;
-							ofs = 2;
-							code_p = 0;
-							break;
-						/* stikethrough */
-						case 'k':
-							stike = 0;
-							ofs = 2;
-							code_p = 0;
-							break;
-						case 'K':
-							stike = 1;
-							ofs = 2;
-							code_p = 0;
-							break;
-						/* new paragraph */
-						case 'P':
-						case 'p':
-							ofs_x = 0.0;
-							ofs_y -= 1.1;
-							ofs = 2;
-							code_p = 0;
-							break;
-						case 'U':
-						case 'u':
-							if (text[str_start + 2] == '+'){
-								char *cont;
-								long cp = strtol(text + str_start + 3, &cont, 16);
-								if (cp){
-									code_p = cp;
-									ofs = cont - text - str_start;
-								}
-							}
-							break;
-						/* change color */
-						case 'C':
-						case 'c':
-							{
-								char *cont;
-								long new_color = strtol(text + str_start + 2, &cont, 10);
-								code_p = 0;
-								ofs = cont - text - str_start;
-								if ((cont) && (cont[0] == ';')) ofs++;
-							}
-							break;
-						/* change font */
-						case 'F':
-						case 'f':
-							{
-								char *next_mark = strchr(text + str_start + 2, ';');
-								if (next_mark){
-									code_p = 0;
-									ofs = next_mark - text - str_start + 1;
-								}
-							}
-							break;
-						/* change height */
-						case 'H':
-						case 'h':
-							{
-								char *cont;
-								double factor = strtod(text + str_start + 2, &cont);
-								if (factor > 0.0){
-									//spc_fac = factor;
-								}
-								code_p = 0;
-								ofs = cont - text - str_start;
-								if (cont){
-									if (cont[0] == 'x' || cont[0] == 'X'){
-										//
-										cont++;
-										ofs++;
-									}
-									if (cont[0] == ';') ofs++;
-								}
-							}
-							break;
-						/* stacks text */
-						case 'S':
-						case 's':
-							{
-								char *next_mark = strchr(text + str_start + 2, ';');
-								if (next_mark){
-									code_p = 0;
-									ofs = next_mark - text - str_start + 1;
-								}
-							}
-							break;
-						/* adjust the space between chars */
-						case 'T':
-						case 't':
-							{
-								char *cont;
-								double factor = strtod(text + str_start + 2, &cont);
-								if (factor > 0.0){
-									spc_fac = factor;
-								}
-								code_p = 0;
-								ofs = cont - text - str_start;
-								if ((cont) && (cont[0] == ';')) ofs++;
-							}
-							break;
-						/* change obliquing angle */
-						case 'Q':
-						case 'q':
-							{
-								char *cont;
-								double factor = strtod(text + str_start + 2, &cont);
-								if (factor > 0.0){
-									//spc_fac = factor;
-								}
-								code_p = 0;
-								ofs = cont - text - str_start;
-								if ((cont) && (cont[0] == ';')) ofs++;
-							}
-							break;
-						/* width factor */
-						case 'W':
-						case 'w':
-							{
-								char *cont;
-								double factor = strtod(text + str_start + 2, &cont);
-								if (factor > 0.0){
-									w_fac = factor;
-								}
-								code_p = 0;
-								ofs = cont - text - str_start;
-								if ((cont) && (cont[0] == ';')) ofs++;
-							}
-							break;
-						/* vertical alignment (0 - bottm, 1 - center, 2 - top) */
-						case 'A':
-						case 'a':
-							{
-								char *cont;
-								long new_al = strtol(text + str_start + 2, &cont, 10);
-								code_p = 0;
-								ofs = cont - text - str_start;
-								if ((cont) && (cont[0] == ';')) ofs++;
-							}
-							break;
+					if ((text[str_start + 1] == 'U' || text[str_start + 1] == 'u') && text[str_start + 2] == '+'){
+						char *cont;
+						long cp = strtol(text + str_start + 3, &cont, 16);
+						if (cp){
+							code_p = cp;
+							ofs = cont - text - str_start;
+						}
 					}
-					
-					
-					
 				}
 				if (code_p) {
 					w = 0.0;
@@ -1990,153 +1259,64 @@ list_node * dxf_text_parse3(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				}
 			}
 			
-			#if(0)
-			/* find and replace special symbols in the text*/
-			under_l = 0; /* under line flag*/
-			over_l = 0; /* over line flag*/
-			pos_curr = strstr(text, "%%");
-			pos_st = text;
-			pos_tmp = tmp_str;
-			while (pos_curr){
-				/* copy the part of text until the control string */
-				strncpy(pos_tmp, pos_st, pos_curr - pos_st);
-				/*control string is stripped in new string */
-				pos_tmp += pos_curr - pos_st;
-				/*get the control character */
-				special = *(pos_curr + 2);
-				/* verify the action to do */
-				switch (special){
-					/* put the  diameter simbol (unicode D8 Hex) in text*/
-					case 'c':
-						pos_tmp += wctomb(pos_tmp, L'\xd8');
-						break;
-					case 'C':
-						pos_tmp += wctomb(pos_tmp, L'\xd8');
-						break;
-					/* put the degrees simbol in text*/
-					case 'd':
-						pos_tmp += wctomb(pos_tmp, L'\xb0');
-						break;
-					case 'D':
-						pos_tmp += wctomb(pos_tmp, L'\xb0');
-						break;
-					/* put the plus/minus tolerance simbol in text*/
-					case 'p':
-						pos_tmp += wctomb(pos_tmp, L'\xb1');
-						break;
-					case 'P':
-						pos_tmp += wctomb(pos_tmp, L'\xb1');
-						break;
-					/* under line */
-					case 'u':
-						under_l = 1;
-						break;
-					case 'U':
-						under_l = 1;
-						break;
-					/* over line */
-					case 'o':
-						over_l = 1;
-						break;
-					case 'O':
-						over_l = 1;
-						break;
-				}
-				/*try to find new  control sequences in the rest of text*/
-				pos_curr += 3;
-				pos_st = pos_curr;
-				pos_curr = strstr(pos_curr, "%%");
+			txt_size = t_size;
+			double min_x, min_y, max_x, max_y;
+			int init = 0;
+			graph_list_ext(graph, &init, &min_x, &min_y, &max_x, &max_y);
+			txt_w = fabs(max_x);
+			txt_h = fabs(max_y - min_y);
+			
+			t_base_x =  pt2_x;
+			t_base_y =  pt2_y;
+			
+			if ((t_alin_v == 0) && (t_alin_h == 0)){
+				t_base_x =  pt1_x;
+				t_base_y =  pt1_y;
 			}
-			/* copy the rest of text after the last control string */
-			strcpy(pos_tmp, pos_st);
 			
-			
-			
-			if (num_graph = font_parse_str(font, graph, pool_idx, tmp_str, NULL)){
-				#endif
-				txt_size = t_size;
-				double min_x, min_y, max_x, max_y;
-				int init = 0;
-				graph_list_ext(graph, &init, &min_x, &min_y, &max_x, &max_y);
-				txt_w = fabs(max_x);
-				txt_h = fabs(max_y - min_y);
-				
-				#if(0)
-				if (under_l){
-					/* add the under line */
-					line_add(curr_graph, 
-						curr_graph->ext_min_x,
-						(double)fnt_size * -0.1,
-						pt1_z,
-						curr_graph->ext_max_x, 
-						(double)fnt_size * -0.1,
-						pt1_z);
-				}
-				if (over_l){
-					/* add the over line */
-					line_add(curr_graph, 
-						curr_graph->ext_min_x,
-						(double)fnt_size * 1.1,
-						pt1_z,
-						curr_graph->ext_max_x, 
-						(double)fnt_size * 1.1,
-						pt1_z);
-				}
-				#endif
-				
-				t_base_x =  pt2_x;
-				t_base_y =  pt2_y;
-				
-				if ((t_alin_v == 0) && (t_alin_h == 0)){
-					t_base_x =  pt1_x;
-					t_base_y =  pt1_y;
-				}
-				
-				/* find the insert point of text, in function of its aling */
-				else if(t_alin_h < 3){
-					t_center_x = (double)t_alin_h * (t_scale_x*txt_w * txt_size/2);
-					//t_base_x =  (double)t_alin_h * (pt2_x - pt1_x)/2;
-					//t_base_y =  (double)t_alin_h * (pt2_y - pt1_y)/2;
-				}
-				else{ 
-					if(t_alin_h == 4){
-						t_center_y = (font->above + font->below)* txt_size/2;
-						
-					}
-					else{
-						t_scale_x = sqrt(pow((pt2_x - pt1_x), 2) + pow((pt2_y - pt1_y), 2))/(txt_w * txt_size);
-						t_base_x =  pt1_x + (pt2_x - pt1_x)/2;
-						t_base_y =  pt1_y + (pt2_y - pt1_y)/2;
-					}
+			/* find the insert point of text, in function of its aling */
+			else if(t_alin_h < 3){
+				t_center_x = (double)t_alin_h * (t_scale_x*txt_w * txt_size/2);
+				//t_base_x =  (double)t_alin_h * (pt2_x - pt1_x)/2;
+				//t_base_y =  (double)t_alin_h * (pt2_y - pt1_y)/2;
+			}
+			else{ 
+				if(t_alin_h == 4){
+					t_center_y = (font->above + font->below)* txt_size/2;
 					
-					t_center_x = (t_scale_x*txt_w * txt_size/2);
-					//rot = atan2((pt2_y - pt1_y),(pt2_x - pt1_x)) * 180/M_PI;
-					
-					//printf("alinhamento=%d\n", t_alin_h);
 				}
-				if(t_alin_v >0){
-					if(t_alin_v != 1){
-						t_center_y = (double)(t_alin_v - 1) * font->above * txt_size/2;
-					}
-					else{
-						t_center_y = - font->below * txt_size;
-					}
+				else{
+					t_scale_x = sqrt(pow((pt2_x - pt1_x), 2) + pow((pt2_y - pt1_y), 2))/(txt_w * txt_size);
+					t_base_x =  pt1_x + (pt2_x - pt1_x)/2;
+					t_base_y =  pt1_y + (pt2_y - pt1_y)/2;
 				}
 				
-				t_pos_x = t_base_x - t_center_x;
-				t_pos_y = t_base_y - t_center_y;
+				t_center_x = (t_scale_x*txt_w * txt_size/2);
+				//rot = atan2((pt2_y - pt1_y),(pt2_x - pt1_x)) * 180/M_PI;
 				
-				/* apply the scales, offsets and rotation to graphs */
-				graph_list_modify(graph, t_pos_x, t_pos_y, t_scale_x*txt_size, txt_size, 0.0);
-				graph_list_rot(graph, t_base_x, t_base_y, t_rot);
-				
-				/* convert OCS to WCS */
-				normal[0] = extru_x;
-				normal[1] = extru_y;
-				normal[2] = extru_z;
-				graph_list_mod_ax(graph, normal, elev, 0, num_graph - 1);
-				
-			//}
+				//printf("alinhamento=%d\n", t_alin_h);
+			}
+			if(t_alin_v >0){
+				if(t_alin_v != 1){
+					t_center_y = (double)(t_alin_v - 1) * font->above * txt_size/2;
+				}
+				else{
+					t_center_y = - font->below * txt_size;
+				}
+			}
+			
+			t_pos_x = t_base_x - t_center_x;
+			t_pos_y = t_base_y - t_center_y;
+			
+			/* apply the scales, offsets and rotation to graphs */
+			graph_list_modify(graph, t_pos_x, t_pos_y, t_scale_x*txt_size, txt_size, 0.0);
+			graph_list_rot(graph, t_base_x, t_base_y, t_rot);
+			
+			/* convert OCS to WCS */
+			normal[0] = extru_x;
+			normal[1] = extru_y;
+			normal[2] = extru_z;
+			graph_list_mod_ax(graph, normal, elev, 0, num_graph - 1);
 			return graph;
 		}
 	}
@@ -3049,11 +2229,11 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 	return NULL;
 }
 
-graph_obj * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
-	#if(0)
+list_node * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
 	if(ent){
 		int force_ascii = drawing->version < 1021;
 		
+		int num_graph = 0;
 		dxf_node *current = NULL;
 		graph_obj *curr_graph = NULL;
 		double pt1_x = 0, pt1_y = 0, pt1_z = 0;
@@ -3061,7 +2241,8 @@ graph_obj * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
 		double elev = 0.0;
 		
-		shape *shx_font = NULL;
+		//shape *shx_font = NULL;
+		struct tfont *font = NULL;
 		
 		double t_size = 0, t_rot = 0;
 		
@@ -3079,7 +2260,7 @@ graph_obj * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 		
 		/*flags*/
 		int pt1 = 0, pt2 = 0;
-		int under_l, over_l;
+		int under_l = 0, over_l = 0, stike = 0;
 		
 		
 		/* clear the strings */
@@ -3122,12 +2303,12 @@ graph_obj * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 						pt1_z = current->value.d_data;
 						pt1 = 1; /* set flag */
 						break;
+					case 38:
+						elev = current->value.d_data;
+						break;
 					case 31:
 						pt2_z = current->value.d_data;
 						pt2 = 1; /* set flag */
-						break;
-					case 38:
-						elev = current->value.d_data;
 						break;
 					case 40:
 						t_size = current->value.d_data;
@@ -3161,177 +2342,217 @@ graph_obj * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 		}
 		if (((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))){
 			
-			/* find the font index and font*/
-			fnt_idx = dxf_tstyle_idx(drawing, t_style);
-			if (fnt_idx >= 0) shx_font = drawing->text_styles[fnt_idx].shx_font;
-			else shx_font = NULL;
-			
-			
-			if(shx_font == NULL){ /* if font not loaded*/
-				/* use the deafault font*/
-				shx_font = drawing->text_styles[0].shx_font;
+			/* find the tstyle index and font*/
+			if (strlen(t_style) > 0){
+				fnt_idx = dxf_tstyle_idx(drawing, t_style);
+				if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
+				else font = drawing->dflt_font;
+			}
+			else {
+				fnt_idx = dxf_tstyle_idx(drawing, "STANDARD");
+				if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
+				else font = drawing->dflt_font;
 			}
 			
-			/* find the dimentions of SHX font */
-			if(shx_font){ /* if the font exists */
-				if(shx_font->next){ /* the font descriptor is stored in first iten of list */
-					if(shx_font->next->cmd_size > 1){ /* check if the font is valid */
-						fnt_above = shx_font->next->cmds[0]; /* size above the base line of text */
-						fnt_below = shx_font->next->cmds[1]; /* size below the base line of text */
-						if((fnt_above + fnt_below) > 0){
-							fnt_size = fnt_above + fnt_below;
+			list_node * graph = list_new(NULL, FRAME_LIFE);
+			
+			int ofs = 0, str_start = 0, code_p, prev_cp = 0, txt_len;
+			double w = 0.0, ofs_x = 0.0, ofs_y = 0.0;
+			double w_fac = 1.0, spc_fac = 1.0, h_fac = 1.0;
+			
+			txt_len = strlen(text);
+			/*sweep the string, decoding utf8 or ascii (cp1252)*/
+			if ((force_ascii) || (!font->unicode)){ /* decode ascii cp1252 */
+				code_p = (int) cp1252[(unsigned char)text[str_start]];
+				if (code_p > 0) ofs = 1;
+				else ofs = 0;
+			}
+			else{ /* decode utf-8 */
+				ofs = utf8_to_codepoint(text + str_start, &code_p);
+			}
+			while (ofs){
+				if ((str_start < txt_len - 2) && (text[str_start] == '%') && (text[str_start + 1] == '%')){
+					/*get the control character */
+					special = text[str_start + 2];
+					/* verify the action to do */
+					switch (special){
+						/* put the  diameter simbol (unicode D8 Hex) in text*/
+						case 'c':
+						case 'C':
+							code_p = 216;
+							ofs = 3;
+							break;
+						/* put the degrees simbol in text*/
+						case 'd':
+						case 'D':
+							code_p = 176;
+							ofs = 3;
+							break;
+						/* put the plus/minus tolerance simbol in text*/
+						case 'p':
+						case 'P':
+							code_p = 177;
+							ofs = 3;
+							break;
+						/* under line */
+						case 'u':
+						case 'U':
+							under_l = !under_l;
+							ofs = 3;
+							code_p = 0;
+							break;
+						/* over line */
+						case 'o':
+						case 'O':
+							over_l = !over_l;
+							ofs = 3;
+							code_p = 0;
+							break;
+						default:
+						{
+							char *cont;
+							long cp = strtol(text + str_start + 2, &cont, 10);
+							if (cp){
+								code_p = cp;
+								ofs = cont - text - str_start;
+							}
+						}
+							break;
+					}
+					
+				}
+				if ((str_start < txt_len - 1) && (text[str_start] == '\\')){
+					/*get the control character */
+					
+					if ((text[str_start + 1] == 'U' || text[str_start + 1] == 'u') && text[str_start + 2] == '+'){
+						char *cont;
+						long cp = strtol(text + str_start + 3, &cont, 16);
+						if (cp){
+							code_p = cp;
+							ofs = cont - text - str_start;
 						}
 					}
 				}
-			}
-			
-			/* find and replace special symbols in the text*/
-			under_l = 0; /* under line flag*/
-			over_l = 0; /* over line flag*/
-			pos_curr = strstr(text, "%%");
-			pos_st = text;
-			pos_tmp = tmp_str;
-			while (pos_curr){
-				/* copy the part of text until the control string */
-				strncpy(pos_tmp, pos_st, pos_curr - pos_st);
-				/*control string is stripped in new string */
-				pos_tmp += pos_curr - pos_st;
-				/*get the control character */
-				special = *(pos_curr + 2);
-				/* verify the action to do */
-				switch (special){
-					/* put the  diameter simbol (unicode D8 Hex) in text*/
-					case 'c':
-						pos_tmp += wctomb(pos_tmp, L'\xd8');
-						break;
-					case 'C':
-						pos_tmp += wctomb(pos_tmp, L'\xd8');
-						break;
-					/* put the degrees simbol in text*/
-					case 'd':
-						pos_tmp += wctomb(pos_tmp, L'\xb0');
-						break;
-					case 'D':
-						pos_tmp += wctomb(pos_tmp, L'\xb0');
-						break;
-					/* put the plus/minus tolerance simbol in text*/
-					case 'p':
-						pos_tmp += wctomb(pos_tmp, L'\xb1');
-						break;
-					case 'P':
-						pos_tmp += wctomb(pos_tmp, L'\xb1');
-						break;
-					/* under line */
-					case 'u':
-						under_l = 1;
-						break;
-					case 'U':
-						under_l = 1;
-						break;
-					/* over line */
-					case 'o':
-						over_l = 1;
-						break;
-					case 'O':
-						over_l = 1;
-						break;
-				}
-				/*try to find new  control sequences in the rest of text*/
-				pos_curr += 3;
-				pos_st = pos_curr;
-				pos_curr = strstr(pos_curr, "%%");
-			}
-			/* copy the rest of text after the last control string */
-			strcpy(pos_tmp, pos_st);
-			//printf("%s\n", tmp_str);
-			
-			curr_graph = shx_font_parse(shx_font, pool_idx, tmp_str, NULL);
-			
-			
-			if (curr_graph){
-				
-				/* find the dimentions of text */
-				txt_size = t_size/fnt_above;
-				txt_w = fabs(curr_graph->ext_max_x - curr_graph->ext_min_x);
-				txt_h = fabs(curr_graph->ext_max_y - curr_graph->ext_min_y);
-				
-				if (under_l){
-					/* add the under line */
-					line_add(curr_graph, 
-						curr_graph->ext_min_x,
-						(double)fnt_size * -0.1,
-						pt1_z,
-						curr_graph->ext_max_x, 
-						(double)fnt_size * -0.1,
-						pt1_z);
-				}
-				if (over_l){
-					/* add the over line */
-					line_add(curr_graph, 
-						curr_graph->ext_min_x,
-						(double)fnt_size * 1.1,
-						pt1_z,
-						curr_graph->ext_max_x, 
-						(double)fnt_size * 1.1,
-						pt1_z);
-				}
-				
-				t_base_x =  pt2_x;
-				t_base_y =  pt2_y;
-				
-				if ((t_alin_v == 0) && (t_alin_h == 0)){
-					t_base_x =  pt1_x;
-					t_base_y =  pt1_y;
-				}
-				
-				/* find the insert point of text, in function of its aling */
-				else if(t_alin_h < 3){
-					t_center_x = (double)t_alin_h * (t_scale_x*txt_w * txt_size/2);
-					//t_base_x =  (double)t_alin_h * (pt2_x - pt1_x)/2;
-					//t_base_y =  (double)t_alin_h * (pt2_y - pt1_y)/2;
-				}
-				else{ 
-					if(t_alin_h == 4){
-						t_center_y = (fnt_above + fnt_below)* txt_size/2;
-					}
-					else{
-						t_scale_x = sqrt(pow((pt2_x - pt1_x), 2) + pow((pt2_y - pt1_y), 2))/(txt_w * txt_size);
-						t_base_x =  pt1_x + (pt2_x - pt1_x)/2;
-						t_base_y =  pt1_y + (pt2_y - pt1_y)/2;
+				if (code_p) {
+					w = 0.0;
+					curr_graph = font_parse_cp(font, code_p, prev_cp, pool_idx, &w);
+					w *= w_fac;
+					
+					if (curr_graph){
+						graph_modify(curr_graph, ofs_x, ofs_y, w_fac, h_fac, 0.0);
+						/* store the graph in the return vector */
+						if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
 					}
 					
-					t_center_x = (t_scale_x*txt_w * txt_size/2);
-					//rot = atan2((pt2_y - pt1_y),(pt2_x - pt1_x)) * 180/M_PI;
+					if (w > 0.0 && (under_l)){
+						/* add the under line */
+						double y = -0.2;
+						graph_obj * txt_line = graph_new(pool_idx);
+						line_add(txt_line, ofs_x, y, pt1_z, ofs_x + w, y, pt1_z);
+						if (txt_line){
+							/* store the graph in the return vector */
+							if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
+						}
+					}
+					if (w > 0.0 && (over_l)){
+						/* add the over line */
+						double y = 1.2;
+						graph_obj * txt_line = graph_new(pool_idx);
+						line_add(txt_line, ofs_x, y, pt1_z, ofs_x + w, y, pt1_z);
+						if (txt_line){
+							/* store the graph in the return vector */
+							if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
+						}
+					}
+					if (w > 0.0 && (stike)){
+						/* add stikethough */
+						double y = 0.5;
+						graph_obj * txt_line = graph_new(pool_idx);
+						line_add(txt_line, ofs_x, y, pt1_z, ofs_x + w, y, pt1_z);
+						if (txt_line){
+							/* store the graph in the return vector */
+							if (list_push(graph, list_new((void *)txt_line, pool_idx))) num_graph++;
+						}
+					}
 					
-					//printf("alinhamento=%d\n", t_alin_h);
+					/* update the ofset */
+					ofs_x += w * spc_fac;
+					
+					prev_cp = code_p;
 				}
-				if(t_alin_v >0){
-					if(t_alin_v != 1){
-						t_center_y = (double)(t_alin_v - 1) * fnt_above * txt_size/2;
-					}
-					else{
-						t_center_y = - fnt_below * txt_size;
-					}
+				/* get next codepoint */
+				str_start += ofs;
+				if ((force_ascii) || (!font->unicode)){ /* decode ascii cp1252 */
+					code_p = (int) cp1252[(unsigned char)text[str_start]];
+					if (code_p > 0) ofs = 1;
+					else ofs = 0;
 				}
-				
-				t_pos_x = t_base_x - t_center_x;
-				t_pos_y = t_base_y - t_center_y;
-				
-				/* apply the scales, offsets and rotation to graphs */
-				graph_modify(curr_graph, t_pos_x, t_pos_y, t_scale_x*txt_size, txt_size, 0.0);
-				graph_rot(curr_graph, t_base_x, t_base_y, t_rot);
-				
-				/* convert OCS to WCS */
-				normal[0] = extru_x;
-				normal[1] = extru_y;
-				normal[2] = extru_z;
-				graph_mod_axis(curr_graph, normal, elev);
-				
+				else{/* decode utf-8 */
+					ofs = utf8_to_codepoint(text + str_start, &code_p);
+				}
 			}
-			return curr_graph;
+			
+			txt_size = t_size;
+			double min_x, min_y, max_x, max_y;
+			int init = 0;
+			graph_list_ext(graph, &init, &min_x, &min_y, &max_x, &max_y);
+			txt_w = fabs(max_x);
+			txt_h = fabs(max_y - min_y);
+			
+			t_base_x =  pt2_x;
+			t_base_y =  pt2_y;
+			
+			if ((t_alin_v == 0) && (t_alin_h == 0)){
+				t_base_x =  pt1_x;
+				t_base_y =  pt1_y;
+			}
+			
+			/* find the insert point of text, in function of its aling */
+			else if(t_alin_h < 3){
+				t_center_x = (double)t_alin_h * (t_scale_x*txt_w * txt_size/2);
+				//t_base_x =  (double)t_alin_h * (pt2_x - pt1_x)/2;
+				//t_base_y =  (double)t_alin_h * (pt2_y - pt1_y)/2;
+			}
+			else{ 
+				if(t_alin_h == 4){
+					t_center_y = (font->above + font->below)* txt_size/2;
+					
+				}
+				else{
+					t_scale_x = sqrt(pow((pt2_x - pt1_x), 2) + pow((pt2_y - pt1_y), 2))/(txt_w * txt_size);
+					t_base_x =  pt1_x + (pt2_x - pt1_x)/2;
+					t_base_y =  pt1_y + (pt2_y - pt1_y)/2;
+				}
+				
+				t_center_x = (t_scale_x*txt_w * txt_size/2);
+				//rot = atan2((pt2_y - pt1_y),(pt2_x - pt1_x)) * 180/M_PI;
+				
+				//printf("alinhamento=%d\n", t_alin_h);
+			}
+			if(t_alin_v >0){
+				if(t_alin_v != 1){
+					t_center_y = (double)(t_alin_v - 1) * font->above * txt_size/2;
+				}
+				else{
+					t_center_y = - font->below * txt_size;
+				}
+			}
+			
+			t_pos_x = t_base_x - t_center_x;
+			t_pos_y = t_base_y - t_center_y;
+			
+			/* apply the scales, offsets and rotation to graphs */
+			graph_list_modify(graph, t_pos_x, t_pos_y, t_scale_x*txt_size, txt_size, 0.0);
+			graph_list_rot(graph, t_base_x, t_base_y, t_rot);
+			
+			/* convert OCS to WCS */
+			normal[0] = extru_x;
+			normal[1] = extru_y;
+			normal[2] = extru_z;
+			graph_list_mod_ax(graph, normal, elev, 0, num_graph - 1);
+			return graph;
 		}
 	}
-	#endif
 	return NULL;
 }
 
@@ -3572,16 +2793,8 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				
 			}
 			else if (strcmp(current->obj.name, "TEXT") == 0){
-				#if (0)
-				curr_graph = dxf_text_parse(drawing, current, p_space, pool_idx);
-				if (curr_graph){
-					/* store the graph in the return vector */
-					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
-					mod_idx++;
-				}
-				#endif
-				list_node * text_list = dxf_text_parse3(drawing, current, p_space, pool_idx);
+				
+				list_node * text_list = dxf_text_parse(drawing, current, p_space, pool_idx);
 				
 				if ((text_list != NULL)){
 					list_node *curr_node = text_list->next;
@@ -3704,13 +2917,23 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			}
 			else if (strcmp(current->obj.name, "ATTRIB") == 0){
 				ent_type = DXF_ATTRIB;
-				curr_graph = dxf_attrib_parse(drawing, current, p_space, pool_idx);
-				if (curr_graph){
-					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos+1]);
+				
+				list_node * text_list = dxf_attrib_parse(drawing, current, p_space, pool_idx);
+				if (text_list){
+					list_node *curr_node = text_list->next;
 					
-					/* store the graph in a temporary list.
+					// starts the content sweep 
+					while (curr_node != NULL){
+						if (curr_node->data){
+							curr_graph = (graph_obj *)curr_node->data;
+							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos+1]);
+						}
+						curr_node = curr_node->next;
+					}
+					
+					/* store the graph list  in a temporary list.
 					this approach avoid to modify the attributes inside INSERTs*/
-					list_node * att_el = list_new(curr_graph, FRAME_LIFE);
+					list_node * att_el = list_new(text_list, FRAME_LIFE);
 					if (att_el){
 						list_push(att_list, att_el);
 					}
@@ -3718,13 +2941,23 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			}
 			else if ((strcmp(current->obj.name, "ATTDEF") == 0) && parse_attdef){
 				ent_type = DXF_ATTRIB;
-				curr_graph = dxf_attrib_parse(drawing, current, p_space, pool_idx);
-				if (curr_graph){
-					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos+1]);
+				
+				list_node * text_list = dxf_attrib_parse(drawing, current, p_space, pool_idx);
+				if (text_list){
+					list_node *curr_node = text_list->next;
 					
-					/* store the graph in a temporary list.
+					// starts the content sweep 
+					while (curr_node != NULL){
+						if (curr_node->data){
+							curr_graph = (graph_obj *)curr_node->data;
+							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos+1]);
+						}
+						curr_node = curr_node->next;
+					}
+					
+					/* store the graph list  in a temporary list.
 					this approach avoid to modify the attributes inside INSERTs*/
-					list_node * att_el = list_new(curr_graph, FRAME_LIFE);
+					list_node * att_el = list_new(text_list, FRAME_LIFE);
 					if (att_el){
 						list_push(att_list, att_el);
 					}
@@ -4061,7 +3294,15 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 	list_node *att_curr = att_list->next;
 	while (att_curr != NULL){
 		if (att_curr->data){
-			list_push(list_ret, list_new((void *)att_curr->data, pool_idx));
+			list_node *curr_node = ((list_node *)att_curr->data)->next;
+					
+			// starts the content sweep 
+			while (curr_node != NULL){
+				if (curr_node->data){
+					list_push(list_ret, list_new((void *)curr_node->data, pool_idx));
+				}
+				curr_node = curr_node->next;
+			}
 		}
 		att_curr = att_curr->next;
 	}

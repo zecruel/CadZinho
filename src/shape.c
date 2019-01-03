@@ -853,7 +853,10 @@ graph_obj *shp_parse_cp(shp_typ *shp_font, int pool_idx, int cp, double *w){
 			index++;
 			continue;
 		}
-		
+		else {
+			index++;
+			continue;
+		}
 	}
 	
 	if (w != NULL) *w = pre_x;

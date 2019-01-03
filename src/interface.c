@@ -429,6 +429,7 @@ int main(int argc, char** argv){
 	int show_app_about = 0;
 	int show_app_file = 0;
 	int show_info = 0;
+	int show_file_br = 0;
 	
 	char file_path[DXF_MAX_CHARS];
 	int file_path_len = 0;
@@ -941,6 +942,7 @@ int main(int argc, char** argv){
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_GEAR]))){
 					//printf("Config\n");
+					show_file_br = 1;
 					
 					
 				}
@@ -1350,6 +1352,10 @@ int main(int argc, char** argv){
 		
 		if (show_info){
 			show_info = info_win(gui);
+		}
+		
+		if (show_file_br){
+			show_file_br = file_win(gui);
 		}
 		
 		if (show_tstyles_mng){

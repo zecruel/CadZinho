@@ -76,7 +76,7 @@ enum Gui_ev {
 	
 
 struct sort_by_idx{
-	int idx;
+	long int idx;
 	void *data;
 };
 

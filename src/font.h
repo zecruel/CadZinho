@@ -4,7 +4,6 @@
 #include "dxf.h"
 #include "list.h"
 #include "shape.h"
-//#include "shape2.h"
 #include "tt_graph.h"
 #include "graph.h"
 

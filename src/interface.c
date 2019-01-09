@@ -19,7 +19,7 @@
 #include "gui_info.h"
 #include "gui_xy.h"
 #include "gui_use.h"
-
+#include "gui_file.h"
 
 #include <stdio.h> 
 #include <stdlib.h> 
@@ -1137,7 +1137,7 @@ int main(int argc, char** argv){
 					nk_edit_string(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, file_path, &file_path_len, DXF_MAX_CHARS, nk_filter_default);
 					
 					nk_layout_row_dynamic(gui->ctx, 20, 2);
-					if (nk_button_label(gui->ctx, "OK")) {
+					if ((nk_button_label(gui->ctx, "OK")) && (!show_file_br)) {
 						file_path[file_path_len] = 0;
 						if (strlen(file_path) > 4){
 							dxf_mem_pool(ZERO_DXF, 0);
@@ -1157,10 +1157,13 @@ int main(int argc, char** argv){
 						file_path_len = 0;
 					}
 					if (nk_button_label(gui->ctx, "Explore")) {
-						gui->action = FILE_OPEN;
-						show_app_file = nk_false;
-						file_path_len = 0;
+						//gui->action = FILE_OPEN;
+						//show_app_file = nk_false;
+						//file_path_len = 0;
+						
+						show_file_br = 1;
 					}
+					
 					nk_popup_end(gui->ctx);
 				} else {
 					show_app_file = nk_false;
@@ -1355,7 +1358,10 @@ int main(int argc, char** argv){
 		}
 		
 		if (show_file_br){
-			show_file_br = file_win(gui);
+			char *path;
+			show_file_br = file_win(gui, &path);
+			strncpy(file_path, path, DXF_MAX_CHARS);
+			file_path_len = strlen(file_path);
 		}
 		
 		if (show_tstyles_mng){

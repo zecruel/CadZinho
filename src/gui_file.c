@@ -1,4 +1,4 @@
-#include "gui.h"
+#include "gui_file.h"
 #include <dirent.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -8,8 +8,11 @@
 struct file_info{
 	char name[DXF_MAX_CHARS];
 	time_t date;
+	off_t size;
 };
 
+/* auxiliary functions for sorting files (qsort) */
+/* compare by file/dir name*/
 int cmp_file_name(const void * a, const void * b) {
 	struct file_info *info1 = ((struct sort_by_idx *)a)->data;
 	struct file_info *info2 = ((struct sort_by_idx *)b)->data;
@@ -17,6 +20,7 @@ int cmp_file_name(const void * a, const void * b) {
 	return (strcmp(info1->name, info2->name));
 }
 
+/* compare by file/dir modification time*/
 int cmp_file_date(const void * a, const void * b) {
 	struct file_info *info1 = ((struct sort_by_idx *)a)->data;
 	struct file_info *info2 = ((struct sort_by_idx *)b)->data;
@@ -24,7 +28,15 @@ int cmp_file_date(const void * a, const void * b) {
 	return (int)round(difftime(info1->date, info2->date));
 }
 
-int file_win (gui_obj *gui){
+/* compare by file/dir byte size*/
+int cmp_file_size(const void * a, const void * b) {
+	struct file_info *info1 = ((struct sort_by_idx *)a)->data;
+	struct file_info *info2 = ((struct sort_by_idx *)b)->data;
+	
+	return (int)(info1->size - info2->size);
+}
+
+int file_win (gui_obj *gui, char **path){
 	static char full_path[MAX_PATH_LEN];
 	static char sel_file[MAX_PATH_LEN];
 	
@@ -32,7 +44,7 @@ int file_win (gui_obj *gui){
 	static DIR *work = NULL;
 	DIR *subdir;
 	char ext[4], *suffix, *end, dir[] = ".";
-	char date[20];
+	char str_tmp[20];
 	if (!work){
 		work = opendir(dir);
 		full_path[0] = 0;
@@ -55,10 +67,12 @@ int file_win (gui_obj *gui){
 	static struct file_info files[10000];
 	int num_files = 0, num_dirs = 0;
 	
-	gui->next_win_x += gui->next_win_w + 3;
+	*path = full_path;
+	
+	gui->next_win_x += gui->next_win_w + 250;
 	//gui->next_win_y += gui->next_win_h + 3;
 	gui->next_win_w = 600;
-	gui->next_win_h = 800;
+	gui->next_win_h = 600;
 	
 	struct nk_style_button b_dir, b_file;
 	b_dir = gui->ctx->style.button;
@@ -84,6 +98,7 @@ int file_win (gui_obj *gui){
 						strncpy (dirs[num_dirs].name, entry->d_name, DXF_MAX_CHARS);
 						stat(entry->d_name, &filestat);
 						dirs[num_dirs].date = filestat.st_mtime;
+						dirs[num_dirs].size = filestat.st_size;
 						sort_dirs[num_dirs].data = &(dirs[num_dirs]);
 						
 						num_dirs++;
@@ -103,6 +118,7 @@ int file_win (gui_obj *gui){
 						strncpy (files[num_files].name, entry->d_name, DXF_MAX_CHARS);
 						stat(entry->d_name, &filestat);
 						files[num_files].date = filestat.st_mtime;
+						files[num_files].size = filestat.st_size;
 						sort_files[num_files].data = &(files[num_files]);
 						
 						num_files++;
@@ -116,7 +132,8 @@ int file_win (gui_obj *gui){
 		enum sort {
 			UNSORTED,
 			BY_NAME,
-			BY_DATE
+			BY_DATE,
+			BY_SIZE
 		};
 		char curr_path[MAX_PATH_LEN];
 		getcwd(curr_path, MAX_PATH_LEN);
@@ -139,11 +156,12 @@ int file_win (gui_obj *gui){
 		
 			nk_layout_row_template_begin(gui->ctx, 22);
 			nk_layout_row_template_push_dynamic(gui->ctx);
-			nk_layout_row_template_push_static(gui->ctx, 138);
+			nk_layout_row_template_push_static(gui->ctx, 80);
+			nk_layout_row_template_push_static(gui->ctx, 145);
 			nk_layout_row_template_push_static(gui->ctx, 8);
 			nk_layout_row_template_end(gui->ctx);
 			
-			/* sort by Layer name */
+			/* sort by dir/file name */
 			if (sorted == BY_NAME){
 				if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Name", NK_TEXT_CENTERED)){
 					sorted = UNSORTED;
@@ -154,7 +172,20 @@ int file_win (gui_obj *gui){
 					sorted = BY_NAME;
 				}
 			}
-			/* sort by color */
+			
+			/* sort by file/dir byte size */
+			if (sorted == BY_SIZE){
+				if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Size", NK_TEXT_CENTERED)){
+					sorted = UNSORTED;
+				}
+			}
+			else {
+				if (nk_button_label(gui->ctx,  "Size")){
+					sorted = BY_SIZE;
+				}
+			}
+			
+			/* sort by file/dir modification time */
 			if (sorted == BY_DATE){
 				if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Date", NK_TEXT_CENTERED)){
 					sorted = UNSORTED;
@@ -168,12 +199,13 @@ int file_win (gui_obj *gui){
 			
 			nk_group_end(gui->ctx);
 		}
-		nk_layout_row_dynamic(gui->ctx, 600, 1);
+		nk_layout_row_dynamic(gui->ctx, 400, 1);
 		if (nk_group_begin(gui->ctx, "File_view", NK_WINDOW_BORDER)) {
 			//nk_layout_row_dynamic(gui->ctx, 20, 2);
 			nk_layout_row_template_begin(gui->ctx, 20);
 			nk_layout_row_template_push_dynamic(gui->ctx);
-			nk_layout_row_template_push_static(gui->ctx, 138);
+			nk_layout_row_template_push_static(gui->ctx, 80);
+			nk_layout_row_template_push_static(gui->ctx, 145);
 			nk_layout_row_template_end(gui->ctx);
 			
 			
@@ -184,6 +216,10 @@ int file_win (gui_obj *gui){
 			else if (sorted == BY_DATE){
 				qsort(sort_dirs, num_dirs, sizeof(struct sort_by_idx), cmp_file_date);
 				qsort(sort_files, num_files, sizeof(struct sort_by_idx), cmp_file_date);
+			}
+			else if (sorted == BY_SIZE){
+				qsort(sort_dirs, num_dirs, sizeof(struct sort_by_idx), cmp_file_name);
+				qsort(sort_files, num_files, sizeof(struct sort_by_idx), cmp_file_size);
 			}
 			
 			for (i = 0; i < num_dirs; i++){
@@ -197,38 +233,60 @@ int file_win (gui_obj *gui){
 					if (!work) return 0;
 				}
 				
-				//nk_label_colored(gui->ctx, entry->d_name, NK_TEXT_LEFT, nk_rgb(255,255,0));
+				/*show byte size */
+				//snprintf(str_tmp, 20, "%d", dirs[idx].size);
+				//nk_label_colored(gui->ctx, str_tmp, NK_TEXT_RIGHT, nk_rgb(255,255,0));
+				nk_label_colored(gui->ctx, "-", NK_TEXT_CENTERED, nk_rgb(255,255,0));
 				
+				/* show modification date/time */
 				info = localtime(&(dirs[idx].date));
-				snprintf(date, 20, "%02d/%02d/%04d %02d:%02d:%02d", info->tm_mday, info->tm_mon+1, info->tm_year+1900, info->tm_hour, info->tm_min, info->tm_sec);
-				nk_label_colored(gui->ctx, date, NK_TEXT_LEFT, nk_rgb(255,255,0));
+				snprintf(str_tmp, 20, "%02d/%02d/%04d-%02d:%02d:%02d", info->tm_mday, info->tm_mon+1, info->tm_year+1900, info->tm_hour, info->tm_min, info->tm_sec);
+				nk_label_colored(gui->ctx, str_tmp, NK_TEXT_RIGHT, nk_rgb(255,255,0));
+				
 			}
 			for (i = 0; i < num_files; i++){
 				idx = sort_files[i].idx;
 				if (nk_button_label_styled(gui->ctx, &b_file,  files[idx].name)){
 					strncpy(sel_file, files[idx].name, MAX_PATH_LEN);
 				}
+				
+				/*show byte size */
+				if (files[idx].size > 1048576) snprintf(str_tmp, 20, "%0.2fM", (float) files[idx].size / 1048576);
+				else if (files[idx].size > 1024) snprintf(str_tmp, 20, "%0.2fK", (float) files[idx].size / 1024);
+				else snprintf(str_tmp, 20, "%d", files[idx].size);
+				nk_label(gui->ctx, str_tmp, NK_TEXT_RIGHT);
+				
+				/* show modification date/time */
 				info = localtime(&(files[idx].date));
-				snprintf(date, 20, "%02d/%02d/%04d %02d:%02d:%02d", info->tm_mday, info->tm_mon+1, info->tm_year+1900, info->tm_hour, info->tm_min, info->tm_sec);
-				nk_label(gui->ctx, date, NK_TEXT_LEFT);
+				snprintf(str_tmp, 20, "%02d/%02d/%04d-%02d:%02d:%02d", info->tm_mday, info->tm_mon+1, info->tm_year+1900, info->tm_hour, info->tm_min, info->tm_sec);
+				nk_label(gui->ctx, str_tmp, NK_TEXT_RIGHT);
+				
 			}
 			
 			nk_group_end(gui->ctx);
 			
-			if (strlen(sel_file) > 0){
-				snprintf(full_path, MAX_PATH_LEN, "%s%c%s", curr_path, DIR_SEPARATOR, sel_file);
-			}
-			
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			nk_label_colored(gui->ctx, "Selected:", NK_TEXT_LEFT, nk_rgb(0,0,255));
-			nk_label_colored(gui->ctx, sel_file, NK_TEXT_LEFT, nk_rgb(255,0,255));
-			nk_label(gui->ctx, full_path, NK_TEXT_LEFT);
+			nk_label_colored(gui->ctx, sel_file, NK_TEXT_LEFT, nk_rgb(255, 255, 0));
+			//nk_label(gui->ctx, full_path, NK_TEXT_LEFT);
+			if (nk_button_label(gui->ctx,  "OK")){
+				if (strlen(sel_file) > 0){
+					snprintf(full_path, MAX_PATH_LEN, "%s%c%s", curr_path, DIR_SEPARATOR, sel_file);
+				}
+				
+				closedir(work);
+				work = NULL;
+				//full_path[0] = 0;
+				sel_file[0] = 0;
+				
+				show_browser = 0;
+			}
 		}
 		
 	} else {
 		closedir(work);
 		work = NULL;
-		full_path[0] = 0;
+		//full_path[0] = 0;
 		sel_file[0] = 0;
 		
 		show_browser = 0;

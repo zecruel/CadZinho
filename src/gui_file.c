@@ -1,8 +1,15 @@
+/* ATTENTION: this source code file is not fully portable.
+It use POSIX libraries that are not part of the C standard.
+Therefore, not all compilers and platafforms can make this file.
+Please, check the compatibility first. */
+
 #include "gui_file.h"
+#include <time.h>
+/* POSIX libs*/
 #include <dirent.h>
 #include <sys/stat.h>
-#include <time.h>
 #include <unistd.h>
+/*-----------*/
 #define MAX_PATH_LEN 512
 
 struct file_info{
@@ -52,8 +59,6 @@ int file_win (gui_obj *gui, char **path){
 	}
 	if (!work) return 0;
 	
-	
-	
 	int show_browser = 1;
 	int i = 0;
 	int idx = 0;
@@ -84,9 +89,18 @@ int file_win (gui_obj *gui, char **path){
 	b_dir.text_hover = nk_rgb(255,255,0);
 	b_dir.text_active = nk_rgb(255,255,0);
 	
+	char *ext_type[] = {"DXF", "*"};
+	char *ext_descr[] = {"Drawing files (.dxf) ", "All files (*)"};
+	int num_ext = 2;
+	static int ext_idx = 0;
+	
+	if (ext_idx >= num_ext) ext_idx = 0;
+	
+	
 	if (nk_begin(gui->ctx, "File", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
+		
 		rewinddir(work);
 		
 		while((entry = readdir(work))){
@@ -112,7 +126,7 @@ int file_win (gui_obj *gui, char **path){
 				strncpy(ext, suffix, 4);
 				ext[3] = 0; /*terminate string */
 				str_upp(ext); /* upper case extension*/
-				if (strcmp(ext, "DXF") == 0) {
+				if ((strcmp(ext_type[ext_idx], "*") == 0) || (strcmp(ext, ext_type[ext_idx]) == 0)) {
 					if (num_files < 10000){
 						sort_files[num_files].idx = num_files;
 						strncpy (files[num_files].name, entry->d_name, DXF_MAX_CHARS);
@@ -265,10 +279,40 @@ int file_win (gui_obj *gui, char **path){
 			
 			nk_group_end(gui->ctx);
 			
-			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			
+			nk_layout_row_dynamic(gui->ctx, 20, 2);
 			nk_label_colored(gui->ctx, "Selected:", NK_TEXT_LEFT, nk_rgb(0,0,255));
-			nk_label_colored(gui->ctx, sel_file, NK_TEXT_LEFT, nk_rgb(255, 255, 0));
-			//nk_label(gui->ctx, full_path, NK_TEXT_LEFT);
+			
+			if (nk_combo_begin_label(gui->ctx, ext_descr[ext_idx], nk_vec2(200,300))){
+				nk_layout_row_dynamic(gui->ctx, 17, 1);
+				for (i = 0; i < num_ext; i++){
+					if (nk_button_label(gui->ctx, ext_descr[i])){
+						ext_idx = i;
+						nk_combo_close(gui->ctx);
+					}
+				}
+				
+				nk_combo_end(gui->ctx);
+			}
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			
+			/* show the selected file*/
+			nk_flags res; /* the user will can edit the file name */
+			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, sel_file, MAX_PATH_LEN, nk_filter_default);
+			if (res & NK_EDIT_COMMITED){ /* user hit enter */
+				nk_edit_unfocus(gui->ctx);
+				/* the user also will can enter a new path */
+				subdir = opendir(sel_file); /* try to open  the path entered by user */
+				if (subdir != NULL){
+					closedir(work);
+					chdir(sel_file); /* change the current path */
+					work = subdir;
+					full_path[0] = 0;
+					sel_file[0] = 0;
+				}
+			}
+			
+			nk_layout_row_dynamic(gui->ctx, 20, 2);
 			if (nk_button_label(gui->ctx,  "OK")){
 				if (strlen(sel_file) > 0){
 					snprintf(full_path, MAX_PATH_LEN, "%s%c%s", curr_path, DIR_SEPARATOR, sel_file);
@@ -281,6 +325,7 @@ int file_win (gui_obj *gui, char **path){
 				
 				show_browser = 0;
 			}
+			
 		}
 		
 	} else {

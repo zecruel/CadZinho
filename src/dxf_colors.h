@@ -3317,3 +3317,38 @@ int cp1252[] = {
 	254, //LATIN SMALL LETTER THORN
 	255, //LATIN SMALL LETTER Y WITH DIAERESIS
 };
+enum files_types {
+	FILE_ALL,
+	FILE_DXF,
+	FILE_TXT,
+	FILE_PAT,
+	FILE_LIN,
+	FILE_SHP,
+	FILE_SHX,
+	FILE_TTF,
+	FILE_OTF,
+	
+	FILE_T_MAX
+};
+const char *ext_types[] = {
+	[FILE_ALL] = "*",
+	[FILE_DXF] = "DXF",
+	[FILE_TXT] = "TXT",
+	[FILE_PAT] = "PAT",
+	[FILE_LIN] = "LIN",
+	[FILE_SHP] = "SHP",
+	[FILE_SHX] = "SHX",
+	[FILE_TTF] = "TTF",
+	[FILE_OTF] = "OTF",
+};
+const char *ext_descr[] = {
+	[FILE_ALL] = "All files (*)",
+	[FILE_DXF] = "Drawing files (.dxf)",
+	[FILE_TXT] = "Text files (.txt)",
+	[FILE_PAT] = "Patterns files (.pat)",
+	[FILE_LIN] = "Line style files (.lin)",
+	[FILE_SHP] = "Shapes files (.shp)",
+	[FILE_SHX] = "Binary shapes file (.shx)",
+	[FILE_TTF] = "True type font file (.ttf)",
+	[FILE_OTF] = "Open font file (.otf)",
+};

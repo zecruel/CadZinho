@@ -1,6 +1,5 @@
 #include <SDL.h>
 
-
 #include "dxf.h"
 #include "bmp.h"
 #include "graph.h"
@@ -462,6 +461,19 @@ int main(int argc, char** argv){
 	long file_size = 0;
 	
 	char* dropped_filedir;                  /* Pointer for directory of dropped file */
+	
+	
+	char const * file_filter_types[FILE_T_MAX];
+	char const * file_filter_descr[FILE_T_MAX];
+	int file_filter_count = 0;
+	
+	file_filter_types[0] = ext_types[FILE_DXF];
+	file_filter_types[1] = ext_types[FILE_ALL];
+	
+	file_filter_descr[0] = ext_descr[FILE_DXF];
+	file_filter_descr[1] = ext_descr[FILE_ALL];
+	
+	file_filter_count = 2;
 	
 	/* Colors in use */
 	bmp_color white = {.r = 255, .g = 255, .b =255, .a = 255};
@@ -942,6 +954,11 @@ int main(int argc, char** argv){
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_GEAR]))){
 					//printf("Config\n");
+					file_filter_types[0] = ext_types[FILE_ALL];
+					file_filter_descr[0] = ext_descr[FILE_ALL];
+					
+					file_filter_count = 1;
+					
 					show_file_br = 1;
 					
 					
@@ -1160,6 +1177,13 @@ int main(int argc, char** argv){
 						//gui->action = FILE_OPEN;
 						//show_app_file = nk_false;
 						//file_path_len = 0;
+						file_filter_types[0] = ext_types[FILE_DXF];
+						file_filter_types[1] = ext_types[FILE_ALL];
+						
+						file_filter_descr[0] = ext_descr[FILE_DXF];
+						file_filter_descr[1] = ext_descr[FILE_ALL];
+						
+						file_filter_count = 2;
 						
 						show_file_br = 1;
 					}
@@ -1359,7 +1383,8 @@ int main(int argc, char** argv){
 		
 		if (show_file_br){
 			char *path;
-			show_file_br = file_win(gui, &path);
+			
+			show_file_br = file_win(gui, &path, file_filter_types, file_filter_descr, file_filter_count, NULL);
 			strncpy(file_path, path, DXF_MAX_CHARS);
 			file_path_len = strlen(file_path);
 		}

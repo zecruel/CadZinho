@@ -43,17 +43,21 @@ int cmp_file_size(const void * a, const void * b) {
 	return (int)(info1->size - info2->size);
 }
 
-int file_win (gui_obj *gui, char **path){
+int file_win (gui_obj *gui, char **path, const char *ext_type[], const char *ext_descr[], int num_ext, char *init_dir){
+	if ((ext_type == NULL) || (ext_descr == NULL) || num_ext == 0) return 0;
+	
 	static char full_path[MAX_PATH_LEN];
 	static char sel_file[MAX_PATH_LEN];
+	
+	if (init_dir) chdir(init_dir);
 	
 	struct dirent *entry;
 	static DIR *work = NULL;
 	DIR *subdir;
-	char ext[4], *suffix, *end, dir[] = ".";
+	char ext[4], *suffix, *end;
 	char str_tmp[20];
 	if (!work){
-		work = opendir(dir);
+		work = opendir(".");
 		full_path[0] = 0;
 		sel_file[0] = 0;
 	}
@@ -77,7 +81,7 @@ int file_win (gui_obj *gui, char **path){
 	gui->next_win_x += gui->next_win_w + 250;
 	//gui->next_win_y += gui->next_win_h + 3;
 	gui->next_win_w = 600;
-	gui->next_win_h = 600;
+	gui->next_win_h = 510;
 	
 	struct nk_style_button b_dir, b_file;
 	b_dir = gui->ctx->style.button;
@@ -89,15 +93,15 @@ int file_win (gui_obj *gui, char **path){
 	b_dir.text_hover = nk_rgb(255,255,0);
 	b_dir.text_active = nk_rgb(255,255,0);
 	
-	char *ext_type[] = {"DXF", "*"};
-	char *ext_descr[] = {"Drawing files (.dxf) ", "All files (*)"};
-	int num_ext = 2;
+	//char *ext_type[] = {"DXF", "*"};
+	//char *ext_descr[] = {"Drawing files (.dxf) ", "All files (*)"};
+	//int num_ext = 2;
 	static int ext_idx = 0;
 	
 	if (ext_idx >= num_ext) ext_idx = 0;
 	
 	
-	if (nk_begin(gui->ctx, "File", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
+	if (nk_begin(gui->ctx, "File explorer", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		
@@ -152,16 +156,19 @@ int file_win (gui_obj *gui, char **path){
 		char curr_path[MAX_PATH_LEN];
 		getcwd(curr_path, MAX_PATH_LEN);
 		
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		nk_label_colored(gui->ctx, "Current directory:", NK_TEXT_LEFT, nk_rgb(255,255,0));
+		
 		nk_layout_row_template_begin(gui->ctx, 22);
 		nk_layout_row_template_push_dynamic(gui->ctx);
 		nk_layout_row_template_push_static(gui->ctx, 30);
 		nk_layout_row_template_end(gui->ctx);
 		
 		nk_label(gui->ctx, curr_path, NK_TEXT_LEFT);
-		if (nk_button_label(gui->ctx,  "UP")){
+		if (nk_button_label(gui->ctx,  "Up")){
 			closedir(work);
 			chdir("..");
-			work = opendir(dir);
+			work = opendir(".");
 			if (!work) return 0;
 		}
 		
@@ -213,7 +220,7 @@ int file_win (gui_obj *gui, char **path){
 			
 			nk_group_end(gui->ctx);
 		}
-		nk_layout_row_dynamic(gui->ctx, 400, 1);
+		nk_layout_row_dynamic(gui->ctx, 300, 1);
 		if (nk_group_begin(gui->ctx, "File_view", NK_WINDOW_BORDER)) {
 			//nk_layout_row_dynamic(gui->ctx, 20, 2);
 			nk_layout_row_template_begin(gui->ctx, 20);
@@ -241,7 +248,7 @@ int file_win (gui_obj *gui, char **path){
 				if (nk_button_label_styled(gui->ctx, &b_dir,  dirs[idx].name)){
 					closedir(work);
 					chdir(dirs[idx].name);
-					work = opendir(dir);
+					work = opendir(".");
 					full_path[0] = 0;
 					sel_file[0] = 0;
 					if (!work) return 0;
@@ -317,6 +324,15 @@ int file_win (gui_obj *gui, char **path){
 				if (strlen(sel_file) > 0){
 					snprintf(full_path, MAX_PATH_LEN, "%s%c%s", curr_path, DIR_SEPARATOR, sel_file);
 				}
+				
+				closedir(work);
+				work = NULL;
+				//full_path[0] = 0;
+				sel_file[0] = 0;
+				
+				show_browser = 0;
+			}
+			if (nk_button_label(gui->ctx,  "Cancel")){
 				
 				closedir(work);
 				work = NULL;

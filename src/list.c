@@ -129,6 +129,26 @@ list_node *list_find_data(list_node * list, void *data){
 	return NULL; /* return fail */
 }
 
+list_node *list_get_idx(list_node * list, int idx){
+	list_node *current = NULL, *last = NULL;
+	int i = 0;
+	
+	if (!list) return NULL;
+	
+	current = list->next;
+	while (current != NULL){
+		last = current;
+		if (idx == i){
+			return current; /* return success */
+		}
+		current = current->next;
+		i++;
+	}
+	
+	if (idx < 0) return last; /* return the last element found */
+	else return NULL; /* return fail */
+}
+
 int list_clear(list_node * list){
 	
 	if (list){

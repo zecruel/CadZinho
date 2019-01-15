@@ -242,6 +242,8 @@ void dxf_layer_assemb (dxf_drawing *drawing);
 
 void dxf_ltype_assemb (dxf_drawing *drawing);
 
+void dxf_tstyles_assemb (dxf_drawing *drawing);
+
 int dxf_lay_idx (dxf_drawing *drawing, char *name);
 
 int dxf_ltype_idx (dxf_drawing *drawing, char *name);

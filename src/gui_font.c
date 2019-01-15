@@ -2,8 +2,8 @@
 
 int tstyles_mng (gui_obj *gui){
 	int i, show_tstyle_mng = 1;
-	static int show_color_pick = 0, show_tstyle_name = 0;
-	static int sel_t_sty, t_sty_idx;
+	static int show_color_pick = 0, show_name = 0;
+	static int sel_t_sty, t_sty_idx, sel_font;
 	
 	static struct sort_by_idx sort_t_sty[DXF_MAX_LAYERS];
 	dxf_tstyle *t_sty = gui->drawing->text_styles;
@@ -25,6 +25,8 @@ int tstyles_mng (gui_obj *gui){
 	if (nk_begin(gui->ctx, "Text Styles Manager", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
+		static char sty_name[DXF_MAX_CHARS] = "";
+		
 		t_sty = gui->drawing->text_styles;
 		
 		nk_layout_row_dynamic(gui->ctx, 32, 1);
@@ -79,7 +81,40 @@ int tstyles_mng (gui_obj *gui){
 					}
 				}
 				
-				nk_button_label_styled(gui->ctx, &gui->b_icon_unsel, t_sty[t_sty_idx].file);
+				//nk_button_label_styled(gui->ctx, &gui->b_icon_unsel, t_sty[t_sty_idx].file);
+				//list_node *list_get_idx(list_node * list, int idx)
+				
+				sel_font = -1;
+				if (nk_combo_begin_label(gui->ctx,  t_sty[t_sty_idx].file, nk_vec2(200,200))){
+					nk_layout_row_dynamic(gui->ctx, 20, 1);
+					int j = 0;
+					list_node *curr_node = NULL;
+					while (curr_node = list_get_idx(gui->font_list, j)){
+						
+						if (!(curr_node->data)) continue;
+						struct tfont *curr_font = curr_node->data;
+						
+						if (nk_button_label(gui->ctx, curr_font->name)){
+							sel_font = j;
+							nk_combo_close(gui->ctx);
+						}
+						j++;
+					}
+					nk_combo_end(gui->ctx);
+				}
+				
+				if (sel_font >= 0){
+					list_node *curr_node = list_get_idx(gui->font_list, sel_font);
+					if (curr_node) {
+						if (curr_node->data) {
+							struct tfont *curr_font = curr_node->data;
+							strncpy(t_sty[t_sty_idx].file, curr_font->name, DXF_MAX_CHARS);
+						
+							dxf_attr_change(t_sty[t_sty_idx].obj, 3, curr_font->name);
+						}
+					}
+				}
+				
 				
 				nk_button_label_styled(gui->ctx, &gui->b_icon_unsel, t_sty[t_sty_idx].subst_file);
 				
@@ -105,10 +140,10 @@ int tstyles_mng (gui_obj *gui){
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 3);
 		if (nk_button_label(gui->ctx, "Create")){
-			/*
-			show_lay_name = 1;
-			lay_name[0] = 0;
-			lay_change = LAY_OP_CREATE;*/
+			
+			show_name = 1;
+			sty_name[0] = 0;
+			tstyle_change = TSTYLE_OP_CREATE;
 		}
 		if ((nk_button_label(gui->ctx, "Rename")) && (sel_t_sty >= 0)){
 			/*show_lay_name = 1;
@@ -128,6 +163,70 @@ int tstyles_mng (gui_obj *gui){
 				dxf_layer_assemb (gui->drawing);
 				lay_change = LAY_OP_UPDATE;
 			}*/
+		}
+		
+		if ((show_name)){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Style Name", NK_WINDOW_CLOSABLE, nk_rect(10, 20, 220, 100))){
+				
+				nk_layout_row_dynamic(gui->ctx, 20, 1);
+				//nk_label(gui->ctx, "Layer Name:",  NK_TEXT_LEFT);
+				/* set focus to edit */
+				nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_name, DXF_MAX_CHARS, nk_filter_default);
+				
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				if (nk_button_label(gui->ctx, "OK")){
+					if (tstyle_change == TSTYLE_OP_CREATE){
+						if (!dxf_new_tstyle (gui->drawing, sty_name)){
+							snprintf(gui->log_msg, 63, "Error: Text Style already exists");
+						}
+						else {
+							nk_popup_close(gui->ctx);
+							show_name = 0;
+							tstyle_change = TSTYLE_OP_UPDATE;
+						}
+					}
+					
+					#if (0)
+					else if ((lay_change == LAY_OP_RENAME) && (sel_lay >= 0)){
+						/* verify if is not name of existing layer*/
+						lay_exist = 0;
+						for (i = 0; i < num_layers; i++){
+							if (i != sel_lay){ /*except current layer*/
+								if(strcmp(layers[i].name, lay_name) == 0){
+									lay_exist = 1;
+									break;
+								}
+							}
+						}
+						if (!lay_exist){
+							//layer_rename(gui->drawing, sel_lay, lay_name);
+							
+							
+							
+							nk_popup_close(gui->ctx);
+							show_name = 0;
+							tstyle_change = TSTYLE_OP_UPDATE;
+						}
+						else snprintf(gui->log_msg, 63, "Error: exists Text Style with same name");
+					}
+					#endif
+					else {
+						nk_popup_close(gui->ctx);
+						show_name = 0;
+						tstyle_change = TSTYLE_OP_NONE;
+					}
+				}
+				if (nk_button_label(gui->ctx, "Cancel")){
+					nk_popup_close(gui->ctx);
+					show_name = 0;
+					tstyle_change = TSTYLE_OP_NONE;
+				}
+				nk_popup_end(gui->ctx);
+			} else {
+				show_name = 0;
+				tstyle_change = TSTYLE_OP_NONE;
+			}
 		}
 		
 	} else {

@@ -202,6 +202,8 @@ NK_API void nk_sdl_shutdown(gui_obj *gui);
 
 int gui_start(gui_obj *gui);
 
+int gui_tstyle(gui_obj *gui);
+
 extern int dxf_lw[];
 extern const char *dxf_lw_descr[];
 extern bmp_color dxf_colors[];

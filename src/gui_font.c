@@ -68,24 +68,26 @@ int tstyles_mng (gui_obj *gui){
 				
 			for (i = 0; i < num_tstyles; i++){
 				
+				/* show current text style name */
 				//t_sty_idx = sort_t_sty[i].idx;
 				t_sty_idx = i;
 				if (sel_t_sty == t_sty_idx){
 					if (nk_button_label_styled(gui->ctx, &gui->b_icon_sel, t_sty[t_sty_idx].name)){
-						sel_t_sty = -1;
+						sel_t_sty = -1; /* none selected */
 					}
 				}
 				else {
 					if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel, t_sty[t_sty_idx].name)){
-						sel_t_sty = t_sty_idx;
+						sel_t_sty = t_sty_idx; /* select current text style */
 					}
 				}
 				
-				//nk_button_label_styled(gui->ctx, &gui->b_icon_unsel, t_sty[t_sty_idx].file);
-				//list_node *list_get_idx(list_node * list, int idx)
-				
+				/* -------------------- font setting ------------------*/
 				sel_font = -1;
 				if (nk_combo_begin_label(gui->ctx,  t_sty[t_sty_idx].file, nk_vec2(200,200))){
+					sel_t_sty = t_sty_idx; /* select current text style */
+					
+					/* show loaded fonts, available for setting */
 					nk_layout_row_dynamic(gui->ctx, 20, 1);
 					int j = 0;
 					list_node *curr_node = NULL;
@@ -95,7 +97,7 @@ int tstyles_mng (gui_obj *gui){
 						struct tfont *curr_font = curr_node->data;
 						
 						if (nk_button_label(gui->ctx, curr_font->name)){
-							sel_font = j;
+							sel_font = j; /* select current font */
 							nk_combo_close(gui->ctx);
 						}
 						j++;
@@ -103,19 +105,23 @@ int tstyles_mng (gui_obj *gui){
 					nk_combo_end(gui->ctx);
 				}
 				
-				if (sel_font >= 0){
+				if (sel_font >= 0){ /* font change in current text style */
 					list_node *curr_node = list_get_idx(gui->font_list, sel_font);
 					if (curr_node) {
 						if (curr_node->data) {
 							struct tfont *curr_font = curr_node->data;
+							/* change setting in gui */
 							strncpy(t_sty[t_sty_idx].file, curr_font->name, DXF_MAX_CHARS);
-						
+							/* change setting in DXF structure */
 							dxf_attr_change(t_sty[t_sty_idx].obj, 3, curr_font->name);
+							/* update settings in drawing */
+							gui_tstyle(gui);
 						}
 					}
 				}
+				/* -------------------- end font setting ------------------ */
 				
-				
+				/* check if font was substituted in case of unavailability */
 				nk_button_label_styled(gui->ctx, &gui->b_icon_unsel, t_sty[t_sty_idx].subst_file);
 				
 				snprintf(txt, DXF_MAX_CHARS, "%d", t_sty[t_sty_idx].flags1);
@@ -126,6 +132,7 @@ int tstyles_mng (gui_obj *gui){
 				
 				snprintf(txt, DXF_MAX_CHARS, "%0.2f", t_sty[t_sty_idx].width_f);
 				nk_button_label_styled(gui->ctx, &gui->b_icon_unsel, txt);
+				//t_sty[t_sty_idx].width_f = nk_propertyd(gui->ctx, "Width factor", 0.0d, t_sty[t_sty_idx].width_f, 100.0d, 0.1d, 0.1d);
 				
 				snprintf(txt, DXF_MAX_CHARS, "%0.2f", t_sty[t_sty_idx].fixed_h);
 				nk_button_label_styled(gui->ctx, &gui->b_icon_unsel, txt);

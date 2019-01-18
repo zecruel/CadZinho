@@ -1,11 +1,93 @@
 #include "gui.h"
 
+int t_sty_rename(dxf_drawing *drawing, int idx, char *name){
+	/* Rename text style - change the STYLE structure and the DXF entities wich uses this text style */
+	int ok = 0, i;
+	dxf_node *current, *prev, *obj = NULL, *list[2], *sty_obj;
+	char *new_name = trimwhitespace(name); /* remove trailing spaces*/
+	
+	list[0] = NULL; list[1] = NULL;
+	if (drawing){
+		/* look for entities in BLOCKS and ENTITIES sections */
+		list[0] = drawing->ents;
+		list[1] = drawing->blks;
+	}
+	else return 0;
+	
+	for (i = 0; i< 2; i++){
+		obj = list[i];
+		current = obj;
+		while (current){ /* sweep current section */
+			ok = 1;
+			prev = current;
+			if (current->type == DXF_ENT){
+				/* Look for DXF code group 7, text style name */
+				sty_obj = dxf_find_attr2(current, 7);
+				if (sty_obj){
+					/* verify style name in entity*/
+					char t_sty[DXF_MAX_CHARS], old_name[DXF_MAX_CHARS];
+					strncpy(t_sty, sty_obj->value.s_data, DXF_MAX_CHARS); /* preserve original string */
+					str_upp(t_sty); /* upper to compare */
+					strncpy(old_name, drawing->text_styles[idx].name, DXF_MAX_CHARS); /* preserve original string */
+					str_upp(old_name); /*upper to compare */
+					
+					if(strcmp(t_sty, old_name) == 0){
+						/* change if match */
+						dxf_attr_change(current, 7, new_name);
+					}
+				}
+				
+				
+				if (current->obj.content){
+					/* starts the content sweep */
+					current = current->obj.content;
+					continue;
+				}
+			}
+				
+			current = current->next; /* go to the next in the list*/
+			
+			if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
+				current = NULL;
+				break;
+			}
+
+			/* ============================================================= */
+			while (current == NULL){
+				/* end of list sweeping */
+				if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
+					//printf("para\n");
+					current = NULL;
+					break;
+				}
+				/* try to back in structure hierarchy */
+				prev = prev->master;
+				if (prev){ /* up in structure */
+					/* try to continue on previous point in structure */
+					current = prev->next;
+					
+				}
+				else{ /* stop the search if structure ends */
+					current = NULL;
+					break;
+				}
+			}
+		}
+	}
+	/* change style name in DXF structure */
+	dxf_attr_change(drawing->text_styles[idx].obj, 2, new_name);
+	/* change in gui */
+	strncpy (drawing->text_styles[idx].name, new_name, DXF_MAX_CHARS);
+	
+	return ok;
+}
+
 int tstyles_mng (gui_obj *gui){
 	int i, show_tstyle_mng = 1;
 	static int show_edit = 0, show_name = 0;
 	static int sel_t_sty, t_sty_idx, sel_font, edit_sty = 0;
 	
-	static struct sort_by_idx sort_t_sty[DXF_MAX_LAYERS];
+	static struct sort_by_idx sort_t_sty[DXF_MAX_FONTS];
 	static char sty_name[DXF_MAX_CHARS] = "";
 	static char sty_font[DXF_MAX_CHARS] = "";
 	static char sty_w_fac[64] = "";
@@ -26,6 +108,8 @@ int tstyles_mng (gui_obj *gui){
 		TSTYLE_OP_UPDATE
 	};
 	static int tstyle_change = TSTYLE_OP_UPDATE;
+	
+	int num_tstyles = gui->drawing->num_tstyles;
 	
 	//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Info", NK_WINDOW_CLOSABLE, nk_rect(310, 50, 200, 300))){
 	if (nk_begin(gui->ctx, "Text Styles Manager", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
@@ -69,7 +153,7 @@ int tstyles_mng (gui_obj *gui){
 		if (nk_group_begin(gui->ctx, "tstyle_prop", NK_WINDOW_BORDER)) {
 			
 			nk_layout_row(gui->ctx, NK_STATIC, 22, 8, (float[]){175, 175, 175, 25, 25, 50, 50, 50});
-			int num_tstyles = gui->drawing->num_tstyles;
+			
 			char txt[DXF_MAX_CHARS];
 				
 			for (i = 0; i < num_tstyles; i++){
@@ -219,23 +303,24 @@ int tstyles_mng (gui_obj *gui){
 	nk_end(gui->ctx);
 	
 	if ((show_edit)){
-		//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Edit Text Style", NK_WINDOW_CLOSABLE, nk_rect(10, 20, 220, 100))){
+		/* edit parameters of selected text style */
 		if (nk_begin(gui->ctx, "Edit Text Style", nk_rect(gui->next_win_x + 50, gui->next_win_y + gui->next_win_h + 3, 570, 250), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_CLOSABLE)){
-			nk_layout_row(gui->ctx, NK_STATIC, 140, 2, (float[]){330, 200});
+			static int shape = 0, vertical = 0, xref = 0, xref_ok = 0, backward = 0, upside = 0;
+			
+			nk_layout_row(gui->ctx, NK_STATIC, 160, 2, (float[]){330, 200});
 			if (nk_group_begin(gui->ctx, "edit_param", NK_WINDOW_BORDER)) {
 				nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 200});
 				
+				/* -------------------- name setting ------------------*/
 				nk_label(gui->ctx, "Name:", NK_TEXT_RIGHT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_name, DXF_MAX_CHARS, nk_filter_default);
 				
 				/* -------------------- font setting ------------------*/
-				
 				nk_label(gui->ctx, "Font:", NK_TEXT_RIGHT);
 				sel_font = -1;
-				//if (nk_combo_begin_label(gui->ctx,  t_sty[sel_t_sty].file, nk_vec2(200,200))){
 				if (nk_combo_begin_label(gui->ctx,  sty_font, nk_vec2(220,200))){
 					
-					/* show loaded fonts, available for setting */
+					/* get filename from available loaded fonts */
 					nk_layout_row_dynamic(gui->ctx, 20, 1);
 					int j = 0;
 					list_node *curr_node = NULL;
@@ -253,17 +338,26 @@ int tstyles_mng (gui_obj *gui){
 					}
 					nk_combo_end(gui->ctx);
 				}
-				/* -------------------- end font setting ------------------ */
-				
+				/* -------------------- width setting ------------------*/
 				nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 100});
 				nk_label(gui->ctx, "Width factor:", NK_TEXT_RIGHT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_w_fac, 63, nk_filter_float);
 				
+				/* -------------------- fixed heigth setting ------------------*/
 				nk_label(gui->ctx, "Fixed height:", NK_TEXT_RIGHT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_fixed_h, 63, nk_filter_float);
 				
+				/* -------------------- oblique angle setting ------------------*/
 				nk_label(gui->ctx, "Oblique angle:", NK_TEXT_RIGHT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_o_ang, 63, nk_filter_float);
+				
+				nk_layout_row_dynamic(gui->ctx, 20, 3);
+				
+				/* -------------------- flags ------------------*/
+				//nk_checkbox_label(gui->ctx, "Shape", &shape);
+				nk_checkbox_label(gui->ctx, "Vertical", &vertical);
+				nk_checkbox_label(gui->ctx, "Backward", &backward);
+				nk_checkbox_label(gui->ctx, "Upside down", &upside);
 				
 				nk_group_end(gui->ctx);
 			}
@@ -287,30 +381,70 @@ int tstyles_mng (gui_obj *gui){
 			}
 			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 100});
 			if (nk_button_label(gui->ctx, "OK")){
-				/* TODO - NEED SOME CHECKS*/
-				/* change setting in gui */
-				strncpy(t_sty[edit_sty].name, sty_name, DXF_MAX_CHARS);
-				/* change setting in DXF structure */
-				dxf_attr_change(t_sty[edit_sty].obj, 2, sty_name);
 				
-				/* change setting in gui */
-				strncpy(t_sty[edit_sty].file, sty_font, DXF_MAX_CHARS);
-				/* change setting in DXF structure */
-				dxf_attr_change(t_sty[edit_sty].obj, 3, sty_font);
-				/* update settings in drawing */
-				gui_tstyle(gui);
 				
-				/* change setting in gui */
-				t_sty[edit_sty].width_f = atof(sty_w_fac);
-				t_sty[edit_sty].fixed_h = atof(sty_fixed_h);
-				t_sty[edit_sty].oblique = atof(sty_o_ang);
+				/* verify if name is duplicated */
+				int sty_exist = 0;
+				char name1[DXF_MAX_CHARS] = "";
+				char name2[DXF_MAX_CHARS] = "";
 				
-				/* change setting in DXF structure */
-				dxf_attr_change(t_sty[edit_sty].obj, 41, &(t_sty[edit_sty].width_f));
-				dxf_attr_change(t_sty[edit_sty].obj, 40, &(t_sty[edit_sty].fixed_h));
-				dxf_attr_change(t_sty[edit_sty].obj, 50, &(t_sty[edit_sty].oblique));
+				char *new_name = trimwhitespace(sty_name);
+				/*copy to a temporary string to preserve original name */
+				strncpy(name1, new_name, DXF_MAX_CHARS);
+				str_upp(name1); /* upper case to compare*/
 				
-				show_edit = 0;
+				for (i = 0; i < num_tstyles; i++){
+					/*copy to a temporary string to preserve original name */
+					strncpy(name2, t_sty[i].name, DXF_MAX_CHARS);
+					str_upp(name2); /* upper case to compare*/
+					if (i == edit_sty) { /*if current text style */
+						/* preserve STANDARD text style from rename*/
+						if (strcmp(name2, "STANDARD") == 0){
+							if (strcmp(name2, name1) != 0) sty_exist = 2;
+							break;
+						}
+					}
+					else{ /* verifify duplicated */
+						if (strcmp(name2, name1) == 0) sty_exist = 1;
+						break;
+					}
+				}
+				
+				if (!sty_exist){ /*proceed to rename, if no exists duplicated name*/
+					/*verify if was renamed*/
+					/*copy to a temporary string to preserve original name */
+					strncpy(name2, t_sty[edit_sty].name, DXF_MAX_CHARS);
+					str_upp(name2); /* upper case to compare*/
+					int renamed = strcmp(name2, name1);
+					if (renamed) {
+						/* change the STYLE structure and the DXF entities wich uses this text style */
+						t_sty_rename(gui->drawing, edit_sty, new_name);
+					}
+				
+					/* change font setting in gui */
+					strncpy(t_sty[edit_sty].file, sty_font, DXF_MAX_CHARS);
+					/* change font setting in DXF structure */
+					dxf_attr_change(t_sty[edit_sty].obj, 3, sty_font);
+					
+					/* change setting in gui */
+					t_sty[edit_sty].width_f = atof(sty_w_fac);
+					t_sty[edit_sty].fixed_h = atof(sty_fixed_h);
+					t_sty[edit_sty].oblique = atof(sty_o_ang);
+					
+					/* change setting in DXF structure */
+					dxf_attr_change(t_sty[edit_sty].obj, 41, &(t_sty[edit_sty].width_f));
+					dxf_attr_change(t_sty[edit_sty].obj, 40, &(t_sty[edit_sty].fixed_h));
+					dxf_attr_change(t_sty[edit_sty].obj, 50, &(t_sty[edit_sty].oblique));
+					
+					/* update settings in drawing */
+					gui_tstyle(gui);
+					
+					show_edit = 0;
+				}
+				else{ /* show error messages */
+					if (sty_exist == 1) snprintf(gui->log_msg, 63, "Error: Duplicated Text Style");
+					else if (sty_exist == 2) snprintf(gui->log_msg, 63, "Error: STANDARD style can't be renamed");
+				}
 			}
 			if (nk_button_label(gui->ctx, "Cancel")){
 				show_edit = 0;

@@ -428,7 +428,7 @@ int main(int argc, char** argv){
 	int show_app_about = 0;
 	int show_app_file = 0;
 	int show_info = 0;
-	int show_file_br = 0;
+	
 	
 	char file_path[DXF_MAX_CHARS];
 	int file_path_len = 0;
@@ -463,17 +463,15 @@ int main(int argc, char** argv){
 	char* dropped_filedir;                  /* Pointer for directory of dropped file */
 	
 	
-	char const * file_filter_types[FILE_T_MAX];
-	char const * file_filter_descr[FILE_T_MAX];
-	int file_filter_count = 0;
+	gui->show_file_br = 0;
 	
-	file_filter_types[0] = ext_types[FILE_DXF];
-	file_filter_types[1] = ext_types[FILE_ALL];
+	gui->file_filter_types[0] = ext_types[FILE_DXF];
+	gui->file_filter_types[1] = ext_types[FILE_ALL];
 	
-	file_filter_descr[0] = ext_descr[FILE_DXF];
-	file_filter_descr[1] = ext_descr[FILE_ALL];
+	gui->file_filter_descr[0] = ext_descr[FILE_DXF];
+	gui->file_filter_descr[1] = ext_descr[FILE_ALL];
 	
-	file_filter_count = 2;
+	gui->file_filter_count = 2;
 	
 	/* Colors in use */
 	bmp_color white = {.r = 255, .g = 255, .b =255, .a = 255};
@@ -954,12 +952,12 @@ int main(int argc, char** argv){
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_GEAR]))){
 					//printf("Config\n");
-					file_filter_types[0] = ext_types[FILE_ALL];
-					file_filter_descr[0] = ext_descr[FILE_ALL];
+					gui->file_filter_types[0] = ext_types[FILE_ALL];
+					gui->file_filter_descr[0] = ext_descr[FILE_ALL];
 					
-					file_filter_count = 1;
+					gui->file_filter_count = 1;
 					
-					show_file_br = 1;
+					gui->show_file_br = 1;
 					
 					
 				}
@@ -1154,7 +1152,7 @@ int main(int argc, char** argv){
 					nk_edit_string(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, file_path, &file_path_len, DXF_MAX_CHARS, nk_filter_default);
 					
 					nk_layout_row_dynamic(gui->ctx, 20, 2);
-					if ((nk_button_label(gui->ctx, "OK")) && (!show_file_br)) {
+					if ((nk_button_label(gui->ctx, "OK")) && (!gui->show_file_br)) {
 						file_path[file_path_len] = 0;
 						if (strlen(file_path) > 4){
 							dxf_mem_pool(ZERO_DXF, 0);
@@ -1177,15 +1175,15 @@ int main(int argc, char** argv){
 						//gui->action = FILE_OPEN;
 						//show_app_file = nk_false;
 						//file_path_len = 0;
-						file_filter_types[0] = ext_types[FILE_DXF];
-						file_filter_types[1] = ext_types[FILE_ALL];
+						gui->file_filter_types[0] = ext_types[FILE_DXF];
+						gui->file_filter_types[1] = ext_types[FILE_ALL];
 						
-						file_filter_descr[0] = ext_descr[FILE_DXF];
-						file_filter_descr[1] = ext_descr[FILE_ALL];
+						gui->file_filter_descr[0] = ext_descr[FILE_DXF];
+						gui->file_filter_descr[1] = ext_descr[FILE_ALL];
 						
-						file_filter_count = 2;
+						gui->file_filter_count = 2;
 						
-						show_file_br = 1;
+						gui->show_file_br = 1;
 					}
 					
 					nk_popup_end(gui->ctx);
@@ -1381,10 +1379,10 @@ int main(int argc, char** argv){
 			show_info = info_win(gui);
 		}
 		
-		if (show_file_br){
+		if (gui->show_file_br){
 			char *path;
 			
-			show_file_br = file_win(gui, &path, file_filter_types, file_filter_descr, file_filter_count, NULL);
+			gui->show_file_br = file_win(gui, &path, gui->file_filter_types, gui->file_filter_descr, gui->file_filter_count, NULL);
 			strncpy(file_path, path, DXF_MAX_CHARS);
 			file_path_len = strlen(file_path);
 		}

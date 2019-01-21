@@ -175,6 +175,11 @@ struct Gui_obj {
 	struct h_family hatch_fam;
 	struct h_family *end_fam;
 	
+	char const * file_filter_types[20];
+	char const * file_filter_descr[20];
+	int file_filter_count;
+	int show_file_br;
+	
 };
 typedef struct Gui_obj gui_obj;
 
@@ -212,6 +217,8 @@ extern const char *text_al_v[];
 extern const char *std_h_pat;
 extern const char *shp_font_romans;
 extern const char *shp_font_txt;
+
+
 
 #ifndef DXF_LW_LEN
 	#define DXF_LW_LEN 24

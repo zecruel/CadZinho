@@ -26,6 +26,8 @@
 #define FONT_SCALE 1.4
 #define FIXED_MEM 128*1024
 
+#define MAX_PATH_LEN 512
+
 enum Action {
 	NONE,
 	FILE_OPEN,
@@ -175,10 +177,12 @@ struct Gui_obj {
 	struct h_family hatch_fam;
 	struct h_family *end_fam;
 	
+	int show_file_br;
 	char const * file_filter_types[20];
 	char const * file_filter_descr[20];
 	int file_filter_count;
-	int show_file_br;
+	
+	char curr_path[MAX_PATH_LEN];
 	
 };
 typedef struct Gui_obj gui_obj;

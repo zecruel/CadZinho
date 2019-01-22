@@ -8,7 +8,6 @@
 #include "dxf_create.h"
 #include "dxf_attract.h"
 
-
 #include "dxf_colors.h"
 #include "dxf_seed.h"
 #include "i_svg_media.h"
@@ -51,6 +50,30 @@
 #elif defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 #define OS_WIN
 #endif
+
+const char *ext_types[] = {
+	[FILE_ALL] = "*",
+	[FILE_DXF] = "DXF",
+	[FILE_TXT] = "TXT",
+	[FILE_PAT] = "PAT",
+	[FILE_LIN] = "LIN",
+	[FILE_SHP] = "SHP",
+	[FILE_SHX] = "SHX",
+	[FILE_TTF] = "TTF",
+	[FILE_OTF] = "OTF",
+};
+const char *ext_descr[] = {
+	[FILE_ALL] = "All files (*)",
+	[FILE_DXF] = "Drawing files (.dxf)",
+	[FILE_TXT] = "Text files (.txt)",
+	[FILE_PAT] = "Patterns files (.pat)",
+	[FILE_LIN] = "Line style files (.lin)",
+	[FILE_SHP] = "Shapes files (.shp)",
+	[FILE_SHX] = "Binary shapes file (.shx)",
+	[FILE_TTF] = "True type font file (.ttf)",
+	[FILE_OTF] = "Open font file (.otf)",
+};
+
 
 void draw_cursor(bmp_img *img, int x, int y, bmp_color color){
 	/* draw cursor */
@@ -427,6 +450,7 @@ int main(int argc, char** argv){
 	unsigned int wait_open = 0;
 	int show_app_about = 0;
 	int show_app_file = 0;
+	int path_ok = 0;
 	int show_info = 0;
 	
 	
@@ -472,6 +496,8 @@ int main(int argc, char** argv){
 	gui->file_filter_descr[1] = ext_descr[FILE_ALL];
 	
 	gui->file_filter_count = 2;
+	
+	gui->curr_path[0] = 0;
 	
 	/* Colors in use */
 	bmp_color white = {.r = 255, .g = 255, .b =255, .a = 255};
@@ -822,14 +848,19 @@ int main(int argc, char** argv){
 					printf("NEW\n");
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_OPEN]))){
-					//gui->action = FILE_OPEN;
+					gui->action = FILE_OPEN;
 					show_app_file = 1;
+					path_ok = 0;
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SAVE]))){
 					gui->action = FILE_SAVE;
+					show_app_file = 1;
+					path_ok = 0;
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPORT]))){
 					gui->action = EXPORT;
+					show_app_file = 1;
+					path_ok = 0;
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CLOSE]))){
 					printf("CLOSE\n");
@@ -952,14 +983,14 @@ int main(int argc, char** argv){
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_GEAR]))){
 					//printf("Config\n");
-					gui->file_filter_types[0] = ext_types[FILE_ALL];
-					gui->file_filter_descr[0] = ext_descr[FILE_ALL];
+					//gui->file_filter_types[0] = ext_types[FILE_ALL];
+					//gui->file_filter_descr[0] = ext_descr[FILE_ALL];
 					
-					gui->file_filter_count = 1;
+					//gui->file_filter_count = 1;
 					
-					gui->show_file_br = 1;
+					//gui->show_file_br = 1;
 					
-					
+					show_app_file = 1;
 				}
 				nk_group_end(gui->ctx);
 			}
@@ -1142,57 +1173,17 @@ int main(int argc, char** argv){
 			}
 			
 			if (show_app_file){
-				/* about popup */
-				static struct nk_rect s = {20, 100, 400, 150};
-				if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "File", NK_WINDOW_CLOSABLE, s)){
-					nk_layout_row_dynamic(gui->ctx, 20, 1);
-					nk_label(gui->ctx, "File to Open:", NK_TEXT_CENTERED);
-					//nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, file_path, DXF_MAX_CHARS, nk_filter_default);
-					nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
-					nk_edit_string(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, file_path, &file_path_len, DXF_MAX_CHARS, nk_filter_default);
-					
-					nk_layout_row_dynamic(gui->ctx, 20, 2);
-					if ((nk_button_label(gui->ctx, "OK")) && (!gui->show_file_br)) {
-						file_path[file_path_len] = 0;
+				enum files_types filters[2] = {FILE_DXF, FILE_ALL};
+				char path[20];
+				show_app_file = file_pop (gui, filters, 2, NULL);
+				if (show_app_file == 2){
 						if (strlen(file_path) > 4){
-							dxf_mem_pool(ZERO_DXF, 0);
-							graph_mem_pool(ZERO_GRAPH, 0);
-							graph_mem_pool(ZERO_LINE, 0);
-							
-							wait_open = 1;
-							progress = 0;
-							
-							file_buf = dxf_load_file(file_path, &file_size);
-							open_prg = dxf_read(gui->drawing, file_buf, file_size, &progress);
-							
-							low_proc = 0;
-							progr_win = 1;
+							path_ok = 1;
 						}
-						show_app_file = nk_false;
-						file_path_len = 0;
-					}
-					if (nk_button_label(gui->ctx, "Explore")) {
-						//gui->action = FILE_OPEN;
-						//show_app_file = nk_false;
-						//file_path_len = 0;
-						gui->file_filter_types[0] = ext_types[FILE_DXF];
-						gui->file_filter_types[1] = ext_types[FILE_ALL];
-						
-						gui->file_filter_descr[0] = ext_descr[FILE_DXF];
-						gui->file_filter_descr[1] = ext_descr[FILE_ALL];
-						
-						gui->file_filter_count = 2;
-						
-						gui->show_file_br = 1;
-					}
 					
-					nk_popup_end(gui->ctx);
-				} else {
-					show_app_file = nk_false;
-					file_path_len = 0;
+					show_app_file = 0;
 				}
 			}
-			
 		}
 		nk_end(gui->ctx);
 		
@@ -1379,12 +1370,10 @@ int main(int argc, char** argv){
 			show_info = info_win(gui);
 		}
 		
-		if (gui->show_file_br){
-			char *path;
-			
-			gui->show_file_br = file_win(gui, &path, gui->file_filter_types, gui->file_filter_descr, gui->file_filter_count, NULL);
-			strncpy(file_path, path, DXF_MAX_CHARS);
-			file_path_len = strlen(file_path);
+		if (gui->show_file_br){			
+			gui->show_file_br = file_win(gui, gui->file_filter_types, gui->file_filter_descr, gui->file_filter_count, NULL);
+			strncpy(file_path, gui->curr_path, DXF_MAX_CHARS);
+			//file_path_len = strlen(file_path);
 		}
 		
 		if (show_tstyles_mng){
@@ -1541,54 +1530,37 @@ int main(int argc, char** argv){
 		
 		/*===============================*/
 		
-		if(gui->action == FILE_OPEN) {
-			gui->action = NONE;
-			url = (char *) tinyfd_openFileDialog(
-			"Open a Drawing",
-			"",
-			2,
-			lFilterPatterns,
-			NULL,
-			0);
-			if (url){
-				dxf_mem_pool(ZERO_DXF, 0);
-				graph_mem_pool(ZERO_GRAPH, 0);
-				graph_mem_pool(ZERO_LINE, 0);
-				
-				wait_open = 1;
-				progress = 0;
-				
-				file_buf = dxf_load_file(url, &file_size);
-				open_prg = dxf_read(gui->drawing, file_buf, file_size, &progress);
-				
-				low_proc = 0;
-				progr_win = 1;
-			}
+		if((gui->action == FILE_OPEN) && (path_ok)) {
+			gui->action = NONE; path_ok = 0;
+			
+			dxf_mem_pool(ZERO_DXF, 0);
+			graph_mem_pool(ZERO_GRAPH, 0);
+			graph_mem_pool(ZERO_LINE, 0);
+			
+			wait_open = 1;
+			progress = 0;
+			
+			file_buf = dxf_load_file(gui->curr_path, &file_size);
+			open_prg = dxf_read(gui->drawing, file_buf, file_size, &progress);
+			
+			low_proc = 0;
+			progr_win = 1;
+			
 			SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
 		}
-		else if(gui->action == FILE_SAVE) {
-			gui->action = NONE;
-			url = (char *) tinyfd_saveFileDialog(
-			"Save Drawing",
-			"save.txt",
-			2,
-			lFilterPatterns,
-			NULL);
-			if ((url != NULL) && (gui->drawing->main_struct != NULL)){
+		else if((gui->action == FILE_SAVE) && (path_ok)){
+			gui->action = NONE; path_ok = 0;
+			
+			if (gui->drawing->main_struct != NULL){
 				//dxf_ent_print_f (gui->drawing->main_struct, url);
-				dxf_save (url, gui->drawing);
+				dxf_save (gui->curr_path, gui->drawing);
 			}
 		}
-		else if(gui->action == EXPORT) {
-			gui->action = NONE;
-			url = (char *) tinyfd_saveFileDialog(
-			"Save Drawing",
-			"save.txt",
-			2,
-			lFilterPatterns,
-			NULL);
-			if ((url != NULL) && (gui->drawing->main_struct != NULL)){
-				dxf_ent_print_f (gui->drawing->main_struct, url);
+		else if((gui->action == EXPORT) && (path_ok)) {
+			gui->action = NONE; path_ok = 0;
+			
+			if (gui->drawing->main_struct != NULL){
+				dxf_ent_print_f (gui->drawing->main_struct, gui->curr_path);
 				//dxf_save (url, gui->drawing);
 			}
 		}

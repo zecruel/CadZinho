@@ -3,6 +3,7 @@ It use POSIX libraries that are not part of the C standard.
 Therefore, not all compilers and platafforms can make this file.
 Please, check the compatibility first. */
 
+
 #include "gui_file.h"
 #include <time.h>
 /* POSIX libs*/
@@ -10,7 +11,30 @@ Please, check the compatibility first. */
 #include <sys/stat.h>
 #include <unistd.h>
 /*-----------*/
-#define MAX_PATH_LEN 512
+
+
+const char *filter_types[] = {
+	[FILE_ALL] = "*",
+	[FILE_DXF] = "DXF",
+	[FILE_TXT] = "TXT",
+	[FILE_PAT] = "PAT",
+	[FILE_LIN] = "LIN",
+	[FILE_SHP] = "SHP",
+	[FILE_SHX] = "SHX",
+	[FILE_TTF] = "TTF",
+	[FILE_OTF] = "OTF",
+};
+const char *filter_descr[] = {
+	[FILE_ALL] = "All files (*)",
+	[FILE_DXF] = "Drawing files (.dxf)",
+	[FILE_TXT] = "Text files (.txt)",
+	[FILE_PAT] = "Patterns files (.pat)",
+	[FILE_LIN] = "Line style files (.lin)",
+	[FILE_SHP] = "Shapes files (.shp)",
+	[FILE_SHX] = "Binary shapes file (.shx)",
+	[FILE_TTF] = "True type font file (.ttf)",
+	[FILE_OTF] = "Open font file (.otf)",
+};
 
 struct file_info{
 	char name[DXF_MAX_CHARS];
@@ -43,7 +67,7 @@ int cmp_file_size(const void * a, const void * b) {
 	return (int)(info1->size - info2->size);
 }
 
-int file_win (gui_obj *gui, char **path, const char *ext_type[], const char *ext_descr[], int num_ext, char *init_dir){
+int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int num_ext, char *init_dir){
 	if ((ext_type == NULL) || (ext_descr == NULL) || num_ext == 0) return 0;
 	
 	static char full_path[MAX_PATH_LEN];
@@ -76,7 +100,7 @@ int file_win (gui_obj *gui, char **path, const char *ext_type[], const char *ext
 	static struct file_info files[10000];
 	int num_files = 0, num_dirs = 0;
 	
-	*path = full_path;
+	//*path = full_path;
 	
 	gui->next_win_x += gui->next_win_w + 250;
 	//gui->next_win_y += gui->next_win_h + 3;
@@ -327,7 +351,10 @@ int file_win (gui_obj *gui, char **path, const char *ext_type[], const char *ext
 				
 				closedir(work);
 				work = NULL;
-				//full_path[0] = 0;
+				
+				strncpy(gui->curr_path, full_path, MAX_PATH_LEN);
+				
+				full_path[0] = 0;
 				sel_file[0] = 0;
 				
 				show_browser = 0;
@@ -355,4 +382,41 @@ int file_win (gui_obj *gui, char **path, const char *ext_type[], const char *ext
 	nk_end(gui->ctx);
 	
 	return show_browser;
+}
+
+int file_pop (gui_obj *gui, enum files_types filters[], int num_filters, char *init_dir){
+	//static char file_path[DXF_MAX_CHARS];
+	
+	int show_app_file = 1;
+	/* about popup */
+	static struct nk_rect s = {20, 100, 400, 150};
+	if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "File", NK_WINDOW_CLOSABLE, s)){
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		nk_label(gui->ctx, "File to Open:", NK_TEXT_CENTERED);
+		
+		nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
+		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_path, MAX_PATH_LEN, nk_filter_default);
+		
+		nk_layout_row_dynamic(gui->ctx, 20, 2);
+		if ((nk_button_label(gui->ctx, "OK")) && (!gui->show_file_br)) {
+			show_app_file = 2;
+		}
+		if (nk_button_label(gui->ctx, "Explore")) {
+			int i;
+			
+			for (i = 0; i < num_filters; i++){
+				gui->file_filter_types[i] = filter_types[filters[i]];
+				gui->file_filter_descr[i] = filter_descr[filters[i]];
+			}
+			
+			gui->file_filter_count = num_filters;
+			
+			gui->show_file_br = 1;
+		}
+		
+		nk_popup_end(gui->ctx);
+	} else {
+		show_app_file = nk_false;
+	}
+	return show_app_file;
 }

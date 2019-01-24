@@ -19,6 +19,10 @@ int cmp_sty_name(const void * a, const void * b) {
 	return (strncmp(name1, name2, DXF_MAX_CHARS));
 }
 
+int cmp_sty_name_rev(const void * a, const void * b) {
+	return (-cmp_sty_name(a, b));
+}
+
 int t_sty_rename(dxf_drawing *drawing, int idx, char *name){
 	/* Rename text style - change the STYLE structure and the DXF entities wich uses this text style */
 	int ok = 0, i;
@@ -249,7 +253,10 @@ int tstyles_mng (gui_obj *gui){
 			}
 			
 			if (sorted == BY_NAME){
-				qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_name);
+				if(!sort_reverse)
+					qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_name);
+				else
+					qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_name_rev);
 			}
 			
 			nk_layout_row(gui->ctx, NK_STATIC, 22, 7, (float[]){175, 175, 175, 50, 50, 50, 50});

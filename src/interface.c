@@ -51,29 +51,6 @@
 #define OS_WIN
 #endif
 
-const char *ext_types[] = {
-	[FILE_ALL] = "*",
-	[FILE_DXF] = "DXF",
-	[FILE_TXT] = "TXT",
-	[FILE_PAT] = "PAT",
-	[FILE_LIN] = "LIN",
-	[FILE_SHP] = "SHP",
-	[FILE_SHX] = "SHX",
-	[FILE_TTF] = "TTF",
-	[FILE_OTF] = "OTF",
-};
-const char *ext_descr[] = {
-	[FILE_ALL] = "All files (*)",
-	[FILE_DXF] = "Drawing files (.dxf)",
-	[FILE_TXT] = "Text files (.txt)",
-	[FILE_PAT] = "Patterns files (.pat)",
-	[FILE_LIN] = "Line style files (.lin)",
-	[FILE_SHP] = "Shapes files (.shp)",
-	[FILE_SHX] = "Binary shapes file (.shx)",
-	[FILE_TTF] = "True type font file (.ttf)",
-	[FILE_OTF] = "Open font file (.otf)",
-};
-
 
 void draw_cursor(bmp_img *img, int x, int y, bmp_color color){
 	/* draw cursor */
@@ -479,7 +456,7 @@ int main(int argc, char** argv){
 	int recv_comm_flag = 0;
 	
 	char *url = NULL;
-	char const * lFilterPatterns[2] = { "*.dxf", "*.txt" };
+	//char const * lFilterPatterns[2] = { "*.dxf", "*.txt" };
 	
 	char *file_buf = NULL;
 	long file_size = 0;
@@ -489,13 +466,13 @@ int main(int argc, char** argv){
 	
 	gui->show_file_br = 0;
 	
-	gui->file_filter_types[0] = ext_types[FILE_DXF];
-	gui->file_filter_types[1] = ext_types[FILE_ALL];
+	//gui->file_filter_types[0] = ext_types[FILE_DXF];
+	//gui->file_filter_types[1] = ext_types[FILE_ALL];
 	
-	gui->file_filter_descr[0] = ext_descr[FILE_DXF];
-	gui->file_filter_descr[1] = ext_descr[FILE_ALL];
+	//gui->file_filter_descr[0] = ext_descr[FILE_DXF];
+	//gui->file_filter_descr[1] = ext_descr[FILE_ALL];
 	
-	gui->file_filter_count = 2;
+	gui->file_filter_count = 0;
 	
 	gui->curr_path[0] = 0;
 	

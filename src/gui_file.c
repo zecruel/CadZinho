@@ -102,10 +102,10 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 	
 	//*path = full_path;
 	
-	gui->next_win_x += gui->next_win_w + 250;
+	//gui->next_win_x += gui->next_win_w + 250;
 	//gui->next_win_y += gui->next_win_h + 3;
-	gui->next_win_w = 600;
-	gui->next_win_h = 510;
+	//gui->next_win_w = 600;
+	//gui->next_win_h = 510;
 	
 	struct nk_style_button b_dir, b_file;
 	b_dir = gui->ctx->style.button;
@@ -125,7 +125,7 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 	if (ext_idx >= num_ext) ext_idx = 0;
 	
 	
-	if (nk_begin(gui->ctx, "File explorer", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
+	if (nk_begin(gui->ctx, "File explorer", nk_rect(450, 100, 600, 510),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		
@@ -389,7 +389,7 @@ int file_pop (gui_obj *gui, enum files_types filters[], int num_filters, char *i
 	
 	int show_app_file = 1;
 	/* about popup */
-	static struct nk_rect s = {20, 100, 400, 150};
+	static struct nk_rect s = {20, 200, 400, 150};
 	if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "File", NK_WINDOW_CLOSABLE, s)){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "File to Open:", NK_TEXT_CENTERED);
@@ -399,6 +399,7 @@ int file_pop (gui_obj *gui, enum files_types filters[], int num_filters, char *i
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		if ((nk_button_label(gui->ctx, "OK")) && (!gui->show_file_br)) {
+			nk_popup_close(gui->ctx);
 			show_app_file = 2;
 		}
 		if (nk_button_label(gui->ctx, "Explore")) {

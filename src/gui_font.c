@@ -23,6 +23,33 @@ int cmp_sty_name_rev(const void * a, const void * b) {
 	return (-cmp_sty_name(a, b));
 }
 
+int cmp_sty_font(const void * a, const void * b) {
+	char *name1, *name2;
+	char copy1[DXF_MAX_CHARS], copy2[DXF_MAX_CHARS];
+	int ret;
+	
+	dxf_tstyle *sty1 = ((struct sort_by_idx *)a)->data;
+	dxf_tstyle *sty2 = ((struct sort_by_idx *)b)->data;
+	/* copy strings for secure manipulation */
+	strncpy(copy1, sty1->file, DXF_MAX_CHARS);
+	strncpy(copy2, sty2->file, DXF_MAX_CHARS);
+	/* remove trailing spaces */
+	name1 = trimwhitespace(copy1);
+	name2 = trimwhitespace(copy2);
+	/* change to upper case */
+	str_upp(name1);
+	str_upp(name2);
+	ret = strncmp(name1, name2, DXF_MAX_CHARS);
+	if (ret == 0) { /* in case the font is the same, sort by style name */
+		return cmp_sty_name(a, b);
+	}
+	return ret;
+}
+
+int cmp_sty_font_rev(const void * a, const void * b) {
+	return  -cmp_sty_font(a, b);
+}
+
 int t_sty_rename(dxf_drawing *drawing, int idx, char *name){
 	/* Rename text style - change the STYLE structure and the DXF entities wich uses this text style */
 	int ok = 0, i;
@@ -257,6 +284,12 @@ int tstyles_mng (gui_obj *gui){
 					qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_name);
 				else
 					qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_name_rev);
+			}
+			else if (sorted == BY_FONT){
+				if(!sort_reverse)
+					qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_font);
+				else
+					qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_font_rev);
 			}
 			
 			nk_layout_row(gui->ctx, NK_STATIC, 22, 7, (float[]){175, 175, 175, 50, 50, 50, 50});

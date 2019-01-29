@@ -1,6 +1,7 @@
 #include "gui.h"
 #include "gui_file.h"
 
+/* compare text styles names - for sort functions */
 int cmp_sty_name(const void * a, const void * b) {
 	char *name1, *name2;
 	char copy1[DXF_MAX_CHARS], copy2[DXF_MAX_CHARS];
@@ -18,11 +19,11 @@ int cmp_sty_name(const void * a, const void * b) {
 	str_upp(name2);
 	return (strncmp(name1, name2, DXF_MAX_CHARS));
 }
-
+/* compare text styles names - reverse mode - for sort functions */
 int cmp_sty_name_rev(const void * a, const void * b) {
 	return (-cmp_sty_name(a, b));
 }
-
+/* compare text styles font names - for sort functions */
 int cmp_sty_font(const void * a, const void * b) {
 	char *name1, *name2;
 	char copy1[DXF_MAX_CHARS], copy2[DXF_MAX_CHARS];
@@ -45,9 +46,54 @@ int cmp_sty_font(const void * a, const void * b) {
 	}
 	return ret;
 }
-
+/* compare text styles font names - reverse mode - for sort functions */
 int cmp_sty_font_rev(const void * a, const void * b) {
 	return  -cmp_sty_font(a, b);
+}
+
+/* compare text styles width factor - for sort functions */
+int cmp_sty_wf(const void * a, const void * b) {
+	
+	dxf_tstyle *sty1 = ((struct sort_by_idx *)a)->data;
+	dxf_tstyle *sty2 = ((struct sort_by_idx *)b)->data;
+	
+	if (sty1->width_f > sty2->width_f) return 1;
+	else if (sty1->width_f < sty2->width_f) return -1;
+	else return 0;
+}
+/* compare text styles width factor - reverse mode - for sort functions */
+int cmp_sty_wf_rev(const void * a, const void * b) {
+	return  -cmp_sty_wf(a, b);
+}
+
+/* compare text styles fixed height - for sort functions */
+int cmp_sty_fh(const void * a, const void * b) {
+	
+	dxf_tstyle *sty1 = ((struct sort_by_idx *)a)->data;
+	dxf_tstyle *sty2 = ((struct sort_by_idx *)b)->data;
+	
+	if (sty1->fixed_h > sty2->fixed_h) return 1;
+	else if (sty1->fixed_h < sty2->fixed_h) return -1;
+	else return 0;
+}
+/* compare text styles fixed height - reverse mode - for sort functions */
+int cmp_sty_fh_rev(const void * a, const void * b) {
+	return  -cmp_sty_fh(a, b);
+}
+
+/* compare text styles oblique angle - for sort functions */
+int cmp_sty_oa(const void * a, const void * b) {
+	
+	dxf_tstyle *sty1 = ((struct sort_by_idx *)a)->data;
+	dxf_tstyle *sty2 = ((struct sort_by_idx *)b)->data;
+	
+	if (sty1->oblique > sty2->oblique) return 1;
+	else if (sty1->oblique < sty2->oblique) return -1;
+	else return 0;
+}
+/* compare text styles oblique angle - reverse mode - for sort functions */
+int cmp_sty_oa_rev(const void * a, const void * b) {
+	return  -cmp_sty_oa(a, b);
 }
 
 int t_sty_rename(dxf_drawing *drawing, int idx, char *name){
@@ -216,9 +262,6 @@ int tstyles_mng (gui_obj *gui){
 			if (nk_button_label(gui->ctx, "Subst")){
 				
 			}
-			if (nk_button_label(gui->ctx, "Flags")){
-				
-			}
 			/* Width */
 			if (sorted == BY_WIDTH){
 				if (sort_reverse){
@@ -268,6 +311,11 @@ int tstyles_mng (gui_obj *gui){
 				sort_reverse = 0;
 			}
 			
+			
+			if (nk_button_label(gui->ctx, "Flags")){
+				
+			}
+			
 			nk_group_end(gui->ctx);
 		}
 		nk_layout_row_dynamic(gui->ctx, 200, 1);
@@ -291,48 +339,64 @@ int tstyles_mng (gui_obj *gui){
 				else
 					qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_font_rev);
 			}
+			else if (sorted == BY_WIDTH){
+				if(!sort_reverse)
+					qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_wf);
+				else
+					qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_wf_rev);
+			}
+			else if (sorted == BY_HEIGHT){
+				if(!sort_reverse)
+					qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_fh);
+				else
+					qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_fh_rev);
+			}
+			else if (sorted == BY_ANGLE){
+				if(!sort_reverse)
+					qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_oa);
+				else
+					qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_oa_rev);
+			}
 			
+			/* show text style list of drawing*/
 			nk_layout_row(gui->ctx, NK_STATIC, 22, 7, (float[]){175, 175, 175, 50, 50, 50, 50});
-			
 			char txt[DXF_MAX_CHARS];
-				
 			for (i = 0; i < num_tstyles; i++){
 				
-				/* show current text style name */
+				/* hilite the selected text style in list */
 				t_sty_idx = sort_tstyle[i].idx;
-				//t_sty_idx = i;
 				sel_type = &gui->b_icon_unsel;
 				if (sel_t_sty == t_sty_idx) sel_type = &gui->b_icon_sel;
 				
+				/* show current text style name */
 				if (nk_button_label_styled(gui->ctx, sel_type, t_sty[t_sty_idx].name)){
 					sel_t_sty = t_sty_idx; /* select current text style */
 				}
 				
+				/* show font file */
 				if (nk_button_label_styled(gui->ctx, sel_type, t_sty[t_sty_idx].file)) sel_t_sty = t_sty_idx; /* select current text style */
 				
-				/* check if font was substituted in case of unavailability */
+				/* show if font was substituted in case of unavailability */
 				if (nk_button_label_styled(gui->ctx, sel_type, t_sty[t_sty_idx].subst_file)) sel_t_sty = t_sty_idx; /* select current text style */
 				
-				//snprintf(txt, DXF_MAX_CHARS, "%d", t_sty[t_sty_idx].flags1);
-				snprintf(txt, DXF_MAX_CHARS, "---");
-				if (t_sty[sel_t_sty].flags1 & 4) txt[0] = 'V';
-				if (t_sty[sel_t_sty].flags2 & 2) txt[1] = 'B';
-				if (t_sty[sel_t_sty].flags2 & 4) txt[2] = 'U';
-				if (nk_button_label_styled(gui->ctx, sel_type, txt)) sel_t_sty = t_sty_idx; /* select current text style */
-				
-				//snprintf(txt, DXF_MAX_CHARS, "%d", t_sty[t_sty_idx].flags2);
-				//nk_button_label_styled(gui->ctx, sel_type, txt);
-				
+				/* show width factor */
 				snprintf(txt, DXF_MAX_CHARS, "%0.2f", t_sty[t_sty_idx].width_f);
 				if (nk_button_label_styled(gui->ctx, sel_type, txt)) sel_t_sty = t_sty_idx; /* select current text style */
-				//t_sty[t_sty_idx].width_f = nk_propertyd(gui->ctx, "Width factor", 0.0d, t_sty[t_sty_idx].width_f, 100.0d, 0.1d, 0.1d);
 				
+				/* show fixed height */
 				snprintf(txt, DXF_MAX_CHARS, "%0.2f", t_sty[t_sty_idx].fixed_h);
 				if (nk_button_label_styled(gui->ctx, sel_type, txt)) sel_t_sty = t_sty_idx; /* select current text style */
 				
+				/* show oblique angle */
 				snprintf(txt, DXF_MAX_CHARS, "%0.2f", t_sty[t_sty_idx].oblique);
 				if (nk_button_label_styled(gui->ctx, sel_type, txt)) sel_t_sty = t_sty_idx; /* select current text style */
 				
+				/* show flags status of current text style */
+				snprintf(txt, DXF_MAX_CHARS, "---");
+				if (t_sty[sel_t_sty].flags1 & 4) txt[0] = 'V'; /* vertical text */
+				if (t_sty[sel_t_sty].flags2 & 2) txt[1] = 'B'; /* backward text - flip in X coord */
+				if (t_sty[sel_t_sty].flags2 & 4) txt[2] = 'U'; /* upside down text - flip in Y coord */
+				if (nk_button_label_styled(gui->ctx, sel_type, txt)) sel_t_sty = t_sty_idx; /* select current text style */
 				
 			}
 			nk_group_end(gui->ctx);

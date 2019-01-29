@@ -178,6 +178,83 @@ int t_sty_rename(dxf_drawing *drawing, int idx, char *name){
 	return ok;
 }
 
+
+int t_sty_use(dxf_drawing *drawing){
+	/* Update text styles in use */
+	int ok = 0, i, idx;
+	dxf_node *current, *prev, *obj = NULL, *list[2], *sty_obj;
+	
+	list[0] = NULL; list[1] = NULL;
+	if (drawing){
+		/* look for entities in BLOCKS and ENTITIES sections */
+		list[0] = drawing->ents;
+		list[1] = drawing->blks;
+	}
+	else return 0;
+	
+	/* clear all styles */
+	for (i = 0; i < drawing->num_tstyles; i++){
+		drawing->text_styles[i].num_el = 0;
+	}
+	
+	for (i = 0; i< 2; i++){
+		obj = list[i];
+		current = obj;
+		while (current){ /* sweep current section */
+			ok = 1;
+			prev = current;
+			if (current->type == DXF_ENT){
+				/* Look for DXF code group 7, text style name */
+				sty_obj = dxf_find_attr2(current, 7);
+				if (sty_obj){
+					/* look for text style index */
+					idx = dxf_tstyle_idx(drawing, sty_obj->value.s_data);
+					/* increment elements wich uses its style*/
+					drawing->text_styles[idx].num_el++;
+				}
+				
+				
+				if (current->obj.content){
+					/* starts the content sweep */
+					current = current->obj.content;
+					continue;
+				}
+			}
+				
+			current = current->next; /* go to the next in the list*/
+			
+			if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
+				current = NULL;
+				break;
+			}
+
+			/* ============================================================= */
+			while (current == NULL){
+				/* end of list sweeping */
+				if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
+					//printf("para\n");
+					current = NULL;
+					break;
+				}
+				/* try to back in structure hierarchy */
+				prev = prev->master;
+				if (prev){ /* up in structure */
+					/* try to continue on previous point in structure */
+					current = prev->next;
+					
+				}
+				else{ /* stop the search if structure ends */
+					current = NULL;
+					break;
+				}
+			}
+		}
+	}
+	
+	return ok;
+}
+
+
 int tstyles_mng (gui_obj *gui){
 	int i, show_tstyle_mng = 1;
 	static int show_edit = 0, show_name = 0;
@@ -196,7 +273,7 @@ int tstyles_mng (gui_obj *gui){
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
-	gui->next_win_w = 810;
+	gui->next_win_w = 870;
 	gui->next_win_h = 310;
 	
 	int num_tstyles = gui->drawing->num_tstyles;
@@ -225,7 +302,7 @@ int tstyles_mng (gui_obj *gui){
 		
 		nk_layout_row_dynamic(gui->ctx, 32, 1);
 		if (nk_group_begin(gui->ctx, "tstyle_head", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-			nk_layout_row(gui->ctx, NK_STATIC, 22, 7, (float[]){175, 175, 175, 50, 50, 50, 50});
+			nk_layout_row(gui->ctx, NK_STATIC, 22, 8, (float[]){175, 175, 175, 50, 50, 50, 50, 50});
 			/* table head -  buttons to sort the list */
 			/* name */
 			if (sorted == BY_NAME){
@@ -316,17 +393,23 @@ int tstyles_mng (gui_obj *gui){
 				
 			}
 			
+			if (nk_button_label(gui->ctx, "Used")){
+				
+			}
+			
 			nk_group_end(gui->ctx);
 		}
 		nk_layout_row_dynamic(gui->ctx, 200, 1);
 		if (nk_group_begin(gui->ctx, "tstyle_prop", NK_WINDOW_BORDER)) {
 			
-			/* sort tables */
+			/* sorting functions */
+			/* initialize the list to be sorted*/
 			for (i = 0; i < num_tstyles; i++){
 				sort_tstyle[i].idx = i;
 				sort_tstyle[i].data = &(t_sty[i]);
 			}
 			
+			/* identify and apply the sorting criteria */
 			if (sorted == BY_NAME){
 				if(!sort_reverse)
 					qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_name);
@@ -358,8 +441,11 @@ int tstyles_mng (gui_obj *gui){
 					qsort(sort_tstyle, num_tstyles, sizeof(struct sort_by_idx), cmp_sty_oa_rev);
 			}
 			
+			/* update the text styles in use */
+			t_sty_use(gui->drawing);
+			
 			/* show text style list of drawing*/
-			nk_layout_row(gui->ctx, NK_STATIC, 22, 7, (float[]){175, 175, 175, 50, 50, 50, 50});
+			nk_layout_row(gui->ctx, NK_STATIC, 22, 8, (float[]){175, 175, 175, 50, 50, 50, 50, 50});
 			char txt[DXF_MAX_CHARS];
 			for (i = 0; i < num_tstyles; i++){
 				
@@ -398,6 +484,11 @@ int tstyles_mng (gui_obj *gui){
 				if (t_sty[sel_t_sty].flags2 & 4) txt[2] = 'U'; /* upside down text - flip in Y coord */
 				if (nk_button_label_styled(gui->ctx, sel_type, txt)) sel_t_sty = t_sty_idx; /* select current text style */
 				
+				/* show if current text style is in use */
+				if (t_sty[t_sty_idx].num_el) snprintf(txt, DXF_MAX_CHARS, "x");
+				else snprintf(txt, DXF_MAX_CHARS, " ");
+				if (nk_button_label_styled(gui->ctx, sel_type, txt)) sel_t_sty = t_sty_idx; /* select current text style */
+				
 			}
 			nk_group_end(gui->ctx);
 		}
@@ -423,23 +514,28 @@ int tstyles_mng (gui_obj *gui){
 			
 			edit_sty = sel_t_sty;
 			
-			/*show_lay_name = 1;
-			strncpy(lay_name, layers[sel_lay].name, DXF_MAX_CHARS);
-			lay_change = LAY_OP_RENAME;*/
-			
 		}
 		if ((nk_button_label(gui->ctx, "Remove")) && (sel_t_sty >= 0)){
-			/*if (layers[sel_lay].num_el){
-				snprintf(gui->log_msg, 63, "Error: Don't remove Layer in use");
+			char name[DXF_MAX_CHARS] = "";
+			/*copy to a temporary string to preserve original name */
+			strncpy(name, t_sty[sel_t_sty].name, DXF_MAX_CHARS);
+			str_upp(name); /* upper case to compare*/
+			/* preserve STANDARD text style from remove */
+			if (strcmp(name, "STANDARD") == 0){
+				snprintf(gui->log_msg, 63, "Error: Don't remove Standard Style");
 			}
 			else{
-				
-				layer_use(gui->drawing);
-				dxf_obj_subst(layers[sel_lay].obj, NULL);
-				sel_lay = -1;
-				dxf_layer_assemb (gui->drawing);
-				lay_change = LAY_OP_UPDATE;
-			}*/
+				/*check if text style is used */
+				t_sty_use(gui->drawing); /* update for sure */
+				if (t_sty[sel_t_sty].num_el){
+					snprintf(gui->log_msg, 63, "Error: Don't remove Style in use");
+				}
+				else{ /* if allowed, proceed to remove */
+					dxf_obj_subst(t_sty[sel_t_sty].obj, NULL);
+					sel_t_sty = 0;
+					dxf_tstyles_assemb (gui->drawing); /*update drawing*/
+				}
+			}
 		}
 		
 		if ((show_name)){

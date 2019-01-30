@@ -25,7 +25,6 @@
 #include <ctype.h>
 //#include <locale.h>
 
-#include "tinyfiledialogs.h"
 
 #include "lua.h"
 #include "lauxlib.h"
@@ -566,15 +565,15 @@ int main(int argc, char** argv){
 	/* other font */
 	
 	
-	struct nk_user_font font_tiny_nk;
-	#if 0
-	font_tiny_nk.userdata = nk_handle_ptr(&font_tiny);
-	font_tiny_nk.height = 8.0;
-	font_tiny.scale = font_scale(font_tiny.shx_font, font_tiny_nk.height);
-	font_tiny_nk.width = nk_user_font_get_text_width;
-	#endif
-	font_tiny_nk = gui->ui_font;
-	font_tiny_nk.height = 9.0;
+	
+	{
+		double font_size = 0.8;
+		for (i = 0; i < FONT_NUM_SIZE; i++){
+			gui->alt_font_sizes[i] = gui->ui_font;
+			gui->alt_font_sizes[i].height = font_size * gui->ui_font.height;
+			font_size += 0.2;
+		}
+	}
 	
 	//int show_blk_pp = 0;
 	//bmp_img * gui->preview_img;
@@ -1446,7 +1445,7 @@ int main(int argc, char** argv){
 			int text_len;
 			char text[64];
 			
-			nk_style_push_font(gui->ctx, &font_tiny_nk); /* change font to tiny*/
+			nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
 			
 			/* view coordinates of mouse in drawing units */
 			nk_layout_row_push(gui->ctx, 280);

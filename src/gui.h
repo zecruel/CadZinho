@@ -74,6 +74,15 @@ enum Gui_ev {
 	EV_MOTION = 4,
 	EV_LOCK_AX = 8
 };
+
+enum Font_sizes {
+	FONT_SMALL,
+	FONT_REGULAR,
+	FONT_BIG,
+	FONT_HUGE,
+	
+	FONT_NUM_SIZE
+};
 	
 	
 
@@ -170,6 +179,7 @@ struct Gui_obj {
 	list_node *font_list;
 	//struct tfont * ui_font;
 	struct nk_user_font ui_font;
+	struct nk_user_font alt_font_sizes[FONT_NUM_SIZE];
 	struct tfont * dflt_font;
 	
 	struct h_pattern list_pattern;

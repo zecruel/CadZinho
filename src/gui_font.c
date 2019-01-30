@@ -576,10 +576,10 @@ int tstyles_mng (gui_obj *gui){
 	
 	if ((show_edit)){
 		/* edit parameters of selected text style */
-		if (nk_begin(gui->ctx, "Edit Text Style", nk_rect(gui->next_win_x + 50, gui->next_win_y + gui->next_win_h + 3, 570, 250), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_CLOSABLE)){
+		if (nk_begin(gui->ctx, "Edit Text Style", nk_rect(gui->next_win_x + 50, gui->next_win_y + gui->next_win_h + 3, 530, 250), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_CLOSABLE)){
 			static int show_app_file = 0, path_ok = 0;
 			
-			nk_layout_row(gui->ctx, NK_STATIC, 160, 2, (float[]){330, 200});
+			nk_layout_row(gui->ctx, NK_STATIC, 160, 2, (float[]){330, 170});
 			if (nk_group_begin(gui->ctx, "edit_param", NK_WINDOW_BORDER)) {
 				nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 200});
 				
@@ -635,7 +635,10 @@ int tstyles_mng (gui_obj *gui){
 			}
 			if (nk_group_begin(gui->ctx, "Available Fonts", NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
 				/* show loaded fonts, available for setting */
-				nk_layout_row_dynamic(gui->ctx, 20, 1);
+				
+				nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
+				
+				nk_layout_row_dynamic(gui->ctx, 12, 1);
 				int j = 0;
 				list_node *curr_node = NULL;
 				while (curr_node = list_get_idx(gui->font_list, j)){
@@ -647,6 +650,7 @@ int tstyles_mng (gui_obj *gui){
 					j++;
 				}
 				
+				nk_style_pop_font(gui->ctx); /* return to the default font*/
 				nk_group_end(gui->ctx);
 			}
 			nk_layout_row(gui->ctx, NK_STATIC, 20, 3, (float[]){100, 100, 100});

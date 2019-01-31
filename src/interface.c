@@ -395,6 +395,10 @@ int main(int argc, char** argv){
 		
 	//SDL_SetTextureBlendMode(canvas, SDL_BLENDMODE_BLEND);
 	
+	char *base_path = SDL_GetBasePath();
+	printf ("%s\n", base_path);
+	printf ("%s\n", argv[0]);
+	
 	#if(0)
 	char fonts_path[DXF_MAX_CHARS];
 	fonts_path[0] = 0;
@@ -826,6 +830,9 @@ int main(int argc, char** argv){
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_OPEN]))){
 					gui->action = FILE_OPEN;
 					show_app_file = 1;
+					
+					gui->curr_path[0] = 0;
+					
 					path_ok = 0;
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SAVE]))){
@@ -1153,9 +1160,9 @@ int main(int argc, char** argv){
 				char path[20];
 				show_app_file = file_pop (gui, filters, 2, NULL);
 				if (show_app_file == 2){
-						if (strlen(file_path) > 4){
+						//if (strlen(file_path) > 4){
 							path_ok = 1;
-						}
+						//}
 					
 					show_app_file = 0;
 				}
@@ -1349,7 +1356,7 @@ int main(int argc, char** argv){
 		if (gui->show_file_br){			
 			gui->show_file_br = file_win(gui, gui->file_filter_types, gui->file_filter_descr, gui->file_filter_count, NULL);
 			strncpy(file_path, gui->curr_path, DXF_MAX_CHARS);
-			//file_path_len = strlen(file_path);
+			file_path_len = strlen(file_path);
 		}
 		
 		if (show_tstyles_mng){

@@ -495,12 +495,13 @@ int tstyles_mng (gui_obj *gui){
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 3);
 		if (nk_button_label(gui->ctx, "Create")){
-			
+			/* show popup window for entry new text style name */
 			show_name = 1;
 			sty_name[0] = 0;
 		}
 		if ((nk_button_label(gui->ctx, "Edit")) && (sel_t_sty >= 0)){
-			show_edit = 1;
+			show_edit = 1; /* show edit window */
+			/* initialize variables for edit window with selected text style parameters*/
 			strncpy(sty_name, t_sty[sel_t_sty].name, DXF_MAX_CHARS);
 			strncpy(sty_font, t_sty[sel_t_sty].file, DXF_MAX_CHARS);
 			
@@ -538,22 +539,23 @@ int tstyles_mng (gui_obj *gui){
 			}
 		}
 		
-		if ((show_name)){
+		if ((show_name)){ /* popup window to creat a new text style */
 			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Style Name", NK_WINDOW_CLOSABLE, nk_rect(10, 20, 220, 100))){
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				//nk_label(gui->ctx, "Layer Name:",  NK_TEXT_LEFT);
 				/* set focus to edit */
 				nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
+				/* new text style name*/
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_name, DXF_MAX_CHARS, nk_filter_default);
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				if (nk_button_label(gui->ctx, "OK")){
-					
+					/* try to create a new text style */
 					if (!dxf_new_tstyle (gui->drawing, sty_name)){
 						snprintf(gui->log_msg, 63, "Error: Text Style already exists");
 					}
 					else {
+						/* success - close popup */
 						nk_popup_close(gui->ctx);
 						show_name = 0;
 					}
@@ -575,7 +577,7 @@ int tstyles_mng (gui_obj *gui){
 	nk_end(gui->ctx);
 	
 	if ((show_edit)){
-		/* edit parameters of selected text style */
+		/* edit window - allow modifications on parameters of selected text style */
 		if (nk_begin(gui->ctx, "Edit Text Style", nk_rect(gui->next_win_x + 50, gui->next_win_y + gui->next_win_h + 3, 530, 250), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_CLOSABLE)){
 			static int show_app_file = 0, path_ok = 0;
 			
@@ -653,7 +655,7 @@ int tstyles_mng (gui_obj *gui){
 				nk_style_pop_font(gui->ctx); /* return to the default font*/
 				nk_group_end(gui->ctx);
 			}
-			nk_layout_row(gui->ctx, NK_STATIC, 20, 3, (float[]){100, 100, 100});
+			nk_layout_row(gui->ctx, NK_STATIC, 20, 4, (float[]){100, 100, 150, 100});
 			if (nk_button_label(gui->ctx, "OK")){
 				
 				
@@ -740,11 +742,15 @@ int tstyles_mng (gui_obj *gui){
 			if (nk_button_label(gui->ctx, "Cancel")){
 				show_edit = 0;
 			}
-			if (nk_button_label(gui->ctx, "Load")){
-				
+			
+			nk_label(gui->ctx, " ", NK_TEXT_RIGHT); /*label only for simple space layout */
+			
+			if (nk_button_label(gui->ctx, "Load font")){
+				/* load more other fonts */
 				show_app_file = 1;
 			}
 			if (show_app_file){
+				/* popup to open other font files */
 				enum files_types filters[5] = {FILE_SHP, FILE_SHX, FILE_TTF, FILE_OTF, FILE_ALL};
 				//char path[20];
 				show_app_file = file_pop (gui, filters, 5, NULL);
@@ -755,7 +761,6 @@ int tstyles_mng (gui_obj *gui){
 						//}
 					
 					show_app_file = 0;
-					//nk_popup_close(gui->ctx);
 				}
 			}
 			

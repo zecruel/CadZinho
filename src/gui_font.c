@@ -388,7 +388,6 @@ int tstyles_mng (gui_obj *gui){
 				sort_reverse = 0;
 			}
 			
-			
 			if (nk_button_label(gui->ctx, "Flags")){
 				
 			}
@@ -579,7 +578,7 @@ int tstyles_mng (gui_obj *gui){
 	if ((show_edit)){
 		/* edit window - allow modifications on parameters of selected text style */
 		if (nk_begin(gui->ctx, "Edit Text Style", nk_rect(gui->next_win_x + 50, gui->next_win_y + gui->next_win_h + 3, 530, 250), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_CLOSABLE)){
-			static int show_app_file = 0, path_ok = 0;
+			static int show_app_file = 0;
 			
 			nk_layout_row(gui->ctx, NK_STATIC, 160, 2, (float[]){330, 170});
 			if (nk_group_begin(gui->ctx, "edit_param", NK_WINDOW_BORDER)) {
@@ -748,18 +747,14 @@ int tstyles_mng (gui_obj *gui){
 			if (nk_button_label(gui->ctx, "Load font")){
 				/* load more other fonts */
 				show_app_file = 1;
+				gui->curr_path[0] = 0;
 			}
 			if (show_app_file){
 				/* popup to open other font files */
 				enum files_types filters[5] = {FILE_SHP, FILE_SHX, FILE_TTF, FILE_OTF, FILE_ALL};
-				//char path[20];
 				show_app_file = file_pop (gui, filters, 5, NULL);
 				if (show_app_file == 2){
-						//if (strlen(file_path) > 4){
-							path_ok = 1;
-							add_font_list(gui->font_list, gui->curr_path, gui->dflt_fonts_path);
-						//}
-					
+					add_font_list(gui->font_list, gui->curr_path, gui->dflt_fonts_path);
 					show_app_file = 0;
 				}
 			}

@@ -1502,6 +1502,7 @@ int main(int argc, char** argv){
 				gui->action = VIEW_ZOOM_EXT;
 				gui->layer_idx = 0;
 				gui->ltypes_idx = 0;
+				gui->t_sty_idx = 0;
 				gui->color_idx = 256;
 				wait_open = 0;
 				progr_end = 1;

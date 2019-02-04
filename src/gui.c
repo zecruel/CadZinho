@@ -945,6 +945,7 @@ int gui_start(gui_obj *gui){
 	gui->t_al_h = 0;
 	gui->layer_idx = 0;
 	gui->ltypes_idx = 0;
+	gui->t_sty_idx = 0;
 	
 	gui->step = 0;
 	gui->user_flag_x = 0;

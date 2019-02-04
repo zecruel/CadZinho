@@ -128,7 +128,7 @@ struct Gui_obj {
 	double patt_scale, patt_ang;
 	
 	int color_idx, lw_idx, t_al_v, t_al_h;
-	int layer_idx, ltypes_idx;
+	int layer_idx, ltypes_idx, t_sty_idx;
 	
 	int step, user_flag_x, user_flag_y, lock_ax_x, lock_ax_y, user_number;
 	int keyEnter;

@@ -278,7 +278,7 @@ int tstyles_mng (gui_obj *gui){
 	
 	int num_tstyles = gui->drawing->num_tstyles;
 	
-	if (sel_t_sty > num_tstyles) sel_t_sty = 0;
+	if (sel_t_sty >= num_tstyles) sel_t_sty = 0;
 	
 	static struct sort_by_idx sort_tstyle[DXF_MAX_FONTS];
 	

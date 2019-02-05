@@ -1927,18 +1927,20 @@ int graph_list_ext(list_node *list, int *init, double * min_x, double * min_y, d
 		while (current != NULL){
 			if (current->data){
 				curr_graph = (graph_obj *)current->data;
-				if (*init == 0){
-					*init = 1;
-					*min_x = curr_graph->ext_min_x;
-					*min_y = curr_graph->ext_min_y;
-					*max_x = curr_graph->ext_max_x;
-					*max_y = curr_graph->ext_max_y;
-				}
-				else{
-					*min_x = (*min_x < curr_graph->ext_min_x) ? *min_x : curr_graph->ext_min_x;
-					*min_y = (*min_y < curr_graph->ext_min_y) ? *min_y : curr_graph->ext_min_y;
-					*max_x = (*max_x > curr_graph->ext_max_x) ? *max_x : curr_graph->ext_max_x;
-					*max_y = (*max_y > curr_graph->ext_max_y) ? *max_y : curr_graph->ext_max_y;
+				if (curr_graph->list->next != NULL){ /*check if graph is not empty */
+					if (*init == 0){
+						*init = 1;
+						*min_x = curr_graph->ext_min_x;
+						*min_y = curr_graph->ext_min_y;
+						*max_x = curr_graph->ext_max_x;
+						*max_y = curr_graph->ext_max_y;
+					}
+					else{
+						*min_x = (*min_x < curr_graph->ext_min_x) ? *min_x : curr_graph->ext_min_x;
+						*min_y = (*min_y < curr_graph->ext_min_y) ? *min_y : curr_graph->ext_min_y;
+						*max_x = (*max_x > curr_graph->ext_max_x) ? *max_x : curr_graph->ext_max_x;
+						*max_y = (*max_y > curr_graph->ext_max_y) ? *max_y : curr_graph->ext_max_y;
+					}
 				}
 			}
 			current = current->next;

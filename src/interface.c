@@ -1984,6 +1984,10 @@ int main(int argc, char** argv){
 		
 		graph_mem_pool(ZERO_GRAPH, 1);
 		graph_mem_pool(ZERO_LINE, 1);
+		graph_mem_pool(ZERO_GRAPH, FRAME_LIFE);
+		graph_mem_pool(ZERO_LINE, FRAME_LIFE);
+		list_mem_pool(ZERO_LIST, FRAME_LIFE);
+		
 		nk_clear(gui->ctx); /*IMPORTANT */
 		if (low_proc){
 			SDL_Delay(30);

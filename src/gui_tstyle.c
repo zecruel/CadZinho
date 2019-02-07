@@ -781,15 +781,17 @@ int tstyles_mng (gui_obj *gui){
 					/* extents and zoom parameters */
 					double x0, y0, x1, y1, z, z_x, z_y, o_x, o_y;
 					
-					int pos1, pos2, pos3;
+					int pos1, pos2, pos3, pos4;
 					
 					ei = 0;
 					/* get graphics preview of selected font*/
-					pos1 = font_parse_str(selected_font, preview, FRAME_LIFE, "ABC", NULL, 0);
-					pos2 = font_parse_str(selected_font, preview, FRAME_LIFE, "abc", NULL, 0);
-					pos3 = font_parse_str(selected_font, preview, FRAME_LIFE, "123", NULL, 0);
-					graph_list_modify_idx(preview, 0.0, -1.2 , 1.0, 1.0, 0.0, pos1, pos1 + pos2 - 1);
-					graph_list_modify_idx(preview, 0.0, -2.4 , 1.0, 1.0, 0.0, pos1 + pos2, pos1 + pos2 + pos3);
+					pos1 = font_parse_str(selected_font, preview, FRAME_LIFE, "GINJAL", NULL, 0);
+					pos2 = font_parse_str(selected_font, preview, FRAME_LIFE, "ginjal", NULL, 0);
+					pos3 = font_parse_str(selected_font, preview, FRAME_LIFE, "012345", NULL, 0);
+					pos4 = font_parse_str(selected_font, preview, FRAME_LIFE, "!@#$%&", NULL, 0);
+					graph_list_modify_idx(preview, 0.0, -1.4 , 1.0, 1.0, 0.0, pos1, pos1 + pos2 - 1);
+					graph_list_modify_idx(preview, 0.0, -2.8 , 1.0, 1.0, 0.0, pos1 + pos2, pos1 + pos2 + pos3 - 1);
+					graph_list_modify_idx(preview, 0.0, -4.2 , 1.0, 1.0, 0.0, pos1 + pos2 + pos3, pos1 + pos2 + pos3 + pos4);
 					/* get extents parameters*/
 					graph_list_ext(preview, &ei, &x0, &y0, &x1, &y1);
 					/*change color */

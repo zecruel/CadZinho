@@ -256,8 +256,10 @@ int t_sty_use(dxf_drawing *drawing){
 
 
 int tstyles_mng (gui_obj *gui){
+	/* window to manage text styles in drawing
+	User can create, edit parameters or remove styles */
 	int i, show_tstyle_mng = 1;
-	static int show_edit = 0, show_name = 0;
+	static int show_edit = 0, show_name = 0, show_fonts = 0;
 	static int sel_t_sty, t_sty_idx, sel_font, edit_sty = 0;
 	
 	static struct sort_by_idx sort_t_sty[DXF_MAX_FONTS];
@@ -492,7 +494,7 @@ int tstyles_mng (gui_obj *gui){
 			nk_group_end(gui->ctx);
 		}
 		
-		nk_layout_row_dynamic(gui->ctx, 20, 3);
+		nk_layout_row_dynamic(gui->ctx, 20, 5);
 		if (nk_button_label(gui->ctx, "Create")){
 			/* show popup window for entry new text style name */
 			show_name = 1;
@@ -538,6 +540,13 @@ int tstyles_mng (gui_obj *gui){
 			}
 		}
 		
+		nk_label(gui->ctx, " ", NK_TEXT_RIGHT); /*label only for simple space layout */
+		
+		if (nk_button_label(gui->ctx, "Fonts")){
+			/* show fonts manager */
+			show_fonts = 1;
+		}
+		
 		if ((show_name)){ /* popup window to creat a new text style */
 			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Style Name", NK_WINDOW_CLOSABLE, nk_rect(10, 20, 220, 100))){
 				
@@ -577,84 +586,61 @@ int tstyles_mng (gui_obj *gui){
 	
 	if ((show_edit)){
 		/* edit window - allow modifications on parameters of selected text style */
-		if (nk_begin(gui->ctx, "Edit Text Style", nk_rect(gui->next_win_x + 50, gui->next_win_y + gui->next_win_h + 3, 530, 250), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_CLOSABLE)){
+		if (nk_begin(gui->ctx, "Edit Text Style", nk_rect(gui->next_win_x, gui->next_win_y + gui->next_win_h + 3, 330, 220), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
 			static int show_app_file = 0;
 			
-			nk_layout_row(gui->ctx, NK_STATIC, 160, 2, (float[]){330, 170});
-			if (nk_group_begin(gui->ctx, "edit_param", NK_WINDOW_BORDER)) {
-				nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 200});
+			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 200});
+			
+			/* -------------------- name setting ------------------*/
+			nk_label(gui->ctx, "Name:", NK_TEXT_RIGHT);
+			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_name, DXF_MAX_CHARS, nk_filter_default);
+			
+			/* -------------------- font setting ------------------*/
+			nk_label(gui->ctx, "Font:", NK_TEXT_RIGHT);
+			sel_font = -1;
+			if (nk_combo_begin_label(gui->ctx,  sty_font, nk_vec2(220,200))){
 				
-				/* -------------------- name setting ------------------*/
-				nk_label(gui->ctx, "Name:", NK_TEXT_RIGHT);
-				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_name, DXF_MAX_CHARS, nk_filter_default);
-				
-				/* -------------------- font setting ------------------*/
-				nk_label(gui->ctx, "Font:", NK_TEXT_RIGHT);
-				sel_font = -1;
-				if (nk_combo_begin_label(gui->ctx,  sty_font, nk_vec2(220,200))){
-					
-					/* get filename from available loaded fonts */
-					nk_layout_row_dynamic(gui->ctx, 20, 1);
-					int j = 0;
-					list_node *curr_node = NULL;
-					while (curr_node = list_get_idx(gui->font_list, j)){
-						
-						if (!(curr_node->data)) continue;
-						struct tfont *curr_font = curr_node->data;
-						
-						if (nk_button_label(gui->ctx, curr_font->name)){
-							sel_font = j; /* select current font */
-							strncpy(sty_font, curr_font->name, DXF_MAX_CHARS);
-							nk_combo_close(gui->ctx);
-						}
-						j++;
-					}
-					nk_combo_end(gui->ctx);
-				}
-				/* -------------------- width setting ------------------*/
-				nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 100});
-				nk_label(gui->ctx, "Width factor:", NK_TEXT_RIGHT);
-				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_w_fac, 63, nk_filter_float);
-				
-				/* -------------------- fixed heigth setting ------------------*/
-				nk_label(gui->ctx, "Fixed height:", NK_TEXT_RIGHT);
-				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_fixed_h, 63, nk_filter_float);
-				
-				/* -------------------- oblique angle setting ------------------*/
-				nk_label(gui->ctx, "Oblique angle:", NK_TEXT_RIGHT);
-				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_o_ang, 63, nk_filter_float);
-				
-				nk_layout_row_dynamic(gui->ctx, 20, 3);
-				
-				/* -------------------- flags ------------------*/
-				//nk_checkbox_label(gui->ctx, "Shape", &shape);
-				nk_checkbox_label(gui->ctx, "Vertical", &vertical);
-				nk_checkbox_label(gui->ctx, "Backward", &backward);
-				nk_checkbox_label(gui->ctx, "Upside down", &upside);
-				
-				nk_group_end(gui->ctx);
-			}
-			if (nk_group_begin(gui->ctx, "Available Fonts", NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
-				/* show loaded fonts, available for setting */
-				
-				nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
-				
-				nk_layout_row_dynamic(gui->ctx, 12, 1);
+				/* get filename from available loaded fonts */
+				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				int j = 0;
 				list_node *curr_node = NULL;
 				while (curr_node = list_get_idx(gui->font_list, j)){
 					
-					if (curr_node->data) {
-						struct tfont *curr_font = curr_node->data;
-						nk_label(gui->ctx, curr_font->name, NK_TEXT_LEFT);
+					if (!(curr_node->data)) continue;
+					struct tfont *curr_font = curr_node->data;
+					
+					if (nk_button_label(gui->ctx, curr_font->name)){
+						sel_font = j; /* select current font */
+						strncpy(sty_font, curr_font->name, DXF_MAX_CHARS);
+						nk_combo_close(gui->ctx);
 					}
 					j++;
 				}
-				
-				nk_style_pop_font(gui->ctx); /* return to the default font*/
-				nk_group_end(gui->ctx);
+				nk_combo_end(gui->ctx);
 			}
-			nk_layout_row(gui->ctx, NK_STATIC, 20, 4, (float[]){100, 100, 150, 100});
+			/* -------------------- width setting ------------------*/
+			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 100});
+			nk_label(gui->ctx, "Width factor:", NK_TEXT_RIGHT);
+			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_w_fac, 63, nk_filter_float);
+			
+			/* -------------------- fixed heigth setting ------------------*/
+			nk_label(gui->ctx, "Fixed height:", NK_TEXT_RIGHT);
+			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_fixed_h, 63, nk_filter_float);
+			
+			/* -------------------- oblique angle setting ------------------*/
+			nk_label(gui->ctx, "Oblique angle:", NK_TEXT_RIGHT);
+			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_o_ang, 63, nk_filter_float);
+			
+			nk_layout_row_dynamic(gui->ctx, 20, 3);
+			
+			/* -------------------- flags ------------------*/
+			//nk_checkbox_label(gui->ctx, "Shape", &shape);
+			nk_checkbox_label(gui->ctx, "Vertical", &vertical);
+			nk_checkbox_label(gui->ctx, "Backward", &backward);
+			nk_checkbox_label(gui->ctx, "Upside down", &upside);
+				
+				
+			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 100});
 			if (nk_button_label(gui->ctx, "OK")){
 				
 				
@@ -742,7 +728,103 @@ int tstyles_mng (gui_obj *gui){
 				show_edit = 0;
 			}
 			
-			nk_label(gui->ctx, " ", NK_TEXT_RIGHT); /*label only for simple space layout */
+		} else {
+			show_edit = 0;
+		}
+		nk_end(gui->ctx);
+	}
+	
+	if ((show_fonts)){
+		/* show fonts */
+		static int show_app_file = 0, sel_f_idx = 0, prev = -1;
+		if (nk_begin(gui->ctx, "Manage Fonts", nk_rect(gui->next_win_x + 335, gui->next_win_y + gui->next_win_h + 3, 400, 260), NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_TITLE|NK_WINDOW_CLOSABLE)){
+			struct tfont * selected_font = NULL;
+			
+			struct nk_style_button *sel_type;
+			
+			nk_layout_row(gui->ctx, NK_STATIC, 185, 2, (float[]){170, 190});
+			
+			if (nk_group_begin(gui->ctx, "Available Fonts", NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
+				/* show loaded fonts, available for setting */
+				
+				sel_type = &gui->b_icon_unsel;
+				if (sel_t_sty == t_sty_idx) sel_type = &gui->b_icon_sel;
+				
+				nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
+				
+				nk_layout_row_dynamic(gui->ctx, 15, 1);
+				int j = 0;
+				list_node *curr_node = NULL;
+				while (curr_node = list_get_idx(gui->font_list, j)){
+					
+					if (curr_node->data) {
+						struct tfont *curr_font = curr_node->data;
+						/* hilite selected font */
+						sel_type = &gui->b_icon_unsel;
+						if (j == sel_f_idx){
+							sel_type = &gui->b_icon_sel;
+							selected_font = curr_font;
+						}
+						if (nk_button_label_styled(gui->ctx, sel_type, curr_font->name)) {
+							sel_f_idx = j; /* select current font */
+							selected_font = curr_font;
+						}
+					}
+					j++;
+				}
+				
+				if (prev != sel_f_idx){
+					prev = sel_f_idx;
+					bmp_color color = {.r = 255, .g = 255, .b =255, .a = 255};
+					list_node *preview = list_new(NULL, FRAME_LIFE); /*graphic object of preview font */
+					int ei; /*extents flag of preview */
+					/* extents and zoom parameters */
+					double x0, y0, x1, y1, z, z_x, z_y, o_x, o_y;
+					
+					int pos1, pos2, pos3;
+					
+					ei = 0;
+					/* get graphics preview of selected font*/
+					pos1 = font_parse_str(selected_font, preview, FRAME_LIFE, "ABC", NULL, 0);
+					pos2 = font_parse_str(selected_font, preview, FRAME_LIFE, "abc", NULL, 0);
+					pos3 = font_parse_str(selected_font, preview, FRAME_LIFE, "123", NULL, 0);
+					graph_list_modify_idx(preview, 0.0, -1.2 , 1.0, 1.0, 0.0, pos1, pos1 + pos2 - 1);
+					graph_list_modify_idx(preview, 0.0, -2.4 , 1.0, 1.0, 0.0, pos1 + pos2, pos1 + pos2 + pos3);
+					/* get extents parameters*/
+					graph_list_ext(preview, &ei, &x0, &y0, &x1, &y1);
+					/*change color */
+					graph_list_color(preview, color);
+					
+					/* calcule the zoom and offset for preview */
+					z_x = fabs(x1 - x0)/gui->preview_img->width;
+					z_y = fabs(y1 - y0)/gui->preview_img->height;
+					z = (z_x > z_y) ? z_x : z_y;
+					if (z <= 0) z =1;
+					else z = 1/(1.1 * z);
+					o_x = x0 - (fabs((x1 - x0)*z - gui->preview_img->width)/2)/z;
+					o_y = y0 - (fabs((y1 - y0)*z - gui->preview_img->height)/2)/z;
+					
+					/* draw graphics in current preview bitmap */
+					//gui->preview_img->zero_tl = 1;
+					bmp_fill(gui->preview_img, gui->preview_img->bkg); /* clear bitmap preview */
+					graph_list_draw(preview, gui->preview_img, o_x, o_y, z);
+				}
+				
+				
+				
+				nk_style_pop_font(gui->ctx); /* return to the default font*/
+				nk_group_end(gui->ctx);
+			}
+			if (nk_group_begin(gui->ctx, "Font_prev", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+				/* preview img */
+				nk_layout_row_dynamic(gui->ctx, 172, 1);
+				nk_button_image(gui->ctx,  nk_image_ptr(gui->preview_img));
+				
+				nk_group_end(gui->ctx);
+			}
+			
+			
+			nk_layout_row_dynamic(gui->ctx, 20, 3);
 			
 			if (nk_button_label(gui->ctx, "Load font")){
 				/* load more other fonts */
@@ -760,7 +842,9 @@ int tstyles_mng (gui_obj *gui){
 			}
 			
 		} else {
-			show_edit = 0;
+			show_fonts = 0;
+			prev = -1;
+			bmp_fill(gui->preview_img, gui->preview_img->bkg); /* clear bitmap preview */
 		}
 		nk_end(gui->ctx);
 	}

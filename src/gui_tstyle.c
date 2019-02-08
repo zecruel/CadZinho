@@ -785,6 +785,7 @@ int tstyles_mng (gui_obj *gui){
 					
 					ei = 0;
 					/* get graphics preview of selected font*/
+					/* 4 strings samples: Uppercase, lowercase, numbers, symblos */
 					pos1 = font_parse_str(selected_font, preview, FRAME_LIFE, "GINJAL", NULL, 0);
 					pos2 = font_parse_str(selected_font, preview, FRAME_LIFE, "ginjal", NULL, 0);
 					pos3 = font_parse_str(selected_font, preview, FRAME_LIFE, "012345", NULL, 0);
@@ -807,12 +808,9 @@ int tstyles_mng (gui_obj *gui){
 					o_y = y0 - (fabs((y1 - y0)*z - gui->preview_img->height)/2)/z;
 					
 					/* draw graphics in current preview bitmap */
-					//gui->preview_img->zero_tl = 1;
 					bmp_fill(gui->preview_img, gui->preview_img->bkg); /* clear bitmap preview */
 					graph_list_draw(preview, gui->preview_img, o_x, o_y, z);
 				}
-				
-				
 				
 				nk_style_pop_font(gui->ctx); /* return to the default font*/
 				nk_group_end(gui->ctx);
@@ -824,7 +822,6 @@ int tstyles_mng (gui_obj *gui){
 				
 				nk_group_end(gui->ctx);
 			}
-			
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 3);
 			

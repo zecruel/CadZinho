@@ -263,14 +263,14 @@ void load_conf (lua_State *L, const char *fname, gui_obj *gui) {
 	lua_getglobal(L, "font_path");
 	if (lua_isstring(L, -1)){
 		const char *font_path = lua_tostring(L, -1);
-		strncpy(gui->dflt_fonts_path, font_path, 5 * DXF_MAX_CHARS);
+		strncat(gui->dflt_fonts_path, font_path, 5 * DXF_MAX_CHARS);
 		
 	}
 	else{ /* default value, if not definied in file*/
 		#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 		strncpy(gui->dflt_fonts_path, "C:\\Windows\\Fonts\\", 5 * DXF_MAX_CHARS);
 		#else
-		strncpy(gui->dflt_fonts_path, "/usr/share/fonts/", 5 * DXF_MAX_CHARS);
+		strncat(gui->dflt_fonts_path, "/usr/share/fonts/", 5 * DXF_MAX_CHARS);
 		#endif
 	}
 	lua_pop(L, 1);
@@ -349,7 +349,13 @@ void load_conf (lua_State *L, const char *fname, gui_obj *gui) {
 int main(int argc, char** argv){
 	gui_obj *gui = malloc(sizeof(gui_obj));
 	gui_start(gui);
-	
+	/* initialize base directory (executable dir) */
+	strncpy (gui->base_dir, get_dir(argv[0]), DXF_MAX_CHARS);
+	/* initialize fonts paths with base directory  */
+	if (strlen(gui->base_dir)){
+		strncpy (gui->dflt_fonts_path, gui->base_dir, 5 * DXF_MAX_CHARS);
+		strncat (gui->dflt_fonts_path, (char []){PATH_SEPARATOR, 0}, 5 * DXF_MAX_CHARS);
+	}
 	lua_State *Lua1 = luaL_newstate(); /* opens Lua */
 	luaL_openlibs(Lua1); /* opens the standard libraries */
 	
@@ -398,6 +404,8 @@ int main(int argc, char** argv){
 	char *base_path = SDL_GetBasePath();
 	printf ("%s\n", base_path);
 	printf ("%s\n", argv[0]);
+	printf ("%s\n", get_dir(argv[0]));
+	printf ("%s\n", gui->dflt_fonts_path);
 	
 	#if(0)
 	char fonts_path[DXF_MAX_CHARS];
@@ -1495,6 +1503,7 @@ int main(int argc, char** argv){
 				free(file_buf);
 				file_buf = NULL;
 				file_size = 0;
+				low_proc = 1;
 				
 				//dxf_ent_print2(gui->drawing->blks);
 				gui_tstyle(gui);
@@ -1510,6 +1519,7 @@ int main(int argc, char** argv){
 			}
 			
 		}
+		else low_proc = 1;
 		
 		
 		/*===============================*/
@@ -1531,6 +1541,13 @@ int main(int argc, char** argv){
 			progr_win = 1;
 			
 			SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
+			
+			strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
+			strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
+			
+			char title[DXF_MAX_CHARS] = "CadZinho - ";
+			strncat (title, gui->dwg_file, DXF_MAX_CHARS);
+			SDL_SetWindowTitle(window, title);
 		}
 		else if((gui->action == FILE_SAVE) && (path_ok)){
 			gui->action = NONE; path_ok = 0;
@@ -1538,6 +1555,13 @@ int main(int argc, char** argv){
 			if (gui->drawing->main_struct != NULL){
 				//dxf_ent_print_f (gui->drawing->main_struct, url);
 				dxf_save (gui->curr_path, gui->drawing);
+				
+				strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
+				strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
+				
+				char title[DXF_MAX_CHARS] = "CadZinho - ";
+				strncat (title, gui->dwg_file, DXF_MAX_CHARS);
+				SDL_SetWindowTitle(window, title);
 			}
 		}
 		else if((gui->action == EXPORT) && (path_ok)) {

@@ -1027,6 +1027,13 @@ int gui_start(gui_obj *gui){
 	gui->h_fam_name[0] = 0;
 	gui->h_fam_descr[0] = 0;
 	
+	gui->dflt_fonts_path[0] = 0;
+	
+	gui->curr_path[0] = 0;
+	gui->base_dir[0] = 0;
+	gui->dwg_file[0] = 0;
+	gui->dwg_dir[0] = 0;
+	
 	#if(0)
 	#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 	strncpy(gui->dflt_fonts_path, "C:\\Windows\\Fonts\\", 5 * DXF_MAX_CHARS);

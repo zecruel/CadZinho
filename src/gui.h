@@ -193,6 +193,9 @@ struct Gui_obj {
 	int file_filter_count;
 	
 	char curr_path[MAX_PATH_LEN];
+	char base_dir[DXF_MAX_CHARS];
+	char dwg_file[DXF_MAX_CHARS];
+	char dwg_dir[DXF_MAX_CHARS];
 	
 };
 typedef struct Gui_obj gui_obj;

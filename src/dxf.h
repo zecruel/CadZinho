@@ -198,6 +198,8 @@ char * trimwhitespace(char *str);
 
 char *get_filename(char *path);
 
+char *get_dir(char *path);
+
 char *get_ext(char *path);
 
 void strip_ext(char *filename);

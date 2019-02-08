@@ -54,6 +54,29 @@ char *get_filename(char *path){
 	return ret;
 }
 
+char *get_dir(char *path){
+	/* Get the directory from path string.
+	This function does not modify the original string,
+	but the return string must be used imediatly */
+	static char buf[DXF_MAX_CHARS];
+	char *ret = NULL;
+	
+	strncpy(buf, path, DXF_MAX_CHARS);
+	ret = strrchr(buf, DIR_SEPARATOR);
+	
+	if (ret){
+		ret++;
+		*ret = 0; /* terminate string */
+	}
+	else {
+		buf[0] = '.';
+		buf[1] = DIR_SEPARATOR;
+		buf[2] = 0;
+	}
+	
+	return buf;
+}
+
 char *get_ext(char *path){
 	/* Get the extension of file from path string.
 	This function does not modify the original string,

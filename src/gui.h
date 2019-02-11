@@ -58,6 +58,7 @@ enum Modal {
 	CIRCLE,
 	RECT,
 	TEXT,
+	MTEXT,
 	ARC,
 	DUPLI,
 	MOVE,

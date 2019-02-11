@@ -1308,7 +1308,8 @@ int main(int argc, char** argv){
 				gui->step = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_I_TEXT]))){
-				
+				gui->modal = MTEXT;
+				gui->step = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BOOK]))){
 				recv_comm_flag = 1;
@@ -1332,6 +1333,7 @@ int main(int argc, char** argv){
 				gui_circle_info (gui);
 				gui_rect_info (gui);
 				gui_text_info (gui);
+				gui_mtext_info (gui);
 				gui_move_info (gui);
 				gui_dupli_info (gui);
 				gui_scale_info (gui);
@@ -1878,6 +1880,7 @@ int main(int argc, char** argv){
 		gui_circle_interactive(gui);
 		gui_rect_interactive(gui);
 		gui_text_interactive(gui);
+		gui_mtext_interactive(gui);
 		gui_move_interactive(gui);
 		gui_dupli_interactive(gui);
 		gui_scale_interactive(gui);

@@ -432,6 +432,34 @@ int dxf_attr_append(dxf_node *master, int group, void *value){
 	return 0;
 }
 
+int dxf_attr_insert_before(dxf_node *attr, int group, void *value){
+	if (attr){
+		if (attr->type == DXF_ATTR){
+			int type = dxf_ident_attr_type(group);
+			dxf_node *new_attr = dxf_attr_new(group, type, value);
+			if (new_attr){
+				new_attr->master = attr->master;
+				
+				dxf_node *next = attr, *prev = attr->prev;
+				
+				/* append new attr between prev and next nodes */
+				new_attr->prev = prev;
+				if (prev){
+					next = prev->next;
+					prev->next = new_attr;
+				}
+				new_attr->next = next;
+				if (next){
+					next->prev = new_attr;
+				}
+				
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
 int dxf_attr_change(dxf_node *master, int group, void *value){
 	if (master){
 		/* find the first attribute*/
@@ -884,6 +912,53 @@ char *txt, int color, char *layer, char *ltype, int lw, int paper){
 	
 	if(ok){
 		return new_text;
+	}
+
+	return NULL;
+}
+
+dxf_node * dxf_new_mtext (double x0, double y0, double z0, double h,
+char *txt[], int num_txt, int color, char *layer, char *ltype, int lw, int paper){
+	if (num_txt <= 0) return NULL;
+	/* create a new DXF TEXT */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbEntity";
+	const char *dxf_subclass = "AcDbMText";
+	const char *t_style = "STANDARD";
+	int ok = 1, int_zero = 0, int_one = 1, i;
+	double d_zero = 0.0;
+	dxf_node * new_mtext = dxf_obj_new ("TEXT");
+	
+	ok &= dxf_attr_append(new_mtext, 5, (void *) handle);
+	ok &= dxf_attr_append(new_mtext, 100, (void *) dxf_class);
+	ok &= dxf_attr_append(new_mtext, 67, (void *) &paper);
+	ok &= dxf_attr_append(new_mtext, 8, (void *) layer);
+	ok &= dxf_attr_append(new_mtext, 6, (void *) ltype);
+	ok &= dxf_attr_append(new_mtext, 62, (void *) &color);
+	ok &= dxf_attr_append(new_mtext, 370, (void *) &lw);
+	
+	ok &= dxf_attr_append(new_mtext, 100, (void *) dxf_subclass);
+	/* place the first vertice */
+	ok &= dxf_attr_append(new_mtext, 10, (void *) &x0);
+	ok &= dxf_attr_append(new_mtext, 20, (void *) &y0);
+	ok &= dxf_attr_append(new_mtext, 30, (void *) &z0);
+	ok &= dxf_attr_append(new_mtext, 40, (void *) &h);
+	ok &= dxf_attr_append(new_mtext, 41, (void *) &d_zero);
+	ok &= dxf_attr_append(new_mtext, 71, (void *) &int_one);
+	ok &= dxf_attr_append(new_mtext, 72, (void *) &int_one);
+	
+	for (i = 0; i < num_txt - 1; i++)
+		ok &= dxf_attr_append(new_mtext, 3, (void *) txt[i]);
+	
+	ok &= dxf_attr_append(new_mtext, 1, (void *) txt[num_txt - 1]);
+	ok &= dxf_attr_append(new_mtext, 7, (void *) t_style);
+	
+	ok &= dxf_attr_append(new_mtext, 11, (void *) &d_zero);
+	ok &= dxf_attr_append(new_mtext, 21, (void *) &d_zero);
+	ok &= dxf_attr_append(new_mtext, 31, (void *) &d_zero);
+	
+	if(ok){
+		return new_mtext;
 	}
 
 	return NULL;

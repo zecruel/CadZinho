@@ -3008,7 +3008,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 							curr_graph = (graph_obj *)curr_node->data;
 							/* store the graph in the return vector */
 							list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-							//proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
 							mod_idx++;
 						}
 						curr_node = curr_node->next;

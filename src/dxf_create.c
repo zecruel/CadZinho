@@ -927,7 +927,7 @@ char *txt[], int num_txt, int color, char *layer, char *ltype, int lw, int paper
 	const char *t_style = "STANDARD";
 	int ok = 1, int_zero = 0, int_one = 1, i;
 	double d_zero = 0.0;
-	dxf_node * new_mtext = dxf_obj_new ("TEXT");
+	dxf_node * new_mtext = dxf_obj_new ("MTEXT");
 	
 	ok &= dxf_attr_append(new_mtext, 5, (void *) handle);
 	ok &= dxf_attr_append(new_mtext, 100, (void *) dxf_class);

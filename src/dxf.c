@@ -791,6 +791,26 @@ dxf_node * dxf_find_attr_i2(dxf_node * start, dxf_node * end, int attr, int idx)
 	else return NULL;
 }
 
+int dxf_count_attr(dxf_node * obj, int attr){
+	int count = 0;
+	dxf_node *current;
+	
+	if(obj != NULL){ /* check if exist */
+		if (obj->type == DXF_ENT){
+			current = obj->obj.content->next;
+			while (current){
+				if (current->type == DXF_ATTR){
+					if(current->value.group == attr){ /* success */
+						count++;
+					}
+				}
+				current = current->next;
+			}
+		}
+	}
+	return count;
+}
+
 #if 0
 vector_p dxf_find_obj(dxf_node * obj, char *name){
 	int size = 0;

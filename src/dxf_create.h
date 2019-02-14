@@ -66,6 +66,8 @@ int dxf_obj_detach(dxf_node *obj);
 
 int dxf_attr_append(dxf_node *master, int group, void *value);
 
+int dxf_attr_insert_before(dxf_node *attr, int group, void *value);
+
 int dxf_attr_change(dxf_node *master, int group, void *value);
 
 int dxf_attr_change_i(dxf_node *master, int group, void *value, int idx);
@@ -95,6 +97,9 @@ double r, int color, char *layer, char *ltype, int lw, int paper);
 
 dxf_node * dxf_new_text (double x0, double y0, double z0, double h,
 char *txt, int color, char *layer, char *ltype, int lw, int paper);
+
+dxf_node * dxf_new_mtext (double x0, double y0, double z0, double h,
+char *txt[], int num_txt, int color, char *layer, char *ltype, int lw, int paper);
 
 dxf_node * dxf_new_attdef (double x0, double y0, double z0, double h,
 char *txt, char *tag, int color, char *layer, char *ltype, int lw, int paper);

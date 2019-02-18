@@ -1,5 +1,4 @@
-#include "gui.h"
-#include "gui_file.h"
+#include "gui_tstyle.h"
 
 /* compare text styles names - for sort functions */
 int cmp_sty_name(const void * a, const void * b) {

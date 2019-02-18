@@ -981,6 +981,7 @@ int gui_start(gui_obj *gui){
 	
 	gui->log_msg[0] = 0;
 	gui->txt[0] = 0;
+	gui->long_txt[0] = 0;
 	gui->blk_name[0] = 0;
 	gui->tag_mark[0] = 0;
 	

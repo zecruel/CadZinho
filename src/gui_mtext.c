@@ -107,33 +107,40 @@ int gui_mtext_info (gui_obj *gui){
 		if (gui->t_sty_idx >= num_tstyles) gui->t_sty_idx = 0;
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Place an text", NK_TEXT_LEFT);
+		nk_label(gui->ctx, "Place an inteli text", NK_TEXT_LEFT);
 		
-		nk_label(gui->ctx, "Style:", NK_TEXT_LEFT);
-		if (nk_combo_begin_label(gui->ctx,  t_sty[gui->t_sty_idx].name, nk_vec2(220,200))){
+		static struct nk_rect s = {20, 10, 420, 330};
+		if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Place an inteli text", NK_WINDOW_CLOSABLE, s)){
+			nk_layout_row_dynamic(gui->ctx, 20, 2);
+			
+			nk_label(gui->ctx, "Style:", NK_TEXT_LEFT);
+			if (nk_combo_begin_label(gui->ctx,  t_sty[gui->t_sty_idx].name, nk_vec2(220,200))){
+				
+				nk_layout_row_dynamic(gui->ctx, 20, 1);
+				int j = 0;
+				for (j = 0; j < num_tstyles; j++){
+					
+					if (nk_button_label(gui->ctx, t_sty[j].name)){
+						gui->t_sty_idx = j; /* select current style */
+						
+						nk_combo_close(gui->ctx);
+						break;
+					}
+				}
+				nk_combo_end(gui->ctx);
+			}
+			
+			nk_label(gui->ctx, "Text:", NK_TEXT_LEFT);
+			nk_layout_row_dynamic(gui->ctx, 60, 1);
+			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_BOX, gui->long_txt, 5 * DXF_MAX_CHARS, nk_filter_default);
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			int j = 0;
-			for (j = 0; j < num_tstyles; j++){
-				
-				if (nk_button_label(gui->ctx, t_sty[j].name)){
-					gui->t_sty_idx = j; /* select current style */
-					
-					nk_combo_close(gui->ctx);
-					break;
-				}
-			}
-			nk_combo_end(gui->ctx);
+			gui->txt_h = nk_propertyd(gui->ctx, "Text Height", 0.0d, gui->txt_h, 100.0d, 0.1d, 0.1d);
+			gui->t_al_v = nk_combo(gui->ctx, text_al_v, T_AL_V_LEN, gui->t_al_v, 20, nk_vec2(100,105));
+			gui->t_al_h = nk_combo(gui->ctx, text_al_h, T_AL_H_LEN, gui->t_al_h, 20, nk_vec2(100,105));
+			
+			nk_popup_end(gui->ctx);
 		}
-		
-		nk_label(gui->ctx, "Text:", NK_TEXT_LEFT);
-		nk_layout_row_dynamic(gui->ctx, 60, 1);
-		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_BOX, gui->txt, DXF_MAX_CHARS, nk_filter_default);
-		
-		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		gui->txt_h = nk_propertyd(gui->ctx, "Text Height", 0.0d, gui->txt_h, 100.0d, 0.1d, 0.1d);
-		gui->t_al_v = nk_combo(gui->ctx, text_al_v, T_AL_V_LEN, gui->t_al_v, 20, nk_vec2(100,105));
-		gui->t_al_h = nk_combo(gui->ctx, text_al_h, T_AL_H_LEN, gui->t_al_h, 20, nk_vec2(100,105));
 	}
 	return 1;
 }

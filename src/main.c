@@ -14,6 +14,7 @@
 
 #include "gui.h"
 #include "gui_lay.h"
+#include "gui_tstyle.h"
 #include "gui_info.h"
 #include "gui_xy.h"
 #include "gui_use.h"

@@ -7330,7 +7330,7 @@ nk_text_calculate_text_bounds(const struct nk_user_font *font,
 
     *glyphs = 0;
     while ((text_len < byte_len) && glyph_len) {
-        if (unicode == '\n') {
+        if ((unicode == '\n') || (unicode == '\v')) {
             text_size.x = NK_MAX(text_size.x, line_width);
             text_size.y += line_height;
             line_width = 0;
@@ -22621,7 +22621,7 @@ nk_edit_draw_text(struct nk_command_buffer *out,
     if (!glyph_len) return;
     while ((text_len < byte_len) && glyph_len)
     {
-        if (unicode == '\n') {
+        if ((unicode == '\n') || (unicode == '\v')) {
             /* new line separator so draw previous line */
             struct nk_rect label;
             label.y = pos_y + line_offset;
@@ -22944,7 +22944,7 @@ nk_do_edit(nk_flags *state, struct nk_command_buffer *out,
                     selection_offset_end.x = row_size.x;
                     select_end_ptr = text + text_len;
                 }
-                if (unicode == '\n') {
+                if ((unicode == '\n') || (unicode == '\v')) {
                     text_size.x = NK_MAX(text_size.x, line_width);
                     total_lines++;
                     line_width = 0;

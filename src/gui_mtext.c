@@ -130,14 +130,98 @@ int gui_mtext_info (gui_obj *gui){
 				nk_combo_end(gui->ctx);
 			}
 			
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			nk_label(gui->ctx, "Text:", NK_TEXT_LEFT);
-			nk_layout_row_dynamic(gui->ctx, 60, 1);
-			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_BOX, gui->long_txt, 5 * DXF_MAX_CHARS, nk_filter_default);
+			
+			{
+				/* wrap text in text edit widget */
+				char *text = nk_str_get(&(gui->text_edit.string));
+				
+				double w = 0, line_w = 0;
+				if (text){
+					int i = 0, last_spc = 0;
+					int ofs, code_p;
+					
+					while (i < nk_str_len(&(gui->text_edit.string))){ /* sweep the string */
+						
+						ofs = utf8_to_codepoint(text + i, &code_p);
+						
+						/* find the good point for break a line (in space caracter) */
+						if ((code_p == ' ') || (code_p == '\t')){
+							last_spc = i;
+							ofs = 1;
+						}
+						/* convert line break to space temporaly, until find a good point to break */
+						else if (code_p == '\v'){
+							//text[i] = ' ';
+							//last_spc = i;
+							nk_str_delete_chars(&(gui->text_edit.string), i, 1);
+							if (gui->text_edit.cursor >= i) gui->text_edit.cursor--;
+							continue;
+						}
+						/* consider a \n caracter as a paragraph break */
+						else if (code_p == '\n'){
+							/* reset the line parameters */
+							last_spc = 0;
+							line_w = 0;
+							ofs = 1;
+						}
+						
+						/* get graphical width of current glyph */
+						font_parse_cp((struct tfont *)gui->ui_font.userdata.ptr, code_p, 0, FRAME_LIFE, &w);
+						/* update width of current line */
+						line_w += w * gui->ui_font.height;
+						
+						if (line_w > 370){ /* verify  if current line width exceeds the drawing area */
+							/* consider a tolerance of two glyphs to avoid repetitive breaks */
+							int tolerance = 0;
+							char *near_line = strpbrk(text + i, "\v\n");
+							if (near_line) tolerance = near_line - text - i; /* tolerance until the next break */
+							else tolerance = nk_str_len(&(gui->text_edit.string)) - i; /* tolerance until the string end */
+							if (tolerance > 3){ /* need to break */
+								if (last_spc){ /* if has a good point for break, use it */
+									//text[last_spc] = '\v';
+									nk_str_insert_text_char(&(gui->text_edit.string), last_spc + 1, "\v", 1);
+									if (gui->text_edit.cursor >= last_spc) gui->text_edit.cursor++;
+									/* start the current line in break point */
+									i = last_spc + 1;
+									ofs = 1;
+									last_spc = 0;
+									line_w = 0;
+								}
+								else{
+									nk_str_insert_text_char(&(gui->text_edit.string), i, "\v", 1);
+									if (gui->text_edit.cursor >= i) gui->text_edit.cursor++;
+									line_w = 0;
+								}
+							}
+						}
+						
+						i += ofs;
+						//text = nk_str_get(&(gui->text_edit.string));
+					}
+				}
+			}
+			
+			nk_layout_row_dynamic(gui->ctx, 100, 1);
+			//nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_BOX, gui->long_txt, 5 * DXF_MAX_CHARS, nk_filter_default);
+			nk_edit_buffer(gui->ctx, NK_EDIT_BOX, &(gui->text_edit), nk_filter_default);
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			gui->txt_h = nk_propertyd(gui->ctx, "Text Height", 0.0d, gui->txt_h, 100.0d, 0.1d, 0.1d);
 			gui->t_al_v = nk_combo(gui->ctx, text_al_v, T_AL_V_LEN, gui->t_al_v, 20, nk_vec2(100,105));
 			gui->t_al_h = nk_combo(gui->ctx, text_al_h, T_AL_H_LEN, gui->t_al_h, 20, nk_vec2(100,105));
+			
+			if (nk_button_label(gui->ctx,  "OK")){
+				
+				
+				//printf ("%f\n", line_w);
+				
+				//nk_textedit_select_all(&(gui->text_edit));
+				//nk_textedit_delete_selection(&(gui->text_edit));
+				
+				nk_textedit_text(&(gui->text_edit), "teste\ttab\vvtab\fff", strlen("teste\ttab\vvtab\fff"));
+			}
 			
 			nk_popup_end(gui->ctx);
 		}

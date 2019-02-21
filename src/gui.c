@@ -712,6 +712,8 @@ NK_API int nk_sdl_init(gui_obj* gui){
 	
 	nk_style_set_font(gui->ctx, &(gui->ui_font));
 	
+	nk_textedit_init_default(&(gui->text_edit));
+	
 	return 1;
 }
 
@@ -875,7 +877,7 @@ void nk_sdl_shutdown(gui_obj *gui)
 {
 	if(gui){
 		
-		
+		nk_textedit_free(&(gui->text_edit));
 		
 		//nk_free(gui->ctx);
 		free(gui->ctx);

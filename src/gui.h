@@ -199,6 +199,8 @@ struct Gui_obj {
 	char dwg_file[DXF_MAX_CHARS];
 	char dwg_dir[DXF_MAX_CHARS];
 	
+	struct nk_text_edit text_edit;
+	
 };
 typedef struct Gui_obj gui_obj;
 

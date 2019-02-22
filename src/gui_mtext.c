@@ -133,6 +133,7 @@ int gui_mtext_info (gui_obj *gui){
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			nk_label(gui->ctx, "Text:", NK_TEXT_LEFT);
 			
+			
 			{
 				/* wrap text in text edit widget */
 				char *text = nk_str_get(&(gui->text_edit.string));
@@ -142,7 +143,7 @@ int gui_mtext_info (gui_obj *gui){
 					int i = 0, last_spc = 0;
 					int ofs, code_p;
 					
-					while (i < nk_str_len(&(gui->text_edit.string))){ /* sweep the string */
+					while (i < nk_str_len_char(&(gui->text_edit.string))){ /* sweep the string */
 						
 						ofs = utf8_to_codepoint(text + i, &code_p);
 						
@@ -177,7 +178,7 @@ int gui_mtext_info (gui_obj *gui){
 							int tolerance = 0;
 							char *near_line = strpbrk(text + i, "\v\n");
 							if (near_line) tolerance = near_line - text - i; /* tolerance until the next break */
-							else tolerance = nk_str_len(&(gui->text_edit.string)) - i; /* tolerance until the string end */
+							else tolerance = nk_str_len_char(&(gui->text_edit.string)) - i; /* tolerance until the string end */
 							if (tolerance > 3){ /* need to break */
 								if (last_spc){ /* if has a good point for break, use it */
 									//text[last_spc] = '\v';
@@ -198,7 +199,7 @@ int gui_mtext_info (gui_obj *gui){
 						}
 						
 						i += ofs;
-						//text = nk_str_get(&(gui->text_edit.string));
+						text = nk_str_get(&(gui->text_edit.string));
 					}
 				}
 			}

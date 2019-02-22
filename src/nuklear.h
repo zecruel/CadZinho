@@ -8378,12 +8378,17 @@ nk_str_insert_at_rune(struct nk_str *str, int pos, const char *cstr, int len)
 NK_API int
 nk_str_insert_text_char(struct nk_str *str, int pos, const char *text, int len)
 {
-    return nk_str_insert_text_utf8(str, pos, text, len);
+    NK_ASSERT(str);
+    NK_ASSERT(text);
+    if (!str || !text || !len) return 0;
+    
+    nk_str_insert_at_char(str, pos, text, len);
+    return len;
 }
 NK_API int
 nk_str_insert_str_char(struct nk_str *str, int pos, const char *text)
 {
-    return nk_str_insert_text_utf8(str, pos, text, nk_strlen(text));
+    return nk_str_insert_text_char(str, pos, text, nk_strlen(text));
 }
 NK_API int
 nk_str_insert_text_utf8(struct nk_str *str, int pos, const char *text, int len)
@@ -21827,6 +21832,11 @@ nk_textedit_paste(struct nk_text_edit *state, char const *ctext, int len)
 {
     /* API paste: replace existing selection with passed-in text */
     int glyphs;
+    int glyph_len;
+    nk_rune unicode;
+    char *str_cursor;
+    int cursor;
+    
     const char *text = (const char *) ctext;
     if (state->mode == NK_TEXT_EDIT_MODE_VIEW) return 0;
 
@@ -21835,10 +21845,13 @@ nk_textedit_paste(struct nk_text_edit *state, char const *ctext, int len)
     nk_textedit_delete_selection(state);
 
     /* try to insert the characters */
+    str_cursor = nk_str_at_rune(&state->string, state->cursor, &unicode, &glyph_len);
+    cursor = (void *)str_cursor - state->string.buffer.memory.ptr;
+    
     glyphs = nk_utf_len(ctext, len);
-    if (nk_str_insert_text_char(&state->string, state->cursor, text, len)) {
+    if (nk_str_insert_text_char(&state->string, cursor, text, len)) {
         nk_textedit_makeundo_insert(state, state->cursor, glyphs);
-        state->cursor += len;
+        state->cursor += glyphs;
         state->has_preferred_x = 0;
         return 1;
     }

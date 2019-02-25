@@ -1,5 +1,59 @@
 #include "gui_use.h"
 
+int mtext_change_text (dxf_node *obj, char *text, int len){
+	if (dxf_ident_ent_type(obj) != DXF_MTEXT) return 0;
+	if (!text) return 0;
+	int i = 0, j = 0, pos = 0;
+	int num_ignore = 0;
+	for (i = 0; i < len; i++){
+		if (text[i] == '\v' || text[i] == '\r' || text[i] == '\n')
+			num_ignore++;
+	}
+	
+	char curr_text[DXF_MAX_CHARS], curr_char;
+	int extra_str = (len - num_ignore)/(DXF_MAX_CHARS - 1);
+	int exist_str = dxf_count_attr(obj, 3);
+	
+	
+	dxf_node *curr_str = NULL;
+	dxf_node *final_str = dxf_find_attr2(obj, 1);
+	
+	if (extra_str > exist_str){
+		for (i = 0; i < (extra_str - exist_str); i++){
+			dxf_attr_insert_before(final_str, 3, (void *)"ins");
+		}
+	}
+	else if (extra_str < exist_str){
+		for (i = 0; i < (exist_str - extra_str); i++){
+			curr_str = dxf_find_attr2(obj, 3);
+			dxf_obj_detach(curr_str);
+		}
+	}
+	
+	//curr_str = obj->obj.content->next;
+	//while (curr_str = dxf_find_attr_i2(curr_str, final_str, 3, i)){
+	for (i = 0; i <= extra_str; i++){
+		pos = 0;
+		j = 0;
+		int text_pos = 0;
+		while (pos < DXF_MAX_CHARS - 2 && text_pos < len){
+			curr_char = text[text_pos];
+			if (curr_char != '\n' && curr_char != '\v' && curr_char != '\r'){
+				curr_text[pos] = curr_char;
+				pos ++;
+			}
+			
+			j++;
+			text_pos = i * (DXF_MAX_CHARS - 1) + j;
+		}
+		curr_text[pos] = 0; /*terminate string*/
+		if (i < extra_str) dxf_attr_change_i(obj, 3, curr_text, i);
+		else dxf_attr_change(obj, 1, curr_text);
+		//i++;
+	}
+	return 1;
+}
+
 int gui_mtext_interactive(gui_obj *gui){
 	if (gui->modal == MTEXT){
 		static dxf_node *new_el;
@@ -32,13 +86,18 @@ int gui_mtext_interactive(gui_obj *gui){
 				//dxf_attr_change(new_el, 1, gui->txt);
 				//dxf_attr_change_i(new_el, 72, &gui->t_al_h, -1);
 				//dxf_attr_change_i(new_el, 73, &gui->t_al_v, -1);
-				
+				/*
 				printf("before = %d\n", dxf_count_attr(new_el, 3));
 				
 				dxf_node *final_str = dxf_find_attr2(new_el, 1);
 				dxf_attr_insert_before(final_str, 3, (void *)"ins");
 				
 				printf("after = %d\n", dxf_count_attr(new_el, 3));
+				*/
+				
+				char *text = nk_str_get(&(gui->text_edit.string));
+				int len = nk_str_len_char(&(gui->text_edit.string));
+				mtext_change_text (new_el, text, len);
 				
 				dxf_attr_change(new_el, 7, gui->drawing->text_styles[gui->t_sty_idx].name);
 				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
@@ -61,6 +120,13 @@ int gui_mtext_interactive(gui_obj *gui){
 				//dxf_attr_change_i(new_el, 21, &gui->step_y[gui->step], -1);
 				dxf_attr_change(new_el, 40, &gui->txt_h);
 				//dxf_attr_change(new_el, 1, gui->txt);
+				
+				
+				char *text = nk_str_get(&(gui->text_edit.string));
+				int len = nk_str_len_char(&(gui->text_edit.string));
+				mtext_change_text (new_el, text, len);
+				
+				
 				dxf_attr_change(new_el, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
 				dxf_attr_change(new_el, 8, gui->drawing->layers[gui->layer_idx].name);
 				dxf_attr_change(new_el, 370, &dxf_lw[gui->lw_idx]);

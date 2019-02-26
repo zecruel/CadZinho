@@ -125,6 +125,7 @@ struct Gui_obj {
 	double near_x, near_y;
 	double bulge, scale;
 	double txt_h;
+	double rect_w;
 	
 	double patt_scale, patt_ang;
 	

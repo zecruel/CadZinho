@@ -940,6 +940,7 @@ int gui_start(gui_obj *gui){
 	gui->bulge = 0.0;
 	gui->scale = 1.0;
 	gui->txt_h = 1.0;
+	gui->rect_w = 0.0;
 	
 	gui->color_idx = 256;
 	gui->lw_idx = 0;

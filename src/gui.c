@@ -1,5 +1,145 @@
 #include "gui.h"
 
+struct gui_font * gui_new_font (struct nk_user_font *base_font){
+	//if (!base_font) return NULL;
+	struct gui_font *font = calloc(1, sizeof(struct gui_font));
+	if (font){
+		font->font = base_font;
+		font->glyphs = NULL;
+		font->next = NULL;
+	}
+	
+	return font;
+}
+
+struct gui_font * gui_font_add (struct gui_font *list, struct nk_user_font *base_font){
+	if (!list) return NULL;
+	struct gui_font *font = gui_new_font (base_font);
+	if (font){
+		struct gui_font *curr = list;
+		/* find the list tail */
+		while (curr->next){
+			curr = curr->next;
+		}
+		/*atach the new font at list tail */
+		curr->next = font;
+	}
+	
+	return font;
+}
+
+struct gui_font * gui_get_font (struct gui_font *list, struct nk_user_font *base_font){
+	if (!list) return NULL;
+	struct gui_font *curr = list->next;
+	
+	while(curr){
+		if (curr->font == base_font) return curr;
+		curr = curr->next;
+	}
+	
+	/* if not found, add the font in list*/
+	return gui_font_add (list, base_font);
+}
+
+struct gui_glyph * gui_new_glyph (struct gui_font *gfont, int code_p){
+	if (!gfont) return NULL;
+	struct gui_glyph *glyph = calloc(1, sizeof(struct gui_glyph));
+	if (glyph){
+		glyph->code_p = code_p;
+		glyph->w = 0;
+		glyph->h = 0;
+		glyph->adv = 0.0;
+		memset(glyph->rast, 0, 20*25);
+		glyph->next = NULL;
+	}
+	struct tfont *font = (struct tfont *)gfont->font->userdata.ptr;
+	if (font->type != FONT_TT){
+		
+		list_node * graph = list_new(NULL, FRAME_LIFE);
+
+		if (graph) {
+			//if (font_parse_str(font, graph, FRAME_LIFE, (char *)t->string, NULL, 0)){
+			//	graph_list_color(graph, color);
+			//	graph_list_modify(graph, t->x, t->y + t->font->height, t->font->height, -t->font->height, 0.0);
+				
+			//	graph_list_draw_aa(graph, img, 0.0, 0.0, 1.0);
+			//}
+		}
+	}
+	else {
+		unsigned char rast_glyph[20*25];
+		struct tt_font *tt_fnt = font->data;
+		
+		
+		float scale = tt_fnt->scale * gfont->font->height;
+		
+		int x0, y0, x1, y1, w, h;
+		struct tt_glyph *curr_glyph =  tt_find_cp (tt_fnt, code_p);
+			
+		if (!curr_glyph){/* if not found, add the glyph in list*/
+			curr_glyph = tt_get_glyph (tt_fnt, code_p);
+			if(curr_glyph){
+				if (tt_fnt->end) tt_fnt->end->next = curr_glyph;
+				tt_fnt->end = curr_glyph;
+			}
+		}
+		if (curr_glyph){ /* glyph found*/
+			/* get final graphics of each glyph*/
+			stbtt_GetGlyphBitmapBox((stbtt_fontinfo *) tt_fnt->info, curr_glyph->g_idx, scale, scale, &x0, &y0, &x1, &y1);
+				
+			w = x1 - x0; h = y1 - y0;
+			
+			w = (w < 25)? w : 25;
+			h = (h < 20)? h : 20;
+			stbtt_MakeGlyphBitmap((stbtt_fontinfo *) tt_fnt->info, glyph->rast, w, h, 25, scale, scale, curr_glyph->g_idx);
+			
+			glyph->x = x0;
+			glyph->y = y0;
+			glyph->w = w;
+			glyph->h = h;
+			glyph->adv = curr_glyph->adv * gfont->font->height;
+			
+		}
+	}
+	
+	return glyph;
+}
+
+struct gui_glyph * gui_glyph_add (struct gui_font *font, int code_p){
+	if (!font) return NULL;
+	struct gui_glyph *glyph = gui_new_glyph (font, code_p);
+	if (glyph){
+		struct gui_glyph *curr = font->glyphs;
+		/* find the list tail */
+		if (curr){
+			while (curr->next){
+				curr = curr->next;
+			}
+			/*atach the new glyph at list tail */
+			curr->next = glyph;
+		}
+		else{
+			font->glyphs = glyph;
+		}
+	}
+	
+	return glyph;
+}
+
+struct gui_glyph * gui_get_glyph (struct gui_font *font, int code_p){
+	if (!font) return NULL;
+	struct gui_glyph *curr = font->glyphs;
+	
+	while(curr){
+		if (curr->code_p == code_p) return curr;
+		curr = curr->next;
+	}
+	
+	/* if not found, add the gliph in font*/
+	return gui_glyph_add (font, code_p);
+}
+
+
 void set_style(struct nk_context *ctx, enum theme theme){
     struct nk_color table[NK_COLOR_COUNT];
     if (theme == THEME_WHITE) {
@@ -470,50 +610,9 @@ NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
 				case NK_COMMAND_TEXT: {
 					const struct nk_command_text *t = (const struct nk_command_text*)cmd;
 					color = nk_to_bmp_color(t->foreground);
-					/*nk_rune str_uni[255];
-					char str[255];
-					int glyph_size, char_size, pos = 0;
+					img->frg = color;
 					
-					char *curr = 0, *curr_pos =0;
-					
-					curr = (char *)t->string;
-					curr_pos = str;
-					pos = 0;
-					
-					while ((*curr != 0) && (pos < 254)){
-					
-						glyph_size = nk_utf_decode(curr, str_uni, 10);
-						if (glyph_size){
-							char_size = wctomb(curr_pos, (wchar_t)str_uni[0]);
-							curr += glyph_size;
-							pos += char_size;
-							curr_pos += char_size;
-						}
-						else {
-							curr = 0;
-						}
-					}
-					
-					if(pos<255){
-						str[pos] = 0;
-					}
-					else{
-						str[254] = 0;
-					}*/
-					#if 0
-					struct font_obj *font = (struct font_obj *)t->font->userdata.ptr;
-					//graph_obj *curr_graph = shx_font_parse(font->shx_font, 1, (const char*)str, NULL);
-					graph_obj *curr_graph = shx_font_parse(font->shx_font, 1, (char *)t->string, NULL);
-					/*change the color */
-					if(curr_graph){
-						curr_graph->color = color;
-					}
-
-					/* apply the scales, offsets and rotation to graphs */
-					graph_modify(curr_graph, t->x, t->y + t->font->height, font->scale, -font->scale, 0);
-					graph_draw_aa(curr_graph, img, 0.0, 0.0, 1.0);
-					//graph_draw2(curr_graph, img, 0.0, 0.0, 1.0);
-					#endif
+					#if(0)
 					struct tfont *font = (struct tfont *)t->font->userdata.ptr;
 					
 					if (font->type != FONT_TT){
@@ -571,22 +670,29 @@ NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
 								}
 								/* get final graphics of each glyph*/
 								stbtt_GetGlyphBitmapBox((stbtt_fontinfo *) tt_fnt->info, curr_glyph->g_idx, scale, scale, &x0, &y0, &x1, &y1);
+								
+								int x = t->x + x0 + (int) ofs_x;
+								int y = t->y + y0 + (int) t->font->height;
+								
 								w = x1 - x0; h = y1 - y0;
-								w = (w < 25)? w : 25;
-								h = (h < 20)? h : 20;
-								stbtt_MakeGlyphBitmap((stbtt_fontinfo *) tt_fnt->info, rast_glyph, w, h, 25, scale, scale, curr_glyph->g_idx);
-								int i = 0, j = 0, x, y;
 								
-								x = t->x + x0 + (int) ofs_x;
-								y = t->y + y0 + (int) t->font->height;
 								
-								for (j = 0; j < h; j++){
-									for (i = 0; i < w; i++){
-										img->frg.a = (rast_glyph[j * 25 + i] * color.a) / 255;
-										bmp_point_raw (img, x + i, y + j);
+								rect_pos pos_p0 = rect_find_pos(x, y, img->clip_x, img->clip_y, img->clip_x + img->clip_w, img->clip_y + img->clip_h);
+								rect_pos pos_p1 = rect_find_pos(x+w, y+h, img->clip_x, img->clip_y, img->clip_x + img->clip_w, img->clip_y + img->clip_h);
+								if (!(pos_p0 & pos_p1)){
+								
+									w = (w < 25)? w : 25;
+									h = (h < 20)? h : 20;
+									stbtt_MakeGlyphBitmap((stbtt_fontinfo *) tt_fnt->info, rast_glyph, w, h, 25, scale, scale, curr_glyph->g_idx);
+									int i = 0, j = 0;
+									
+									for (j = 0; j < h; j++){
+										for (i = 0; i < w; i++){
+											img->frg.a = (rast_glyph[j * 25 + i] * color.a) / 255;
+											bmp_point_raw (img, x + i, y + j);
+										}
 									}
 								}
-								
 
 								/* update the ofset */
 								ofs_x += curr_glyph->adv * t->font->height;
@@ -596,7 +702,33 @@ NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
 						
 						
 					}
+					#endif
+					
+					struct gui_font * font = gui_get_font (gui->ui_font_list, (struct nk_user_font *) t->font);
+					struct gui_glyph *curr_glyph = NULL;
+					int ofs = 0, str_start = 0, code_p;
+					double ofs_x = 0.0;
+					
+					while (ofs = utf8_to_codepoint((char *)t->string + str_start, &code_p)){
+						str_start += ofs;
+						curr_glyph = gui_get_glyph (font, code_p);
 						
+						int x = t->x + curr_glyph->x + (int) ofs_x;
+						int y = t->y + curr_glyph->y + (int) t->font->height;
+						int w = curr_glyph->w;
+						int h = curr_glyph->h;
+						int i = 0, j = 0;
+									
+						for (j = 0; j < h; j++){
+							for (i = 0; i < w; i++){
+								img->frg.a = (curr_glyph->rast[j * 25 + i] * color.a) / 255;
+								bmp_point_raw (img, x + i, y + j);
+							}
+						}
+						
+						ofs_x += curr_glyph->adv;
+					}
+					
 				} break;
 				
 				case NK_COMMAND_CURVE: {
@@ -897,6 +1029,8 @@ void nk_sdl_shutdown(gui_obj *gui)
 
 int gui_start(gui_obj *gui){
 	if(!gui) return 0;
+	
+	gui->ui_font_list = gui_new_font (NULL);
 	
 	int i = 0;
 	bmp_color gray = {.r = 100, .g = 100, .b = 100, .a = 255};

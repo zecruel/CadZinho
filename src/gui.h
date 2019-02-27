@@ -92,14 +92,23 @@ struct sort_by_idx{
 	void *data;
 };
 
-
-struct font_obj{
-	double scale;
+struct gui_glyph{
+	int code_p, x, y, w, h;
+	double adv;
+	unsigned char rast[20*25];
+	struct gui_glyph *next;
+};
+	
+struct gui_font{
+	struct nk_user_font *font;
+	struct gui_glyph *glyphs;
+	struct gui_font *next;
 };
 
 struct Gui_obj {
 	struct nk_context *ctx;
 	struct nk_user_font *font;
+	struct gui_font *ui_font_list;
 	void *buf; /*for fixed memory */
 	void *last; /* to verify if needs to draw */
 	

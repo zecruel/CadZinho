@@ -953,7 +953,7 @@ char *txt[], int num_txt, int color, char *layer, char *ltype, int lw, int paper
 	ok &= dxf_attr_append(new_mtext, 1, (void *) txt[num_txt - 1]);
 	ok &= dxf_attr_append(new_mtext, 7, (void *) t_style);
 	
-	ok &= dxf_attr_append(new_mtext, 11, (void *) &d_zero);
+	ok &= dxf_attr_append(new_mtext, 11, (void *) (double[]){1.0});
 	ok &= dxf_attr_append(new_mtext, 21, (void *) &d_zero);
 	ok &= dxf_attr_append(new_mtext, 31, (void *) &d_zero);
 	

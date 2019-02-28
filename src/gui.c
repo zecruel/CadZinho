@@ -1,19 +1,25 @@
 #include "gui.h"
+/* ***********************************************************
+the fowling functions are for rendering text in gui, by rastering each
+glyphs in a monochrome image in memory. */
 
 struct gui_font * gui_new_font (struct nk_user_font *base_font){
-	//if (!base_font) return NULL;
+	/* create a new font structute */
+	/* memory allocation */
 	struct gui_font *font = calloc(1, sizeof(struct gui_font));
 	if (font){
+		/* initial parameters */
 		font->font = base_font;
 		font->glyphs = NULL;
 		font->next = NULL;
 	}
-	
 	return font;
 }
 
 struct gui_font * gui_font_add (struct gui_font *list, struct nk_user_font *base_font){
+	/* create a new font structute and append in list*/
 	if (!list) return NULL;
+	/* create font */
 	struct gui_font *font = gui_new_font (base_font);
 	if (font){
 		struct gui_font *curr = list;
@@ -24,16 +30,17 @@ struct gui_font * gui_font_add (struct gui_font *list, struct nk_user_font *base
 		/*atach the new font at list tail */
 		curr->next = font;
 	}
-	
 	return font;
 }
 
 struct gui_font * gui_get_font (struct gui_font *list, struct nk_user_font *base_font){
+	/* return a font structure in list, by its pointer */
 	if (!list) return NULL;
-	struct gui_font *curr = list->next;
 	
-	while(curr){
-		if (curr->font == base_font) return curr;
+	/* try to find the font previously stored */
+	struct gui_font *curr = list->next;
+	while(curr){ /*sweep list */
+		if (curr->font == base_font) return curr; /* success */
 		curr = curr->next;
 	}
 	
@@ -42,9 +49,13 @@ struct gui_font * gui_get_font (struct gui_font *list, struct nk_user_font *base
 }
 
 struct gui_glyph * gui_new_glyph (struct gui_font *gfont, int code_p){
+	/* create a new glyph structute */
 	if (!gfont) return NULL;
+	
+	/* memory allocation */
 	struct gui_glyph *glyph = calloc(1, sizeof(struct gui_glyph));
 	if (glyph){
+		/* initial parameters */
 		glyph->code_p = code_p;
 		glyph->w = 0;
 		glyph->h = 0;
@@ -52,47 +63,38 @@ struct gui_glyph * gui_new_glyph (struct gui_font *gfont, int code_p){
 		memset(glyph->rast, 0, 20*25);
 		glyph->next = NULL;
 	}
+	/* -------- raster the glyph and get its size parameters ----------*/
 	struct tfont *font = (struct tfont *)gfont->font->userdata.ptr;
-	if (font->type != FONT_TT){
+	if (font->type != FONT_TT){ /* shape font*/
 		
-		list_node * graph = list_new(NULL, FRAME_LIFE);
-
-		if (graph) {
-			//if (font_parse_str(font, graph, FRAME_LIFE, (char *)t->string, NULL, 0)){
-			//	graph_list_color(graph, color);
-			//	graph_list_modify(graph, t->x, t->y + t->font->height, t->font->height, -t->font->height, 0.0);
-				
-			//	graph_list_draw_aa(graph, img, 0.0, 0.0, 1.0);
-			//}
-		}
+		/* TODO*/
+		
 	}
-	else {
-		unsigned char rast_glyph[20*25];
+	else { /* True Type font*/
 		struct tt_font *tt_fnt = font->data;
-		
-		
 		float scale = tt_fnt->scale * gfont->font->height;
-		
 		int x0, y0, x1, y1, w, h;
+		
+		/* try to find tt glyph */
 		struct tt_glyph *curr_glyph =  tt_find_cp (tt_fnt, code_p);
-			
-		if (!curr_glyph){/* if not found, add the glyph in list*/
+		if (!curr_glyph){/* if not found, add the glyph in font for future use*/
 			curr_glyph = tt_get_glyph (tt_fnt, code_p);
 			if(curr_glyph){
 				if (tt_fnt->end) tt_fnt->end->next = curr_glyph;
 				tt_fnt->end = curr_glyph;
 			}
 		}
-		if (curr_glyph){ /* glyph found*/
-			/* get final graphics of each glyph*/
+		if (curr_glyph){ /* glyph found */
+			/* find size parameters */
 			stbtt_GetGlyphBitmapBox((stbtt_fontinfo *) tt_fnt->info, curr_glyph->g_idx, scale, scale, &x0, &y0, &x1, &y1);
-				
 			w = x1 - x0; h = y1 - y0;
-			
+			/* size limits */
 			w = (w < 25)? w : 25;
 			h = (h < 20)? h : 20;
+			/* rasterize glyph*/
 			stbtt_MakeGlyphBitmap((stbtt_fontinfo *) tt_fnt->info, glyph->rast, w, h, 25, scale, scale, curr_glyph->g_idx);
 			
+			/* update glyph parameters */
 			glyph->x = x0;
 			glyph->y = y0;
 			glyph->w = w;
@@ -101,24 +103,26 @@ struct gui_glyph * gui_new_glyph (struct gui_font *gfont, int code_p){
 			
 		}
 	}
-	
+	/* ------------------------------------------------------------ */
 	return glyph;
 }
 
 struct gui_glyph * gui_glyph_add (struct gui_font *font, int code_p){
+	/* create a new glyph structute and append in font*/
 	if (!font) return NULL;
+	/* create glyph */
 	struct gui_glyph *glyph = gui_new_glyph (font, code_p);
 	if (glyph){
 		struct gui_glyph *curr = font->glyphs;
-		/* find the list tail */
+		/* find the font's tail */
 		if (curr){
 			while (curr->next){
 				curr = curr->next;
 			}
-			/*atach the new glyph at list tail */
+			/*atach the new glyph at font's tail */
 			curr->next = glyph;
 		}
-		else{
+		else{ /* if is the first glyph in font */ 
 			font->glyphs = glyph;
 		}
 	}
@@ -127,43 +131,42 @@ struct gui_glyph * gui_glyph_add (struct gui_font *font, int code_p){
 }
 
 struct gui_glyph * gui_get_glyph (struct gui_font *font, int code_p){
+	/* return a glyph structure in font, by its code point (unicode) */
 	if (!font) return NULL;
-	struct gui_glyph *curr = font->glyphs;
 	
-	while(curr){
-		if (curr->code_p == code_p) return curr;
+	/* try to find the glyph previously stored */
+	struct gui_glyph *curr = font->glyphs;
+	while(curr){ /* sweep font */
+		if (curr->code_p == code_p) return curr; /* success */
 		curr = curr->next;
 	}
-	
-	/* if not found, add the gliph in font*/
+	/* if not found, add the glyph in font*/
 	return gui_glyph_add (font, code_p);
 }
 
 int gui_list_font_free (struct gui_font *list){
+	/* free list of fonts and all its childs structures */
 	if (!list) return 0;
 	struct gui_font *curr_font = list->next;
 	struct gui_font *next_font;
 	struct gui_glyph *curr_glyph, *next_glyph;
 	
-	while(curr_font){
+	while(curr_font){ /* sweep font list */
 		next_font = curr_font->next;
-		
 		curr_glyph = curr_font->glyphs;
 	
-		while(curr_glyph){
+		while(curr_glyph){ /* sweep current font */
 			next_glyph = curr_glyph->next;
-			free(curr_glyph);
-			
+			free(curr_glyph); /* free each glyph */
 			curr_glyph = next_glyph;
 		}
-		
-		free (curr_font);
+		free (curr_font); /* free each font */
 		curr_font = next_font;
 	}
 	
-	free (list);
+	free (list); /* free main list structure */
 }
-
+/* ************************************************************* */
 
 void set_style(struct nk_context *ctx, enum theme theme){
     struct nk_color table[NK_COLOR_COUNT];
@@ -637,13 +640,12 @@ NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
 					color = nk_to_bmp_color(t->foreground);
 					img->frg = color;
 					
-					
+					/* get font descriptor */
 					struct tfont *font = (struct tfont *)t->font->userdata.ptr;
 					
-					if (font->type != FONT_TT){
-						
+					if (font->type != FONT_TT){ /*shape font */
+						/* rendering text by default general drawing engine */
 						list_node * graph = list_new(NULL, FRAME_LIFE);
-		
 						if (graph) {
 							if (font_parse_str(font, graph, FRAME_LIFE, (char *)t->string, NULL, 0)){
 								graph_list_color(graph, color);
@@ -653,111 +655,40 @@ NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
 							}
 						}
 					}
-					else {
-					#if(0)
-						unsigned char rast_glyph[20*25];
-						struct tt_font *tt_fnt = font->data;
-						img->frg = color;
-						
-						//float scale = stbtt_ScaleForPixelHeight((stbtt_fontinfo *) tt_fnt->info, 15);
-						float scale = tt_fnt->scale * t->font->height;
-						//int codepoint = 'a';
-						
-						int x0, y0, x1, y1, w, h;
-						
-						int ofs = 0, str_start = 0, code_p;//, num_graph = 0;
-						struct tt_glyph *curr_glyph = NULL, *prev_glyph = NULL;
-						//graph_obj *curr_graph = NULL;
-						
-						double ofs_x = 0.0;
-						char txt[DXF_MAX_CHARS];
-						txt[0] = 0;
-						strncpy(txt, (char *) t->string, DXF_MAX_CHARS);
-						
-						/*sweep the string, decoding utf8 */
-						while (ofs = utf8_to_codepoint(txt + str_start, &code_p)){
-							str_start += ofs;
-							/* try to find the glyph previously loaded */
-							curr_glyph = tt_find_cp (tt_fnt, code_p);
-							
-							if (!curr_glyph){/* if not found, add the glyph in list*/
-								curr_glyph = tt_get_glyph (tt_fnt, code_p);
-								if(curr_glyph){
-									if (tt_fnt->end) tt_fnt->end->next = curr_glyph;
-									tt_fnt->end = curr_glyph;
-								}
-							}
-							
-							if (curr_glyph){ /* glyph found*/
-								
-								if (prev_glyph){/* get additional custom advance, relative to previous glyph*/
-									ofs_x += stbtt_GetGlyphKernAdvance(tt_fnt->info,
-									prev_glyph->g_idx, curr_glyph->g_idx) * scale;
-								}
-								/* get final graphics of each glyph*/
-								stbtt_GetGlyphBitmapBox((stbtt_fontinfo *) tt_fnt->info, curr_glyph->g_idx, scale, scale, &x0, &y0, &x1, &y1);
-								
-								int x = t->x + x0 + (int) ofs_x;
-								int y = t->y + y0 + (int) t->font->height;
-								
-								w = x1 - x0; h = y1 - y0;
-								
-								
-								rect_pos pos_p0 = rect_find_pos(x, y, img->clip_x, img->clip_y, img->clip_x + img->clip_w, img->clip_y + img->clip_h);
-								rect_pos pos_p1 = rect_find_pos(x+w, y+h, img->clip_x, img->clip_y, img->clip_x + img->clip_w, img->clip_y + img->clip_h);
-								if (!(pos_p0 & pos_p1)){
-								
-									w = (w < 25)? w : 25;
-									h = (h < 20)? h : 20;
-									stbtt_MakeGlyphBitmap((stbtt_fontinfo *) tt_fnt->info, rast_glyph, w, h, 25, scale, scale, curr_glyph->g_idx);
-									int i = 0, j = 0;
-									
-									for (j = 0; j < h; j++){
-										for (i = 0; i < w; i++){
-											img->frg.a = (rast_glyph[j * 25 + i] * color.a) / 255;
-											bmp_point_raw (img, x + i, y + j);
-										}
-									}
-								}
-
-								/* update the ofset */
-								ofs_x += curr_glyph->adv * t->font->height;
-								prev_glyph = curr_glyph;
-							}
-						}
-						
-						
-					}
-					#endif
-					
+					else { /* True Type font */
+						/* rendering text by glyph raster images - used only in GUI */
+						/* get gui font structure */
 						struct gui_font * gfont = gui_get_font (gui->ui_font_list, (struct nk_user_font *) t->font);
 						struct gui_glyph *curr_glyph = NULL;
 						int ofs = 0, str_start = 0, code_p;
 						double ofs_x = 0.0;
 						
+						/* sweep the text string, decoding UTF8 in code points*/
 						while (ofs = utf8_to_codepoint((char *)t->string + str_start, &code_p)){
 							str_start += ofs;
 							curr_glyph = gui_get_glyph (gfont, code_p);
 							
+							/* calcule current glyph position in main image */
 							int x = t->x + curr_glyph->x + (int) ofs_x;
 							int y = t->y + curr_glyph->y + (int) t->font->height;
+							
 							int w = curr_glyph->w;
 							int h = curr_glyph->h;
 							
+							/* verify if glyph will be showed in image's clip area */
 							rect_pos pos_p0 = rect_find_pos(x, y, img->clip_x, img->clip_y, img->clip_x + img->clip_w, img->clip_y + img->clip_h);
 							rect_pos pos_p1 = rect_find_pos(x+w, y+h, img->clip_x, img->clip_y, img->clip_x + img->clip_w, img->clip_y + img->clip_h);
 							if (!(pos_p0 & pos_p1)){
-							
-								
+								/* copy rasterized glyph in main image */
 								int i = 0, j = 0;
 								for (j = 0; j < h; j++){
-									for (i = 0; i < w; i++){
+									for (i = 0; i < w; i++){ /* pixel by pixel */
 										img->frg.a = (curr_glyph->rast[j * 25 + i] * color.a) / 255;
 										bmp_point_raw (img, x + i, y + j);
 									}
 								}
 							}
-							ofs_x += curr_glyph->adv;
+							ofs_x += curr_glyph->adv; /*update position for next glyph */
 						}
 					}
 				} break;

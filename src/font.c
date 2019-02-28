@@ -386,13 +386,19 @@ int font_str_w(struct tfont * font, char *txt, double *w, int force_ascii){
 /* get width of an string */
 	if (!font || !w|| !txt) return 0;
 	
-	list_node * graph = list_new(NULL, FRAME_LIFE);
+	int type = font->type;
 	
-	if (!graph) return 0;
-	
-	*w = 0.0;
-	
-	font_parse_str(font, graph, FRAME_LIFE, txt, w, force_ascii); /* temporary list */
+	if(type == FONT_SHP){
+		list_node * graph = list_new(NULL, FRAME_LIFE);
+		
+		if (!graph) return 0;
+		
+		*w = 0.0;
+		
+		font_parse_str(font, graph, FRAME_LIFE, txt, w, force_ascii); /* temporary list */
+	}
+	else if (type == FONT_TT)
+		tt_w_str((struct tt_font *) font->data, txt, w, force_ascii);
 	
 	if(fabs(*w) > 1e-9) return 1;
 	else return 0;

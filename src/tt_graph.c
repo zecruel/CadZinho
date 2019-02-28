@@ -275,6 +275,63 @@ int tt_parse_str(struct tt_font * font, list_node *list_ret, int pool_idx, char 
 	return num_graph;
 }
 
+int tt_w_str(struct tt_font * font, char *txt, double *w, int force_ascii){
+/* get string width*/
+	if (!font || !txt) return 0;
+	
+	int ofs = 0, str_start = 0, code_p, num_graph = 0;
+	struct tt_glyph *curr_glyph = NULL, *prev_glyph = NULL;
+	
+	
+	double ofs_x = 0.0;
+	
+	/*sweep the string, decoding utf8 or ascii (cp1252)*/
+	if (force_ascii){ /* decode ascii cp1252 */
+		code_p = (int) cp1252[(unsigned char)txt[str_start]];
+		if (code_p > 0) ofs = 1;
+		else ofs = 0;
+	}
+	else{ /* decode utf-8 */
+		ofs = utf8_to_codepoint(txt + str_start, &code_p);
+	}
+	while (ofs){
+		
+		/* try to find the glyph previously loaded */
+		curr_glyph = tt_find_cp (font, code_p);
+		
+		if (!curr_glyph){/* if not found, add the glyph in list*/
+			curr_glyph = tt_get_glyph (font, code_p);
+			if(curr_glyph){
+				if (font->end) font->end->next = curr_glyph;
+				font->end = curr_glyph;
+			}
+		}
+		
+		if (curr_glyph){ /* glyph found*/
+			
+			//if (prev_glyph){/* get additional custom advance, relative to previous glyph*/
+			//	ofs_x += stbtt_GetGlyphKernAdvance(font->info,
+			//	prev_glyph->g_idx, curr_glyph->g_idx) * font->scale;
+			//}
+			/* update the ofset */
+			ofs_x += curr_glyph->adv;
+			prev_glyph = curr_glyph;
+		}
+		/* get next codepoint */
+		str_start += ofs;
+		if (force_ascii){ /* decode ascii cp1252 */
+			code_p = (int) cp1252[(unsigned char)txt[str_start]];
+			if (code_p > 0) ofs = 1;
+			else ofs = 0;
+		}
+		else{/* decode utf-8 */
+			ofs = utf8_to_codepoint(txt + str_start, &code_p);
+		}
+	}
+	if (w != NULL) *w = ofs_x; /* return the text width*/
+	return 1;
+}
+
 graph_obj * tt_parse_cp(struct tt_font * font, int cp, int prev_cp, int pool_idx, double *w){
 /* parse single code point to graph*/
 	if (!font) return 0;

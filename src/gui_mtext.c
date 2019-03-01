@@ -220,7 +220,7 @@ int gui_mtext_info (gui_obj *gui){
 			
 			static struct nk_rect s = {150, 10, 420, 330};
 			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Edit inteli text", NK_WINDOW_CLOSABLE|NK_WINDOW_MOVABLE, s)){
-				
+				#if(0)
 				/* wrap text in text edit widget */
 				char *text = nk_str_get(&(gui->text_edit.string));
 				
@@ -289,10 +289,11 @@ int gui_mtext_info (gui_obj *gui){
 					}
 				}
 				
-				
+				#endif
 				nk_layout_row_dynamic(gui->ctx, 270, 1);
-				//nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_BOX, gui->long_txt, 5 * DXF_MAX_CHARS, nk_filter_default);
-				nk_edit_buffer(gui->ctx, NK_EDIT_BOX, &(gui->text_edit), nk_filter_default);
+				
+				//nk_edit_buffer(gui->ctx, NK_EDIT_BOX, &(gui->text_edit), nk_filter_default);
+				nk_edit_buffer_wrap(gui->ctx, NK_EDIT_BOX, &(gui->text_edit), nk_filter_default);
 				
 				nk_popup_end(gui->ctx);
 			}

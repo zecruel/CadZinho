@@ -1,6 +1,5 @@
 #include <SDL.h>
 
-
 #include "dxf.h"
 #include "bmp.h"
 #include "graph.h"

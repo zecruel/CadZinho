@@ -139,4 +139,6 @@ void graph_matrix(graph_obj * master, double matrix[3][3]);
 
 int graph_list_matrix(list_node *list, double matrix[3][3]);
 
+void vec_2_rot_matrix(double matrix[3][3], double x, double y, double z);
+
 #endif

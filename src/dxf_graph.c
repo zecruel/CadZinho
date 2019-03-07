@@ -1519,6 +1519,8 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			double spacing = 0.5;
 			current = NULL;
 			
+			line_h = (stack[0].font->above + stack[0].font->below) * stack[0].h_fac;
+			
 			for (i = 0; i < num_str; i++){
 				if (i < num_str - 1) current = dxf_find_attr_i(ent, 3, i);
 				else current = dxf_find_attr_i(ent, 1, 0);
@@ -1751,7 +1753,8 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 								if (stack[stack_pos].p_i + stack[stack_pos].p_l >= 0) line_x = stack[stack_pos].p_i + stack[stack_pos].p_l;
 								//line_x = 0.0;
 								line_y -= 1.1 * stack[stack_pos].h_fac + stack[stack_pos].p_a + stack[stack_pos].p_b;
-								line_h = stack[stack_pos].h_fac;
+								//line_h = stack[stack_pos].h_fac;
+								line_h = (stack[stack_pos].font->above + stack[stack_pos].font->below) * stack[stack_pos].h_fac;
 								line_w = 0.0;
 								ofs = 2;
 								code_p = 0;
@@ -2210,13 +2213,11 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			graph_list_modify(graph, 0.0,
 				-min_y - (double)(t_alin_v[t_alin] - 1) * txt_h/2,
 				1.0, 1.0, 0.0);
-				
-			if (pt2){
-				double matrix[3][3] = {
-					{pt2_x, -pt2_y, 0.0},
-					{pt2_y, pt2_x, 0.0},
-					{0.0, 0.0, 1.0}
-				};
+			
+			/* apply rotation, if has a direction vector */
+			if (pt2 && (pt2_x != 0.0 || pt2_y != 0.0 || pt2_z != 0.0)){
+				double matrix[3][3];
+				vec_2_rot_matrix(matrix, pt2_x, pt2_y, pt2_z);
 				graph_list_matrix(graph, matrix);
 			}
 			

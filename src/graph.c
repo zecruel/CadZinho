@@ -2773,6 +2773,56 @@ Define function PlotAntiAliasedPoint ( number x, number y )
               DrawPixel ( coordinates roundedx, roundedy, color percent (range 0-1) )
 */
 
+/* https://gamedev.stackexchange.com/questions/45298/convert-orientation-vec3-to-a-rotation-matrix
+answered Dec 10 '12 at 12:08 by sam hocevar
+
+Your problem is under-constrained, so there are a lot of possible solutions.
+
+My suggestion is to see your vec3 as the result of rotating vector [1 0 0] by φ around axis Y then by θ around axis Z. This is the latitude/longitude notation. The corresponding transformation matrix is:
+
+|cosθ cosφ   -sinθ   -cosθ sinφ|
+|sinθ cosφ    cosθ   -sinθ sinφ|
+|   sinφ       0         cosφ  |
+See the first column? That’s your vec3, since it’s the image of [1 0 0]. So the good thing is that we already know a lot of the matrix values.
+
+The following code computes the remaining values:
+
+mat3 rotation_matrix(vec3 v)
+{
+    // Find cosφ and sinφ 
+    float c1 = sqrt(v.x * v.x + v.y * v.y);
+    float s1 = v.z;
+    // Find cosθ and sinθ; if gimbal lock, choose (1,0) arbitrarily 
+    float c2 = c1 ? v1.x / c1 : 1.0;
+    float s2 = c1 ? v1.y / c1 : 0.0;
+
+    return mat3(v.x, -s2, -s1*c2,
+                v.y,  c2, -s1*s2,
+                v.z,   0,     c1);
+}
+*/
+
+void vec_2_rot_matrix(double matrix[3][3], double x, double y, double z){
+	/* Find cos(fi) and sin(fi) */ 
+	double c1 = sqrt(x * x + y * y);
+	double s1 = z;
+	/* Find cos(omega) and sin(omega); if gimbal lock, choose (1,0) arbitrarily */
+	double c2 = c1 ? x / c1 : 1.0;
+	double s2 = c1 ? y / c1 : 0.0;
+	
+	matrix[0][0] = x;
+	matrix[1][0] = y;
+	matrix[2][0] = z;
+	
+	matrix[0][1] = -s2;
+	matrix[1][1] = c2;
+	matrix[2][1] = 0;
+	
+	matrix[0][2] = -s1*c2;
+	matrix[1][2] = -s1*s2;
+	matrix[2][2] = c1;
+}
+
 void graph_matrix(graph_obj * master, double matrix[3][3]){
 	if ((master != NULL)){
 		if(master->list->next){ /* check if list is not empty */

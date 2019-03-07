@@ -137,4 +137,6 @@ int graph_list_draw_aa(list_node *list, bmp_img * img, double ofs_x, double ofs_
 
 void graph_matrix(graph_obj * master, double matrix[3][3]);
 
+int graph_list_matrix(list_node *list, double matrix[3][3]);
+
 #endif

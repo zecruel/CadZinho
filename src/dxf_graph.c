@@ -2207,13 +2207,22 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			txt_w = fabs(max_x - min_x);
 			txt_h = fabs(max_y - min_y);
 			
-			
 			graph_list_modify(graph, 0.0,
 				-min_y - (double)(t_alin_v[t_alin] - 1) * txt_h/2,
 				1.0, 1.0, 0.0);
+				
+			if (pt2){
+				double matrix[3][3] = {
+					{pt2_x, -pt2_y, 0.0},
+					{pt2_y, pt2_x, 0.0},
+					{0.0, 0.0, 1.0}
+				};
+				graph_list_matrix(graph, matrix);
+			}
 			
 			graph_list_modify(graph, pt1_x, pt1_y, t_scale_x*txt_size, txt_size, 0.0);
 			graph_list_rot(graph, pt1_x, pt1_y, t_rot);
+			
 			
 			
 			/* convert OCS to WCS */

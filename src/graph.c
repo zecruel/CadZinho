@@ -2826,3 +2826,24 @@ void graph_matrix(graph_obj * master, double matrix[3][3]){
 		}
 	}
 }
+
+int graph_list_matrix(list_node *list, double matrix[3][3]){
+	list_node *current = NULL;
+	graph_obj *curr_graph = NULL;
+	int ok = 0;
+		
+	if (list != NULL){
+		current = list->next;
+		
+		/* sweep the main list */
+		while (current != NULL){
+			if (current->data){
+				curr_graph = (graph_obj *)current->data;
+				graph_matrix(curr_graph, matrix);
+			}
+			current = current->next;
+		}
+		ok = 1;
+	}
+	return ok;
+}

@@ -37,12 +37,12 @@ int mtext_change_text (dxf_node *obj, char *text, int len){
 		}
 	}
 	/* edit text in each group */
+	int text_pos = 0;
 	for (i = 0; i <= extra_str; i++){
 		pos = 0;
 		j = 0;
-		int text_pos = 0;
 		/* construct string to group */
-		while (pos < DXF_MAX_CHARS - 2 && text_pos < len){
+		while (pos < DXF_MAX_CHARS - 1 && text_pos < len){
 			curr_char = text[text_pos];
 			/* ignore the break line chars */
 			if (curr_char != '\n' && curr_char != '\v' && curr_char != '\r'){
@@ -50,7 +50,7 @@ int mtext_change_text (dxf_node *obj, char *text, int len){
 				pos ++;
 			}
 			j++;
-			text_pos = i * (DXF_MAX_CHARS - 1) + j;
+			text_pos++;
 		}
 		curr_text[pos] = 0; /*terminate string*/
 		/* modify current group */
@@ -64,6 +64,7 @@ int gui_mtext_interactive(gui_obj *gui){
 	if (gui->modal == MTEXT){
 		static dxf_node *new_el;
 		char *blank = "";
+		int attch_pt = (2 - gui->t_al_v) * 3 + gui->t_al_h +1;
 		if (gui->step == 0){
 			gui->draw_tmp = 1;
 			/* create a new DXF text */
@@ -80,6 +81,7 @@ int gui_mtext_interactive(gui_obj *gui){
 			//dxf_attr_change_i(new_el, 72, &gui->t_al_h, -1);
 			//dxf_attr_change_i(new_el, 73, &gui->t_al_v, -1);
 			dxf_attr_change(new_el, 7, gui->drawing->text_styles[gui->t_sty_idx].name);
+			dxf_attr_change(new_el, 71, &attch_pt);
 			gui->step = 1;
 			goto next_step;
 		}
@@ -91,6 +93,7 @@ int gui_mtext_interactive(gui_obj *gui){
 				//dxf_attr_change_i(new_el, 21, &gui->step_y[gui->step], -1);
 				dxf_attr_change(new_el, 40, &gui->txt_h);
 				dxf_attr_change(new_el, 41, &gui->rect_w);
+				dxf_attr_change(new_el, 71, &attch_pt);
 				//dxf_attr_change(new_el, 1, gui->txt);
 				//dxf_attr_change_i(new_el, 72, &gui->t_al_h, -1);
 				//dxf_attr_change_i(new_el, 73, &gui->t_al_v, -1);
@@ -129,6 +132,7 @@ int gui_mtext_interactive(gui_obj *gui){
 				//dxf_attr_change_i(new_el, 21, &gui->step_y[gui->step], -1);
 				dxf_attr_change(new_el, 40, &gui->txt_h);
 				dxf_attr_change(new_el, 41, &gui->rect_w);
+				dxf_attr_change(new_el, 71, &attch_pt);
 				//dxf_attr_change(new_el, 1, gui->txt);
 				
 				
@@ -213,8 +217,12 @@ int gui_mtext_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		gui->txt_h = nk_propertyd(gui->ctx, "Text Height", 0.0d, gui->txt_h, 100.0d, 0.1d, 0.1d);
 		gui->rect_w = nk_propertyd(gui->ctx, "Rect width", 0.0d, gui->rect_w, 100.0d, 0.1d, 0.1d);
-		gui->t_al_v = nk_combo(gui->ctx, text_al_v, T_AL_V_LEN, gui->t_al_v, 20, nk_vec2(100,105));
-		gui->t_al_h = nk_combo(gui->ctx, text_al_h, T_AL_H_LEN, gui->t_al_h, 20, nk_vec2(100,105));
+		
+		if (gui->t_al_v > 2) gui->t_al_v = 0;
+		if (gui->t_al_h > 2) gui->t_al_h = 0;
+		
+		gui->t_al_v = nk_combo(gui->ctx, text_al_v + 1, 3, gui->t_al_v, 20, nk_vec2(100,105));
+		gui->t_al_h = nk_combo(gui->ctx, text_al_h, 3, gui->t_al_h, 20, nk_vec2(100,105));
 		
 		if (mtext_pop){
 			

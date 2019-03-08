@@ -1712,7 +1712,9 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 								new_node = dxf_attr_new (group, t_data, (void *) &i_data);
 								break;
 							case DXF_STR :
-								new_node = dxf_attr_new (group, t_data, (void *) line);
+								if (group == 1 || group == 3)
+									new_node = dxf_attr_new (group, t_data, (void *) line_buf);
+								else new_node = dxf_attr_new (group, t_data, (void *) line);
 						}
 						
 						if (new_node){

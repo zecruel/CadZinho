@@ -1516,10 +1516,10 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			int ofs = 0, str_start = 0, code_p, prev_cp = 0, txt_len;
 			double w = 0.0, word_x = 0.0, word_y = 0.0, word_w = 0.0;
 			double line_x = 0.0, line_y = 0.0, line_w = 0.0, line_h = 1.0;
-			double spacing = 0.5;
+			double spacing = 0.5, line_spc = 1.666;
 			current = NULL;
 			
-			line_h = (stack[0].font->above + stack[0].font->below) * stack[0].h_fac;
+			//line_h = (stack[0].font->above + stack[0].font->below) * stack[0].h_fac;
 			
 			for (i = 0; i < num_str; i++){
 				if (i < num_str - 1) current = dxf_find_attr_i(ent, 3, i);
@@ -1732,7 +1732,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 									word_x = 0.0; word_y = 0.0;
 									line_x = stack[stack_pos].p_l;
 									//line_x = 0.0;
-									line_y -= 1.1 * line_h;
+									line_y -= line_spc * line_h;
 									
 									line_w = 0.0;
 								}
@@ -1752,9 +1752,12 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 								word_w = 0.0;
 								if (stack[stack_pos].p_i + stack[stack_pos].p_l >= 0) line_x = stack[stack_pos].p_i + stack[stack_pos].p_l;
 								//line_x = 0.0;
-								line_y -= 1.1 * stack[stack_pos].h_fac + stack[stack_pos].p_a + stack[stack_pos].p_b;
-								//line_h = stack[stack_pos].h_fac;
-								line_h = (stack[stack_pos].font->above + stack[stack_pos].font->below) * stack[stack_pos].h_fac;
+								
+								line_h = stack[stack_pos].h_fac;
+								//line_h = (stack[stack_pos].font->above + stack[stack_pos].font->below) * stack[stack_pos].h_fac;
+								
+								line_y -= line_spc * line_h + stack[stack_pos].p_a + stack[stack_pos].p_b;
+								
 								line_w = 0.0;
 								ofs = 2;
 								code_p = 0;
@@ -1865,8 +1868,8 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 										max_w = (top_w > bot_w)? top_w : bot_w;
 										
 										if (end_top[0] == '^') {
-											pos_ty = 1.1* line_h * (1.0 - (double) stack[stack_pos].al_v/2);
-											pos_by = -1.1* line_h * ((double) stack[stack_pos].al_v/2);
+											pos_ty = 1.1 * line_h * (1.0 - (double) stack[stack_pos].al_v/2);
+											pos_by = -1.1 * line_h * ((double) stack[stack_pos].al_v/2);
 										}
 										else if (end_top[0] == '/') {
 											pos_ty = 1.2* line_h * (1.0 - (double) stack[stack_pos].al_v/2);
@@ -2070,7 +2073,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							word_x = 0.0; word_y = 0.0;
 							line_x = stack[stack_pos].p_l;
 							//line_x = 0.0;
-							line_y -= 1.1 * line_h;
+							line_y -= line_spc * line_h;
 							line_w = 0.0;
 						}
 						
@@ -2188,7 +2191,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				word_x = 0.0; word_y = 0.0;
 				line_x = stack[stack_pos].p_l;
 				//line_x = 0.0;
-				line_y -= 1.1 * line_h;
+				line_y -= line_spc * line_h;
 				line_w = 0.0;
 			}
 			/* positioning current word */

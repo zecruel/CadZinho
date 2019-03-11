@@ -1486,7 +1486,7 @@ char * dxf_load_file(char *path, long *fsize){
 
 int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 	static enum {NONE, INIT, READ, FINISH} state = INIT;
-	static char *line, *cur_line, *next_line, line_buf[DXF_MAX_CHARS];
+	static char *line, *cur_line, *next_line, line_buf[DXF_MAX_CHARS], line_cpy[DXF_MAX_CHARS];
 	static dxf_node *main_struct = NULL;
 	static dxf_node *master, *prev, *next, *tmp, *last_obj;
 	
@@ -1502,6 +1502,7 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 	//static vector_p part;
 	static int blk_end = 0, cplx_end = 0; /* close block and include ENDBLOCK in structure*/
 	static int ins_flag = 0; /* inside INSERT entity - for cascadind ATTRIB ents */
+	static int mtext_flag = 0; /* inside MTEXT entity - to avoid trim whitespaces in text */
 	
 	if (state == INIT){
 		if ((!drawing)||(!buf)){
@@ -1542,7 +1543,7 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 	if (state == READ){
 		int i = 0;
 		while((i++ < 10001) && (state == READ)){
-			next_line = strchr(cur_line, '\n');
+			next_line = strpbrk(cur_line, "\r\n");
 			if (next_line) {
 				line_size = next_line - cur_line;
 				if (line_size > DXF_MAX_CHARS - 1) line_size = DXF_MAX_CHARS - 1;
@@ -1552,6 +1553,8 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 			else{
 				strncpy(line_buf, cur_line, DXF_MAX_CHARS);
 			}
+			/* copy original string to avoid trim spaces */
+			strncpy(line_cpy, line_buf, DXF_MAX_CHARS);
 			
 			/* trim leading/trailing whitespace of line */
 			line = trimwhitespace(line_buf);
@@ -1598,6 +1601,7 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 						//prev = tmp; /* new objs will append here */
 						
 						ins_flag = 0;
+						mtext_flag = 0;
 					
 						/* new level of hierarchy  */
 						if((strcmp(line, "SECTION") == 0) ||
@@ -1646,6 +1650,7 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 						/*  new ordinary DXF object */
 						else {
 							if (strcmp(line, "INSERT") == 0) ins_flag = 1;
+							if (strcmp(line, "MTEXT") == 0) mtext_flag = 1;
 							
 							new_node = dxf_obj_new (line); /* new object */
 							if (new_node){
@@ -1712,8 +1717,8 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 								new_node = dxf_attr_new (group, t_data, (void *) &i_data);
 								break;
 							case DXF_STR :
-								if (group == 1 || group == 3)
-									new_node = dxf_attr_new (group, t_data, (void *) line_buf);
+								if (mtext_flag && (group == 1 || group == 3))
+									new_node = dxf_attr_new (group, t_data, (void *) line_cpy);
 								else new_node = dxf_attr_new (group, t_data, (void *) line);
 						}
 						
@@ -1734,6 +1739,9 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 			}
 			
 			f_index++; /* next line index */
+			if (next_line)
+				if (next_line[0] == '\r' && next_line[1] == '\n') next_line++;
+			
 			cur_line = next_line ? (next_line+1) : NULL;
 			if(cur_line == NULL){
 				//free(buf);

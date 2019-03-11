@@ -86,7 +86,7 @@ int dxf_ent_get_ltype(dxf_drawing *drawing, dxf_node * ent, int ins_ltype){
 			else ltype = ltype_default; /* fail to find layer ltype*/
 		}
 		if ((ltype == 0) || (ltype >= drawing->num_ltypes)) 
-			ltype = ltype_default;; /* invalid  ltype*/
+			ltype = ltype_default; /* invalid  ltype*/
 	}
 	return ltype;
 }
@@ -1323,7 +1323,7 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 	return NULL;
 }
 
-list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx, int ins_color){
+list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx, struct ins_save ins){
 	if(ent){
 		int force_ascii = drawing->version < 1021;
 		
@@ -1483,6 +1483,17 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			}
 			current = current->next; /* go to the next in the list */
 		}
+		
+		
+		if (strlen(layer)>0){
+			/* find the layer index */
+			int lay_idx = dxf_lay_idx(drawing, layer);
+			lay_color = drawing->layers[lay_idx].color;
+			ent->obj.layer = lay_idx;
+		}
+		
+		int lw = dxf_ent_get_lw(drawing, ent, ins.lw);
+		
 		if (((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))){
 			
 			/* find the tstyle index and font*/
@@ -1497,11 +1508,6 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				else stack[0].font = drawing->dflt_font;
 			}
 			
-			if (strlen(layer)>0){
-				/* find the layer index */
-				int lay_idx = dxf_lay_idx(drawing, layer);
-				lay_color = drawing->layers[lay_idx].color;
-			}
 			stack[0].color = color;
 			
 			stack[0].al_h = t_alin_h[t_alin];
@@ -1893,7 +1899,15 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 												graph_modify(curr_graph, word_w + alx_frac_t, word_y + pos_ty, stack[stack_pos].w_fac * stack[stack_pos].h_fac, stack[stack_pos].h_fac, 0.0);
 												
 												/* change color */
-												curr_graph->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+												curr_graph->color = dxf_get_color (stack[stack_pos].color, lay_color, ins.color);
+												
+												/*change tickness */
+												if (stack[stack_pos].font->type != FONT_TT){
+													if (lw > 0){
+														curr_graph->tick = (double)lw * 0.07109;
+														curr_graph->thick_const = 1;
+													}
+												}
 												
 												/* store the graph in the return vector */
 												//if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
@@ -1913,7 +1927,15 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 												graph_modify(curr_graph, word_w + pos_bx + alx_frac_b, word_y + pos_by, stack[stack_pos].w_fac * stack[stack_pos].h_fac, stack[stack_pos].h_fac, 0.0);
 												
 												/* change color */
-												curr_graph->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+												curr_graph->color = dxf_get_color (stack[stack_pos].color, lay_color, ins.color);
+												
+												/*change tickness */
+												if (stack[stack_pos].font->type != FONT_TT){
+													if (lw > 0){
+														curr_graph->tick = (double)lw * 0.07109;
+														curr_graph->thick_const = 1;
+													}
+												}
 												
 												/* store the graph in the return vector */
 												//if (list_push(graph, list_new((void *)curr_graph, pool_idx))) num_graph++;
@@ -1929,7 +1951,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 											graph_obj * txt_line = graph_new(pool_idx);
 											line_add(txt_line, word_w, word_y + y, 0.0, word_w + max_w, word_y + y, 0.0);
 											if (txt_line){
-												txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+												txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins.color);
 												
 												/* store the graph in the return vector */
 												if (list_push(word, list_new((void *)txt_line, pool_idx))) num_graph++;
@@ -1942,7 +1964,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 											graph_obj * txt_line = graph_new(pool_idx);
 											line_add(txt_line, word_w + base - 0.4 * y, word_y + 0.1 * y, 0.0, word_w + base + 0.4 * y, word_y + 1.5 * y, 0.0);
 											if (txt_line){
-												txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+												txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins.color);
 												
 												/* store the graph in the return vector */
 												if (list_push(word, list_new((void *)txt_line, pool_idx))) num_graph++;
@@ -2116,7 +2138,15 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 								graph_matrix(curr_graph, matrix);
 							}
 							
-							curr_graph->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+							curr_graph->color = dxf_get_color (stack[stack_pos].color, lay_color, ins.color);
+							/*change tickness */
+							if (stack[stack_pos].font->type != FONT_TT){
+								if (lw > 0){
+									curr_graph->tick = (double)lw * 0.07109;
+									curr_graph->thick_const = 1;
+								}
+							}
+							
 							double y = word_y;
 							if (line_h >= stack[stack_pos].h_fac)
 								y += ((double) stack[stack_pos].al_v/2)* (line_h - stack[stack_pos].h_fac);
@@ -2131,7 +2161,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							graph_obj * txt_line = graph_new(pool_idx);
 							line_add(txt_line, word_w, word_y + y, 0.0, word_w + w, word_y + y, 0.0);
 							if (txt_line){
-								txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+								txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins.color);
 								
 								/* store the graph in the return vector */
 								if (list_push(word, list_new((void *)txt_line, pool_idx))) num_graph++;
@@ -2143,7 +2173,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							graph_obj * txt_line = graph_new(pool_idx);
 							line_add(txt_line, word_w, word_y + y, 0.0, word_w + w, word_y + y, 0.0);
 							if (txt_line){
-								txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+								txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins.color);
 								
 								/* store the graph in the return vector */
 								if (list_push(word, list_new((void *)txt_line, pool_idx))) num_graph++;
@@ -2155,7 +2185,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							graph_obj * txt_line = graph_new(pool_idx);
 							line_add(txt_line, word_w, word_y + y, pt1_z, word_w + w, word_y + y, pt1_z);
 							if (txt_line){
-								txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins_color);
+								txt_line->color = dxf_get_color (stack[stack_pos].color, lay_color, ins.color);
 								
 								/* store the graph in the return vector */
 								if (list_push(word, list_new((void *)txt_line, pool_idx))) num_graph++;
@@ -3010,7 +3040,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			}
 			else if (strcmp(current->obj.name, "MTEXT") == 0){
 				ent_type = DXF_MTEXT;
-				list_node * text_list = dxf_mtext_parse(drawing, current, p_space, pool_idx, ins_stack[ins_stack_pos].color);
+				list_node * text_list = dxf_mtext_parse(drawing, current, p_space, pool_idx, ins_stack[ins_stack_pos]);
 				
 				if ((text_list != NULL)){
 					list_node *curr_node = text_list->next;
@@ -3021,7 +3051,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 							curr_graph = (graph_obj *)curr_node->data;
 							/* store the graph in the return vector */
 							list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+							//proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
 							mod_idx++;
 						}
 						curr_node = curr_node->next;

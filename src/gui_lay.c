@@ -821,6 +821,16 @@ int layer_prop(gui_obj *gui){
 			
 		}
 		
+		/*
+		if (num_layers < 10){
+			struct nk_vec2 wid_pos = nk_widget_position(gui->ctx);
+			struct nk_vec2 win_pos = nk_window_get_position(gui->ctx);
+			struct nk_rect win_cont = nk_window_get_content_region(gui->ctx);
+			int h = win_cont.h - (wid_pos.y - win_pos.y);
+			nk_layout_row_dynamic(gui->ctx, h - 4, 1);
+			nk_label(gui->ctx, " ", NK_TEXT_LEFT);
+		}*/
+		
 		nk_combo_end(gui->ctx);
 	}
 	

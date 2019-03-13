@@ -99,7 +99,10 @@ int gui_text_info (gui_obj *gui){
 		nk_label(gui->ctx, "Place an text", NK_TEXT_LEFT);
 		
 		nk_label(gui->ctx, "Style:", NK_TEXT_LEFT);
-		if (nk_combo_begin_label(gui->ctx,  t_sty[gui->t_sty_idx].name, nk_vec2(220,200))){
+		
+		int h = num_tstyles * 25 + 5;
+		h = (h < 200)? h : 200;
+		if (nk_combo_begin_label(gui->ctx,  t_sty[gui->t_sty_idx].name, nk_vec2(220, h))){
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			int j = 0;

@@ -238,8 +238,20 @@ int gui_hatch_info (gui_obj *gui){
 				
 				
 				nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.85f, 0.15f});
+				
+				/* count hatch families */
+				curr_fam = gui->hatch_fam.next;
+				i = 0;
+				while (curr_fam){
+					i++;
+					curr_fam = curr_fam->next;
+				}
+				
+				int h = i * 25 + 5;
+				h = (h < 300)? h : 300;
+				
 				/* selection of families */
-				if (nk_combo_begin_label(gui->ctx, gui->h_fam_name, nk_vec2(150,300))){
+				if (nk_combo_begin_label(gui->ctx, gui->h_fam_name, nk_vec2(150, h))){
 					nk_layout_row_dynamic(gui->ctx, 20, 1);
 					curr_fam = gui->hatch_fam.next;
 					i = 0;

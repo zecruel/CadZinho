@@ -1077,9 +1077,14 @@ int main(int argc, char** argv){
 				nk_layout_row_push(gui->ctx, 100);
 				nk_label(gui->ctx, "Line type: ", NK_TEXT_RIGHT);
 				nk_layout_row_push(gui->ctx, 200);
-				if (nk_combo_begin_label(gui->ctx, gui->drawing->ltypes[gui->ltypes_idx].name, nk_vec2(300,200))){
+				
+				int num_ltypes = gui->drawing->num_ltypes;
+	
+				int h = num_ltypes * 25 + 5;
+				h = (h < 200)? h : 200;
+				
+				if (nk_combo_begin_label(gui->ctx, gui->drawing->ltypes[gui->ltypes_idx].name, nk_vec2(300, h))){
 					nk_layout_row_dynamic(gui->ctx, 20, 2);
-					int num_ltypes = gui->drawing->num_ltypes;
 					
 					for (i = 0; i < num_ltypes; i++){
 						

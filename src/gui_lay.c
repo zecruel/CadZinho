@@ -284,9 +284,14 @@ int lay_mng (gui_obj *gui){
 				
 				
 				sel_ltype = -1;
-				if (nk_combo_begin_label(gui->ctx, layers[lay_idx].ltype, nk_vec2(300,200))){
+				
+				int num_ltypes = gui->drawing->num_ltypes;
+				int h = num_ltypes * 25 + 5;
+				h = (h < 200)? h : 200;
+				
+				if (nk_combo_begin_label(gui->ctx, layers[lay_idx].ltype, nk_vec2(300, h))){
 					nk_layout_row_dynamic(gui->ctx, 20, 2);
-					int num_ltypes = gui->drawing->num_ltypes;
+					
 					
 					for (j = 0; j < num_ltypes; j++){
 						strncpy(str_tmp, ltypes[j].name, DXF_MAX_CHARS);

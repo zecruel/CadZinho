@@ -51,12 +51,20 @@ int cmp_file_name(const void * a, const void * b) {
 	return (strcmp(info1->name, info2->name));
 }
 
+int cmp_file_name_rev(const void * a, const void * b) { /* reverse */
+	return -cmp_file_name(a, b);
+}
+
 /* compare by file/dir modification time*/
 int cmp_file_date(const void * a, const void * b) {
 	struct file_info *info1 = ((struct sort_by_idx *)a)->data;
 	struct file_info *info2 = ((struct sort_by_idx *)b)->data;
 	
 	return (int)round(difftime(info1->date, info2->date));
+}
+
+int cmp_file_date_rev(const void * a, const void * b) { /* reverse */
+	return -cmp_file_date(a, b);
 }
 
 /* compare by file/dir byte size*/
@@ -67,20 +75,27 @@ int cmp_file_size(const void * a, const void * b) {
 	return (int)(info1->size - info2->size);
 }
 
+int cmp_file_size_rev(const void * a, const void * b) { /* reverse */
+	return -cmp_file_size(a, b);
+}
+
+/* file explorer window */
 int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int num_ext, char *init_dir){
 	if ((ext_type == NULL) || (ext_descr == NULL) || num_ext == 0) return 0;
 	
 	static char full_path[MAX_PATH_LEN];
 	static char sel_file[MAX_PATH_LEN];
 	
+	/* change to initial directory, if it has passed */
 	if (init_dir) chdir(init_dir);
 	
 	struct dirent *entry;
-	static DIR *work = NULL;
+	static DIR *work = NULL; /* working directory */
 	DIR *subdir;
 	char ext[4], *suffix, *end;
 	char str_tmp[20];
-	if (!work){
+	
+	if (!work){ /* if not working dir previously open */
 		work = opendir(".");
 		full_path[0] = 0;
 		sel_file[0] = 0;
@@ -100,26 +115,16 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 	static struct file_info files[10000];
 	int num_files = 0, num_dirs = 0;
 	
-	//*path = full_path;
-	
-	//gui->next_win_x += gui->next_win_w + 250;
-	//gui->next_win_y += gui->next_win_h + 3;
-	//gui->next_win_w = 600;
-	//gui->next_win_h = 510;
-	
+	/* customized buttons for files and directories */
 	struct nk_style_button b_dir, b_file;
 	b_dir = gui->ctx->style.button;
 	b_file = gui->ctx->style.button;
-	
 	b_file.text_alignment = NK_TEXT_LEFT;
 	b_dir.text_alignment = NK_TEXT_LEFT;
-	b_dir.text_normal = nk_rgb(255,255,0);
+	b_dir.text_normal = nk_rgb(255,255,0); /* text in directory buttons are yellow */
 	b_dir.text_hover = nk_rgb(255,255,0);
 	b_dir.text_active = nk_rgb(255,255,0);
 	
-	//char *ext_type[] = {"DXF", "*"};
-	//char *ext_descr[] = {"Drawing files (.dxf) ", "All files (*)"};
-	//int num_ext = 2;
 	static int ext_idx = 0;
 	
 	if (ext_idx >= num_ext) ext_idx = 0;
@@ -128,40 +133,46 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 	if (nk_begin(gui->ctx, "File explorer", nk_rect(450, 100, 600, 510),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
-		
+		/* read the workind directory */
 		rewinddir(work);
-		
-		while((entry = readdir(work))){
+		while((entry = readdir(work))){ /*sweep the directory */
+			/* verify if current item is a subdir */
 			subdir = opendir(entry->d_name);
-			if (subdir != NULL){
-				if (!(strcmp(entry->d_name, ".") == 0) && !(strcmp(entry->d_name, "..") == 0)){
+			if (subdir != NULL){ /* a subdir */
+				if (!(strcmp(entry->d_name, ".") == 0) &&
+				    !(strcmp(entry->d_name, "..") == 0)){ /* don't show current and parent dir information */
 					if (num_dirs < 10000){
-						sort_dirs[num_dirs].idx = num_dirs;
-						strncpy (dirs[num_dirs].name, entry->d_name, DXF_MAX_CHARS);
-						stat(entry->d_name, &filestat);
-						dirs[num_dirs].date = filestat.st_mtime;
-						dirs[num_dirs].size = filestat.st_size;
-						sort_dirs[num_dirs].data = &(dirs[num_dirs]);
+						/* update current dir information in list */
+						sort_dirs[num_dirs].idx = num_dirs; /* index*/
+						strncpy (dirs[num_dirs].name, entry->d_name, DXF_MAX_CHARS); /* name */
+						stat(entry->d_name, &filestat); /* get storage information */
+						dirs[num_dirs].date = filestat.st_mtime; /* modification time */
+						dirs[num_dirs].size = filestat.st_size; /* file size */
+						sort_dirs[num_dirs].data = &(dirs[num_dirs]); /* pointer to structure */
 						
-						num_dirs++;
+						num_dirs++; 
 					}
 				}
 				
 				closedir(subdir);
 			}
-			else{
+			else{/* a file */
+				/* get file extension */
 				suffix = get_ext(entry->d_name);
 				strncpy(ext, suffix, 4);
 				ext[3] = 0; /*terminate string */
 				str_upp(ext); /* upper case extension*/
-				if ((strcmp(ext_type[ext_idx], "*") == 0) || (strcmp(ext, ext_type[ext_idx]) == 0)) {
+				/* verify if the current file extension is in filter criteria */
+				if ((strcmp(ext_type[ext_idx], "*") == 0) || /* no filter criteria (all files) */
+				    (strcmp(ext, ext_type[ext_idx]) == 0)) {
 					if (num_files < 10000){
-						sort_files[num_files].idx = num_files;
-						strncpy (files[num_files].name, entry->d_name, DXF_MAX_CHARS);
-						stat(entry->d_name, &filestat);
-						files[num_files].date = filestat.st_mtime;
-						files[num_files].size = filestat.st_size;
-						sort_files[num_files].data = &(files[num_files]);
+						/* update current file information in list */
+						sort_files[num_files].idx = num_files; /* index*/
+						strncpy (files[num_files].name, entry->d_name, DXF_MAX_CHARS); /* name */
+						stat(entry->d_name, &filestat); /* get storage information */
+						files[num_files].date = filestat.st_mtime; /* modification time */
+						files[num_files].size = filestat.st_size; /* file size */
+						sort_files[num_files].data = &(files[num_files]); /* pointer to structure */
 						
 						num_files++;
 					}
@@ -177,28 +188,35 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 			BY_DATE,
 			BY_SIZE
 		};
+		static int sort_reverse = 0;
+		
+		/* show current directory */
 		char curr_path[MAX_PATH_LEN];
 		getcwd(curr_path, MAX_PATH_LEN);
-		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label_colored(gui->ctx, "Current directory:", NK_TEXT_LEFT, nk_rgb(255,255,0));
 		
+		/* dynamic width for directory path and fixed width for "up" button */
 		nk_layout_row_template_begin(gui->ctx, 22);
 		nk_layout_row_template_push_dynamic(gui->ctx);
 		nk_layout_row_template_push_static(gui->ctx, 30);
 		nk_layout_row_template_end(gui->ctx);
 		
-		nk_label(gui->ctx, curr_path, NK_TEXT_LEFT);
+		nk_label(gui->ctx, curr_path, NK_TEXT_LEFT); /* show current directory */
+		
 		if (nk_button_label(gui->ctx,  "Up")){
+			/* up in directory structure */
 			closedir(work);
-			chdir("..");
+			chdir(".."); /* change working dir */
 			work = opendir(".");
 			if (!work) return 0;
 		}
 		
+		/* list header */
 		nk_layout_row_dynamic(gui->ctx, 32, 1);
 		if (nk_group_begin(gui->ctx, "file_head", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-		
+			
+			/* dynamic width for dir/file name and fixed width for other informations */
 			nk_layout_row_template_begin(gui->ctx, 22);
 			nk_layout_row_template_push_dynamic(gui->ctx);
 			nk_layout_row_template_push_static(gui->ctx, 80);
@@ -206,79 +224,114 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 			nk_layout_row_template_push_static(gui->ctx, 8);
 			nk_layout_row_template_end(gui->ctx);
 			
-			/* sort by dir/file name */
+			/* sort option - by dir/file name */
 			if (sorted == BY_NAME){
-				if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Name", NK_TEXT_CENTERED)){
-					sorted = UNSORTED;
+				if (sort_reverse){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Name", NK_TEXT_CENTERED)){
+						sorted = UNSORTED;
+						sort_reverse = 0;
+					}
+				} else {
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Name", NK_TEXT_CENTERED)){
+						sort_reverse = 1;
+					}
 				}
-			}
-			else {
-				if (nk_button_label(gui->ctx,  "Name")){
-					sorted = BY_NAME;
-				}
+			}else if (nk_button_label(gui->ctx, "Name")){
+				sorted = BY_NAME;
+				sort_reverse = 0;
 			}
 			
-			/* sort by file/dir byte size */
+			/* sort option - by file/dir byte size */
 			if (sorted == BY_SIZE){
-				if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Size", NK_TEXT_CENTERED)){
-					sorted = UNSORTED;
+				if (sort_reverse){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Size", NK_TEXT_CENTERED)){
+						sorted = UNSORTED;
+						sort_reverse = 0;
+					}
+				} else {
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Size", NK_TEXT_CENTERED)){
+						sort_reverse = 1;
+					}
 				}
-			}
-			else {
-				if (nk_button_label(gui->ctx,  "Size")){
-					sorted = BY_SIZE;
-				}
+			}else if (nk_button_label(gui->ctx, "Size")){
+				sorted = BY_SIZE;
+				sort_reverse = 0;
 			}
 			
-			/* sort by file/dir modification time */
+			/* sort option -  by file/dir modification time */
 			if (sorted == BY_DATE){
-				if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Date", NK_TEXT_CENTERED)){
-					sorted = UNSORTED;
+				if (sort_reverse){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Date", NK_TEXT_CENTERED)){
+						sorted = UNSORTED;
+						sort_reverse = 0;
+					}
+				} else {
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Date", NK_TEXT_CENTERED)){
+						sort_reverse = 1;
+					}
 				}
-			}
-			else {
-				if (nk_button_label(gui->ctx,  "Date")){
-					sorted = BY_DATE;
-				}
+			}else if (nk_button_label(gui->ctx, "Date")){
+				sorted = BY_DATE;
+				sort_reverse = 0;
 			}
 			
 			nk_group_end(gui->ctx);
 		}
 		nk_layout_row_dynamic(gui->ctx, 300, 1);
 		if (nk_group_begin(gui->ctx, "File_view", NK_WINDOW_BORDER)) {
-			//nk_layout_row_dynamic(gui->ctx, 20, 2);
+			
+			/* dynamic width for dir/file name and fixed width for other informations */
 			nk_layout_row_template_begin(gui->ctx, 20);
 			nk_layout_row_template_push_dynamic(gui->ctx);
 			nk_layout_row_template_push_static(gui->ctx, 80);
 			nk_layout_row_template_push_static(gui->ctx, 145);
 			nk_layout_row_template_end(gui->ctx);
 			
-			
+			/* sort list, according sorting criteria */
 			if (sorted == BY_NAME){
-				qsort(sort_dirs, num_dirs, sizeof(struct sort_by_idx), cmp_file_name);
-				qsort(sort_files, num_files, sizeof(struct sort_by_idx), cmp_file_name);
+				if(!sort_reverse){
+					qsort(sort_dirs, num_dirs, sizeof(struct sort_by_idx), cmp_file_name);
+					qsort(sort_files, num_files, sizeof(struct sort_by_idx), cmp_file_name);
+				}
+				else{
+					qsort(sort_dirs, num_dirs, sizeof(struct sort_by_idx), cmp_file_name_rev);
+					qsort(sort_files, num_files, sizeof(struct sort_by_idx), cmp_file_name_rev);
+				}
 			}
 			else if (sorted == BY_DATE){
-				qsort(sort_dirs, num_dirs, sizeof(struct sort_by_idx), cmp_file_date);
-				qsort(sort_files, num_files, sizeof(struct sort_by_idx), cmp_file_date);
+				if(!sort_reverse){
+					qsort(sort_dirs, num_dirs, sizeof(struct sort_by_idx), cmp_file_date);
+					qsort(sort_files, num_files, sizeof(struct sort_by_idx), cmp_file_date);
+				}
+				else{
+					qsort(sort_dirs, num_dirs, sizeof(struct sort_by_idx), cmp_file_date_rev);
+					qsort(sort_files, num_files, sizeof(struct sort_by_idx), cmp_file_date_rev);
+				}
 			}
 			else if (sorted == BY_SIZE){
 				qsort(sort_dirs, num_dirs, sizeof(struct sort_by_idx), cmp_file_name);
-				qsort(sort_files, num_files, sizeof(struct sort_by_idx), cmp_file_size);
+				if(!sort_reverse){
+					qsort(sort_files, num_files, sizeof(struct sort_by_idx), cmp_file_size);
+				}
+				else{
+					qsort(sort_files, num_files, sizeof(struct sort_by_idx), cmp_file_size_rev);
+				}
 			}
 			
+			/* first, show the subdirs */
 			for (i = 0; i < num_dirs; i++){
 				idx = sort_dirs[i].idx;
 				if (nk_button_label_styled(gui->ctx, &b_dir,  dirs[idx].name)){
+					/* enter in the subdir */
 					closedir(work);
-					chdir(dirs[idx].name);
+					chdir(dirs[idx].name); /* change working dir */
 					work = opendir(".");
 					full_path[0] = 0;
 					sel_file[0] = 0;
 					if (!work) return 0;
 				}
 				
-				/*show byte size */
+				/*show byte size - NOT applicable in dir*/
 				//snprintf(str_tmp, 20, "%d", dirs[idx].size);
 				//nk_label_colored(gui->ctx, str_tmp, NK_TEXT_RIGHT, nk_rgb(255,255,0));
 				nk_label_colored(gui->ctx, "-", NK_TEXT_CENTERED, nk_rgb(255,255,0));
@@ -289,9 +342,11 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 				nk_label_colored(gui->ctx, str_tmp, NK_TEXT_RIGHT, nk_rgb(255,255,0));
 				
 			}
+			/* then, show the files */
 			for (i = 0; i < num_files; i++){
 				idx = sort_files[i].idx;
 				if (nk_button_label_styled(gui->ctx, &b_file,  files[idx].name)){
+					/* select file */
 					strncpy(sel_file, files[idx].name, MAX_PATH_LEN);
 				}
 				
@@ -307,14 +362,16 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 				nk_label(gui->ctx, str_tmp, NK_TEXT_RIGHT);
 				
 			}
-			
 			nk_group_end(gui->ctx);
-			
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 2);
 			nk_label_colored(gui->ctx, "Selected:", NK_TEXT_LEFT, nk_rgb(0,0,255));
 			
-			if (nk_combo_begin_label(gui->ctx, ext_descr[ext_idx], nk_vec2(200,300))){
+			/* file extension filter option */
+			int h = num_ext * 22 + 5;
+			h = (h < 300)? h : 300;
+			if (nk_combo_begin_label(gui->ctx, ext_descr[ext_idx], nk_vec2(200, h))){
+				/* change type of file extension */
 				nk_layout_row_dynamic(gui->ctx, 17, 1);
 				for (i = 0; i < num_ext; i++){
 					if (nk_button_label(gui->ctx, ext_descr[i])){
@@ -322,7 +379,6 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 						nk_combo_close(gui->ctx);
 					}
 				}
-				
 				nk_combo_end(gui->ctx);
 			}
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
@@ -345,38 +401,31 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 2);
 			if (nk_button_label(gui->ctx,  "OK")){
+				/* return the full path of selected file and close window*/
 				if (strlen(sel_file) > 0){
 					snprintf(full_path, MAX_PATH_LEN, "%s%c%s", curr_path, DIR_SEPARATOR, sel_file);
 				}
-				
 				closedir(work);
 				work = NULL;
-				
 				strncpy(gui->curr_path, full_path, MAX_PATH_LEN);
-				
 				full_path[0] = 0;
 				sel_file[0] = 0;
-				
 				show_browser = 0;
 			}
 			if (nk_button_label(gui->ctx,  "Cancel")){
-				
+				/* close window */
 				closedir(work);
 				work = NULL;
-				//full_path[0] = 0;
 				sel_file[0] = 0;
-				
 				show_browser = 0;
 			}
 			
 		}
 		
-	} else {
+	} else { /* user close window by press "x" button*/
 		closedir(work);
 		work = NULL;
-		//full_path[0] = 0;
 		sel_file[0] = 0;
-		
 		show_browser = 0;
 	}
 	nk_end(gui->ctx);
@@ -385,15 +434,15 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 }
 
 int file_pop (gui_obj *gui, enum files_types filters[], int num_filters, char *init_dir){
-	//static char file_path[DXF_MAX_CHARS];
+	/* simple popup for entering file name/path */
 	
 	int show_app_file = 1;
-	/* about popup */
 	static struct nk_rect s = {20, 200, 400, 150};
 	if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "File", NK_WINDOW_CLOSABLE, s)){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "File to Open:", NK_TEXT_CENTERED);
 		
+		/* user can type the file name/path, or paste text, or drop from system navigator */
 		nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
 		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_path, MAX_PATH_LEN, nk_filter_default);
 		
@@ -403,15 +452,15 @@ int file_pop (gui_obj *gui, enum files_types filters[], int num_filters, char *i
 			show_app_file = 2;
 		}
 		if (nk_button_label(gui->ctx, "Explore")) {
+			/* option for internal file explorer */
 			int i;
 			
+			/* update file extension filter */
 			for (i = 0; i < num_filters; i++){
 				gui->file_filter_types[i] = filter_types[filters[i]];
 				gui->file_filter_descr[i] = filter_descr[filters[i]];
 			}
-			
 			gui->file_filter_count = num_filters;
-			
 			gui->show_file_br = 1;
 		}
 		

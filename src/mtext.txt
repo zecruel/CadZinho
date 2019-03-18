@@ -1,0 +1,29 @@
+\0...\o Turns overline on and off
+\L...\l Turns underline on and off
+\~ Inserts a nonbreaking space
+\\ Inserts a backslash
+\{...\} Inserts an opening and closing brace
+\Cvalue; Changes to the specified color
+\File name; Changes to the specified font file
+\Hvalue; Changes to the specified text height
+\Hvaluex; Changes to multiple of mtext object's property
+\S...^...; Stacks the subsequent text at the \ or ^ symbol
+\Tvalue; Adjusts the space between characters
+\Qangle; Changes obliquing angle
+\Wvalue; Changes width factor to produce wide text
+\A Sets the alignment value; valid values: 0, 1, 2 (bottom,
+center, top)
+\P Ends paragraph
+
+that is the mtext justfication control.
+
+\pxqc = centered
+\pxqr = right
+\pxql = left
+
+I have codes like:
+
+\pt0.24,17;
+\pxt0.24,17;
+
+These are tab distances (1st tab in 0.24, 2nd in 17) in different units. Once in centimeters, the second in inches.

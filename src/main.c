@@ -817,6 +817,7 @@ int main(int argc, char** argv){
 						}
 				}
 			}
+			
 		}
 		
 		gui->next_win_h = 6 + 4 + ICON_SIZE + 4 + 6 + 4 + ICON_SIZE + 4 + 6 + 8;
@@ -858,7 +859,8 @@ int main(int argc, char** argv){
 					printf("CLOSE\n");
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PRINT]))){
-					printf("PRINT\n");
+					//printf("PRINT\n");
+					print_pdf(gui->drawing);
 				}
 				
 				nk_group_end(gui->ctx);

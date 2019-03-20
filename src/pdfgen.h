@@ -456,5 +456,8 @@ int pdf_add_jpeg(struct pdf_doc *pdf, struct pdf_object *page, int x, int y,
 		 
 int pdf_add_stream(struct pdf_doc *pdf, struct pdf_object *page,
                           const char *buffer);
+			  
+int pdf_add_stream_zip(struct pdf_doc *pdf, struct pdf_object *page,
+                          const char *buffer, int len);
 
 #endif // PDFGEN_H

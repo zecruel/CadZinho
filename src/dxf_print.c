@@ -1,4 +1,5 @@
 #include "pdfgen.h"
+#include "miniz.h"
 #include "dxf.h"
 #include "bmp.h"
 #include "graph.h"
@@ -21,7 +22,7 @@ void zoom_ext3(dxf_drawing *drawing, int x, int y, int width, int height, double
 	zoom_x = fabs(max_x - min_x)/width;
 	zoom_y = fabs(max_y - min_y)/height;
 	*zoom = (zoom_x > zoom_y) ? zoom_x : zoom_y;
-	*zoom = 1/(1.1 * (*zoom));
+	*zoom = 1/(*zoom);
 	
 	*ofs_x = min_x - ((fabs((max_x - min_x)*(*zoom) - width)/2)+x)/(*zoom);
 	*ofs_y = min_y - ((fabs((max_y - min_y)*(*zoom) - height)/2)+y)/(*zoom);
@@ -33,8 +34,7 @@ void print_draw(graph_obj * master, struct txt_buf *buf, double ofs_x, double of
 			int x0, y0, x1, y1, i;
 			line_node *current = master->list->next;
 			int tick = 0, prev_x, prev_y; /* for fill */
-			long old_pos = 0;
-			int init = 0, good_patt = 0;
+			int init = 0;
 			
 			bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
 			bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
@@ -67,22 +67,18 @@ void print_draw(graph_obj * master, struct txt_buf *buf, double ofs_x, double of
 						"[");
 					
 					if(master->patt_size > 1){
-						old_pos = buf->pos; good_patt = 0;
-						int patt_el = (int) fabs(master->pattern[0] * scale * resolution);
+						int patt_el = (int) fabs(master->pattern[0] * scale * resolution) + 1;
 						buf->pos +=snprintf(buf->data + buf->pos,
 							PDF_BUF_SIZE - buf->pos,
 							"%d", patt_el);
-						if (patt_el > 0) good_patt = 1;
 						for (i = 1; i < master->patt_size; i++){
-							patt_el = (int) fabs(master->pattern[i] * scale * resolution);
+							patt_el = (int) fabs(master->pattern[i] * scale * resolution) + 1;
 							buf->pos +=snprintf(buf->data + buf->pos,
 								PDF_BUF_SIZE - buf->pos,
-								"%d", patt_el);
-							if (patt_el > 0) good_patt = 1;
+								" %d", patt_el);
 						}
-						
-						if(!good_patt) buf->pos = old_pos;
 					}
+					
 					
 					
 					buf->pos +=snprintf(buf->data + buf->pos,
@@ -118,11 +114,10 @@ void print_draw(graph_obj * master, struct txt_buf *buf, double ofs_x, double of
 					buf->pos +=snprintf(buf->data + buf->pos,
 						PDF_BUF_SIZE - buf->pos,
 						"%d %d m ", x0, y0);
-				
 				buf->pos +=snprintf(buf->data + buf->pos,
 					PDF_BUF_SIZE - buf->pos,
 					"%d %d l ", x1, y1);
-				
+			
 				prev_x = x1;
 				prev_y = y1;
 					
@@ -217,24 +212,35 @@ int print_pdf(dxf_drawing *drawing){
 	
 	print_ents_draw(drawing, buf, ofs_x, ofs_y, zoom, resolution);
 	
+	int cmp_status;
+	long src_len = strlen(buf->data);
+	long cmp_len = compressBound(src_len);
+	// Allocate buffers to hold compressed and uncompressed data.
+	mz_uint8 *pCmp = (mz_uint8 *)malloc((size_t)cmp_len);
+	// Compress the string.
+	cmp_status = compress(pCmp, &cmp_len, (const unsigned char *)buf->data, src_len);
+	if (cmp_status == Z_OK){
+		printf("Compressed from %u to %u bytes\n", (mz_uint32)src_len, (mz_uint32)cmp_len);
+	}
+	
 	struct pdf_info info = {
-		.creator = "My software",
-		.producer = "My software",
-		.title = "My document",
-		.author = "My name",
-		.subject = "My subject",
-		.date = "Today"
+		.creator = "CadZinho",
+		.producer = "CadZinho",
+		.title = "Print Drawing",
+		.author = "Ze Cruel",
+		.subject = "Print Drawing",
+		.date = ""
 	};
 	struct pdf_doc *pdf = pdf_create(PDF_A4_HEIGHT, PDF_A4_WIDTH, &info);
-	//pdf_set_font(pdf, "Times-Roman");
+	
 	struct pdf_object *page = pdf_append_page(pdf);
-	//pdf_add_text(pdf, NULL, "This is text", 12, 50, 20, PDF_RGB(0xff, 0, 0));
-	//pdf_add_line(pdf, NULL, 50, 24, 150, 24, 1, PDF_RGB(0xff, 0, 0));
-	//pdf_add_stream(pdf, page, "1.0 1.0 0.0 RG 50 24 m 250 100 l S");
-	pdf_add_stream(pdf, page, buf->data);
-	pdf_save(pdf, "output.pdf");
+	
+	//pdf_add_stream(pdf, page, buf->data);
+	pdf_add_stream_zip(pdf, page, pCmp, cmp_len);
+	pdf_save(pdf, "E:\\documentos\\cadzinho\\output.pdf");
 	pdf_destroy(pdf);
 	
+	free(pCmp);
 	free(buf);
 	#if(0)
 	#endif

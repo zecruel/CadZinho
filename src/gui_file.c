@@ -23,6 +23,7 @@ const char *filter_types[] = {
 	[FILE_SHX] = "SHX",
 	[FILE_TTF] = "TTF",
 	[FILE_OTF] = "OTF",
+	[FILE_PDF] = "PDF",
 };
 const char *filter_descr[] = {
 	[FILE_ALL] = "All files (*)",
@@ -34,6 +35,7 @@ const char *filter_descr[] = {
 	[FILE_SHX] = "Binary shapes file (.shx)",
 	[FILE_TTF] = "True type font file (.ttf)",
 	[FILE_OTF] = "Open font file (.otf)",
+	[FILE_PDF] = "PDF (.pdf)",
 };
 
 struct file_info{

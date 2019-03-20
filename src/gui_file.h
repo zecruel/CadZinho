@@ -12,6 +12,7 @@ enum files_types {
 	FILE_SHX,
 	FILE_TTF,
 	FILE_OTF,
+	FILE_PDF,
 	
 	FILE_T_MAX
 };

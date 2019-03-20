@@ -967,6 +967,33 @@ int pdf_add_stream(struct pdf_doc *pdf, struct pdf_object *page,
     return flexarray_append(&page->page.children, obj);
 }
 
+int pdf_add_stream_zip(struct pdf_doc *pdf, struct pdf_object *page,
+                          const char *buffer, int len)
+{
+    struct pdf_object *obj;
+
+    if (!page)
+        page = pdf_find_last_object(pdf, OBJ_page);
+
+    if (!page)
+        return pdf_set_err(pdf, -EINVAL, "Invalid pdf page");
+#if(0)
+    len = strlen(buffer);
+    /* We don't want any trailing whitespace in the stream */
+    while (len >= 1 && (buffer[len - 1] == '\r' || buffer[len - 1] == '\n'))
+        len--;
+#endif
+    obj = pdf_add_object(pdf, OBJ_stream);
+    if (!obj)
+        return pdf->errval;
+
+    dstr_printf(&obj->stream, "<< /Filter/FlateDecode /Length %d >>stream\r\n", len);
+    dstr_append_data(&obj->stream, buffer, len);
+    dstr_append(&obj->stream, "\r\nendstream\r\n");
+
+    return flexarray_append(&page->page.children, obj);
+}
+
 int pdf_add_bookmark(struct pdf_doc *pdf, struct pdf_object *page, int parent,
                      const char *name)
 {

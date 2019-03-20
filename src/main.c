@@ -441,6 +441,7 @@ int main(int argc, char** argv){
 	int show_app_file = 0;
 	int path_ok = 0;
 	int show_info = 0;
+	int show_print = 0;
 	
 	
 	char file_path[DXF_MAX_CHARS];
@@ -860,7 +861,8 @@ int main(int argc, char** argv){
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PRINT]))){
 					//printf("PRINT\n");
-					print_pdf(gui->drawing);
+					//print_pdf(gui->drawing);
+					show_print = 1;
 				}
 				
 				nk_group_end(gui->ctx);
@@ -1369,6 +1371,9 @@ int main(int argc, char** argv){
 		
 		if (show_info){
 			show_info = info_win(gui);
+		}
+		if (show_print){
+			show_print = print_win(gui);
 		}
 		
 		if (gui->show_file_br){			

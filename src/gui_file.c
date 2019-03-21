@@ -412,7 +412,7 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 				strncpy(gui->curr_path, full_path, MAX_PATH_LEN);
 				full_path[0] = 0;
 				sel_file[0] = 0;
-				show_browser = 0;
+				show_browser = 2;
 			}
 			if (nk_button_label(gui->ctx,  "Cancel")){
 				/* close window */
@@ -449,9 +449,10 @@ int file_pop (gui_obj *gui, enum files_types filters[], int num_filters, char *i
 		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_path, MAX_PATH_LEN, nk_filter_default);
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
-		if ((nk_button_label(gui->ctx, "OK")) && (!gui->show_file_br)) {
+		if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
 			nk_popup_close(gui->ctx);
 			show_app_file = 2;
+			gui->show_file_br = 0;
 		}
 		if (nk_button_label(gui->ctx, "Explore")) {
 			/* option for internal file explorer */
@@ -468,7 +469,8 @@ int file_pop (gui_obj *gui, enum files_types filters[], int num_filters, char *i
 		
 		nk_popup_end(gui->ctx);
 	} else {
-		show_app_file = nk_false;
+		show_app_file = 0;
+		gui->show_file_br = 0;
 	}
 	return show_app_file;
 }

@@ -196,21 +196,21 @@ int print_ents_draw(dxf_drawing *drawing, struct txt_buf *buf, double ofs_x, dou
 	}
 }
 
-int print_pdf(dxf_drawing *drawing){
+int print_pdf(dxf_drawing *drawing, double scale, double ofs_x, double ofs_y, double w, double h){
 	
 	if (!drawing) return 0;
 	
 	struct txt_buf *buf = malloc(sizeof(struct txt_buf));
 	
 	if (!buf) return 0;
-	double zoom, ofs_x, ofs_y, resolution = 10;
+	double resolution = 10;
 	
 	buf->pos = 0;
 	
-	zoom_ext3(drawing, 0, 0, PDF_A4_HEIGHT, PDF_A4_WIDTH, &zoom, &ofs_x, &ofs_y);
+	//zoom_ext3(drawing, 0, 0, PDF_A4_HEIGHT, PDF_A4_WIDTH, &scale, &ofs_x, &ofs_y);
 	
 	
-	print_ents_draw(drawing, buf, ofs_x, ofs_y, zoom, resolution);
+	print_ents_draw(drawing, buf, ofs_x, ofs_y, scale * 2.83465, resolution);
 	
 	int cmp_status;
 	long src_len = strlen(buf->data);
@@ -231,7 +231,7 @@ int print_pdf(dxf_drawing *drawing){
 		.subject = "Print Drawing",
 		.date = ""
 	};
-	struct pdf_doc *pdf = pdf_create(PDF_A4_HEIGHT, PDF_A4_WIDTH, &info);
+	struct pdf_doc *pdf = pdf_create((int)(w * 2.83465), (int)(h * 2.83465), &info);
 	
 	struct pdf_object *page = pdf_append_page(pdf);
 	

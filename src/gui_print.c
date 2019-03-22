@@ -3,7 +3,7 @@
 
 int print_win (gui_obj *gui){
 	int show_print = 1;
-	int i = 0;
+	int i = 0, update = 0;
 	static double page_w = 297.0, page_h = 210.0;
 	static double ofs_x = 0.0, ofs_y = 0.0, scale = 1.0;
 	static char page_w_str[64] = "297.00";
@@ -11,7 +11,7 @@ int print_win (gui_obj *gui){
 	static char ofs_x_str[64] = "0.00";
 	static char ofs_y_str[64] = "0.00";
 	static char scale_str[64] = "1.00";
-	static char sel_file[MAX_PATH_LEN];
+	static char sel_file[MAX_PATH_LEN] = "output.pdf";
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
@@ -33,6 +33,7 @@ int print_win (gui_obj *gui){
 				if (strlen(page_w_str)) /* update parameter value */
 					page_w = atof(page_w_str);
 				snprintf(page_w_str, 63, "%0.2f", page_w);
+				update = 1;
 			}
 			
 			nk_label(gui->ctx, "Height:", NK_TEXT_RIGHT);
@@ -42,6 +43,7 @@ int print_win (gui_obj *gui){
 				if (strlen(page_h_str)) /* update parameter value */
 					page_h = atof(page_h_str);
 				snprintf(page_h_str, 63, "%0.2f", page_h);
+				update = 1;
 			}
 			
 			nk_label(gui->ctx, "Offset X:", NK_TEXT_RIGHT);
@@ -51,6 +53,7 @@ int print_win (gui_obj *gui){
 				if (strlen(ofs_x_str)) /* update parameter value */
 					ofs_x = atof(ofs_x_str);
 				snprintf(ofs_x_str, 63, "%0.2f", ofs_x);
+				update = 1;
 			}
 			
 			nk_label(gui->ctx, "Offset Y:", NK_TEXT_RIGHT);
@@ -60,6 +63,7 @@ int print_win (gui_obj *gui){
 				if (strlen(ofs_y_str)) /* update parameter value */
 					ofs_y = atof(ofs_y_str);
 				snprintf(ofs_y_str, 63, "%0.2f", ofs_y);
+				update = 1;
 			}
 			
 			nk_label(gui->ctx, "Scale:", NK_TEXT_RIGHT);
@@ -69,6 +73,7 @@ int print_win (gui_obj *gui){
 				if (strlen(scale_str)) /* update parameter value */
 					scale = atof(scale_str);
 				snprintf(scale_str, 63, "%0.2f", scale);
+				update = 1;
 			}
 			nk_group_end(gui->ctx);
 		}
@@ -89,6 +94,7 @@ int print_win (gui_obj *gui){
 			snprintf(ofs_x_str, 63, "%0.2f", ofs_x);
 			snprintf(ofs_y_str, 63, "%0.2f", ofs_y);
 			snprintf(scale_str, 63, "%0.2f", scale);
+			update = 1;
 		}
 		if (nk_button_label(gui->ctx, "Fit all")){
 			double min_x, min_y, max_x, max_y;
@@ -105,6 +111,7 @@ int print_win (gui_obj *gui){
 			snprintf(ofs_x_str, 63, "%0.2f", ofs_x);
 			snprintf(ofs_y_str, 63, "%0.2f", ofs_y);
 			snprintf(scale_str, 63, "%0.2f", scale);
+			update = 1;
 		}
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
@@ -137,32 +144,50 @@ int print_win (gui_obj *gui){
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		if (nk_button_label(gui->ctx, "Print")){
-			print_pdf(gui->drawing, scale, ofs_x, ofs_y, page_w, page_h);
+			print_pdf(gui->drawing, scale, ofs_x, ofs_y, page_w, page_h, 0, sel_file);
 		}
 		
-		
-		
+		if (update){
+			update = 0;
+			/* calcule the zoom and offset for preview */
+			double z_x = page_w/gui->preview_img->width;
+			double z_y = page_h/gui->preview_img->height;
+			double z = (z_x > z_y) ? z_x : z_y;
+			if (z <= 0.0) z =1.0;
+			else z = 1/z;
+				
+			int w = (int)(page_w * z);
+			int h = (int)(page_h * z);
+			int x = -(int)(w - gui->preview_img->width) / 2;
+			int y = -(int)(h - gui->preview_img->height) / 2;
+			
+			double o_x = ofs_x - (double) x / (z * scale);
+			double o_y = ofs_y - (double) y / (z * scale);
+			
+			bmp_fill(gui->preview_img, gui->preview_img->bkg); /* clear bitmap */
+			
+			gui->preview_img->clip_x = (unsigned int)x;
+			gui->preview_img->clip_y = (unsigned int)y;
+			gui->preview_img->clip_w = (unsigned int)w;
+			gui->preview_img->clip_h = (unsigned int)h;
+			
+			dxf_ents_draw(gui->drawing, gui->preview_img, o_x, o_y, z * scale);
+			
+			/* draw page rectangle */
+			bmp_color blue = { .r = 0, .g = 0, .b = 255, .a = 255 };
+			gui->preview_img->frg = blue;
+			
+			bmp_line(gui->preview_img, x, y, x + w - 1, y);
+			bmp_line(gui->preview_img, x + w - 1, y, x + w - 1, y + h - 1);
+			bmp_line(gui->preview_img, x + w - 1, y + h - 1, x, y + h - 1);
+			bmp_line(gui->preview_img, x, y + h - 1, x, y);
+		}
 		if (show_app_file){
 			if (gui->show_file_br == 2){
 				gui->show_file_br = 0;
 				show_app_file = 0;
 				strncpy(sel_file, gui->curr_path, MAX_PATH_LEN);
 			}
-			
-			
-			
-			
-			
-			#if(0)
-			/* popup to open other font files */
-			enum files_types filters[5] = {FILE_PDF, FILE_ALL};
-			
-			show_app_file = file_pop (gui, filters, 2, NULL);
-			if (show_app_file == 2){
-				//gui->curr_path
-				show_app_file = 0;
-			}
-			#endif
 		}
 		
 	} else show_print = 0;

@@ -196,7 +196,26 @@ int print_ents_draw(dxf_drawing *drawing, struct txt_buf *buf, double ofs_x, dou
 	}
 }
 
-int print_pdf(dxf_drawing *drawing, double scale, double ofs_x, double ofs_y, double w, double h){
+/**
+ * Convert a value in inches into a number of points.
+ * Always returns an integer value
+ */
+int inch2pt (double inch){
+	return (int)((inch)*72 + 0.5);
+}
+
+/**
+ * Convert a value in milli-meters into a number of points.
+ * Always returns an integer value
+ */
+int mm2pt (double mm){
+	return (int)((mm)*72 / 25.4 + 0.5);
+}
+
+int print_pdf(dxf_drawing *drawing, double scale,
+double ofs_x, double ofs_y,
+double w, double h,
+int inch, char *dest){
 	
 	if (!drawing) return 0;
 	
@@ -208,9 +227,14 @@ int print_pdf(dxf_drawing *drawing, double scale, double ofs_x, double ofs_y, do
 	buf->pos = 0;
 	
 	//zoom_ext3(drawing, 0, 0, PDF_A4_HEIGHT, PDF_A4_WIDTH, &scale, &ofs_x, &ofs_y);
+	double mul = 72.0 / 25.4;
+	int (*conv_fnc)(double) = mm2pt;
+	if (inch) {
+		conv_fnc = inch2pt;
+		mul = 72.0;
+	}
 	
-	
-	print_ents_draw(drawing, buf, ofs_x, ofs_y, scale * 2.83465, resolution);
+	print_ents_draw(drawing, buf, ofs_x, ofs_y, scale * mul, resolution);
 	
 	int cmp_status;
 	long src_len = strlen(buf->data);
@@ -220,7 +244,7 @@ int print_pdf(dxf_drawing *drawing, double scale, double ofs_x, double ofs_y, do
 	// Compress the string.
 	cmp_status = compress(pCmp, &cmp_len, (const unsigned char *)buf->data, src_len);
 	if (cmp_status == Z_OK){
-		printf("Compressed from %u to %u bytes\n", (mz_uint32)src_len, (mz_uint32)cmp_len);
+		//printf("Compressed from %u to %u bytes\n", (mz_uint32)src_len, (mz_uint32)cmp_len);
 	}
 	
 	struct pdf_info info = {
@@ -231,13 +255,13 @@ int print_pdf(dxf_drawing *drawing, double scale, double ofs_x, double ofs_y, do
 		.subject = "Print Drawing",
 		.date = ""
 	};
-	struct pdf_doc *pdf = pdf_create((int)(w * 2.83465), (int)(h * 2.83465), &info);
+	struct pdf_doc *pdf = pdf_create((int)conv_fnc(w), (int)conv_fnc(h), &info);
 	
 	struct pdf_object *page = pdf_append_page(pdf);
 	
 	//pdf_add_stream(pdf, page, buf->data);
 	pdf_add_stream_zip(pdf, page, pCmp, cmp_len);
-	pdf_save(pdf, "E:\\documentos\\cadzinho\\output.pdf");
+	pdf_save(pdf, dest);
 	pdf_destroy(pdf);
 	
 	free(pCmp);

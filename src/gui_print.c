@@ -22,7 +22,7 @@ int print_win (gui_obj *gui){
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_flags res;
-		static int show_app_file = 0;
+		static int show_app_file = 0, mono = 0;
 		nk_layout_row_static(gui->ctx, 180, 190, 2);
 		if (nk_group_begin(gui->ctx, "Page setup", NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
 			nk_layout_row_static(gui->ctx, 20, 70, 2);
@@ -86,10 +86,15 @@ int print_win (gui_obj *gui){
 		}
 		nk_layout_row_static(gui->ctx, 20, 80, 2);
 		if (nk_button_label(gui->ctx, "View")){
-			
+			double zoom_x, zoom_y;
 			ofs_x = gui->ofs_x;
 			ofs_y = gui->ofs_y + (gui->main_h - gui->win_h) / gui->zoom ;
-			scale = (page_w * gui->zoom)/gui->win_w;
+			//scale = (page_w * gui->zoom)/gui->win_w;
+			
+			zoom_x = gui->win_w/(page_w * gui->zoom);
+			zoom_y = gui->win_h/(page_h * gui->zoom);
+			scale = (zoom_x > zoom_y) ? zoom_x : zoom_y;
+			scale = 1/scale;
 			
 			snprintf(ofs_x_str, 63, "%0.2f", ofs_x);
 			snprintf(ofs_y_str, 63, "%0.2f", ofs_y);
@@ -115,6 +120,7 @@ int print_win (gui_obj *gui){
 		}
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		nk_checkbox_label(gui->ctx, "Monochrome", &mono);
 		nk_label(gui->ctx, "Destination:", NK_TEXT_LEFT);
 		
 		/* dynamic width for dir/file name and fixed width for other informations */
@@ -144,7 +150,7 @@ int print_win (gui_obj *gui){
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		if (nk_button_label(gui->ctx, "Print")){
-			print_pdf(gui->drawing, scale, ofs_x, ofs_y, page_w, page_h, 0, sel_file);
+			print_pdf(gui->drawing, scale, ofs_x, ofs_y, page_w, page_h, 0, mono, sel_file);
 		}
 		
 		if (update){

@@ -13,22 +13,8 @@ struct txt_buf{
 	long pos;
 	char data[PDF_BUF_SIZE];
 };
-	
 
-void zoom_ext3(dxf_drawing *drawing, int x, int y, int width, int height, double *zoom, double *ofs_x, double *ofs_y){
-	double min_x, min_y, max_x, max_y;
-	double zoom_x, zoom_y;
-	dxf_ents_ext(drawing, &min_x, &min_y, &max_x, &max_y);
-	zoom_x = fabs(max_x - min_x)/width;
-	zoom_y = fabs(max_y - min_y)/height;
-	*zoom = (zoom_x > zoom_y) ? zoom_x : zoom_y;
-	*zoom = 1/(*zoom);
-	
-	*ofs_x = min_x - ((fabs((max_x - min_x)*(*zoom) - width)/2)+x)/(*zoom);
-	*ofs_y = min_y - ((fabs((max_y - min_y)*(*zoom) - height)/2)+y)/(*zoom);
-}
-
-void print_draw(graph_obj * master, struct txt_buf *buf, double ofs_x, double ofs_y, double scale, double resolution){
+void print_draw(graph_obj * master, struct txt_buf *buf, double ofs_x, double ofs_y, double scale, double resolution, int mono){
 	if (master != NULL){
 		if(master->list->next){ /* check if list is not empty */
 			int x0, y0, x1, y1, i;
@@ -65,7 +51,6 @@ void print_draw(graph_obj * master, struct txt_buf *buf, double ofs_x, double of
 					buf->pos +=snprintf(buf->data + buf->pos,
 						PDF_BUF_SIZE - buf->pos,
 						"[");
-					
 					if(master->patt_size > 1){
 						int patt_el = (int) fabs(master->pattern[0] * scale * resolution) + 1;
 						buf->pos +=snprintf(buf->data + buf->pos,
@@ -78,9 +63,6 @@ void print_draw(graph_obj * master, struct txt_buf *buf, double ofs_x, double of
 								" %d", patt_el);
 						}
 					}
-					
-					
-					
 					buf->pos +=snprintf(buf->data + buf->pos,
 						PDF_BUF_SIZE - buf->pos,
 						"] 0 d ");
@@ -91,19 +73,21 @@ void print_draw(graph_obj * master, struct txt_buf *buf, double ofs_x, double of
 						PDF_BUF_SIZE - buf->pos,
 						"%d w ", tick); /*line width */
 					/* set the color */
-					buf->pos +=snprintf(buf->data + buf->pos,
-						PDF_BUF_SIZE - buf->pos,
-						"%0.2f %0.2f %0.2f RG ",
-						(float)color.r/255,
-						(float)color.g/255,
-						(float)color.b/255);
-					if (master->fill) /* check if object is filled */
+					if (!mono){
 						buf->pos +=snprintf(buf->data + buf->pos,
 							PDF_BUF_SIZE - buf->pos,
-							"%0.2f %0.2f %0.2f rg ",
+							"%0.2f %0.2f %0.2f RG ",
 							(float)color.r/255,
 							(float)color.g/255,
 							(float)color.b/255);
+						if (master->fill) /* check if object is filled */
+							buf->pos +=snprintf(buf->data + buf->pos,
+								PDF_BUF_SIZE - buf->pos,
+								"%0.2f %0.2f %0.2f rg ",
+								(float)color.r/255,
+								(float)color.g/255,
+								(float)color.b/255);
+					}
 					buf->pos +=snprintf(buf->data + buf->pos,
 						PDF_BUF_SIZE - buf->pos,
 						"%d %d m ", x0, y0);
@@ -137,7 +121,7 @@ void print_draw(graph_obj * master, struct txt_buf *buf, double ofs_x, double of
 	}
 }
 
-int print_list_draw(list_node *list, struct txt_buf *buf, double ofs_x, double ofs_y, double scale, double resolution){
+int print_list_draw(list_node *list, struct txt_buf *buf, double ofs_x, double ofs_y, double scale, double resolution, int mono){
 	list_node *current = NULL;
 	graph_obj *curr_graph = NULL;
 	int ok = 0;
@@ -149,7 +133,7 @@ int print_list_draw(list_node *list, struct txt_buf *buf, double ofs_x, double o
 		while (current != NULL){
 			if (current->data){
 				curr_graph = (graph_obj *)current->data;
-				print_draw(curr_graph, buf, ofs_x, ofs_y, scale, resolution);
+				print_draw(curr_graph, buf, ofs_x, ofs_y, scale, resolution, mono);
 			}
 			current = current->next;
 		}
@@ -158,7 +142,7 @@ int print_list_draw(list_node *list, struct txt_buf *buf, double ofs_x, double o
 	return ok;
 }
 
-int print_ents_draw(dxf_drawing *drawing, struct txt_buf *buf, double ofs_x, double ofs_y, double scale, double resolution){
+int print_ents_draw(dxf_drawing *drawing, struct txt_buf *buf, double ofs_x, double ofs_y, double scale, double resolution, int mono){
 	dxf_node *current = NULL;
 	//int lay_idx = 0;
 		
@@ -181,12 +165,13 @@ int print_ents_draw(dxf_drawing *drawing, struct txt_buf *buf, double ofs_x, dou
 						else res = 1.0;
 						buf->pos +=snprintf(buf->data + buf->pos,
 							PDF_BUF_SIZE - buf->pos,
+							"0.0 0.0 0.0 RG " /*set to black */
 							"1 J " /*line cap style - round*/
 							"%0.2f 0.0 0.0 %0.2f 0.0 0.0 cm\r\n", res, res);
 						init = 1;
 					}
 	
-					print_list_draw(current->obj.graphics, buf, ofs_x, ofs_y, scale, resolution);
+					print_list_draw(current->obj.graphics, buf, ofs_x, ofs_y, scale, resolution, mono);
 					
 					//---------------------------------------
 				}
@@ -215,7 +200,7 @@ int mm2pt (double mm){
 int print_pdf(dxf_drawing *drawing, double scale,
 double ofs_x, double ofs_y,
 double w, double h,
-int inch, char *dest){
+int inch, int mono, char *dest){
 	
 	if (!drawing) return 0;
 	
@@ -226,7 +211,6 @@ int inch, char *dest){
 	
 	buf->pos = 0;
 	
-	//zoom_ext3(drawing, 0, 0, PDF_A4_HEIGHT, PDF_A4_WIDTH, &scale, &ofs_x, &ofs_y);
 	double mul = 72.0 / 25.4;
 	int (*conv_fnc)(double) = mm2pt;
 	if (inch) {
@@ -234,7 +218,7 @@ int inch, char *dest){
 		mul = 72.0;
 	}
 	
-	print_ents_draw(drawing, buf, ofs_x, ofs_y, scale * mul, resolution);
+	print_ents_draw(drawing, buf, ofs_x, ofs_y, scale * mul, resolution, mono);
 	
 	int cmp_status;
 	long src_len = strlen(buf->data);

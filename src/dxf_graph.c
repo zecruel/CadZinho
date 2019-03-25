@@ -3480,7 +3480,7 @@ int dxf_ents_ext(dxf_drawing *drawing, double * min_x, double * min_y, double * 
 			if (current->type == DXF_ENT){
 				/*verify if entity layer is thaw */
 				//lay_idx = dxf_layer_get(drawing, current);
-				if (!drawing->layers[current->obj.layer].frozen){
+				if (!drawing->layers[current->obj.layer].off){
 					graph_list_ext(current->obj.graphics, &ext_ini, min_x, min_y, max_x, max_y);
 				}
 				

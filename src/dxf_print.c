@@ -1,36 +1,55 @@
-#include "pdfgen.h"
-#include "miniz.h"
-#include "dxf.h"
-#include "bmp.h"
-#include "graph.h"
-#include "list.h"
-#include "font.h"
-#include "dxf_graph.h"
+#include "dxf_print.h"
 
-#define PDF_BUF_SIZE 50*1024*1024
+int cmp_color(bmp_color color1, bmp_color color2){
+	return color1.r == color2.r && color1.g == color2.g && color1.b == color2.b;
+}
 
-struct txt_buf{
-	long pos;
-	char data[PDF_BUF_SIZE];
-};
+bmp_color validate_color (bmp_color color, bmp_color list[], bmp_color subst[], int len){
+	bmp_color ret = color;
+	int i;
+	
+	for (i = 0; i < len; i++){
+		if (cmp_color(color, list[i])){
+			return subst[i];
+		}
+	}
+	return color;
+}
 
-void print_draw(graph_obj * master, struct txt_buf *buf, double ofs_x, double ofs_y, double scale, double resolution, int mono){
+void print_draw(graph_obj * master, struct txt_buf *buf, struct print_param param){
 	if (master != NULL){
-		if(master->list->next){ /* check if list is not empty */
+		double b_x0, b_y0, b_x1, b_y1;
+		b_x0 = (master->ext_min_x - param.ofs_x) * param.scale * param.resolution;
+		b_y0 = (master->ext_min_y - param.ofs_y) * param.scale * param.resolution;
+		b_x1 = (master->ext_max_x - param.ofs_x) * param.scale * param.resolution;
+		b_y1 = (master->ext_max_y - param.ofs_y) * param.scale * param.resolution;
+		
+		rect_pos pos_p0 = rect_find_pos(b_x0, b_y0, 0, 0, param.w * param.resolution, param.h * param.resolution);
+		rect_pos pos_p1 = rect_find_pos(b_x1, b_y1, 0, 0, param.w * param.resolution, param.h * param.resolution);
+		
+		if ((master->list->next) /* check if list is not empty */
+			&& (!(pos_p0 & pos_p1)) /* and in bounds of page */
+			&& (!(master->patt_size <= 1 && master->pattern[0] < 0.0))
+			){
 			int x0, y0, x1, y1, i;
 			line_node *current = master->list->next;
 			int tick = 0, prev_x, prev_y; /* for fill */
 			int init = 0;
 			
-			bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
-			bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
+			
+			
+			//bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
+			//bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
 			
 			/* set the pattern */
 			//patt_change(img, master->pattern, master->patt_size);
 			/* set the color */
-			bmp_color color = master->color;
-			if (color.r == white.r && color.g == white.g && color.b == white.b)
-				color = black;
+			//bmp_color color = master->color;
+			//if (color.r == white.r && color.g == white.g && color.b == white.b)
+			//	color = black;
+			
+			bmp_color color = validate_color(master->color, param.list, param.subst, param.len);
+			
 			
 			/* set the tickness */
 			//if (master->thick_const) img->tick = (int) round(master->tick);
@@ -39,11 +58,12 @@ void print_draw(graph_obj * master, struct txt_buf *buf, double ofs_x, double of
 			/* draw the lines */
 			
 			while(current){ /*sweep the list content */
+				
 				/* apply the scale and offset */
-				x0 = (int) ((current->x0 - ofs_x) * scale * resolution);
-				y0 = (int) ((current->y0 - ofs_y) * scale * resolution);
-				x1 = (int) ((current->x1 - ofs_x) * scale * resolution);
-				y1 = (int) ((current->y1 - ofs_y) * scale * resolution);
+				x0 = (int) ((current->x0 - param.ofs_x) * param.scale * param.resolution);
+				y0 = (int) ((current->y0 - param.ofs_y) * param.scale * param.resolution);
+				x1 = (int) ((current->x1 - param.ofs_x) * param.scale * param.resolution);
+				y1 = (int) ((current->y1 - param.ofs_y) * param.scale * param.resolution);
 				
 				if (init == 0){
 					/* set the pattern */
@@ -52,12 +72,12 @@ void print_draw(graph_obj * master, struct txt_buf *buf, double ofs_x, double of
 						PDF_BUF_SIZE - buf->pos,
 						"[");
 					if(master->patt_size > 1){
-						int patt_el = (int) fabs(master->pattern[0] * scale * resolution) + 1;
+						int patt_el = (int) fabs(master->pattern[0] * param.scale * param.resolution) + 1;
 						buf->pos +=snprintf(buf->data + buf->pos,
 							PDF_BUF_SIZE - buf->pos,
 							"%d", patt_el);
 						for (i = 1; i < master->patt_size; i++){
-							patt_el = (int) fabs(master->pattern[i] * scale * resolution) + 1;
+							patt_el = (int) fabs(master->pattern[i] * param.scale * param.resolution) + 1;
 							buf->pos +=snprintf(buf->data + buf->pos,
 								PDF_BUF_SIZE - buf->pos,
 								" %d", patt_el);
@@ -67,13 +87,13 @@ void print_draw(graph_obj * master, struct txt_buf *buf, double ofs_x, double of
 						PDF_BUF_SIZE - buf->pos,
 						"] 0 d ");
 					/* set the tickness */
-					if (master->thick_const) tick = (int) round(master->tick * 0.14067 * scale * resolution);
-					else tick = (int) round(master->tick * scale * resolution);
+					if (master->thick_const) tick = (int) round(master->tick * 0.14067 * param.scale * param.resolution);
+					else tick = (int) round(master->tick * param.scale * param.resolution);
 					buf->pos +=snprintf(buf->data + buf->pos,
 						PDF_BUF_SIZE - buf->pos,
 						"%d w ", tick); /*line width */
 					/* set the color */
-					if (!mono){
+					if (!param.mono){
 						buf->pos +=snprintf(buf->data + buf->pos,
 							PDF_BUF_SIZE - buf->pos,
 							"%0.2f %0.2f %0.2f RG ",
@@ -121,7 +141,7 @@ void print_draw(graph_obj * master, struct txt_buf *buf, double ofs_x, double of
 	}
 }
 
-int print_list_draw(list_node *list, struct txt_buf *buf, double ofs_x, double ofs_y, double scale, double resolution, int mono){
+int print_list_draw(list_node *list, struct txt_buf *buf, struct print_param param){
 	list_node *current = NULL;
 	graph_obj *curr_graph = NULL;
 	int ok = 0;
@@ -133,7 +153,7 @@ int print_list_draw(list_node *list, struct txt_buf *buf, double ofs_x, double o
 		while (current != NULL){
 			if (current->data){
 				curr_graph = (graph_obj *)current->data;
-				print_draw(curr_graph, buf, ofs_x, ofs_y, scale, resolution, mono);
+				print_draw(curr_graph, buf, param);
 			}
 			current = current->next;
 		}
@@ -142,7 +162,7 @@ int print_list_draw(list_node *list, struct txt_buf *buf, double ofs_x, double o
 	return ok;
 }
 
-int print_ents_draw(dxf_drawing *drawing, struct txt_buf *buf, double ofs_x, double ofs_y, double scale, double resolution, int mono){
+int print_ents_draw(dxf_drawing *drawing, struct txt_buf *buf , struct print_param param){
 	dxf_node *current = NULL;
 	//int lay_idx = 0;
 		
@@ -161,7 +181,7 @@ int print_ents_draw(dxf_drawing *drawing, struct txt_buf *buf, double ofs_x, dou
 					// -------------------------------------------
 					if (!init){
 						double res;
-						if (resolution > 0.0) res = 1/resolution;
+						if (param.resolution > 0.0) res = 1/param.resolution;
 						else res = 1.0;
 						buf->pos +=snprintf(buf->data + buf->pos,
 							PDF_BUF_SIZE - buf->pos,
@@ -171,7 +191,7 @@ int print_ents_draw(dxf_drawing *drawing, struct txt_buf *buf, double ofs_x, dou
 						init = 1;
 					}
 	
-					print_list_draw(current->obj.graphics, buf, ofs_x, ofs_y, scale, resolution, mono);
+					print_list_draw(current->obj.graphics, buf, param);
 					
 					//---------------------------------------
 				}
@@ -197,28 +217,29 @@ int mm2pt (double mm){
 	return (int)((mm)*72 / 25.4 + 0.5);
 }
 
-int print_pdf(dxf_drawing *drawing, double scale,
-double ofs_x, double ofs_y,
-double w, double h,
-int inch, int mono, char *dest){
+int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	
 	if (!drawing) return 0;
 	
 	struct txt_buf *buf = malloc(sizeof(struct txt_buf));
 	
 	if (!buf) return 0;
-	double resolution = 10;
+	param.resolution = 10;
 	
 	buf->pos = 0;
 	
 	double mul = 72.0 / 25.4;
 	int (*conv_fnc)(double) = mm2pt;
-	if (inch) {
+	if (param.inch) {
 		conv_fnc = inch2pt;
 		mul = 72.0;
 	}
 	
-	print_ents_draw(drawing, buf, ofs_x, ofs_y, scale * mul, resolution, mono);
+	param.scale *= mul;
+	param.w = conv_fnc(param.w);
+	param.h = conv_fnc(param.h);
+	
+	print_ents_draw(drawing, buf, param);
 	
 	int cmp_status;
 	long src_len = strlen(buf->data);
@@ -239,7 +260,7 @@ int inch, int mono, char *dest){
 		.subject = "Print Drawing",
 		.date = ""
 	};
-	struct pdf_doc *pdf = pdf_create((int)conv_fnc(w), (int)conv_fnc(h), &info);
+	struct pdf_doc *pdf = pdf_create((int)param.w, (int)param.h, &info);
 	
 	struct pdf_object *page = pdf_append_page(pdf);
 	
@@ -252,4 +273,5 @@ int inch, int mono, char *dest){
 	free(buf);
 	#if(0)
 	#endif
+	return 1;
 }

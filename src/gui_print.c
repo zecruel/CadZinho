@@ -1,5 +1,6 @@
 #include "gui.h"
 #include "gui_file.h"
+#include "dxf_print.h"
 
 int print_win (gui_obj *gui){
 	int show_print = 1;
@@ -150,7 +151,33 @@ int print_win (gui_obj *gui){
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		if (nk_button_label(gui->ctx, "Print")){
-			print_pdf(gui->drawing, scale, ofs_x, ofs_y, page_w, page_h, 0, mono, sel_file);
+			struct print_param param;
+			bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
+			bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
+			bmp_color red = { .r = 255, .g = 0, .b = 0, .a = 255 };
+			bmp_color yellow = { .r = 255, .g = 255, .b = 0, .a = 255 };
+			bmp_color green = { .r = 0, .g = 255, .b = 0, .a = 255 };
+			bmp_color cyan = { .r = 0, .g = 255, .b = 255, .a = 255 };
+			bmp_color blue = { .r = 0, .g = 0, .b = 255, .a = 255 };
+			bmp_color magenta = { .r = 255, .g = 0, .b = 255, .a = 255 };
+			
+			bmp_color list[] = { white, };
+			bmp_color subst[] = { black, };
+			int len = 1;
+			
+			param.scale = scale;
+			param.ofs_x = ofs_x;
+			param.ofs_y = ofs_y;
+			param.w = page_w;
+			param.h = page_h;
+			param.mono = mono;
+			param.inch = 0;
+			param.list = list;
+			param.subst = subst;
+			param.len = len;
+			
+			print_pdf(gui->drawing, param, sel_file);
+			//int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest)
 		}
 		
 		if (update){

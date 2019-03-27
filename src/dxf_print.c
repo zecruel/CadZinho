@@ -1,23 +1,31 @@
 #include "dxf_print.h"
 
 int cmp_color(bmp_color color1, bmp_color color2){
+	/* compare colors, by RGB values */
 	return color1.r == color2.r && color1.g == color2.g && color1.b == color2.b;
 }
 
 bmp_color validate_color (bmp_color color, bmp_color list[], bmp_color subst[], int len){
-	bmp_color ret = color;
-	int i;
+	/* verify if color is in substitution list and return a valid color */
 	
-	for (i = 0; i < len; i++){
+	/* if not substitution list, return default color */
+	if (subst == NULL) return color;
+	/* if not indicate especific colors, every color is substituted by first in list */
+	if (list == NULL) return subst[0];
+	
+	int i;
+	for (i = 0; i < len; i++){ /* sweep the list */
 		if (cmp_color(color, list[i])){
+			/* if in list, get the relative substitute */
 			return subst[i];
 		}
 	}
-	return color;
+	return color; /* return default color */
 }
 
-void print_draw(graph_obj * master, struct txt_buf *buf, struct print_param param){
+void print_graph_pdf(graph_obj * master, struct txt_buf *buf, struct print_param param){
 	if (master != NULL){
+		/* verify if graph bounds are in visible page area */
 		double b_x0, b_y0, b_x1, b_y1;
 		b_x0 = (master->ext_min_x - param.ofs_x) * param.scale * param.resolution;
 		b_y0 = (master->ext_min_y - param.ofs_y) * param.scale * param.resolution;
@@ -29,35 +37,18 @@ void print_draw(graph_obj * master, struct txt_buf *buf, struct print_param para
 		
 		if ((master->list->next) /* check if list is not empty */
 			&& (!(pos_p0 & pos_p1)) /* and in bounds of page */
-			&& (!(master->patt_size <= 1 && master->pattern[0] < 0.0))
-			){
+			/* and too if is drawable pattern */
+			&& (!(master->patt_size <= 1 && master->pattern[0] < 0.0 && !master->fill))
+		){
 			int x0, y0, x1, y1, i;
 			line_node *current = master->list->next;
-			int tick = 0, prev_x, prev_y; /* for fill */
+			int tick = 0, prev_x, prev_y;
 			int init = 0;
 			
-			
-			
-			//bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
-			//bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
-			
-			/* set the pattern */
-			//patt_change(img, master->pattern, master->patt_size);
-			/* set the color */
-			//bmp_color color = master->color;
-			//if (color.r == white.r && color.g == white.g && color.b == white.b)
-			//	color = black;
-			
+			/* verify if color is substituted  */
 			bmp_color color = validate_color(master->color, param.list, param.subst, param.len);
 			
-			
-			/* set the tickness */
-			//if (master->thick_const) img->tick = (int) round(master->tick);
-			//else img->tick = (int) round(master->tick * scale);
-			
-			/* draw the lines */
-			
-			while(current){ /*sweep the list content */
+			while(current){ /* draw the lines - sweep the list content */
 				
 				/* apply the scale and offset */
 				x0 = (int) ((current->x0 - param.ofs_x) * param.scale * param.resolution);
@@ -67,7 +58,6 @@ void print_draw(graph_obj * master, struct txt_buf *buf, struct print_param para
 				
 				if (init == 0){
 					/* set the pattern */
-					
 					buf->pos +=snprintf(buf->data + buf->pos,
 						PDF_BUF_SIZE - buf->pos,
 						"[");
@@ -86,12 +76,14 @@ void print_draw(graph_obj * master, struct txt_buf *buf, struct print_param para
 					buf->pos +=snprintf(buf->data + buf->pos,
 						PDF_BUF_SIZE - buf->pos,
 						"] 0 d ");
+					
 					/* set the tickness */
-					if (master->thick_const) tick = (int) round(master->tick * 0.14067 * param.scale * param.resolution);
+					if (master->thick_const) tick = (int) round(master->tick * 10 *!(param.inch)/25.4 * param.resolution);
 					else tick = (int) round(master->tick * param.scale * param.resolution);
 					buf->pos +=snprintf(buf->data + buf->pos,
 						PDF_BUF_SIZE - buf->pos,
 						"%d w ", tick); /*line width */
+					
 					/* set the color */
 					if (!param.mono){
 						buf->pos +=snprintf(buf->data + buf->pos,
@@ -108,27 +100,31 @@ void print_draw(graph_obj * master, struct txt_buf *buf, struct print_param para
 								(float)color.g/255,
 								(float)color.b/255);
 					}
+					
+					/* move to first point */
 					buf->pos +=snprintf(buf->data + buf->pos,
 						PDF_BUF_SIZE - buf->pos,
 						"%d %d m ", x0, y0);
+					prev_x = x0;
+					prev_y = y0;
 					init = 1;
 				}
-				
+				/*finaly, draw current line */
 				else if (((x0 != prev_x)||(y0 != prev_y)))
 					buf->pos +=snprintf(buf->data + buf->pos,
 						PDF_BUF_SIZE - buf->pos,
 						"%d %d m ", x0, y0);
+
 				buf->pos +=snprintf(buf->data + buf->pos,
 					PDF_BUF_SIZE - buf->pos,
 					"%d %d l ", x1, y1);
 			
 				prev_x = x1;
 				prev_y = y1;
-					
 				
-				current = current->next; /* go to next */
+				current = current->next; /* go to next line */
 			}
-			
+			/* stroke the graph */
 			if (master->fill) /* check if object is filled */
 				buf->pos +=snprintf(buf->data + buf->pos,
 						PDF_BUF_SIZE - buf->pos,
@@ -141,7 +137,7 @@ void print_draw(graph_obj * master, struct txt_buf *buf, struct print_param para
 	}
 }
 
-int print_list_draw(list_node *list, struct txt_buf *buf, struct print_param param){
+int print_list_pdf(list_node *list, struct txt_buf *buf, struct print_param param){
 	list_node *current = NULL;
 	graph_obj *curr_graph = NULL;
 	int ok = 0;
@@ -153,7 +149,7 @@ int print_list_draw(list_node *list, struct txt_buf *buf, struct print_param par
 		while (current != NULL){
 			if (current->data){
 				curr_graph = (graph_obj *)current->data;
-				print_draw(curr_graph, buf, param);
+				print_graph_pdf(curr_graph, buf, param);
 			}
 			current = current->next;
 		}
@@ -162,7 +158,7 @@ int print_list_draw(list_node *list, struct txt_buf *buf, struct print_param par
 	return ok;
 }
 
-int print_ents_draw(dxf_drawing *drawing, struct txt_buf *buf , struct print_param param){
+int print_ents_pdf(dxf_drawing *drawing, struct txt_buf *buf , struct print_param param){
 	dxf_node *current = NULL;
 	//int lay_idx = 0;
 		
@@ -186,12 +182,12 @@ int print_ents_draw(dxf_drawing *drawing, struct txt_buf *buf , struct print_par
 						buf->pos +=snprintf(buf->data + buf->pos,
 							PDF_BUF_SIZE - buf->pos,
 							"0.0 0.0 0.0 RG " /*set to black */
-							"1 J " /*line cap style - round*/
+							//"1 J " /*line cap style - round*/
 							"%0.2f 0.0 0.0 %0.2f 0.0 0.0 cm\r\n", res, res);
 						init = 1;
 					}
 	
-					print_list_draw(current->obj.graphics, buf, param);
+					print_list_pdf(current->obj.graphics, buf, param);
 					
 					//---------------------------------------
 				}
@@ -239,7 +235,7 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	param.w = conv_fnc(param.w);
 	param.h = conv_fnc(param.h);
 	
-	print_ents_draw(drawing, buf, param);
+	print_ents_pdf(drawing, buf, param);
 	
 	int cmp_status;
 	long src_len = strlen(buf->data);

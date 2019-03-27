@@ -1862,9 +1862,15 @@ int graph_isect(graph_obj * master, double rect_pt1[2], double rect_pt2[2]){
 				lin_pt1[1] = current->y0;
 				lin_pt2[0] = current->x1;
 				lin_pt2[1] = current->y1;
+				if ((lin_pt1[0] > rect_pt1[0] && lin_pt1[0] < rect_pt2[0]) &&
+					(lin_pt1[1] > rect_pt1[1] && lin_pt1[1] < rect_pt2[1]) &&
+					(lin_pt2[0] > rect_pt1[0] && lin_pt2[0] < rect_pt2[0]) &&
+					(lin_pt2[1] > rect_pt1[1] && lin_pt2[1] < rect_pt2[1]))
+					return 1;
 				if(l_r_isect(lin_pt1, lin_pt2, rect_pt1, rect_pt2)){
 					return 1;
 				}
+				
 				
 				current = current->next; /* go to next */
 			}

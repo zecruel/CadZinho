@@ -271,3 +271,182 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	#endif
 	return 1;
 }
+
+
+void print_graph_svg(graph_obj * master, FILE *file, struct print_param param){
+	if (master != NULL){
+		/* verify if graph bounds are in visible page area */
+		double b_x0, b_y0, b_x1, b_y1;
+		b_x0 = (master->ext_min_x - param.ofs_x) * param.scale * param.resolution;
+		b_y0 = (master->ext_min_y - param.ofs_y) * param.scale * param.resolution;
+		b_x1 = (master->ext_max_x - param.ofs_x) * param.scale * param.resolution;
+		b_y1 = (master->ext_max_y - param.ofs_y) * param.scale * param.resolution;
+		
+		rect_pos pos_p0 = rect_find_pos(b_x0, b_y0, 0, 0, param.w * param.resolution, param.h * param.resolution);
+		rect_pos pos_p1 = rect_find_pos(b_x1, b_y1, 0, 0, param.w * param.resolution, param.h * param.resolution);
+		
+		if ((master->list->next) /* check if list is not empty */
+			&& (!(pos_p0 & pos_p1)) /* and in bounds of page */
+			/* and too if is drawable pattern */
+			&& (!(master->patt_size <= 1 && master->pattern[0] < 0.0 && !master->fill))
+		){
+			double x0, y0, x1, y1;
+			line_node *current = master->list->next;
+			double tick = 0, prev_x, prev_y;
+			int init = 0, i;
+			
+			/* verify if color is substituted  */
+			bmp_color color = validate_color(master->color, param.list, param.subst, param.len);
+			
+			while(current){ /* draw the lines - sweep the list content */
+				
+				/* apply the scale and offset */
+				x0 = ((current->x0 - param.ofs_x) * param.scale * param.resolution);
+				y0 = param.h * param.resolution - ((current->y0 - param.ofs_y) * param.scale * param.resolution);
+				x1 = ((current->x1 - param.ofs_x) * param.scale * param.resolution);
+				y1 = param.h * param.resolution - ((current->y1 - param.ofs_y) * param.scale * param.resolution);
+				
+				if (init == 0){
+					fprintf(file,"<path ");
+					
+					/* set the pattern */
+					if(master->patt_size > 1){
+						/* get pattern lenght */
+						double patt_len = 0;
+						for (i = 0; i < master->patt_size; i++){
+							patt_len += fabs(master->pattern[i] * param.scale * param.resolution);
+						}
+						
+						if ((patt_len / master->patt_size) >= 1.0){
+						
+							fprintf(file,"stroke-dasharray=\"");
+							
+							double patt_el = fabs(master->pattern[0] * param.scale * param.resolution);
+							fprintf(file, "%0.2f", patt_el);
+							for (i = 1; i < master->patt_size; i++){
+								patt_el = fabs(master->pattern[i] * param.scale * param.resolution);
+								fprintf(file, ",%0.2f", patt_el);
+							}
+							
+							fprintf(file,"\" ");
+						}
+					}
+					
+					/* set the tickness */
+					if (master->thick_const) tick = (master->tick * param.resolution);
+					else tick = (master->tick * param.scale * param.resolution);
+					if (tick >= 1.0) fprintf(file, "stroke-width=\"%0.1f\" ", tick);
+					
+					/* set the color */
+					if (!param.mono){
+						
+						if (master->fill) /* check if object is filled */
+							fprintf(file, "fill=\"rgb(%d, %d, %d)\" stroke=\"none\" ",
+								color.r, color.g, color.b);
+						else
+							fprintf(file, "stroke=\"rgb(%d, %d, %d)\" fill=\"none\" ",
+								color.r, color.g, color.b);
+					}
+					
+					/* move to first point */
+					fprintf(file, "d=\"M%0.2f %0.2f ", x0, y0);
+					prev_x = x0;
+					prev_y = y0;
+					init = 1;
+				}
+				/*finaly, draw current line */
+				else if (((x0 != prev_x)||(y0 != prev_y)))
+					fprintf(file, "M%0.2f %0.2f ", x0, y0);
+
+				fprintf(file, "L%0.2f %0.2f ", x1, y1);
+			
+				prev_x = x1;
+				prev_y = y1;
+				
+				current = current->next; /* go to next line */
+			}
+			/* stroke the graph */
+			fprintf(file, "\"/>\n");
+		}
+	}
+}
+
+int print_list_svg(list_node *list, FILE *file, struct print_param param){
+	list_node *current = NULL;
+	graph_obj *curr_graph = NULL;
+	int ok = 0;
+		
+	if (list != NULL){
+		current = list->next;
+		
+		/* sweep the main list */
+		while (current != NULL){
+			if (current->data){
+				curr_graph = (graph_obj *)current->data;
+				print_graph_svg(curr_graph, file, param);
+			}
+			current = current->next;
+		}
+		ok = 1;
+	}
+	return ok;
+}
+
+int print_ents_svg(dxf_drawing *drawing, FILE *file , struct print_param param){
+	dxf_node *current = NULL;
+	//int lay_idx = 0;
+		
+	if ((drawing->ents != NULL) && (drawing->main_struct != NULL)){
+		current = drawing->ents->obj.content->next;
+		
+		int init = 0;
+		// starts the content sweep 
+		while (current != NULL){
+			if (current->type == DXF_ENT){ // DXF entity
+				/*verify if entity layer is on and thaw */
+				//lay_idx = dxf_layer_get(drawing, current);
+				if ((!drawing->layers[current->obj.layer].off) && 
+					(!drawing->layers[current->obj.layer].frozen)){
+				
+					// -------------------------------------------
+					if (!init){
+						fprintf(file, "<svg width=\"%0.4f\" height=\"%0.4f\" "
+							"version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" "
+							"xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n",
+							param.w * param.resolution,
+							param.h * param.resolution);
+						init = 1;
+					}
+	
+					print_list_svg(current->obj.graphics, file, param);
+					
+					//---------------------------------------
+				}
+			}
+			current = current->next;
+		}
+		if (init) fprintf(file,"</svg>");
+	}
+}
+
+int print_svg(dxf_drawing *drawing, struct print_param param, char *dest){
+	
+	if (!drawing) return 0;
+	
+	FILE *file = fopen(dest, "w"); /* open the file */
+	
+	if (!file) return 0;
+	param.resolution = 4.0;
+	
+	
+	
+	
+	
+	print_ents_svg(drawing, file, param);
+	
+	
+	
+	fclose(file);
+	
+	return 1;
+}

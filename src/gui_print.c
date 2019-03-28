@@ -12,7 +12,8 @@ int print_win (gui_obj *gui){
 	static char ofs_x_str[64] = "0.00";
 	static char ofs_y_str[64] = "0.00";
 	static char scale_str[64] = "1.00";
-	static char sel_file[MAX_PATH_LEN] = "output.pdf";
+	//static char sel_file[MAX_PATH_LEN] = "output.pdf";
+	static char sel_file[MAX_PATH_LEN] = "output.svg";
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
@@ -134,14 +135,16 @@ int print_win (gui_obj *gui){
 			/* load more other fonts */
 			show_app_file = 1;
 			
-			static const char *ext_type[] = { "PDF", "*"};
-			static const char *ext_descr[] = { "PDF (.pdf)", "All files (*)"};
+			static const char *ext_type[] = { "PDF", "SVG", "*"};
+			static const char *ext_descr[] = { "PDF (.pdf)", "SVG (.svg)", "All files (*)"};
 			gui->file_filter_types[0] = ext_type[0];
 			gui->file_filter_types[1] = ext_type[1];
+			gui->file_filter_types[2] = ext_type[2];
 			gui->file_filter_descr[0] = ext_descr[0];
 			gui->file_filter_descr[1] = ext_descr[1];
+			gui->file_filter_descr[2] = ext_descr[2];
 			
-			gui->file_filter_count = 2;
+			gui->file_filter_count = 3;
 			
 			gui->show_file_br = 1;
 			gui->curr_path[0] = 0;
@@ -176,8 +179,9 @@ int print_win (gui_obj *gui){
 			param.subst = subst;
 			param.len = len;
 			
-			print_pdf(gui->drawing, param, sel_file);
-			//int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest)
+			//print_pdf(gui->drawing, param, sel_file);
+			print_svg(gui->drawing, param, sel_file);
+			
 		}
 		
 		if (update){

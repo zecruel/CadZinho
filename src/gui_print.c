@@ -152,7 +152,10 @@ int print_win (gui_obj *gui){
 			}
 			
 			if (end_fname){
-				sprintf(end_fname, ".%s", ext_type[out_fmt]);
+				end_fname[0] = '.';
+				i = 1;
+				while (end_fname[i] = tolower(ext_type[out_fmt][i -1])) i++;
+				//sprintf(end_fname, ".%s", ext_type[out_fmt]);
 			}
 		}
 		

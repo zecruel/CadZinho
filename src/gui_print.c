@@ -12,8 +12,8 @@ int print_win (gui_obj *gui){
 	static char ofs_x_str[64] = "0.00";
 	static char ofs_y_str[64] = "0.00";
 	static char scale_str[64] = "1.00";
-	//static char sel_file[MAX_PATH_LEN] = "output.pdf";
-	static char sel_file[MAX_PATH_LEN] = "output.svg";
+	static char sel_file[MAX_PATH_LEN] = "output.pdf";
+	
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
@@ -24,7 +24,11 @@ int print_win (gui_obj *gui){
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_flags res;
-		static int show_app_file = 0, mono = 0, dark = 0;
+		static int show_app_file = 0, mono = 0, dark = 0, out_fmt = 0;
+		static const char *ext_type[] = { "PDF", "SVG", "*"};
+		static const char *ext_descr[] = { "PDF (.pdf)", "SVG (.svg)", "All files (*)"};
+		int num_ext = 3, i;
+			
 		nk_layout_row_static(gui->ctx, 180, 190, 2);
 		if (nk_group_begin(gui->ctx, "Page setup", NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
 			nk_layout_row_static(gui->ctx, 20, 70, 2);
@@ -124,6 +128,34 @@ int print_win (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		nk_checkbox_label(gui->ctx, "Monochrome", &mono);
 		nk_checkbox_label(gui->ctx, "Dark", &dark);
+		
+		nk_label(gui->ctx, "Output format:", NK_TEXT_RIGHT);
+		int fmt = nk_combo (gui->ctx, ext_descr, 2, out_fmt, 20, nk_vec2(200,55));
+		if (fmt != out_fmt){
+			out_fmt = fmt;
+			char *ext = get_ext(sel_file);
+			char *end_fname = NULL;
+			str_upp(ext);
+			int ok = 0;
+			for (i = 0; i < num_ext - 1; i++){
+				if (strcmp(ext, ext_type[i]) == 0){
+					ok =1;
+					break;
+				}
+			}
+			
+			if (ok){
+				end_fname = strrchr(sel_file, '.');
+			}
+			else if (strlen(sel_file) > 0){
+				end_fname = sel_file + strlen(sel_file) - 1;
+			}
+			
+			if (end_fname){
+				sprintf(end_fname, ".%s", ext_type[out_fmt]);
+			}
+		}
+		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Destination:", NK_TEXT_LEFT);
 		
@@ -137,16 +169,12 @@ int print_win (gui_obj *gui){
 			/* load more other fonts */
 			show_app_file = 1;
 			
-			static const char *ext_type[] = { "PDF", "SVG", "*"};
-			static const char *ext_descr[] = { "PDF (.pdf)", "SVG (.svg)", "All files (*)"};
-			gui->file_filter_types[0] = ext_type[0];
-			gui->file_filter_types[1] = ext_type[1];
-			gui->file_filter_types[2] = ext_type[2];
-			gui->file_filter_descr[0] = ext_descr[0];
-			gui->file_filter_descr[1] = ext_descr[1];
-			gui->file_filter_descr[2] = ext_descr[2];
+			for (i = 0; i < num_ext; i++){
+				gui->file_filter_types[i] = ext_type[i];
+				gui->file_filter_descr[i] = ext_descr[i];
+			}
 			
-			gui->file_filter_count = 3;
+			gui->file_filter_count = num_ext;
 			
 			gui->show_file_br = 1;
 			gui->curr_path[0] = 0;
@@ -197,8 +225,10 @@ int print_win (gui_obj *gui){
 				param.len = len_dark;
 			}
 			
-			//print_pdf(gui->drawing, param, sel_file);
-			print_svg(gui->drawing, param, sel_file);
+			if (strcmp(ext_type[out_fmt], "PDF") == 0)
+				print_pdf(gui->drawing, param, sel_file);
+			if (strcmp(ext_type[out_fmt], "SVG") == 0)
+				print_svg(gui->drawing, param, sel_file);
 			
 		}
 		

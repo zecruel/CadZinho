@@ -88,14 +88,14 @@ void print_graph_pdf(graph_obj * master, struct txt_buf *buf, struct print_param
 					if (!param.mono){
 						buf->pos +=snprintf(buf->data + buf->pos,
 							PDF_BUF_SIZE - buf->pos,
-							"%0.2f %0.2f %0.2f RG ",
+							"%.4g %.4g %.4g RG ",
 							(float)color.r/255,
 							(float)color.g/255,
 							(float)color.b/255);
 						if (master->fill) /* check if object is filled */
 							buf->pos +=snprintf(buf->data + buf->pos,
 								PDF_BUF_SIZE - buf->pos,
-								"%0.2f %0.2f %0.2f rg ",
+								"%.4g %.4g %.4g rg ",
 								(float)color.r/255,
 								(float)color.g/255,
 								(float)color.b/255);
@@ -183,7 +183,7 @@ int print_ents_pdf(dxf_drawing *drawing, struct txt_buf *buf , struct print_para
 							PDF_BUF_SIZE - buf->pos,
 							"0.0 0.0 0.0 RG " /*set to black */
 							//"1 J " /*line cap style - round*/
-							"%0.2f 0.0 0.0 %0.2f 0.0 0.0 cm\r\n", res, res);
+							"%.4g 0.0 0.0 %.4g 0.0 0.0 cm\r\n", res, res);
 						init = 1;
 					}
 	
@@ -322,10 +322,12 @@ void print_graph_svg(graph_obj * master, FILE *file, struct print_param param){
 							fprintf(file,"stroke-dasharray=\"");
 							
 							double patt_el = fabs(master->pattern[0] * param.scale * param.resolution);
-							fprintf(file, "%0.2f", patt_el);
+							if (patt_el < 1.0) patt_el = 1.0;
+							fprintf(file, "%.4g", patt_el);
 							for (i = 1; i < master->patt_size; i++){
 								patt_el = fabs(master->pattern[i] * param.scale * param.resolution);
-								fprintf(file, ",%0.2f", patt_el);
+								if (patt_el < 1.0) patt_el = 1.0;
+								fprintf(file, ",%.4g", patt_el);
 							}
 							
 							fprintf(file,"\" ");
@@ -333,8 +335,8 @@ void print_graph_svg(graph_obj * master, FILE *file, struct print_param param){
 					}
 					
 					/* set the tickness */
-					if (master->thick_const) tick = (master->tick * param.resolution);
-					else tick = (master->tick * param.scale * param.resolution);
+					if (master->thick_const) tick = (master->tick);// * param.resolution);
+					else tick = (master->tick * param.scale);// * param.resolution);
 					if (tick >= 1.0) fprintf(file, "stroke-width=\"%0.1f\" ", tick);
 					
 					/* set the color */
@@ -347,18 +349,25 @@ void print_graph_svg(graph_obj * master, FILE *file, struct print_param param){
 							fprintf(file, "stroke=\"rgb(%d, %d, %d)\" fill=\"none\" ",
 								color.r, color.g, color.b);
 					}
+					else {
+						
+						if (master->fill) /* check if object is filled */
+							fprintf(file, "fill=\"black\" stroke=\"none\" ");
+						else
+							fprintf(file, "stroke=\"black\" fill=\"none\" ");
+					}
 					
 					/* move to first point */
-					fprintf(file, "d=\"M%0.2f %0.2f ", x0, y0);
+					fprintf(file, "d=\"M%.4g %.4g ", x0, y0);
 					prev_x = x0;
 					prev_y = y0;
 					init = 1;
 				}
 				/*finaly, draw current line */
 				else if (((x0 != prev_x)||(y0 != prev_y)))
-					fprintf(file, "M%0.2f %0.2f ", x0, y0);
+					fprintf(file, "M%.4g %.4g ", x0, y0);
 
-				fprintf(file, "L%0.2f %0.2f ", x1, y1);
+				fprintf(file, "L%.4g %.4g ", x1, y1);
 			
 				prev_x = x1;
 				prev_y = y1;

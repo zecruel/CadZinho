@@ -7,8 +7,8 @@ int print_win (gui_obj *gui){
 	int i = 0, update = 0;
 	static double page_w = 297.0, page_h = 210.0;
 	static double ofs_x = 0.0, ofs_y = 0.0, scale = 1.0;
-	static char page_w_str[64] = "297.00";
-	static char page_h_str[64] = "210.00";
+	static char page_w_str[64] = "297";
+	static char page_h_str[64] = "210";
 	static char ofs_x_str[64] = "0.00";
 	static char ofs_y_str[64] = "0.00";
 	static char scale_str[64] = "1.00";
@@ -24,7 +24,7 @@ int print_win (gui_obj *gui){
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_flags res;
-		static int show_app_file = 0, mono = 0;
+		static int show_app_file = 0, mono = 0, dark = 0;
 		nk_layout_row_static(gui->ctx, 180, 190, 2);
 		if (nk_group_begin(gui->ctx, "Page setup", NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
 			nk_layout_row_static(gui->ctx, 20, 70, 2);
@@ -34,7 +34,7 @@ int print_win (gui_obj *gui){
 				nk_edit_unfocus(gui->ctx);
 				if (strlen(page_w_str)) /* update parameter value */
 					page_w = atof(page_w_str);
-				snprintf(page_w_str, 63, "%0.2f", page_w);
+				snprintf(page_w_str, 63, "%.9g", page_w);
 				update = 1;
 			}
 			
@@ -44,7 +44,7 @@ int print_win (gui_obj *gui){
 				nk_edit_unfocus(gui->ctx);
 				if (strlen(page_h_str)) /* update parameter value */
 					page_h = atof(page_h_str);
-				snprintf(page_h_str, 63, "%0.2f", page_h);
+				snprintf(page_h_str, 63, "%.9g", page_h);
 				update = 1;
 			}
 			
@@ -54,7 +54,7 @@ int print_win (gui_obj *gui){
 				nk_edit_unfocus(gui->ctx);
 				if (strlen(ofs_x_str)) /* update parameter value */
 					ofs_x = atof(ofs_x_str);
-				snprintf(ofs_x_str, 63, "%0.2f", ofs_x);
+				snprintf(ofs_x_str, 63, "%.9g", ofs_x);
 				update = 1;
 			}
 			
@@ -64,7 +64,7 @@ int print_win (gui_obj *gui){
 				nk_edit_unfocus(gui->ctx);
 				if (strlen(ofs_y_str)) /* update parameter value */
 					ofs_y = atof(ofs_y_str);
-				snprintf(ofs_y_str, 63, "%0.2f", ofs_y);
+				snprintf(ofs_y_str, 63, "%.9g", ofs_y);
 				update = 1;
 			}
 			
@@ -74,7 +74,7 @@ int print_win (gui_obj *gui){
 				nk_edit_unfocus(gui->ctx);
 				if (strlen(scale_str)) /* update parameter value */
 					scale = atof(scale_str);
-				snprintf(scale_str, 63, "%0.2f", scale);
+				snprintf(scale_str, 63, "%.9g", scale);
 				update = 1;
 			}
 			nk_group_end(gui->ctx);
@@ -98,9 +98,9 @@ int print_win (gui_obj *gui){
 			scale = (zoom_x > zoom_y) ? zoom_x : zoom_y;
 			scale = 1/scale;
 			
-			snprintf(ofs_x_str, 63, "%0.2f", ofs_x);
-			snprintf(ofs_y_str, 63, "%0.2f", ofs_y);
-			snprintf(scale_str, 63, "%0.2f", scale);
+			snprintf(ofs_x_str, 63, "%.9g", ofs_x);
+			snprintf(ofs_y_str, 63, "%.9g", ofs_y);
+			snprintf(scale_str, 63, "%.9g", scale);
 			update = 1;
 		}
 		if (nk_button_label(gui->ctx, "Fit all")){
@@ -115,14 +115,16 @@ int print_win (gui_obj *gui){
 			ofs_x = min_x - (fabs((max_x - min_x) * scale - page_w)/2) / scale;
 			ofs_y = min_y - (fabs((max_y - min_y) * scale - page_h)/2) / scale;
 			
-			snprintf(ofs_x_str, 63, "%0.2f", ofs_x);
-			snprintf(ofs_y_str, 63, "%0.2f", ofs_y);
-			snprintf(scale_str, 63, "%0.2f", scale);
+			snprintf(ofs_x_str, 63, "%.9g", ofs_x);
+			snprintf(ofs_y_str, 63, "%.9g", ofs_y);
+			snprintf(scale_str, 63, "%.9g", scale);
 			update = 1;
 		}
 		
-		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		nk_checkbox_label(gui->ctx, "Monochrome", &mono);
+		nk_checkbox_label(gui->ctx, "Dark", &dark);
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Destination:", NK_TEXT_LEFT);
 		
 		/* dynamic width for dir/file name and fixed width for other informations */
@@ -164,9 +166,18 @@ int print_win (gui_obj *gui){
 			bmp_color blue = { .r = 0, .g = 0, .b = 255, .a = 255 };
 			bmp_color magenta = { .r = 255, .g = 0, .b = 255, .a = 255 };
 			
+			bmp_color y_dark = { .r = 150, .g = 150, .b = 0, .a = 255 };
+			bmp_color g_dark = { .r = 0, .g = 129, .b = 0, .a = 255 };
+			bmp_color c_dark = { .r = 0, .g = 129, .b = 129, .a = 255 };
+			
 			bmp_color list[] = { white, };
 			bmp_color subst[] = { black, };
+			
 			int len = 1;
+			
+			bmp_color list_dark[] = { white, yellow, green, cyan};
+			bmp_color subst_dark[] = { black, y_dark, g_dark, c_dark};
+			int len_dark = 4;
 			
 			param.scale = scale;
 			param.ofs_x = ofs_x;
@@ -175,9 +186,16 @@ int print_win (gui_obj *gui){
 			param.h = page_h;
 			param.mono = mono;
 			param.inch = 0;
-			param.list = list;
-			param.subst = subst;
-			param.len = len;
+			if (!dark){
+				param.list = list;
+				param.subst = subst;
+				param.len = len;
+			}
+			else{
+				param.list = list_dark;
+				param.subst = subst_dark;
+				param.len = len_dark;
+			}
 			
 			//print_pdf(gui->drawing, param, sel_file);
 			print_svg(gui->drawing, param, sel_file);
@@ -213,6 +231,7 @@ int print_win (gui_obj *gui){
 			/* draw page rectangle */
 			bmp_color blue = { .r = 0, .g = 0, .b = 255, .a = 255 };
 			gui->preview_img->frg = blue;
+			gui->preview_img->tick = 0;
 			
 			bmp_line(gui->preview_img, x, y, x + w - 1, y);
 			bmp_line(gui->preview_img, x + w - 1, y, x + w - 1, y + h - 1);

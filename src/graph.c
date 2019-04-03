@@ -4,6 +4,26 @@
 #define GRAPH_NUM_POOL 5
 #define TOLERANCE 1e-9
 
+int cmp_double(const void * a, const void * b) {
+	if (*(double*)a > *(double*)b)
+		return 1;
+	else if (*(double*)a < *(double*)b)
+		return -1;
+	else
+		return 0;  
+}
+
+int cmp_vert(const void * a, const void * b) {
+	double pos1 = *(double *)(((struct sort_by_idx *)a)->data);
+	double pos2 = *(double *)(((struct sort_by_idx *)b)->data);
+	if (pos1 < pos2)
+		return 1;
+	else if (pos1 > pos2)
+		return -1;
+	else
+		return 0;
+}
+
 void * graph_mem_pool2(enum graph_pool_action action){
 	
 	static graph_pool_slot graph, line;
@@ -2338,14 +2358,16 @@ int pool_idx){
 	
 	graph_obj *ret_graph = NULL;//graph_new(pool_idx);
 	
-	int i, j;
+	int i, j, idx0, idx1;
 	double min_x, max_x, min_y, max_y;
 	
 	int nodes = 0, steps = 0;
 	
 	double  start, end, swap;
 	double node_x[1000], node_y[1000];
-	  
+	double pos[1000];
+	struct sort_by_idx sort_vert[1000];
+	
 	double a = sin(angle);
 	double b = -cos(angle);
 	double c = -(a*orig_x+b*orig_y);
@@ -2367,16 +2389,8 @@ int pool_idx){
 	dist[2] = (a*max_x + b*min_y + c);
 	dist[3] = (a*max_x + b*max_y + c);
 	
-	/* Sort the distances, via a simple Bubble sort. */
-	for (i = 3; i > 0; i--){
-		for (j = 0; j < i; j++){
-			if (dist[j] > dist[j+1]){
-				tmp = dist[j];
-				dist[j] = dist[j+1];
-				dist[j+1] = tmp;
-			}
-		}
-	}
+	/* Sort the distances*/
+	qsort(dist, 4, sizeof(double), cmp_double);
 	
 	start = floor(dist[0]/delta) * (delta);
 	end = ceil(dist[3]/delta) * (delta);
@@ -2415,6 +2429,17 @@ int pool_idx){
 						/* if intersection is in segment, add point to hatch vertices list*/
 						node_x[nodes] = x;
 						node_y[nodes] = y;
+						
+						/* parameters for sorting vertices */
+						if (fabs(b) > TOLERANCE)
+							pos[nodes] = (x + c * a) / b;
+						else if (fabs(a) > TOLERANCE)
+							pos[nodes] = -(y + c * b) / a;
+						//else pos[nodes] = 0.0;
+						sort_vert[nodes].idx = nodes;
+						sort_vert[nodes].data = &pos[nodes];
+						
+						
 						nodes++;
 					}
 				}
@@ -2423,47 +2448,22 @@ int pool_idx){
 		}
 		
 		if (nodes > 1){
-			double pos1, pos2;
+			/* Sort the hatch vertices */
+			qsort(sort_vert, nodes, sizeof(struct sort_by_idx), cmp_vert);
 			
-			/* Sort the hatch vertices, via a simple Bubble sort. */
-			j=0;
-			while (j < nodes - 1) {
-				if (fabs(b) > TOLERANCE){
-					pos1 = (node_x[j] + c * a) / b;
-					pos2 = (node_x[j+1] + c * a) / b;
-				}
-				else if (fabs(a) > TOLERANCE){
-					pos1 = -(node_y[j] + c * b) / a;
-					pos2 = -(node_y[j+1] + c * b) / a;
-				}
-				
-				if (pos1 < pos2) {
-					swap = node_x[j];
-					node_x[j] = node_x[j+1];
-					node_x[j+1] = swap;
-					
-					swap = node_y[j];
-					node_y[j] = node_y[j+1];
-					node_y[j+1] = swap;
-					
-					if (j) j--;
-				}
-				else {
-					j++;
-				}
-			}
-			
-			/*create the hatch segments between vertices pairs*/
+			/* create the hatch segments between vertices pairs */
 			j = 0;
 			while (j < nodes - 1){
-				if  ((fabs(node_x[j] - node_x[j+1]) < TOLERANCE) &&
-					(fabs(node_y[j] - node_y[j+1]) < TOLERANCE)){
-					/* ignore duplicated nodes*/
+				idx0 = sort_vert[j].idx;
+				idx1 = sort_vert[j+1].idx;
+				if  ((fabs(node_x[idx0] - node_x[idx1]) < TOLERANCE) &&
+					(fabs(node_y[idx0] - node_y[idx1]) < TOLERANCE)){
+					/* ignore duplicated nodes */
 					j++;
 				}
 				else {
-					graph_dash(ret_graph, node_x[j], node_y[j],
-					node_x[j+1], node_y[j+1],
+					graph_dash(ret_graph, node_x[idx0], node_y[idx0],
+					node_x[idx1], node_y[idx1],
 					curr_skew, dash, num_dash);
 					
 					j += 2;
@@ -2646,23 +2646,8 @@ double ofs_x, double ofs_y, double scale){
 			}
 			
 			if (nodes > 1){
-				
-				
-				/* Sort the nodes, via a simple Bubble sort. */
-				j=0;
-				while (j < nodes - 1) {
-					
-					if (node_x[j] > node_x[j+1]) {
-						swap = node_x[j];
-						node_x[j] = node_x[j+1];
-						node_x[j+1] = swap;
-						
-						if (j) j--;
-					}
-					else {
-						j++;
-					}
-				}
+				/* Sort the nodes */
+				qsort(node_x, nodes, sizeof(double), cmp_double);
 				
 				/*fill the pixels between node pairs*/
 				for (i = 0; i < nodes ; i += 2){

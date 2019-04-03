@@ -84,13 +84,6 @@ enum Font_sizes {
 	
 	FONT_NUM_SIZE
 };
-	
-	
-
-struct sort_by_idx{
-	long int idx;
-	void *data;
-};
 
 struct gui_glyph{
 	int code_p, x, y, w, h;

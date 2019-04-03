@@ -23,6 +23,11 @@
 #define DIR_SEPARATOR '/'
 #endif
 
+struct sort_by_idx{
+	long int idx;
+	void *data;
+};
+
 /* supportable graphic entities */
 enum dxf_graph {
 	DXF_NONE,

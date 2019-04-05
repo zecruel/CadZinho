@@ -56,6 +56,21 @@ struct Graph_obj{
 };
 typedef struct Graph_obj graph_obj;
 
+
+struct draw_param{
+	double w;
+	double h;
+	double ofs_x;
+	double ofs_y;
+	double scale;
+	double resolution;
+	int mono;
+	int inch;
+	int len_subst;
+	bmp_color *list;
+	bmp_color *subst;
+};
+
 void * graph_mem_pool2(enum graph_pool_action action);
 void * graph_mem_pool(enum graph_pool_action action, int idx);
 
@@ -140,5 +155,7 @@ void graph_matrix(graph_obj * master, double matrix[3][3]);
 int graph_list_matrix(list_node *list, double matrix[3][3]);
 
 void vec_2_rot_matrix(double matrix[3][3], double x, double y, double z);
+
+bmp_color validate_color (bmp_color color, bmp_color list[], bmp_color subst[], int len);
 
 #endif

@@ -1,27 +1,8 @@
 #include "dxf_print.h"
 
-int cmp_color(bmp_color color1, bmp_color color2){
-	/* compare colors, by RGB values */
-	return color1.r == color2.r && color1.g == color2.g && color1.b == color2.b;
-}
 
-bmp_color validate_color (bmp_color color, bmp_color list[], bmp_color subst[], int len){
-	/* verify if color is in substitution list and return a valid color */
-	
-	/* if not substitution list, return default color */
-	if (subst == NULL) return color;
-	/* if not indicate especific colors, every color is substituted by first in list */
-	if (list == NULL) return subst[0];
-	
-	int i;
-	for (i = 0; i < len; i++){ /* sweep the list */
-		if (cmp_color(color, list[i])){
-			/* if in list, get the relative substitute */
-			return subst[i];
-		}
-	}
-	return color; /* return default color */
-}
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 void print_graph_pdf(graph_obj * master, struct txt_buf *buf, struct print_param param){
 	if (master != NULL){
@@ -456,6 +437,105 @@ int print_svg(dxf_drawing *drawing, struct print_param param, char *dest){
 	
 	
 	fclose(file);
+	
+	return 1;
+}
+
+int print_list_png(list_node *list, bmp_img * img, struct draw_param param){
+	list_node *current = NULL;
+	graph_obj *curr_graph = NULL;
+	int ok = 0;
+		
+	if (list != NULL){
+		current = list->next;
+		
+		/* sweep the main list */
+		while (current != NULL){
+			if (current->data){
+				curr_graph = (graph_obj *)current->data;
+				//print_graph_pdf(curr_graph, buf, param);
+				graph_draw3(curr_graph, img, param);
+			}
+			current = current->next;
+		}
+		ok = 1;
+	}
+	return ok;
+}
+
+int print_ents_png(dxf_drawing *drawing, bmp_img * img, struct draw_param param){
+	dxf_node *current = NULL;
+	//int lay_idx = 0;
+		
+	if ((drawing->ents != NULL) && (drawing->main_struct != NULL)){
+		current = drawing->ents->obj.content->next;
+		
+		int init = 0;
+		// starts the content sweep 
+		while (current != NULL){
+			if (current->type == DXF_ENT){ // DXF entity
+				/*verify if entity layer is on and thaw */
+				//lay_idx = dxf_layer_get(drawing, current);
+				if ((!drawing->layers[current->obj.layer].off) && 
+					(!drawing->layers[current->obj.layer].frozen)){
+				
+					// -------------------------------------------
+					if (!init){
+						
+						init = 1;
+					}
+	
+					print_list_png(current->obj.graphics, img, param);
+					
+					//---------------------------------------
+				}
+			}
+			current = current->next;
+		}
+	}
+}
+
+int print_png(dxf_drawing *drawing, struct print_param param, char *dest){
+	
+	if (!drawing) return 0;
+	
+	
+	param.resolution = 4.0;
+	
+	
+	bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 0 };
+	bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
+	
+	int w = (int) param.w * param.resolution;
+	int h = (int) param.h * param.resolution;
+	
+	bmp_img * img = bmp_new(w, h, white, black);
+	
+	if (img == NULL) return 0;
+	
+	/*order of color components in buffer.*/
+	img->r_i = 0;
+	img->g_i = 1;
+	img->b_i = 2;
+	img->a_i = 3;
+	
+	struct draw_param d_param;
+	
+	d_param.ofs_x = param.ofs_x;
+	d_param.ofs_y = param.ofs_y;
+	d_param.scale = param.scale * param.resolution;
+	d_param.list = param.list;
+	d_param.subst = param.subst;
+	d_param.len_subst = param.len;
+	
+	bmp_fill_clip(img, img->bkg); /* clear bitmap */
+	
+	print_ents_png(drawing, img, d_param);
+	
+	stbi_write_png((char const *)dest, w, h, 4, img->buf, w * 4);
+	
+	
+	bmp_free(img);
 	
 	return 1;
 }

@@ -25,9 +25,9 @@ int print_win (gui_obj *gui){
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_flags res;
 		static int show_app_file = 0, mono = 0, dark = 0, out_fmt = 0;
-		static const char *ext_type[] = { "PDF", "SVG", "*"};
-		static const char *ext_descr[] = { "PDF (.pdf)", "SVG (.svg)", "All files (*)"};
-		int num_ext = 3, i;
+		static const char *ext_type[] = { "PDF", "SVG", "PNG", "*"};
+		static const char *ext_descr[] = { "PDF (.pdf)", "SVG (.svg)", "PNG (.png)", "All files (*)"};
+		int num_ext = 4, i;
 			
 		nk_layout_row_static(gui->ctx, 180, 190, 2);
 		if (nk_group_begin(gui->ctx, "Page setup", NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
@@ -130,7 +130,10 @@ int print_win (gui_obj *gui){
 		nk_checkbox_label(gui->ctx, "Dark", &dark);
 		
 		nk_label(gui->ctx, "Output format:", NK_TEXT_RIGHT);
-		int fmt = nk_combo (gui->ctx, ext_descr, 2, out_fmt, 20, nk_vec2(200,55));
+		/* file extension filter option */
+		int h = (num_ext - 1) * 22 + 5;
+		h = (h < 300)? h : 300;
+		int fmt = nk_combo (gui->ctx, ext_descr, num_ext - 1, out_fmt, 17, nk_vec2(200, h));
 		if (fmt != out_fmt){
 			out_fmt = fmt;
 			char *ext = get_ext(sel_file);
@@ -232,6 +235,8 @@ int print_win (gui_obj *gui){
 				print_pdf(gui->drawing, param, sel_file);
 			if (strcmp(ext_type[out_fmt], "SVG") == 0)
 				print_svg(gui->drawing, param, sel_file);
+			if (strcmp(ext_type[out_fmt], "PNG") == 0)
+				print_png(gui->drawing, param, sel_file);
 			
 		}
 		

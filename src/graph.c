@@ -24,6 +24,34 @@ int cmp_vert(const void * a, const void * b) {
 		return 0;
 }
 
+int get_i(int pos, int len, int rev){
+	if (!rev) return pos;
+	else return len - 1 - pos;
+}
+
+int cmp_color(bmp_color color1, bmp_color color2){
+	/* compare colors, by RGB values */
+	return color1.r == color2.r && color1.g == color2.g && color1.b == color2.b;
+}
+
+bmp_color validate_color (bmp_color color, bmp_color list[], bmp_color subst[], int len){
+	/* verify if color is in substitution list and return a valid color */
+	
+	/* if not substitution list, return default color */
+	if (subst == NULL) return color;
+	/* if not indicate especific colors, every color is substituted by first in list */
+	if (list == NULL) return subst[0];
+	
+	int i;
+	for (i = 0; i < len; i++){ /* sweep the list */
+		if (cmp_color(color, list[i])){
+			/* if in list, get the relative substitute */
+			return subst[i];
+		}
+	}
+	return color; /* return default color */
+}
+
 void * graph_mem_pool2(enum graph_pool_action action){
 	
 	static graph_pool_slot graph, line;
@@ -458,7 +486,6 @@ void graph_draw(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 	}
 }
 
-
 int graph_draw2(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, double scale){
 	if ((master == NULL) || (img == NULL)) return 0;
 	 /* check if list is not empty */
@@ -468,8 +495,6 @@ int graph_draw2(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 	double x0, y0, x1, y1;
 	double dx, dy, modulus, sine, cosine;
 	line_node *current = master->list->next;
-	int corners = 0, prev_x, prev_y; /* for fill */
-	int corner_x[1000], corner_y[1000], stroke[1000];
 	int i, iter;
 	
 	/* set the pattern */
@@ -502,7 +527,6 @@ int graph_draw2(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 			y0 = current->y0;
 			x1 = current->x1;
 			y1 = current->y1;
-			
 			
 			/* get polar parameters of line */
 			dx = x1 - x0;
@@ -564,18 +588,14 @@ int graph_draw2(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 					patt_acc += fabs(master->pattern[patt_i - 1]);
 				}
 			}
-			
 		}
-		
 		
 		/* draw the lines */
 		while(current){ /*sweep the list content */
-			
 			x0 = current->x0;
 			y0 = current->y0;
 			x1 = current->x1;
 			y1 = current->y1;
-			
 			
 			/* get polar parameters of line */
 			dx = x1 - x0;
@@ -623,8 +643,6 @@ int graph_draw2(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 					patt_acc += fabs(master->pattern[patt_p_i]);
 					
 					patt_rem_n = patt_acc - patt_part;
-					
-					
 				}
 				
 				/* first stroke - remainder of past pattern*/
@@ -653,14 +671,11 @@ int graph_draw2(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 					if (draw){
 						bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
 					}
-					
 					p1x = p2x;
 					p1y = p2y;
-					//if (i < iter - 1){
-						patt_i++;
-						if (patt_i >= master->patt_size) patt_i = 0;
-					//}
 					
+					patt_i++;
+					if (patt_i >= master->patt_size) patt_i = 0;
 				}
 				
 				p2x = last * scale * cosine + p1x;
@@ -680,23 +695,6 @@ int graph_draw2(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 				p1x = p2x;
 				p1y = p2y;
 			}
-			
-			/*if (master->fill && (corners < 1000)){ /* check if object is filled */
-				/*build the lists of corners 
-				if (((x0 != prev_x)||(y0 != prev_y))||(corners == 0)){
-					corner_x[corners] = x0;
-					corner_y[corners] = y0;
-					stroke[corners] = 0;
-					corners++;
-				}
-				corner_x[corners] = x1;
-				corner_y[corners] = y1;
-				stroke[corners] = 1;
-				corners++;
-				
-				prev_x = x1;
-				prev_y = y1;
-			}*/
 		
 			current = current->next; /* go to next */
 		}
@@ -724,36 +722,256 @@ int graph_draw2(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 			if (master->pattern[0] >= 0.0)
 				bmp_line_norm(img, x0, y0, x1, y1, -sine, cosine);
 			
-			/*if (master->fill && (corners < 1000)){ /* check if object is filled */
-				/*build the lists of corners 
-				if (((x0 != prev_x)||(y0 != prev_y))||(corners == 0)){
-					corner_x[corners] = x0;
-					corner_y[corners] = y0;
-					stroke[corners] = 0;
-					corners++;
+			current = current->next; /* go to next */
+		}
+	}
+	if (master->fill){
+		graph_fill(master, img, ofs_x, ofs_y, scale);
+	}
+}
+
+int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
+	if ((master == NULL) || (img == NULL)) return 0;
+	 /* check if list is not empty */
+	if (master->list == NULL) return 0;
+	if (master->list->next == NULL) return 0;
+	
+	double x0, y0, x1, y1;
+	double dx, dy, modulus, sine, cosine;
+	line_node *current = master->list->next;
+	int i, iter;
+	
+	/* set the pattern */
+	patt_change(img, (double[]){1.0,}, 1);
+	/* set the color */
+	img->frg = validate_color(master->color, param.list, param.subst, param.len_subst);
+	
+	/* set the tickness */
+	if (master->thick_const) img->tick = (int) round(master->tick);
+	else img->tick = (int) round(master->tick * param.scale);
+	
+	if (master->patt_size > 1) { /* if graph is dashed lines */
+		int patt_i = 0, patt_a_i = 0, patt_p_i = 0, draw;
+		double patt_len = 0.0, patt_int, patt_part, patt_rem = 0.0, patt_acc, patt_rem_n;
+		double patt_start_x = 0, patt_start_y = 0;
+		double patt_start = 0;
+		
+		double p1x, p1y, p2x, p2y;
+		double last;
+		
+		/* get the pattern length */
+		for (i = 0; i <= master->patt_size && i < 20; i++){
+			patt_len += fabs(master->pattern[i]);
+		}
+		//patt_len *= param.scale;
+		
+		/*first vertice*/
+		if (current){
+			x0 = current->x0;
+			y0 = current->y0;
+			x1 = current->x1;
+			y1 = current->y1;
+			
+			/* get polar parameters of line */
+			dx = x1 - x0;
+			dy = y1 - y0;
+			modulus = sqrt(pow(dx, 2) + pow(dy, 2));
+			cosine = 1.0;
+			sine = 0.0;
+			
+			if (modulus > TOLERANCE){
+				cosine = dx/modulus;
+				sine = dy/modulus;
+			}
+			
+			/* find the start point of pattern, based in line - axis interceptions*/
+			patt_start_x = x0;
+			patt_start_y = y0;
+			patt_start = 0;
+			
+			if (fabs(dy) > TOLERANCE){
+				patt_start_x = (dy * x0 - dx * y0) / dy;
+				patt_start_x /= 2;
+			}else patt_start_x = 0;
+			
+			if (fabs(dx) > TOLERANCE){
+				patt_start_y = (dx * y0 - dy * x0) / dx;
+				patt_start_y /= 2;
+			}else patt_start_y = 0;
+			
+			/*find distance between pattern start and segment's first point */
+			if (fabs(cosine) > TOLERANCE){
+				patt_start = (patt_start_x - x0)/ cosine;
+			}
+			else if (fabs(sine) > TOLERANCE){
+				patt_start = (patt_start_y - y0)/ sine;
+			}
+			
+			/* find the pattern initial conditions for the first point*/
+			if (patt_start <= 0){ /* start of pattern outside segment */
+				patt_start = fabs(fmod(patt_start, patt_len));
+				patt_acc = fabs(master->pattern[0]);
+				for (i = 1; i < master->patt_size && i < 20; i++){
+					patt_i = i - 1;
+					if (patt_start <= patt_acc){
+						patt_rem = (patt_acc - patt_start);
+						break;
+					}
+					patt_acc += fabs(master->pattern[i]);
 				}
-				corner_x[corners] = x1;
-				corner_y[corners] = y1;
-				stroke[corners] = 1;
-				corners++;
+			}
+			else { /* start of pattern on segment -> reverse the search */
+				patt_start = fabs(fmod(patt_start, patt_len));
+				patt_acc = fabs(master->pattern[master->patt_size - 1]);
+				for (i = 1; i < master->patt_size && i < 20; i++){
+					patt_i = master->patt_size - i;
+					if (patt_start <= patt_acc){
+						patt_rem = fabs(master->pattern[patt_i]) - (patt_acc - patt_start);
+						break;
+					}
+					patt_acc += fabs(master->pattern[patt_i - 1]);
+				}
+			}
+		}
+		
+		/* draw the lines */
+		while(current){ /*sweep the list content */
+			x0 = current->x0;
+			y0 = current->y0;
+			x1 = current->x1;
+			y1 = current->y1;
+			
+			/* get polar parameters of line */
+			dx = x1 - x0;
+			dy = y1 - y0;
+			modulus = sqrt(pow(dx, 2) + pow(dy, 2));
+			cosine = 1.0;
+			sine = 0.0;
+			
+			if (modulus > TOLERANCE){
+				cosine = dx/modulus;
+				sine = dy/modulus;
+			}
+			
+			/* initial point */
+			draw = master->pattern[patt_i] >= 0.0;
+			p1x = ((x0 - param.ofs_x) * param.scale);
+			p1y = ((y0 - param.ofs_y) * param.scale);
+			
+			if (patt_rem <= modulus){ /* current segment needs some iterations over pattern */
+			
+				/* find how many interations over whole pattern */ 
+				patt_part = modf((modulus - patt_rem)/patt_len, &patt_int);
+				patt_part *= patt_len; /* remainder for the next step*/
 				
-				prev_x = x1;
-				prev_y = y1;
-			}*/
+				/* find how many interations over partial pattern */
+				patt_a_i = 0;
+				patt_p_i = patt_i;
+				if (patt_rem > 0) patt_p_i++;
+				if (patt_p_i >= master->patt_size) patt_p_i = 0;
+				patt_acc = fabs(master->pattern[patt_p_i]);
+				
+				patt_rem_n = patt_part; /* remainder pattern for next segment continues */
+				if (patt_part < patt_acc) patt_rem_n = patt_acc - patt_part;
+				
+				last = modulus - patt_int*patt_len - patt_rem; /* the last stroke (pattern fractional part) of current segment*/
+				for (i = 0; i < master->patt_size && i < 20; i++){
+					patt_a_i = i;
+					if (patt_part < patt_acc) break;
+					
+					last -= fabs(master->pattern[patt_p_i]);
+					
+					patt_p_i++;
+					if (patt_p_i >= master->patt_size) patt_p_i = 0;
+					
+					patt_acc += fabs(master->pattern[patt_p_i]);
+					
+					patt_rem_n = patt_acc - patt_part;
+				}
+				
+				/* first stroke - remainder of past pattern*/
+				p2x = patt_rem * param.scale * cosine + p1x;
+				p2y = patt_rem * param.scale * sine + p1y;
+				
+				if (patt_rem > 0) {
+					patt_i++;
+					if (patt_i >= master->patt_size) patt_i = 0;
+					
+					if (draw){
+						bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
+					}
+				}
+				
+				patt_rem = patt_rem_n; /* for next segment */
+				p1x = p2x;
+				p1y = p2y;
+				
+				/* draw pattern */
+				iter = (int) (patt_int * (master->patt_size)) + patt_a_i;
+				for (i = 0; i < iter; i++){
+					draw = master->pattern[patt_i] >= 0.0;
+					p2x = fabs(master->pattern[patt_i]) * param.scale * cosine + p1x;
+					p2y = fabs(master->pattern[patt_i]) * param.scale * sine + p1y;
+					if (draw){
+						bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
+					}
+					p1x = p2x;
+					p1y = p2y;
+					
+					patt_i++;
+					if (patt_i >= master->patt_size) patt_i = 0;
+				}
+				
+				p2x = last * param.scale * cosine + p1x;
+				p2y = last * param.scale * sine + p1y;
+				draw = master->pattern[patt_i] >= 0.0;
+				if (draw) bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
+			}
+			else{ /* current segment is in same past iteration pattern */
+				p2x = modulus * param.scale * cosine + p1x;
+				p2y = modulus * param.scale * sine + p1y;
+				
+				patt_rem -= modulus;
+			
+				if (draw){
+					bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
+				}
+				p1x = p2x;
+				p1y = p2y;
+			}
+		
+			current = current->next; /* go to next */
+		}
+	}
+	else{ /* for continuous lines*/
+		while(current){ /*sweep the list content */
+			/* apply the scale and offset */
+			x0 = (current->x0 - param.ofs_x) * param.scale;
+			y0 =(current->y0 - param.ofs_y) * param.scale;
+			x1 = (current->x1 - param.ofs_x) * param.scale;
+			y1 = (current->y1 - param.ofs_y) * param.scale;
+			
+			/* get polar parameters of line */
+			dx = x1 - x0;
+			dy = y1 - y0;
+			modulus = sqrt(pow(dx, 2) + pow(dy, 2));
+			cosine = 1.0;
+			sine = 0.0;
+			
+			if (modulus > TOLERANCE){
+				cosine = dx/modulus;
+				sine = dy/modulus;
+			}
+			
+			if (master->pattern[0] >= 0.0)
+				bmp_line_norm(img, x0, y0, x1, y1, -sine, cosine);
 			
 			current = current->next; /* go to next */
 		}
 	}
-	
-	/*if (master->fill && corners){ /* check if object is filled */
-		/* draw a filled polygon 
-		bmp_poly_fill(img, corners, corner_x, corner_y, stroke);
-	}*/
-	
 	if (master->fill){
-		graph_fill(master, img, ofs_x, ofs_y, scale);
+		graph_fill(master, img, param.ofs_x, param.ofs_y, param.scale);
 	}
-
 }
 
 void graph_line_t(bmp_img *img, double x0, double y0, double x1, double y1, double norm_x, double norm_y, double thick){
@@ -791,309 +1009,6 @@ void graph_line_t(bmp_img *img, double x0, double y0, double x1, double y1, doub
 		}
 	}
 }
-
-int graph_draw3(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, double scale){
-	if ((master == NULL) || (img == NULL)) return 0;
-	 /* check if list is not empty */
-	if (master->list == NULL) return 0;
-	if (master->list->next == NULL) return 0;
-	
-	double x0, y0, x1, y1;
-	line_node *current = master->list->next;
-	int corners = 0, prev_x, prev_y; /* for fill */
-	int corner_x[1000], corner_y[1000], stroke[1000];
-	int i, iter;
-	double dx, dy, modulus, sine, cosine;
-	double norm_x, norm_y, thick;
-	
-	/* set the pattern */
-	patt_change(img, (double[]){1.0,}, 1);
-	/* set the color */
-	img->frg = master->color;
-	
-	/* set the tickness */
-	if (master->thick_const) thick = master->tick;
-	else thick = master->tick * scale;
-	
-	if (master->patt_size > 1) { /* if graph is dashed lines */
-		int patt_i = 0, patt_a_i = 0, patt_p_i = 0, draw;
-		double patt_len = 0.0, patt_int, patt_part, patt_rem = 0.0, patt_acc, patt_rem_n;
-		double patt_start_x = 0, patt_start_y = 0;
-		double patt_start = 0;
-		
-		
-		double p1x, p1y, p2x, p2y;
-		double last;
-		
-		/* get the pattern length */
-		for (i = 0; i <= master->patt_size && i < 20; i++){
-			patt_len += fabs(master->pattern[i]);
-		}
-		//patt_len *= scale;
-		
-		/*first vertice*/
-		if (current){
-			x0 = current->x0;
-			y0 = current->y0;
-			x1 = current->x1;
-			y1 = current->y1;
-			
-			
-			/* get polar parameters of line */
-			dx = x1 - x0;
-			dy = y1 - y0;
-			modulus = sqrt(pow(dx, 2) + pow(dy, 2));
-			cosine = 1.0;
-			sine = 0.0;
-			
-			if (modulus > TOLERANCE){
-				cosine = dx/modulus;
-				sine = dy/modulus;
-			}
-			
-			/* find the start point of pattern, based in line - axis interceptions*/
-			patt_start_x = x0;
-			patt_start_y = y0;
-			patt_start = 0;
-			
-			if (fabs(dy) > TOLERANCE){
-				patt_start_x = (dy * x0 - dx * y0) / dy;
-				patt_start_x /= 2;
-			}else patt_start_x = 0;
-			
-			if (fabs(dx) > TOLERANCE){
-				patt_start_y = (dx * y0 - dy * x0) / dx;
-				patt_start_y /= 2;
-			}else patt_start_y = 0;
-			
-			/*find distance between pattern start and segment's first point */
-			if (fabs(cosine) > TOLERANCE){
-				patt_start = (patt_start_x - x0)/ cosine;
-			}
-			else if (fabs(sine) > TOLERANCE){
-				patt_start = (patt_start_y - y0)/ sine;
-			}
-			
-			/* find the pattern initial conditions for the first point*/
-			if (patt_start <= 0){ /* start of pattern outside segment */
-				patt_start = fabs(fmod(patt_start, patt_len));
-				patt_acc = fabs(master->pattern[0]);
-				for (i = 1; i < master->patt_size && i < 20; i++){
-					patt_i = i - 1;
-					if (patt_start <= patt_acc){
-						patt_rem = (patt_acc - patt_start);
-						break;
-					}
-					patt_acc += fabs(master->pattern[i]);
-				}
-			}
-			else { /* start of pattern on segment -> reverse the search */
-				patt_start = fabs(fmod(patt_start, patt_len));
-				patt_acc = fabs(master->pattern[master->patt_size - 1]);
-				for (i = 1; i < master->patt_size && i < 20; i++){
-					patt_i = master->patt_size - i;
-					if (patt_start <= patt_acc){
-						patt_rem = fabs(master->pattern[patt_i]) - (patt_acc - patt_start);
-						break;
-					}
-					patt_acc += fabs(master->pattern[patt_i - 1]);
-				}
-			}
-			
-		}
-		
-		
-		/* draw the lines */
-		while(current){ /*sweep the list content */
-			
-			x0 = current->x0;
-			y0 = current->y0;
-			x1 = current->x1;
-			y1 = current->y1;
-			
-			
-			/* get polar parameters of line */
-			dx = x1 - x0;
-			dy = y1 - y0;
-			modulus = sqrt(pow(dx, 2) + pow(dy, 2));
-			cosine = 1.0;
-			sine = 0.0;
-			
-			if (modulus > TOLERANCE){
-				cosine = dx/modulus;
-				sine = dy/modulus;
-			}
-			
-			norm_x = -sine * thick/2;
-			norm_y = cosine * thick/2;
-			
-			/* initial point */
-			draw = master->pattern[patt_i] >= 0.0;
-			p1x = ((x0 - ofs_x) * scale);
-			p1y = ((y0 - ofs_y) * scale);
-			
-			if (patt_rem <= modulus){ /* current segment needs some iterations over pattern */
-			
-				/* find how many interations over whole pattern */ 
-				patt_part = modf((modulus - patt_rem)/patt_len, &patt_int);
-				patt_part *= patt_len; /* remainder for the next step*/
-				
-				/* find how many interations over partial pattern */
-				patt_a_i = 0;
-				patt_p_i = patt_i;
-				if (patt_rem > 0) patt_p_i++;
-				if (patt_p_i >= master->patt_size) patt_p_i = 0;
-				patt_acc = fabs(master->pattern[patt_p_i]);
-				
-				patt_rem_n = patt_part; /* remainder pattern for next segment continues */
-				if (patt_part < patt_acc) patt_rem_n = patt_acc - patt_part;
-				
-				last = modulus - patt_int*patt_len - patt_rem; /* the last stroke (pattern fractional part) of current segment*/
-				for (i = 0; i < master->patt_size && i < 20; i++){
-					patt_a_i = i;
-					if (patt_part < patt_acc) break;
-					
-					last -= fabs(master->pattern[patt_p_i]);
-					
-					patt_p_i++;
-					if (patt_p_i >= master->patt_size) patt_p_i = 0;
-					
-					patt_acc += fabs(master->pattern[patt_p_i]);
-					
-					patt_rem_n = patt_acc - patt_part;
-					
-					
-				}
-				
-				/* first stroke - remainder of past pattern*/
-				p2x = patt_rem * scale * cosine + p1x;
-				p2y = patt_rem * scale * sine + p1y;
-				
-				if (patt_rem > 0) {
-					patt_i++;
-					if (patt_i >= master->patt_size) patt_i = 0;
-					
-					if (draw){
-						graph_line_t(img, p1x, p1y, p2x, p2y, norm_x, norm_y, thick);
-					}
-				}
-				
-				patt_rem = patt_rem_n; /* for next segment */
-				p1x = p2x;
-				p1y = p2y;
-				
-				/* draw pattern */
-				iter = (int) (patt_int * (master->patt_size)) + patt_a_i;
-				for (i = 0; i < iter; i++){
-					draw = master->pattern[patt_i] >= 0.0;
-					p2x = fabs(master->pattern[patt_i]) * scale * cosine + p1x;
-					p2y = fabs(master->pattern[patt_i]) * scale * sine + p1y;
-					if (draw){
-						graph_line_t(img, p1x, p1y, p2x, p2y, norm_x, norm_y, thick);
-					}
-					
-					p1x = p2x;
-					p1y = p2y;
-					//if (i < iter - 1){
-						patt_i++;
-						if (patt_i >= master->patt_size) patt_i = 0;
-					//}
-					
-				}
-				
-				p2x = last * scale * cosine + p1x;
-				p2y = last * scale * sine + p1y;
-				draw = master->pattern[patt_i] >= 0.0;
-				if (draw) graph_line_t(img, p1x, p1y, p2x, p2y, norm_x, norm_y, thick);
-			}
-			else{ /* current segment is in same past iteration pattern */
-				p2x = modulus * scale * cosine + p1x;
-				p2y = modulus * scale * sine + p1y;
-				
-				patt_rem -= modulus;
-			
-				if (draw){
-					graph_line_t(img, p1x, p1y, p2x, p2y, norm_x, norm_y, thick);
-				}
-				p1x = p2x;
-				p1y = p2y;
-			}
-			
-			if (master->fill && (corners < 1000)){ /* check if object is filled */
-				/*build the lists of corners */
-				if (((x0 != prev_x)||(y0 != prev_y))||(corners == 0)){
-					corner_x[corners] = x0;
-					corner_y[corners] = y0;
-					stroke[corners] = 0;
-					corners++;
-				}
-				corner_x[corners] = x1;
-				corner_y[corners] = y1;
-				stroke[corners] = 1;
-				corners++;
-				
-				prev_x = x1;
-				prev_y = y1;
-			}
-		
-			current = current->next; /* go to next */
-		}
-	}
-	else{ /* for continuous lines*/
-		while(current){ /*sweep the list content */
-			/* apply the scale and offset */
-			x0 = (current->x0 - ofs_x) * scale;
-			y0 =(current->y0 - ofs_y) * scale;
-			x1 = (current->x1 - ofs_x) * scale;
-			y1 = (current->y1 - ofs_y) * scale;
-			
-			/* get polar parameters of line */
-			dx = x1 - x0;
-			dy = y1 - y0;
-			modulus = sqrt(pow(dx, 2) + pow(dy, 2));
-			cosine = 1.0;
-			sine = 0.0;
-			
-			if (modulus > TOLERANCE){
-				cosine = dx/modulus;
-				sine = dy/modulus;
-			}
-			
-			norm_x = -sine * thick/2;
-			norm_y = cosine * thick/2;
-			
-			if (master->pattern[0] >= 0.0)
-				graph_line_t(img, x0, y0, x1, y1, norm_x, norm_y, thick);
-			
-			if (master->fill && (corners < 1000)){ /* check if object is filled */
-				/*build the lists of corners */
-				if (((x0 != prev_x)||(y0 != prev_y))||(corners == 0)){
-					corner_x[corners] = x0;
-					corner_y[corners] = y0;
-					stroke[corners] = 0;
-					corners++;
-				}
-				corner_x[corners] = x1;
-				corner_y[corners] = y1;
-				stroke[corners] = 1;
-				corners++;
-				
-				prev_x = x1;
-				prev_y = y1;
-			}
-			
-			current = current->next; /* go to next */
-		}
-	}
-	
-	if (master->fill && corners){ /* check if object is filled */
-		/* draw a filled polygon */
-		bmp_poly_fill(img, corners, corner_x, corner_y, stroke);
-	}
-
-}
-
-
 
 void graph_draw_fix(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, double scale, bmp_color color){
 	if ((master != NULL) && (img != NULL)){
@@ -1891,7 +1806,6 @@ int graph_isect(graph_obj * master, double rect_pt1[2], double rect_pt2[2]){
 					return 1;
 				}
 				
-				
 				current = current->next; /* go to next */
 			}
 		}
@@ -2176,11 +2090,6 @@ int graph_is_closed(graph_obj * master){
 		(fabs(first_y - prev_y) > TOLERANCE)) return 0;
 	
 	return 1;
-}
-
-int get_i(int pos, int len, int rev){
-	if (!rev) return pos;
-	else return len - 1 - pos;
 }
 
 int graph_dash(graph_obj * master, double x0, double y0, 

@@ -464,7 +464,17 @@ int gui_hatch_info (gui_obj *gui){
 				
 				/* draw graphics in preview bitmap */
 				bmp_fill(gui->preview_img, gui->preview_img->bkg); /* clear bitmap */
-				graph_list_draw(pat_g, gui->preview_img, o_x, o_y, z);
+				//graph_list_draw(pat_g, gui->preview_img, o_x, o_y, z);
+				struct draw_param d_param;
+				
+				d_param.ofs_x = o_x;
+				d_param.ofs_y = o_y;
+				d_param.scale = z;
+				d_param.list = NULL;
+				d_param.subst = NULL;
+				d_param.len_subst = 0;
+				graph_list_draw(pat_g, gui->preview_img, d_param);
+				
 				
 				
 				if (nk_group_begin(gui->ctx, "Patt_prev", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {

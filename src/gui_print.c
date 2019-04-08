@@ -1,6 +1,4 @@
-#include "gui.h"
-#include "gui_file.h"
-#include "dxf_print.h"
+#include "gui_print.h"
 
 int print_win (gui_obj *gui){
 	int show_print = 1;
@@ -28,7 +26,64 @@ int print_win (gui_obj *gui){
 		static const char *ext_type[] = { "PDF", "SVG", "PNG", "*"};
 		static const char *ext_descr[] = { "PDF (.pdf)", "SVG (.svg)", "PNG (.png)", "All files (*)"};
 		int num_ext = 4, i;
+		
+		bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
+		bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
+		bmp_color red = { .r = 255, .g = 0, .b = 0, .a = 255 };
+		bmp_color yellow = { .r = 255, .g = 255, .b = 0, .a = 255 };
+		bmp_color green = { .r = 0, .g = 255, .b = 0, .a = 255 };
+		bmp_color cyan = { .r = 0, .g = 255, .b = 255, .a = 255 };
+		bmp_color blue = { .r = 0, .g = 0, .b = 255, .a = 255 };
+		bmp_color magenta = { .r = 255, .g = 0, .b = 255, .a = 255 };
+		
+		bmp_color y_dark = { .r = 150, .g = 150, .b = 0, .a = 255 };
+		bmp_color g_dark = { .r = 0, .g = 129, .b = 0, .a = 255 };
+		bmp_color c_dark = { .r = 0, .g = 129, .b = 129, .a = 255 };
+		
+		bmp_color list[] = { white, };
+		bmp_color subst[] = { black, };
+		
+		static struct print_param param, prev_param;
 			
+		int len = 1;
+		
+		bmp_color list_dark[] = { white, yellow, green, cyan};
+		bmp_color subst_dark[] = { black, y_dark, g_dark, c_dark};
+		int len_dark = 4;
+		
+		param.scale = scale;
+		param.ofs_x = ofs_x;
+		param.ofs_y = ofs_y;
+		param.w = page_w;
+		param.h = page_h;
+		param.mono = mono;
+		param.inch = 0;
+		
+		if (!dark){
+			param.list = list;
+			param.subst = subst;
+			param.len = len;
+		}
+		else{
+			param.list = list_dark;
+			param.subst = subst_dark;
+			param.len = len_dark;
+		}
+		if (mono) param.list = NULL;
+		
+		
+		if(prev_param.scale != param.scale ||
+		prev_param.ofs_x != param.ofs_x ||
+		prev_param.ofs_y != param.ofs_y ||
+		prev_param.w != param.w ||
+		prev_param.h != param.h ||
+		prev_param.mono != param.mono ||
+		prev_param.inch != param.inch ||
+		prev_param.list != param.list ||
+		prev_param.subst != param.subst ||
+		prev_param.len != param.len)
+		update = 1;
+		
 		nk_layout_row_static(gui->ctx, 180, 190, 2);
 		if (nk_group_begin(gui->ctx, "Page setup", NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
 			nk_layout_row_static(gui->ctx, 20, 70, 2);
@@ -39,7 +94,7 @@ int print_win (gui_obj *gui){
 				if (strlen(page_w_str)) /* update parameter value */
 					page_w = atof(page_w_str);
 				snprintf(page_w_str, 63, "%.9g", page_w);
-				update = 1;
+				//update = 1;
 			}
 			
 			nk_label(gui->ctx, "Height:", NK_TEXT_RIGHT);
@@ -49,7 +104,7 @@ int print_win (gui_obj *gui){
 				if (strlen(page_h_str)) /* update parameter value */
 					page_h = atof(page_h_str);
 				snprintf(page_h_str, 63, "%.9g", page_h);
-				update = 1;
+				//update = 1;
 			}
 			
 			nk_label(gui->ctx, "Offset X:", NK_TEXT_RIGHT);
@@ -59,7 +114,7 @@ int print_win (gui_obj *gui){
 				if (strlen(ofs_x_str)) /* update parameter value */
 					ofs_x = atof(ofs_x_str);
 				snprintf(ofs_x_str, 63, "%.9g", ofs_x);
-				update = 1;
+				//update = 1;
 			}
 			
 			nk_label(gui->ctx, "Offset Y:", NK_TEXT_RIGHT);
@@ -69,7 +124,7 @@ int print_win (gui_obj *gui){
 				if (strlen(ofs_y_str)) /* update parameter value */
 					ofs_y = atof(ofs_y_str);
 				snprintf(ofs_y_str, 63, "%.9g", ofs_y);
-				update = 1;
+				//update = 1;
 			}
 			
 			nk_label(gui->ctx, "Scale:", NK_TEXT_RIGHT);
@@ -79,7 +134,7 @@ int print_win (gui_obj *gui){
 				if (strlen(scale_str)) /* update parameter value */
 					scale = atof(scale_str);
 				snprintf(scale_str, 63, "%.9g", scale);
-				update = 1;
+				//update = 1;
 			}
 			nk_group_end(gui->ctx);
 		}
@@ -105,7 +160,7 @@ int print_win (gui_obj *gui){
 			snprintf(ofs_x_str, 63, "%.9g", ofs_x);
 			snprintf(ofs_y_str, 63, "%.9g", ofs_y);
 			snprintf(scale_str, 63, "%.9g", scale);
-			update = 1;
+			//update = 1;
 		}
 		if (nk_button_label(gui->ctx, "Fit all")){
 			double min_x, min_y, max_x, max_y;
@@ -122,7 +177,7 @@ int print_win (gui_obj *gui){
 			snprintf(ofs_x_str, 63, "%.9g", ofs_x);
 			snprintf(ofs_y_str, 63, "%.9g", ofs_y);
 			snprintf(scale_str, 63, "%.9g", scale);
-			update = 1;
+			//update = 1;
 		}
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
@@ -190,46 +245,7 @@ int print_win (gui_obj *gui){
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		if (nk_button_label(gui->ctx, "Print")){
-			struct print_param param;
-			bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
-			bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
-			bmp_color red = { .r = 255, .g = 0, .b = 0, .a = 255 };
-			bmp_color yellow = { .r = 255, .g = 255, .b = 0, .a = 255 };
-			bmp_color green = { .r = 0, .g = 255, .b = 0, .a = 255 };
-			bmp_color cyan = { .r = 0, .g = 255, .b = 255, .a = 255 };
-			bmp_color blue = { .r = 0, .g = 0, .b = 255, .a = 255 };
-			bmp_color magenta = { .r = 255, .g = 0, .b = 255, .a = 255 };
 			
-			bmp_color y_dark = { .r = 150, .g = 150, .b = 0, .a = 255 };
-			bmp_color g_dark = { .r = 0, .g = 129, .b = 0, .a = 255 };
-			bmp_color c_dark = { .r = 0, .g = 129, .b = 129, .a = 255 };
-			
-			bmp_color list[] = { white, };
-			bmp_color subst[] = { black, };
-			
-			int len = 1;
-			
-			bmp_color list_dark[] = { white, yellow, green, cyan};
-			bmp_color subst_dark[] = { black, y_dark, g_dark, c_dark};
-			int len_dark = 4;
-			
-			param.scale = scale;
-			param.ofs_x = ofs_x;
-			param.ofs_y = ofs_y;
-			param.w = page_w;
-			param.h = page_h;
-			param.mono = mono;
-			param.inch = 0;
-			if (!dark){
-				param.list = list;
-				param.subst = subst;
-				param.len = len;
-			}
-			else{
-				param.list = list_dark;
-				param.subst = subst_dark;
-				param.len = len_dark;
-			}
 			
 			if (strcmp(ext_type[out_fmt], "PDF") == 0)
 				print_pdf(gui->drawing, param, sel_file);
@@ -264,7 +280,19 @@ int print_win (gui_obj *gui){
 			gui->preview_img->clip_w = (unsigned int)w;
 			gui->preview_img->clip_h = (unsigned int)h;
 			
-			dxf_ents_draw(gui->drawing, gui->preview_img, o_x, o_y, z * scale);
+			bmp_fill_clip(gui->preview_img, white); /* clear bitmap on page bounds */
+			
+			//dxf_ents_draw(gui->drawing, gui->preview_img, o_x, o_y, z * scale);
+			struct draw_param d_param;
+			
+			d_param.ofs_x = o_x;
+			d_param.ofs_y = o_y;
+			d_param.scale = z * scale;
+			d_param.list = param.list;
+			d_param.subst = param.subst;
+			d_param.len_subst = param.len;
+			
+			dxf_ents_draw(gui->drawing, gui->preview_img, d_param);
 			
 			/* draw page rectangle */
 			bmp_color blue = { .r = 0, .g = 0, .b = 255, .a = 255 };
@@ -283,6 +311,17 @@ int print_win (gui_obj *gui){
 				strncpy(sel_file, gui->curr_path, MAX_PATH_LEN);
 			}
 		}
+		
+		prev_param.scale = param.scale;
+		prev_param.ofs_x = param.ofs_x;
+		prev_param.ofs_y = param.ofs_y;
+		prev_param.w = param.w;
+		prev_param.h = param.h;
+		prev_param.mono = param.mono;
+		prev_param.inch = param.inch;
+		prev_param.list = param.list;
+		prev_param.subst = param.subst;
+		prev_param.len = param.len;
 		
 	} else show_print = 0;
 	nk_end(gui->ctx);

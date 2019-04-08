@@ -808,7 +808,17 @@ int tstyles_mng (gui_obj *gui){
 					
 					/* draw graphics in current preview bitmap */
 					bmp_fill(gui->preview_img, gui->preview_img->bkg); /* clear bitmap preview */
-					graph_list_draw(preview, gui->preview_img, o_x, o_y, z);
+					//graph_list_draw(preview, gui->preview_img, o_x, o_y, z);
+					struct draw_param d_param;
+	
+					d_param.ofs_x = o_x;
+					d_param.ofs_y = o_y;
+					d_param.scale = z;
+					d_param.list = NULL;
+					d_param.subst = NULL;
+					d_param.len_subst = 0;
+					graph_list_draw(preview, gui->preview_img, d_param);
+					
 				}
 				
 				nk_style_pop_font(gui->ctx); /* return to the default font*/

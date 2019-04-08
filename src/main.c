@@ -19,6 +19,7 @@
 #include "gui_xy.h"
 #include "gui_use.h"
 #include "gui_file.h"
+#include "gui_print.h"
 
 #include <stdio.h> 
 #include <stdlib.h> 
@@ -497,10 +498,12 @@ int main(int argc, char** argv){
 	bmp_color green = {.r = 0, .g = 255, .b =0, .a = 255};
 	bmp_color yellow = {.r = 255, .g = 255, .b =0, .a = 255};
 	bmp_color grey = {.r = 100, .g = 100, .b = 100, .a = 255};
-	bmp_color hilite = {.r = 255, .g = 0, .b = 255, .a = 150};
+	bmp_color magenta_l = {.r = 255, .g = 0, .b = 255, .a = 150};
 	bmp_color transp = {.r = 255, .g = 255, .b = 255, .a = 0};
 	bmp_color cursor = {.r = 255, .g = 255, .b = 255, .a = 100};
 	background = nk_rgb(28,48,62);
+	
+	bmp_color hilite[] = {magenta_l, };
 	
 	/* line types in use */
 	double center [] = {12, -6, 2 , -6};
@@ -820,6 +823,15 @@ int main(int argc, char** argv){
 			}
 			
 		}
+		
+		struct draw_param d_param;
+	
+		d_param.ofs_x = gui->ofs_x;
+		d_param.ofs_y = gui->ofs_y;
+		d_param.scale = gui->zoom;
+		d_param.list = NULL;
+		d_param.subst = NULL;
+		d_param.len_subst = 0;
 		
 		gui->next_win_h = 6 + 4 + ICON_SIZE + 4 + 6 + 4 + ICON_SIZE + 4 + 6 + 8;
 		gui->next_win_x = 2;
@@ -1956,7 +1968,8 @@ int main(int argc, char** argv){
 			img->clip_h = gui->win_h;
 		
 			bmp_fill_clip(img, img->bkg); /* clear bitmap */
-			dxf_ents_draw(gui->drawing, img, gui->ofs_x, gui->ofs_y, gui->zoom); /* redraw */
+			//dxf_ents_draw(gui->drawing, img, gui->ofs_x, gui->ofs_y, gui->zoom); /* redraw */
+			dxf_ents_draw(gui->drawing, img, d_param);
 			
 			/*===================== teste ===============*/
 			//graph_list_draw(tt_test, img, gui->ofs_x, gui->ofs_y, gui->zoom);
@@ -1976,14 +1989,19 @@ int main(int argc, char** argv){
 			if((gui->draw_tmp)&&(gui->element != NULL)){
 				gui->element->obj.graphics = dxf_graph_parse(gui->drawing, gui->element, 0 , 1);
 			}
+			
+			d_param.subst = hilite;
+			d_param.len_subst = 1;
+			
 			if(gui->element != NULL){
-				graph_list_draw_fix(gui->element->obj.graphics, img, gui->ofs_x, gui->ofs_y, gui->zoom, hilite);
+				//graph_list_draw_fix(gui->element->obj.graphics, img, gui->ofs_x, gui->ofs_y, gui->zoom, hilite);
+				graph_list_draw(gui->element->obj.graphics, img, d_param);
 			}
 			if((gui->draw_phanton)&&(gui->phanton)){
 				//dxf_list_draw(gui->sel_list, img, gui->ofs_x - (x1 - x0), gui->ofs_y - (y1 - y0), gui->zoom, hilite);
-				graph_list_draw_fix(gui->phanton, img, gui->ofs_x, gui->ofs_y, gui->zoom, hilite);
+				graph_list_draw(gui->phanton, img, d_param);
 			}
-			dxf_list_draw(gui->sel_list, img, gui->ofs_x, gui->ofs_y, gui->zoom, hilite);
+			dxf_list_draw(gui->sel_list, img, d_param);
 			
 			
 			/* set image visible window*/

@@ -441,60 +441,6 @@ int print_svg(dxf_drawing *drawing, struct print_param param, char *dest){
 	return 1;
 }
 
-int print_list_png(list_node *list, bmp_img * img, struct draw_param param){
-	list_node *current = NULL;
-	graph_obj *curr_graph = NULL;
-	int ok = 0;
-		
-	if (list != NULL){
-		current = list->next;
-		
-		/* sweep the main list */
-		while (current != NULL){
-			if (current->data){
-				curr_graph = (graph_obj *)current->data;
-				//print_graph_pdf(curr_graph, buf, param);
-				graph_draw3(curr_graph, img, param);
-			}
-			current = current->next;
-		}
-		ok = 1;
-	}
-	return ok;
-}
-
-int print_ents_png(dxf_drawing *drawing, bmp_img * img, struct draw_param param){
-	dxf_node *current = NULL;
-	//int lay_idx = 0;
-		
-	if ((drawing->ents != NULL) && (drawing->main_struct != NULL)){
-		current = drawing->ents->obj.content->next;
-		
-		int init = 0;
-		// starts the content sweep 
-		while (current != NULL){
-			if (current->type == DXF_ENT){ // DXF entity
-				/*verify if entity layer is on and thaw */
-				//lay_idx = dxf_layer_get(drawing, current);
-				if ((!drawing->layers[current->obj.layer].off) && 
-					(!drawing->layers[current->obj.layer].frozen)){
-				
-					// -------------------------------------------
-					if (!init){
-						
-						init = 1;
-					}
-	
-					print_list_png(current->obj.graphics, img, param);
-					
-					//---------------------------------------
-				}
-			}
-			current = current->next;
-		}
-	}
-}
-
 int print_png(dxf_drawing *drawing, struct print_param param, char *dest){
 	
 	if (!drawing) return 0;
@@ -530,7 +476,7 @@ int print_png(dxf_drawing *drawing, struct print_param param, char *dest){
 	
 	bmp_fill_clip(img, img->bkg); /* clear bitmap */
 	
-	print_ents_png(drawing, img, d_param);
+	dxf_ents_draw(drawing, img, d_param);
 	
 	stbi_write_png((char const *)dest, w, h, 4, img->buf, w * 4);
 	

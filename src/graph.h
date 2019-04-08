@@ -110,9 +110,10 @@ void rbasis(int c, double t, int npts, int x[], double h[], double r[]);
 
 void rbspline(int npts, int k, int p1, double b[], double h[], double p[]);
 
-int graph_list_draw(list_node *list, bmp_img * img, double ofs_x, double ofs_y, double scale);
+//int graph_list_draw(list_node *list, bmp_img * img, double ofs_x, double ofs_y, double scale);
+int graph_list_draw(list_node *list, bmp_img * img, struct draw_param param);
 
-int graph_list_draw_fix(list_node *list, bmp_img * img, double ofs_x, double ofs_y, double scale, bmp_color color);
+//int graph_list_draw_fix(list_node *list, bmp_img * img, double ofs_x, double ofs_y, double scale, bmp_color color);
 
 int graph_list_ext(list_node *list, int *init, double * min_x, double * min_y, double * max_x, double * max_y);
 

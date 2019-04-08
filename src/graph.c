@@ -1813,6 +1813,7 @@ int graph_isect(graph_obj * master, double rect_pt1[2], double rect_pt2[2]){
 	return 0;
 }
 
+#if(0)
 int graph_list_draw(list_node *list, bmp_img * img, double ofs_x, double ofs_y, double scale){
 	list_node *current = NULL;
 	graph_obj *curr_graph = NULL;
@@ -1833,7 +1834,31 @@ int graph_list_draw(list_node *list, bmp_img * img, double ofs_x, double ofs_y, 
 	}
 	return ok;
 }
+#endif
 
+int graph_list_draw(list_node *list, bmp_img * img, struct draw_param param){
+	list_node *current = NULL;
+	graph_obj *curr_graph = NULL;
+	int ok = 0;
+		
+	if (list != NULL){
+		current = list->next;
+		
+		/* sweep the main list */
+		while (current != NULL){
+			if (current->data){
+				curr_graph = (graph_obj *)current->data;
+				//print_graph_pdf(curr_graph, buf, param);
+				graph_draw3(curr_graph, img, param);
+			}
+			current = current->next;
+		}
+		ok = 1;
+	}
+	return ok;
+}
+
+#if(0)
 int graph_list_draw_fix(list_node *list, bmp_img * img, double ofs_x, double ofs_y, double scale, bmp_color color){
 	list_node *current = NULL;
 	graph_obj *curr_graph = NULL;
@@ -1854,6 +1879,7 @@ int graph_list_draw_fix(list_node *list, bmp_img * img, double ofs_x, double ofs
 	}
 	return ok;
 }
+#endif
 
 int graph_list_ext(list_node *list, int *init, double * min_x, double * min_y, double * max_x, double * max_y){
 	list_node *current = NULL;

@@ -3420,6 +3420,7 @@ list_node * dxf_list_parse(dxf_drawing *drawing, list_node *list, int p_space, i
 	return NULL;
 }
 
+#if(0)
 int dxf_ents_draw(dxf_drawing *drawing, bmp_img * img, double ofs_x, double ofs_y, double scale){
 	dxf_node *current = NULL;
 	//int lay_idx = 0;
@@ -3445,8 +3446,41 @@ int dxf_ents_draw(dxf_drawing *drawing, bmp_img * img, double ofs_x, double ofs_
 		}
 	}
 }
+#endif
 
-int dxf_list_draw(list_node *list, bmp_img * img, double ofs_x, double ofs_y, double scale, bmp_color color){
+int dxf_ents_draw(dxf_drawing *drawing, bmp_img * img, struct draw_param param){
+	dxf_node *current = NULL;
+	//int lay_idx = 0;
+		
+	if ((drawing->ents != NULL) && (drawing->main_struct != NULL)){
+		current = drawing->ents->obj.content->next;
+		
+		int init = 0;
+		// starts the content sweep 
+		while (current != NULL){
+			if (current->type == DXF_ENT){ // DXF entity
+				/*verify if entity layer is on and thaw */
+				//lay_idx = dxf_layer_get(drawing, current);
+				if ((!drawing->layers[current->obj.layer].off) && 
+					(!drawing->layers[current->obj.layer].frozen)){
+				
+					// -------------------------------------------
+					if (!init){
+						
+						init = 1;
+					}
+	
+					graph_list_draw(current->obj.graphics, img, param);
+					
+					//---------------------------------------
+				}
+			}
+			current = current->next;
+		}
+	}
+}
+
+int dxf_list_draw(list_node *list, bmp_img * img, struct draw_param param){
 	list_node *current = NULL;
 		
 	if (list != NULL){
@@ -3457,7 +3491,7 @@ int dxf_list_draw(list_node *list, bmp_img * img, double ofs_x, double ofs_y, do
 			if (current->data){
 				if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
 					// -------------------------------------------
-					graph_list_draw_fix(((dxf_node *)current->data)->obj.graphics, img, ofs_x, ofs_y, scale, color);
+					graph_list_draw(((dxf_node *)current->data)->obj.graphics, img, param);
 					
 					//---------------------------------------
 				}

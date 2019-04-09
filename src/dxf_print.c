@@ -223,10 +223,16 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	long cmp_len = compressBound(src_len);
 	// Allocate buffers to hold compressed and uncompressed data.
 	mz_uint8 *pCmp = (mz_uint8 *)malloc((size_t)cmp_len);
+	if (!pCmp) {
+		free(buf);
+		return 0;
+	}
 	// Compress the string.
 	cmp_status = compress(pCmp, &cmp_len, (const unsigned char *)buf->data, src_len);
-	if (cmp_status == Z_OK){
-		//printf("Compressed from %u to %u bytes\n", (mz_uint32)src_len, (mz_uint32)cmp_len);
+	if (cmp_status != Z_OK){
+		free(pCmp);
+		free(buf);
+		return 0;
 	}
 	
 	struct pdf_info info = {
@@ -243,13 +249,12 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	
 	//pdf_add_stream(pdf, page, buf->data);
 	pdf_add_stream_zip(pdf, page, pCmp, cmp_len);
-	pdf_save(pdf, dest);
+	int e = pdf_save(pdf, dest);
 	pdf_destroy(pdf);
 	
 	free(pCmp);
 	free(buf);
-	#if(0)
-	#endif
+	if (e) return 0;
 	return 1;
 }
 
@@ -441,13 +446,13 @@ int print_svg(dxf_drawing *drawing, struct print_param param, char *dest){
 	return 1;
 }
 
-int print_png(dxf_drawing *drawing, struct print_param param, char *dest){
+int print_img(dxf_drawing *drawing, struct print_param param, char *dest){
 	
 	if (!drawing) return 0;
 	
-	
-	param.resolution = 4.0;
-	
+	param.resolution = 96.0 / 25.4;
+	if (param.inch)
+		param.resolution = 96.0;
 	
 	bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 0 };
 	bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
@@ -473,15 +478,16 @@ int print_png(dxf_drawing *drawing, struct print_param param, char *dest){
 	d_param.list = param.list;
 	d_param.subst = param.subst;
 	d_param.len_subst = param.len;
+	d_param.inc_thick = 0;
 	
 	bmp_fill_clip(img, img->bkg); /* clear bitmap */
 	
 	dxf_ents_draw(drawing, img, d_param);
 	
-	stbi_write_png((char const *)dest, w, h, 4, img->buf, w * 4);
+	int ret = stbi_write_png((char const *)dest, w, h, 4, img->buf, w * 4);
 	
 	
 	bmp_free(img);
 	
-	return 1;
+	return ret;
 }

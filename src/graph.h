@@ -69,6 +69,7 @@ struct draw_param{
 	int len_subst;
 	bmp_color *list;
 	bmp_color *subst;
+	int inc_thick;
 };
 
 void * graph_mem_pool2(enum graph_pool_action action);

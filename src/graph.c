@@ -732,7 +732,7 @@ int graph_draw2(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 
 int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 	if ((master == NULL) || (img == NULL)) return 0;
-	 /* check if list is not empty */
+	/* check if list is not empty */
 	if (master->list == NULL) return 0;
 	if (master->list->next == NULL) return 0;
 	
@@ -747,8 +747,8 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 	img->frg = validate_color(master->color, param.list, param.subst, param.len_subst);
 	
 	/* set the tickness */
-	if (master->thick_const) img->tick = (int) round(master->tick);
-	else img->tick = (int) round(master->tick * param.scale);
+	if (master->thick_const) img->tick = (int) round(master->tick) + param.inc_thick;
+	else img->tick = (int) round(master->tick * param.scale) + param.inc_thick;
 	
 	if (master->patt_size > 1) { /* if graph is dashed lines */
 		int patt_i = 0, patt_a_i = 0, patt_p_i = 0, draw;

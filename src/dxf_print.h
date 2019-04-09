@@ -35,6 +35,6 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest);
 
 int print_svg(dxf_drawing *drawing, struct print_param param, char *dest);
 
-int print_png(dxf_drawing *drawing, struct print_param param, char *dest);
+int print_img(dxf_drawing *drawing, struct print_param param, char *dest);
 
 #endif

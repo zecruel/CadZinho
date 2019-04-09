@@ -443,6 +443,7 @@ int main(int argc, char** argv){
 	int path_ok = 0;
 	int show_info = 0;
 	int show_print = 0;
+	struct draw_param d_param;
 	
 	
 	char file_path[DXF_MAX_CHARS];
@@ -824,14 +825,7 @@ int main(int argc, char** argv){
 			
 		}
 		
-		struct draw_param d_param;
-	
-		d_param.ofs_x = gui->ofs_x;
-		d_param.ofs_y = gui->ofs_y;
-		d_param.scale = gui->zoom;
-		d_param.list = NULL;
-		d_param.subst = NULL;
-		d_param.len_subst = 0;
+		
 		
 		gui->next_win_h = 6 + 4 + ICON_SIZE + 4 + 6 + 4 + ICON_SIZE + 4 + 6 + 8;
 		gui->next_win_x = 2;
@@ -1966,6 +1960,14 @@ int main(int argc, char** argv){
 			img->clip_x = 0; img->clip_y = gui->main_h - gui->win_h;
 			img->clip_w = gui->win_w;
 			img->clip_h = gui->win_h;
+			
+			d_param.ofs_x = gui->ofs_x;
+			d_param.ofs_y = gui->ofs_y;
+			d_param.scale = gui->zoom;
+			d_param.list = NULL;
+			d_param.subst = NULL;
+			d_param.len_subst = 0;
+			d_param.inc_thick = 0;
 		
 			bmp_fill_clip(img, img->bkg); /* clear bitmap */
 			//dxf_ents_draw(gui->drawing, img, gui->ofs_x, gui->ofs_y, gui->zoom); /* redraw */
@@ -1992,6 +1994,7 @@ int main(int argc, char** argv){
 			
 			d_param.subst = hilite;
 			d_param.len_subst = 1;
+			d_param.inc_thick = 3;
 			
 			if(gui->element != NULL){
 				//graph_list_draw_fix(gui->element->obj.graphics, img, gui->ofs_x, gui->ofs_y, gui->zoom, hilite);

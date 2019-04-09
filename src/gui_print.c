@@ -25,7 +25,7 @@ int print_win (gui_obj *gui){
 		static int show_app_file = 0, mono = 0, dark = 0, out_fmt = 0;
 		static const char *ext_type[] = { "PDF", "SVG", "PNG", "*"};
 		static const char *ext_descr[] = { "PDF (.pdf)", "SVG (.svg)", "PNG (.png)", "All files (*)"};
-		int num_ext = 4, i;
+		int num_ext = 4, i, ret = 0;
 		
 		bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
 		bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
@@ -160,7 +160,7 @@ int print_win (gui_obj *gui){
 			snprintf(ofs_x_str, 63, "%.9g", ofs_x);
 			snprintf(ofs_y_str, 63, "%.9g", ofs_y);
 			snprintf(scale_str, 63, "%.9g", scale);
-			//update = 1;
+			update = 1;
 		}
 		if (nk_button_label(gui->ctx, "Fit all")){
 			double min_x, min_y, max_x, max_y;
@@ -177,7 +177,7 @@ int print_win (gui_obj *gui){
 			snprintf(ofs_x_str, 63, "%.9g", ofs_x);
 			snprintf(ofs_y_str, 63, "%.9g", ofs_y);
 			snprintf(scale_str, 63, "%.9g", scale);
-			//update = 1;
+			update = 1;
 		}
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
@@ -245,15 +245,19 @@ int print_win (gui_obj *gui){
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		if (nk_button_label(gui->ctx, "Print")){
-			
+			snprintf(gui->log_msg, 63, " ");
 			
 			if (strcmp(ext_type[out_fmt], "PDF") == 0)
-				print_pdf(gui->drawing, param, sel_file);
+				ret = print_pdf(gui->drawing, param, sel_file);
 			if (strcmp(ext_type[out_fmt], "SVG") == 0)
-				print_svg(gui->drawing, param, sel_file);
+				ret = print_svg(gui->drawing, param, sel_file);
 			if (strcmp(ext_type[out_fmt], "PNG") == 0)
-				print_png(gui->drawing, param, sel_file);
+				ret = print_img(gui->drawing, param, sel_file);
 			
+			if (ret)
+				snprintf(gui->log_msg, 63, "Print: Created print output succesfully");
+			else
+				snprintf(gui->log_msg, 63, "Print Error");
 		}
 		
 		if (update){
@@ -291,6 +295,7 @@ int print_win (gui_obj *gui){
 			d_param.list = param.list;
 			d_param.subst = param.subst;
 			d_param.len_subst = param.len;
+			d_param.inc_thick = 0;
 			
 			dxf_ents_draw(gui->drawing, gui->preview_img, d_param);
 			
@@ -323,7 +328,11 @@ int print_win (gui_obj *gui){
 		prev_param.subst = param.subst;
 		prev_param.len = param.len;
 		
-	} else show_print = 0;
+	}
+	else{
+		show_print = 0;
+		bmp_fill(gui->preview_img, gui->preview_img->bkg); /* clear bitmap */
+	}
 	nk_end(gui->ctx);
 	
 	return show_print;

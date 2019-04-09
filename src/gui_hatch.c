@@ -473,6 +473,7 @@ int gui_hatch_info (gui_obj *gui){
 				d_param.list = NULL;
 				d_param.subst = NULL;
 				d_param.len_subst = 0;
+				d_param.inc_thick = 0;
 				graph_list_draw(pat_g, gui->preview_img, d_param);
 				
 				

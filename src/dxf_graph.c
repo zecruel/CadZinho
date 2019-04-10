@@ -1507,7 +1507,11 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				if (fnt_idx >= 0) stack[0].font = drawing->text_styles[fnt_idx].font;
 				else stack[0].font = drawing->dflt_font;
 			}
-			
+			/* initial width and oblique angle from style */
+			if (fnt_idx >= 0){
+				stack[0].w_fac = drawing->text_styles[fnt_idx].width_f;
+				stack[0].o_ang = drawing->text_styles[fnt_idx].oblique;
+			}
 			stack[0].color = color;
 			
 			stack[0].al_h = t_alin_h[t_alin];

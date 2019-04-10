@@ -22,10 +22,22 @@ int print_win (gui_obj *gui){
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_flags res;
-		static int show_app_file = 0, mono = 0, dark = 0, out_fmt = 0;
-		static const char *ext_type[] = { "PDF", "SVG", "PNG", "*"};
-		static const char *ext_descr[] = { "PDF (.pdf)", "SVG (.svg)", "PNG (.png)", "All files (*)"};
-		int num_ext = 4, i, ret = 0;
+		static int show_app_file = 0, mono = 0, dark = 0, out_fmt = PRT_PDF;
+		static const char *ext_type[] = {
+			[PRT_PDF] = "PDF",
+			[PRT_SVG] = "SVG",
+			[PRT_PNG] = "PNG",
+			[PRT_JPG] = "JPG",
+			[PRT_BMP] = "BMP",
+			[PRT_NONE] = "*"};
+		static const char *ext_descr[] = {
+			[PRT_PDF] = "Portable Document Format (.pdf)",
+			[PRT_SVG] = "Scalable Vector Graphics (.svg)",
+			[PRT_PNG] = "Image PNG (.png)",
+			[PRT_JPG] = "Image JPG (.jpg)",
+			[PRT_BMP] = "Image BMP (.bmp)",
+			[PRT_NONE] = "All files (*)"};
+		int i, ret = 0;
 		
 		bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
 		bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
@@ -81,7 +93,8 @@ int print_win (gui_obj *gui){
 		prev_param.inch != param.inch ||
 		prev_param.list != param.list ||
 		prev_param.subst != param.subst ||
-		prev_param.len != param.len)
+		prev_param.len != param.len ||
+		prev_param.out_fmt != param.out_fmt)
 		update = 1;
 		
 		nk_layout_row_static(gui->ctx, 180, 190, 2);
@@ -184,18 +197,19 @@ int print_win (gui_obj *gui){
 		nk_checkbox_label(gui->ctx, "Monochrome", &mono);
 		nk_checkbox_label(gui->ctx, "Dark", &dark);
 		
+		nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){120, 270});
 		nk_label(gui->ctx, "Output format:", NK_TEXT_RIGHT);
 		/* file extension filter option */
-		int h = (num_ext - 1) * 22 + 5;
+		int h = (PRT_SIZE - 1) * 22 + 5;
 		h = (h < 300)? h : 300;
-		int fmt = nk_combo (gui->ctx, ext_descr, num_ext - 1, out_fmt, 17, nk_vec2(200, h));
+		int fmt = nk_combo (gui->ctx, ext_descr, PRT_SIZE - 1, out_fmt, 17, nk_vec2(270, h));
 		if (fmt != out_fmt){
 			out_fmt = fmt;
 			char *ext = get_ext(sel_file);
 			char *end_fname = NULL;
 			str_upp(ext);
 			int ok = 0;
-			for (i = 0; i < num_ext - 1; i++){
+			for (i = 0; i < PRT_SIZE - 1; i++){
 				if (strcmp(ext, ext_type[i]) == 0){
 					ok =1;
 					break;
@@ -217,6 +231,8 @@ int print_win (gui_obj *gui){
 			}
 		}
 		
+		param.out_fmt = out_fmt;
+		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Destination:", NK_TEXT_LEFT);
 		
@@ -230,12 +246,12 @@ int print_win (gui_obj *gui){
 			/* load more other fonts */
 			show_app_file = 1;
 			
-			for (i = 0; i < num_ext; i++){
+			for (i = 0; i < PRT_SIZE; i++){
 				gui->file_filter_types[i] = ext_type[i];
 				gui->file_filter_descr[i] = ext_descr[i];
 			}
 			
-			gui->file_filter_count = num_ext;
+			gui->file_filter_count = PRT_SIZE;
 			
 			gui->show_file_br = 1;
 			gui->curr_path[0] = 0;
@@ -247,11 +263,13 @@ int print_win (gui_obj *gui){
 		if (nk_button_label(gui->ctx, "Print")){
 			snprintf(gui->log_msg, 63, " ");
 			
-			if (strcmp(ext_type[out_fmt], "PDF") == 0)
+			if (out_fmt == PRT_PDF)
 				ret = print_pdf(gui->drawing, param, sel_file);
-			if (strcmp(ext_type[out_fmt], "SVG") == 0)
+			else if (out_fmt == PRT_SVG)
 				ret = print_svg(gui->drawing, param, sel_file);
-			if (strcmp(ext_type[out_fmt], "PNG") == 0)
+			else if (out_fmt == PRT_PNG ||
+			out_fmt == PRT_JPG ||
+			out_fmt == PRT_BMP)
 				ret = print_img(gui->drawing, param, sel_file);
 			
 			if (ret)
@@ -327,6 +345,7 @@ int print_win (gui_obj *gui){
 		prev_param.list = param.list;
 		prev_param.subst = param.subst;
 		prev_param.len = param.len;
+		prev_param.out_fmt = param.out_fmt;
 		
 	}
 	else{

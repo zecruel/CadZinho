@@ -372,7 +372,7 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 			/* file extension filter option */
 			int h = num_ext * 22 + 5;
 			h = (h < 300)? h : 300;
-			if (nk_combo_begin_label(gui->ctx, ext_descr[ext_idx], nk_vec2(200, h))){
+			if (nk_combo_begin_label(gui->ctx, ext_descr[ext_idx], nk_vec2(270, h))){
 				/* change type of file extension */
 				nk_layout_row_dynamic(gui->ctx, 17, 1);
 				for (i = 0; i < num_ext; i++){

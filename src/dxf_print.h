@@ -17,6 +17,17 @@ struct txt_buf{
 	char data[PDF_BUF_SIZE];
 };
 
+enum print_fmt{
+	PRT_PDF,
+	PRT_SVG,
+	PRT_PNG,
+	PRT_JPG,
+	PRT_BMP,
+	
+	PRT_NONE,
+	PRT_SIZE
+};
+
 struct print_param{
 	double w;
 	double h;
@@ -29,6 +40,7 @@ struct print_param{
 	bmp_color *list;
 	bmp_color *subst;
 	int len;
+	int out_fmt;
 };
 
 int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest);

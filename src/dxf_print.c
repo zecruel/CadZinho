@@ -1,6 +1,5 @@
 #include "dxf_print.h"
 
-
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
@@ -454,13 +453,15 @@ int print_img(dxf_drawing *drawing, struct print_param param, char *dest){
 	if (param.inch)
 		param.resolution = 96.0;
 	
-	bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 0 };
+	bmp_color transp = { .r = 255, .g = 255, .b = 255, .a = 0 };
+	bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
 	bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
 	
 	int w = (int) param.w * param.resolution;
 	int h = (int) param.h * param.resolution;
+	int ret = 0;
 	
-	bmp_img * img = bmp_new(w, h, white, black);
+	bmp_img * img = bmp_new(w, h, transp, black);
 	
 	if (img == NULL) return 0;
 	
@@ -480,12 +481,19 @@ int print_img(dxf_drawing *drawing, struct print_param param, char *dest){
 	d_param.len_subst = param.len;
 	d_param.inc_thick = 0;
 	
-	bmp_fill_clip(img, img->bkg); /* clear bitmap */
+	if (param.out_fmt == PRT_PNG)
+		bmp_fill(img, transp); /* clear bitmap */
+	else
+		bmp_fill(img, white); /* clear bitmap */
 	
 	dxf_ents_draw(drawing, img, d_param);
 	
-	int ret = stbi_write_png((char const *)dest, w, h, 4, img->buf, w * 4);
-	
+	if (param.out_fmt == PRT_PNG)
+		ret = stbi_write_png((char const *)dest, w, h, 4, img->buf, w * 4);
+	else if (param.out_fmt == PRT_BMP)
+		ret = stbi_write_bmp((char const *)dest, w, h, 4, img->buf);
+	else if (param.out_fmt == PRT_JPG)
+		ret = stbi_write_jpg((char const *)dest, w, h, 4, img->buf, 80);
 	
 	bmp_free(img);
 	

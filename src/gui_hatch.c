@@ -57,13 +57,13 @@ int gui_hatch_interactive(gui_obj *gui){
 					
 					double rot = 0.0, scale = 1.0;
 					
-					if(gui->hatch_user) { /* user definied simple pattern */
+					if(gui->h_type == HATCH_USER) { /* user definied simple pattern */
 						strncpy(gui->list_pattern.name, "USER_DEF", DXF_MAX_CHARS);
 						curr_h = &(gui->list_pattern);
 						rot = 0.0;
 						scale = 1.0;
 					}
-					else if(gui->hatch_solid) { /* solid pattern */
+					else if(gui->h_type == HATCH_SOLID) { /* solid pattern */
 						strncpy(gui->list_pattern.name, "SOLID", DXF_MAX_CHARS);
 						curr_h = &(gui->list_pattern);
 						rot = 0.0;
@@ -97,7 +97,7 @@ int gui_hatch_interactive(gui_obj *gui){
 					
 					/* make DXF HATCH entity */
 					dxf_node *new_hatch_el = dxf_new_hatch (curr_h, bound,
-					gui->hatch_solid, gui->hatch_assoc,
+					gui->h_type == HATCH_SOLID, gui->hatch_assoc,
 					0, 0, /* style, type */
 					rot, scale,
 					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
@@ -171,36 +171,24 @@ int gui_hatch_info (gui_obj *gui){
 			- User definied simple hatch;
 			- Hatch pattern from a library;
 			- Solid fill; */
-		nk_layout_row(gui->ctx, NK_STATIC, 20, 3, (float[]){40, 60, 40});
-		if (nk_selectable_label(gui->ctx, "User", NK_TEXT_CENTERED, &gui->hatch_user)){
-			if(gui->hatch_user) {
-				gui->hatch_predef = 0;
-				gui->hatch_solid = 0;
-			}
-		}
-		if (nk_selectable_label(gui->ctx, "Library", NK_TEXT_CENTERED, &gui->hatch_predef)){
-			if(gui->hatch_predef) {
-				gui->hatch_user = 0;
-				gui->hatch_solid = 0;
-			}
-		}
-		if (nk_selectable_label(gui->ctx, "Solid", NK_TEXT_CENTERED, &gui->hatch_solid)){
-			if(gui->hatch_solid) {
-				gui->hatch_predef = 0;
-				gui->hatch_user = 0;
-			}
-		}
+		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
+		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
+		if (gui_tab (gui, "User", gui->h_type == HATCH_USER)) gui->h_type = HATCH_USER;
+		if (gui_tab (gui, "Library", gui->h_type == HATCH_PREDEF)) gui->h_type = HATCH_PREDEF;
+		if (gui_tab (gui, "Solid", gui->h_type == HATCH_SOLID)) gui->h_type = HATCH_SOLID;
+		nk_style_pop_vec2(gui->ctx);
+		nk_layout_row_end(gui->ctx);
 		
 		nk_layout_row_dynamic(gui->ctx, 125, 1);
 		if (nk_group_begin(gui->ctx, "Patt_controls", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 		
-			if (gui->hatch_user){/*User definied simple hatch*/
+			if (gui->h_type == HATCH_USER){/*User definied simple hatch*/
 				/* the user can select only angle and spacing of continuous lines*/
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				gui->user_patt.ang = nk_propertyd(gui->ctx, "Angle", 0.0d, gui->user_patt.ang, 360.0d, 0.5d, 0.5d);
 				gui->user_patt.dy = nk_propertyd(gui->ctx, "Spacing", 0.0d, gui->user_patt.dy, DBL_MAX, 0.1d, 0.1d);
 			}
-			else if (gui->hatch_predef){ /*Hatch pattern from a library */
+			else if (gui->h_type == HATCH_PREDEF){ /*Hatch pattern from a library */
 				/*the library or family of pattern hatchs is a .pat file, according the
 				Autodesk especification.
 				

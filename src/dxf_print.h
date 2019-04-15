@@ -17,6 +17,12 @@ struct txt_buf{
 	char data[PDF_BUF_SIZE];
 };
 
+struct page_def{
+	double w;
+	double h;
+	char *name;
+};
+
 enum print_fmt{
 	PRT_PDF,
 	PRT_SVG,

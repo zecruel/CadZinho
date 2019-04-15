@@ -141,7 +141,7 @@ struct Gui_obj {
 	
 	int text2tag;
 	
-	int hatch_fam_idx, hatch_idx, hatch_solid, hatch_assoc, hatch_user, hatch_predef;
+	int hatch_fam_idx, hatch_idx, h_type, hatch_assoc;
 	
 	
 	int en_distance; /* enable distance entry */
@@ -208,6 +208,8 @@ struct Gui_obj {
 typedef struct Gui_obj gui_obj;
 
 enum theme {THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK, THEME_ZE};
+
+int gui_tab (gui_obj *gui, const char *title, int active);
 
 void set_style(struct nk_context *ctx, enum theme theme);
 

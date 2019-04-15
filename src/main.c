@@ -7,10 +7,11 @@
 #include "list.h"
 #include "dxf_create.h"
 #include "dxf_attract.h"
+#include "dxf_print.h"
 
-#include "dxf_colors.h"
 #include "dxf_seed.h"
 #include "i_svg_media.h"
+
 
 #include "gui.h"
 #include "gui_lay.h"
@@ -52,6 +53,7 @@
 #define OS_WIN
 #endif
 
+#include "dxf_colors.h"
 
 void draw_cursor(bmp_img *img, int x, int y, bmp_color color){
 	/* draw cursor */

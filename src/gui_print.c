@@ -1,5 +1,7 @@
 #include "gui_print.h"
 
+extern struct page_def pages_iso_a[];
+
 int print_win (gui_obj *gui){
 	int show_print = 1;
 	int i = 0, update = 0;
@@ -15,7 +17,7 @@ int print_win (gui_obj *gui){
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
-	gui->next_win_w = 420;
+	gui->next_win_w = 620;
 	gui->next_win_h = 500;
 	
 	if (nk_begin(gui->ctx, "Print", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
@@ -97,9 +99,47 @@ int print_win (gui_obj *gui){
 		prev_param.out_fmt != param.out_fmt)
 		update = 1;
 		
-		nk_layout_row_static(gui->ctx, 180, 190, 2);
+		nk_layout_row(gui->ctx, NK_STATIC, 180, 3, (float[]){200, 160, 190});
+		if (nk_group_begin(gui->ctx, "Paper Families", NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)) {
+			enum paper_fam {
+				ISO_A,
+				ISO_B,
+				US,
+				ARCH
+			};
+			
+			static enum paper_fam tab_state = ISO_A;
+			struct page_def *page_fam = pages_iso_a;
+			int num_pages = 9;
+			
+			
+			nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
+			nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
+			if (gui_tab (gui, "ISO A", tab_state == ISO_A)) tab_state = ISO_A;
+			if (gui_tab (gui, "ISO B", tab_state == ISO_B)) tab_state = ISO_B;
+			if (gui_tab (gui, "US", tab_state == US)) tab_state = US;
+			if (gui_tab (gui, "ARCH", tab_state == ARCH)) tab_state = ARCH;
+			nk_style_pop_vec2(gui->ctx);
+			nk_layout_row_end(gui->ctx);
+			
+			nk_layout_row_dynamic(gui->ctx, 120, 1);
+			if (nk_group_begin(gui->ctx, "Paper sizes", NK_WINDOW_BORDER)) {
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				for (i = 0; i < num_pages; i++){
+					if (nk_button_label(gui->ctx, page_fam[i].name)){
+						page_w = page_fam[i].w;
+						snprintf(page_w_str, 63, "%.9g", page_w);
+						page_h = page_fam[i].h;
+						snprintf(page_h_str, 63, "%.9g", page_h);
+					}
+				}
+				
+				nk_group_end(gui->ctx);
+			}
+			nk_group_end(gui->ctx);
+		}
 		if (nk_group_begin(gui->ctx, "Page setup", NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
-			nk_layout_row_static(gui->ctx, 20, 70, 2);
+			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 70});
 			nk_label(gui->ctx, "Width:", NK_TEXT_RIGHT);
 			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, page_w_str, 63, nk_filter_float);
 			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){
@@ -120,7 +160,7 @@ int print_win (gui_obj *gui){
 				//update = 1;
 			}
 			
-			nk_label(gui->ctx, "Offset X:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, "Origin X:", NK_TEXT_RIGHT);
 			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, ofs_x_str, 63, nk_filter_float);
 			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){
 				nk_edit_unfocus(gui->ctx);
@@ -130,7 +170,7 @@ int print_win (gui_obj *gui){
 				//update = 1;
 			}
 			
-			nk_label(gui->ctx, "Offset Y:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, "Origin Y:", NK_TEXT_RIGHT);
 			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, ofs_y_str, 63, nk_filter_float);
 			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){
 				nk_edit_unfocus(gui->ctx);

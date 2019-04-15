@@ -15945,6 +15945,7 @@ nk_panel_end(struct nk_context *ctx)
                 : (window->bounds.y + window->bounds.h));
         struct nk_rect b = window->bounds;
         b.h = padding_y - window->bounds.y;
+	b.w -= 1;
         nk_stroke_rect(out, b, 0, layout->border, border_color);
     }
 

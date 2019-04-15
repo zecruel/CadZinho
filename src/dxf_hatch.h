@@ -25,6 +25,12 @@ struct h_family {
 	struct h_family *next;
 };
 
+enum hatch_type{
+	HATCH_USER,
+	HATCH_PREDEF,
+	HATCH_SOLID
+};
+
 int dxf_parse_patt(char *buf, struct h_pattern *ret);
 int dxf_hatch_free (struct h_pattern *hatch);
 struct h_family * dxf_hatch_family(char *name, char* descr, char *buf);

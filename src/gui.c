@@ -168,6 +168,25 @@ int gui_list_font_free (struct gui_font *list){
 }
 /* ************************************************************* */
 
+int gui_tab (gui_obj *gui, const char *title, int active){
+	const struct nk_user_font *f = gui->ctx->style.font;
+	struct nk_style_button *sel_type;
+	
+	/* calcule button size */ 
+	float text_width = f->width(f->userdata, f->height, title, nk_strlen(title));
+	float widget_width = text_width + 6 * gui->ctx->style.button.padding.x;
+	/* verify if active or not */
+	sel_type = &gui->b_icon_unsel;
+	if (active) sel_type = &gui->b_icon_sel;
+	/* do the button */
+	nk_layout_row_push(gui->ctx, widget_width);
+	int r = nk_button_label_styled(gui->ctx, sel_type, title);
+	
+	return r;
+}
+
+/* ************************************************** */
+
 void set_style(struct nk_context *ctx, enum theme theme){
     struct nk_color table[NK_COLOR_COUNT];
     if (theme == THEME_WHITE) {
@@ -1095,10 +1114,8 @@ int gui_start(gui_obj *gui){
 	/* initialize the hatch pattern list */
 	gui->hatch_fam_idx = 0;
 	gui->hatch_idx = 0;
-	gui->hatch_solid = 0;
 	gui->hatch_assoc = 0;
-	gui->hatch_user = 1;
-	gui->hatch_predef = 0;
+	gui->h_type = HATCH_USER;
 	
 	gui->user_patt.ang = 45.0;
 	gui->user_patt.ox = 0.0; gui->user_patt.oy = 0.0;

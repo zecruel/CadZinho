@@ -13,7 +13,7 @@ int print_win (gui_obj *gui){
 	static char ofs_y_str[64] = "0.00";
 	static char scale_str[64] = "1.00";
 	static char sel_file[MAX_PATH_LEN] = "output.pdf";
-	
+	static char tmp_str[64];
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
@@ -99,8 +99,8 @@ int print_win (gui_obj *gui){
 		prev_param.out_fmt != param.out_fmt)
 		update = 1;
 		
-		nk_layout_row(gui->ctx, NK_STATIC, 180, 3, (float[]){200, 160, 190});
-		if (nk_group_begin(gui->ctx, "Paper Families", NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)) {
+		nk_layout_row(gui->ctx, NK_STATIC, 180, 3, (float[]){160, 160, 190});
+		if (nk_group_begin(gui->ctx, "Page setup", NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)) {
 			enum paper_fam {
 				ISO_A,
 				ISO_B,
@@ -108,11 +108,20 @@ int print_win (gui_obj *gui){
 				ARCH
 			};
 			
+			static const char *p_fam_descr[] = {"ISO A", "ISO B", "US", "ARCH"};
+			static const char *unit_descr[] = {"in", "mm", "px"};
+			
+			
 			static enum paper_fam tab_state = ISO_A;
 			struct page_def *page_fam = pages_iso_a;
 			int num_pages = 9;
+			static int sel_page = 0;
 			
-			
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			int h = 4 * 22 + 5;
+			h = (h < 300)? h : 300;
+			tab_state = nk_combo (gui->ctx, p_fam_descr, 4, tab_state, 17, nk_vec2(100, h));
+			/*
 			nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
 			nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
 			if (gui_tab (gui, "ISO A", tab_state == ISO_A)) tab_state = ISO_A;
@@ -121,7 +130,35 @@ int print_win (gui_obj *gui){
 			if (gui_tab (gui, "ARCH", tab_state == ARCH)) tab_state = ARCH;
 			nk_style_pop_vec2(gui->ctx);
 			nk_layout_row_end(gui->ctx);
-			
+			*/
+			h = num_pages * 25 + 5;
+			h = (h < 300)? h : 300;
+			snprintf(tmp_str, 63, "%s - %.5gx%.5g%s",
+				page_fam[sel_page].name,
+				page_fam[sel_page].w,
+				page_fam[sel_page].h,
+				unit_descr[page_fam[sel_page].unit]);
+			if (nk_combo_begin_label(gui->ctx, tmp_str, nk_vec2(200,h))){
+				nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){70, 110});
+				for (i = 0; i < num_pages; i++){
+					if (nk_button_label(gui->ctx, page_fam[i].name)){
+						sel_page = i;
+						page_w = page_fam[i].w;
+						snprintf(page_w_str, 63, "%.9g", page_w);
+						page_h = page_fam[i].h;
+						snprintf(page_h_str, 63, "%.9g", page_h);
+						
+						nk_combo_close(gui->ctx);
+					}
+					snprintf(tmp_str, 63, "%.5gx%.5g%s",
+						page_fam[i].w, page_fam[i].h,
+						unit_descr[page_fam[i].unit]);
+					nk_label(gui->ctx, tmp_str, NK_TEXT_CENTERED);
+				}
+				
+				nk_combo_end(gui->ctx);
+			}
+			/*
 			nk_layout_row_dynamic(gui->ctx, 120, 1);
 			if (nk_group_begin(gui->ctx, "Paper sizes", NK_WINDOW_BORDER)) {
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
@@ -136,9 +173,8 @@ int print_win (gui_obj *gui){
 				
 				nk_group_end(gui->ctx);
 			}
-			nk_group_end(gui->ctx);
-		}
-		if (nk_group_begin(gui->ctx, "Page setup", NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
+			*/
+			
 			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 70});
 			nk_label(gui->ctx, "Width:", NK_TEXT_RIGHT);
 			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, page_w_str, 63, nk_filter_float);
@@ -160,6 +196,18 @@ int print_win (gui_obj *gui){
 				//update = 1;
 			}
 			
+			if (nk_button_label(gui->ctx, "Rotate")){
+				double swap = page_w;
+				page_w = page_h;
+				snprintf(page_w_str, 63, "%.9g", page_w);
+				page_h = swap;
+				snprintf(page_h_str, 63, "%.9g", page_h);
+			}
+			nk_group_end(gui->ctx);
+		}
+		if (nk_group_begin(gui->ctx, "Scale & Position", NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
+			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 70});
+				
 			nk_label(gui->ctx, "Origin X:", NK_TEXT_RIGHT);
 			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, ofs_x_str, 63, nk_filter_float);
 			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){
@@ -189,6 +237,41 @@ int print_win (gui_obj *gui){
 				snprintf(scale_str, 63, "%.9g", scale);
 				//update = 1;
 			}
+			
+			if (nk_button_label(gui->ctx, "View")){
+				double zoom_x, zoom_y;
+				ofs_x = gui->ofs_x;
+				ofs_y = gui->ofs_y + (gui->main_h - gui->win_h) / gui->zoom ;
+				//scale = (page_w * gui->zoom)/gui->win_w;
+				
+				zoom_x = gui->win_w/(page_w * gui->zoom);
+				zoom_y = gui->win_h/(page_h * gui->zoom);
+				scale = (zoom_x > zoom_y) ? zoom_x : zoom_y;
+				scale = 1/scale;
+				
+				snprintf(ofs_x_str, 63, "%.9g", ofs_x);
+				snprintf(ofs_y_str, 63, "%.9g", ofs_y);
+				snprintf(scale_str, 63, "%.9g", scale);
+				update = 1;
+			}
+			if (nk_button_label(gui->ctx, "Fit all")){
+				double min_x, min_y, max_x, max_y;
+				double zoom_x, zoom_y;
+				dxf_ents_ext(gui->drawing, &min_x, &min_y, &max_x, &max_y);
+				zoom_x = fabs(max_x - min_x)/page_w;
+				zoom_y = fabs(max_y - min_y)/page_h;
+				scale = (zoom_x > zoom_y) ? zoom_x : zoom_y;
+				scale = 1/scale;
+				
+				ofs_x = min_x - (fabs((max_x - min_x) * scale - page_w)/2) / scale;
+				ofs_y = min_y - (fabs((max_y - min_y) * scale - page_h)/2) / scale;
+				
+				snprintf(ofs_x_str, 63, "%.9g", ofs_x);
+				snprintf(ofs_y_str, 63, "%.9g", ofs_y);
+				snprintf(scale_str, 63, "%.9g", scale);
+				update = 1;
+			}
+			
 			nk_group_end(gui->ctx);
 		}
 		if (nk_group_begin(gui->ctx, "Preview", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
@@ -198,40 +281,8 @@ int print_win (gui_obj *gui){
 			
 			nk_group_end(gui->ctx);
 		}
-		nk_layout_row_static(gui->ctx, 20, 80, 2);
-		if (nk_button_label(gui->ctx, "View")){
-			double zoom_x, zoom_y;
-			ofs_x = gui->ofs_x;
-			ofs_y = gui->ofs_y + (gui->main_h - gui->win_h) / gui->zoom ;
-			//scale = (page_w * gui->zoom)/gui->win_w;
-			
-			zoom_x = gui->win_w/(page_w * gui->zoom);
-			zoom_y = gui->win_h/(page_h * gui->zoom);
-			scale = (zoom_x > zoom_y) ? zoom_x : zoom_y;
-			scale = 1/scale;
-			
-			snprintf(ofs_x_str, 63, "%.9g", ofs_x);
-			snprintf(ofs_y_str, 63, "%.9g", ofs_y);
-			snprintf(scale_str, 63, "%.9g", scale);
-			update = 1;
-		}
-		if (nk_button_label(gui->ctx, "Fit all")){
-			double min_x, min_y, max_x, max_y;
-			double zoom_x, zoom_y;
-			dxf_ents_ext(gui->drawing, &min_x, &min_y, &max_x, &max_y);
-			zoom_x = fabs(max_x - min_x)/page_w;
-			zoom_y = fabs(max_y - min_y)/page_h;
-			scale = (zoom_x > zoom_y) ? zoom_x : zoom_y;
-			scale = 1/scale;
-			
-			ofs_x = min_x - (fabs((max_x - min_x) * scale - page_w)/2) / scale;
-			ofs_y = min_y - (fabs((max_y - min_y) * scale - page_h)/2) / scale;
-			
-			snprintf(ofs_x_str, 63, "%.9g", ofs_x);
-			snprintf(ofs_y_str, 63, "%.9g", ofs_y);
-			snprintf(scale_str, 63, "%.9g", scale);
-			update = 1;
-		}
+		
+		
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		nk_checkbox_label(gui->ctx, "Monochrome", &mono);

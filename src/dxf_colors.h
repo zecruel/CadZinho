@@ -3319,13 +3319,78 @@ int cp1252[] = {
 };
 
 struct page_def pages_iso_a[] = {
-	{PRT_MM, 841.0, 1189.0, "A0"},
-	{PRT_MM, 594.0, 841.0, "A1"},
-	{PRT_MM, 420.0, 594.0, "A2"},
-	{PRT_MM, 297.0, 420.0, "A3"},
-	{PRT_MM, 210.0, 297.0, "A4"},
-	{PRT_MM, 148.0, 210.0, "A5"},
-	{PRT_MM, 105.0, 148.0, "A6"},
-	{PRT_MM, 74.0, 105.0, "A7"},
-	{PRT_MM, 52.0, 74.0, "A8"},
-	};
+	{PRT_MM, 1682, 2378, "4A0"},
+	{PRT_MM, 1189, 1682, "2A0"},
+	{PRT_MM, 841, 1189, "A0"},
+	{PRT_MM, 594, 841, "A1"},
+	{PRT_MM, 420, 594, "A2"},
+	{PRT_MM, 297, 420, "A3"},
+	{PRT_MM, 210, 297, "A4"},
+	{PRT_MM, 148, 210, "A5"},
+	{PRT_MM, 105, 148, "A6"},
+	{PRT_MM, 74, 105, "A7"},
+	{PRT_MM, 52, 74, "A8"},
+	{PRT_MM, 37, 52, "A9"},
+	{PRT_MM, 26, 37, "A10"},
+};
+
+struct page_def pages_iso_b[] = {
+	{PRT_MM, 1000, 1414, "B0"},
+	{PRT_MM, 707, 1000, "B1"},
+	{PRT_MM, 500, 707, "B2"},
+	{PRT_MM, 353, 500, "B3"},
+	{PRT_MM, 250, 353, "B4"},
+	{PRT_MM, 176, 250, "B5"},
+	{PRT_MM, 125, 176, "B6"},
+	{PRT_MM, 88, 125, "B7"},
+	{PRT_MM, 62, 88, "B8"},
+	{PRT_MM, 44, 62, "B9"},
+	{PRT_MM, 31, 44, "B10"},
+};
+
+struct page_def pages_us[] = {
+	{PRT_IN, 5.5, 8.5, "Half Letter"},
+	{PRT_IN, 8.5, 11.0, "Letter"},
+	{PRT_IN, 8.5, 14.0, "Legal"},
+	{PRT_IN, 5.0, 8.0, "Junior Legal"},
+	{PRT_IN, 11.0, 17.0, "Ledger / Tabloid"},
+
+};
+
+struct page_def pages_ansi[] = {
+	{PRT_IN, 8.5, 11.0, "A"},
+	{PRT_IN, 11.0, 17.0, "B"},
+	{PRT_IN, 17.0, 22.0, "C"},
+	{PRT_IN, 22.0, 34.0, "D"},
+	{PRT_IN, 34.0, 44.0, "E"},
+};
+
+struct page_def pages_arch[] = {
+	{PRT_IN, 9.0, 12.0, "Arch A"},
+	{PRT_IN, 12.0, 18.0, "Arch B"},
+	{PRT_IN, 18.0, 24.0, "Arch C"},
+	{PRT_IN, 24.0, 36.0, "Arch D"},
+	{PRT_IN, 36.0, 48.0, "Arch E"},
+	{PRT_IN, 30.0, 42.0, "Arch E1"},
+};
+
+struct page_def pages_image[] = {
+	{PRT_PX, 1280, 1024, "1280x1024"},
+	{PRT_PX, 1024, 768, "1024x768"},
+	{PRT_PX, 800, 600, "800x600"},
+	{PRT_PX, 640, 480, "640x480"},
+};
+
+
+struct page_def *fam_pages[] = {
+	pages_iso_a,
+	pages_iso_b,
+	pages_us,
+	pages_ansi,
+	pages_arch,
+	pages_image,
+};
+
+const char *fam_pages_descr[] = {"ISO A", "ISO B", "US", "ANSI", "ARCH", "IMAGE"};
+const int fam_pages_len[] = {13, 11, 5, 5, 6, 4};
+	

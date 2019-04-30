@@ -1,6 +1,9 @@
 #include "gui_print.h"
 
-extern struct page_def pages_iso_a[];
+//extern struct page_def pages_iso_a[];
+extern struct page_def *fam_pages[];
+extern const char *fam_pages_descr[];
+extern const int fam_pages_len[];
 
 int print_win (gui_obj *gui){
 	int show_print = 1;
@@ -99,28 +102,35 @@ int print_win (gui_obj *gui){
 		prev_param.out_fmt != param.out_fmt)
 		update = 1;
 		
-		nk_layout_row(gui->ctx, NK_STATIC, 180, 3, (float[]){160, 160, 190});
+		nk_layout_row(gui->ctx, NK_STATIC, 180, 3, (float[]){190, 160, 190});
 		if (nk_group_begin(gui->ctx, "Page setup", NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)) {
-			enum paper_fam {
+			/*enum paper_fam {
 				ISO_A,
 				ISO_B,
 				US,
 				ARCH
-			};
+			};*/
 			
-			static const char *p_fam_descr[] = {"ISO A", "ISO B", "US", "ARCH"};
+			//static const char *p_fam_descr[] = {"ISO A", "ISO B", "US", "ARCH"};
 			static const char *unit_descr[] = {"in", "mm", "px"};
 			
+			static int num_fam = 6;
+			static int curr_fam = 0;
 			
-			static enum paper_fam tab_state = ISO_A;
-			struct page_def *page_fam = pages_iso_a;
-			int num_pages = 9;
+			//static enum paper_fam tab_state = 0;
+			
 			static int sel_page = 0;
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			int h = 4 * 22 + 5;
+			int h = num_fam * 22 + 5;
 			h = (h < 300)? h : 300;
-			tab_state = nk_combo (gui->ctx, p_fam_descr, 4, tab_state, 17, nk_vec2(100, h));
+			curr_fam = nk_combo (gui->ctx, fam_pages_descr, num_fam, curr_fam, 17, nk_vec2(100, h));
+			
+			struct page_def *page_fam = fam_pages[curr_fam];
+			int num_pages = fam_pages_len[curr_fam];
+			
+			if (sel_page >= num_pages) sel_page = 0;
+			
 			/*
 			nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
 			nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
@@ -133,13 +143,13 @@ int print_win (gui_obj *gui){
 			*/
 			h = num_pages * 25 + 5;
 			h = (h < 300)? h : 300;
-			snprintf(tmp_str, 63, "%s - %.5gx%.5g%s",
+			snprintf(tmp_str, 63, "%s - %.5gx%.5g %s",
 				page_fam[sel_page].name,
 				page_fam[sel_page].w,
 				page_fam[sel_page].h,
 				unit_descr[page_fam[sel_page].unit]);
-			if (nk_combo_begin_label(gui->ctx, tmp_str, nk_vec2(200,h))){
-				nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){70, 110});
+			if (nk_combo_begin_label(gui->ctx, tmp_str, nk_vec2(250,h))){
+				nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 120});
 				for (i = 0; i < num_pages; i++){
 					if (nk_button_label(gui->ctx, page_fam[i].name)){
 						sel_page = i;
@@ -150,7 +160,7 @@ int print_win (gui_obj *gui){
 						
 						nk_combo_close(gui->ctx);
 					}
-					snprintf(tmp_str, 63, "%.5gx%.5g%s",
+					snprintf(tmp_str, 63, "%.5gx%.5g %s",
 						page_fam[i].w, page_fam[i].h,
 						unit_descr[page_fam[i].unit]);
 					nk_label(gui->ctx, tmp_str, NK_TEXT_CENTERED);

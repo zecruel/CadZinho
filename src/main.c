@@ -12,7 +12,6 @@
 #include "dxf_seed.h"
 #include "i_svg_media.h"
 
-
 #include "gui.h"
 #include "gui_lay.h"
 #include "gui_tstyle.h"

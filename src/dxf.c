@@ -135,7 +135,7 @@ int utf8_to_codepoint(char *utf8_s, int *uni_c){
 	
 	char c = utf8_s[ofs];
 	if (!c) return 0; /*string end*/
-	
+	*uni_c = 0;
 	if ( (c & 0x80) == 0 ){
 		*uni_c = c;
 		ofs++;

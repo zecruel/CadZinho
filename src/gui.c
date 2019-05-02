@@ -1153,6 +1153,9 @@ int gui_start(gui_obj *gui){
 	gui->dwg_file[0] = 0;
 	gui->dwg_dir[0] = 0;
 	
+	gui->paper_fam = 0;
+	gui->sel_paper = 6;
+	
 	#if(0)
 	#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 	strncpy(gui->dflt_fonts_path, "C:\\Windows\\Fonts\\", 5 * DXF_MAX_CHARS);

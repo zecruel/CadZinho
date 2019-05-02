@@ -115,21 +115,34 @@ int print_win (gui_obj *gui){
 			static const char *unit_descr[] = {"in", "mm", "px"};
 			
 			static int num_fam = 6;
-			static int curr_fam = 0;
+			static int curr_fam = -1;
 			
 			//static enum paper_fam tab_state = 0;
 			
-			static int sel_page = 0;
+			static int sel_page = -1, unit = PRT_MM;
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			int h = num_fam * 22 + 5;
 			h = (h < 300)? h : 300;
-			curr_fam = nk_combo (gui->ctx, fam_pages_descr, num_fam, curr_fam, 17, nk_vec2(100, h));
+			gui->paper_fam = nk_combo (gui->ctx, fam_pages_descr, num_fam, gui->paper_fam, 17, nk_vec2(100, h));
 			
-			struct page_def *page_fam = fam_pages[curr_fam];
-			int num_pages = fam_pages_len[curr_fam];
+			struct page_def *page_fam = fam_pages[gui->paper_fam];
+			int num_pages = fam_pages_len[gui->paper_fam];
 			
-			if (sel_page >= num_pages) sel_page = 0;
+			if (gui->sel_paper >= num_pages) gui->sel_paper = 0;
+			
+			if (curr_fam != gui->paper_fam || 
+				sel_page != gui->sel_paper)
+			{
+				curr_fam = gui->paper_fam;
+				sel_page = gui->sel_paper;
+				page_w = page_fam[gui->sel_paper].w;
+				snprintf(page_w_str, 63, "%.9g", page_w);
+				page_h = page_fam[gui->sel_paper].h;
+				snprintf(page_h_str, 63, "%.9g", page_h);
+				unit = page_fam[gui->sel_paper].unit;
+				update = 1;
+			}
 			
 			/*
 			nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
@@ -144,19 +157,20 @@ int print_win (gui_obj *gui){
 			h = num_pages * 25 + 5;
 			h = (h < 300)? h : 300;
 			snprintf(tmp_str, 63, "%s - %.5gx%.5g %s",
-				page_fam[sel_page].name,
-				page_fam[sel_page].w,
-				page_fam[sel_page].h,
-				unit_descr[page_fam[sel_page].unit]);
+				page_fam[gui->sel_paper].name,
+				page_fam[gui->sel_paper].w,
+				page_fam[gui->sel_paper].h,
+				unit_descr[page_fam[gui->sel_paper].unit]);
 			if (nk_combo_begin_label(gui->ctx, tmp_str, nk_vec2(250,h))){
 				nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 120});
 				for (i = 0; i < num_pages; i++){
 					if (nk_button_label(gui->ctx, page_fam[i].name)){
-						sel_page = i;
+						gui->sel_paper = i;
 						page_w = page_fam[i].w;
 						snprintf(page_w_str, 63, "%.9g", page_w);
 						page_h = page_fam[i].h;
 						snprintf(page_h_str, 63, "%.9g", page_h);
+						unit = page_fam[i].unit;
 						
 						nk_combo_close(gui->ctx);
 					}
@@ -184,6 +198,11 @@ int print_win (gui_obj *gui){
 				nk_group_end(gui->ctx);
 			}
 			*/
+			
+			nk_layout_row_dynamic(gui->ctx, 20, 3);
+			if (nk_option_label(gui->ctx, "mm", unit == PRT_MM)) {unit = PRT_MM;}
+			if (nk_option_label(gui->ctx, "inches", unit == PRT_IN)) {unit = PRT_IN;}
+			if (nk_option_label(gui->ctx, "pixels", unit == PRT_PX)) {unit = PRT_PX;}
 			
 			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 70});
 			nk_label(gui->ctx, "Width:", NK_TEXT_RIGHT);

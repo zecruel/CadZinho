@@ -204,6 +204,9 @@ struct Gui_obj {
 	
 	struct nk_text_edit text_edit;
 	
+	int paper_fam;
+	int sel_paper;
+	
 };
 typedef struct Gui_obj gui_obj;
 

@@ -388,6 +388,7 @@ shp_typ *shp_font_load(char *buf){
 	{
 		char type[8];
 		strncpy(type, curr_line, 7);
+		type[7] = 0; /* terminate string */
 		str_upp (type);
 		if (strcmp(type, "UNIFONT") == 0) shp_font->unicode = 1;
 	}

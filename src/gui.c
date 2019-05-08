@@ -1,4 +1,5 @@
 #include "gui.h"
+
 /* ***********************************************************
 the fowling functions are for rendering text in gui, by rastering each
 glyphs in a monochrome image in memory. */

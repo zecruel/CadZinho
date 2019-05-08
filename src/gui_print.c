@@ -17,11 +17,12 @@ int print_win (gui_obj *gui){
 	static char scale_str[64] = "1.00";
 	static char sel_file[MAX_PATH_LEN] = "output.pdf";
 	static char tmp_str[64];
+	static int unit = PRT_MM, new_unit = PRT_MM;
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
-	gui->next_win_w = 620;
-	gui->next_win_h = 500;
+	gui->next_win_w = 580;
+	gui->next_win_h = 350;
 	
 	if (nk_begin(gui->ctx, "Print", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
@@ -74,7 +75,7 @@ int print_win (gui_obj *gui){
 		param.w = page_w;
 		param.h = page_h;
 		param.mono = mono;
-		param.inch = 0;
+		param.unit = unit;
 		
 		if (!dark){
 			param.list = list;
@@ -95,7 +96,7 @@ int print_win (gui_obj *gui){
 		prev_param.w != param.w ||
 		prev_param.h != param.h ||
 		prev_param.mono != param.mono ||
-		prev_param.inch != param.inch ||
+		prev_param.unit != param.unit ||
 		prev_param.list != param.list ||
 		prev_param.subst != param.subst ||
 		prev_param.len != param.len ||
@@ -119,7 +120,7 @@ int print_win (gui_obj *gui){
 			
 			//static enum paper_fam tab_state = 0;
 			
-			static int sel_page = -1, unit = PRT_MM;
+			static int sel_page = -1;
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			int h = num_fam * 22 + 5;
@@ -198,11 +199,41 @@ int print_win (gui_obj *gui){
 				nk_group_end(gui->ctx);
 			}
 			*/
+			nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 3, (float[]){0.25, 0.4, 0.35});
+			new_unit = unit;
+			if (nk_option_label(gui->ctx, "mm", new_unit == PRT_MM)) {new_unit = PRT_MM;}
+			if (nk_option_label(gui->ctx, "inches", new_unit == PRT_IN)) {new_unit = PRT_IN;}
+			if (nk_option_label(gui->ctx, "pixels", new_unit == PRT_PX)) {new_unit = PRT_PX;}
 			
-			nk_layout_row_dynamic(gui->ctx, 20, 3);
-			if (nk_option_label(gui->ctx, "mm", unit == PRT_MM)) {unit = PRT_MM;}
-			if (nk_option_label(gui->ctx, "inches", unit == PRT_IN)) {unit = PRT_IN;}
-			if (nk_option_label(gui->ctx, "pixels", unit == PRT_PX)) {unit = PRT_PX;}
+			if (unit != new_unit){
+				double factor1 = 1.0, factor2 = 1.0;
+				
+				if (unit == PRT_MM){
+					factor1 = 25.4;
+				} else if (unit == PRT_IN){
+					factor1 = 1;
+				} else if (unit == PRT_PX){
+					factor1 = 96;
+				}
+				
+				if (new_unit == PRT_MM){
+					factor2 = 25.4;
+				} else if (new_unit == PRT_IN){
+					factor2 = 1;
+				} else if (new_unit == PRT_PX){
+					factor2 = 96;
+				}
+				
+				page_w = page_w * factor2/factor1;
+				snprintf(page_w_str, 63, "%.9g", page_w);
+				page_h = page_h * factor2/factor1;
+				snprintf(page_h_str, 63, "%.9g", page_h);
+				scale = scale * factor2/factor1;
+				snprintf(scale_str, 63, "%.9g", scale);
+				
+				
+				unit = new_unit;
+			}
 			
 			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 70});
 			nk_label(gui->ctx, "Width:", NK_TEXT_RIGHT);
@@ -232,6 +263,7 @@ int print_win (gui_obj *gui){
 				page_h = swap;
 				snprintf(page_h_str, 63, "%.9g", page_h);
 			}
+			
 			nk_group_end(gui->ctx);
 		}
 		if (nk_group_begin(gui->ctx, "Scale & Position", NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
@@ -312,8 +344,8 @@ int print_win (gui_obj *gui){
 		}
 		
 		
-		
-		nk_layout_row_dynamic(gui->ctx, 20, 2);
+		nk_layout_row(gui->ctx, NK_STATIC, 20, 3, (float[]){120, 120, 70});
+		nk_label(gui->ctx, "Color options:", NK_TEXT_RIGHT);
 		nk_checkbox_label(gui->ctx, "Monochrome", &mono);
 		nk_checkbox_label(gui->ctx, "Dark", &dark);
 		
@@ -461,7 +493,7 @@ int print_win (gui_obj *gui){
 		prev_param.w = param.w;
 		prev_param.h = param.h;
 		prev_param.mono = param.mono;
-		prev_param.inch = param.inch;
+		prev_param.unit = param.unit;
 		prev_param.list = param.list;
 		prev_param.subst = param.subst;
 		prev_param.len = param.len;

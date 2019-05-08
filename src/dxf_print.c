@@ -58,7 +58,8 @@ void print_graph_pdf(graph_obj * master, struct txt_buf *buf, struct print_param
 						"] 0 d ");
 					
 					/* set the tickness */
-					if (master->thick_const) tick = (int) round(master->tick * 10 *!(param.inch)/25.4 * param.resolution);
+					if (master->thick_const) 
+						tick = (int) round(master->tick * param.resolution);
 					else tick = (int) round(master->tick * param.scale * param.resolution);
 					buf->pos +=snprintf(buf->data + buf->pos,
 						PDF_BUF_SIZE - buf->pos,
@@ -177,22 +178,6 @@ int print_ents_pdf(dxf_drawing *drawing, struct txt_buf *buf , struct print_para
 	}
 }
 
-/**
- * Convert a value in inches into a number of points.
- * Always returns an integer value
- */
-int inch2pt (double inch){
-	return (int)((inch)*72 + 0.5);
-}
-
-/**
- * Convert a value in milli-meters into a number of points.
- * Always returns an integer value
- */
-int mm2pt (double mm){
-	return (int)((mm)*72 / 25.4 + 0.5);
-}
-
 int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	
 	if (!drawing) return 0;
@@ -200,20 +185,21 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	struct txt_buf *buf = malloc(sizeof(struct txt_buf));
 	
 	if (!buf) return 0;
-	param.resolution = 10;
+	param.resolution = 20;
 	
 	buf->pos = 0;
-	
-	double mul = 72.0 / 25.4;
-	int (*conv_fnc)(double) = mm2pt;
-	if (param.inch) {
-		conv_fnc = inch2pt;
+	double mul = 1.0;
+	if (param.unit == PRT_MM)
+		mul = 72.0 / 25.4;
+	else if (param.unit == PRT_IN)
 		mul = 72.0;
-	}
+	else if (param.unit == PRT_PX)
+		mul = 72.0/96.0;
 	
+	param.w = mul * param.w + 0.5;
+	param.h = mul * param.h + 0.5;
 	param.scale *= mul;
-	param.w = conv_fnc(param.w);
-	param.h = conv_fnc(param.h);
+	
 	
 	print_ents_pdf(drawing, buf, param);
 	
@@ -449,9 +435,13 @@ int print_img(dxf_drawing *drawing, struct print_param param, char *dest){
 	
 	if (!drawing) return 0;
 	
-	param.resolution = 96.0 / 25.4;
-	if (param.inch)
+	param.resolution = 1.0;
+	if (param.unit == PRT_MM){
+		param.resolution = 96.0 / 25.4;
+	}
+	else if (param.unit == PRT_IN){
 		param.resolution = 96.0;
+	}
 	
 	bmp_color transp = { .r = 255, .g = 255, .b = 255, .a = 0 };
 	bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };

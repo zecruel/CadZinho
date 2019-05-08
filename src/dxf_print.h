@@ -49,11 +49,11 @@ struct print_param{
 	double scale;
 	double resolution;
 	int mono;
-	int inch;
+	enum print_unit unit;
 	bmp_color *list;
 	bmp_color *subst;
 	int len;
-	int out_fmt;
+	enum print_fmt out_fmt;
 };
 
 int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest);

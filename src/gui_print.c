@@ -40,6 +40,7 @@ int print_win (gui_obj *gui){
 			[PRT_PNG] = "PNG",
 			[PRT_JPG] = "JPG",
 			[PRT_BMP] = "BMP",
+			[PRT_PS] = "PS",
 			[PRT_NONE] = "*"
 		};
 		static const char *ext_descr[] = {
@@ -47,7 +48,8 @@ int print_win (gui_obj *gui){
 			[PRT_SVG] = "Scalable Vector Graphics (.svg)",
 			[PRT_PNG] = "Image PNG (.png)",
 			[PRT_JPG] = "Image JPG (.jpg)",
-			[PRT_BMP] = "Image BMP (.bmp)",
+			[PRT_BMP] = "Image Bitmap (.bmp)",
+			[PRT_PS] = "Postscript (.ps)",
 			[PRT_NONE] = "All files (*)"
 		};
 		
@@ -404,6 +406,8 @@ int print_win (gui_obj *gui){
 			out_fmt == PRT_JPG ||
 			out_fmt == PRT_BMP)
 				ret = print_img(gui->drawing, param, sel_file);
+			else if (out_fmt == PRT_PS)
+				ret = print_ps(gui->drawing, param, sel_file);
 			/* verify success or fail*/
 			if (ret)
 				snprintf(gui->log_msg, 63, "Print: Created print output succesfully");

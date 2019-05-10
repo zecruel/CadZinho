@@ -418,13 +418,197 @@ int print_svg(dxf_drawing *drawing, struct print_param param, char *dest){
 	if (!file) return 0;
 	param.resolution = 4.0;
 	
-	
-	
-	
-	
 	print_ents_svg(drawing, file, param);
 	
 	
+	
+	fclose(file);
+	
+	return 1;
+}
+
+void print_graph_ps(graph_obj * master, FILE *file, struct print_param param){
+	if (master != NULL){
+		/* verify if graph bounds are in visible page area */
+		double b_x0, b_y0, b_x1, b_y1;
+		b_x0 = (master->ext_min_x - param.ofs_x) * param.scale * param.resolution;
+		b_y0 = (master->ext_min_y - param.ofs_y) * param.scale * param.resolution;
+		b_x1 = (master->ext_max_x - param.ofs_x) * param.scale * param.resolution;
+		b_y1 = (master->ext_max_y - param.ofs_y) * param.scale * param.resolution;
+		
+		rect_pos pos_p0 = rect_find_pos(b_x0, b_y0, 0, 0, param.w * param.resolution, param.h * param.resolution);
+		rect_pos pos_p1 = rect_find_pos(b_x1, b_y1, 0, 0, param.w * param.resolution, param.h * param.resolution);
+		
+		if ((master->list->next) /* check if list is not empty */
+			&& (!(pos_p0 & pos_p1)) /* and in bounds of page */
+			/* and too if is drawable pattern */
+			&& (!(master->patt_size <= 1 && master->pattern[0] < 0.0 && !master->fill))
+		){
+			int x0, y0, x1, y1, i;
+			line_node *current = master->list->next;
+			int tick = 0, prev_x, prev_y;
+			int init = 0;
+			
+			/* verify if color is substituted  */
+			bmp_color color = validate_color(master->color, param.list, param.subst, param.len);
+			
+			while(current){ /* draw the lines - sweep the list content */
+				
+				/* apply the scale and offset */
+				x0 = (int) ((current->x0 - param.ofs_x) * param.scale * param.resolution);
+				y0 = (int) ((current->y0 - param.ofs_y) * param.scale * param.resolution);
+				x1 = (int) ((current->x1 - param.ofs_x) * param.scale * param.resolution);
+				y1 = (int) ((current->y1 - param.ofs_y) * param.scale * param.resolution);
+				
+				if (init == 0){
+					/* set the pattern */
+					fprintf(file, "n [");
+					if(master->patt_size > 1){
+						int patt_el = (int) fabs(master->pattern[0] * param.scale * param.resolution);
+						if(patt_el < param.resolution) patt_el = param.resolution;
+						fprintf(file, "%d", patt_el);
+						for (i = 1; i < master->patt_size; i++){
+							patt_el = (int) fabs(master->pattern[i] * param.scale * param.resolution) + 1;
+							if(patt_el < param.resolution) patt_el = param.resolution;
+							fprintf(file, " %d", patt_el);
+						}
+					}
+					fprintf(file, "] 0 d ");
+					
+					/* set the tickness */
+					if (master->thick_const) 
+						tick = (int) round(master->tick * param.resolution);
+					else tick = (int) round(master->tick * param.scale * param.resolution);
+					fprintf(file, "%d lw ", tick); /*line width */
+					
+					/* set the color */
+					if (!param.mono){
+						fprintf(file, "%.4g %.4g %.4g rg ",
+							(float)color.r/255,
+							(float)color.g/255,
+							(float)color.b/255);
+					}
+					
+					/* move to first point */
+					fprintf(file, "%d %d m ", x0, y0);
+					prev_x = x0;
+					prev_y = y0;
+					init = 1;
+				}
+				/*finaly, draw current line */
+				else if (((x0 != prev_x)||(y0 != prev_y)))
+					fprintf(file, "%d %d m ", x0, y0);
+
+				fprintf(file, "%d %d l ", x1, y1);
+			
+				prev_x = x1;
+				prev_y = y1;
+				
+				current = current->next; /* go to next line */
+			}
+			/* stroke the graph */
+			if (master->fill) /* check if object is filled */
+				fprintf(file, "f\n");
+			
+			else fprintf(file, "s\n");
+		}
+	}
+}
+
+
+int print_list_ps(list_node *list, FILE *file, struct print_param param){
+	list_node *current = NULL;
+	graph_obj *curr_graph = NULL;
+	int ok = 0;
+		
+	if (list != NULL){
+		current = list->next;
+		
+		/* sweep the main list */
+		while (current != NULL){
+			if (current->data){
+				curr_graph = (graph_obj *)current->data;
+				print_graph_ps(curr_graph, file, param);
+			}
+			current = current->next;
+		}
+		ok = 1;
+	}
+	return ok;
+}
+
+int print_ents_ps(dxf_drawing *drawing, FILE *file , struct print_param param){
+	dxf_node *current = NULL;
+	//int lay_idx = 0;
+		
+	if ((drawing->ents != NULL) && (drawing->main_struct != NULL)){
+		current = drawing->ents->obj.content->next;
+		
+		int init = 0;
+		// starts the content sweep 
+		while (current != NULL){
+			if (current->type == DXF_ENT){ // DXF entity
+				/*verify if entity layer is on and thaw */
+				//lay_idx = dxf_layer_get(drawing, current);
+				if ((!drawing->layers[current->obj.layer].off) && 
+					(!drawing->layers[current->obj.layer].frozen)){
+				
+					// -------------------------------------------
+					if (!init){
+						fprintf(file, "%%!PS\n\n"
+							"/n {newpath} bind def\n"
+							"/m {moveto} bind def\n"
+							"/l {lineto} bind def\n"
+							"/cp {closepath} bind def\n"
+							"/s {stroke} bind def\n"
+							"/f {fill} bind def\n"
+							"/d {setdash} bind def\n"
+							"/lw {setlinewidth} bind def\n"
+							"/rg {setrgbcolor} bind def\n"
+							"%.9g dup scale\n\n"
+							//"0 0 m %.9g 0 l 0 %.9g l -%.9g 0 l cp clip\n\n"
+							, 
+							1/param.resolution,
+							param.w * param.resolution,
+							param.h * param.resolution,
+							param.w * param.resolution
+						);
+						init = 1;
+					}
+	
+					print_list_ps(current->obj.graphics, file, param);
+					
+					//---------------------------------------
+				}
+			}
+			current = current->next;
+		}
+		if (init) fprintf(file,"\nshowpage\n");
+	}
+}
+
+int print_ps(dxf_drawing *drawing, struct print_param param, char *dest){
+	
+	if (!drawing) return 0;
+	
+	FILE *file = fopen(dest, "w"); /* open the file */
+	
+	if (!file) return 0;
+	param.resolution = 20;
+	
+	double mul = 1.0;
+	if (param.unit == PRT_MM)
+		mul = 72.0 / 25.4;
+	else if (param.unit == PRT_IN)
+		mul = 72.0;
+	else if (param.unit == PRT_PX)
+		mul = 72.0/96.0;
+	
+	param.w = mul * param.w + 0.5;
+	param.h = mul * param.h + 0.5;
+	param.scale *= mul;
+	
+	print_ents_ps(drawing, file, param);
 	
 	fclose(file);
 	

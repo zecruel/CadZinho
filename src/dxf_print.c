@@ -556,6 +556,7 @@ int print_ents_ps(dxf_drawing *drawing, FILE *file , struct print_param param){
 					// -------------------------------------------
 					if (!init){
 						fprintf(file, "%%!PS\n\n"
+							"<< /PageSize [%.9g %.9g] >> setpagedevice\n\n"
 							"/n {newpath} bind def\n"
 							"/m {moveto} bind def\n"
 							"/l {lineto} bind def\n"
@@ -565,13 +566,9 @@ int print_ents_ps(dxf_drawing *drawing, FILE *file , struct print_param param){
 							"/d {setdash} bind def\n"
 							"/lw {setlinewidth} bind def\n"
 							"/rg {setrgbcolor} bind def\n"
-							"%.9g dup scale\n\n"
-							//"0 0 m %.9g 0 l 0 %.9g l -%.9g 0 l cp clip\n\n"
-							, 
-							1/param.resolution,
-							param.w * param.resolution,
-							param.h * param.resolution,
-							param.w * param.resolution
+							"%.9g dup scale\n\n",
+							param.w , param.h,
+							1/param.resolution
 						);
 						init = 1;
 					}
@@ -604,8 +601,8 @@ int print_ps(dxf_drawing *drawing, struct print_param param, char *dest){
 	else if (param.unit == PRT_PX)
 		mul = 72.0/96.0;
 	
-	param.w = mul * param.w + 0.5;
-	param.h = mul * param.h + 0.5;
+	param.w = (int) (mul * param.w + 0.5);
+	param.h = (int) (mul * param.h + 0.5);
 	param.scale *= mul;
 	
 	print_ents_ps(drawing, file, param);

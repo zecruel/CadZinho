@@ -556,7 +556,8 @@ int print_ents_ps(dxf_drawing *drawing, FILE *file , struct print_param param){
 					// -------------------------------------------
 					if (!init){
 						fprintf(file, "%%!PS\n\n"
-							"<< /PageSize [%.9g %.9g] >> setpagedevice\n\n"
+							"/W %.9g def\n"
+							"/H %.9g def\n"
 							"/n {newpath} bind def\n"
 							"/m {moveto} bind def\n"
 							"/l {lineto} bind def\n"
@@ -566,6 +567,8 @@ int print_ents_ps(dxf_drawing *drawing, FILE *file , struct print_param param){
 							"/d {setdash} bind def\n"
 							"/lw {setlinewidth} bind def\n"
 							"/rg {setrgbcolor} bind def\n"
+							"<< /PageSize [W H] >> setpagedevice\n"
+							"n 0 0 m W 0 l W H l 0 H l cp clip\n\n"
 							"%.9g dup scale\n\n",
 							param.w , param.h,
 							1/param.resolution

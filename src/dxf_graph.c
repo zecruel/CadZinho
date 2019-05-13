@@ -3231,7 +3231,9 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					ins_stack[ins_stack_pos].scale_y = 1.0;
 					ins_stack[ins_stack_pos].scale_z = 1.0;
 					ins_stack[ins_stack_pos].rot = 0.0;
-					ins_stack[ins_stack_pos].color = 7;
+					ins_stack[ins_stack_pos].color = dxf_ent_get_color(drawing, insert_ent, ins_stack[ins_stack_pos -1].color);
+					ins_stack[ins_stack_pos].ltype = dxf_ent_get_ltype(drawing, insert_ent, ins_stack[ins_stack_pos - 1].ltype);
+					ins_stack[ins_stack_pos].lw = dxf_ent_get_lw(drawing, insert_ent, ins_stack[ins_stack_pos - 1].lw);
 					ins_stack[ins_stack_pos].normal[0] = 0.0;
 					ins_stack[ins_stack_pos].normal[1] = 0.0;
 					ins_stack[ins_stack_pos].normal[2] = 1.0;

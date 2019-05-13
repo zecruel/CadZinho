@@ -378,6 +378,7 @@ int print_win (gui_obj *gui){
 				gui->file_filter_descr[i] = ext_descr[i];
 			}
 			gui->file_filter_count = PRT_SIZE;
+			gui->filter_idx = out_fmt;
 			
 			gui->show_file_br = 1;
 			gui->curr_path[0] = 0;
@@ -389,6 +390,9 @@ int print_win (gui_obj *gui){
 				show_app_file = 0;
 				/* update output path */
 				strncpy(sel_file, gui->curr_path, MAX_PATH_LEN);
+				/* update output format*/
+				out_fmt = gui->filter_idx;
+				if (out_fmt >= PRT_SIZE - 1) out_fmt = 0;
 			}
 		} /* manual entry to output path */
 		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, sel_file, MAX_PATH_LEN, nk_filter_default);

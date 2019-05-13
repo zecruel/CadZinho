@@ -196,6 +196,7 @@ struct Gui_obj {
 	char const * file_filter_types[20];
 	char const * file_filter_descr[20];
 	int file_filter_count;
+	int filter_idx;
 	
 	char curr_path[MAX_PATH_LEN];
 	char base_dir[DXF_MAX_CHARS];

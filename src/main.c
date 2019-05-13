@@ -489,6 +489,7 @@ int main(int argc, char** argv){
 	//gui->file_filter_descr[1] = ext_descr[FILE_ALL];
 	
 	gui->file_filter_count = 0;
+	gui->filter_idx = 0;
 	
 	gui->curr_path[0] = 0;
 	

@@ -52,6 +52,8 @@
 #define OS_WIN
 #endif
 
+#include <whereami.h>
+
 #include "dxf_colors.h"
 
 void draw_cursor(bmp_img *img, int x, int y, bmp_color color){
@@ -352,8 +354,26 @@ void load_conf (lua_State *L, const char *fname, gui_obj *gui) {
 int main(int argc, char** argv){
 	gui_obj *gui = malloc(sizeof(gui_obj));
 	gui_start(gui);
+	{ /* get base path */
+		char* path = NULL;
+		int length, dirname_length;
+		length = wai_getExecutablePath(NULL, 0, &dirname_length);
+		if (length > 0){
+			path = (char*)malloc(length + 1);
+			wai_getExecutablePath(path, length, &dirname_length);
+			path[length] = '\0';
+			//printf("executable path: %s\n", path);
+			path[dirname_length] = '\0';
+			//printf("  dirname: %s\n", path);
+			//printf("  basename: %s\n", path + dirname_length + 1);
+			/* initialize base directory (executable dir) */
+			strncpy (gui->base_dir, path, DXF_MAX_CHARS);
+			free(path);
+		}
+	}
+	
 	/* initialize base directory (executable dir) */
-	strncpy (gui->base_dir, get_dir(argv[0]), DXF_MAX_CHARS);
+	//strncpy (gui->base_dir, get_dir(argv[0]), DXF_MAX_CHARS);
 	/* initialize fonts paths with base directory  */
 	if (strlen(gui->base_dir)){
 		strncpy (gui->dflt_fonts_path, gui->base_dir, 5 * DXF_MAX_CHARS);
@@ -409,6 +429,7 @@ int main(int argc, char** argv){
 	printf ("%s\n", argv[0]);
 	printf ("%s\n", get_dir(argv[0]));
 	printf ("%s\n", gui->dflt_fonts_path);
+	
 	
 	#if(0)
 	char fonts_path[DXF_MAX_CHARS];

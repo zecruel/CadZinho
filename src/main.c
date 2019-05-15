@@ -627,7 +627,7 @@ int main(int argc, char** argv){
 	
 	
 	/* init the drawing */
-	gui->drawing = malloc(sizeof(dxf_drawing));
+	gui->drawing = dxf_drawing_new(DWG_LIFE);
 	gui->drawing->font_list = gui->font_list;
 	gui->drawing->dflt_font = gui->dflt_font;
 	

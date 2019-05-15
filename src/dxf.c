@@ -469,13 +469,13 @@ void dxf_ent_print_f (dxf_node *ent, char *path){ /* print the entity structure 
 	fclose(file);
 }
 
-dxf_node * dxf_obj_new (char *name){
+dxf_node * dxf_obj_new (char *name, int pool){
 	//char *new_name = NULL;
 	
 	/* create a new DXF Object */
 	//dxf_node *new_obj = (dxf_node *) malloc(sizeof(dxf_node));
 	//dxf_mem_pool(enum dxf_pool_action action, int idx)
-	dxf_node *new_obj = dxf_mem_pool(ADD_DXF, 0);
+	dxf_node *new_obj = dxf_mem_pool(ADD_DXF, pool);
 	if (new_obj){
 		new_obj->obj.name[0] = 0;
 		if(name){
@@ -492,7 +492,7 @@ dxf_node * dxf_obj_new (char *name){
 		
 		/* create head of content's list */
 		//new_obj->obj.content = (dxf_node *) malloc(sizeof(dxf_node));
-		new_obj->obj.content = (dxf_node *) dxf_mem_pool(ADD_DXF, 0);
+		new_obj->obj.content = (dxf_node *) dxf_mem_pool(ADD_DXF, pool);
 		if(new_obj->obj.content){
 			new_obj->end = new_obj->obj.content;
 			new_obj->obj.content->master = new_obj;
@@ -648,10 +648,10 @@ int dxf_ident_ent_type (dxf_node *obj){
 	return ent_type;
 }
 
-dxf_node * dxf_attr_new (int group, int type, void *value){
+dxf_node * dxf_attr_new (int group, int type, void *value, int pool){
 	/* create a new DXF attribute */
 	//dxf_node *new_attr = (dxf_node *) malloc(sizeof(dxf_node));
-	dxf_node *new_attr = (dxf_node *) dxf_mem_pool(ADD_DXF, 0);
+	dxf_node *new_attr = (dxf_node *) dxf_mem_pool(ADD_DXF, pool);
 	if (new_attr){
 		new_attr->master = NULL;
 		new_attr->prev = NULL;
@@ -1509,27 +1509,11 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 			goto quit_error;
 		}
 
-		/* init the drawing */
-		drawing->head = NULL;
-		drawing->tabs = NULL;
-		drawing->blks = NULL;
-		drawing->ents = NULL; 
-		drawing->t_ltype = NULL;
-		drawing->t_layer = NULL;
-		drawing->t_style = NULL;
-		drawing->t_view = NULL;
-		drawing->t_ucs = NULL;
-		drawing->t_vport = NULL;
-		drawing->t_dimst = NULL;
-		drawing->t_appid = NULL;
-		drawing->main_struct = NULL;
-		
-		/* create a new main_struct */
-		main_struct = dxf_obj_new(NULL);
-		if (!main_struct){
+		/*  the drawing */
+		if (!dxf_drawing_clear(drawing)){
 			goto quit_error;
 		}
-		
+		main_struct = drawing->main_struct;
 		cur_line = buf;
 		
 		master = main_struct; /* current master is the main struct */
@@ -1608,7 +1592,7 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 							(strcmp(line, "TABLE") == 0) ||
 							(strcmp(line, "BLOCK") == 0) ||
 							(strcmp(line, "POLYLINE") == 0)){
-							new_node = dxf_obj_new (line); /* new object */
+							new_node = dxf_obj_new (line, drawing->pool); /* new object */
 							if (new_node){
 								/*  append new to master's list */
 								new_node->master = master;
@@ -1652,7 +1636,7 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 							if (strcmp(line, "INSERT") == 0) ins_flag = 1;
 							if (strcmp(line, "MTEXT") == 0) mtext_flag = 1;
 							
-							new_node = dxf_obj_new (line); /* new object */
+							new_node = dxf_obj_new (line, drawing->pool); /* new object */
 							if (new_node){
 								/*  append new to master's list */
 								new_node->master = master;
@@ -1680,7 +1664,7 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 					case 66: /* Entities follow flag -  for INSERT ents only*/
 						
 						i_data = atoi(line);
-						new_node = dxf_attr_new (group, t_data, (void *) &i_data);
+						new_node = dxf_attr_new (group, t_data, (void *) &i_data, drawing->pool);
 						if (new_node){
 							/*  append new to last obj's list */
 							new_node->master = last_obj;
@@ -1710,16 +1694,16 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 						switch(t_data) {
 							case DXF_FLOAT :
 								d_data = atof(line);
-								new_node = dxf_attr_new (group, t_data, (void *) &d_data);
+								new_node = dxf_attr_new (group, t_data, (void *) &d_data, drawing->pool);
 								break;
 							case DXF_INT :
 								i_data = atoi(line);
-								new_node = dxf_attr_new (group, t_data, (void *) &i_data);
+								new_node = dxf_attr_new (group, t_data, (void *) &i_data, drawing->pool);
 								break;
 							case DXF_STR :
 								if (mtext_flag && (group == 1 || group == 3))
-									new_node = dxf_attr_new (group, t_data, (void *) line_cpy);
-								else new_node = dxf_attr_new (group, t_data, (void *) line);
+									new_node = dxf_attr_new (group, t_data, (void *) line_cpy, drawing->pool);
+								else new_node = dxf_attr_new (group, t_data, (void *) line, drawing->pool);
 						}
 						
 						if (new_node){
@@ -1755,8 +1739,6 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 		return 1;
 	}
 	if (state == FINISH){
-			
-		drawing->main_struct = main_struct;
 		
 		/* disassembly the drawing structure */
 		/* the main sections */
@@ -1907,4 +1889,45 @@ int dxf_find_head_var(dxf_node *obj, char *var, dxf_node **start, dxf_node **end
 		}
 	}
 	return found;
+}
+
+int dxf_drawing_clear (dxf_drawing *drawing){
+	if (drawing){
+		/* init the drawing */
+		drawing->head = NULL;
+		drawing->tabs = NULL;
+		drawing->blks = NULL;
+		drawing->ents = NULL; 
+		drawing->t_ltype = NULL;
+		drawing->t_layer = NULL;
+		drawing->t_style = NULL;
+		drawing->t_view = NULL;
+		drawing->t_ucs = NULL;
+		drawing->t_vport = NULL;
+		drawing->t_dimst = NULL;
+		drawing->t_appid = NULL;
+		drawing->main_struct = NULL;
+		
+		/* create a new main_struct */
+		dxf_node *main_struct = dxf_obj_new(NULL, drawing->pool);
+		if (!main_struct){
+			return 0;
+		}
+		
+		drawing->main_struct = main_struct;
+		return 1;
+	}
+	return 0;
+}
+
+dxf_drawing *dxf_drawing_new(int pool){
+	dxf_drawing *drawing = malloc(sizeof(dxf_drawing));
+	if (drawing){
+		if (!dxf_drawing_clear(drawing)){
+			free(drawing);
+			return NULL;
+		}
+	}
+	
+	return drawing;
 }

@@ -155,6 +155,7 @@ struct Dxf_tstyle{
 typedef struct Dxf_tstyle dxf_tstyle;
 
 struct Dxf_drawing{
+	int pool; /* memory pool location */
 	/* DXF main sections */
 	dxf_node 	
 	*head,  /* header with drawing variables */
@@ -221,13 +222,13 @@ void dxf_ent_print2 (dxf_node *ent);
 
 void dxf_ent_print_f (dxf_node *ent, char *path);
 
-dxf_node * dxf_obj_new (char *name);
+dxf_node * dxf_obj_new (char *name, int pool);
 
 int dxf_ident_attr_type (int group);
 
 int dxf_ident_ent_type (dxf_node *obj);
 
-dxf_node * dxf_attr_new (int group, int type, void *value);
+dxf_node * dxf_attr_new (int group, int type, void *value, int pool);
 
 //vector_p dxf_find_attr(dxf_node * obj, int attr);
 
@@ -274,5 +275,9 @@ void * dxf_mem_pool(enum dxf_pool_action action, int idx);
 void dxf_append(dxf_node *master, dxf_node *new_node);
 
 int dxf_find_head_var(dxf_node *obj, char *var, dxf_node **start, dxf_node **end);
+
+dxf_drawing *dxf_drawing_new(int pool);
+
+int dxf_drawing_clear (dxf_drawing *drawing);
 
 #endif

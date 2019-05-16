@@ -15,10 +15,10 @@ int gui_rect_interactive(gui_obj *gui){
 					0.0,  /* bulge, */
 					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-					0); /* paper space */
-				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, 0.0);
-				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, 0.0);
-				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, 0.0);
+					0, DWG_LIFE); /* paper space */
+				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, 0.0, DWG_LIFE);
+				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, 0.0, DWG_LIFE);
+				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, 0.0, DWG_LIFE);
 				dxf_attr_change_i(new_el, 70, (void *) &closed, 0);
 				gui->element = new_el;
 				gui->step = 1;

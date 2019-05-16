@@ -6,9 +6,9 @@ int gui_block_interactive(gui_obj *gui){
 			if (gui->ev & EV_ENTER){
 				/* verify if text is valid */
 				if (strlen(gui->txt) > 0){
-					if(!gui->text2tag) dxf_new_block(gui->drawing, gui->txt, "0", gui->sel_list, &gui->list_do);
+					if(!gui->text2tag) dxf_new_block(gui->drawing, gui->txt, "0", gui->sel_list, &gui->list_do, DWG_LIFE);
 					
-					else dxf_new_block2(gui->drawing, gui->txt, gui->tag_mark, "0", gui->sel_list, &gui->list_do);
+					else dxf_new_block2(gui->drawing, gui->txt, gui->tag_mark, "0", gui->sel_list, &gui->list_do, DWG_LIFE);
 				}
 			}
 			else if (gui->ev & EV_CANCEL){

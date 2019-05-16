@@ -1,6 +1,6 @@
 #include "gui_use.h"
 
-int mtext_change_text (dxf_node *obj, char *text, int len){
+int mtext_change_text (dxf_node *obj, char *text, int len, int pool){
 	/* change text in MTEXT DXF entity (groups 3- multiple - and 1 - mandatory single) */
 	
 	/* verify if obj is an MTEXT entity */
@@ -27,7 +27,7 @@ int mtext_change_text (dxf_node *obj, char *text, int len){
 	/* adjust the number of groups in obj */
 	if (extra_str > exist_str){ /* add groups */
 		for (i = 0; i < (extra_str - exist_str); i++){
-			dxf_attr_insert_before(final_str, 3, (void *)"");
+			dxf_attr_insert_before(final_str, 3, (void *)"", pool);
 		}
 	}
 	else if (extra_str < exist_str){ /* remove groups */
@@ -76,7 +76,7 @@ int gui_mtext_interactive(gui_obj *gui){
 				teste, 1, /* text, */
 				gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 				gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-				0); /* paper space */
+				0, DWG_LIFE); /* paper space */
 			gui->element = new_el;
 			//dxf_attr_change_i(new_el, 72, &gui->t_al_h, -1);
 			//dxf_attr_change_i(new_el, 73, &gui->t_al_v, -1);
@@ -109,7 +109,7 @@ int gui_mtext_interactive(gui_obj *gui){
 				char *text = nk_str_get(&(gui->text_edit.string));
 				int len = nk_str_len_char(&(gui->text_edit.string));
 				if (!text) text = blank;
-				mtext_change_text (new_el, text, len);
+				mtext_change_text (new_el, text, len, DWG_LIFE);
 				
 				dxf_attr_change(new_el, 7, gui->drawing->text_styles[gui->t_sty_idx].name);
 				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
@@ -139,7 +139,7 @@ int gui_mtext_interactive(gui_obj *gui){
 				char *text = nk_str_get(&(gui->text_edit.string));
 				int len = nk_str_len_char(&(gui->text_edit.string));
 				if (!text) text = blank;
-				mtext_change_text (new_el, text, len);
+				mtext_change_text (new_el, text, len, DWG_LIFE);
 				
 				
 				dxf_attr_change(new_el, 6, gui->drawing->ltypes[gui->ltypes_idx].name);

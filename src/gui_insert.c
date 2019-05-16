@@ -15,7 +15,7 @@ int gui_insert_interactive(gui_obj *gui){
 						gui->step_x[gui->step], gui->step_y[gui->step], 0.0, /* pt1 */
 						gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 						gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-						0); /* paper space */
+						0, DWG_LIFE); /* paper space */
 					gui->element = new_el;
 					gui->step = 1;
 					gui->en_distance = 1;
@@ -39,9 +39,9 @@ int gui_insert_interactive(gui_obj *gui){
 				dxf_node *attdef, *attrib;
 				i = 0;
 				while (attdef = dxf_find_obj_i(blk, "ATTDEF", i)){
-					attrib = dxf_attrib_cpy(attdef, gui->step_x[gui->step], gui->step_y[gui->step], 0.0);
+					attrib = dxf_attrib_cpy(attdef, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, DWG_LIFE);
 					ent_handle(gui->drawing, attrib);
-					dxf_insert_append(gui->drawing, new_el, attrib);
+					dxf_insert_append(gui->drawing, new_el, attrib, DWG_LIFE);
 					
 					i++;
 				}

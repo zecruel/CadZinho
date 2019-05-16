@@ -12,7 +12,7 @@ int gui_circle_interactive(gui_obj *gui){
 					gui->step_x[gui->step], gui->step_y[gui->step], 0.0, 0.0, /* pt1, radius */
 					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-					0); /* paper space */
+					0, DWG_LIFE); /* paper space */
 				gui->element = new_el;
 				gui->step = 1;
 				gui->en_distance = 1;

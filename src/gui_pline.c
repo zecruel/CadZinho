@@ -12,8 +12,8 @@ int gui_pline_interactive(gui_obj *gui){
 					gui->bulge, /* bulge */
 					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-					0); /* paper space */
-				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge);
+					0, DWG_LIFE); /* paper space */
+				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge, DWG_LIFE);
 				gui->element = new_el;
 				gui->step = 1;
 				gui->en_distance = 1;
@@ -35,7 +35,7 @@ int gui_pline_interactive(gui_obj *gui){
 				
 				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
 				
-				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge);
+				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge, DWG_LIFE);
 				gui->step = 2;
 				goto next_step;
 			}

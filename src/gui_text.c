@@ -11,7 +11,7 @@ int gui_text_interactive(gui_obj *gui){
 				gui->txt, /* text, */
 				gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 				gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-				0); /* paper space */
+				0, DWG_LIFE); /* paper space */
 			gui->element = new_el;
 			dxf_attr_change_i(new_el, 72, &gui->t_al_h, -1);
 			dxf_attr_change_i(new_el, 73, &gui->t_al_v, -1);

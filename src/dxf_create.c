@@ -393,8 +393,7 @@ dxf_node * dxf_obj_cpy(dxf_node *orig, int pool){
 	return new_obj;
 }
 
-int dxf_attr_append(dxf_node *master, int group, void *value){
-	int pool = DWG_LIFE;
+int dxf_attr_append(dxf_node *master, int group, void *value, int pool){
 	if (master){
 		if (master->type == DXF_ENT){
 			int type = dxf_ident_attr_type(group);
@@ -433,8 +432,7 @@ int dxf_attr_append(dxf_node *master, int group, void *value){
 	return 0;
 }
 
-int dxf_attr_insert_before(dxf_node *attr, int group, void *value){
-	int pool = DWG_LIFE;
+int dxf_attr_insert_before(dxf_node *attr, int group, void *value, int pool){
 	if (attr){
 		if (attr->type == DXF_ATTR){
 			int type = dxf_ident_attr_type(group);
@@ -556,9 +554,8 @@ int dxf_find_ext_appid(dxf_node *obj, char *appid, dxf_node **start, dxf_node **
 	return found;
 }
 
-int dxf_ext_append(dxf_node *master, char *appid, int group, void *value){
+int dxf_ext_append(dxf_node *master, char *appid, int group, void *value, int pool){
 	/* appdend new attrib on extended data, indicated by APPID */
-	int pool = DWG_LIFE;
 	if (master){
 		if (master->type == DXF_ENT){
 			dxf_node *start, *end, *prev = NULL, *next = NULL;
@@ -681,11 +678,11 @@ dxf_node *dxf_ent_copy(dxf_node *source, int pool_dest){
 		}
 		else if (current->type == DXF_ATTR){ /* DXF attibute */
 			if (current->value.t_data == DXF_STR){
-				dxf_attr_append(curr_dest, current->value.group, current->value.s_data);
+				dxf_attr_append(curr_dest, current->value.group, current->value.s_data, pool_dest);
 			} else if (current->value.t_data == DXF_FLOAT){
-				dxf_attr_append(curr_dest, current->value.group, &current->value.d_data);
+				dxf_attr_append(curr_dest, current->value.group, &current->value.d_data, pool_dest);
 			} else if (current->value.t_data == DXF_INT){
-				dxf_attr_append(curr_dest, current->value.group, &current->value.i_data);
+				dxf_attr_append(curr_dest, current->value.group, &current->value.i_data, pool_dest);
 			}
 			
 		}
@@ -719,36 +716,37 @@ dxf_node *dxf_ent_copy(dxf_node *source, int pool_dest){
 
 dxf_node * dxf_new_line (double x0, double y0, double z0,
 double x1, double y1, double z1,
-int color, char *layer, char *ltype, int lw, int paper){
+int color, char *layer, char *ltype, int lw, int paper, int pool){
+	
 	/* create a new DXF LINE */
 	const char *handle = "0";
 	const char *dxf_class = "AcDbEntity";
 	const char *dxf_subclass = "AcDbLine";
 	int ok = 1;
-	dxf_node * new_line = dxf_obj_new ("LINE", 0);
+	dxf_node * new_line = dxf_obj_new ("LINE", pool);
 	
-	ok &= dxf_attr_append(new_line, 5, (void *) handle);
-	//ok &= dxf_attr_append(new_line, 330, (void *) handle);
-	ok &= dxf_attr_append(new_line, 100, (void *) dxf_class);
-	ok &= dxf_attr_append(new_line, 67, (void *) &paper);
-	ok &= dxf_attr_append(new_line, 8, (void *) layer);
-	ok &= dxf_attr_append(new_line, 6, (void *) ltype);
-	ok &= dxf_attr_append(new_line, 62, (void *) &color);
-	ok &= dxf_attr_append(new_line, 370, (void *) &lw);
+	ok &= dxf_attr_append(new_line, 5, (void *) handle, pool);
+	//ok &= dxf_attr_append(new_line, 330, (void *) handle, pool);
+	ok &= dxf_attr_append(new_line, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_line, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(new_line, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_line, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(new_line, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(new_line, 370, (void *) &lw, pool);
 	
-	ok &= dxf_attr_append(new_line, 100, (void *) dxf_subclass);
+	ok &= dxf_attr_append(new_line, 100, (void *) dxf_subclass, pool);
 	
-	ok &= dxf_attr_append(new_line, 10, (void *) &x0);
-	ok &= dxf_attr_append(new_line, 20, (void *) &y0);
-	ok &= dxf_attr_append(new_line, 30, (void *) &z0);
-	ok &= dxf_attr_append(new_line, 11, (void *) &x1);
-	ok &= dxf_attr_append(new_line, 21, (void *) &y1);
-	ok &= dxf_attr_append(new_line, 31, (void *) &z1);
+	ok &= dxf_attr_append(new_line, 10, (void *) &x0, pool);
+	ok &= dxf_attr_append(new_line, 20, (void *) &y0, pool);
+	ok &= dxf_attr_append(new_line, 30, (void *) &z0, pool);
+	ok &= dxf_attr_append(new_line, 11, (void *) &x1, pool);
+	ok &= dxf_attr_append(new_line, 21, (void *) &y1, pool);
+	ok &= dxf_attr_append(new_line, 31, (void *) &z1, pool);
 	
 	/* test */
 	/* -------------------------------------------  
-	ok &= dxf_attr_append(new_line, 1001, (void *) "ZECRUEL");
-	ok &= dxf_attr_append(new_line, 1001, (void *) "ACAD");
+	ok &= dxf_attr_append(new_line, 1001, (void *) "ZECRUEL", pool);
+	ok &= dxf_attr_append(new_line, 1001, (void *) "ACAD", pool);
 	
 	ok &= dxf_ext_append(new_line, "ZECRUEL", 1002, (void *) "{");
 	ok &= dxf_ext_append(new_line, "ACAD", 1002, (void *) "{");
@@ -765,32 +763,32 @@ int color, char *layer, char *ltype, int lw, int paper){
 }
 
 dxf_node * dxf_new_lwpolyline (double x0, double y0, double z0,
-double bulge, int color, char *layer, char *ltype, int lw, int paper){
+double bulge, int color, char *layer, char *ltype, int lw, int paper, int pool){
 	/* create a new DXF LWPOLYLINE */
 	const char *handle = "0";
 	const char *dxf_class = "AcDbEntity";
 	const char *dxf_subclass = "AcDbPolyline";
 	int ok = 1;
 	int verts = 1, flags = 0;
-	dxf_node * new_poly = dxf_obj_new ("LWPOLYLINE", 0);
+	dxf_node * new_poly = dxf_obj_new ("LWPOLYLINE", pool);
 	
-	ok &= dxf_attr_append(new_poly, 5, (void *) handle);
-	//ok &= dxf_attr_append(new_poly, 330, (void *) handle);
-	ok &= dxf_attr_append(new_poly, 100, (void *) dxf_class);
-	ok &= dxf_attr_append(new_poly, 67, (void *) &paper);
-	ok &= dxf_attr_append(new_poly, 8, (void *) layer);
-	ok &= dxf_attr_append(new_poly, 6, (void *) ltype);
-	ok &= dxf_attr_append(new_poly, 62, (void *) &color);
-	ok &= dxf_attr_append(new_poly, 370, (void *) &lw);
+	ok &= dxf_attr_append(new_poly, 5, (void *) handle, pool);
+	//ok &= dxf_attr_append(new_poly, 330, (void *) handle, pool);
+	ok &= dxf_attr_append(new_poly, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_poly, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(new_poly, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_poly, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(new_poly, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(new_poly, 370, (void *) &lw, pool);
 	
-	ok &= dxf_attr_append(new_poly, 100, (void *) dxf_subclass);
-	ok &= dxf_attr_append(new_poly, 90, (void *) &verts);
-	ok &= dxf_attr_append(new_poly, 70, (void *) &flags);
+	ok &= dxf_attr_append(new_poly, 100, (void *) dxf_subclass, pool);
+	ok &= dxf_attr_append(new_poly, 90, (void *) &verts, pool);
+	ok &= dxf_attr_append(new_poly, 70, (void *) &flags, pool);
 	/* place the first vertice */
-	ok &= dxf_attr_append(new_poly, 10, (void *) &x0);
-	ok &= dxf_attr_append(new_poly, 20, (void *) &y0);
-	ok &= dxf_attr_append(new_poly, 30, (void *) &z0);
-	//ok &= dxf_attr_append(new_poly, 42, (void *) &bulge);
+	ok &= dxf_attr_append(new_poly, 10, (void *) &x0, pool);
+	ok &= dxf_attr_append(new_poly, 20, (void *) &y0, pool);
+	ok &= dxf_attr_append(new_poly, 30, (void *) &z0, pool);
+	//ok &= dxf_attr_append(new_poly, 42, (void *) &bulge, pool);
 	
 	if(ok){
 		return new_poly;
@@ -800,16 +798,16 @@ double bulge, int color, char *layer, char *ltype, int lw, int paper){
 }
 
 int dxf_lwpoly_append (dxf_node * poly,
-double x0, double y0, double z0, double bulge){
+double x0, double y0, double z0, double bulge, int pool){
 	/* append a vertice in a LWPOLYLINE */
 	int ok = 1;
 	/* look for the vertices counter attribute */
 	dxf_node * verts = dxf_find_attr_i(poly, 90, 0);
 	if (verts){ /* place the new vertice */
-		ok &= dxf_attr_append(poly, 42, (void *) &bulge);
-		ok &= dxf_attr_append(poly, 10, (void *) &x0);
-		ok &= dxf_attr_append(poly, 20, (void *) &y0);
-		ok &= dxf_attr_append(poly, 30, (void *) &z0);
+		ok &= dxf_attr_append(poly, 42, (void *) &bulge, pool);
+		ok &= dxf_attr_append(poly, 10, (void *) &x0, pool);
+		ok &= dxf_attr_append(poly, 20, (void *) &y0, pool);
+		ok &= dxf_attr_append(poly, 30, (void *) &z0, pool);
 		
 		
 		if (ok) verts->value.i_data++; /* increment the verts counter */
@@ -847,28 +845,28 @@ int dxf_lwpoly_remove (dxf_node * poly, int idx){
 }
 
 dxf_node * dxf_new_circle (double x0, double y0, double z0,
-double r, int color, char *layer, char *ltype, int lw, int paper){
+double r, int color, char *layer, char *ltype, int lw, int paper, int pool){
 	/* create a new DXF CIRCLE */
 	const char *handle = "0";
 	const char *dxf_class = "AcDbEntity";
 	const char *dxf_subclass = "AcDbCircle";
 	int ok = 1;
-	dxf_node * new_circle = dxf_obj_new ("CIRCLE", 0);
+	dxf_node * new_circle = dxf_obj_new ("CIRCLE", pool);
 	
-	ok &= dxf_attr_append(new_circle, 5, (void *) handle);
-	ok &= dxf_attr_append(new_circle, 100, (void *) dxf_class);
-	ok &= dxf_attr_append(new_circle, 67, (void *) &paper);
-	ok &= dxf_attr_append(new_circle, 8, (void *) layer);
-	ok &= dxf_attr_append(new_circle, 6, (void *) ltype);
-	ok &= dxf_attr_append(new_circle, 62, (void *) &color);
-	ok &= dxf_attr_append(new_circle, 370, (void *) &lw);
+	ok &= dxf_attr_append(new_circle, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_circle, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_circle, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(new_circle, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_circle, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(new_circle, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(new_circle, 370, (void *) &lw, pool);
 	
-	ok &= dxf_attr_append(new_circle, 100, (void *) dxf_subclass);
+	ok &= dxf_attr_append(new_circle, 100, (void *) dxf_subclass, pool);
 	/* place the first vertice */
-	ok &= dxf_attr_append(new_circle, 10, (void *) &x0);
-	ok &= dxf_attr_append(new_circle, 20, (void *) &y0);
-	ok &= dxf_attr_append(new_circle, 30, (void *) &z0);
-	ok &= dxf_attr_append(new_circle, 40, (void *) &r);
+	ok &= dxf_attr_append(new_circle, 10, (void *) &x0, pool);
+	ok &= dxf_attr_append(new_circle, 20, (void *) &y0, pool);
+	ok &= dxf_attr_append(new_circle, 30, (void *) &z0, pool);
+	ok &= dxf_attr_append(new_circle, 40, (void *) &r, pool);
 	
 	if(ok){
 		return new_circle;
@@ -878,7 +876,7 @@ double r, int color, char *layer, char *ltype, int lw, int paper){
 }
 
 dxf_node * dxf_new_text (double x0, double y0, double z0, double h,
-char *txt, int color, char *layer, char *ltype, int lw, int paper){
+char *txt, int color, char *layer, char *ltype, int lw, int paper, int pool){
 	/* create a new DXF TEXT */
 	const char *handle = "0";
 	const char *dxf_class = "AcDbEntity";
@@ -886,32 +884,32 @@ char *txt, int color, char *layer, char *ltype, int lw, int paper){
 	const char *t_style = "STANDARD";
 	int ok = 1, int_zero = 0;
 	double d_zero = 0.0;
-	dxf_node * new_text = dxf_obj_new ("TEXT", 0);
+	dxf_node * new_text = dxf_obj_new ("TEXT", pool);
 	
-	ok &= dxf_attr_append(new_text, 5, (void *) handle);
-	ok &= dxf_attr_append(new_text, 100, (void *) dxf_class);
-	ok &= dxf_attr_append(new_text, 67, (void *) &paper);
-	ok &= dxf_attr_append(new_text, 8, (void *) layer);
-	ok &= dxf_attr_append(new_text, 6, (void *) ltype);
-	ok &= dxf_attr_append(new_text, 62, (void *) &color);
-	ok &= dxf_attr_append(new_text, 370, (void *) &lw);
+	ok &= dxf_attr_append(new_text, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_text, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_text, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(new_text, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_text, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(new_text, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(new_text, 370, (void *) &lw, pool);
 	
-	ok &= dxf_attr_append(new_text, 100, (void *) dxf_subclass);
+	ok &= dxf_attr_append(new_text, 100, (void *) dxf_subclass, pool);
 	/* place the first vertice */
-	ok &= dxf_attr_append(new_text, 10, (void *) &x0);
-	ok &= dxf_attr_append(new_text, 20, (void *) &y0);
-	ok &= dxf_attr_append(new_text, 30, (void *) &z0);
-	ok &= dxf_attr_append(new_text, 40, (void *) &h);
-	ok &= dxf_attr_append(new_text, 1, (void *) txt);
-	ok &= dxf_attr_append(new_text, 50, (void *) &d_zero);
-	ok &= dxf_attr_append(new_text, 7, (void *) t_style);
-	ok &= dxf_attr_append(new_text, 72, (void *) &int_zero);
+	ok &= dxf_attr_append(new_text, 10, (void *) &x0, pool);
+	ok &= dxf_attr_append(new_text, 20, (void *) &y0, pool);
+	ok &= dxf_attr_append(new_text, 30, (void *) &z0, pool);
+	ok &= dxf_attr_append(new_text, 40, (void *) &h, pool);
+	ok &= dxf_attr_append(new_text, 1, (void *) txt, pool);
+	ok &= dxf_attr_append(new_text, 50, (void *) &d_zero, pool);
+	ok &= dxf_attr_append(new_text, 7, (void *) t_style, pool);
+	ok &= dxf_attr_append(new_text, 72, (void *) &int_zero, pool);
 	
-	ok &= dxf_attr_append(new_text, 11, (void *) &x0);
-	ok &= dxf_attr_append(new_text, 21, (void *) &y0);
-	ok &= dxf_attr_append(new_text, 31, (void *) &z0);
-	ok &= dxf_attr_append(new_text, 100, (void *) dxf_subclass);
-	ok &= dxf_attr_append(new_text, 73, (void *) &int_zero);
+	ok &= dxf_attr_append(new_text, 11, (void *) &x0, pool);
+	ok &= dxf_attr_append(new_text, 21, (void *) &y0, pool);
+	ok &= dxf_attr_append(new_text, 31, (void *) &z0, pool);
+	ok &= dxf_attr_append(new_text, 100, (void *) dxf_subclass, pool);
+	ok &= dxf_attr_append(new_text, 73, (void *) &int_zero, pool);
 	
 	if(ok){
 		return new_text;
@@ -921,7 +919,7 @@ char *txt, int color, char *layer, char *ltype, int lw, int paper){
 }
 
 dxf_node * dxf_new_mtext (double x0, double y0, double z0, double h,
-char *txt[], int num_txt, int color, char *layer, char *ltype, int lw, int paper){
+char *txt[], int num_txt, int color, char *layer, char *ltype, int lw, int paper, int pool){
 	if (num_txt <= 0) return NULL;
 	/* create a new DXF TEXT */
 	const char *handle = "0";
@@ -930,35 +928,35 @@ char *txt[], int num_txt, int color, char *layer, char *ltype, int lw, int paper
 	const char *t_style = "STANDARD";
 	int ok = 1, int_zero = 0, int_one = 1, i;
 	double d_zero = 0.0;
-	dxf_node * new_mtext = dxf_obj_new ("MTEXT", 0);
+	dxf_node * new_mtext = dxf_obj_new ("MTEXT", pool);
 	
-	ok &= dxf_attr_append(new_mtext, 5, (void *) handle);
-	ok &= dxf_attr_append(new_mtext, 100, (void *) dxf_class);
-	ok &= dxf_attr_append(new_mtext, 67, (void *) &paper);
-	ok &= dxf_attr_append(new_mtext, 8, (void *) layer);
-	ok &= dxf_attr_append(new_mtext, 6, (void *) ltype);
-	ok &= dxf_attr_append(new_mtext, 62, (void *) &color);
-	ok &= dxf_attr_append(new_mtext, 370, (void *) &lw);
+	ok &= dxf_attr_append(new_mtext, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_mtext, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_mtext, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(new_mtext, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_mtext, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(new_mtext, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(new_mtext, 370, (void *) &lw, pool);
 	
-	ok &= dxf_attr_append(new_mtext, 100, (void *) dxf_subclass);
+	ok &= dxf_attr_append(new_mtext, 100, (void *) dxf_subclass, pool);
 	/* place the first vertice */
-	ok &= dxf_attr_append(new_mtext, 10, (void *) &x0);
-	ok &= dxf_attr_append(new_mtext, 20, (void *) &y0);
-	ok &= dxf_attr_append(new_mtext, 30, (void *) &z0);
-	ok &= dxf_attr_append(new_mtext, 40, (void *) &h);
-	ok &= dxf_attr_append(new_mtext, 41, (void *) &d_zero);
-	ok &= dxf_attr_append(new_mtext, 71, (void *) &int_one);
-	ok &= dxf_attr_append(new_mtext, 72, (void *) &int_one);
+	ok &= dxf_attr_append(new_mtext, 10, (void *) &x0, pool);
+	ok &= dxf_attr_append(new_mtext, 20, (void *) &y0, pool);
+	ok &= dxf_attr_append(new_mtext, 30, (void *) &z0, pool);
+	ok &= dxf_attr_append(new_mtext, 40, (void *) &h, pool);
+	ok &= dxf_attr_append(new_mtext, 41, (void *) &d_zero, pool);
+	ok &= dxf_attr_append(new_mtext, 71, (void *) &int_one, pool);
+	ok &= dxf_attr_append(new_mtext, 72, (void *) &int_one, pool);
 	
 	for (i = 0; i < num_txt - 1; i++)
-		ok &= dxf_attr_append(new_mtext, 3, (void *) txt[i]);
+		ok &= dxf_attr_append(new_mtext, 3, (void *) txt[i], pool);
 	
-	ok &= dxf_attr_append(new_mtext, 1, (void *) txt[num_txt - 1]);
-	ok &= dxf_attr_append(new_mtext, 7, (void *) t_style);
+	ok &= dxf_attr_append(new_mtext, 1, (void *) txt[num_txt - 1], pool);
+	ok &= dxf_attr_append(new_mtext, 7, (void *) t_style, pool);
 	
-	ok &= dxf_attr_append(new_mtext, 11, (void *) (double[]){1.0});
-	ok &= dxf_attr_append(new_mtext, 21, (void *) &d_zero);
-	ok &= dxf_attr_append(new_mtext, 31, (void *) &d_zero);
+	ok &= dxf_attr_append(new_mtext, 11, (void *) (double[]){1.0}, pool);
+	ok &= dxf_attr_append(new_mtext, 21, (void *) &d_zero, pool);
+	ok &= dxf_attr_append(new_mtext, 31, (void *) &d_zero, pool);
 	
 	if(ok){
 		return new_mtext;
@@ -968,8 +966,8 @@ char *txt[], int num_txt, int color, char *layer, char *ltype, int lw, int paper
 }
 
 dxf_node * dxf_new_attdef (double x0, double y0, double z0, double h,
-char *txt, char *tag, int color, char *layer, char *ltype, int lw, int paper){
-	/* create a new DXF TEXT */
+char *txt, char *tag, int color, char *layer, char *ltype, int lw, int paper, int pool){
+	/* create a new DXF ATTDEF used only in Block description*/
 	const char *handle = "0";
 	const char *dxf_class = "AcDbEntity";
 	const char *dxf_subclass1 = "AcDbText";
@@ -978,35 +976,35 @@ char *txt, char *tag, int color, char *layer, char *ltype, int lw, int paper){
 	const char *prompt = "value:";
 	int ok = 1, int_zero = 0;
 	double d_zero = 0.0;
-	dxf_node * attdef = dxf_obj_new ("ATTDEF", 0);
+	dxf_node * attdef = dxf_obj_new ("ATTDEF", pool);
 	
-	ok &= dxf_attr_append(attdef, 5, (void *) handle);
-	ok &= dxf_attr_append(attdef, 100, (void *) dxf_class);
-	ok &= dxf_attr_append(attdef, 67, (void *) &paper);
-	ok &= dxf_attr_append(attdef, 8, (void *) layer);
-	ok &= dxf_attr_append(attdef, 6, (void *) ltype);
-	ok &= dxf_attr_append(attdef, 62, (void *) &color);
-	ok &= dxf_attr_append(attdef, 370, (void *) &lw);
+	ok &= dxf_attr_append(attdef, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(attdef, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(attdef, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(attdef, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(attdef, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(attdef, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(attdef, 370, (void *) &lw, pool);
 	
-	ok &= dxf_attr_append(attdef, 100, (void *) dxf_subclass1);
+	ok &= dxf_attr_append(attdef, 100, (void *) dxf_subclass1, pool);
 	/* place the first vertice */
-	ok &= dxf_attr_append(attdef, 10, (void *) &x0);
-	ok &= dxf_attr_append(attdef, 20, (void *) &y0);
-	ok &= dxf_attr_append(attdef, 30, (void *) &z0);
-	ok &= dxf_attr_append(attdef, 40, (void *) &h);
-	ok &= dxf_attr_append(attdef, 1, (void *) txt);
-	ok &= dxf_attr_append(attdef, 50, (void *) &d_zero);
-	ok &= dxf_attr_append(attdef, 7, (void *) t_style);
-	ok &= dxf_attr_append(attdef, 72, (void *) &int_zero);
+	ok &= dxf_attr_append(attdef, 10, (void *) &x0, pool);
+	ok &= dxf_attr_append(attdef, 20, (void *) &y0, pool);
+	ok &= dxf_attr_append(attdef, 30, (void *) &z0, pool);
+	ok &= dxf_attr_append(attdef, 40, (void *) &h, pool);
+	ok &= dxf_attr_append(attdef, 1, (void *) txt, pool);
+	ok &= dxf_attr_append(attdef, 50, (void *) &d_zero, pool);
+	ok &= dxf_attr_append(attdef, 7, (void *) t_style, pool);
+	ok &= dxf_attr_append(attdef, 72, (void *) &int_zero, pool);
 	
-	ok &= dxf_attr_append(attdef, 11, (void *) &x0);
-	ok &= dxf_attr_append(attdef, 21, (void *) &y0);
-	ok &= dxf_attr_append(attdef, 31, (void *) &z0);
-	ok &= dxf_attr_append(attdef, 100, (void *) dxf_subclass2);
-	ok &= dxf_attr_append(attdef, 3, (void *) prompt);
-	ok &= dxf_attr_append(attdef, 2, (void *) tag);
-	ok &= dxf_attr_append(attdef, 70, (void *) &int_zero);
-	ok &= dxf_attr_append(attdef, 74, (void *) &int_zero);
+	ok &= dxf_attr_append(attdef, 11, (void *) &x0, pool);
+	ok &= dxf_attr_append(attdef, 21, (void *) &y0, pool);
+	ok &= dxf_attr_append(attdef, 31, (void *) &z0, pool);
+	ok &= dxf_attr_append(attdef, 100, (void *) dxf_subclass2, pool);
+	ok &= dxf_attr_append(attdef, 3, (void *) prompt, pool);
+	ok &= dxf_attr_append(attdef, 2, (void *) tag, pool);
+	ok &= dxf_attr_append(attdef, 70, (void *) &int_zero, pool);
+	ok &= dxf_attr_append(attdef, 74, (void *) &int_zero, pool);
 	
 	if(ok){
 		return attdef;
@@ -1016,8 +1014,8 @@ char *txt, char *tag, int color, char *layer, char *ltype, int lw, int paper){
 }
 
 dxf_node * dxf_new_attrib (double x0, double y0, double z0, double h,
-char *txt, char *tag, int color, char *layer, char *ltype, int lw, int paper){
-	/* create a new DXF TEXT */
+char *txt, char *tag, int color, char *layer, char *ltype, int lw, int paper, int pool){
+	/* create a new DXF ATTRIB, used in Insert entity only */
 	const char *handle = "0";
 	const char *dxf_class = "AcDbEntity";
 	const char *dxf_subclass1 = "AcDbText";
@@ -1026,40 +1024,40 @@ char *txt, char *tag, int color, char *layer, char *ltype, int lw, int paper){
 	const char *prompt = "value:";
 	int ok = 1, int_zero = 0;
 	double d_zero = 0.0;
-	dxf_node * attrib = dxf_obj_new ("ATTRIB", 0);
+	dxf_node * attrib = dxf_obj_new ("ATTRIB", pool);
 	
-	ok &= dxf_attr_append(attrib, 5, (void *) handle);
-	ok &= dxf_attr_append(attrib, 100, (void *) dxf_class);
-	ok &= dxf_attr_append(attrib, 67, (void *) &paper);
-	ok &= dxf_attr_append(attrib, 8, (void *) layer);
-	ok &= dxf_attr_append(attrib, 6, (void *) ltype);
-	ok &= dxf_attr_append(attrib, 62, (void *) &color);
-	ok &= dxf_attr_append(attrib, 370, (void *) &lw);
+	ok &= dxf_attr_append(attrib, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(attrib, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(attrib, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(attrib, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(attrib, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(attrib, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(attrib, 370, (void *) &lw, pool);
 	
-	ok &= dxf_attr_append(attrib, 100, (void *) dxf_subclass1);
+	ok &= dxf_attr_append(attrib, 100, (void *) dxf_subclass1, pool);
 	/* place the first vertice */
-	ok &= dxf_attr_append(attrib, 10, (void *) &x0);
-	ok &= dxf_attr_append(attrib, 20, (void *) &y0);
-	ok &= dxf_attr_append(attrib, 30, (void *) &z0);
-	ok &= dxf_attr_append(attrib, 40, (void *) &h);
-	ok &= dxf_attr_append(attrib, 1, (void *) txt);
-	ok &= dxf_attr_append(attrib, 50, (void *) &d_zero);
-	//ok &= dxf_attr_append(attrib, 41, (void *) &d_zero);
-	//ok &= dxf_attr_append(attrib, 51, (void *) &d_zero);
-	ok &= dxf_attr_append(attrib, 7, (void *) t_style);
-	//ok &= dxf_attr_append(attrib, 71, (void *) t_style);
-	ok &= dxf_attr_append(attrib, 72, (void *) &int_zero);
-	ok &= dxf_attr_append(attrib, 11, (void *) &x0);
-	ok &= dxf_attr_append(attrib, 21, (void *) &y0);
-	ok &= dxf_attr_append(attrib, 31, (void *) &z0);
-	//ok &= dxf_attr_append(attrib, 210, (void *) t_style);
-	//ok &= dxf_attr_append(attrib, 220, (void *) t_style);
-	//ok &= dxf_attr_append(attrib, 230, (void *) t_style);
+	ok &= dxf_attr_append(attrib, 10, (void *) &x0, pool);
+	ok &= dxf_attr_append(attrib, 20, (void *) &y0, pool);
+	ok &= dxf_attr_append(attrib, 30, (void *) &z0, pool);
+	ok &= dxf_attr_append(attrib, 40, (void *) &h, pool);
+	ok &= dxf_attr_append(attrib, 1, (void *) txt, pool);
+	ok &= dxf_attr_append(attrib, 50, (void *) &d_zero, pool);
+	//ok &= dxf_attr_append(attrib, 41, (void *) &d_zero, pool);
+	//ok &= dxf_attr_append(attrib, 51, (void *) &d_zero, pool);
+	ok &= dxf_attr_append(attrib, 7, (void *) t_style, pool);
+	//ok &= dxf_attr_append(attrib, 71, (void *) t_style, pool);
+	ok &= dxf_attr_append(attrib, 72, (void *) &int_zero, pool);
+	ok &= dxf_attr_append(attrib, 11, (void *) &x0, pool);
+	ok &= dxf_attr_append(attrib, 21, (void *) &y0, pool);
+	ok &= dxf_attr_append(attrib, 31, (void *) &z0, pool);
+	//ok &= dxf_attr_append(attrib, 210, (void *) t_style, pool);
+	//ok &= dxf_attr_append(attrib, 220, (void *) t_style, pool);
+	//ok &= dxf_attr_append(attrib, 230, (void *) t_style, pool);
 	
-	ok &= dxf_attr_append(attrib, 100, (void *) dxf_subclass2);
-	ok &= dxf_attr_append(attrib, 2, (void *) tag);
-	ok &= dxf_attr_append(attrib, 70, (void *) &int_zero);
-	ok &= dxf_attr_append(attrib, 74, (void *) &int_zero);
+	ok &= dxf_attr_append(attrib, 100, (void *) dxf_subclass2, pool);
+	ok &= dxf_attr_append(attrib, 2, (void *) tag, pool);
+	ok &= dxf_attr_append(attrib, 70, (void *) &int_zero, pool);
+	ok &= dxf_attr_append(attrib, 74, (void *) &int_zero, pool);
 	
 	if(ok){
 		return attrib;
@@ -1068,7 +1066,7 @@ char *txt, char *tag, int color, char *layer, char *ltype, int lw, int paper){
 	return NULL;
 }
 
-dxf_node * dxf_attdef_cpy (dxf_node *text, char *tag, double x0, double y0, double z0){
+dxf_node * dxf_attdef_cpy (dxf_node *text, char *tag, double x0, double y0, double z0, int pool){
 	/*create new attdef ent by copying parameters of an text ent */
 	/* offset position of attdef by x0, y0, z0*/
 	if(text){
@@ -1171,7 +1169,7 @@ dxf_node * dxf_attdef_cpy (dxf_node *text, char *tag, double x0, double y0, doub
 		}
 		
 		dxf_node * attdef = dxf_new_attdef (x1 - x0, y1 - y0, z1 - z0, h,
-			txt, tag, color, layer, l_type, lw, paper);
+			txt, tag, color, layer, l_type, lw, paper, pool);
 		
 		dxf_attr_change(attdef, 11, (void *)(double[]){x2 - x0});
 		dxf_attr_change(attdef, 21, (void *)(double[]){y2 - y0});
@@ -1191,7 +1189,7 @@ dxf_node * dxf_attdef_cpy (dxf_node *text, char *tag, double x0, double y0, doub
 	return NULL;
 }
 
-dxf_node * dxf_attrib_cpy (dxf_node *attdef, double x0, double y0, double z0){
+dxf_node * dxf_attrib_cpy (dxf_node *attdef, double x0, double y0, double z0, int pool){
 	/*create new attrib ent by copying parameters of an attdef ent */
 	/* translate position of attrib by x0, y0, z0*/
 	if(attdef){
@@ -1298,7 +1296,7 @@ dxf_node * dxf_attrib_cpy (dxf_node *attdef, double x0, double y0, double z0){
 		}
 		
 		dxf_node * attrib = dxf_new_attrib (x1 + x0, y1 + y0, z1 + z0, h,
-			txt, tag, color, layer, l_type, lw, paper);
+			txt, tag, color, layer, l_type, lw, paper, pool);
 		
 		dxf_attr_change(attrib, 11, (void *)(double[]){x2 + x0});
 		dxf_attr_change(attrib, 21, (void *)(double[]){y2 + y0});
@@ -1318,16 +1316,16 @@ dxf_node * dxf_attrib_cpy (dxf_node *attdef, double x0, double y0, double z0){
 	return NULL;
 }
 
-dxf_node * dxf_new_seqend (char *layer){
+dxf_node * dxf_new_seqend (char *layer, int pool){
 	/* create a new SEQEND entity */
 	const char *handle = "0";
 	const char *dxf_class = "AcDbEntity";
 	int ok = 1;
-	dxf_node * seqend = dxf_obj_new ("SEQEND", 0);
+	dxf_node * seqend = dxf_obj_new ("SEQEND", pool);
 	
-	ok &= dxf_attr_append(seqend, 5, (void *) handle);
-	ok &= dxf_attr_append(seqend, 100, (void *) dxf_class);
-	ok &= dxf_attr_append(seqend, 8, (void *) layer);
+	ok &= dxf_attr_append(seqend, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(seqend, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(seqend, 8, (void *) layer, pool);
 	
 	if(ok){
 		return seqend;
@@ -1336,19 +1334,19 @@ dxf_node * dxf_new_seqend (char *layer){
 	return NULL;
 }
 
-dxf_node * dxf_new_endblk (char *layer, char *owner){
+dxf_node * dxf_new_endblk (char *layer, char *owner, int pool){
 	/* create a new ENDBLK entity */
 	const char *handle = "0";
 	const char *dxf_class = "AcDbEntity";
 	const char *dxf_subclass = "AcDbBlockEnd";
 	int ok = 1;
-	dxf_node * new_endblk = dxf_obj_new ("ENDBLK", 0);
+	dxf_node * new_endblk = dxf_obj_new ("ENDBLK", pool);
 	
-	ok &= dxf_attr_append(new_endblk, 5, (void *) handle);
-	ok &= dxf_attr_append(new_endblk, 330, (void *) owner);
-	ok &= dxf_attr_append(new_endblk, 100, (void *) dxf_class);
-	ok &= dxf_attr_append(new_endblk, 8, (void *) layer);
-	ok &= dxf_attr_append(new_endblk, 100, (void *) dxf_subclass);
+	ok &= dxf_attr_append(new_endblk, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_endblk, 330, (void *) owner, pool);
+	ok &= dxf_attr_append(new_endblk, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_endblk, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_endblk, 100, (void *) dxf_subclass, pool);
 	
 	if(ok){
 		return new_endblk;
@@ -1357,7 +1355,7 @@ dxf_node * dxf_new_endblk (char *layer, char *owner){
 	return NULL;
 }
 
-dxf_node * dxf_new_begblk (char *name, char *layer, char *owner){
+dxf_node * dxf_new_begblk (char *name, char *layer, char *owner, int pool){
 	/* create a new begin BLOCK entity */
 	const char *handle = "0";
 	const char *str_zero = "";
@@ -1365,20 +1363,20 @@ dxf_node * dxf_new_begblk (char *name, char *layer, char *owner){
 	const char *dxf_subclass = "AcDbBlockBegin";
 	int ok = 1, int_zero = 0;
 	double d_zero = 0.0;
-	dxf_node * blk = dxf_obj_new ("BLOCK", 0);
+	dxf_node * blk = dxf_obj_new ("BLOCK", pool);
 	
-	ok &= dxf_attr_append(blk, 5, (void *) handle);
-	ok &= dxf_attr_append(blk, 330, (void *) owner);
-	ok &= dxf_attr_append(blk, 100, (void *) dxf_class);
-	ok &= dxf_attr_append(blk, 8, (void *) layer);
-	ok &= dxf_attr_append(blk, 100, (void *) dxf_subclass);
-	ok &= dxf_attr_append(blk, 2, (void *) name);
-	ok &= dxf_attr_append(blk, 70, (void *) &int_zero);
-	ok &= dxf_attr_append(blk, 10, (void *) &d_zero);
-	ok &= dxf_attr_append(blk, 20, (void *) &d_zero);
-	ok &= dxf_attr_append(blk, 30, (void *) &d_zero);
-	ok &= dxf_attr_append(blk, 3, (void *) name);
-	ok &= dxf_attr_append(blk, 1, (void *) str_zero);
+	ok &= dxf_attr_append(blk, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(blk, 330, (void *) owner, pool);
+	ok &= dxf_attr_append(blk, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(blk, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(blk, 100, (void *) dxf_subclass, pool);
+	ok &= dxf_attr_append(blk, 2, (void *) name, pool);
+	ok &= dxf_attr_append(blk, 70, (void *) &int_zero, pool);
+	ok &= dxf_attr_append(blk, 10, (void *) &d_zero, pool);
+	ok &= dxf_attr_append(blk, 20, (void *) &d_zero, pool);
+	ok &= dxf_attr_append(blk, 30, (void *) &d_zero, pool);
+	ok &= dxf_attr_append(blk, 3, (void *) name, pool);
+	ok &= dxf_attr_append(blk, 1, (void *) str_zero, pool);
 	
 	if(ok){
 		return blk;
@@ -1387,19 +1385,19 @@ dxf_node * dxf_new_begblk (char *name, char *layer, char *owner){
 	return NULL;
 }
 
-dxf_node * dxf_new_blkrec (char *name){
+dxf_node * dxf_new_blkrec (char *name, int pool){
 	/* create a new BLOCK_RECORD */
 	const char *handle = "0";
 	const char *dxf_class = "AcDbSymbolTableRecord";
 	const char *dxf_subclass = "AcDbBlockTableRecord";
 	int ok = 1, int_zero = 0;
-	dxf_node * blk = dxf_obj_new ("BLOCK_RECORD", 0);
+	dxf_node * blk = dxf_obj_new ("BLOCK_RECORD", pool);
 	
-	ok &= dxf_attr_append(blk, 5, (void *) handle);
-	ok &= dxf_attr_append(blk, 100, (void *) dxf_class);
-	ok &= dxf_attr_append(blk, 100, (void *) dxf_subclass);
-	ok &= dxf_attr_append(blk, 2, (void *) name);
-	ok &= dxf_attr_append(blk, 70, (void *) &int_zero);
+	ok &= dxf_attr_append(blk, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(blk, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(blk, 100, (void *) dxf_subclass, pool);
+	ok &= dxf_attr_append(blk, 2, (void *) name, pool);
+	ok &= dxf_attr_append(blk, 70, (void *) &int_zero, pool);
 	
 	if(ok){
 		return blk;
@@ -1441,7 +1439,7 @@ int dxf_block_append(dxf_node *blk, dxf_node *obj){
 	return ok;
 }
 
-int dxf_new_block(dxf_drawing *drawing, char *name, char *layer, list_node *list, struct do_list *list_do){
+int dxf_new_block(dxf_drawing *drawing, char *name, char *layer, list_node *list, struct do_list *list_do, int pool){
 	int ok = 0;
 	
 	if ((drawing) && (name)){
@@ -1455,17 +1453,17 @@ int dxf_new_block(dxf_drawing *drawing, char *name, char *layer, list_node *list
 			int init_ext = 0;
 			
 			/* create BLOCK_RECORD table entry*/
-			blkrec = dxf_new_blkrec (name);
+			blkrec = dxf_new_blkrec (name, pool);
 			ok = ent_handle(drawing, blkrec);
 			if (ok) handle = dxf_find_attr2(blkrec, 5); ok = 0;
 			
 			/* begin block */
-			if (handle) blk = dxf_new_begblk (name, layer, (char *)handle->value.s_data);
+			if (handle) blk = dxf_new_begblk (name, layer, (char *)handle->value.s_data, pool);
 			/* get a handle */
 			ok = ent_handle(drawing, blk);
 			/* use the handle to owning the ENDBLK ent */
 			if (ok) handle = dxf_find_attr2(blk, 5); ok = 0;
-			if (handle) endblk = dxf_new_endblk (layer, (char *)handle->value.s_data);
+			if (handle) endblk = dxf_new_endblk (layer, (char *)handle->value.s_data, pool);
 			
 			if (list != NULL){ /* append list of objects in block*/
 				list_node *current = list->next;
@@ -1514,7 +1512,7 @@ int dxf_new_block(dxf_drawing *drawing, char *name, char *layer, list_node *list
 	return ok;
 }
 
-int dxf_new_block2(dxf_drawing *drawing, char *name, char *mark, char *layer, list_node *list, struct do_list *list_do){
+int dxf_new_block2(dxf_drawing *drawing, char *name, char *mark, char *layer, list_node *list, struct do_list *list_do, int pool){
 	int ok = 0;
 	
 	if ((drawing) && (name)){
@@ -1533,17 +1531,17 @@ int dxf_new_block2(dxf_drawing *drawing, char *name, char *mark, char *layer, li
 			int mark_len = strlen(mark);
 			
 			/* create BLOCK_RECORD table entry*/
-			blkrec = dxf_new_blkrec (name);
+			blkrec = dxf_new_blkrec (name, pool);
 			ok = ent_handle(drawing, blkrec);
 			if (ok) handle = dxf_find_attr2(blkrec, 5); ok = 0;
 			
 			/* begin block */
-			if (handle) blk = dxf_new_begblk (name, layer, (char *)handle->value.s_data);
+			if (handle) blk = dxf_new_begblk (name, layer, (char *)handle->value.s_data, pool);
 			/* get a handle */
 			ok = ent_handle(drawing, blk);
 			/* use the handle to owning the ENDBLK ent */
 			if (ok) handle = dxf_find_attr2(blk, 5); ok = 0;
-			if (handle) endblk = dxf_new_endblk (layer, (char *)handle->value.s_data);
+			if (handle) endblk = dxf_new_endblk (layer, (char *)handle->value.s_data, pool);
 			
 			if (list != NULL){ /* append list of objects in block*/
 				list_node *current = list->next;
@@ -1590,7 +1588,7 @@ int dxf_new_block2(dxf_drawing *drawing, char *name, char *mark, char *layer, li
 								text = dxf_find_attr2(obj, 1);
 								if (text){
 									if (strncmp (text->value.s_data, mark, mark_len) == 0){
-										new_ent = dxf_attdef_cpy (obj, text->value.s_data + mark_len, min_x, min_y, 0.0);
+										new_ent = dxf_attdef_cpy (obj, text->value.s_data + mark_len, min_x, min_y, 0.0, pool);
 										ent_handle(drawing, new_ent);
 										dxf_obj_append(blk, new_ent);
 									}
@@ -1621,39 +1619,39 @@ int dxf_new_block2(dxf_drawing *drawing, char *name, char *mark, char *layer, li
 }
 
 dxf_node * dxf_new_insert (char *name, double x0, double y0, double z0,
-int color, char *layer, char *ltype, int lw, int paper){
+int color, char *layer, char *ltype, int lw, int paper, int pool){
 	/* create a new INSERT */
 	const char *handle = "0";
 	const char *dxf_class = "AcDbEntity";
 	const char *dxf_subclass = "AcDbBlockReference";
 	int ok = 1, int_zero = 0;
 	double d_zero = 0.0, d_one = 1.0;
-	dxf_node * ins = dxf_obj_new ("INSERT", 0);
+	dxf_node * ins = dxf_obj_new ("INSERT", pool);
 	
-	ok &= dxf_attr_append(ins, 5, (void *) handle);
-	ok &= dxf_attr_append(ins, 100, (void *) dxf_class);
-	ok &= dxf_attr_append(ins, 67, (void *) &paper);
-	ok &= dxf_attr_append(ins, 8, (void *) layer);
-	ok &= dxf_attr_append(ins, 6, (void *) ltype);
-	ok &= dxf_attr_append(ins, 62, (void *) &color);
-	ok &= dxf_attr_append(ins, 370, (void *) &lw);
+	ok &= dxf_attr_append(ins, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(ins, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(ins, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(ins, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(ins, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(ins, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(ins, 370, (void *) &lw, pool);
 	
-	ok &= dxf_attr_append(ins, 100, (void *) dxf_subclass);
-	ok &= dxf_attr_append(ins, 66, (void *) &int_zero);
-	ok &= dxf_attr_append(ins, 2, (void *) name);
+	ok &= dxf_attr_append(ins, 100, (void *) dxf_subclass, pool);
+	ok &= dxf_attr_append(ins, 66, (void *) &int_zero, pool);
+	ok &= dxf_attr_append(ins, 2, (void *) name, pool);
 	
 	/* insert point */
-	ok &= dxf_attr_append(ins, 10, (void *) &x0);
-	ok &= dxf_attr_append(ins, 20, (void *) &y0);
-	ok &= dxf_attr_append(ins, 30, (void *) &z0);
+	ok &= dxf_attr_append(ins, 10, (void *) &x0, pool);
+	ok &= dxf_attr_append(ins, 20, (void *) &y0, pool);
+	ok &= dxf_attr_append(ins, 30, (void *) &z0, pool);
 	
 	/* scales */
-	ok &= dxf_attr_append(ins, 41, (void *) &d_one);
-	ok &= dxf_attr_append(ins, 42, (void *) &d_one);
-	ok &= dxf_attr_append(ins, 43, (void *) &d_one);
+	ok &= dxf_attr_append(ins, 41, (void *) &d_one, pool);
+	ok &= dxf_attr_append(ins, 42, (void *) &d_one, pool);
+	ok &= dxf_attr_append(ins, 43, (void *) &d_one, pool);
 	
 	/* rotation */
-	ok &= dxf_attr_append(ins, 50, (void *) &d_zero);
+	ok &= dxf_attr_append(ins, 50, (void *) &d_zero, pool);
 	
 	
 	if(ok){
@@ -1663,7 +1661,7 @@ int color, char *layer, char *ltype, int lw, int paper){
 	return NULL;
 }
 
-int dxf_insert_append(dxf_drawing *drawing, dxf_node *ins, dxf_node *obj){
+int dxf_insert_append(dxf_drawing *drawing, dxf_node *ins, dxf_node *obj, int pool){
 	int ok = 0;
 	if((ins) && (obj)){
 		if ((ins->type != DXF_ENT) || (obj->type != DXF_ENT)){
@@ -1693,7 +1691,7 @@ int dxf_insert_append(dxf_drawing *drawing, dxf_node *ins, dxf_node *obj){
 		else { /* SEQEND not found */
 			/* in this case, append object in insert, create and append a valid SEQEND */
 			dxf_obj_append(ins, obj);
-			seqend = dxf_new_seqend ("0");
+			seqend = dxf_new_seqend ("0", pool);
 			ent_handle(drawing, seqend);
 			dxf_obj_append(ins, seqend);
 		}
@@ -1732,15 +1730,15 @@ int dxf_new_layer (dxf_drawing *drawing, char *name, int color, char *ltype){
 	
 	if (lay) {
 		ok = 1;
-		ok &= dxf_attr_append(lay, 5, (void *) handle);
-		ok &= dxf_attr_append(lay, 100, (void *) dxf_class);
-		ok &= dxf_attr_append(lay, 100, (void *) dxf_subclass);
-		ok &= dxf_attr_append(lay, 2, (void *) new_name);
-		ok &= dxf_attr_append(lay, 70, (void *) &int_zero);
-		ok &= dxf_attr_append(lay, 62, (void *) &color);
-		ok &= dxf_attr_append(lay, 6, (void *) ltype);
-		ok &= dxf_attr_append(lay, 370, (void *) &int_zero);
-		ok &= dxf_attr_append(lay, 390, (void *) handle);
+		ok &= dxf_attr_append(lay, 5, (void *) handle, drawing->pool);
+		ok &= dxf_attr_append(lay, 100, (void *) dxf_class, drawing->pool);
+		ok &= dxf_attr_append(lay, 100, (void *) dxf_subclass, drawing->pool);
+		ok &= dxf_attr_append(lay, 2, (void *) new_name, drawing->pool);
+		ok &= dxf_attr_append(lay, 70, (void *) &int_zero, drawing->pool);
+		ok &= dxf_attr_append(lay, 62, (void *) &color, drawing->pool);
+		ok &= dxf_attr_append(lay, 6, (void *) ltype, drawing->pool);
+		ok &= dxf_attr_append(lay, 370, (void *) &int_zero, drawing->pool);
+		ok &= dxf_attr_append(lay, 390, (void *) handle, drawing->pool);
 		
 		/* get current handle and increment the handle seed*/
 		ok &= ent_handle(drawing, lay);
@@ -1786,18 +1784,18 @@ int dxf_new_tstyle (dxf_drawing *drawing, char *name){
 	
 	if (sty) {
 		ok = 1;
-		ok &= dxf_attr_append(sty, 5, (void *) handle);
-		ok &= dxf_attr_append(sty, 100, (void *) dxf_class);
-		ok &= dxf_attr_append(sty, 100, (void *) dxf_subclass);
-		ok &= dxf_attr_append(sty, 2, (void *) new_name);
-		ok &= dxf_attr_append(sty, 70, (void *) &int_zero);
-		ok &= dxf_attr_append(sty, 40, (void *) &d_zero);
-		ok &= dxf_attr_append(sty, 41, (void *) &d_one);
-		ok &= dxf_attr_append(sty, 50, (void *) &d_zero);
-		ok &= dxf_attr_append(sty, 71, (void *) &int_zero);
-		ok &= dxf_attr_append(sty, 42, (void *) &d_one);
-		ok &= dxf_attr_append(sty, 3, (void *) font);
-		ok &= dxf_attr_append(sty, 4, (void *) blank);
+		ok &= dxf_attr_append(sty, 5, (void *) handle, drawing->pool);
+		ok &= dxf_attr_append(sty, 100, (void *) dxf_class, drawing->pool);
+		ok &= dxf_attr_append(sty, 100, (void *) dxf_subclass, drawing->pool);
+		ok &= dxf_attr_append(sty, 2, (void *) new_name, drawing->pool);
+		ok &= dxf_attr_append(sty, 70, (void *) &int_zero, drawing->pool);
+		ok &= dxf_attr_append(sty, 40, (void *) &d_zero, drawing->pool);
+		ok &= dxf_attr_append(sty, 41, (void *) &d_one, drawing->pool);
+		ok &= dxf_attr_append(sty, 50, (void *) &d_zero, drawing->pool);
+		ok &= dxf_attr_append(sty, 71, (void *) &int_zero, drawing->pool);
+		ok &= dxf_attr_append(sty, 42, (void *) &d_one, drawing->pool);
+		ok &= dxf_attr_append(sty, 3, (void *) font, drawing->pool);
+		ok &= dxf_attr_append(sty, 4, (void *) blank, drawing->pool);
 		
 		/* get current handle and increment the handle seed*/
 		ok &= ent_handle(drawing, sty);
@@ -1816,50 +1814,50 @@ int solid, int assoc,
 int style, /* 0 = normal odd, 1 = outer, 2 = ignore */
 int type, /* 0 = user, 1 = predefined, 2 =custom */
 double rot, double scale,
-int color, char *layer, char *ltype, int lw, int paper){
+int color, char *layer, char *ltype, int lw, int paper, int pool){
 	/* create a new hatch */
 	const char *handle = "0";
 	const char *dxf_class = "AcDbEntity";
 	const char *dxf_subclass = "AcDbHatch";
 	int ok = 1, int_zero = 0;
 	double d_zero = 0.0, d_one = 1.0;
-	dxf_node * hatch = dxf_obj_new ("HATCH", 0);
+	dxf_node * hatch = dxf_obj_new ("HATCH", pool);
 	
 	if ((!pattern) || (!bound)) return NULL;
 	
-	ok &= dxf_attr_append(hatch, 5, (void *) handle);
-	ok &= dxf_attr_append(hatch, 100, (void *) dxf_class);
-	ok &= dxf_attr_append(hatch, 67, (void *) &paper);
-	ok &= dxf_attr_append(hatch, 8, (void *) layer);
-	ok &= dxf_attr_append(hatch, 6, (void *) ltype);
-	ok &= dxf_attr_append(hatch, 62, (void *) &color);
-	ok &= dxf_attr_append(hatch, 370, (void *) &lw);
+	ok &= dxf_attr_append(hatch, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(hatch, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(hatch, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(hatch, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(hatch, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(hatch, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(hatch, 370, (void *) &lw, pool);
 	
-	ok &= dxf_attr_append(hatch, 100, (void *) dxf_subclass);
+	ok &= dxf_attr_append(hatch, 100, (void *) dxf_subclass, pool);
 	
 	/* elevation point */
-	ok &= dxf_attr_append(hatch, 10, (void *) &d_zero); /*always zero*/
-	ok &= dxf_attr_append(hatch, 20, (void *) &d_zero); /*always zero*/
-	ok &= dxf_attr_append(hatch, 30, (void *) &d_zero); /* z coordinate is the elevation*/
+	ok &= dxf_attr_append(hatch, 10, (void *) &d_zero, pool); /*always zero*/
+	ok &= dxf_attr_append(hatch, 20, (void *) &d_zero, pool); /*always zero*/
+	ok &= dxf_attr_append(hatch, 30, (void *) &d_zero, pool); /* z coordinate is the elevation*/
 	
-	ok &= dxf_attr_append(hatch, 210, (void *) &d_zero);
-	ok &= dxf_attr_append(hatch, 220, (void *) &d_zero);
-	ok &= dxf_attr_append(hatch, 230, (void *) &d_one);
+	ok &= dxf_attr_append(hatch, 210, (void *) &d_zero, pool);
+	ok &= dxf_attr_append(hatch, 220, (void *) &d_zero, pool);
+	ok &= dxf_attr_append(hatch, 230, (void *) &d_one, pool);
 	
 	/* pattern name */
-	ok &= dxf_attr_append(hatch, 2, (void *) pattern->name);
+	ok &= dxf_attr_append(hatch, 2, (void *) pattern->name, pool);
 	
 	/* fill flag */
-	ok &= dxf_attr_append(hatch, 70, (void *) &solid);
+	ok &= dxf_attr_append(hatch, 70, (void *) &solid, pool);
 	/* associativity flag */
-	ok &= dxf_attr_append(hatch, 71, (void *) &assoc);
+	ok &= dxf_attr_append(hatch, 71, (void *) &assoc, pool);
 	
 	/* number of boundary loops */
-	ok &= dxf_attr_append(hatch, 91, (void *) (int[]){1});
+	ok &= dxf_attr_append(hatch, 91, (void *) (int[]){1}, pool);
 	
 	/*============== bondaries =============*/
 	/* boundary type */
-	ok &= dxf_attr_append(hatch, 92, (void *) (int[]){0}); /* not polyline*/
+	ok &= dxf_attr_append(hatch, 92, (void *) (int[]){0}, pool); /* not polyline*/
 	
 	int num_edges = 0;
 	line_node *curr_graph = bound->list->next;
@@ -1868,39 +1866,39 @@ int color, char *layer, char *ltype, int lw, int paper){
 		curr_graph = curr_graph->next; /* go to next */
 	}
 	
-	ok &= dxf_attr_append(hatch, 93, (void *) &num_edges);
+	ok &= dxf_attr_append(hatch, 93, (void *) &num_edges, pool);
 	
 	curr_graph = bound->list->next;
 	while(curr_graph){ /*sweep the list content */
-		ok &= dxf_attr_append(hatch, 72, (void *) (int[]){1}); /* 1 = Line edge */
-		ok &= dxf_attr_append(hatch, 10, (void *) &(curr_graph->x0));
-		ok &= dxf_attr_append(hatch, 20, (void *) &(curr_graph->y0));
-		ok &= dxf_attr_append(hatch, 11, (void *) &(curr_graph->x1));
-		ok &= dxf_attr_append(hatch, 21, (void *) &(curr_graph->y1));
+		ok &= dxf_attr_append(hatch, 72, (void *) (int[]){1}, pool); /* 1 = Line edge */
+		ok &= dxf_attr_append(hatch, 10, (void *) &(curr_graph->x0), pool);
+		ok &= dxf_attr_append(hatch, 20, (void *) &(curr_graph->y0), pool);
+		ok &= dxf_attr_append(hatch, 11, (void *) &(curr_graph->x1), pool);
+		ok &= dxf_attr_append(hatch, 21, (void *) &(curr_graph->y1), pool);
 		
 		curr_graph = curr_graph->next; /* go to next */
 	}
 	
 	/* number of source boundary objects - ?? */
-	ok &= dxf_attr_append(hatch, 97, (void *) &int_zero);
+	ok &= dxf_attr_append(hatch, 97, (void *) &int_zero, pool);
 	
 	/*===================================*/
 	
 	/* hatch style */
-	ok &= dxf_attr_append(hatch, 75, (void *) &style);
+	ok &= dxf_attr_append(hatch, 75, (void *) &style, pool);
 	/* pattern type */
-	ok &= dxf_attr_append(hatch, 76, (void *) &type);
+	ok &= dxf_attr_append(hatch, 76, (void *) &type, pool);
 	
 	if (!solid){
 		/* pattern rotation */
-		ok &= dxf_attr_append(hatch, 52, (void *) &rot);
+		ok &= dxf_attr_append(hatch, 52, (void *) &rot, pool);
 		/* pattern scale */
-		ok &= dxf_attr_append(hatch, 41, (void *) &scale);
+		ok &= dxf_attr_append(hatch, 41, (void *) &scale, pool);
 		/* double pattern - ?? */
-		ok &= dxf_attr_append(hatch, 77, (void *) &int_zero);
+		ok &= dxf_attr_append(hatch, 77, (void *) &int_zero, pool);
 		
 		/* number of definition lines */
-		ok &= dxf_attr_append(hatch, 78, (void *) &(pattern->num_lines));
+		ok &= dxf_attr_append(hatch, 78, (void *) &(pattern->num_lines), pool);
 		
 		/*============== lines =============*/
 		struct hatch_line *curr_l = pattern->lines;
@@ -1922,18 +1920,18 @@ int color, char *layer, char *ltype, int lw, int paper){
 			}
 			
 			 /* line angle */
-			ok &= dxf_attr_append(hatch, 53, (void *) &ang);
+			ok &= dxf_attr_append(hatch, 53, (void *) &ang, pool);
 			/* base point */
-			ok &= dxf_attr_append(hatch, 43, (void *) &ox);
-			ok &= dxf_attr_append(hatch, 44, (void *) &oy);
+			ok &= dxf_attr_append(hatch, 43, (void *) &ox, pool);
+			ok &= dxf_attr_append(hatch, 44, (void *) &oy, pool);
 			/*offset*/
-			ok &= dxf_attr_append(hatch, 45, (void *) &dx);
-			ok &= dxf_attr_append(hatch, 46, (void *) &dy);
+			ok &= dxf_attr_append(hatch, 45, (void *) &dx, pool);
+			ok &= dxf_attr_append(hatch, 46, (void *) &dy, pool);
 			/*number of dash elements*/
-			ok &= dxf_attr_append(hatch, 79, (void *) &(curr_l->num_dash));
+			ok &= dxf_attr_append(hatch, 79, (void *) &(curr_l->num_dash), pool);
 			
 			for (i = 0; i < curr_l->num_dash; i++){
-				ok &= dxf_attr_append(hatch, 49, (void *) &(dash[i]));
+				ok &= dxf_attr_append(hatch, 49, (void *) &(dash[i]), pool);
 			}
 			
 			curr_l = curr_l->next;
@@ -1944,7 +1942,7 @@ int color, char *layer, char *ltype, int lw, int paper){
 	}
 	
 	/* number seed points - ?? */
-	ok &= dxf_attr_append(hatch, 98, (void *) &int_zero);
+	ok &= dxf_attr_append(hatch, 98, (void *) &int_zero, pool);
 	
 	if(ok){
 		return hatch;

@@ -636,6 +636,15 @@ int main(int argc, char** argv){
 	while (dxf_read (gui->drawing, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &progress) > 0){
 		
 	}
+	
+	/* **************** init the clipboard drawing ************ */
+	dxf_drawing *clip_drwg = dxf_drawing_new(ONE_TIME);
+	
+	while (dxf_read (clip_drwg, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &progress) > 0){
+		
+	}
+	/* *************************************************** */
+	
 	gui_tstyle(gui);
 	
 	
@@ -1069,6 +1078,15 @@ int main(int argc, char** argv){
 				
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_COPY]))){
 					printf("Copy\n");
+					dxf_drawing_clear(clip_drwg);
+					while (dxf_read (clip_drwg, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &progress) > 0){
+						
+					}
+					dxf_drwg_ent_cpy(clip_drwg, gui->sel_list);
+					dxf_cpy_lay_drwg(gui->drawing, clip_drwg);
+					dxf_cpy_ltyp_drwg(gui->drawing, clip_drwg);
+					dxf_save ("test_clip.dxf", clip_drwg);
+					dxf_mem_pool(ZERO_DXF, ONE_TIME);
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CUT]))){
 					printf("Cut\n");
@@ -2112,6 +2130,7 @@ int main(int argc, char** argv){
 	//dxf_hatch_free(gui->list_pattern.next);
 	dxf_h_fam_free(gui->hatch_fam.next);
 	
+	free(clip_drwg);
 	
 	free(gui->drawing);
 	nk_sdl_shutdown(gui);

@@ -280,4 +280,28 @@ dxf_drawing *dxf_drawing_new(int pool);
 
 int dxf_drawing_clear (dxf_drawing *drawing);
 
+int dxf_obj_subst(dxf_node *orig, dxf_node *repl);
+
+int dxf_obj_append(dxf_node *master, dxf_node *obj);
+
+int dxf_obj_detach(dxf_node *obj);
+
+int dxf_attr_append(dxf_node *master, int group, void *value, int pool);
+
+int dxf_attr_insert_before(dxf_node *attr, int group, void *value, int pool);
+
+int dxf_attr_change(dxf_node *master, int group, void *value);
+
+int dxf_attr_change_i(dxf_node *master, int group, void *value, int idx);
+
+int dxf_find_ext_appid(dxf_node *obj, char *appid, dxf_node **start, dxf_node **end);
+
+int dxf_ext_append(dxf_node *master, char *appid, int group, void *value, int pool);
+
+dxf_node *dxf_ent_copy(dxf_node *source, int pool_dest);
+
+int ent_handle(dxf_drawing *drawing, dxf_node *element);
+
+void drawing_ent_append(dxf_drawing *drawing, dxf_node *element);
+
 #endif

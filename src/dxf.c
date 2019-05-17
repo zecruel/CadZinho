@@ -1908,6 +1908,13 @@ int dxf_drawing_clear (dxf_drawing *drawing){
 		drawing->t_appid = NULL;
 		drawing->main_struct = NULL;
 		
+		drawing->hand_seed = NULL;
+		drawing->num_layers = 0;
+		drawing->num_ltypes = 0;
+		drawing->num_tstyles = 0;
+		drawing->font_list = NULL;
+		drawing->dflt_font = NULL;
+		
 		/* create a new main_struct */
 		dxf_node *main_struct = dxf_obj_new(NULL, drawing->pool);
 		if (!main_struct){
@@ -1930,4 +1937,807 @@ dxf_drawing *dxf_drawing_new(int pool){
 	}
 	
 	return drawing;
+}
+
+int dxf_obj_append(dxf_node *master, dxf_node *obj){
+	if ((master) && (obj)){
+		if (master->type == DXF_ENT){
+			obj->master = master;
+			/* start search at end of master's list */
+			dxf_node *next = NULL, *prev = master->end;
+			
+			/* append object between prev and next nodes */
+			obj->prev = prev;
+			if (prev){
+				next = prev->next;
+				prev->next = obj;
+			}
+			obj->next = next;
+			if (next){
+				next->prev = obj;
+			}
+			
+			if (prev == master->end){
+				master->end = obj;
+			}
+			
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int dxf_obj_detach(dxf_node *obj){
+	/* remove the object from its list */
+	if (obj){
+		dxf_node *master = obj->master;
+		dxf_node *prev = obj->prev;
+		dxf_node *next = obj->next;
+		/* rebuilt the insertion point */
+		if (prev){
+			prev->next = next;
+			obj->prev = NULL;
+		}
+		if (next){
+			next->prev = prev;
+			obj->next = NULL;
+		}
+		/* verify if the object is at end of master list */
+		if (master){
+			if (obj == master->end){
+				master->end = prev;
+			}
+		}
+		return 1;
+	}
+	return 0;
+}
+
+int dxf_obj_subst(dxf_node *orig, dxf_node *repl){
+	/* substitute the orig object from its list for the replace obj */
+	if ((repl) && (orig)){
+		dxf_node *master = orig->master;
+		dxf_node *prev = orig->prev;
+		dxf_node *next = orig->next;
+		dxf_node *end = orig->end;
+		
+		/* substitute inherits orig's properties */
+		repl->master = master;
+		repl->prev = prev;
+		repl->next = next;
+		repl->end = end;
+		
+		/* rebuilt the insertion point */
+		if (prev){
+			prev->next = repl;
+		}
+		if (next){
+			next->prev = repl;
+		}
+		/* verify if the orig is at end of master list */
+		if (master){
+			if (orig == master->end){
+				master->end = repl;
+			}
+		}
+		return 1;
+	}
+	else if ((repl == NULL) && (orig)){
+		/* detach, but preserve orig properties*/
+		dxf_node *master = orig->master;
+		dxf_node *prev = orig->prev;
+		dxf_node *next = orig->next;
+		/* rebuilt the insertion point */
+		if (prev){
+			prev->next = next;
+		}
+		if (next){
+			next->prev = prev;
+		}
+		/* verify if the orig is at end of master list */
+		if (master){
+			if (orig == master->end){
+				master->end = prev;
+			}
+		}
+		return 1;
+	}
+	else if ((repl) && (orig == NULL)){
+		/* restore the repl at their referenced point*/
+		dxf_node *master = repl->master;
+		dxf_node *prev = repl->prev;
+		dxf_node *next = repl->next;
+		/* rebuilt the insertion point */
+		if (prev){
+			prev->next = repl;
+		}
+		if (next){
+			next->prev = repl;
+		}
+		/* verify if the orig is at end of master list */
+		if (master){
+			if (prev == master->end){
+				master->end = repl;
+			}
+		}
+		return 1;
+	}
+	return 0;
+}
+
+dxf_node * dxf_obj_cpy(dxf_node *orig, int pool){
+	/* copy a DXF object */
+	dxf_node *new_obj = NULL;
+	if (orig){
+		new_obj = (dxf_node *) dxf_mem_pool(ADD_DXF, pool);
+		if (new_obj){
+			new_obj->master = orig->master;
+			new_obj->prev = orig->prev;
+			new_obj->next = orig->next;
+			new_obj->end = orig->end;
+			new_obj->type = orig->type;
+			if (new_obj->type == DXF_ENT){
+				new_obj->obj = orig->obj;
+			}
+			else if (new_obj->type == DXF_ATTR){
+				new_obj->value = orig->value;
+			}
+		}
+	}
+	return new_obj;
+}
+
+int dxf_attr_append(dxf_node *master, int group, void *value, int pool){
+	if (master){
+		if (master->type == DXF_ENT){
+			int type = dxf_ident_attr_type(group);
+			dxf_node *new_attr = dxf_attr_new(group, type, value, pool);
+			if (new_attr){
+				new_attr->master = master;
+				/* start search at end of master's list */
+				dxf_node *next = NULL, *prev = master->end;
+				/*  find the last attribute*/
+				if (prev){ /*skip if is an entity */
+					while (prev->type == DXF_ENT){
+						prev = prev->prev;
+						if (!prev) break;
+					}
+				}	
+				
+				/* append new attr between prev and next nodes */
+				new_attr->prev = prev;
+				if (prev){
+					next = prev->next;
+					prev->next = new_attr;
+				}
+				new_attr->next = next;
+				if (next){
+					next->prev = new_attr;
+				}
+				
+				if (prev == master->end){
+					master->end = new_attr;
+				}
+				
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+int dxf_attr_insert_before(dxf_node *attr, int group, void *value, int pool){
+	if (attr){
+		if (attr->type == DXF_ATTR){
+			int type = dxf_ident_attr_type(group);
+			dxf_node *new_attr = dxf_attr_new(group, type, value, pool);
+			if (new_attr){
+				new_attr->master = attr->master;
+				
+				dxf_node *next = attr, *prev = attr->prev;
+				
+				/* append new attr between prev and next nodes */
+				new_attr->prev = prev;
+				if (prev){
+					next = prev->next;
+					prev->next = new_attr;
+				}
+				new_attr->next = next;
+				if (next){
+					next->prev = new_attr;
+				}
+				
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+int dxf_attr_change(dxf_node *master, int group, void *value){
+	if (master){
+		/* find the first attribute*/
+		dxf_node *found_attr = dxf_find_attr2(master, group);
+		if (found_attr){
+			/* identify the type of attrib, according DXF group specification */
+			int type = dxf_ident_attr_type(group);
+			switch(type) {
+				/* change the data */
+				case DXF_FLOAT :
+					found_attr->value.d_data = *((double *)value);
+					break;
+				case DXF_INT :
+					found_attr->value.i_data = *((int *)value);
+					break;
+				case DXF_STR :
+					found_attr->value.s_data[0] = 0;
+					strncpy(found_attr->value.s_data,(char *) value, DXF_MAX_CHARS); /* and copy the string */
+			}
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int dxf_attr_change_i(dxf_node *master, int group, void *value, int idx){
+	if (master){
+		/* find the attribute, indicated by index */
+		dxf_node *found_attr = dxf_find_attr_i(master, group, idx);
+		if (found_attr){
+			/* identify the type of attrib, according DXF group specification */
+			int type = dxf_ident_attr_type(group);
+			switch(type) {
+				/* change the data */
+				case DXF_FLOAT :
+					found_attr->value.d_data = *((double *)value);
+					break;
+				case DXF_INT :
+					found_attr->value.i_data = *((int *)value);
+					break;
+				case DXF_STR :
+					found_attr->value.s_data[0] = 0;
+					strncpy(found_attr->value.s_data,(char *) value, DXF_MAX_CHARS); /* and copy the string */
+			}
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int dxf_find_ext_appid(dxf_node *obj, char *appid, dxf_node **start, dxf_node **end){
+	/* find the range of attributes of extended data, indicated by APPID */
+	dxf_node *current;
+	int found = 0;
+	
+	*start = NULL;
+	*end = NULL;
+	
+	if(obj != NULL){ /* check if exist */
+		if (obj->type == DXF_ENT){
+			current = obj->obj.content->next;
+			while (current){
+				/* try to find the first entry, by matching the APPID */
+				if (!found){
+					if (current->type == DXF_ATTR){
+						if(current->value.group == 1001){
+							if(strcmp((char*) current->value.s_data, appid) == 0){
+								found = 1; /* appid found */
+								*start = current;
+								*end = current;
+							}
+						}
+					}
+				}
+				else{
+					/* after the first entry, look by end */
+					if (current->type == DXF_ATTR){
+						/* breaks if is found a new APPID entry */
+						if(current->value.group == 1001){
+							break;
+						}
+						/* update the end mark */
+						*end = current;
+					}
+					/* breaks if is found a entity */
+					else break;
+				}
+				current = current->next;
+			}
+		}
+	}
+	return found;
+}
+
+int dxf_ext_append(dxf_node *master, char *appid, int group, void *value, int pool){
+	/* appdend new attrib on extended data, indicated by APPID */
+	if (master){
+		if (master->type == DXF_ENT){
+			dxf_node *start, *end, *prev = NULL, *next = NULL;
+			/* look for appid in master */
+			if(dxf_find_ext_appid(master, appid, &start, &end)){
+				int type = dxf_ident_attr_type(group);
+				dxf_node *new_attr = dxf_attr_new(group, type, value, pool);
+				if (new_attr){
+					new_attr->master = master;
+					/* append at end mark */
+					prev = end;
+					
+					/* append new attr between prev and next nodes */
+					new_attr->prev = prev;
+					if (prev){
+						next = prev->next;
+						prev->next = new_attr;
+					}
+					new_attr->next = next;
+					if (next){
+						next->prev = new_attr;
+					}
+					
+					if (prev == master->end){
+						master->end = new_attr;
+					}
+					
+					return 1;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+int ent_handle(dxf_drawing *drawing, dxf_node *element){
+	int ok = 0;
+	if (drawing && element){
+		if ((drawing->ents != NULL) && (drawing->main_struct != NULL)){
+			/* get current handle and increment the handle seed*/
+			long int handle = 0;
+			char hdl_str[DXF_MAX_CHARS];
+			
+			if (drawing->hand_seed){
+				/* get the last handle value and convert to integer */
+				handle = strtol(drawing->hand_seed->value.s_data, NULL, 16);
+				/* convert back to hexadecimal string, to write in element */
+				snprintf(hdl_str, DXF_MAX_CHARS, "%X", handle);
+				/* increment value of seed and write back */
+				snprintf(drawing->hand_seed->value.s_data, DXF_MAX_CHARS, "%X", handle + 1);
+			}
+			
+			/* change element handle */
+			if (handle){
+				ok = dxf_attr_change(element, 5, hdl_str);
+			}
+		}
+	}
+	
+	return ok;
+}
+
+void drawing_ent_append(dxf_drawing *drawing, dxf_node *element){
+	if (drawing && element){
+		if ((drawing->ents != NULL) && (drawing->main_struct != NULL)){
+			/* get current handle and increment the handle seed*/
+			ent_handle(drawing, element);
+			
+			/*  append drawing entities's list */
+			element->master = drawing->ents;
+			element->prev = drawing->ents->end;
+			if (drawing->ents->end){
+				drawing->ents->end->next = element;
+			}
+			element->next = NULL; /* append at end of list */
+			drawing->ents->end = element;
+		}
+	}
+}
+
+dxf_node *dxf_ent_copy(dxf_node *source, int pool_dest){
+	dxf_node *current = NULL;
+	dxf_node *prev = NULL, *dest = NULL, *curr_dest = NULL, *new_ent = NULL;
+	
+	if (source){ 
+		if (source->type == DXF_ENT){
+			if (source->obj.content){
+				current = source->obj.content->next;
+				prev = current;
+				
+				dest = dxf_obj_new (source->obj.name, pool_dest);
+				curr_dest = dest;
+			}
+		}
+	}
+
+	while ((current) && (curr_dest)){
+		if (current->type == DXF_ENT){
+			
+			if (current->obj.content){
+				
+				new_ent = dxf_obj_new (current->obj.name, pool_dest);
+				dxf_obj_append(curr_dest, new_ent);
+				curr_dest = new_ent;
+				
+				/* starts the content sweep */
+				current = current->obj.content->next;
+				prev = current;
+				
+				continue;
+			}
+		}
+		else if (current->type == DXF_ATTR){ /* DXF attibute */
+			if (current->value.t_data == DXF_STR){
+				dxf_attr_append(curr_dest, current->value.group, current->value.s_data, pool_dest);
+			} else if (current->value.t_data == DXF_FLOAT){
+				dxf_attr_append(curr_dest, current->value.group, &current->value.d_data, pool_dest);
+			} else if (current->value.t_data == DXF_INT){
+				dxf_attr_append(curr_dest, current->value.group, &current->value.i_data, pool_dest);
+			}
+			
+		}
+		
+		current = current->next; /* go to the next in the list */
+		/* ============================================================= */
+		while (current == NULL){
+			/* end of list sweeping */
+			/* try to back in structure hierarchy */
+			prev = prev->master;
+			curr_dest = curr_dest->master;
+			if (prev == source){ /* stop the search if back on initial entity */
+				//printf("para\n");
+				current = NULL;
+				break;
+			}
+			if (prev){ /* up in structure */
+				/* try to continue on previous point in structure */
+				current = prev->next;
+				
+			}
+			else{ /* stop the search if structure ends */
+				current = NULL;
+				break;
+			}
+		}
+	}
+	
+	return dest;
+}
+
+int dxf_drwg_ent_cpy(dxf_drawing *drawing, list_node *list){
+	if (drawing == NULL || list == NULL) return 0;
+	list_node *current = list->next;
+	dxf_node *obj = NULL, *new_ent = NULL;
+	
+	while (current != NULL){
+		if (current->data){
+			obj = (dxf_node *)current->data;
+			if (obj->type == DXF_ENT){ /* DXF entity  */
+				new_ent = dxf_ent_copy(obj, drawing->pool);
+				drawing_ent_append(drawing, new_ent);
+				
+			}
+		}
+		current = current->next;
+	}
+	return 1;
+
+}
+
+int dxf_cpy_layer (dxf_drawing *drawing, dxf_node *layer){
+	
+	if (!drawing) 
+		return 0; /* error -  not drawing */
+	
+	if ((drawing->t_layer == NULL) || (drawing->main_struct == NULL)) 
+		return 0; /* error -  not main structure */
+	
+	if (!layer) 
+		return 0; /* error -  not layer */
+	
+	char name[DXF_MAX_CHARS], *new_name;
+	char ltype[DXF_MAX_CHARS];
+	int color = 0, line_w = 0, flags = 0;
+	dxf_node *current = NULL;
+	
+	name[0] = 0;
+	ltype[0] = 0;
+	
+	
+	/* and sweep its content */
+	if (layer->obj.content) current = layer->obj.content->next;
+	while (current){
+		if (current->type == DXF_ATTR){
+			switch (current->value.group){
+				case 2: /* layer name */
+					strcpy(name, current->value.s_data);
+					break;
+				case 6: /* layer line type name */
+					strcpy(ltype, current->value.s_data);
+					break;
+				case 62: /* layer color */
+					color = current->value.i_data;
+					if (color < 0) {
+						color = abs(color);
+					}
+					break;
+				case 70: /* flags */
+					flags = current->value.i_data;
+					break;
+				case 370:
+					line_w = current->value.i_data;
+			}
+		}
+		current = current->next;
+	}
+	new_name = trimwhitespace(name);
+	
+	if (strlen(new_name) == 0) return 0; /* error -  no name */
+	
+	/* verify if not exists */
+	if (dxf_find_obj_descr2(drawing->t_layer, "LAYER", new_name) != NULL) 
+		return 0; /* error -  exists layer with same name */
+	
+	if ((abs(color) > 255) || (color == 0)) color = 7;
+	
+	const char *handle = "0";
+	const char *dxf_class = "AcDbSymbolTableRecord";
+	const char *dxf_subclass = "AcDbLayerTableRecord";
+	int int_zero = 0, ok = 0;
+	
+	/* create a new LAYER */
+	dxf_node * lay = dxf_obj_new ("LAYER", drawing->pool);
+	
+	if (lay) {
+		ok = 1;
+		ok &= dxf_attr_append(lay, 5, (void *) handle, drawing->pool);
+		ok &= dxf_attr_append(lay, 100, (void *) dxf_class, drawing->pool);
+		ok &= dxf_attr_append(lay, 100, (void *) dxf_subclass, drawing->pool);
+		ok &= dxf_attr_append(lay, 2, (void *) new_name, drawing->pool);
+		ok &= dxf_attr_append(lay, 70, (void *) &int_zero, drawing->pool);
+		ok &= dxf_attr_append(lay, 62, (void *) &color, drawing->pool);
+		ok &= dxf_attr_append(lay, 6, (void *) ltype, drawing->pool);
+		ok &= dxf_attr_append(lay, 370, (void *) &line_w, drawing->pool);
+		ok &= dxf_attr_append(lay, 390, (void *) handle, drawing->pool);
+		
+		/* get current handle and increment the handle seed*/
+		ok &= ent_handle(drawing, lay);
+		
+		/* append the layer to correpondent table */
+		dxf_append(drawing->t_layer, lay);
+		
+		/* update the layers in drawing  */
+		dxf_layer_assemb (drawing);
+	}
+	
+	return ok;
+}
+
+int dxf_cpy_lay_drwg(dxf_drawing *source, dxf_drawing *dest){
+	/* copy layer betweew drawings, only in use */
+	int ok = 0, i, idx;
+	dxf_node *current, *prev, *obj = NULL, *list[2], *lay_obj, *lay_name;
+	
+	list[0] = NULL; list[1] = NULL;
+	if (source){
+		list[0] = dest->ents;
+		list[1] = dest->blks;
+	}
+	else return 0;
+	
+	for (i = 0; i< 2; i++){ /* look in BLOCKS and ENTITIES sections */
+		obj = list[i];
+		current = obj;
+		while (current){ /* sweep elements in section */
+			ok = 1;
+			prev = current;
+			if (current->type == DXF_ENT){
+				lay_name = dxf_find_attr2(current, 8); /* get element's layer */
+				if (lay_name){
+					lay_obj = dxf_find_obj_descr2(source->t_layer, "LAYER", lay_name->value.s_data);
+					dxf_cpy_layer (dest, lay_obj);
+					
+				}
+				/* search also in sub elements */
+				if (current->obj.content){
+					/* starts the content sweep */
+					current = current->obj.content;
+					continue;
+				}
+			}
+				
+			current = current->next; /* go to the next in the list*/
+			
+			if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
+				current = NULL;
+				break;
+			}
+
+			/* ============================================================= */
+			while (current == NULL){
+				/* end of list sweeping */
+				if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
+					//printf("para\n");
+					current = NULL;
+					break;
+				}
+				/* try to back in structure hierarchy */
+				prev = prev->master;
+				if (prev){ /* up in structure */
+					/* try to continue on previous point in structure */
+					current = prev->next;
+					
+				}
+				else{ /* stop the search if structure ends */
+					current = NULL;
+					break;
+				}
+			}
+		}
+	}
+	
+	return ok;
+}
+
+int dxf_cpy_ltype (dxf_drawing *drawing, dxf_node *ltype){
+	
+	if (!drawing) 
+		return 0; /* error -  not drawing */
+	
+	if ((drawing->t_ltype == NULL) || (drawing->main_struct == NULL)) 
+		return 0; /* error -  not main structure */
+	
+	if (!ltype) 
+		return 0; /* error -  not ltype */
+	
+	char name[DXF_MAX_CHARS], descr[DXF_MAX_CHARS], *new_name;
+	int size;
+	double pat[DXF_MAX_PAT];
+	double length;
+	
+	dxf_node *current = NULL;
+	
+	name[0] = 0;
+	descr[0] = 0;
+	size = 0;
+	pat[0] = 0;
+	int pat_idx = 0;
+	length = 0;
+	
+	
+	/* and sweep its content */
+	if (ltype->obj.content) current = ltype->obj.content->next;
+	while (current){
+		if (current->type == DXF_ATTR){
+			switch (current->value.group){
+				case 2: /* ltype name */
+					strcpy(name, current->value.s_data);
+					break;
+				case 3: /* ltype descriptive text */
+					strcpy(descr, current->value.s_data);
+					break;
+				case 40: /* pattern length */
+					length = current->value.d_data;
+					break;
+				case 49: /* pattern element */
+					if (pat_idx < DXF_MAX_PAT) {
+						pat[pat_idx] = current->value.d_data;
+						pat_idx++;
+					}
+					break;
+				case 73: /* num of pattern elements */
+					size = current->value.i_data;
+					if (size > DXF_MAX_PAT) {
+						size < DXF_MAX_PAT;}
+			}
+		}
+		current = current->next;
+	}
+	new_name = trimwhitespace(name);
+	
+	if (strlen(new_name) == 0) return 0; /* error -  no name */
+	
+	/* verify if not exists */
+	if (dxf_find_obj_descr2(drawing->t_ltype, "LTYPE", new_name) != NULL) 
+		return 0; /* error -  exists ltype with same name */
+	
+	const char *handle = "0";
+	const char *dxf_class = "AcDbSymbolTableRecord";
+	const char *dxf_subclass = "AcDbLinetypeTableRecord";
+	int int_zero = 0, ok = 0, align = 65;
+	
+	/* create a new LTYPE */
+	dxf_node * l_typ = dxf_obj_new ("LTYPE", drawing->pool);
+	
+	if (l_typ) {
+		ok = 1;
+		ok &= dxf_attr_append(l_typ, 5, (void *) handle, drawing->pool);
+		ok &= dxf_attr_append(l_typ, 100, (void *) dxf_class, drawing->pool);
+		ok &= dxf_attr_append(l_typ, 100, (void *) dxf_subclass, drawing->pool);
+		ok &= dxf_attr_append(l_typ, 2, (void *) new_name, drawing->pool);
+		ok &= dxf_attr_append(l_typ, 70, (void *) &int_zero, drawing->pool);
+		ok &= dxf_attr_append(l_typ, 3, (void *) descr, drawing->pool);
+		ok &= dxf_attr_append(l_typ, 72, (void *) &align, drawing->pool);
+		ok &= dxf_attr_append(l_typ, 73, (void *) &size, drawing->pool);
+		ok &= dxf_attr_append(l_typ, 40, (void *) &length, drawing->pool);
+		
+		for (pat_idx = 0; pat_idx < size; pat_idx++){
+			ok &= dxf_attr_append(l_typ, 49, (void *) &pat[pat_idx], drawing->pool);
+			ok &= dxf_attr_append(l_typ, 74, (void *) &int_zero, drawing->pool);
+		}
+		
+		/* get current handle and increment the handle seed*/
+		ok &= ent_handle(drawing, l_typ);
+		
+		/* append the ltype to correpondent table */
+		dxf_append(drawing->t_ltype, l_typ);
+		
+		/* update the ltypes in drawing  */
+		dxf_ltype_assemb (drawing);
+	}
+	
+	return ok;
+}
+
+int dxf_cpy_ltyp_drwg(dxf_drawing *source, dxf_drawing *dest){
+	/* copy layer betweew drawings, only in use */
+	int ok = 0, i, idx;
+	dxf_node *current, *prev, *obj = NULL, *list[3], *ltyp_obj, *ltyp_name;
+	
+	list[0] = NULL; list[1] = NULL; list[2] = NULL;
+	if (source){
+		list[0] = dest->ents;
+		list[1] = dest->blks;
+		list[2] = dest->t_layer;
+	}
+	else return 0;
+	
+	for (i = 0; i< 3; i++){ /* look in BLOCKS, ENTITIES sections and LAYER table too */
+		obj = list[i];
+		current = obj;
+		while (current){ /* sweep elements in section */
+			ok = 1;
+			prev = current;
+			if (current->type == DXF_ENT){
+				ltyp_name = dxf_find_attr2(current, 6); /* get element's line type */
+				if (ltyp_name){
+					ltyp_obj = dxf_find_obj_descr2(source->t_ltype, "LTYPE", ltyp_name->value.s_data);
+					dxf_cpy_ltype (dest, ltyp_obj);
+					
+				}
+				/* search also in sub elements */
+				if (current->obj.content){
+					/* starts the content sweep */
+					current = current->obj.content;
+					continue;
+				}
+			}
+				
+			current = current->next; /* go to the next in the list*/
+			
+			if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
+				current = NULL;
+				break;
+			}
+
+			/* ============================================================= */
+			while (current == NULL){
+				/* end of list sweeping */
+				if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
+					//printf("para\n");
+					current = NULL;
+					break;
+				}
+				/* try to back in structure hierarchy */
+				prev = prev->master;
+				if (prev){ /* up in structure */
+					/* try to continue on previous point in structure */
+					current = prev->next;
+					
+				}
+				else{ /* stop the search if structure ends */
+					current = NULL;
+					break;
+				}
+			}
+		}
+	}
+	
+	return ok;
 }

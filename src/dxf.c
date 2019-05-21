@@ -1,4 +1,5 @@
 #include "dxf.h"
+#include "dxf.h"
 #include <math.h>
 #define DXF_NUM_POOL 5
 #define DXF_PAGE 500000
@@ -2330,6 +2331,68 @@ void drawing_ent_append(dxf_drawing *drawing, dxf_node *element){
 	}
 }
 
+dxf_node *dxf_find_handle(dxf_node *source, long int handle){
+	dxf_node *current = NULL;
+	dxf_node *prev = NULL, *curr_ent = NULL;
+	long int id = 0;
+	
+	if (source){ 
+		if (source->type == DXF_ENT){
+			if (source->obj.content){
+				curr_ent = source;
+				current = source->obj.content->next;
+				prev = current;
+			}
+		}
+	}
+
+	while (current){
+		if (current->type == DXF_ENT){
+			
+			if (current->obj.content){
+				/* starts the content sweep */
+				curr_ent = current;
+				current = current->obj.content->next;
+				prev = current;
+				
+				continue;
+			}
+		}
+		else if (current->type == DXF_ATTR){ /* DXF attibute */
+			if(current->value.group == 5 || /* found regular handle */
+			current->value.group == 105){/* or DIMENSION handle */
+				id = strtol(current->value.s_data, NULL, 16);
+				if (id == handle) { /* success */
+					return curr_ent;
+				}
+			}
+		}
+		
+		current = current->next; /* go to the next in the list */
+		/* ============================================================= */
+		while (current == NULL){
+			/* end of list sweeping */
+			/* try to back in structure hierarchy */
+			prev = prev->master;
+			if (prev == source){ /* stop the search if back on initial entity */
+				//printf("para\n");
+				current = NULL;
+				break;
+			}
+			if (prev){ /* up in structure */
+				/* try to continue on previous point in structure */
+				current = prev->next;
+			}
+			else{ /* stop the search if structure ends */
+				current = NULL;
+				break;
+			}
+		}
+	}
+	
+	return NULL;
+}
+
 dxf_node *dxf_ent_copy(dxf_node *source, int pool_dest){
 	dxf_node *current = NULL;
 	dxf_node *prev = NULL, *dest = NULL, *curr_dest = NULL, *new_ent = NULL;
@@ -2679,6 +2742,7 @@ int dxf_cpy_ltyp_drwg(dxf_drawing *source, dxf_drawing *dest){
 	/* copy layer betweew drawings, only in use */
 	int ok = 0, i, idx;
 	dxf_node *current, *prev, *obj = NULL, *list[3], *ltyp_obj, *ltyp_name;
+	dxf_node *sty_obj = NULL, *style = NULL;
 	
 	list[0] = NULL; list[1] = NULL; list[2] = NULL;
 	if (source){
@@ -2691,6 +2755,8 @@ int dxf_cpy_ltyp_drwg(dxf_drawing *source, dxf_drawing *dest){
 	for (i = 0; i< 3; i++){ /* look in BLOCKS, ENTITIES sections and LAYER table too */
 		obj = list[i];
 		current = obj;
+		//dxf_ent_print2(obj);
+		
 		while (current){ /* sweep elements in section */
 			ok = 1;
 			prev = current;
@@ -2700,6 +2766,12 @@ int dxf_cpy_ltyp_drwg(dxf_drawing *source, dxf_drawing *dest){
 					ltyp_obj = dxf_find_obj_descr2(source->t_ltype, "LTYPE", ltyp_name->value.s_data);
 					dxf_cpy_ltype (dest, ltyp_obj);
 					
+					sty_obj = dxf_find_attr2(ltyp_obj, 340);
+					if (sty_obj){
+						long int sty_id = strtol(sty_obj->value.s_data, NULL, 16);
+						style = dxf_find_handle(source->t_style, sty_id);
+						if (style) dxf_ent_print2(style);
+					}
 				}
 				/* search also in sub elements */
 				if (current->obj.content){
@@ -2711,11 +2783,6 @@ int dxf_cpy_ltyp_drwg(dxf_drawing *source, dxf_drawing *dest){
 				
 			current = current->next; /* go to the next in the list*/
 			
-			if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
-				current = NULL;
-				break;
-			}
-
 			/* ============================================================= */
 			while (current == NULL){
 				/* end of list sweeping */
@@ -2729,6 +2796,10 @@ int dxf_cpy_ltyp_drwg(dxf_drawing *source, dxf_drawing *dest){
 				if (prev){ /* up in structure */
 					/* try to continue on previous point in structure */
 					current = prev->next;
+					if(prev == obj){
+						current = NULL;
+						break;
+					}
 					
 				}
 				else{ /* stop the search if structure ends */

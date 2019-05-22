@@ -1082,10 +1082,14 @@ int main(int argc, char** argv){
 					while (dxf_read (clip_drwg, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &progress) > 0){
 						
 					}
+					char clip_path[DXF_MAX_CHARS + 1];
+					strncpy(clip_path, base_path, DXF_MAX_CHARS);
+					strncat(clip_path, "test_clip.dxf", DXF_MAX_CHARS);
 					dxf_drwg_ent_cpy(clip_drwg, gui->sel_list);
 					dxf_cpy_lay_drwg(gui->drawing, clip_drwg);
+					dxf_cpy_sty_drwg(gui->drawing, clip_drwg);
 					dxf_cpy_ltyp_drwg(gui->drawing, clip_drwg);
-					dxf_save ("test_clip.dxf", clip_drwg);
+					dxf_save (clip_path, clip_drwg);
 					dxf_mem_pool(ZERO_DXF, ONE_TIME);
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CUT]))){

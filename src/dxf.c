@@ -2440,17 +2440,21 @@ dxf_node *dxf_ent_copy(dxf_node *source, int pool_dest){
 		/* ============================================================= */
 		while (current == NULL){
 			/* end of list sweeping */
-			/* try to back in structure hierarchy */
-			prev = prev->master;
-			curr_dest = curr_dest->master;
-			if (prev == source){ /* stop the search if back on initial entity */
+			if ((prev == NULL) || (prev == source)){ /* stop the search if back on initial entity */
 				//printf("para\n");
 				current = NULL;
 				break;
 			}
+			/* try to back in structure hierarchy */
+			prev = prev->master;
+			curr_dest = curr_dest->master;
 			if (prev){ /* up in structure */
 				/* try to continue on previous point in structure */
 				current = prev->next;
+				if(prev == source){
+					current = NULL;
+					break;
+				}
 				
 			}
 			else{ /* stop the search if structure ends */
@@ -2606,11 +2610,6 @@ int dxf_cpy_lay_drwg(dxf_drawing *source, dxf_drawing *dest){
 			}
 				
 			current = current->next; /* go to the next in the list*/
-			
-			if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
-				current = NULL;
-				break;
-			}
 
 			/* ============================================================= */
 			while (current == NULL){
@@ -2625,6 +2624,10 @@ int dxf_cpy_lay_drwg(dxf_drawing *source, dxf_drawing *dest){
 				if (prev){ /* up in structure */
 					/* try to continue on previous point in structure */
 					current = prev->next;
+					if(prev == obj){
+						current = NULL;
+						break;
+					}
 					
 				}
 				else{ /* stop the search if structure ends */
@@ -2638,20 +2641,19 @@ int dxf_cpy_lay_drwg(dxf_drawing *source, dxf_drawing *dest){
 	return ok;
 }
 
-int dxf_cpy_ltype (dxf_drawing *drawing, dxf_node *ltype){
+dxf_node *dxf_cpy_ltype (dxf_drawing *drawing, dxf_node *ltype){
 	
 	if (!drawing) 
-		return 0; /* error -  not drawing */
+		return NULL; /* error -  not drawing */
 	
 	if ((drawing->t_ltype == NULL) || (drawing->main_struct == NULL)) 
-		return 0; /* error -  not main structure */
+		return NULL; /* error -  not main structure */
 	
 	if (!ltype) 
-		return 0; /* error -  not ltype */
+		return NULL; /* error -  not ltype */
 	
 	char name[DXF_MAX_CHARS], descr[DXF_MAX_CHARS], *new_name;
 	int size;
-	double pat[DXF_MAX_PAT];
 	double length;
 	
 	dxf_node *current = NULL;
@@ -2659,8 +2661,6 @@ int dxf_cpy_ltype (dxf_drawing *drawing, dxf_node *ltype){
 	name[0] = 0;
 	descr[0] = 0;
 	size = 0;
-	pat[0] = 0;
-	int pat_idx = 0;
 	length = 0;
 	
 	
@@ -2678,12 +2678,6 @@ int dxf_cpy_ltype (dxf_drawing *drawing, dxf_node *ltype){
 				case 40: /* pattern length */
 					length = current->value.d_data;
 					break;
-				case 49: /* pattern element */
-					if (pat_idx < DXF_MAX_PAT) {
-						pat[pat_idx] = current->value.d_data;
-						pat_idx++;
-					}
-					break;
 				case 73: /* num of pattern elements */
 					size = current->value.i_data;
 					if (size > DXF_MAX_PAT) {
@@ -2694,11 +2688,11 @@ int dxf_cpy_ltype (dxf_drawing *drawing, dxf_node *ltype){
 	}
 	new_name = trimwhitespace(name);
 	
-	if (strlen(new_name) == 0) return 0; /* error -  no name */
+	if (strlen(new_name) == 0) return NULL; /* error -  no name */
 	
 	/* verify if not exists */
 	if (dxf_find_obj_descr2(drawing->t_ltype, "LTYPE", new_name) != NULL) 
-		return 0; /* error -  exists ltype with same name */
+		return NULL; /* error -  exists ltype with same name */
 	
 	const char *handle = "0";
 	const char *dxf_class = "AcDbSymbolTableRecord";
@@ -2720,27 +2714,80 @@ int dxf_cpy_ltype (dxf_drawing *drawing, dxf_node *ltype){
 		ok &= dxf_attr_append(l_typ, 73, (void *) &size, drawing->pool);
 		ok &= dxf_attr_append(l_typ, 40, (void *) &length, drawing->pool);
 		
-		for (pat_idx = 0; pat_idx < size; pat_idx++){
-			ok &= dxf_attr_append(l_typ, 49, (void *) &pat[pat_idx], drawing->pool);
-			ok &= dxf_attr_append(l_typ, 74, (void *) &int_zero, drawing->pool);
+		if (ltype->obj.content) current = ltype->obj.content->next;
+		while (current){
+			if (current->type == DXF_ATTR){
+				switch (current->value.group){
+					case 49: /* pattern element */
+						ok &= dxf_attr_append(l_typ, 49, 
+							(void *) &current->value.d_data,
+							drawing->pool);
+						break;
+					case 74: /* pattern element flag*/
+						ok &= dxf_attr_append(l_typ, 74, 
+							(void *) &current->value.i_data,
+							drawing->pool);
+						break;
+					case 75: /* pattern element - shape number*/
+						ok &= dxf_attr_append(l_typ, 75, 
+							(void *) &current->value.i_data,
+							drawing->pool);
+						break;
+					case 340: /* pattern element - text style pointer */
+						ok &= dxf_attr_append(l_typ, 340, 
+							(void *) current->value.s_data,
+							drawing->pool);
+						break;
+					case 46: /* pattern element scale */
+						ok &= dxf_attr_append(l_typ, 46, 
+							(void *) &current->value.d_data,
+							drawing->pool);
+						break;
+					case 50: /* pattern element rotation*/
+						ok &= dxf_attr_append(l_typ, 50, 
+							(void *) &current->value.d_data,
+							drawing->pool);
+						break;
+					case 44: /* pattern element x offset*/
+						ok &= dxf_attr_append(l_typ, 44, 
+							(void *) &current->value.d_data,
+							drawing->pool);
+						break;
+					case 45: /* pattern element y offset*/
+						ok &= dxf_attr_append(l_typ, 45, 
+							(void *) &current->value.d_data,
+							drawing->pool);
+						break;
+					case 9: /* pattern element - text string */
+						ok &= dxf_attr_append(l_typ, 9, 
+							(void *) current->value.s_data,
+							drawing->pool);
+						break;
+				}
+			}
+			current = current->next;
 		}
 		
 		/* get current handle and increment the handle seed*/
 		ok &= ent_handle(drawing, l_typ);
+		
+		if (!ok) return NULL;
 		
 		/* append the ltype to correpondent table */
 		dxf_append(drawing->t_ltype, l_typ);
 		
 		/* update the ltypes in drawing  */
 		dxf_ltype_assemb (drawing);
+		
+		return l_typ;
 	}
 	
-	return ok;
+	return NULL;
 }
 
 int dxf_cpy_ltyp_drwg(dxf_drawing *source, dxf_drawing *dest){
 	/* copy layer betweew drawings, only in use */
-	int ok = 0, i, idx;
+	int ok = 0, i, j, idx;
 	dxf_node *current, *prev, *obj = NULL, *list[3], *ltyp_obj, *ltyp_name;
 	dxf_node *sty_obj = NULL, *style = NULL;
 	
@@ -2764,13 +2811,15 @@ int dxf_cpy_ltyp_drwg(dxf_drawing *source, dxf_drawing *dest){
 				ltyp_name = dxf_find_attr2(current, 6); /* get element's line type */
 				if (ltyp_name){
 					ltyp_obj = dxf_find_obj_descr2(source->t_ltype, "LTYPE", ltyp_name->value.s_data);
-					dxf_cpy_ltype (dest, ltyp_obj);
-					
-					sty_obj = dxf_find_attr2(ltyp_obj, 340);
-					if (sty_obj){
-						long int sty_id = strtol(sty_obj->value.s_data, NULL, 16);
+					ltyp_obj = dxf_cpy_ltype (dest, ltyp_obj);
+					long int sty_id = 0;
+					for (j = 0; sty_obj = dxf_find_attr_i(ltyp_obj, 340, j); j++){
+						sty_id = strtol(sty_obj->value.s_data, NULL, 16);
 						style = dxf_find_handle(source->t_style, sty_id);
-						if (style) dxf_ent_print2(style);
+						if (style) {
+							sty_id = dxf_cpy_style (dest, style);
+							snprintf(sty_obj->value.s_data, DXF_MAX_CHARS, "%X", sty_id);
+						}
 					}
 				}
 				/* search also in sub elements */
@@ -2783,6 +2832,191 @@ int dxf_cpy_ltyp_drwg(dxf_drawing *source, dxf_drawing *dest){
 				
 			current = current->next; /* go to the next in the list*/
 			
+			/* ============================================================= */
+			while (current == NULL){
+				/* end of list sweeping */
+				if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
+					//printf("para\n");
+					current = NULL;
+					break;
+				}
+				/* try to back in structure hierarchy */
+				prev = prev->master;
+				if (prev){ /* up in structure */
+					/* try to continue on previous point in structure */
+					current = prev->next;
+					if(prev == obj){
+						current = NULL;
+						break;
+					}
+					
+				}
+				else{ /* stop the search if structure ends */
+					current = NULL;
+					break;
+				}
+			}
+		}
+	}
+	
+	return ok;
+}
+
+long int dxf_cpy_style (dxf_drawing *drawing, dxf_node *style){
+	
+	if (!drawing) 
+		return 0; /* error -  not drawing */
+	
+	if ((drawing->t_style == NULL) || (drawing->main_struct == NULL)) 
+		return 0; /* error -  not main structure */
+	
+	if (!style) 
+		return 0; /* error -  not style */
+	
+	char name[DXF_MAX_CHARS], *new_name;
+	char file_name[DXF_MAX_CHARS];
+	char big_file[DXF_MAX_CHARS];
+	
+	int flags1;
+	int flags2;
+	int num_el;
+	
+	double fixed_h;
+	double width_f;
+	double oblique;
+	dxf_node *current = NULL;
+	dxf_node * sty = NULL, *handle_obj = NULL;
+	
+	name[0] = 0;
+	file_name[0] = 0;
+	big_file[0] = 0;
+	
+	flags1 = 0;
+	flags2 = 0;
+	fixed_h = 0.0;
+	width_f = 1.0;
+	oblique = 0.0;
+	
+	
+	/* and sweep its content */
+	if (style->obj.content) current = style->obj.content->next;
+	while (current){
+		if (current->type == DXF_ATTR){
+			switch (current->value.group){
+				case 2: /* tstyle name */
+					strncpy(name, current->value.s_data, DXF_MAX_CHARS);
+					break;
+				case 3: /* file name */
+					strncpy(file_name, current->value.s_data, DXF_MAX_CHARS);
+					break;
+				case 4: /* bigfont file name */
+					strncpy(big_file, current->value.s_data, DXF_MAX_CHARS);
+					break;
+				case 40: /* fixed height*/
+					fixed_h = current->value.d_data;
+					break;
+				case 41: /* width factor*/
+					width_f = current->value.d_data;
+					break;
+				case 50: /* oblique angle*/
+					oblique = current->value.d_data;
+					break;
+				case 70: /* flags */
+					flags1 = current->value.i_data;
+					break;
+				case 71: /* flags */
+					flags2 = current->value.i_data;
+			}
+		}
+		current = current->next;
+	}
+	new_name = trimwhitespace(name);
+	
+	//if (strlen(new_name) == 0) return 0; /* error -  no name */
+	
+	/* verify if not exists */
+	if (sty = dxf_find_obj_descr2(drawing->t_style, "STYLE", new_name)) {
+		handle_obj = dxf_find_attr2(sty, 5);
+		if (handle_obj) return strtol(handle_obj->value.s_data, NULL, 16);
+		
+		return 0; /* error */
+	}
+	
+	const char *handle = "0";
+	const char *dxf_class = "AcDbSymbolTableRecord";
+	const char *dxf_subclass = "AcDbTextStyleTableRecord";
+	long int ok = 0;
+	double d_one = 1.0;
+	
+	/* create a new style */
+	sty = dxf_obj_new ("STYLE", drawing->pool);
+	
+	if (sty) {
+		ok = 1;
+		ok &= dxf_attr_append(sty, 5, (void *) handle, drawing->pool);
+		ok &= dxf_attr_append(sty, 100, (void *) dxf_class, drawing->pool);
+		ok &= dxf_attr_append(sty, 100, (void *) dxf_subclass, drawing->pool);
+		ok &= dxf_attr_append(sty, 2, (void *) new_name, drawing->pool);
+		ok &= dxf_attr_append(sty, 70, (void *) &flags1, drawing->pool);
+		ok &= dxf_attr_append(sty, 40, (void *) &fixed_h, drawing->pool);
+		ok &= dxf_attr_append(sty, 41, (void *) &width_f, drawing->pool);
+		ok &= dxf_attr_append(sty, 50, (void *) &oblique, drawing->pool);
+		ok &= dxf_attr_append(sty, 71, (void *) &flags2, drawing->pool);
+		ok &= dxf_attr_append(sty, 42, (void *) &d_one, drawing->pool);
+		ok &= dxf_attr_append(sty, 3, (void *) file_name, drawing->pool);
+		ok &= dxf_attr_append(sty, 4, (void *) big_file, drawing->pool);
+		
+		/* get current handle and increment the handle seed*/
+		ok &= ent_handle(drawing, sty);
+		if (!ok) return 0; /* error */
+		
+		/* append the style to correpondent table */
+		dxf_append(drawing->t_style, sty);
+		
+		/* update the styles in drawing  */
+		dxf_tstyles_assemb (drawing);
+		
+		handle_obj = dxf_find_attr2(sty, 5);
+		if (handle_obj) return strtol(handle_obj->value.s_data, NULL, 16);
+	}
+	
+	return 0;
+}
+
+int dxf_cpy_sty_drwg(dxf_drawing *source, dxf_drawing *dest){
+	/* copy style betweew drawings, only in use */
+	int ok = 0, i, idx;
+	dxf_node *current, *prev, *obj = NULL, *list[2], *sty_obj, *sty_name;
+	
+	list[0] = NULL; list[1] = NULL;
+	if (source){
+		list[0] = dest->ents;
+		list[1] = dest->blks;
+	}
+	else return 0;
+	
+	for (i = 0; i< 2; i++){ /* look in BLOCKS and ENTITIES sections */
+		obj = list[i];
+		current = obj;
+		while (current){ /* sweep elements in section */
+			ok = 1;
+			prev = current;
+			if (current->type == DXF_ENT){
+				sty_name = dxf_find_attr2(current, 7); /* get element's style */
+				if (sty_name){
+					sty_obj = dxf_find_obj_descr2(source->t_style, "style", sty_name->value.s_data);
+					dxf_cpy_style (dest, sty_obj);
+				}
+				/* search also in sub elements */
+				if (current->obj.content){
+					/* starts the content sweep */
+					current = current->obj.content;
+					continue;
+				}
+			}
+				
+			current = current->next; /* go to the next in the list*/
+
 			/* ============================================================= */
 			while (current == NULL){
 				/* end of list sweeping */

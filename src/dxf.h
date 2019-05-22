@@ -304,4 +304,18 @@ int ent_handle(dxf_drawing *drawing, dxf_node *element);
 
 void drawing_ent_append(dxf_drawing *drawing, dxf_node *element);
 
+int dxf_drwg_ent_cpy(dxf_drawing *drawing, list_node *list);
+
+int dxf_cpy_layer (dxf_drawing *drawing, dxf_node *layer);
+
+int dxf_cpy_lay_drwg(dxf_drawing *source, dxf_drawing *dest);
+
+dxf_node * dxf_cpy_ltype (dxf_drawing *drawing, dxf_node *ltype);
+
+int dxf_cpy_ltyp_drwg(dxf_drawing *source, dxf_drawing *dest);
+
+long int dxf_cpy_style (dxf_drawing *drawing, dxf_node *style);
+
+int dxf_cpy_sty_drwg(dxf_drawing *source, dxf_drawing *dest);
+
 #endif

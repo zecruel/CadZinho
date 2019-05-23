@@ -298,24 +298,10 @@ int dxf_find_ext_appid(dxf_node *obj, char *appid, dxf_node **start, dxf_node **
 
 int dxf_ext_append(dxf_node *master, char *appid, int group, void *value, int pool);
 
-dxf_node *dxf_ent_copy(dxf_node *source, int pool_dest);
-
 int ent_handle(dxf_drawing *drawing, dxf_node *element);
 
+dxf_node *dxf_find_handle(dxf_node *source, long int handle);
+
 void drawing_ent_append(dxf_drawing *drawing, dxf_node *element);
-
-int dxf_drwg_ent_cpy(dxf_drawing *drawing, list_node *list);
-
-int dxf_cpy_layer (dxf_drawing *drawing, dxf_node *layer);
-
-int dxf_cpy_lay_drwg(dxf_drawing *source, dxf_drawing *dest);
-
-dxf_node * dxf_cpy_ltype (dxf_drawing *drawing, dxf_node *ltype);
-
-int dxf_cpy_ltyp_drwg(dxf_drawing *source, dxf_drawing *dest);
-
-long int dxf_cpy_style (dxf_drawing *drawing, dxf_node *style);
-
-int dxf_cpy_sty_drwg(dxf_drawing *source, dxf_drawing *dest);
 
 #endif

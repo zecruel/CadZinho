@@ -93,6 +93,12 @@ dxf_node * dxf_attrib_cpy (dxf_node *attdef, double x0, double y0, double z0, in
 
 dxf_node * dxf_new_seqend (char *layer, int pool);
 
+dxf_node * dxf_new_endblk (char *layer, char *owner, int pool);
+
+dxf_node * dxf_new_begblk (char *name, char *layer, char *owner, int pool);
+
+dxf_node * dxf_new_blkrec (char *name, int pool);
+
 int dxf_block_append(dxf_node *blk, dxf_node *obj);
 
 int dxf_new_block(dxf_drawing *drawing, char *name, char *layer, list_node *list, struct do_list *list_do, int pool);

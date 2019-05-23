@@ -6,6 +6,7 @@
 #include "dxf_graph.h"
 #include "list.h"
 #include "dxf_create.h"
+#include "dxf_copy.h"
 #include "dxf_attract.h"
 #include "dxf_print.h"
 
@@ -1085,7 +1086,7 @@ int main(int argc, char** argv){
 					char clip_path[DXF_MAX_CHARS + 1];
 					strncpy(clip_path, base_path, DXF_MAX_CHARS);
 					strncat(clip_path, "test_clip.dxf", DXF_MAX_CHARS);
-					dxf_drwg_ent_cpy(clip_drwg, gui->sel_list);
+					dxf_drwg_ent_cpy(gui->drawing, clip_drwg, gui->sel_list);
 					dxf_cpy_lay_drwg(gui->drawing, clip_drwg);
 					dxf_cpy_sty_drwg(gui->drawing, clip_drwg);
 					dxf_cpy_ltyp_drwg(gui->drawing, clip_drwg);
@@ -1566,6 +1567,9 @@ int main(int argc, char** argv){
 				file_buf = NULL;
 				file_size = 0;
 				low_proc = 1;
+				
+				gui->drawing->font_list = gui->font_list;
+				gui->drawing->dflt_font = gui->dflt_font;
 				
 				//dxf_ent_print2(gui->drawing->blks);
 				gui_tstyle(gui);

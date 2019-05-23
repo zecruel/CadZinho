@@ -1,5 +1,6 @@
 #include "dxf_create.h"
 #include "dxf_hatch.h"
+#include "dxf_copy.h"
 
 /*
 enum LineWeight { //AcDb::LineWeight

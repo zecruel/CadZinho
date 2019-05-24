@@ -114,12 +114,6 @@ int dxf_new_layer (dxf_drawing *drawing, char *name, int color, char *ltype);
 
 int dxf_new_tstyle (dxf_drawing *drawing, char *name);
 
-int dxf_edit_move2 (dxf_node * obj, double ofs_x, double ofs_y, double ofs_z);
-
-int dxf_edit_move (dxf_node * obj, double ofs_x, double ofs_y, double ofs_z);
-
-int dxf_edit_scale (dxf_node * obj, double scale_x, double scale_y, double scale_z);
-
 dxf_node * dxf_new_hatch (struct h_pattern *pattern, graph_obj *bound,
 int solid, int assoc,
 int style, /* 0 = normal odd, 1 = outer, 2 = ignore */

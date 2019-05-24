@@ -50,7 +50,9 @@ enum dxf_graph {
 	DXF_ELLIPSE,
 	DXF_MTEXT,
 	DXF_BLK,
-	DXF_ENDBLK
+	DXF_ENDBLK,
+	DXF_HATCH,
+	DXF_DIMSTYLE
 };
 
 enum dxf_pool_action{

@@ -644,6 +644,15 @@ int dxf_ident_ent_type (dxf_node *obj){
 			else if (strcmp(obj->obj.name, "BLOCK") == 0){
 				ent_type = DXF_BLK;
 			}
+			else if (strcmp(obj->obj.name, "ENDBLK") == 0){
+				ent_type = DXF_ENDBLK;
+			}
+			else if (strcmp(obj->obj.name, "HATCH") == 0){
+				ent_type = DXF_HATCH;
+			}
+			else if (strcmp(obj->obj.name, "DIMSTYLE") == 0){
+				ent_type = DXF_DIMSTYLE;
+			}
 		}
 	}
 	return ent_type;
@@ -2305,7 +2314,11 @@ int ent_handle(dxf_drawing *drawing, dxf_node *element){
 			
 			/* change element handle */
 			if (handle){
-				ok = dxf_attr_change(element, 5, hdl_str);
+				int typ = dxf_ident_ent_type(element);
+				if (typ == DXF_DIMENSION || typ == DXF_DIMSTYLE)
+					ok = dxf_attr_change(element, 105, hdl_str);
+				else
+					ok = dxf_attr_change(element, 5, hdl_str);
 			}
 		}
 	}

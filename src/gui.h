@@ -9,6 +9,7 @@
 #include "list.h"
 #include "dxf_create.h"
 #include "dxf_copy.h"
+#include "dxf_edit.h"
 #include "dxf_attract.h"
 #include "dxf_hatch.h"
 #include "font.h"

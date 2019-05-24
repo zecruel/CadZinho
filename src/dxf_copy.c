@@ -81,7 +81,8 @@ dxf_node * dxf_drwg_cpy(dxf_drawing *source, dxf_drawing *dest, dxf_node *obj){
 	if (strcmp(obj->obj.name, "BLOCK") == 0) return NULL;
 	if (strcmp(obj->obj.name, "ENDBLK") == 0) return NULL;
 	
-	if (strcmp(obj->obj.name, "INSERT") == 0){
+	if ((strcmp(obj->obj.name, "INSERT") == 0) ||
+		(strcmp(obj->obj.name, "DIMENSION")) == 0){
 		dxf_node *block = NULL, *blk_name = NULL;
 		blk_name = dxf_find_attr2(obj, 2);
 		if(!blk_name) return NULL;
@@ -90,6 +91,26 @@ dxf_node * dxf_drwg_cpy(dxf_drawing *source, dxf_drawing *dest, dxf_node *obj){
 		if(!block) return NULL;
 		
 		if (!dxf_block_cpy(source, dest, block)) return NULL;
+	}
+	if (strcmp(obj->obj.name, "DIMENSION") == 0){
+		/* copy DIMSTYLE */
+		dxf_node *dim_sty = NULL, *dim_sty_nam = NULL;
+		dim_sty_nam = dxf_find_attr2(obj, 3);
+		if(!dim_sty_nam) return NULL;
+		
+		dim_sty = dxf_find_obj_descr2(source->t_dimst, "DIMSTYLE", dim_sty_nam->value.s_data);
+		if(!dim_sty) return NULL;
+		
+		/* verify if DIMSTYLE not exist */
+		if (!dxf_find_obj_descr2(dest->t_dimst, "DIMSTYLE", dim_sty_nam->value.s_data)){
+		
+			dim_sty = dxf_ent_copy(dim_sty, dest->pool);
+			if(!dim_sty) return NULL;
+			
+			int ok = ent_handle(dest, dim_sty);
+			if (ok) ok = dxf_obj_append(dest->t_dimst, dim_sty);
+			if (!ok) return NULL;
+		}
 	}
 	new_ent = dxf_ent_copy(obj, dest->pool);
 	

@@ -67,7 +67,8 @@ enum Modal {
 	SCALE,
 	NEW_BLK,
 	HATCH,
-	INSERT
+	INSERT,
+	PASTE
 };
 
 enum Gui_ev {
@@ -209,6 +210,8 @@ struct Gui_obj {
 	
 	int paper_fam;
 	int sel_paper;
+	
+	dxf_drawing *clip_drwg;
 	
 };
 typedef struct Gui_obj gui_obj;

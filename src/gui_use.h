@@ -56,4 +56,8 @@ int gui_mtext_interactive(gui_obj *gui);
 
 int gui_mtext_info (gui_obj *gui);
 
+int gui_paste_interactive(gui_obj *gui);
+
+int gui_paste_info (gui_obj *gui);
+
 #endif

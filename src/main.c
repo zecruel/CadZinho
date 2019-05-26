@@ -639,9 +639,9 @@ int main(int argc, char** argv){
 	}
 	
 	/* **************** init the clipboard drawing ************ */
-	dxf_drawing *clip_drwg = dxf_drawing_new(ONE_TIME);
+	gui->clip_drwg = dxf_drawing_new(ONE_TIME);
 	
-	while (dxf_read (clip_drwg, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &progress) > 0){
+	while (dxf_read (gui->clip_drwg, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &progress) > 0){
 		
 	}
 	/* *************************************************** */
@@ -1020,6 +1020,7 @@ int main(int argc, char** argv){
 				gui_insert_info (gui);
 				gui_block_info (gui);
 				gui_hatch_info (gui);
+				gui_paste_info (gui);
 				
 				nk_group_end(gui->ctx);
 			}
@@ -1079,18 +1080,18 @@ int main(int argc, char** argv){
 				
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_COPY]))){
 					printf("Copy\n");
-					dxf_drawing_clear(clip_drwg);
-					while (dxf_read (clip_drwg, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &progress) > 0){
+					dxf_drawing_clear(gui->clip_drwg);
+					while (dxf_read (gui->clip_drwg, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &progress) > 0){
 						
 					}
 					char clip_path[DXF_MAX_CHARS + 1];
 					strncpy(clip_path, base_path, DXF_MAX_CHARS);
 					strncat(clip_path, "test_clip.dxf", DXF_MAX_CHARS);
-					dxf_drwg_ent_cpy(gui->drawing, clip_drwg, gui->sel_list);
-					dxf_cpy_lay_drwg(gui->drawing, clip_drwg);
-					dxf_cpy_sty_drwg(gui->drawing, clip_drwg);
-					dxf_cpy_ltyp_drwg(gui->drawing, clip_drwg);
-					dxf_save (clip_path, clip_drwg);
+					dxf_drwg_ent_cpy(gui->drawing, gui->clip_drwg, gui->sel_list);
+					dxf_cpy_lay_drwg(gui->drawing, gui->clip_drwg);
+					dxf_cpy_sty_drwg(gui->drawing, gui->clip_drwg);
+					dxf_cpy_ltyp_drwg(gui->drawing, gui->clip_drwg);
+					dxf_save (clip_path, gui->clip_drwg);
 					dxf_mem_pool(ZERO_DXF, ONE_TIME);
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CUT]))){
@@ -1098,6 +1099,23 @@ int main(int argc, char** argv){
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PASTE]))){
 					printf("Paste\n");
+					char clip_path[DXF_MAX_CHARS + 1];
+					strncpy(clip_path, base_path, DXF_MAX_CHARS);
+					strncat(clip_path, "test_clip.dxf", DXF_MAX_CHARS);
+					file_size = 0;
+					file_buf = dxf_load_file(clip_path, &file_size);
+					dxf_mem_pool(ZERO_DXF, ONE_TIME);
+					graph_mem_pool(ZERO_GRAPH, ONE_TIME);
+					graph_mem_pool(ZERO_LINE, ONE_TIME);
+					dxf_drawing_clear(gui->clip_drwg);
+					while (dxf_read (gui->clip_drwg, file_buf, file_size, &progress) > 0){
+						
+					}
+					free(file_buf);
+					file_buf = NULL;
+					file_size = 0;
+					gui->modal = PASTE;
+					gui->step = 0;
 				}
 				
 				nk_group_end(gui->ctx);
@@ -1952,7 +1970,7 @@ int main(int argc, char** argv){
 		gui_insert_interactive(gui);
 		gui_block_interactive(gui);
 		gui_hatch_interactive(gui);
-		
+		gui_paste_interactive(gui);
 		
 		
 		
@@ -2138,7 +2156,7 @@ int main(int argc, char** argv){
 	//dxf_hatch_free(gui->list_pattern.next);
 	dxf_h_fam_free(gui->hatch_fam.next);
 	
-	free(clip_drwg);
+	free(gui->clip_drwg);
 	
 	free(gui->drawing);
 	nk_sdl_shutdown(gui);

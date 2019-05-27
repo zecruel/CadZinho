@@ -740,7 +740,7 @@ int dxf_block_cpy(dxf_drawing *source, dxf_drawing *dest, dxf_node *block){
 	if(obj) strncpy (layer, obj->value.s_data, DXF_MAX_CHARS);
 	
 	/* verify if block not exist */
-	if (dxf_find_obj_descr2(dest->blks, "BLOCK", name)) return 0;
+	if (dxf_find_obj_descr2(dest->blks, "BLOCK", name)) return 1;
 	
 	double max_x = 0.0, max_y = 0.0;
 	double min_x = 0.0, min_y = 0.0;

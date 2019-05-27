@@ -21,6 +21,8 @@ list_node * dxf_graph_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 
 int dxf_ents_parse(dxf_drawing *drawing);
 
+list_node * dxf_ents_parse2(dxf_drawing *drawing, int p_space, int pool_idx);
+
 //int dxf_ents_draw(dxf_drawing *drawing, bmp_img * img, double ofs_x, double ofs_y, double scale);
 int dxf_ents_draw(dxf_drawing *drawing, bmp_img * img, struct draw_param param);
 

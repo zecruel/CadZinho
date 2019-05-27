@@ -138,6 +138,28 @@ int dxf_drwg_ent_cpy(dxf_drawing *source, dxf_drawing *dest, list_node *list){
 
 }
 
+list_node * dxf_drwg_ent_cpy_all(dxf_drawing *source, dxf_drawing *dest, int pool_idx){
+	if (dest == NULL || source == NULL) return NULL;
+	list_node * list_ret = list_new(NULL, pool_idx);
+	if (!list_ret) return NULL;
+	dxf_node *current = NULL, *new_ent = NULL;
+		
+	if ((source->ents != NULL) && (source->main_struct != NULL)){
+		current = source->ents->obj.content->next;
+		
+		while (current != NULL){
+			if (current->type == DXF_ENT){ // DXF entity
+				new_ent = dxf_drwg_cpy(source, dest, current);
+				drawing_ent_append(dest, new_ent);
+				
+				if (new_ent) list_push(list_ret, list_new((void *)new_ent, pool_idx));
+			}
+			current = current->next;
+		}
+	}
+	return list_ret;
+}
+
 int dxf_cpy_layer (dxf_drawing *drawing, dxf_node *layer){
 	
 	if (!drawing) 

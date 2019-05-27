@@ -3389,6 +3389,33 @@ int dxf_ents_parse(dxf_drawing *drawing){
 	}
 }
 
+list_node * dxf_ents_parse2(dxf_drawing *drawing, int p_space, int pool_idx){
+	dxf_node *current = NULL;
+	list_node * list_ret = NULL;
+	list_node *vec_graph;
+		
+	if ((drawing->ents != NULL) && (drawing->main_struct != NULL)){
+		/* create the vector of returned values */
+		list_ret = list_new(NULL, pool_idx);
+		
+		current = drawing->ents->obj.content->next;
+		
+		// starts the content sweep 
+		while (current != NULL){
+			if (current->type == DXF_ENT){ // DXF entity
+				vec_graph = dxf_graph_parse(drawing, current, p_space, pool_idx);
+				if (vec_graph){
+					current->obj.graphics = vec_graph;
+				}
+				dxf_obj_parse(list_ret, drawing, current, p_space, pool_idx);
+			}
+			current = current->next;
+		}
+	}
+	
+	return list_ret;
+}
+
 list_node * dxf_graph_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
 	/* Initialize */
 	/*create the vector of returned values */

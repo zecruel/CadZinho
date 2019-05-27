@@ -52,13 +52,14 @@ int dxf_edit_move (dxf_node * obj, double ofs_x, double ofs_y, double ofs_z){
 	
 	while (current){
 		ret = 1;
+		prev = current;
 		if (current->type == DXF_ENT){
 			
 			if (current->obj.content){
 				/* starts the content sweep */
 				current = current->obj.content->next;
 				ent_type =  dxf_ident_ent_type (obj);
-				prev = current;
+				
 				continue;
 			}
 		}
@@ -122,7 +123,10 @@ int dxf_edit_move (dxf_node * obj, double ofs_x, double ofs_y, double ofs_z){
 				}
 			}
 		}
-		
+		if ((prev == NULL) || (prev == stop)){ /* stop the search if back on initial entity */
+			current = NULL;
+			break;
+		}
 		current = current->next; /* go to the next in the list */
 		/* ============================================================= */
 		while (current == NULL){

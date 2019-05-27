@@ -36,11 +36,12 @@ int gui_paste_interactive(gui_obj *gui){
 		else{
 			if (gui->ev & EV_ENTER){
 				//list_node * dxf_drwg_ent_cpy_all(dxf_drawing *source, dxf_drawing *dest, int pool_idx){
-				list_node * list = dxf_drwg_ent_cpy_all(gui->clip_drwg, gui->drawing, ONE_TIME);
+				list_node * list = dxf_drwg_ent_cpy_all(gui->clip_drwg, gui->drawing, FRAME_LIFE);
 				if (!list) goto default_modal;
 				dxf_cpy_lay_drwg(gui->clip_drwg, gui->drawing);
 				dxf_cpy_sty_drwg(gui->clip_drwg, gui->drawing);
 				dxf_cpy_ltyp_drwg(gui->clip_drwg, gui->drawing);
+				gui_tstyle(gui);
 				
 				if (gui->sel_list != NULL){
 					/* sweep the selection list */

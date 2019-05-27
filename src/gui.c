@@ -1269,4 +1269,30 @@ int gui_tstyle(gui_obj *gui){
 	return 1;
 }
 
+int gui_tstyle2(gui_obj *gui, dxf_drawing *drawing){
+	if(!gui) return 0;
+	
+	int i = 0;
+	
+	int num_tstyles = drawing->num_tstyles;
+	dxf_tstyle *t_sty = drawing->text_styles;
+	struct tfont * font;
+		
+	for (i = 0; i < num_tstyles; i++){
+		if(font = add_font_list(gui->font_list, t_sty[i].file, gui->dflt_fonts_path)){
+			t_sty[i].font = font;
+			//if (font->type == FONT_SHP) shp_font_print((shp_typ *) font->data);
+		}
+		else{
+			t_sty[i].font = gui->dflt_font;
+			strncpy(t_sty[i].subst_file, gui->dflt_font->name, DXF_MAX_CHARS);
+		}
+		
+	}
+	
+	
+	
+	return 1;
+}
+
 //#endif

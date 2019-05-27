@@ -244,6 +244,8 @@ int gui_start(gui_obj *gui);
 
 int gui_tstyle(gui_obj *gui);
 
+int gui_tstyle2(gui_obj *gui, dxf_drawing *drawing);
+
 extern int dxf_lw[];
 extern const char *dxf_lw_descr[];
 extern bmp_color dxf_colors[];

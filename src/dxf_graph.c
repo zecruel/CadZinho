@@ -1501,11 +1501,13 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				fnt_idx = dxf_tstyle_idx(drawing, t_style);
 				if (fnt_idx >= 0) stack[0].font = drawing->text_styles[fnt_idx].font;
 				else stack[0].font = drawing->dflt_font;
+				if(!stack[0].font) stack[0].font = drawing->dflt_font;
 			}
 			else {
 				fnt_idx = dxf_tstyle_idx(drawing, "STANDARD");
 				if (fnt_idx >= 0) stack[0].font = drawing->text_styles[fnt_idx].font;
 				else stack[0].font = drawing->dflt_font;
+				if(!stack[0].font) stack[0].font = drawing->dflt_font;
 			}
 			/* initial width and oblique angle from style */
 			if (fnt_idx >= 0){
@@ -2394,11 +2396,13 @@ list_node * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 				fnt_idx = dxf_tstyle_idx(drawing, t_style);
 				if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
 				else font = drawing->dflt_font;
+				if(!font) font = drawing->dflt_font;
 			}
 			else {
 				fnt_idx = dxf_tstyle_idx(drawing, "STANDARD");
 				if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
 				else font = drawing->dflt_font;
+				if(!font) font = drawing->dflt_font;
 			}
 			
 			list_node * graph = list_new(NULL, FRAME_LIFE);

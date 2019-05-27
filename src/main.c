@@ -1111,6 +1111,7 @@ int main(int argc, char** argv){
 					while (dxf_read (gui->clip_drwg, file_buf, file_size, &progress) > 0){
 						
 					}
+					gui_tstyle2(gui, gui->clip_drwg);
 					free(file_buf);
 					file_buf = NULL;
 					file_size = 0;

@@ -306,4 +306,6 @@ dxf_node *dxf_find_handle(dxf_node *source, long int handle);
 
 void drawing_ent_append(dxf_drawing *drawing, dxf_node *element);
 
+list_node * dxf_ents_list(dxf_drawing *drawing, int pool_idx);
+
 #endif

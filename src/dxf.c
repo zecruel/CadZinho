@@ -2410,3 +2410,25 @@ dxf_node *dxf_find_handle(dxf_node *source, long int handle){
 	
 	return NULL;
 }
+
+list_node * dxf_ents_list(dxf_drawing *drawing, int pool_idx){
+	dxf_node *current = NULL;
+	list_node * list_ret = NULL;
+		
+	if ((drawing->ents != NULL) && (drawing->main_struct != NULL)){
+		/* create the vector of returned values */
+		list_ret = list_new(NULL, pool_idx);
+		
+		current = drawing->ents->obj.content->next;
+		
+		// starts the content sweep 
+		while (current != NULL){
+			if (current->type == DXF_ENT){ // DXF entity
+				list_push(list_ret, list_new((void *)current, pool_idx));
+			}
+			current = current->next;
+		}
+	}
+	
+	return list_ret;
+}

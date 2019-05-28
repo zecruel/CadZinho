@@ -13,7 +13,10 @@ int gui_paste_interactive(gui_obj *gui){
 			//dxf_ents_parse2(dxf_drawing *drawing, int p_space, int pool_idx)
 			gui->clip_drwg->font_list = gui->font_list;
 			gui->clip_drwg->dflt_font = gui->dflt_font;
-			gui->phanton = dxf_ents_parse2(gui->clip_drwg, 0, ONE_TIME);
+			//list_node * ents_list = dxf_ents_list(gui->clip_drwg, ONE_TIME);
+			//gui->phanton = dxf_list_parse(gui->clip_drwg, ents_list, 0, 0);
+			
+			gui->phanton = dxf_ents_parse2(gui->clip_drwg, 0, FRAME_LIFE);
 			if (!gui->phanton) goto default_modal;
 			//dxf_ents_ext(dxf_drawing *drawing, double * min_x, double * min_y, double * max_x, double * max_y)
 			
@@ -22,6 +25,7 @@ int gui_paste_interactive(gui_obj *gui){
 			center_y = min_y + (max_y - min_y)/2.0;
 			
 			graph_list_modify(gui->phanton, gui->step_x[gui->step] - center_x, gui->step_y[gui->step] - center_y, 1.0, 1.0, 0.0);
+			graph_list_modify(gui->phanton, (gui->step_x[gui->step])*(1 - gui->scale), (gui->step_y[gui->step]) *(1 - gui->scale), gui->scale, gui->scale, 0.0);
 			
 			gui->element = NULL;
 			gui->draw_phanton = 1;
@@ -73,9 +77,9 @@ int gui_paste_interactive(gui_obj *gui){
 				goto default_modal;
 			}
 			if (gui->ev & EV_MOTION){
-				double x = gui->step_x[gui->step] - gui->step_x[gui->step + 1];
-				double y = gui->step_y[gui->step] - gui->step_y[gui->step + 1];
-				graph_list_modify(gui->phanton, x, y, 1.0, 1.0, 0.0);
+				gui->phanton = dxf_ents_parse2(gui->clip_drwg, 0, FRAME_LIFE);
+				graph_list_modify(gui->phanton, gui->step_x[gui->step] - center_x, gui->step_y[gui->step] - center_y, 1.0, 1.0, 0.0);
+				graph_list_modify(gui->phanton, (gui->step_x[gui->step])*(1 - gui->scale), (gui->step_y[gui->step]) *(1 - gui->scale), gui->scale, gui->scale, 0.0);
 				gui->step_x[gui->step + 1] = gui->step_x[gui->step];
 				gui->step_y[gui->step + 1] = gui->step_y[gui->step];
 			}
@@ -111,6 +115,7 @@ int gui_paste_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Paste a selection", NK_TEXT_LEFT);
 		nk_label(gui->ctx, "Enter destination point", NK_TEXT_LEFT);
+		gui->scale = nk_propertyd(gui->ctx, "Scale", 0.0d, gui->scale, 100.0d, 0.1d, 0.1d);
 	}
 	return 1;
 }

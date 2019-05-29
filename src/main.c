@@ -1091,6 +1091,7 @@ int main(int argc, char** argv){
 					dxf_cpy_lay_drwg(gui->drawing, gui->clip_drwg);
 					dxf_cpy_sty_drwg(gui->drawing, gui->clip_drwg);
 					dxf_cpy_ltyp_drwg(gui->drawing, gui->clip_drwg);
+					dxf_cpy_appid_drwg(gui->drawing, gui->clip_drwg);
 					dxf_save (clip_path, gui->clip_drwg);
 					dxf_mem_pool(ZERO_DXF, ONE_TIME);
 				}

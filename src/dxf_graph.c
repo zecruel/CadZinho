@@ -3411,7 +3411,8 @@ list_node * dxf_ents_parse2(dxf_drawing *drawing, int p_space, int pool_idx){
 				if (vec_graph){
 					current->obj.graphics = vec_graph;
 				}
-				dxf_obj_parse(list_ret, drawing, current, p_space, pool_idx);
+				vec_graph = dxf_graph_parse(drawing, current, p_space, pool_idx);
+				list_merge(list_ret, vec_graph);
 			}
 			current = current->next;
 		}

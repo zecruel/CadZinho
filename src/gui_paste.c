@@ -45,6 +45,7 @@ int gui_paste_interactive(gui_obj *gui){
 				dxf_cpy_lay_drwg(gui->clip_drwg, gui->drawing);
 				dxf_cpy_sty_drwg(gui->clip_drwg, gui->drawing);
 				dxf_cpy_ltyp_drwg(gui->clip_drwg, gui->drawing);
+				dxf_cpy_appid_drwg(gui->clip_drwg, gui->drawing);
 				gui_tstyle(gui);
 				
 				if (gui->sel_list != NULL){
@@ -60,7 +61,12 @@ int gui_paste_interactive(gui_obj *gui){
 								new_ent = (dxf_node *)current->data;
 								double x = gui->step_x[gui->step] - center_x;
 								double y = gui->step_y[gui->step] - center_y;
+								
 								dxf_edit_move(new_ent, x, y, 0.0);
+								dxf_edit_scale(new_ent, gui->scale, gui->scale, gui->scale);
+								dxf_edit_move(new_ent, gui->step_x[gui->step] * (1 - gui->scale), gui->step_y[gui->step] * (1 - gui->scale), 0.0);
+								
+								
 								new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
 								
 								do_add_item(gui->list_do.current, NULL, new_ent);

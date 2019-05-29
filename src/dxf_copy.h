@@ -25,4 +25,6 @@ int dxf_cpy_sty_drwg(dxf_drawing *source, dxf_drawing *dest);
 
 int dxf_block_cpy(dxf_drawing *source, dxf_drawing *dest, dxf_node *block);
 
+int dxf_cpy_appid_drwg(dxf_drawing *source, dxf_drawing *dest);
+
 #endif

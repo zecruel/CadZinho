@@ -786,3 +786,72 @@ int dxf_block_cpy(dxf_drawing *source, dxf_drawing *dest, dxf_node *block){
 	
 	return ok;
 }
+
+int dxf_cpy_appid_drwg(dxf_drawing *source, dxf_drawing *dest){
+	/* copy appid betweew drawings, only in use */
+	int ok = 0, i, idx;
+	dxf_node *current, *prev, *obj = NULL, *list[2], *appid, *appid_obj, *appid_name;
+	
+	list[0] = NULL; list[1] = NULL;
+	if (source){
+		list[0] = dest->ents;
+		list[1] = dest->blks;
+	}
+	else return 0;
+	
+	for (i = 0; i< 2; i++){ /* look in BLOCKS and ENTITIES sections */
+		obj = list[i];
+		current = obj;
+		while (current){ /* sweep elements in section */
+			
+			prev = current;
+			if (current->type == DXF_ENT){
+				appid_name = dxf_find_attr2(current, 1001); /* get element's appid */
+				if (appid_name){
+					appid_obj = dxf_find_obj_descr2(source->t_appid, "APPID", appid_name->value.s_data);
+					/* verify if APPID not exist */
+					if (!dxf_find_obj_descr2(dest->t_appid, "APPID", appid_name->value.s_data)){
+						appid = dxf_ent_copy(appid_obj, dest->pool);					
+						ok = ent_handle(dest, appid);
+						if (ok) ok = dxf_obj_append(dest->t_appid, appid);
+					}
+				}
+				/* search also in sub elements */
+				if (current->obj.content){
+					/* starts the content sweep */
+					current = current->obj.content;
+					continue;
+				}
+			}
+			ok = 1;
+			current = current->next; /* go to the next in the list*/
+
+			/* ============================================================= */
+			while (current == NULL){
+				/* end of list sweeping */
+				if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
+					//printf("para\n");
+					current = NULL;
+					break;
+				}
+				/* try to back in structure hierarchy */
+				prev = prev->master;
+				if (prev){ /* up in structure */
+					/* try to continue on previous point in structure */
+					current = prev->next;
+					if(prev == obj){
+						current = NULL;
+						break;
+					}
+					
+				}
+				else{ /* stop the search if structure ends */
+					current = NULL;
+					break;
+				}
+			}
+		}
+	}
+	
+	return ok;
+}

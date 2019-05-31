@@ -733,6 +733,8 @@ int main(int argc, char** argv){
 	//graph_obj * hers = hershey_test (PRG_LIFE);
 	/*===================== teste ===============*/
 	
+	const Uint8* state;
+	
 	/* main loop */
 	while (quit == 0){
 		ev_type = 0;
@@ -757,7 +759,7 @@ int main(int argc, char** argv){
 		else{
 			SDL_ShowCursor(SDL_DISABLE);
 			if (ev_type != 0){
-				
+				state = SDL_GetKeyboardState(0);
 				switch (event.type){
 					case SDL_MOUSEBUTTONUP:
 						gui->mouse_x = event.button.x;
@@ -838,6 +840,24 @@ int main(int argc, char** argv){
 						else if (event.key.keysym.sym == SDLK_KP_PLUS){
 							gui->action = VIEW_ZOOM_P;
 						}
+						else if (event.key.keysym.sym == SDLK_DELETE){
+							gui->ev |= EV_DEL;
+						}
+						else if (event.key.keysym.sym == SDLK_c && state[SDL_SCANCODE_LCTRL]){
+							gui->ev |= EV_YANK;
+						}
+						else if (event.key.keysym.sym == SDLK_x && state[SDL_SCANCODE_LCTRL]){
+							gui->ev |= EV_CUT;
+						}
+						else if (event.key.keysym.sym == SDLK_v && state[SDL_SCANCODE_LCTRL]){
+							gui->ev |= EV_PASTE;
+						}
+						else if (event.key.keysym.sym == SDLK_z && state[SDL_SCANCODE_LCTRL]){
+							gui->ev |= EV_UNDO;
+						}
+						else if (event.key.keysym.sym == SDLK_r && state[SDL_SCANCODE_LCTRL]){
+							gui->ev |= EV_REDO;
+						}
 						break;
 					case SDL_TEXTINPUT:
 						/* text input */
@@ -910,6 +930,8 @@ int main(int argc, char** argv){
 				snprintf(recv_comm, 64, "%s","SCALE");
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ROT]))){
+				gui->modal = ROTATE;
+				gui->step = 0;
 				
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_MIRROR]))){
@@ -1017,6 +1039,7 @@ int main(int argc, char** argv){
 				gui_move_info (gui);
 				gui_dupli_info (gui);
 				gui_scale_info (gui);
+				gui_rotate_info (gui);
 				gui_insert_info (gui);
 				gui_block_info (gui);
 				gui_hatch_info (gui);
@@ -1968,6 +1991,7 @@ int main(int argc, char** argv){
 		gui_move_interactive(gui);
 		gui_dupli_interactive(gui);
 		gui_scale_interactive(gui);
+		gui_rotate_interactive(gui);
 			
 		gui_insert_interactive(gui);
 		gui_block_interactive(gui);

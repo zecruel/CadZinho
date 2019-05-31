@@ -39,6 +39,10 @@ int gui_scale_interactive(gui_obj *gui);
 
 int gui_scale_info (gui_obj *gui);
 
+int gui_rotate_interactive(gui_obj *gui);
+
+int gui_rotate_info (gui_obj *gui);
+
 
 int gui_insert_interactive(gui_obj *gui);
 

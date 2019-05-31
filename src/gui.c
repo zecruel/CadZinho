@@ -1057,6 +1057,7 @@ int gui_start(gui_obj *gui){
 	gui->near_y = 0.0;
 	gui->bulge = 0.0;
 	gui->scale = 1.0;
+	gui->angle = 0.0;
 	gui->txt_h = 1.0;
 	gui->rect_w = 0.0;
 	

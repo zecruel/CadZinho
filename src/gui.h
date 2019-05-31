@@ -65,6 +65,7 @@ enum Modal {
 	DUPLI,
 	MOVE,
 	SCALE,
+	ROTATE,
 	NEW_BLK,
 	HATCH,
 	INSERT,
@@ -76,7 +77,13 @@ enum Gui_ev {
 	EV_ENTER = 1,
 	EV_CANCEL = 2,
 	EV_MOTION = 4,
-	EV_LOCK_AX = 8
+	EV_LOCK_AX = 8,
+	EV_YANK = 16,
+	EV_CUT = 32,
+	EV_PASTE = 64,
+	EV_UNDO = 128,
+	EV_REDO = 256,
+	EV_DEL = 512,
 };
 
 enum Font_sizes {
@@ -128,7 +135,7 @@ struct Gui_obj {
 	double user_x, user_y;
 	double step_x[10], step_y[10];
 	double near_x, near_y;
-	double bulge, scale;
+	double bulge, scale, angle;
 	double txt_h;
 	double rect_w;
 	

@@ -369,12 +369,22 @@ int main(int argc, char** argv){
 			//printf("  basename: %s\n", path + dirname_length + 1);
 			/* initialize base directory (executable dir) */
 			strncpy (gui->base_dir, path, DXF_MAX_CHARS);
+			strncat (gui->base_dir, (char []){DIR_SEPARATOR, 0}, DXF_MAX_CHARS);
 			free(path);
 		}
 	}
 	
 	/* initialize base directory (executable dir) */
 	//strncpy (gui->base_dir, get_dir(argv[0]), DXF_MAX_CHARS);
+	
+	/* full path of clipboard file */
+	char clip_path[DXF_MAX_CHARS + 1];
+	clip_path[0] = 0;
+	strncpy(clip_path, gui->base_dir, DXF_MAX_CHARS);
+	printf("base dir = %s\n", gui->base_dir);
+	strncat(clip_path, "test_clip.dxf", DXF_MAX_CHARS);
+	printf("clip path = %s\n", clip_path);
+	
 	/* initialize fonts paths with base directory  */
 	if (strlen(gui->base_dir)){
 		strncpy (gui->dflt_fonts_path, gui->base_dir, 5 * DXF_MAX_CHARS);
@@ -759,7 +769,7 @@ int main(int argc, char** argv){
 		else{
 			SDL_ShowCursor(SDL_DISABLE);
 			if (ev_type != 0){
-				state = SDL_GetKeyboardState(0);
+				SDL_Keymod modstates = SDL_GetModState();
 				switch (event.type){
 					case SDL_MOUSEBUTTONUP:
 						gui->mouse_x = event.button.x;
@@ -819,11 +829,14 @@ int main(int argc, char** argv){
 						}
 						break;
 					case SDL_KEYDOWN:
+						//printf("%s\n", SDL_GetKeyName(event.key.keysym.sym));
 						if ((event.key.keysym.sym == SDLK_RETURN) || (event.key.keysym.sym == SDLK_RETURN2)){
 							gui->keyEnter = 1;
 						}
 						else if (event.key.keysym.sym == SDLK_UP){
 							gui->action = VIEW_PAN_U;
+							//printf("%d\n", SDL_GetKeyFromName("x"));
+							//printf("%d\n", SDL_GetKeyFromName("X"));
 						}
 						else if (event.key.keysym.sym == SDLK_DOWN){
 							gui->action = VIEW_PAN_D;
@@ -841,22 +854,28 @@ int main(int argc, char** argv){
 							gui->action = VIEW_ZOOM_P;
 						}
 						else if (event.key.keysym.sym == SDLK_DELETE){
-							gui->ev |= EV_DEL;
+							//gui->ev |= EV_DEL;
+							gui->action = DELETE;
 						}
-						else if (event.key.keysym.sym == SDLK_c && state[SDL_SCANCODE_LCTRL]){
-							gui->ev |= EV_YANK;
+						else if (event.key.keysym.sym == SDLK_c && (modstates & KMOD_CTRL)){
+							//gui->ev |= EV_YANK;
+							gui->action = YANK;
 						}
-						else if (event.key.keysym.sym == SDLK_x && state[SDL_SCANCODE_LCTRL]){
-							gui->ev |= EV_CUT;
+						else if (event.key.keysym.sym == SDLK_x && (modstates & KMOD_CTRL)){
+							//gui->ev |= EV_CUT;
+							gui->action = CUT;
 						}
-						else if (event.key.keysym.sym == SDLK_v && state[SDL_SCANCODE_LCTRL]){
-							gui->ev |= EV_PASTE;
+						else if (event.key.keysym.sym == SDLK_v && (modstates & KMOD_CTRL)){
+							//gui->ev |= EV_PASTE;
+							gui->action = START_PASTE;
 						}
-						else if (event.key.keysym.sym == SDLK_z && state[SDL_SCANCODE_LCTRL]){
-							gui->ev |= EV_UNDO;
+						else if (event.key.keysym.sym == SDLK_z && (modstates & KMOD_CTRL)){
+							//gui->ev |= EV_UNDO;
+							gui->action = UNDO;
 						}
-						else if (event.key.keysym.sym == SDLK_r && state[SDL_SCANCODE_LCTRL]){
-							gui->ev |= EV_REDO;
+						else if (event.key.keysym.sym == SDLK_r && (modstates & KMOD_CTRL)){
+							//gui->ev |= EV_REDO;
+							gui->action = REDO;
 						}
 						break;
 					case SDL_TEXTINPUT:
@@ -1102,45 +1121,14 @@ int main(int argc, char** argv){
 				
 				
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_COPY]))){
-					printf("Copy\n");
-					dxf_drawing_clear(gui->clip_drwg);
-					while (dxf_read (gui->clip_drwg, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &progress) > 0){
-						
-					}
-					char clip_path[DXF_MAX_CHARS + 1];
-					strncpy(clip_path, base_path, DXF_MAX_CHARS);
-					strncat(clip_path, "test_clip.dxf", DXF_MAX_CHARS);
-					dxf_drwg_ent_cpy(gui->drawing, gui->clip_drwg, gui->sel_list);
-					dxf_cpy_lay_drwg(gui->drawing, gui->clip_drwg);
-					dxf_cpy_sty_drwg(gui->drawing, gui->clip_drwg);
-					dxf_cpy_ltyp_drwg(gui->drawing, gui->clip_drwg);
-					dxf_cpy_appid_drwg(gui->drawing, gui->clip_drwg);
-					dxf_save (clip_path, gui->clip_drwg);
-					dxf_mem_pool(ZERO_DXF, ONE_TIME);
+					gui->action = YANK;
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CUT]))){
-					printf("Cut\n");
+					gui->action = CUT;
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PASTE]))){
-					printf("Paste\n");
-					char clip_path[DXF_MAX_CHARS + 1];
-					strncpy(clip_path, base_path, DXF_MAX_CHARS);
-					strncat(clip_path, "test_clip.dxf", DXF_MAX_CHARS);
-					file_size = 0;
-					file_buf = dxf_load_file(clip_path, &file_size);
-					dxf_mem_pool(ZERO_DXF, ONE_TIME);
-					graph_mem_pool(ZERO_GRAPH, ONE_TIME);
-					graph_mem_pool(ZERO_LINE, ONE_TIME);
-					dxf_drawing_clear(gui->clip_drwg);
-					while (dxf_read (gui->clip_drwg, file_buf, file_size, &progress) > 0){
-						
-					}
-					gui_tstyle2(gui, gui->clip_drwg);
-					free(file_buf);
-					file_buf = NULL;
-					file_size = 0;
-					gui->modal = PASTE;
-					gui->step = 0;
+					gui->action = START_PASTE;
+					
 				}
 				
 				nk_group_end(gui->ctx);
@@ -1723,10 +1711,88 @@ int main(int argc, char** argv){
 			gui->ofs_x += (gui->win_w*0.1)/gui->zoom;
 			gui->draw = 1;
 		}
+		else if((gui->action == YANK || gui->action == CUT) && strlen(clip_path) > 0) {
+			if (gui->sel_list->next){ /* verify if  has elements in list */
+				/* clear the clipboard drawing and init with basis seed */
+				dxf_drawing_clear(gui->clip_drwg);
+				while (dxf_read (gui->clip_drwg, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &progress) > 0){
+					
+				}
+				/* copy selected elements from main drawing to clipboard */
+				dxf_drwg_ent_cpy(gui->drawing, gui->clip_drwg, gui->sel_list);
+				
+				/* validate the clipboard drawing with used layers, styles, line types and APPIDs */
+				dxf_cpy_lay_drwg(gui->drawing, gui->clip_drwg);
+				dxf_cpy_sty_drwg(gui->drawing, gui->clip_drwg);
+				dxf_cpy_ltyp_drwg(gui->drawing, gui->clip_drwg);
+				dxf_cpy_appid_drwg(gui->drawing, gui->clip_drwg);
+				
+				/* save clipboard to file */
+				dxf_save (clip_path, gui->clip_drwg);
+				
+				/* preapre to reuse memory of clipboard */
+				dxf_mem_pool(ZERO_DXF, ONE_TIME);
+			}
+			if(gui->action == CUT){
+				do_add_entry(&gui->list_do, "CUT");
+				
+				list_node *current = gui->sel_list->next;
+				
+				// starts the content sweep 
+				while (current != NULL){
+					if (current->data){
+						if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
+							
+							if (do_add_item(gui->list_do.current, (dxf_node *)current->data, NULL)) {
+								//printf("add item = %d\n", current->data);
+							}
+							
+							// -------------------------------------------
+							//dxf_obj_detach((dxf_node *)current->data);
+							dxf_obj_subst((dxf_node *)current->data, NULL);
+							
+							//---------------------------------------
+						}
+					}
+					current = current->next;
+				}
+				list_clear(gui->sel_list);
+				gui->element = NULL;
+			}
+			
+			gui->action = NONE;
+			gui->draw = 1;
+		}
+		else if (gui->action == START_PASTE && strlen(clip_path) > 0) {
+			/* clear memory pool used before */
+			dxf_mem_pool(ZERO_DXF, ONE_TIME);
+			graph_mem_pool(ZERO_GRAPH, ONE_TIME);
+			graph_mem_pool(ZERO_LINE, ONE_TIME);
+			dxf_drawing_clear(gui->clip_drwg);
+			/* load the clipboard file */
+			file_size = 0;
+			file_buf = dxf_load_file(clip_path, &file_size);
+			while (dxf_read (gui->clip_drwg, file_buf, file_size, &progress) > 0){
+				
+			}
+			/* load and apply the fonts required for clipboard drawing */
+			gui_tstyle2(gui, gui->clip_drwg);
+			
+			/* clear the file buffer */
+			free(file_buf);
+			file_buf = NULL;
+			file_size = 0;
+			
+			/* prepare for next steps on paste */
+			gui->modal = PASTE;
+			gui->step = 0;
+			gui->action = NONE;
+			gui->draw = 1;
+		}
 		else if(gui->action == DELETE){
 			gui->action = NONE;
 		
-			if (gui->sel_list != NULL){
+			if (gui->sel_list->next){ /* verify if  has elements in list */
 				
 				do_add_entry(&gui->list_do, "DELETE");
 				
@@ -1751,6 +1817,7 @@ int main(int argc, char** argv){
 					current = current->next;
 				}
 				list_clear(gui->sel_list);
+				gui->element = NULL;
 			}
 			gui->draw = 1;
 		}
@@ -2097,7 +2164,8 @@ int main(int argc, char** argv){
 				//dxf_list_draw(gui->sel_list, img, gui->ofs_x - (x1 - x0), gui->ofs_y - (y1 - y0), gui->zoom, hilite);
 				graph_list_draw(gui->phanton, img, d_param);
 			}
-			dxf_list_draw(gui->sel_list, img, d_param);
+			if (gui->sel_list->next) /* verify if  has elements in list */
+				dxf_list_draw(gui->sel_list, img, d_param);
 			
 			
 			/* set image visible window*/

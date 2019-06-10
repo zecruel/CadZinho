@@ -50,6 +50,9 @@ enum Action {
 	COLOR_CHANGE,
 	LTYPE_CHANGE,
 	LW_CHANGE,
+	YANK,
+	CUT,
+	START_PASTE,
 	EXIT
 };
 

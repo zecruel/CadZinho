@@ -302,6 +302,16 @@ int dxf_edit_scale (dxf_node * obj, double scale_x, double scale_y, double scale
 		if (end_bond) stop = end_bond;
 	}
 	
+	if ((ent_type == DXF_INSERT) && (obj->obj.content)){
+		dxf_node *scale_attr = dxf_find_attr_i(obj, 41, 0);
+		if (!scale_attr){
+			dxf_node *last_attr = dxf_find_attr_i(obj, 30, 0);
+			last_attr = dxf_attr_insert_after(last_attr, 41, (void *) (double[]){1.0}, DWG_LIFE);
+			last_attr = dxf_attr_insert_after(last_attr, 42, (void *) (double[]){1.0}, DWG_LIFE);
+			last_attr = dxf_attr_insert_after(last_attr, 43, (void *) (double[]){1.0}, DWG_LIFE);
+		}
+	}
+	
 	while (current){
 		ret = 1;
 		prev = current;
@@ -309,6 +319,7 @@ int dxf_edit_scale (dxf_node * obj, double scale_x, double scale_y, double scale
 			
 			if (current->obj.content){
 				ent_type =  dxf_ident_ent_type (current);
+				
 				/* starts the content sweep */
 				current = current->obj.content->next;
 				
@@ -530,6 +541,21 @@ int dxf_edit_rot (dxf_node * obj, double ang){
 		if (end_bond) stop = end_bond;
 	}
 	
+	
+	if ((ent_type == DXF_INSERT) && (obj->obj.content)){
+		dxf_node *rot_attr = dxf_find_attr_i(obj, 50, 0);
+		if (!rot_attr){
+			dxf_node *scale_attr = dxf_find_attr_i(obj, 41, 0);
+			if (!scale_attr){
+				dxf_node *last_attr = dxf_find_attr_i(obj, 30, 0);
+				last_attr = dxf_attr_insert_after(last_attr, 41, (void *) (double[]){1.0}, DWG_LIFE);
+				last_attr = dxf_attr_insert_after(last_attr, 42, (void *) (double[]){1.0}, DWG_LIFE);
+				last_attr = dxf_attr_insert_after(last_attr, 43, (void *) (double[]){1.0}, DWG_LIFE);
+			}
+			scale_attr = dxf_find_attr_i(obj, 43, 0);
+			dxf_attr_insert_after(scale_attr, 50, (void *) (double[]){0.0}, DWG_LIFE);
+		}
+	}
 	
 	if (ent_type != DXF_POLYLINE){
 		//for (i = 0; x = dxf_find_attr_i(obj, 10, i); i++){

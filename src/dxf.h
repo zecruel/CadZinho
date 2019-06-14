@@ -292,6 +292,8 @@ int dxf_attr_append(dxf_node *master, int group, void *value, int pool);
 
 int dxf_attr_insert_before(dxf_node *attr, int group, void *value, int pool);
 
+dxf_node * dxf_attr_insert_after(dxf_node *attr, int group, void *value, int pool);
+
 int dxf_attr_change(dxf_node *master, int group, void *value);
 
 int dxf_attr_change_i(dxf_node *master, int group, void *value, int idx);

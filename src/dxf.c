@@ -2164,6 +2164,38 @@ int dxf_attr_insert_before(dxf_node *attr, int group, void *value, int pool){
 	return 0;
 }
 
+dxf_node * dxf_attr_insert_after(dxf_node *attr, int group, void *value, int pool){
+	if (attr){
+		if (attr->type == DXF_ATTR){
+			int type = dxf_ident_attr_type(group);
+			dxf_node *new_attr = dxf_attr_new(group, type, value, pool);
+			if (new_attr){
+				new_attr->master = attr->master;
+				
+				dxf_node *next = attr->next, *prev = attr;
+				
+				/* append new attr between prev and next nodes */
+				new_attr->prev = prev;
+				if (prev){
+					next = prev->next;
+					prev->next = new_attr;
+				}
+				new_attr->next = next;
+				if (next){
+					next->prev = new_attr;
+				}
+				if (new_attr->master){
+					if (prev == new_attr->master->end){
+						new_attr->master->end = new_attr;
+					}
+				}
+				return new_attr;
+			}
+		}
+	}
+	return NULL;
+}
+
 int dxf_attr_change(dxf_node *master, int group, void *value){
 	if (master){
 		/* find the first attribute*/

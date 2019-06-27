@@ -91,7 +91,7 @@ struct Dxf_node{
 			/* == entity dxf especific */
 			char name[DXF_MAX_CHARS]; /* standardized DXF name of entity */
 			int layer;
-			int paper;
+			int pool;
 			void * graphics; /* graphics information */
 			
 			struct Dxf_node *content; /* the content is a list */

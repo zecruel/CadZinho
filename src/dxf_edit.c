@@ -306,9 +306,9 @@ int dxf_edit_scale (dxf_node * obj, double scale_x, double scale_y, double scale
 		dxf_node *scale_attr = dxf_find_attr_i(obj, 41, 0);
 		if (!scale_attr){
 			dxf_node *last_attr = dxf_find_attr_i(obj, 30, 0);
-			last_attr = dxf_attr_insert_after(last_attr, 41, (void *) (double[]){1.0}, DWG_LIFE);
-			last_attr = dxf_attr_insert_after(last_attr, 42, (void *) (double[]){1.0}, DWG_LIFE);
-			last_attr = dxf_attr_insert_after(last_attr, 43, (void *) (double[]){1.0}, DWG_LIFE);
+			last_attr = dxf_attr_insert_after(last_attr, 41, (void *) (double[]){1.0}, obj->obj.pool);
+			last_attr = dxf_attr_insert_after(last_attr, 42, (void *) (double[]){1.0}, obj->obj.pool);
+			last_attr = dxf_attr_insert_after(last_attr, 43, (void *) (double[]){1.0}, obj->obj.pool);
 		}
 	}
 	
@@ -548,12 +548,26 @@ int dxf_edit_rot (dxf_node * obj, double ang){
 			dxf_node *scale_attr = dxf_find_attr_i(obj, 41, 0);
 			if (!scale_attr){
 				dxf_node *last_attr = dxf_find_attr_i(obj, 30, 0);
-				last_attr = dxf_attr_insert_after(last_attr, 41, (void *) (double[]){1.0}, DWG_LIFE);
-				last_attr = dxf_attr_insert_after(last_attr, 42, (void *) (double[]){1.0}, DWG_LIFE);
-				last_attr = dxf_attr_insert_after(last_attr, 43, (void *) (double[]){1.0}, DWG_LIFE);
+				last_attr = dxf_attr_insert_after(last_attr, 41, (void *) (double[]){1.0}, obj->obj.pool);
+				last_attr = dxf_attr_insert_after(last_attr, 42, (void *) (double[]){1.0}, obj->obj.pool);
+				last_attr = dxf_attr_insert_after(last_attr, 43, (void *) (double[]){1.0}, obj->obj.pool);
 			}
 			scale_attr = dxf_find_attr_i(obj, 43, 0);
-			dxf_attr_insert_after(scale_attr, 50, (void *) (double[]){0.0}, DWG_LIFE);
+			dxf_attr_insert_after(scale_attr, 50, (void *) (double[]){0.0}, obj->obj.pool);
+		}
+	}
+	
+	if ((ent_type == DXF_MTEXT) && (obj->obj.content)){
+		dxf_node *rot_attr = dxf_find_attr_i(obj, 50, 0);
+		if (!rot_attr) rot_attr = dxf_find_attr_i(obj, 11, 0);
+		if (!rot_attr){
+			dxf_node *last_attr = dxf_find_attr_i(obj, 230, 0);
+			if (!last_attr) last_attr = dxf_find_attr_i(obj, 7, 0);
+			if (!last_attr) last_attr = dxf_find_attr_i(obj, 3, 0);
+			if (!last_attr) last_attr = dxf_find_attr_i(obj, 1, 0);
+			last_attr = dxf_attr_insert_after(last_attr, 11, (void *) (double[]){1.0}, obj->obj.pool);
+			last_attr = dxf_attr_insert_after(last_attr, 21, (void *) (double[]){0.0}, obj->obj.pool);
+			last_attr = dxf_attr_insert_after(last_attr, 31, (void *) (double[]){0.0}, obj->obj.pool);
 		}
 	}
 	

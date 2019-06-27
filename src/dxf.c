@@ -488,7 +488,7 @@ dxf_node * dxf_obj_new (char *name, int pool){
 		new_obj->next = NULL;
 		new_obj->type = DXF_ENT;
 		new_obj->obj.layer = 0;
-		new_obj->obj.paper = 0;
+		new_obj->obj.pool = pool;
 		new_obj->obj.graphics = NULL;
 		
 		/* create head of content's list */

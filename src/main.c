@@ -21,6 +21,7 @@
 #include "gui_use.h"
 #include "gui_file.h"
 #include "gui_print.h"
+#include "gui_config.h"
 
 #include <stdio.h> 
 #include <stdlib.h> 
@@ -230,128 +231,6 @@ void zoom_ext2(dxf_drawing *drawing, int x, int y, int width, int height, double
 	*ofs_y = min_y - ((fabs((max_y - min_y)*(*zoom) - height)/2)+y)/(*zoom);
 }
 
-int getglobint (lua_State *L, const char *var) {
-	int isnum, result;
-	lua_getglobal(L, var);
-	result = (int)lua_tointegerx(L, -1, &isnum);
-	if (!isnum)
-		printf("'%s' should be a number\n", var);
-	lua_pop(L, 1); /* remove result from the stack */
-	return result;
-}
-void load (lua_State *L, const char *fname, int *w, int *h) {
-	if (luaL_loadfile(L, fname) || lua_pcall(L, 0, 0, 0))
-		printf("cannot run config. file: %s", lua_tostring(L, -1));
-	*w = getglobint(L, "width");
-	*h = getglobint(L, "height");
-}
-
-void load_conf (lua_State *L, const char *fname, gui_obj *gui) {
-	/* load configuration file as Lua script*/
-	if (luaL_loadfile(L, fname) || lua_pcall(L, 0, 0, 0))
-		printf("cannot run config. file: %s", lua_tostring(L, -1));
-	
-	
-	
-	/* -------------------- get screen width -------------------*/
-	lua_getglobal(L, "width");
-	if (lua_isnumber(L, -1)) gui->win_w = (int)lua_tonumber(L, -1);
-	else gui->win_w = 1200; /* default value, if not definied in file*/
-	lua_pop(L, 1);
-	
-	/* -------------------- get screen height -------------------*/
-	lua_getglobal(L, "height");
-	if (lua_isnumber(L, -1)) gui->win_h = (int)lua_tonumber(L, -1);
-	else gui->win_h = 710; /* default value, if not definied in file*/
-	lua_pop(L, 1);
-	
-	/* -------------------- get fonts paths -------------------*/
-	lua_getglobal(L, "font_path");
-	if (lua_isstring(L, -1)){
-		const char *font_path = lua_tostring(L, -1);
-		strncat(gui->dflt_fonts_path, font_path, 5 * DXF_MAX_CHARS);
-		
-	}
-	else{ /* default value, if not definied in file*/
-		#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-		strncpy(gui->dflt_fonts_path, "C:\\Windows\\Fonts\\", 5 * DXF_MAX_CHARS);
-		#else
-		strncat(gui->dflt_fonts_path, "/usr/share/fonts/", 5 * DXF_MAX_CHARS);
-		#endif
-	}
-	lua_pop(L, 1);
-	
-	/* -------------------- load list of extra fonts  -------------------*/
-	lua_getglobal(L, "fonts");
-	if (lua_istable(L, -1)){
-		
-		/* iterate over table */
-		lua_pushnil(L);  /* first key */
-		while (lua_next(L, -2) != 0) { /* table index are shifted*/
-			/* uses 'key' (at index -2) and 'value' (at index -1) */
-			//printf("%s - %s\n", lua_typename(L, lua_type(L, -2)), lua_typename(L, lua_type(L, -1)));
-			if (lua_isstring(L, -1)){
-				//printf("%s\n", lua_tostring(L, -1));
-				add_font_list(gui->font_list, (char *)lua_tostring(L, -1), gui->dflt_fonts_path);
-			}
-			/* removes 'value'; keeps 'key' for next iteration */
-			lua_pop(L, 1);
-		}
-	}
-	lua_pop(L, 1);
-	
-	/* -------------------- get font for use in GUI  -------------------*/
-	lua_getglobal(L, "ui_font");
-	if (lua_istable(L, -1)){
-		/*---- name of font */
-		lua_pushnumber(L, 1); /* key*/
-		lua_gettable(L, -2);  /* get table[key] */
-		if (lua_isstring(L, -1)){
-			//printf("%s\n", lua_tostring(L, -1));
-			struct tfont *ui_font = get_font_list(gui->font_list, (char *)lua_tostring(L, -1));
-			if (!ui_font) { /* default font, if fail to find in list*/
-				ui_font = get_font_list(gui->font_list, "romans.shx");
-			}
-			gui->ui_font.userdata = nk_handle_ptr(ui_font);
-		}
-		else{ /* default value, if not definied in file*/
-			struct tfont *ui_font = get_font_list(gui->font_list, "romans.shx");
-			gui->ui_font.userdata = nk_handle_ptr(ui_font);
-		}
-		lua_pop(L, 1);
-		
-		/*---- size of text */
-		lua_pushnumber(L, 2); /* key*/
-		lua_gettable(L, -2);  /* get table[key] */
-		if (lua_isnumber(L, -1)){
-			//printf("%0.2f\n", lua_tonumber(L, -1));
-			gui->ui_font.height = lua_tonumber(L, -1);
-		}
-		else{/* default value, if not definied in file*/
-			gui->ui_font.height = 10.0;
-		}
-		lua_pop(L, 1);
-		
-		#if(0)
-		/* iterate over table */
-		lua_pushnil(L);  /* first key */
-		while (lua_next(L, -2) != 0) { /* table index are shifted*/
-			/* uses 'key' (at index -2) and 'value' (at index -1) */
-			printf("%s - %s\n", lua_typename(L, lua_type(L, -2)), lua_typename(L, lua_type(L, -1)));
-			/* removes 'value'; keeps 'key' for next iteration */
-			lua_pop(L, 1);
-		}
-		#endif
-	}
-	else
-	{ /* default font, if not definied in file*/
-		struct tfont *ui_font = get_font_list(gui->font_list, "romans.shx");
-		gui->ui_font.userdata = nk_handle_ptr(ui_font);
-		gui->ui_font.height = 10.0;
-	}
-	lua_pop(L, 1);
-}
-
 int main(int argc, char** argv){
 	gui_obj *gui = malloc(sizeof(gui_obj));
 	gui_start(gui);
@@ -385,19 +264,23 @@ int main(int argc, char** argv){
 	strncat(clip_path, "test_clip.dxf", DXF_MAX_CHARS);
 	printf("clip path = %s\n", clip_path);
 	
+	/* full path of init file */
+	char init_path[DXF_MAX_CHARS + 1];
+	init_path[0] = 0;
+	strncpy(init_path, gui->base_dir, DXF_MAX_CHARS);
+	strncat(init_path, "init.lua", DXF_MAX_CHARS);
+	
 	/* initialize fonts paths with base directory  */
 	if (strlen(gui->base_dir)){
 		strncpy (gui->dflt_fonts_path, gui->base_dir, 5 * DXF_MAX_CHARS);
 		strncat (gui->dflt_fonts_path, (char []){PATH_SEPARATOR, 0}, 5 * DXF_MAX_CHARS);
 	}
-	lua_State *Lua1 = luaL_newstate(); /* opens Lua */
-	luaL_openlibs(Lua1); /* opens the standard libraries */
 	
 	//setlocale(LC_ALL,""); //seta a localidade como a current do computador para aceitar acentuacao
 	int i, ok;
 	
 	//load (Lua1, "config.lua", &gui->win_w, &gui->win_h);
-	load_conf (Lua1, "config.lua", gui);
+	gui_load_conf ("config.lua", gui);
 	
 	SDL_Rect win_r, display_r;
 	
@@ -477,6 +360,8 @@ int main(int argc, char** argv){
 	int show_info = 0;
 	int show_print = 0;
 	struct draw_param d_param;
+	
+	int hist_new = 0;
 	
 	
 	char file_path[DXF_MAX_CHARS];
@@ -1091,6 +976,7 @@ int main(int argc, char** argv){
 					gui->curr_path[0] = 0;
 					
 					path_ok = 0;
+					hist_new = 1;
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SAVE]))){
 					gui->action = FILE_SAVE;
@@ -1539,13 +1425,59 @@ int main(int argc, char** argv){
 				nk_group_end(gui->ctx);
 			}
 			
-			nk_layout_row_push(gui->ctx, ICON_SIZE + 4);
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PREV]))){
+			nk_layout_row_push(gui->ctx, 4*ICON_SIZE + 4);
+			
+			if (nk_group_begin(gui->ctx, "history", NK_WINDOW_NO_SCROLLBAR)) {
+				nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 2);
 				
-			}
-			nk_layout_row_push(gui->ctx, ICON_SIZE + 4);
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEXT]))){
-				
+				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PREV]))){
+					if (gui->drwg_hist_size > 1 && gui->drwg_hist_pos > 0){
+						int pos = gui->drwg_hist_pos - 2;
+						
+						int head = gui->drwg_hist_tail - gui->drwg_hist_size;
+						if (head < 0){
+							head = (1 + gui->drwg_hist_tail + gui->drwg_hist_size) % gui->drwg_hist_size;
+							pos = (pos + head) % gui->drwg_hist_size;
+						}
+						
+						if (pos < 0) pos = 0;
+						
+						gui->curr_path[0] = 0;
+						strncpy (gui->curr_path, gui->drwg_hist[pos], DXF_MAX_CHARS);
+						gui->drwg_hist_pos --;
+						gui->drwg_hist_wr = gui->drwg_hist_pos + 1;
+						
+						gui->action = FILE_OPEN;
+						path_ok = 1;
+						hist_new = 0;
+					}
+					
+				}
+				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEXT]))){
+					if (gui->drwg_hist_pos < gui->drwg_hist_size &&
+						gui->drwg_hist_pos < DRWG_HIST_MAX - 1 &&
+						gui->drwg_hist_size > 1){
+						int pos = gui->drwg_hist_pos;
+						
+						if (pos >= gui->drwg_hist_size) pos = gui->drwg_hist_size - 1;
+						
+						int head = gui->drwg_hist_tail - gui->drwg_hist_size;
+						if (head < 0){
+							head = (1 + gui->drwg_hist_tail + gui->drwg_hist_size) % gui->drwg_hist_size;
+							pos = (pos + head) % gui->drwg_hist_size;
+						}
+						
+						gui->curr_path[0] = 0;
+						strncpy (gui->curr_path, gui->drwg_hist[pos], DXF_MAX_CHARS);
+						gui->drwg_hist_pos ++;
+						gui->drwg_hist_wr = gui->drwg_hist_pos;
+						
+						gui->action = FILE_OPEN;
+						path_ok = 1;
+						hist_new = 0;
+					}
+				}
+				nk_group_end(gui->ctx);
 			}
 			nk_layout_row_end(gui->ctx);
 			
@@ -1638,6 +1570,51 @@ int main(int argc, char** argv){
 			progr_win = 1;
 			
 			SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
+			
+			if (hist_new){
+				
+				int pos = gui->drwg_hist_wr;
+				int head = gui->drwg_hist_tail - gui->drwg_hist_size;
+				if (head < 0){
+					head = (1 + gui->drwg_hist_tail + gui->drwg_hist_size) % gui->drwg_hist_size;
+					pos = (gui->drwg_hist_pos + head) % gui->drwg_hist_size;
+				}
+				
+				strncpy (gui->drwg_hist[pos], gui->curr_path , DXF_MAX_CHARS);
+				/*
+				if (gui->drwg_hist_size < DRWG_HIST_MAX)
+					gui->drwg_hist_size ++;
+				if (gui->drwg_hist_pos < gui->drwg_hist_size && gui->drwg_hist_pos < DRWG_HIST_MAX - 1)
+					gui->drwg_hist_pos ++;
+				
+				gui->drwg_hist_tail++;
+				if (gui->drwg_hist_tail >= DRWG_HIST_MAX)
+					gui->drwg_hist_tail = 0;
+				*/
+				
+				if ((gui->drwg_hist_pos == gui->drwg_hist_size) ||
+				(gui->drwg_hist_pos == (gui->drwg_hist_size - 1) && gui->drwg_hist_size == DRWG_HIST_MAX)){
+					gui->drwg_hist_tail++;
+					if (gui->drwg_hist_tail >= DRWG_HIST_MAX)
+						gui->drwg_hist_tail = 0;
+					if (gui->drwg_hist_size < DRWG_HIST_MAX)
+						gui->drwg_hist_size ++;
+					if (gui->drwg_hist_pos < gui->drwg_hist_size && gui->drwg_hist_pos < DRWG_HIST_MAX - 1)
+						gui->drwg_hist_pos ++;
+				}
+				else{
+					if (gui->drwg_hist_pos < DRWG_HIST_MAX - 1){
+						gui->drwg_hist_pos ++;
+						gui->drwg_hist_size = gui->drwg_hist_pos;
+					} else  gui->drwg_hist_size = DRWG_HIST_MAX;
+					gui->drwg_hist_tail = (gui->drwg_hist_size + head - 1) % gui->drwg_hist_size;
+					
+				}
+				
+				gui->drwg_hist_wr = gui->drwg_hist_pos;
+				
+				hist_new = 0;
+			}
 			
 			strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
 			strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
@@ -2224,6 +2201,9 @@ int main(int argc, char** argv){
 		//printf("\n------------------------------------------\n         FREE FONT OK\n---------------------------------\n");
 	}
 	
+	
+	gui_save_init (init_path, gui);
+	
 	list_mem_pool(FREE_LIST, 0);
 	list_mem_pool(FREE_LIST, 1);
 	list_mem_pool(FREE_LIST, ONE_TIME);
@@ -2255,8 +2235,6 @@ int main(int argc, char** argv){
 	free(gui->drawing);
 	nk_sdl_shutdown(gui);
 	
-	
-	lua_close(Lua1);
 	return 0;
 	
 };

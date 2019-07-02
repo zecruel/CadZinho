@@ -978,7 +978,7 @@ nk_sdl_handle_event(gui_obj *gui, SDL_Window *win, SDL_Event *evt)
 		SDL_free(dropped_filedir);    // Free dropped_filedir memory
 		
 		nk_input_key(ctx, NK_KEY_PASTE, 1);
-		//SDL_Delay(100);
+		SDL_Delay(50);
 		nk_input_key(ctx, NK_KEY_PASTE, 0);
 		
 		return 1;
@@ -1016,7 +1016,7 @@ int gui_start(gui_obj *gui){
 	
 	gui->ui_font_list = gui_new_font (NULL);
 	
-	int i = 0;
+	int i = 0, j = 0;
 	bmp_color gray = {.r = 100, .g = 100, .b = 100, .a = 255};
 	
 	gui->ctx = NULL;
@@ -1241,6 +1241,14 @@ int gui_start(gui_obj *gui){
 		}
 	}
 	*/
+	
+	for (i = 0; i < DRWG_HIST_MAX; i++)
+		gui->drwg_hist[i][0] = 0;
+	gui->drwg_hist_size = 0;
+	gui->drwg_hist_pos = 0;
+	gui->drwg_hist_wr = 0;
+	gui->drwg_hist_tail = 0;
+	
 	return 1;
 }
 

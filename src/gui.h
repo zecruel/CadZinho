@@ -29,7 +29,7 @@
 #define FIXED_MEM 128*1024
 
 #define MAX_PATH_LEN 512
-#define DRWG_HIST_MAX 3
+#define DRWG_HIST_MAX 50
 
 enum Action {
 	NONE,
@@ -221,7 +221,7 @@ struct Gui_obj {
 	int drwg_hist_size;
 	int drwg_hist_pos;
 	int drwg_hist_wr;
-	int drwg_hist_tail;
+	int drwg_hist_head;
 	
 	struct nk_text_edit text_edit;
 	

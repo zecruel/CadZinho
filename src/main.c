@@ -1375,9 +1375,12 @@ int main(int argc, char** argv){
 		}
 		
 		/* interface to the user visualize and enter coordinates distances*/
-		if (nk_begin(gui->ctx, "POS", nk_rect(2, gui->win_h - 80, gui->win_w - 4, 78),
+		if (nk_begin(gui->ctx, "POS", nk_rect(2, gui->win_h - 92, gui->win_w - 4, 90),
 		NK_WINDOW_BORDER))
 		{
+			nk_layout_row_begin(gui->ctx, NK_STATIC, 55, 5);
+			nk_layout_row_push(gui->ctx, 380);
+			
 			/* interface to the user visualize and enter coordinates and distances*/
 			gui_xy(gui);
 			
@@ -1432,20 +1435,15 @@ int main(int argc, char** argv){
 				
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PREV]))){
 					if (gui->drwg_hist_size > 1 && gui->drwg_hist_pos > 0){
-						int pos = gui->drwg_hist_pos - 2;
-						
-						int head = gui->drwg_hist_tail - gui->drwg_hist_size;
-						if (head < 0){
-							head = (1 + gui->drwg_hist_tail + gui->drwg_hist_size) % gui->drwg_hist_size;
-							pos = (pos + head) % gui->drwg_hist_size;
-						}
-						
-						if (pos < 0) pos = 0;
+						int pos = (gui->drwg_hist_pos - 1 + gui->drwg_hist_head) % DRWG_HIST_MAX;
 						
 						gui->curr_path[0] = 0;
 						strncpy (gui->curr_path, gui->drwg_hist[pos], DXF_MAX_CHARS);
+						
 						gui->drwg_hist_pos --;
 						gui->drwg_hist_wr = gui->drwg_hist_pos + 1;
+						
+						//printf ("hist = %d,%d,%d,%d,%d\n", pos, gui->drwg_hist_pos, gui->drwg_hist_wr, gui->drwg_hist_size, gui->drwg_hist_head);
 						
 						gui->action = FILE_OPEN;
 						path_ok = 1;
@@ -1454,44 +1452,37 @@ int main(int argc, char** argv){
 					
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEXT]))){
-					if (gui->drwg_hist_pos < gui->drwg_hist_size &&
-						gui->drwg_hist_pos < DRWG_HIST_MAX - 1 &&
-						gui->drwg_hist_size > 1){
-						int pos = gui->drwg_hist_pos;
-						
-						if (pos >= gui->drwg_hist_size) pos = gui->drwg_hist_size - 1;
-						
-						int head = gui->drwg_hist_tail - gui->drwg_hist_size;
-						if (head < 0){
-							head = (1 + gui->drwg_hist_tail + gui->drwg_hist_size) % gui->drwg_hist_size;
-							pos = (pos + head) % gui->drwg_hist_size;
-						}
-						
+					if (gui->drwg_hist_pos < gui->drwg_hist_size - 1 &&
+					gui->drwg_hist_size > 1){
+						int pos = (gui->drwg_hist_pos + 1 + gui->drwg_hist_head) % DRWG_HIST_MAX;
 						gui->curr_path[0] = 0;
 						strncpy (gui->curr_path, gui->drwg_hist[pos], DXF_MAX_CHARS);
+						
 						gui->drwg_hist_pos ++;
-						gui->drwg_hist_wr = gui->drwg_hist_pos;
+						gui->drwg_hist_wr = gui->drwg_hist_pos + 1;
+						
+						//printf ("hist = %d,%d,%d,%d,%d\n", pos, gui->drwg_hist_pos, gui->drwg_hist_wr, gui->drwg_hist_size, gui->drwg_hist_head);
 						
 						gui->action = FILE_OPEN;
 						path_ok = 1;
 						hist_new = 0;
 					}
 				}
+				
+				nk_layout_row_dynamic(gui->ctx, 17, 1);
+				nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
+				char text[64];
+				snprintf(text, 63, "%d of %d", gui->drwg_hist_wr, gui->drwg_hist_size);
+				nk_label(gui->ctx, text, NK_TEXT_CENTERED);
+				nk_style_pop_font(gui->ctx); /* return to the default font*/
+				
 				nk_group_end(gui->ctx);
 			}
 			nk_layout_row_end(gui->ctx);
 			
-			nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 20);
+			nk_layout_row_begin(gui->ctx, NK_STATIC, 17, 10);
 			
-			int text_len;
-			char text[64];
-			
-			nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
-			
-			/* view coordinates of mouse in drawing units */
-			nk_layout_row_push(gui->ctx, 280);
-			text_len = snprintf(text, 63, "(%f,  %f)", pos_x, pos_y);
-			nk_label(gui->ctx, text, NK_TEXT_CENTERED);
+			nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny */
 			
 			nk_layout_row_push(gui->ctx, 280);
 			nk_label(gui->ctx, gui->log_msg, NK_TEXT_LEFT);
@@ -1572,46 +1563,19 @@ int main(int argc, char** argv){
 			SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
 			
 			if (hist_new){
-				
-				int pos = gui->drwg_hist_wr;
-				int head = gui->drwg_hist_tail - gui->drwg_hist_size;
-				if (head < 0){
-					head = (1 + gui->drwg_hist_tail + gui->drwg_hist_size) % gui->drwg_hist_size;
-					pos = (gui->drwg_hist_pos + head) % gui->drwg_hist_size;
-				}
-				
+				int pos = (gui->drwg_hist_wr + gui->drwg_hist_head) % DRWG_HIST_MAX;
 				strncpy (gui->drwg_hist[pos], gui->curr_path , DXF_MAX_CHARS);
-				/*
-				if (gui->drwg_hist_size < DRWG_HIST_MAX)
-					gui->drwg_hist_size ++;
+				if(gui->drwg_hist_wr >= DRWG_HIST_MAX) gui->drwg_hist_head++;
+				gui->drwg_hist_head %= DRWG_HIST_MAX;
+				
 				if (gui->drwg_hist_pos < gui->drwg_hist_size && gui->drwg_hist_pos < DRWG_HIST_MAX - 1)
 					gui->drwg_hist_pos ++;
-				
-				gui->drwg_hist_tail++;
-				if (gui->drwg_hist_tail >= DRWG_HIST_MAX)
-					gui->drwg_hist_tail = 0;
-				*/
-				
-				if ((gui->drwg_hist_pos == gui->drwg_hist_size) ||
-				(gui->drwg_hist_pos == (gui->drwg_hist_size - 1) && gui->drwg_hist_size == DRWG_HIST_MAX)){
-					gui->drwg_hist_tail++;
-					if (gui->drwg_hist_tail >= DRWG_HIST_MAX)
-						gui->drwg_hist_tail = 0;
-					if (gui->drwg_hist_size < DRWG_HIST_MAX)
-						gui->drwg_hist_size ++;
-					if (gui->drwg_hist_pos < gui->drwg_hist_size && gui->drwg_hist_pos < DRWG_HIST_MAX - 1)
-						gui->drwg_hist_pos ++;
-				}
-				else{
-					if (gui->drwg_hist_pos < DRWG_HIST_MAX - 1){
-						gui->drwg_hist_pos ++;
-						gui->drwg_hist_size = gui->drwg_hist_pos;
-					} else  gui->drwg_hist_size = DRWG_HIST_MAX;
-					gui->drwg_hist_tail = (gui->drwg_hist_size + head - 1) % gui->drwg_hist_size;
-					
+				if (gui->drwg_hist_wr < DRWG_HIST_MAX){
+					gui->drwg_hist_wr ++;
+					gui->drwg_hist_size = gui->drwg_hist_wr;
 				}
 				
-				gui->drwg_hist_wr = gui->drwg_hist_pos;
+				//printf ("hist = %d,%d,%d,%d,%d\n", pos, gui->drwg_hist_pos, gui->drwg_hist_wr, gui->drwg_hist_size, gui->drwg_hist_head);
 				
 				hist_new = 0;
 			}

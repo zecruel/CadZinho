@@ -96,8 +96,6 @@ int gui_xy(gui_obj *gui){
 	int flag_x = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) >= fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
 	int flag_y = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) < fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
 	
-	nk_layout_row_begin(gui->ctx, NK_STATIC, 32, 5);
-	nk_layout_row_push(gui->ctx, 380);
 	if (nk_group_begin(gui->ctx, "coord", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 10);
 		nk_layout_row_push(gui->ctx, 20);
@@ -205,6 +203,22 @@ int gui_xy(gui_obj *gui){
 			flag_x = 1;
 		}
 		else nk_selectable_label(gui->ctx, "Absolute", NK_TEXT_CENTERED, &gui->entry_relative);
+		nk_layout_row_end(gui->ctx);
+		
+		/* view coordinates of mouse in drawing units */
+		int text_len;
+		char text[64];
+		double pos_x = (double) gui->mouse_x/gui->zoom + gui->ofs_x;
+		double pos_y = (double) gui->mouse_y/gui->zoom + gui->ofs_y;
+		
+		nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
+	
+		nk_layout_row_dynamic(gui->ctx, 17, 1);
+		text_len = snprintf(text, 63, "(%f,  %f)", pos_x, pos_y);
+		nk_label(gui->ctx, text, NK_TEXT_CENTERED);
+		
+		nk_style_pop_font(gui->ctx); /* return to the default font*/
+		
 		nk_group_end(gui->ctx);
 	}
 	

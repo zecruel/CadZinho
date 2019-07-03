@@ -130,23 +130,39 @@ int gui_load_conf (const char *fname, gui_obj *gui) {
 	
 	return 1;
 }
-
+int path_escape (char* path, FILE *file){
+	if (!path || !file) return 0;
+	while (*path){
+		if (*path == '\\') fprintf(file, "\\");
+		fprintf(file, "%c", *path);
+		path++;
+	}
+	return 1;
+}
 int gui_save_init (char *fname, gui_obj *gui){
 	FILE *file;
 	int ret_success = 0;
+	int i;
 	
 	file = fopen(fname, "w"); /* open the file */
 	if (!file) return 0;
 	
 	fprintf(file, "\nwin_width = %d\n", gui->win_w);
 	fprintf(file, "win_height = %d\n", gui->win_h);
-	char *fonts_path = gui->dflt_fonts_path;
 	fprintf(file, "font_path = \"");
-	while (*fonts_path){
-		if (*fonts_path == '\\') fprintf(file, "\\");
-		fprintf(file, "%c", *fonts_path);
-		fonts_path++;
-	}
+	path_escape(gui->dflt_fonts_path, file);
 	fprintf(file, "\"\n");
+	
+	fprintf(file, "recent = {\n");
+	
+	for (i = gui->drwg_hist_size - 1; i >= 0; i--){
+		/* get position in array, considering as circular buffer */
+		int pos = (i + gui->drwg_hist_head) % DRWG_HIST_MAX;
+		fprintf(file, "\t\"");
+		path_escape(gui->drwg_hist[pos], file);
+		fprintf(file, "\",\n");
+	}
+	fprintf(file, "}\n");
+	
 	fclose(file);
 }

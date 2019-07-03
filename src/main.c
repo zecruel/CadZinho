@@ -1376,7 +1376,7 @@ int main(int argc, char** argv){
 		
 		/* interface to the user visualize and enter coordinates distances*/
 		if (nk_begin(gui->ctx, "POS", nk_rect(2, gui->win_h - 92, gui->win_w - 4, 90),
-		NK_WINDOW_BORDER))
+		NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR))
 		{
 			nk_layout_row_begin(gui->ctx, NK_STATIC, 55, 5);
 			nk_layout_row_push(gui->ctx, 380);
@@ -1428,47 +1428,47 @@ int main(int argc, char** argv){
 				nk_group_end(gui->ctx);
 			}
 			
-			nk_layout_row_push(gui->ctx, 4*ICON_SIZE + 4);
+			nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
 			
 			if (nk_group_begin(gui->ctx, "history", NK_WINDOW_NO_SCROLLBAR)) {
 				nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 2);
 				
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PREV]))){
-					if (gui->drwg_hist_size > 1 && gui->drwg_hist_pos > 0){
+					if (gui->drwg_hist_size > 1 && gui->drwg_hist_pos > 0){ /* verify if not at begining */
+						/* get previous position in history, considering as circular buffer */
 						int pos = (gui->drwg_hist_pos - 1 + gui->drwg_hist_head) % DRWG_HIST_MAX;
-						
+						/* get path from history */
 						gui->curr_path[0] = 0;
 						strncpy (gui->curr_path, gui->drwg_hist[pos], DXF_MAX_CHARS);
-						
+						/* update position */
 						gui->drwg_hist_pos --;
-						gui->drwg_hist_wr = gui->drwg_hist_pos + 1;
-						
-						//printf ("hist = %d,%d,%d,%d,%d\n", pos, gui->drwg_hist_pos, gui->drwg_hist_wr, gui->drwg_hist_size, gui->drwg_hist_head);
-						
+						gui->drwg_hist_wr = gui->drwg_hist_pos + 1; /* next write position */
+						/* open file in history */
 						gui->action = FILE_OPEN;
 						path_ok = 1;
-						hist_new = 0;
+						hist_new = 0; /* not change history entries */
 					}
 					
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEXT]))){
 					if (gui->drwg_hist_pos < gui->drwg_hist_size - 1 &&
-					gui->drwg_hist_size > 1){
+					gui->drwg_hist_size > 1){ /* verify if not at end *
+						/* get next position in history, considering as circular buffer */
 						int pos = (gui->drwg_hist_pos + 1 + gui->drwg_hist_head) % DRWG_HIST_MAX;
+						/* get path from history */
 						gui->curr_path[0] = 0;
 						strncpy (gui->curr_path, gui->drwg_hist[pos], DXF_MAX_CHARS);
-						
+						/* update position */
 						gui->drwg_hist_pos ++;
-						gui->drwg_hist_wr = gui->drwg_hist_pos + 1;
-						
-						//printf ("hist = %d,%d,%d,%d,%d\n", pos, gui->drwg_hist_pos, gui->drwg_hist_wr, gui->drwg_hist_size, gui->drwg_hist_head);
-						
+						gui->drwg_hist_wr = gui->drwg_hist_pos + 1; /* next write position */
+						/* open file in history */
 						gui->action = FILE_OPEN;
 						path_ok = 1;
-						hist_new = 0;
+						hist_new = 0; /* not change history entries */
 					}
 				}
 				
+				/* show position and size of history */
 				nk_layout_row_dynamic(gui->ctx, 17, 1);
 				nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
 				char text[64];
@@ -1562,21 +1562,24 @@ int main(int argc, char** argv){
 			
 			SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
 			
-			if (hist_new){
+			/* add file to history */
+			if (hist_new && open_prg >= 0){
+				/* get position in array, considering as circular buffer */
 				int pos = (gui->drwg_hist_wr + gui->drwg_hist_head) % DRWG_HIST_MAX;
+				/* put file path in history */
 				strncpy (gui->drwg_hist[pos], gui->curr_path , DXF_MAX_CHARS);
+				/* history buffer is full -> change the head of buffer to overwrite first entry */
 				if(gui->drwg_hist_wr >= DRWG_HIST_MAX) gui->drwg_hist_head++;
+				/* adjust circular buffer head */
 				gui->drwg_hist_head %= DRWG_HIST_MAX;
 				
+				/* adjust buffer parameters to next entries */
 				if (gui->drwg_hist_pos < gui->drwg_hist_size && gui->drwg_hist_pos < DRWG_HIST_MAX - 1)
-					gui->drwg_hist_pos ++;
+					gui->drwg_hist_pos ++; /* position */
 				if (gui->drwg_hist_wr < DRWG_HIST_MAX){
-					gui->drwg_hist_wr ++;
-					gui->drwg_hist_size = gui->drwg_hist_wr;
+					gui->drwg_hist_wr ++; /* size */
+					gui->drwg_hist_size = gui->drwg_hist_wr; /* next write position */
 				}
-				
-				//printf ("hist = %d,%d,%d,%d,%d\n", pos, gui->drwg_hist_pos, gui->drwg_hist_wr, gui->drwg_hist_size, gui->drwg_hist_head);
-				
 				hist_new = 0;
 			}
 			

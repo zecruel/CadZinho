@@ -43,6 +43,10 @@ int gui_rotate_interactive(gui_obj *gui);
 
 int gui_rotate_info (gui_obj *gui);
 
+int gui_mirror_interactive(gui_obj *gui);
+
+int gui_mirror_info (gui_obj *gui);
+
 
 int gui_insert_interactive(gui_obj *gui);
 

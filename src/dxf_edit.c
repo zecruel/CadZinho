@@ -695,3 +695,214 @@ int dxf_edit_rot (dxf_node * obj, double ang){
 	}
 	return ret;
 }
+
+int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1){
+	/* mirror the object and its childrens,  relactive to a line given to (x0,y0)-(x1,y1) */
+	dxf_node *current = NULL, *x = NULL, *y = NULL;
+	dxf_node *prev = NULL, *stop = NULL;
+	int ret = 0;
+	enum dxf_graph ent_type = DXF_NONE;
+	
+	
+	
+	/* reflection line parameters*/
+	double dx = x1 - x0;
+	double dy = y1 - y0;
+	double modulus = sqrt(dx*dx + dy*dy);
+	
+	if (modulus < 1e-9) return 0;
+	
+	double rad = atan2(-dx, dy); /* angle of normal reflection line */
+	double cosine = cos(rad);
+	double sine = sin(rad);
+	double ang = rad * 180/M_PI;
+	double x_new, y_new;
+	
+	double dist = 0;
+	
+	int i, j;
+	int ellip = 0, arc = 0;
+	
+	if (!obj) return 0;
+	if (obj->type != DXF_ENT) return 0;
+	
+	stop = obj;
+	ent_type =  dxf_ident_ent_type (obj);
+	
+	
+	if ((ent_type != DXF_HATCH) && (obj->obj.content)){
+		current = obj->obj.content->next;
+		prev = current;
+	}
+	else if ((ent_type == DXF_HATCH) && (obj->obj.content)){
+		current = dxf_find_attr_i(obj, 91, 0);
+		if (current){
+			current = current->next;
+			prev = current;
+		}
+		dxf_node *end_bond = dxf_find_attr_i(obj, 75, 0);
+		if (end_bond) stop = end_bond;
+	}
+	
+	if ((ent_type == DXF_MTEXT) && (obj->obj.content)){
+		dxf_node *rot_attr = dxf_find_attr_i(obj, 50, 0);
+		if (!rot_attr) rot_attr = dxf_find_attr_i(obj, 11, 0);
+		if (!rot_attr){
+			dxf_node *last_attr = dxf_find_attr_i(obj, 230, 0);
+			if (!last_attr) last_attr = dxf_find_attr_i(obj, 7, 0);
+			if (!last_attr) last_attr = dxf_find_attr_i(obj, 3, 0);
+			if (!last_attr) last_attr = dxf_find_attr_i(obj, 1, 0);
+			last_attr = dxf_attr_insert_after(last_attr, 11, (void *) (double[]){1.0}, obj->obj.pool);
+			last_attr = dxf_attr_insert_after(last_attr, 21, (void *) (double[]){0.0}, obj->obj.pool);
+			last_attr = dxf_attr_insert_after(last_attr, 31, (void *) (double[]){0.0}, obj->obj.pool);
+		}
+	}
+	
+	if (ent_type != DXF_POLYLINE){
+		for (i = 0; x = dxf_find_attr_i2(current, stop, 10, i); i++){
+			y = dxf_find_attr_i2(current, stop, 20, i);
+			if (y){
+				/* calcule distance between point and reflection line */
+				dist = (-dy*x->value.d_data + dx*y->value.d_data + dy*x1 - dx*y1)/modulus;
+				
+				x_new = x->value.d_data + 2 * dist * (dy/modulus);
+				y_new = y->value.d_data + 2 * dist * (-dx/modulus);
+				x->value.d_data = x_new;
+				y->value.d_data = y_new;
+			}
+		}
+	}
+	if (ent_type == DXF_LWPOLYLINE){
+		for (i = 0; x = dxf_find_attr_i2(current, stop, 42, i); i++){
+			x->value.d_data *= -1;
+		}
+	}
+	if (ent_type == DXF_HATCH){
+		/* hatch bondary path type */
+		if (current->value.group == 72){ 
+			if (current->value.i_data == 2)
+				arc = 1; /* arc */
+			else if (current->value.i_data == 3)
+				ellip = 1; /* ellipse */
+		}
+	}
+	if (ent_type == DXF_LINE || ent_type == DXF_TEXT ||
+	ent_type == DXF_HATCH || ent_type == DXF_ATTRIB ||
+	ent_type == DXF_ELLIPSE || ent_type == DXF_MTEXT){
+		//for (i = 0; x = dxf_find_attr_i(obj, 10, i); i++){
+		//	y = dxf_find_attr_i(obj, 20, i);
+		for (i = 0; x = dxf_find_attr_i2(current, stop, 11, i); i++){
+			y = dxf_find_attr_i2(current, stop, 21, i);
+			if (y){
+				/* calcule distance between point and reflection line */
+				dist = (-dy*x->value.d_data + dx*y->value.d_data + dy*x1 - dx*y1)/modulus;
+				
+				x_new = x->value.d_data + 2 * dist * (dy/modulus);
+				y_new = y->value.d_data + 2 * dist * (-dx/modulus);
+				x->value.d_data = x_new;
+				y->value.d_data = y_new;
+			}
+		}
+	}
+	else if (ent_type == DXF_TRACE || ent_type == DXF_SOLID){
+		for (j = 1; j < 4; j++){
+			//for (i = 0; x = dxf_find_attr_i(obj, 10, i); i++){
+			//	y = dxf_find_attr_i(obj, 20, i);
+			for (i = 0; x = dxf_find_attr_i2(current, stop, 10 + j, i); i++){
+				y = dxf_find_attr_i2(current, stop, 20 + j, i);
+				if (y){
+					/* calcule distance between point and reflection line */
+					dist = (-dy*x->value.d_data + dx*y->value.d_data + dy*x1 - dx*y1)/modulus;
+					
+					x_new = x->value.d_data + 2 * dist * (dy/modulus);
+					y_new = y->value.d_data + 2 * dist * (-dx/modulus);
+					x->value.d_data = x_new;
+					y->value.d_data = y_new;
+				}
+			}
+		}
+	}
+	else if (ent_type == DXF_DIMENSION){
+		for (j = 1; j < 7; j++){
+			//for (i = 0; x = dxf_find_attr_i(obj, 10, i); i++){
+			//	y = dxf_find_attr_i(obj, 20, i);
+			for (i = 0; x = dxf_find_attr_i2(current, stop, 10 + j, i); i++){
+				y = dxf_find_attr_i2(current, stop, 20 + j, i);
+				if (y){
+					/* calcule distance between point and reflection line */
+					dist = (-dy*x->value.d_data + dx*y->value.d_data + dy*x1 - dx*y1)/modulus;
+					
+					x_new = x->value.d_data + 2 * dist * (dy/modulus);
+					y_new = y->value.d_data + 2 * dist * (-dx/modulus);
+					x->value.d_data = x_new;
+					y->value.d_data = y_new;
+				}
+			}
+		}
+	}
+	if (ent_type == DXF_CIRCLE || ent_type == DXF_TEXT ||
+	ent_type == DXF_ATTRIB || ent_type == DXF_ARC ||
+	(ent_type == DXF_HATCH && arc) || ent_type == DXF_MTEXT ||
+	ent_type == DXF_INSERT){
+		y = dxf_find_attr_i2(current, stop, 50, 0);
+		if (y){
+			y->value.d_data += ang;
+		}
+	}
+	if (ent_type == DXF_ARC){
+		y = dxf_find_attr_i2(current, stop, 51, 0);
+		if (y){
+			y->value.d_data += ang;
+		}
+	}
+	
+	if (ent_type == DXF_INSERT && (obj->obj.content)){
+		while (current){
+			if (dxf_ident_ent_type(current) == DXF_ATTRIB){
+				for (j = 0; j < 2; j++){
+					for (i = 0; x = dxf_find_attr_i(current, 10 + j, i); i++){
+						y = dxf_find_attr_i(current, 20 + j, i);
+						if (y){
+							/* calcule distance between point and reflection line */
+							dist = (-dy*x->value.d_data + dx*y->value.d_data + dy*x1 - dx*y1)/modulus;
+							
+							x_new = x->value.d_data + 2 * dist * (dy/modulus);
+							y_new = y->value.d_data + 2 * dist * (-dx/modulus);
+							x->value.d_data = x_new;
+							y->value.d_data = y_new;
+						}
+					}
+				}
+				y = dxf_find_attr_i(current, 50, 0);
+				if (y){
+					y->value.d_data += ang;
+				}
+			}
+			current = current->next; /* go to the next in the list */
+		}
+	}
+	
+	if (ent_type == DXF_POLYLINE && (obj->obj.content)){
+		while (current){
+			if (dxf_ident_ent_type(current) == DXF_VERTEX){
+				for (i = 0; x = dxf_find_attr_i(current, 10, i); i++){
+					y = dxf_find_attr_i(current, 20, i);
+					if (y){
+						/* calcule distance between point and reflection line */
+						dist = (-dy*x->value.d_data + dx*y->value.d_data + dy*x1 - dx*y1)/modulus;
+						
+						x_new = x->value.d_data + 2 * dist * (dy/modulus);
+						y_new = y->value.d_data + 2 * dist * (-dx/modulus);
+						x->value.d_data = x_new;
+						y->value.d_data = y_new;
+					}
+				}
+				for (i = 0; x = dxf_find_attr_i(current, 42, i); i++){
+					x->value.d_data *= -1;
+				}
+			}
+			current = current->next; /* go to the next in the list */
+		}
+	}
+	return ret;
+}

@@ -839,7 +839,8 @@ int main(int argc, char** argv){
 				
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_MIRROR]))){
-				
+				gui->modal = MIRROR;
+				gui->step = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BLOCK]))){
 				recv_comm_flag = 1;
@@ -944,6 +945,7 @@ int main(int argc, char** argv){
 				gui_dupli_info (gui);
 				gui_scale_info (gui);
 				gui_rotate_info (gui);
+				gui_mirror_info (gui);
 				gui_insert_info (gui);
 				gui_block_info (gui);
 				gui_hatch_info (gui);
@@ -2003,6 +2005,7 @@ int main(int argc, char** argv){
 		gui_dupli_interactive(gui);
 		gui_scale_interactive(gui);
 		gui_rotate_interactive(gui);
+		gui_mirror_interactive(gui);
 			
 		gui_insert_interactive(gui);
 		gui_block_interactive(gui);

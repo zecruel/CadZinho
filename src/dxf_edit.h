@@ -12,4 +12,6 @@ int dxf_edit_scale (dxf_node * obj, double scale_x, double scale_y, double scale
 
 int dxf_edit_rot (dxf_node * obj, double ang);
 
+int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1);
+
 #endif

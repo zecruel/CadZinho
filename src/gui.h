@@ -73,7 +73,8 @@ enum Modal {
 	NEW_BLK,
 	HATCH,
 	INSERT,
-	PASTE
+	PASTE,
+	MIRROR
 };
 
 enum Gui_ev {

@@ -712,9 +712,11 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 	
 	if (modulus < 1e-9) return 0;
 	
-	double rad = atan2(-dx, dy); /* angle of normal reflection line */
-	double cosine = cos(rad);
-	double sine = sin(rad);
+	double rad = atan2(-dx, dy)*2; /* angle of normal reflection line */
+	
+	if (rad > M_PI) rad -= 2 * M_PI;
+	if (rad < -M_PI) rad += 2 * M_PI;
+	
 	double ang = rad * 180/M_PI;
 	double x_new, y_new;
 	
@@ -788,7 +790,7 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 	}
 	if (ent_type == DXF_LINE || ent_type == DXF_TEXT ||
 	ent_type == DXF_HATCH || ent_type == DXF_ATTRIB ||
-	ent_type == DXF_ELLIPSE || ent_type == DXF_MTEXT){
+	ent_type == DXF_ELLIPSE){
 		//for (i = 0; x = dxf_find_attr_i(obj, 10, i); i++){
 		//	y = dxf_find_attr_i(obj, 20, i);
 		for (i = 0; x = dxf_find_attr_i2(current, stop, 11, i); i++){
@@ -802,6 +804,62 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 				x->value.d_data = x_new;
 				y->value.d_data = y_new;
 			}
+		}
+	}
+	if (ent_type == DXF_MTEXT){
+		x = dxf_find_attr_i2(current, stop, 71, 0);
+		if (x){
+			int t_alin = x->value.i_data;
+			int t_alin_v[10] = {0, 3, 3, 3, 2, 2, 2, 1, 1, 1};
+			int t_alin_h[10] = {0, 0, 1, 2, 0, 1, 2, 0, 1, 2};
+			int t_al_v = t_alin_v[t_alin], t_al_h = t_alin_h[t_alin];
+			
+			if(fabs(rad) < M_PI/2) t_al_h = 2 - t_al_h;
+			else	t_al_v = 4 - t_al_v;
+			
+			
+			x->value.i_data = (3 - t_al_v) * 3 + t_al_h +1;
+		}
+		
+		for (i = 0; x = dxf_find_attr_i2(current, stop, 11, i); i++){
+			y = dxf_find_attr_i2(current, stop, 21, i);
+			if (y){
+				double angle = rad;
+				if(fabs(rad) > M_PI/2){
+					angle -= M_PI;
+				}
+				double cosine = cos(angle);
+				double sine = sin(angle);
+				x_new = x->value.d_data * cosine - y->value.d_data * sine;
+				y_new = x->value.d_data * sine + y->value.d_data * cosine;
+				x->value.d_data = x_new;
+				y->value.d_data = y_new;
+			}
+		}
+	}
+	if (ent_type == DXF_TEXT){
+		x = dxf_find_attr_i2(current, stop, 72, 0);
+		if (x){
+			int t_alin = x->value.i_data;
+			if(fabs(rad) < M_PI/2 && x->value.i_data < 3) 		
+			
+			x->value.i_data = 2 - x->value.i_data;
+		}
+		x = dxf_find_attr_i2(current, stop, 73, 0);
+		if (x){
+			int t_alin = x->value.i_data;
+			if(fabs(rad) >= M_PI/2 && x->value.i_data > 0) 		
+			
+			x->value.i_data = 4 - x->value.i_data;
+		}
+		
+		x = dxf_find_attr_i2(current, stop, 50, 0);
+		if (x){
+			double angle = ang;
+			if(fabs(rad) > M_PI/2){
+				angle -=180.0;
+			}
+			x->value.d_data += angle;
 		}
 	}
 	else if (ent_type == DXF_TRACE || ent_type == DXF_SOLID){
@@ -840,7 +898,7 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 			}
 		}
 	}
-	if (ent_type == DXF_CIRCLE || ent_type == DXF_TEXT ||
+	if (ent_type == DXF_CIRCLE ||
 	ent_type == DXF_ATTRIB || ent_type == DXF_ARC ||
 	(ent_type == DXF_HATCH && arc) || ent_type == DXF_MTEXT ||
 	ent_type == DXF_INSERT){

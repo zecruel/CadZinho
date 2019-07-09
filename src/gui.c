@@ -1158,6 +1158,8 @@ int gui_start(gui_obj *gui){
 	gui->paper_fam = 0;
 	gui->sel_paper = 6;
 	
+	gui->keep_orig = 0;
+	
 	#if(0)
 	#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 	strncpy(gui->dflt_fonts_path, "C:\\Windows\\Fonts\\", 5 * DXF_MAX_CHARS);

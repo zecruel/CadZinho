@@ -2360,9 +2360,19 @@ int ent_handle(dxf_drawing *drawing, dxf_node *element){
 
 void drawing_ent_append(dxf_drawing *drawing, dxf_node *element){
 	if (drawing && element){
+		if (element->type != DXF_ENT) return;
 		if ((drawing->ents != NULL) && (drawing->main_struct != NULL)){
 			/* get current handle and increment the handle seed*/
 			ent_handle(drawing, element);
+			
+			/* set handle to child entities */
+			dxf_node *current= element->obj.content->next;
+			while (current){
+				if (current->type == DXF_ENT){
+					ent_handle(drawing, current);
+				}
+				current = current->next;
+			}
 			
 			/*  append drawing entities's list */
 			element->master = drawing->ents;

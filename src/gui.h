@@ -158,6 +158,8 @@ struct Gui_obj {
 	
 	int hatch_fam_idx, hatch_idx, h_type, hatch_assoc;
 	
+	int keep_orig;
+	
 	
 	int en_distance; /* enable distance entry */
 	int entry_relative;

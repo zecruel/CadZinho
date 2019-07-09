@@ -789,8 +789,7 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 		}
 	}
 	if (ent_type == DXF_LINE || ent_type == DXF_TEXT ||
-	ent_type == DXF_HATCH || ent_type == DXF_ATTRIB ||
-	ent_type == DXF_ELLIPSE){
+	ent_type == DXF_HATCH || ent_type == DXF_ELLIPSE){
 		//for (i = 0; x = dxf_find_attr_i(obj, 10, i); i++){
 		//	y = dxf_find_attr_i(obj, 20, i);
 		for (i = 0; x = dxf_find_attr_i2(current, stop, 11, i); i++){
@@ -837,7 +836,7 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 			}
 		}
 	}
-	if (ent_type == DXF_TEXT){
+	if (ent_type == DXF_TEXT ){//|| ent_type == DXF_ATTRIB){
 		x = dxf_find_attr_i2(current, stop, 72, 0);
 		if (x){
 			int t_alin = x->value.i_data;
@@ -846,6 +845,15 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 			x->value.i_data = 2 - x->value.i_data;
 		}
 		x = dxf_find_attr_i2(current, stop, 73, 0);
+		if (x){
+			int t_alin = x->value.i_data;
+			if(fabs(rad) >= M_PI/2 && x->value.i_data > 0) 		
+			
+			x->value.i_data = 4 - x->value.i_data;
+		}
+		
+		/* for ATTRIB entity */
+		x = dxf_find_attr_i2(current, stop, 74, 0);
 		if (x){
 			int t_alin = x->value.i_data;
 			if(fabs(rad) >= M_PI/2 && x->value.i_data > 0) 		
@@ -898,23 +906,40 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 			}
 		}
 	}
-	if (ent_type == DXF_CIRCLE ||
-	ent_type == DXF_ATTRIB || ent_type == DXF_ARC ||
+	if (ent_type == DXF_CIRCLE || ent_type == DXF_ARC ||
 	(ent_type == DXF_HATCH && arc) || ent_type == DXF_MTEXT ||
 	ent_type == DXF_INSERT){
-		y = dxf_find_attr_i2(current, stop, 50, 0);
-		if (y){
-			y->value.d_data += ang;
+		x = dxf_find_attr_i2(current, stop, 50, 0);
+		if (x){
+			double angle = ang;
+			if(fabs(rad) > M_PI/2){
+				angle -=180.0;
+			}
+			x->value.d_data += angle;
 		}
 	}
 	if (ent_type == DXF_ARC){
-		y = dxf_find_attr_i2(current, stop, 51, 0);
-		if (y){
-			y->value.d_data += ang;
+		x = dxf_find_attr_i2(current, stop, 51, 0);
+		if (x){
+			double angle = ang;
+			if(fabs(rad) > M_PI/2){
+				angle -=180.0;
+			}
+			x->value.d_data += angle;
 		}
 	}
 	
 	if (ent_type == DXF_INSERT && (obj->obj.content)){
+		x = dxf_find_attr_i2(current, stop, 41, 0);
+		if (x){
+			if(fabs(rad) < M_PI/2) x->value.d_data *= -1;
+		}
+		x = dxf_find_attr_i2(current, stop, 42, 0);
+		if (x){
+			int t_alin = x->value.i_data;
+			if(fabs(rad) >= M_PI/2) x->value.d_data *= -1;
+		}
+		
 		while (current){
 			if (dxf_ident_ent_type(current) == DXF_ATTRIB){
 				for (j = 0; j < 2; j++){
@@ -931,9 +956,28 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 						}
 					}
 				}
-				y = dxf_find_attr_i(current, 50, 0);
-				if (y){
-					y->value.d_data += ang;
+				x = dxf_find_attr2(current, 72);
+				if (x){
+					if(fabs(rad) < M_PI/2 && x->value.i_data < 3) 		
+					
+					x->value.i_data = 2 - x->value.i_data;
+				}
+				
+				/* for ATTRIB entity */
+				x = dxf_find_attr2(current, 74);
+				if (x){
+					if(fabs(rad) >= M_PI/2 && x->value.i_data > 0) 		
+					
+					x->value.i_data = 4 - x->value.i_data;
+				}
+				
+				x = dxf_find_attr2(current, 50);
+				if (x){
+					double angle = ang;
+					if(fabs(rad) > M_PI/2){
+						angle -=180.0;
+					}
+					x->value.d_data += angle;
 				}
 			}
 			current = current->next; /* go to the next in the list */

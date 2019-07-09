@@ -59,7 +59,7 @@ int gui_mirror_interactive(gui_obj *gui){
 								dxf_edit_mirror(new_ent, gui->step_x[gui->step], gui->step_y[gui->step], gui->step_x[gui->step - 1], gui->step_y[gui->step - 1]);
 								new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
 								
-								if(0){
+								if(!gui->keep_orig){
 									dxf_obj_subst((dxf_node *)current->data, new_ent);
 									do_add_item(gui->list_do.current, (dxf_node *)current->data, new_ent);
 								}
@@ -140,10 +140,12 @@ int gui_mirror_info (gui_obj *gui){
 	if (gui->modal == MIRROR) {
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Mirror a selection", NK_TEXT_LEFT);
+		nk_checkbox_label(gui->ctx, "Keep Original", &gui->keep_orig);
+		nk_label(gui->ctx, "Set the reflection line", NK_TEXT_LEFT);
 		if (gui->step == 0){
-			nk_label(gui->ctx, "Enter base point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, "Enter first point", NK_TEXT_LEFT);
 		} else {
-			nk_label(gui->ctx, "Enter destination point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, "Enter second point", NK_TEXT_LEFT);
 		}
 	}
 	return 1;

@@ -188,6 +188,32 @@ int gui_tab (gui_obj *gui, const char *title, int active){
 
 /* ************************************************** */
 
+int gui_default_modal(gui_obj *gui){
+	gui->modal = SELECT;
+	
+	return gui_first_step(gui);
+}
+
+int gui_first_step(gui_obj *gui){
+	gui->en_distance = 0;
+	gui->draw_tmp = 0;
+	gui->element = NULL;
+	gui->draw = 1;
+	gui->step = 0;
+	gui->draw_phanton = 0;
+	return gui_next_step(gui);
+}
+int gui_next_step(gui_obj *gui){
+	
+	gui->lock_ax_x = 0;
+	gui->lock_ax_y = 0;
+	gui->user_flag_x = 0;
+	gui->user_flag_y = 0;
+
+	gui->draw = 1;
+	return 1;
+}
+
 void set_style(struct nk_context *ctx, enum theme theme){
     struct nk_color table[NK_COLOR_COUNT];
     if (theme == THEME_WHITE) {

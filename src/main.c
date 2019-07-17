@@ -1774,7 +1774,7 @@ int main(int argc, char** argv){
 			
 			if (do_undo(&gui->list_do)){
 				snprintf(gui->log_msg, 63, "UNDO: %s", text);
-				goto first_step;
+				gui_first_step(gui);
 			}
 			else{
 				snprintf(gui->log_msg, 63, "No actions to undo");
@@ -1787,7 +1787,7 @@ int main(int argc, char** argv){
 			list_clear(gui->sel_list);
 			if (do_redo(&gui->list_do)){
 				snprintf(gui->log_msg, 63, "REDO: %s", gui->list_do.current->text);
-				goto first_step;
+				gui_first_step(gui);
 			}
 			else{
 				snprintf(gui->log_msg, 63, "No actions to redo");
@@ -2012,36 +2012,6 @@ int main(int argc, char** argv){
 		gui_hatch_interactive(gui);
 		gui_paste_interactive(gui);
 		
-		
-		
-		
-		
-		goto end_step;
-		default_modal:
-			gui->modal = SELECT;
-		first_step:
-			gui->en_distance = 0;
-			gui->draw_tmp = 0;
-			gui->element = NULL;
-			gui->draw = 1;
-			gui->step = 0;
-			gui->draw_phanton = 0;
-			if (gui->phanton){
-				//free(phanton->data);
-				//free(phanton);
-				gui->phanton = NULL;
-			}
-		next_step:
-			
-			//gui->draw_tmp = 0;
-			//gui->element = NULL;
-			gui->lock_ax_x = 0;
-			gui->lock_ax_y = 0;
-			gui->user_flag_x = 0;
-			gui->user_flag_y = 0;
-
-			gui->draw = 1;
-		end_step: ;
 		
 		
 		

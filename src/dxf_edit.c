@@ -571,6 +571,14 @@ int dxf_edit_rot (dxf_node * obj, double ang){
 		}
 	}
 	
+	if (ent_type == DXF_TEXT || ent_type == DXF_ATTRIB){
+		dxf_node *rot_attr = dxf_find_attr_i(obj, 50, 0);
+		if (!rot_attr){
+			dxf_node *last_attr = dxf_find_attr_i(obj, 1, 0);
+			dxf_attr_insert_after(last_attr, 50, (void *) (double[]){0.0}, obj->obj.pool);
+		}
+	}
+	
 	if (ent_type != DXF_POLYLINE){
 		//for (i = 0; x = dxf_find_attr_i(obj, 10, i); i++){
 		//	y = dxf_find_attr_i(obj, 20, i);
@@ -668,9 +676,13 @@ int dxf_edit_rot (dxf_node * obj, double ang){
 						}
 					}
 				}
-				y = dxf_find_attr_i(current, 50, 0);
-				if (y){
-					y->value.d_data += ang;
+				dxf_node *rot_attr = dxf_find_attr_i(current, 50, 0);
+				if (!rot_attr){
+					dxf_node *last_attr = dxf_find_attr_i(current, 1, 0);
+					rot_attr = dxf_attr_insert_after(last_attr, 50, (void *) (double[]){0.0}, current->obj.pool);
+				}
+				if (rot_attr){
+					rot_attr->value.d_data += ang;
 				}
 			}
 			current = current->next; /* go to the next in the list */
@@ -744,6 +756,21 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 		}
 		dxf_node *end_bond = dxf_find_attr_i(obj, 75, 0);
 		if (end_bond) stop = end_bond;
+	}
+	
+	if ((ent_type == DXF_INSERT) && (obj->obj.content)){
+		dxf_node *rot_attr = dxf_find_attr_i(obj, 50, 0);
+		if (!rot_attr){
+			dxf_node *scale_attr = dxf_find_attr_i(obj, 41, 0);
+			if (!scale_attr){
+				dxf_node *last_attr = dxf_find_attr_i(obj, 30, 0);
+				last_attr = dxf_attr_insert_after(last_attr, 41, (void *) (double[]){1.0}, obj->obj.pool);
+				last_attr = dxf_attr_insert_after(last_attr, 42, (void *) (double[]){1.0}, obj->obj.pool);
+				last_attr = dxf_attr_insert_after(last_attr, 43, (void *) (double[]){1.0}, obj->obj.pool);
+			}
+			scale_attr = dxf_find_attr_i(obj, 43, 0);
+			dxf_attr_insert_after(scale_attr, 50, (void *) (double[]){0.0}, obj->obj.pool);
+		}
 	}
 	
 	if ((ent_type == DXF_MTEXT) && (obj->obj.content)){
@@ -958,26 +985,28 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 				}
 				x = dxf_find_attr2(current, 72);
 				if (x){
-					if(fabs(rad) < M_PI/2 && x->value.i_data < 3) 		
-					
-					x->value.i_data = 2 - x->value.i_data;
+					if(fabs(rad) < M_PI/2 && x->value.i_data < 3)
+						x->value.i_data = 2 - x->value.i_data;
 				}
 				
 				/* for ATTRIB entity */
 				x = dxf_find_attr2(current, 74);
 				if (x){
-					if(fabs(rad) >= M_PI/2 && x->value.i_data > 0) 		
-					
-					x->value.i_data = 4 - x->value.i_data;
+					if(fabs(rad) >= M_PI/2 && x->value.i_data > 0)
+						x->value.i_data = 4 - x->value.i_data;
 				}
 				
-				x = dxf_find_attr2(current, 50);
-				if (x){
+				dxf_node *rot_attr = dxf_find_attr_i(current, 50, 0);
+				if (!rot_attr){
+					dxf_node *last_attr = dxf_find_attr_i(current, 1, 0);
+					rot_attr = dxf_attr_insert_after(last_attr, 50, (void *) (double[]){0.0}, current->obj.pool);
+				}
+				if (rot_attr){
 					double angle = ang;
 					if(fabs(rad) > M_PI/2){
 						angle -=180.0;
 					}
-					x->value.d_data += angle;
+					rot_attr->value.d_data += angle;
 				}
 			}
 			current = current->next; /* go to the next in the list */

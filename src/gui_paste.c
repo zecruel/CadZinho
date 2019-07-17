@@ -5,7 +5,7 @@ int gui_paste_interactive(gui_obj *gui){
 		//static dxf_node *new_el;
 		static double min_x, min_y, max_x, max_y, center_x, center_y;
 		if (gui->step == 0){
-			if (!gui->clip_drwg) goto default_modal;
+			if (!gui->clip_drwg) gui_default_modal(gui);
 			gui->draw_tmp = 1;
 			/* phantom object */
 			//dxf_ents_parse(gui->clip_drwg);
@@ -17,7 +17,7 @@ int gui_paste_interactive(gui_obj *gui){
 			//gui->phanton = dxf_list_parse(gui->clip_drwg, ents_list, 0, 0);
 			
 			gui->phanton = dxf_ents_parse2(gui->clip_drwg, 0, FRAME_LIFE);
-			if (!gui->phanton) goto default_modal;
+			if (!gui->phanton) gui_default_modal(gui);
 			//dxf_ents_ext(dxf_drawing *drawing, double * min_x, double * min_y, double * max_x, double * max_y)
 			
 			dxf_ents_ext(gui->clip_drwg, &min_x, &min_y, &max_x, &max_y);
@@ -37,13 +37,13 @@ int gui_paste_interactive(gui_obj *gui){
 			gui->step = 1;
 			gui->step_x[gui->step + 1] = gui->step_x[gui->step];
 			gui->step_y[gui->step + 1] = gui->step_y[gui->step];
-			goto next_step;
+			gui_next_step(gui);
 		}
 		else{
 			if (gui->ev & EV_ENTER){
 				//list_node * dxf_drwg_ent_cpy_all(dxf_drawing *source, dxf_drawing *dest, int pool_idx){
 				list_node * list = dxf_drwg_ent_cpy_all(gui->clip_drwg, gui->drawing, FRAME_LIFE);
-				if (!list) goto default_modal;
+				if (!list) gui_default_modal(gui);
 				dxf_cpy_lay_drwg(gui->clip_drwg, gui->drawing);
 				dxf_cpy_sty_drwg(gui->clip_drwg, gui->drawing);
 				dxf_cpy_ltyp_drwg(gui->clip_drwg, gui->drawing);
@@ -79,10 +79,10 @@ int gui_paste_interactive(gui_obj *gui){
 					}
 					//list_clear(gui->sel_list);
 				}
-				goto default_modal;
+				gui_default_modal(gui);
 			}
 			else if (gui->ev & EV_CANCEL){
-				goto default_modal;
+				gui_default_modal(gui);
 			}
 			if (gui->ev & EV_MOTION){
 				gui->phanton = dxf_ents_parse2(gui->clip_drwg, 0, FRAME_LIFE);
@@ -95,29 +95,7 @@ int gui_paste_interactive(gui_obj *gui){
 			}
 		}
 	}
-	goto end_step;
-	default_modal:
-		gui->modal = SELECT;
-	first_step:
-		gui->en_distance = 0;
-		gui->draw_tmp = 0;
-		gui->element = NULL;
-		gui->draw = 1;
-		gui->step = 0;
-		gui->draw_phanton = 0;
-		//if (gui->phanton){
-		//	gui->phanton = NULL;
-		//}
-	next_step:
-		
-		gui->lock_ax_x = 0;
-		gui->lock_ax_y = 0;
-		gui->user_flag_x = 0;
-		gui->user_flag_y = 0;
-
-		gui->draw = 1;
-	end_step:
-		return 1;
+	return 1;
 }
 
 int gui_paste_info (gui_obj *gui){

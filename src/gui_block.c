@@ -12,33 +12,12 @@ int gui_block_interactive(gui_obj *gui){
 				}
 			}
 			else if (gui->ev & EV_CANCEL){
-				goto default_modal;
+				gui_default_modal(gui);
 			}
 		}
 	}
-	goto end_step;
-	default_modal:
-		gui->modal = SELECT;
-	first_step:
-		gui->en_distance = 0;
-		gui->draw_tmp = 0;
-		gui->element = NULL;
-		gui->draw = 1;
-		gui->step = 0;
-		gui->draw_phanton = 0;
-		//if (gui->phanton){
-		//	gui->phanton = NULL;
-		//}
-	next_step:
-		
-		gui->lock_ax_x = 0;
-		gui->lock_ax_y = 0;
-		gui->user_flag_x = 0;
-		gui->user_flag_y = 0;
-
-		gui->draw = 1;
-	end_step:
-		return 1;
+	
+	return 1;
 }
 
 int gui_block_info (gui_obj *gui){

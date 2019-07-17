@@ -78,29 +78,7 @@ int gui_select_interactive(gui_obj *gui){
 			gui->draw = 1;
 		}
 	}
-	goto end_step;
-	default_modal:
-		gui->modal = SELECT;
-	first_step:
-		gui->en_distance = 0;
-		gui->draw_tmp = 0;
-		gui->element = NULL;
-		gui->draw = 1;
-		gui->step = 0;
-		gui->draw_phanton = 0;
-		//if (gui->phanton){
-		//	gui->phanton = NULL;
-		//}
-	next_step:
-		
-		gui->lock_ax_x = 0;
-		gui->lock_ax_y = 0;
-		gui->user_flag_x = 0;
-		gui->user_flag_y = 0;
-
-		gui->draw = 1;
-	end_step:
-		return 1;
+	return 1;
 }
 
 int gui_select_info (gui_obj *gui){

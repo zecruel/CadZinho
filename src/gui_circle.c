@@ -16,10 +16,10 @@ int gui_circle_interactive(gui_obj *gui){
 				gui->element = new_el;
 				gui->step = 1;
 				gui->en_distance = 1;
-				goto next_step;
+				gui_next_step(gui);
 			}
 			else if (gui->ev & EV_CANCEL){
-				goto default_modal;
+				gui_default_modal(gui);
 			}
 		}
 		else{
@@ -32,10 +32,10 @@ int gui_circle_interactive(gui_obj *gui){
 				do_add_entry(&gui->list_do, "CIRCLE");
 				do_add_item(gui->list_do.current, NULL, new_el);
 				
-				goto first_step;
+				gui_first_step(gui);
 			}
 			else if (gui->ev & EV_CANCEL){
-				goto first_step;
+				gui_first_step(gui);
 			}
 			if (gui->ev & EV_MOTION){
 				double x1 = (double) gui->mouse_x/gui->zoom + gui->ofs_x;
@@ -52,29 +52,7 @@ int gui_circle_interactive(gui_obj *gui){
 			}
 		}
 	}
-	goto end_step;
-	default_modal:
-		gui->modal = SELECT;
-	first_step:
-		gui->en_distance = 0;
-		gui->draw_tmp = 0;
-		gui->element = NULL;
-		gui->draw = 1;
-		gui->step = 0;
-		gui->draw_phanton = 0;
-		//if (gui->phanton){
-		//	gui->phanton = NULL;
-		//}
-	next_step:
-		
-		gui->lock_ax_x = 0;
-		gui->lock_ax_y = 0;
-		gui->user_flag_x = 0;
-		gui->user_flag_y = 0;
-
-		gui->draw = 1;
-	end_step:
-		return 1;
+	return 1;
 }
 
 int gui_circle_info (gui_obj *gui){

@@ -37,10 +37,10 @@ int gui_mirror_interactive(gui_obj *gui){
 				gui->step = 1;
 				gui->step_x[gui->step + 1] = gui->step_x[gui->step];
 				gui->step_y[gui->step + 1] = gui->step_y[gui->step];
-				goto next_step;
+				gui_next_step(gui);
 			}
 			else if (gui->ev & EV_CANCEL){
-				goto default_modal;
+				gui_default_modal(gui);
 			}
 		}
 		else{
@@ -75,10 +75,10 @@ int gui_mirror_interactive(gui_obj *gui){
 					}
 					//list_clear(gui->sel_list);
 				}
-				goto first_step;
+				gui_first_step(gui);
 			}
 			else if (gui->ev & EV_CANCEL){
-				goto first_step;
+				gui_first_step(gui);
 			}
 			if (gui->ev & EV_MOTION){
 				/*current = list->next;
@@ -111,29 +111,7 @@ int gui_mirror_interactive(gui_obj *gui){
 			}
 		}
 	}
-	goto end_step;
-	default_modal:
-		gui->modal = SELECT;
-	first_step:
-		gui->en_distance = 0;
-		gui->draw_tmp = 0;
-		gui->element = NULL;
-		gui->draw = 1;
-		gui->step = 0;
-		gui->draw_phanton = 0;
-		//if (gui->phanton){
-		//	gui->phanton = NULL;
-		//}
-	next_step:
-		
-		gui->lock_ax_x = 0;
-		gui->lock_ax_y = 0;
-		gui->user_flag_x = 0;
-		gui->user_flag_y = 0;
-
-		gui->draw = 1;
-	end_step:
-		return 1;
+	return 1;
 }
 
 int gui_mirror_info (gui_obj *gui){

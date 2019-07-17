@@ -21,10 +21,10 @@ int gui_hatch_interactive(gui_obj *gui){
 				gui->step = 1;
 				gui->en_distance = 1;
 				gui->draw_tmp = 1;
-				goto next_step;
+				gui_next_step(gui);
 			}
 			else if (gui->ev & EV_CANCEL){
-				goto default_modal;
+				gui_default_modal(gui);
 			}
 		}
 		else{
@@ -40,7 +40,7 @@ int gui_hatch_interactive(gui_obj *gui){
 				
 				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge, DWG_LIFE);
 				gui->step = 2;
-				goto next_step;
+				gui_next_step(gui);
 			}
 			else if (gui->ev & EV_CANCEL){
 				gui->draw_tmp = 0;
@@ -117,7 +117,7 @@ int gui_hatch_interactive(gui_obj *gui){
 					gui->step = 0;
 				}
 				gui->element = NULL;
-				goto next_step;
+				gui_next_step(gui);
 			}
 			if (gui->ev & EV_MOTION){
 				dxf_attr_change(new_el, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
@@ -133,29 +133,7 @@ int gui_hatch_interactive(gui_obj *gui){
 		}
 		
 	}
-	goto end_step;
-	default_modal:
-		gui->modal = SELECT;
-	first_step:
-		gui->en_distance = 0;
-		gui->draw_tmp = 0;
-		gui->element = NULL;
-		gui->draw = 1;
-		gui->step = 0;
-		gui->draw_phanton = 0;
-		//if (gui->phanton){
-		//	gui->phanton = NULL;
-		//}
-	next_step:
-		
-		gui->lock_ax_x = 0;
-		gui->lock_ax_y = 0;
-		gui->user_flag_x = 0;
-		gui->user_flag_y = 0;
-
-		gui->draw = 1;
-	end_step:
-		return 1;
+	return 1;
 }
 
 int gui_hatch_info (gui_obj *gui){

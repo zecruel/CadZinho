@@ -1277,6 +1277,8 @@ int gui_start(gui_obj *gui){
 	gui->drwg_hist_wr = 0;
 	gui->drwg_hist_head = 0;
 	
+	gui->show_edit_text = 0;
+	
 	return 1;
 }
 

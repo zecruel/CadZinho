@@ -74,7 +74,9 @@ enum Modal {
 	HATCH,
 	INSERT,
 	PASTE,
-	MIRROR
+	MIRROR,
+	ED_TEXT,
+	ED_ATTR
 };
 
 enum Gui_ev {
@@ -230,6 +232,8 @@ struct Gui_obj {
 	
 	int paper_fam;
 	int sel_paper;
+	
+	int show_edit_text;
 	
 	dxf_drawing *clip_drwg;
 	

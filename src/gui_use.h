@@ -68,4 +68,8 @@ int gui_paste_interactive(gui_obj *gui);
 
 int gui_paste_info (gui_obj *gui);
 
+int gui_ed_text_interactive(gui_obj *gui);
+
+int gui_ed_text_info (gui_obj *gui);
+
 #endif

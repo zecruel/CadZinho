@@ -819,7 +819,8 @@ int main(int argc, char** argv){
 				snprintf(recv_comm, 64, "%s","SELECT");
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT_E]))){
-				
+				gui->modal = ED_TEXT;
+				gui->step = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_MOVE]))){
 				recv_comm_flag = 1;
@@ -950,6 +951,7 @@ int main(int argc, char** argv){
 				gui_block_info (gui);
 				gui_hatch_info (gui);
 				gui_paste_info (gui);
+				gui_ed_text_info (gui);
 				
 				nk_group_end(gui->ctx);
 			}
@@ -2011,6 +2013,7 @@ int main(int argc, char** argv){
 		gui_block_interactive(gui);
 		gui_hatch_interactive(gui);
 		gui_paste_interactive(gui);
+		gui_ed_text_interactive(gui);
 		
 		
 		

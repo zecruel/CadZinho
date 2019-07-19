@@ -4,45 +4,37 @@ int gui_ed_text_interactive(gui_obj *gui){
 	if (gui->modal == ED_TEXT){
 		static dxf_node *text_el = NULL, *x = NULL;
 		enum dxf_graph ent_type = DXF_NONE;
-		//static char text[DXF_MAX_CHARS];
+		dxf_node *new_ent = NULL;
 		
 		int i = 0;
 		
-		gui->element = text_el;
 		if (gui->step == 0){
 			if (gui->ev & EV_ENTER){
 				ent_type = dxf_ident_ent_type (gui->near_el);
 				if (ent_type == DXF_TEXT || ent_type == DXF_MTEXT){
 					text_el = gui->near_el;
+					gui->element = text_el;
 					gui->draw = 1;
-					//gui->draw_tmp = 1;
 					gui->show_edit_text = 1;
 					
+					/* init the edit string with DXF entity text */
 					nk_str_clear(&gui->text_edit.string);
 					for (i = 0; x = dxf_find_attr_i(text_el, 3, i); i++){
-						//text[0] = 0;
-						//strncpy(text, "teste", DXF_MAX_CHARS - 1);
+						/* first, get the additional text (MTEXT ent) */
 						nk_str_append_str_char(&gui->text_edit.string, x->value.s_data);
 					}
-					
 					for (i = 0; x = dxf_find_attr_i(text_el, 1, i); i++){
-						//text[0] = 0;
-						//strncpy(text, "teste", DXF_MAX_CHARS - 1);
+						/* finally, get main text */
 						nk_str_append_str_char(&gui->text_edit.string, x->value.s_data);
 					}
 					
-					
-					
-					
-					gui->step_x[gui->step + 1] = gui->step_x[gui->step];
-					gui->step_y[gui->step + 1] = gui->step_y[gui->step];
 					gui->step = 1;
-					gui->step_x[gui->step + 1] = gui->step_x[gui->step];
-					gui->step_y[gui->step + 1] = gui->step_y[gui->step];
+					
 					gui_next_step(gui);
 				}
 			}
 			else if (gui->ev & EV_CANCEL){
+				gui->element = NULL;
 				gui_default_modal(gui);
 			}
 			else if (gui->ev & EV_MOTION){
@@ -56,15 +48,39 @@ int gui_ed_text_interactive(gui_obj *gui){
 		}
 		else{
 			if (gui->ev & EV_ENTER){
-				char *blank = "";
-				char *text = nk_str_get(&(gui->text_edit.string));
-				int len = nk_str_len_char(&(gui->text_edit.string));
-				if (!text) text = blank;
-				mtext_change_text (text_el, text, len, DWG_LIFE);
-				text_el->obj.graphics = dxf_graph_parse(gui->drawing, text_el, 0 , 0);
+				new_ent = dxf_ent_copy(text_el, DWG_LIFE); /* copy original entity */
+				if (new_ent){
+					/* get edited text */
+					char *blank = "";
+					char *text = nk_str_get(&(gui->text_edit.string));
+					int len = nk_str_len_char(&(gui->text_edit.string));
+					if (!text) text = blank;
+					
+					ent_type = dxf_ident_ent_type (new_ent);
+					
+					/* replace the text */
+					if (ent_type == DXF_MTEXT)
+						mtext_change_text (new_ent, text, len, DWG_LIFE);
+					else if (ent_type == DXF_TEXT){
+						for (i = 0; x = dxf_find_attr_i(new_ent, 1, i); i++){
+							/* limit of TEXT entity length */
+							len = (len < DXF_MAX_CHARS - 1)? len : DXF_MAX_CHARS - 1;
+							strncpy(x->value.s_data, text, len);
+							x->value.s_data[len] = 0; /* terminate string */
+						}
+					}
+					new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0, DWG_LIFE);
+					dxf_obj_subst(text_el, new_ent);
+					
+					/* update undo/redo list */
+					do_add_entry(&gui->list_do, "EDIT TEXT");
+					do_add_item(gui->list_do.current, text_el, new_ent);
+				}
+				gui->element = NULL;
 				gui_first_step(gui);
 			}
 			else if (gui->ev & EV_CANCEL){
+				gui->element = NULL;
 				gui_first_step(gui);
 			}
 			

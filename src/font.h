@@ -20,6 +20,7 @@ struct tfont{
 	double std_size;
 	double above, below;
 	int unicode;
+	int backwards;
 	
 	void *data;
 };

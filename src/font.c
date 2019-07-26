@@ -143,6 +143,7 @@ struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 			strncpy(font->path, full_path, DXF_MAX_CHARS);
 			strncpy(font->name, name, DXF_MAX_CHARS);
 			font->type = FONT_SHP;
+			font->backwards = 0;
 			font->data = shp_tfont;
 			font->std_size = 12.0;
 			font->unicode = shp_tfont->unicode;
@@ -182,6 +183,7 @@ struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 			strncpy(font->path, full_path, DXF_MAX_CHARS);
 			strncpy(font->name, name, DXF_MAX_CHARS);
 			font->type = FONT_SHP;
+			font->backwards = 0;
 			font->data = shp_tfont;
 			font->std_size = 12.0;
 			font->unicode = shp_tfont->unicode;
@@ -209,6 +211,7 @@ struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 			strncpy(font->path, full_path, DXF_MAX_CHARS);
 			strncpy(font->name, name, DXF_MAX_CHARS);
 			font->type = FONT_TT;
+			font->backwards = 0;
 			font->data = tt_tfont;
 			
 			font->above = fabs(tt_tfont->ascent);
@@ -274,6 +277,7 @@ struct tfont * add_shp_font_list(list_node *list, char *name, char *buf){
 		strncpy(font->name, name, DXF_MAX_CHARS);
 		str_upp(font->name); /* upper case the name */
 		font->type = FONT_SHP;
+		font->backwards = 0;
 		font->data = shp_tfont;
 		font->std_size = 12.0;
 		font->unicode = shp_tfont->unicode;

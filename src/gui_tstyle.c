@@ -479,9 +479,9 @@ int tstyles_mng (gui_obj *gui){
 				
 				/* show flags status of current text style */
 				snprintf(txt, DXF_MAX_CHARS, "---");
-				if (t_sty[sel_t_sty].flags1 & 4) txt[0] = 'V'; /* vertical text */
-				if (t_sty[sel_t_sty].flags2 & 2) txt[1] = 'B'; /* backward text - flip in X coord */
-				if (t_sty[sel_t_sty].flags2 & 4) txt[2] = 'U'; /* upside down text - flip in Y coord */
+				if (t_sty[t_sty_idx].flags1 & 4) txt[0] = 'V'; /* vertical text */
+				if (t_sty[t_sty_idx].flags2 & 2) txt[1] = 'B'; /* backward text - flip in X coord */
+				if (t_sty[t_sty_idx].flags2 & 4) txt[2] = 'U'; /* upside down text - flip in Y coord */
 				if (nk_button_label_styled(gui->ctx, sel_type, txt)) sel_t_sty = t_sty_idx; /* select current text style */
 				
 				/* show if current text style is in use */

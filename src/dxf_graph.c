@@ -1028,7 +1028,7 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 		/*flags*/
 		int pt1 = 0, pt2 = 0;
 		int under_l = 0, over_l = 0, stike = 0;
-		
+		double backwards = 1.0;
 		
 		/* clear the strings */
 		text[0] = 0;
@@ -1120,6 +1120,10 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 				if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
 				else font = drawing->dflt_font;
 			}
+			
+			if (fnt_idx >= 0) 
+				if ((drawing->text_styles[fnt_idx].flags2 & 2) != 0)
+					backwards = -1.0;
 			
 			list_node * graph = list_new(NULL, FRAME_LIFE);
 			

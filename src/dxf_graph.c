@@ -1028,7 +1028,9 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 		/*flags*/
 		int pt1 = 0, pt2 = 0;
 		int under_l = 0, over_l = 0, stike = 0;
-		double backwards = 1.0;
+		
+		int backwards = 0;
+		
 		
 		/* clear the strings */
 		text[0] = 0;
@@ -1123,7 +1125,7 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 			
 			if (fnt_idx >= 0) 
 				if ((drawing->text_styles[fnt_idx].flags2 & 2) != 0)
-					backwards = -1.0;
+					backwards = 1;
 			
 			list_node * graph = list_new(NULL, FRAME_LIFE);
 			
@@ -1207,7 +1209,9 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 				if (code_p) {
 					w = 0.0;
 					curr_graph = font_parse_cp(font, code_p, prev_cp, pool_idx, &w);
+					//curr_graph = font_parse_cp(font, code_p, 0, pool_idx, &w);
 					w *= w_fac;
+					if (backwards) ofs_x -= w * spc_fac;
 					
 					if (curr_graph){
 						graph_modify(curr_graph, ofs_x, ofs_y, w_fac, h_fac, 0.0);
@@ -1247,7 +1251,7 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 					}
 					
 					/* update the ofset */
-					ofs_x += w * spc_fac;
+					if (!backwards) ofs_x += w * spc_fac;
 					
 					prev_cp = code_p;
 				}

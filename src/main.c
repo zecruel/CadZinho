@@ -2183,6 +2183,14 @@ int main(int argc, char** argv){
 };
 
 /*
+//measure time
+clock_t start = clock();
+//Do something
+clock_t end = clock();
+float seconds = (float)(end - start) / CLOCKS_PER_SEC;
+*/
+
+/*
 https://stackoverflow.com/questions/8972925/dxf-parser-ellipses-angle-direction
 
 

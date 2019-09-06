@@ -17,10 +17,40 @@ void load (lua_State *L, const char *fname, int *w, int *h) {
 	*h = getglobint(L, "height");
 }
 
+/* ************* TEST ******************** */
+void HookRoutine(lua_State *L, lua_Debug *ar){
+	// Only listen to "Hook Lines" events
+	if(ar->event == LUA_HOOKLINE){
+		printf("\nDEBUGING LUA\n");
+		printf("line %d\n", ar->currentline);
+		
+		lua_getinfo(L, "S", ar);
+		
+		printf("%s\n", ar->source);
+		
+		// Check the global flag to know if we should abort
+		/*if(bAbortScript){
+		// Ok, let's abort the script
+			lua_pushstring(L, "HookRoutine: Abort requested!");
+			lua_error(L);
+		}*/
+	}
+	else if(ar->event == LUA_HOOKCOUNT){
+		printf("\nDEBUGING LUA\n");
+		lua_getinfo(L, "Sl", ar);
+		printf("line %d\n", ar->currentline);
+		printf("%s\n", ar->source);
+	}
+}
+
+
 int gui_load_conf (const char *fname, gui_obj *gui) {
 	lua_State *L = luaL_newstate(); /* opens Lua */
 	luaL_openlibs(L); /* opens the standard libraries */
 	
+	/* ******************* TEST ******************** */
+	lua_sethook(L, HookRoutine, LUA_MASKLINE, 0);
+	//lua_sethook(L, HookRoutine, LUA_MASKCOUNT, 5);
 	
 	/* load configuration file as Lua script*/
 	if (luaL_loadfile(L, fname) || lua_pcall(L, 0, 0, 0))

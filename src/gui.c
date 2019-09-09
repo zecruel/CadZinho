@@ -853,6 +853,7 @@ NK_API int nk_sdl_init(gui_obj* gui){
 	nk_style_set_font(gui->ctx, &(gui->ui_font));
 	
 	nk_textedit_init_default(&(gui->text_edit));
+	nk_textedit_init_default(&(gui->debug_edit));
 	
 	return 1;
 }
@@ -1018,6 +1019,7 @@ void nk_sdl_shutdown(gui_obj *gui)
 	if(gui){
 		
 		nk_textedit_free(&(gui->text_edit));
+		nk_textedit_free(&(gui->debug_edit));
 		
 		gui_list_font_free (gui->ui_font_list);
 		
@@ -1185,6 +1187,8 @@ int gui_start(gui_obj *gui){
 	gui->sel_paper = 6;
 	
 	gui->keep_orig = 0;
+	
+	strncpy(gui->curr_script, "D:\\documentos\\cadzinho\\script\\test.lua", MAX_PATH_LEN - 1);
 	
 	#if(0)
 	#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)

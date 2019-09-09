@@ -63,6 +63,8 @@ enum {
     SVG_RULER,
     SVG_SAVE,
     SVG_SCALE,
+    SVG_SCRIPT1,
+    SVG_SCRIPT2,
     SVG_SPLINE,
     SVG_STYLE,
     SVG_SUN,

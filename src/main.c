@@ -1,5 +1,6 @@
 #include <SDL.h>
 
+
 #include "dxf.h"
 #include "bmp.h"
 #include "graph.h"
@@ -358,6 +359,7 @@ int main(int argc, char** argv){
 	int show_app_file = 0;
 	int path_ok = 0;
 	int show_info = 0;
+	int show_script = 0;
 	int show_print = 0;
 	struct draw_param d_param;
 	
@@ -1341,6 +1343,9 @@ int main(int argc, char** argv){
 		if (show_info){
 			show_info = info_win(gui);
 		}
+		if (show_script){
+			show_script = script_win(gui);
+		}
 		if (show_print){
 			show_print = print_win(gui);
 		}
@@ -1479,6 +1484,17 @@ int main(int argc, char** argv){
 				snprintf(text, 63, "%d of %d", gui->drwg_hist_wr, gui->drwg_hist_size);
 				nk_label(gui->ctx, text, NK_TEXT_CENTERED);
 				nk_style_pop_font(gui->ctx); /* return to the default font*/
+				
+				nk_group_end(gui->ctx);
+			}
+			nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
+			if (nk_group_begin(gui->ctx, "script", NK_WINDOW_NO_SCROLLBAR)) {
+				nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 2);
+				
+				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SCRIPT1]))){
+					
+					show_script = 1;
+				}
 				
 				nk_group_end(gui->ctx);
 			}

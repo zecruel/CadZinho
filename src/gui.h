@@ -229,6 +229,7 @@ struct Gui_obj {
 	int drwg_hist_head;
 	
 	struct nk_text_edit text_edit;
+	struct nk_text_edit debug_edit;
 	
 	int paper_fam;
 	int sel_paper;
@@ -236,6 +237,8 @@ struct Gui_obj {
 	int show_edit_text;
 	
 	dxf_drawing *clip_drwg;
+	
+	char curr_script[MAX_PATH_LEN];
 	
 };
 typedef struct Gui_obj gui_obj;

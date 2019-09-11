@@ -23,6 +23,7 @@
 #include "gui_file.h"
 #include "gui_print.h"
 #include "gui_config.h"
+#include "gui_script.h"
 
 #include <stdio.h> 
 #include <stdlib.h> 

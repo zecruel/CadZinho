@@ -125,6 +125,7 @@ struct gui_font{
 struct script_brk_pt{
 	char source[DXF_MAX_CHARS];
 	unsigned long line;
+	int enable;
 };
 
 struct Gui_obj {

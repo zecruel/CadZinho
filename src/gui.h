@@ -2,6 +2,8 @@
 #ifndef _CZ_GUI_LIB
 #define _CZ_GUI_LIB
 
+#include <time.h>
+
 #include "dxf.h"
 #include "bmp.h"
 #include "graph.h"
@@ -13,6 +15,10 @@
 #include "dxf_attract.h"
 #include "dxf_hatch.h"
 #include "font.h"
+
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
 
 #include <SDL.h>
 
@@ -30,6 +36,7 @@
 
 #define MAX_PATH_LEN 512
 #define DRWG_HIST_MAX 50
+#define BRK_PTS_MAX 50
 
 enum Action {
 	NONE,
@@ -113,6 +120,11 @@ struct gui_font{
 	struct nk_user_font *font;
 	struct gui_glyph *glyphs;
 	struct gui_font *next;
+};
+
+struct script_brk_pt{
+	char source[DXF_MAX_CHARS];
+	unsigned long line;
 };
 
 struct Gui_obj {
@@ -238,7 +250,13 @@ struct Gui_obj {
 	
 	dxf_drawing *clip_drwg;
 	
+	lua_State *lua_main;
+	lua_State *lua_script;
 	char curr_script[MAX_PATH_LEN];
+	clock_t script_time;
+	double script_timeout;
+	struct script_brk_pt brk_pts[BRK_PTS_MAX];
+	int num_brk_pts;
 	
 };
 typedef struct Gui_obj gui_obj;

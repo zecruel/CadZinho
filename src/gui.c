@@ -1018,6 +1018,8 @@ void nk_sdl_shutdown(gui_obj *gui)
 {
 	if(gui){
 		
+		lua_close(gui->lua_main);
+		
 		nk_textedit_free(&(gui->text_edit));
 		nk_textedit_free(&(gui->debug_edit));
 		
@@ -1188,7 +1190,11 @@ int gui_start(gui_obj *gui){
 	
 	gui->keep_orig = 0;
 	
+	if(gui->lua_main = luaL_newstate()) /* opens Lua */
+		luaL_openlibs(gui->lua_main); /* opens the standard libraries */
+	gui->lua_script = NULL;
 	strncpy(gui->curr_script, "D:\\documentos\\cadzinho\\script\\test.lua", MAX_PATH_LEN - 1);
+	gui->script_timeout = 10.0;
 	
 	#if(0)
 	#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
@@ -1282,6 +1288,8 @@ int gui_start(gui_obj *gui){
 	gui->drwg_hist_head = 0;
 	
 	gui->show_edit_text = 0;
+	
+	gui->num_brk_pts = 0;
 	
 	return 1;
 }

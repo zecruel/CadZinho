@@ -139,6 +139,7 @@ int script_win (gui_obj *gui){
 	int show_script = 1;
 	int i = 0;
 	static char source[DXF_MAX_CHARS], line[DXF_MAX_CHARS];
+	char str_tmp[DXF_MAX_CHARS];
 	
 	enum Script_tab {
 		EXECUTE,
@@ -182,15 +183,6 @@ int script_win (gui_obj *gui){
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				if (nk_button_label(gui->ctx, "Run")){
-					/* ----------------------------- */
-					gui->num_brk_pts = 2;
-					gui->brk_pts[0].line = 3;
-					strncpy(gui->brk_pts[0].source, "test.lua", DXF_MAX_CHARS - 1);
-					gui->brk_pts[0].enable = 1;
-					gui->brk_pts[1].line = 5;
-					strncpy(gui->brk_pts[1].source, "test.lua", DXF_MAX_CHARS - 1);
-					gui->brk_pts[1].enable = 1;
-					/* ----------------------------- */
 					script_run (gui, gui->curr_script);
 				}
 				if (nk_button_label(gui->ctx, "Continue")){
@@ -213,26 +205,32 @@ int script_win (gui_obj *gui){
 				static int sel_brk = -1;
 				struct nk_style_button *sel_type;
 				
-				nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.6f, 0.4f});
-				nk_label(gui->ctx, "Source:", NK_TEXT_LEFT);
-				nk_label(gui->ctx, "Line:", NK_TEXT_LEFT);
-				
+				nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 4, (float[]){0.18f, 0.45f, 0.12f, 0.25f});
+				nk_label(gui->ctx, "Source:", NK_TEXT_RIGHT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, source, DXF_MAX_CHARS - 1, nk_filter_default);
+				nk_label(gui->ctx, "Line:", NK_TEXT_RIGHT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, line, DXF_MAX_CHARS - 1, nk_filter_decimal);
 				
-				nk_layout_row_dynamic(gui->ctx, 20, 3);
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				if (nk_button_label(gui->ctx, "Add")){
-					
+					long i_line = strtol(line, NULL, 10);
+					if (i_line && strlen(source)){
+						gui->brk_pts[gui->num_brk_pts].line = i_line;
+						strncpy(gui->brk_pts[gui->num_brk_pts].source, source, DXF_MAX_CHARS - 1);
+						gui->brk_pts[gui->num_brk_pts].enable = 1;
+						
+						gui->num_brk_pts++;
+					}
 				}
 				if (nk_button_label(gui->ctx, "Remove")){
 					
 				}
-				if (nk_button_label(gui->ctx, "On/Off")){
+				//if (nk_button_label(gui->ctx, "On/Off")){
 					
-				}
+				//}
 				nk_layout_row_dynamic(gui->ctx, 200, 1);
 				if (nk_group_begin(gui->ctx, "Breaks", NK_WINDOW_BORDER)) {
-					nk_layout_row_dynamic(gui->ctx, 20, 1);
+					nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 3, (float[]){0.5f, 0.3f, 0.2f});
 					for (i = 0; i < gui->num_brk_pts; i++){
 						
 						sel_type = &gui->b_icon_unsel;
@@ -241,9 +239,17 @@ int script_win (gui_obj *gui){
 						if (nk_button_label_styled(gui->ctx, sel_type, gui->brk_pts[i].source)){
 							sel_brk = i; /* select current text style */
 						}
-						//if (nk_button_label_styled(gui->ctx, sel_type, gui->brk_pts[i].line)){
-						//	sel_brk = i; /* select current text style */
-						//}
+						snprintf(str_tmp, DXF_MAX_CHARS-1, "%d", gui->brk_pts[i].line);
+						if (nk_button_label_styled(gui->ctx, sel_type, str_tmp)){
+							sel_brk = i; /* select current text style */
+						}
+						if (gui->brk_pts[i].enable) snprintf(str_tmp, DXF_MAX_CHARS-1, "On");
+						else snprintf(str_tmp, DXF_MAX_CHARS-1, "Off");
+						if (nk_button_label_styled(gui->ctx, sel_type, str_tmp)){
+							sel_brk = i; /* select current text style */
+							gui->brk_pts[i].enable = !gui->brk_pts[i].enable;
+						}
+						
 					}
 					nk_group_end(gui->ctx);
 				}

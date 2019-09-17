@@ -28,9 +28,11 @@ void script_check(lua_State *L, lua_Debug *ar){
 				gui->brk_pts[i].enable)
 			{
 				if (strcmp(source, gui->brk_pts[i].source) == 0){
-					lua_yield (L, 0);
+					
 					snprintf(msg, DXF_MAX_CHARS-1, "db: Thread paused at: %s-line %d\n", source, ar->currentline);
 					nk_str_append_str_char(&gui->debug_edit.string, msg);
+					lua_yield (L, 0);
+					return;
 				}
 			}
 		}
@@ -156,9 +158,11 @@ int script_win (gui_obj *gui){
 		init = 1;
 	}
 	
-	if (nk_begin(gui->ctx, "Script", nk_rect(gui->win_w - 404, gui->win_h - 450, 400, 350),
+	if (nk_begin(gui->ctx, "Script", nk_rect(gui->win_w - 404, gui->win_h - 470, 400, 380),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
+		struct nk_style_button *sel_type;
+		
 		/* Tabs for select three options:
 			- Load and run scripts;
 			- Manage breakpoints in code;
@@ -171,7 +175,7 @@ int script_win (gui_obj *gui){
 		nk_style_pop_vec2(gui->ctx);
 		nk_layout_row_end(gui->ctx);
 		
-		nk_layout_row_dynamic(gui->ctx, 280, 1);
+		nk_layout_row_dynamic(gui->ctx, 180, 1);
 		if (nk_group_begin(gui->ctx, "Script_controls", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 			if (script_tab == EXECUTE){
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
@@ -192,18 +196,9 @@ int script_win (gui_obj *gui){
 					}
 				}
 				
-				
-				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				nk_label(gui->ctx, "Output:", NK_TEXT_LEFT);
-				if (nk_button_label(gui->ctx, "Clear")){
-					nk_str_clear(&gui->debug_edit.string);
-				}
-				nk_layout_row_dynamic(gui->ctx, 100, 1);
-				nk_edit_buffer_wrap(gui->ctx, NK_EDIT_EDITOR, &(gui->debug_edit), nk_filter_default);
 			}
 			else if (script_tab == BREAKS){
 				static int sel_brk = -1;
-				struct nk_style_button *sel_type;
 				
 				nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 4, (float[]){0.18f, 0.45f, 0.12f, 0.25f});
 				nk_label(gui->ctx, "Source:", NK_TEXT_RIGHT);
@@ -211,10 +206,10 @@ int script_win (gui_obj *gui){
 				nk_label(gui->ctx, "Line:", NK_TEXT_RIGHT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, line, DXF_MAX_CHARS - 1, nk_filter_decimal);
 				
-				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				if (nk_button_label(gui->ctx, "Add")){
 					long i_line = strtol(line, NULL, 10);
-					if (i_line && strlen(source)){
+					if (i_line && strlen(source) && gui->num_brk_pts < BRK_PTS_MAX){
 						gui->brk_pts[gui->num_brk_pts].line = i_line;
 						strncpy(gui->brk_pts[gui->num_brk_pts].source, source, DXF_MAX_CHARS - 1);
 						gui->brk_pts[gui->num_brk_pts].enable = 1;
@@ -222,24 +217,33 @@ int script_win (gui_obj *gui){
 						gui->num_brk_pts++;
 					}
 				}
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				nk_label(gui->ctx, "Breakpoints:", NK_TEXT_LEFT);
 				if (nk_button_label(gui->ctx, "Remove")){
-					
+					if (sel_brk >= 0 && gui->num_brk_pts > 0){
+						for (i = sel_brk; i < gui->num_brk_pts - 1; i++){
+							gui->brk_pts[i] = gui->brk_pts[i + 1];
+						}
+						gui->num_brk_pts--;
+						if (sel_brk >= gui->num_brk_pts) sel_brk = gui->num_brk_pts - 1;
+						
+					}
 				}
 				//if (nk_button_label(gui->ctx, "On/Off")){
 					
 				//}
-				nk_layout_row_dynamic(gui->ctx, 200, 1);
+				nk_layout_row_dynamic(gui->ctx, 95, 1);
 				if (nk_group_begin(gui->ctx, "Breaks", NK_WINDOW_BORDER)) {
-					nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 3, (float[]){0.5f, 0.3f, 0.2f});
+					nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 3, (float[]){0.1f, 0.7f, 0.2f});
 					for (i = 0; i < gui->num_brk_pts; i++){
 						
 						sel_type = &gui->b_icon_unsel;
 						if (i == sel_brk) sel_type = &gui->b_icon_sel;
 						
-						if (nk_button_label_styled(gui->ctx, sel_type, gui->brk_pts[i].source)){
-							sel_brk = i; /* select current text style */
-						}
-						snprintf(str_tmp, DXF_MAX_CHARS-1, "%d", gui->brk_pts[i].line);
+						snprintf(str_tmp, DXF_MAX_CHARS-1, "%d.", i + 1);
+						nk_label(gui->ctx, str_tmp, NK_TEXT_LEFT);
+						
+						snprintf(str_tmp, DXF_MAX_CHARS-1, "%s : %d", gui->brk_pts[i].source, gui->brk_pts[i].line);
 						if (nk_button_label_styled(gui->ctx, sel_type, str_tmp)){
 							sel_brk = i; /* select current text style */
 						}
@@ -255,11 +259,60 @@ int script_win (gui_obj *gui){
 				}
 			}
 			else if (script_tab == VARS){
+				static int num_vars = 0;
+				int ok = 0;
+				lua_Debug ar;
+				static char vars[50][DXF_MAX_CHARS];
+				static char values[50][DXF_MAX_CHARS];
 				
+				nk_layout_row_dynamic(gui->ctx, 20, 1);
+				if (nk_button_label(gui->ctx, "Vars")){
+					ok = lua_getstack(gui->lua_script, 0, &ar);
+					if (ok){
+						i = 0;
+						const char * name;
+
+						while ((name = lua_getlocal(gui->lua_script, &ar, i+1))) {
+							//if (name[0] != '(')   //(*temporary)
+							//	printVar(sb, name, args->L);
+							strncpy(vars[i], name, DXF_MAX_CHARS - 1);
+							snprintf(values[i], DXF_MAX_CHARS-1, "%s", lua_tostring(gui->lua_script, -1));
+							lua_pop(gui->lua_script, 1);
+							i++;
+						}
+						num_vars = i;
+					}
+				}
+				nk_layout_row_dynamic(gui->ctx, 95, 1);
+				if (nk_group_begin(gui->ctx, "vars", NK_WINDOW_BORDER)) {
+					nk_layout_row_dynamic(gui->ctx, 20, 2);
+					for (i = 0; i < num_vars; i++){
+						
+						sel_type = &gui->b_icon_unsel;
+						//if (i == sel_brk) sel_type = &gui->b_icon_sel;
+						
+						
+						if (nk_button_label_styled(gui->ctx, sel_type, vars[i])){
+							
+						}
+						if (nk_button_label_styled(gui->ctx, sel_type, values[i])){
+							
+						}
+						
+					}
+					nk_group_end(gui->ctx);
+				}
 			}
 			
 			nk_group_end(gui->ctx);
 		}
+		nk_layout_row_dynamic(gui->ctx, 20, 2);
+		nk_label(gui->ctx, "Output:", NK_TEXT_LEFT);
+		if (nk_button_label(gui->ctx, "Clear")){
+			nk_str_clear(&gui->debug_edit.string);
+		}
+		nk_layout_row_dynamic(gui->ctx, 100, 1);
+		nk_edit_buffer_wrap(gui->ctx, NK_EDIT_EDITOR, &(gui->debug_edit), nk_filter_default);
 		
 		
 		

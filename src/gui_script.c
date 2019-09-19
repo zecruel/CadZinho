@@ -1,8 +1,52 @@
 #include "gui_script.h"
 
-/* ************* TEST ******************** */
+static int print_lua_var(char * value, lua_State * L){
+	int type = lua_type(L, -1);
+
+	switch(type) {
+		case LUA_TSTRING: {
+			snprintf(value, DXF_MAX_CHARS - 1, "s: %s", lua_tostring(L, -1));
+			break;
+		}
+		case LUA_TNUMBER: {
+		/* LUA_NUMBER may be double or integer */
+			snprintf(value, DXF_MAX_CHARS - 1, "n: %.9g", lua_tonumber(L, -1));
+			break;
+		}
+		case LUA_TTABLE: {
+			snprintf(value, DXF_MAX_CHARS - 1, "t: 0x%08x", lua_topointer(L, -1));
+			break;
+		}
+		case LUA_TFUNCTION: {
+			snprintf(value, DXF_MAX_CHARS - 1, "f: 0x%08x", lua_topointer(L, -1));
+			break;		}
+		case LUA_TUSERDATA: {
+			snprintf(value, DXF_MAX_CHARS - 1, "u: 0x%08x", lua_touserdata(L, -1));
+			break;
+		}
+		case LUA_TLIGHTUSERDATA: {
+			snprintf(value, DXF_MAX_CHARS - 1, "U: 0x%08x", lua_touserdata(L, -1));
+			break;
+		}
+		case LUA_TBOOLEAN: {
+			snprintf(value, DXF_MAX_CHARS - 1, "b: %d", lua_toboolean(L, -1) ? 1 : 0);
+			break;
+		}
+		case LUA_TTHREAD: {
+			snprintf(value, DXF_MAX_CHARS - 1, "d: 0x%08x", lua_topointer(L, -1));
+			break;
+		}
+		case LUA_TNIL: {
+			snprintf(value, DXF_MAX_CHARS - 1, "nil");
+			break;
+		}
+	}
+}
+
+/* Routine to check break points and script execution time ( timeout in stuck scripts)*/
 void script_check(lua_State *L, lua_Debug *ar){
-	// Only listen to "Hook Lines" events
+	
+	/* listen to "Hook Lines" events to verify debug breakpoints */
 	if(ar->event == LUA_HOOKLINE){
 		/* get gui object from Lua instance */
 		lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -10,25 +54,24 @@ void script_check(lua_State *L, lua_Debug *ar){
 		gui_obj *gui = lua_touserdata (L, -1);
 		lua_pop(L, 1);
 		
-		if (!gui){
+		if (!gui){ /* error in gui object access */
 			lua_pushstring(L, "Auto check: no access to CadZinho enviroment");
 			lua_error(L);
 			return;
 		}
 		
-		char msg[DXF_MAX_CHARS];
-		char source[DXF_MAX_CHARS];
-		
-		lua_getinfo(L, "Sl", ar);
-		strncpy(source, get_filename(ar->short_src), DXF_MAX_CHARS - 1);
-		
 		int i;
+		/* sweep the breakpoints list */
 		for (i = 0; i < gui->num_brk_pts; i++){
-			if ((ar->currentline == gui->brk_pts[i].line) &&
-				gui->brk_pts[i].enable)
-			{
+			/* verify if break conditions matchs with current line */
+			if ((ar->currentline == gui->brk_pts[i].line) && gui->brk_pts[i].enable){	
+				/* get the source name */
+				char msg[DXF_MAX_CHARS];
+				char source[DXF_MAX_CHARS];
+				lua_getinfo(L, "Sl", ar); /* fill debug informations */
+				strncpy(source, get_filename(ar->short_src), DXF_MAX_CHARS - 1);
 				if (strcmp(source, gui->brk_pts[i].source) == 0){
-					
+					/* pause execution*/
 					snprintf(msg, DXF_MAX_CHARS-1, "db: Thread paused at: %s-line %d\n", source, ar->currentline);
 					nk_str_append_str_char(&gui->debug_edit.string, msg);
 					lua_yield (L, 0);
@@ -37,6 +80,8 @@ void script_check(lua_State *L, lua_Debug *ar){
 			}
 		}
 	}
+	
+	/* listen to "Hook Count" events to verify execution time and timeout */
 	else if(ar->event == LUA_HOOKCOUNT){
 		/* get gui object from Lua instance */
 		lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -44,7 +89,7 @@ void script_check(lua_State *L, lua_Debug *ar){
 		gui_obj *gui = lua_touserdata (L, -1);
 		lua_pop(L, 1);
 		
-		if (!gui){
+		if (!gui){ /* error in gui object access */
 			lua_pushstring(L, "Auto check: no access to CadZinho enviroment");
 			lua_error(L);
 			return;
@@ -52,12 +97,16 @@ void script_check(lua_State *L, lua_Debug *ar){
 		
 		clock_t end_t;
 		double diff_t;
+		/* get the elapsed time since script starts or continue */
 		end_t = clock();
 		diff_t = (double)(end_t - gui->script_time) / CLOCKS_PER_SEC;
 		
+		/* verify if timeout is reachead. Its made to prevent user script stuck main program*/
 		if (diff_t >= gui->script_timeout){
 			char msg[DXF_MAX_CHARS];
-			lua_getinfo(L, "Sl", ar);
+			lua_getinfo(L, "Sl", ar); /* fill debug informations */
+			
+			/* stop script execution */
 			snprintf(msg, DXF_MAX_CHARS-1, "Auto check: reached number of iterations on %s, line %d, exec time %f\n", ar->source, ar->currentline, diff_t);
 			nk_str_append_str_char(&gui->debug_edit.string, msg);
 			
@@ -77,7 +126,7 @@ static int debug_print (lua_State *L) {
 	
 	if (gui){
 		char msg[DXF_MAX_CHARS];
-		snprintf(msg, DXF_MAX_CHARS-1, "db: %s\n", lua_tostring(L, -1));
+		snprintf(msg, DXF_MAX_CHARS - 1, "db: %s\n", lua_tostring(L, -1));
 		nk_str_append_str_char(&gui->debug_edit.string, msg);
 	}
 }
@@ -85,17 +134,18 @@ static int debug_print (lua_State *L) {
 int script_run (gui_obj *gui, char *fname) {
 	if(!gui->lua_main) return 0;
 	char msg[DXF_MAX_CHARS];
-	//lua_State *L = luaL_newstate(); /* opens Lua */
-	//luaL_openlibs(L); /* opens the standard libraries */
 	
+	/* create a new lua thread, allowing yield */
 	lua_State *T = lua_newthread(gui->lua_main);
 	if(!T) return 0;
 	gui->lua_script = T;
 	
+	/* put the gui structure in lua global registry */
 	lua_pushstring(T, "cz_gui");
 	lua_pushlightuserdata(T, (void *)gui);
 	lua_settable(T, LUA_REGISTRYINDEX);
 	
+	/* add functions in cadzinho object*/
 	static const luaL_Reg cz_lib[] = {
 		{"db_print",   debug_print},
 		{NULL, NULL}
@@ -103,35 +153,35 @@ int script_run (gui_obj *gui, char *fname) {
 	luaL_newlib(T, cz_lib);
 	lua_setglobal(T, "cadzinho");
 	
+	/* set start time of script execution */
 	gui->script_time = clock();
-	gui->script_timeout = 10.0;
+	gui->script_timeout = 10.0; /* default timeout value */
 	
-	
-	/* ******************* TEST ******************** */
-	//lua_sethook(L, script_check, LUA_MASKLINE, 0);
+	/* hook function to breakpoints and  timeout verification*/
 	lua_sethook(T, script_check, LUA_MASKCOUNT|LUA_MASKLINE, 500);
 		
+	/* load lua script file */
 	if (luaL_loadfile(T, (const char *) fname) != LUA_OK){
-		
+		/* error on loading */
 		snprintf(msg, DXF_MAX_CHARS-1, "cannot run script file: %s", lua_tostring(T, -1));
 		nk_str_append_str_char(&gui->debug_edit.string, msg);
 		
 		lua_pop(T, 1); /* pop error message from Lua stack */
 	}
 	
-	/* run file as Lua script*/
+	/* run Lua script*/
 	else {
-		int e = lua_resume(T, NULL, 0);
+		int e = lua_resume(T, NULL, 0); /* start thread */
 		if (e != LUA_OK && e != LUA_YIELD){
+			/* execution error */
 			snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(T, -1));
 			nk_str_append_str_char(&gui->debug_edit.string, msg);
 			
 			lua_pop(T, 1); /* pop error message from Lua stack */
 		}
+		/* clear variable if thread is no yielded*/
 		if (e != LUA_YIELD) gui->lua_script = NULL;
 	}
-	
-	//lua_close(L);
 	
 	return 1;
 	
@@ -141,6 +191,7 @@ int script_win (gui_obj *gui){
 	int show_script = 1;
 	int i = 0;
 	static char source[DXF_MAX_CHARS], line[DXF_MAX_CHARS];
+	static char glob[DXF_MAX_CHARS], loc[DXF_MAX_CHARS];
 	char str_tmp[DXF_MAX_CHARS];
 	
 	enum Script_tab {
@@ -155,6 +206,8 @@ int script_win (gui_obj *gui){
 		nk_str_clear(&gui->debug_edit.string);
 		source[0] = 0;
 		line[0] = 0;
+		glob[0] = 0;
+		loc[0] = 0;
 		init = 1;
 	}
 	
@@ -191,8 +244,9 @@ int script_win (gui_obj *gui){
 				}
 				if (nk_button_label(gui->ctx, "Continue")){
 					if (gui->lua_script) {
-						lua_resume(gui->lua_script, NULL, 0);
 						gui->script_time = clock();
+						lua_resume(gui->lua_script, NULL, 0);
+						
 					}
 				}
 				
@@ -258,34 +312,95 @@ int script_win (gui_obj *gui){
 					nk_group_end(gui->ctx);
 				}
 			}
-			else if (script_tab == VARS){
+			else if (script_tab == VARS && gui->lua_script){
 				static int num_vars = 0;
 				int ok = 0;
 				lua_Debug ar;
 				static char vars[50][DXF_MAX_CHARS];
 				static char values[50][DXF_MAX_CHARS];
 				
-				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				if (nk_button_label(gui->ctx, "Vars")){
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				if (nk_button_label(gui->ctx, "All Globals")){
+					lua_pushglobaltable(gui->lua_script);
+					lua_pushnil(gui->lua_script);
+					i = 0;
+					while (lua_next(gui->lua_script, -2) != 0) {
+						snprintf(vars[i], DXF_MAX_CHARS-1, "%s", lua_tostring(gui->lua_script, -2));
+						lua_getglobal(gui->lua_script, vars[i]);
+						print_lua_var(values[i], gui->lua_script);
+						lua_pop(gui->lua_script, 1);
+						
+						
+						//snprintf(values[i], DXF_MAX_CHARS-1, "-");
+						lua_pop(gui->lua_script, 1);
+						i++;
+					}
+					lua_pop(gui->lua_script, 1);
+					num_vars = i;
+				}
+				if (nk_button_label(gui->ctx, "All Locals")){
 					ok = lua_getstack(gui->lua_script, 0, &ar);
 					if (ok){
 						i = 0;
 						const char * name;
 
 						while ((name = lua_getlocal(gui->lua_script, &ar, i+1))) {
-							//if (name[0] != '(')   //(*temporary)
-							//	printVar(sb, name, args->L);
 							strncpy(vars[i], name, DXF_MAX_CHARS - 1);
-							snprintf(values[i], DXF_MAX_CHARS-1, "%s", lua_tostring(gui->lua_script, -1));
+							//snprintf(values[i], DXF_MAX_CHARS-1, "%s", lua_tostring(gui->lua_script, -1));
+							print_lua_var(values[i], gui->lua_script);
 							lua_pop(gui->lua_script, 1);
 							i++;
 						}
 						num_vars = i;
 					}
 				}
-				nk_layout_row_dynamic(gui->ctx, 95, 1);
-				if (nk_group_begin(gui->ctx, "vars", NK_WINDOW_BORDER)) {
+				
+				nk_layout_row(gui->ctx, NK_DYNAMIC, 145, 2, (float[]){0.3f, 0.7f});
+				//nk_layout_row_dynamic(gui->ctx, 170, 2);
+				if (nk_group_begin(gui->ctx, "vars", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+					nk_layout_row_dynamic(gui->ctx, 19, 1);
+					
+					nk_label(gui->ctx, "Global:", NK_TEXT_LEFT);
+					nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, glob, DXF_MAX_CHARS - 1, nk_filter_default);
+					if (nk_button_label(gui->ctx, "Print")){
+						char msg[DXF_MAX_CHARS];
+						lua_getglobal(gui->lua_script, glob);
+						print_lua_var(str_tmp, gui->lua_script);
+						lua_pop(gui->lua_script, 1);
+						
+						snprintf(msg, DXF_MAX_CHARS-1, "Global %s - %s\n", glob, str_tmp);
+						nk_str_append_str_char(&gui->debug_edit.string, msg);
+					}
+					
+					nk_label(gui->ctx, "Local:", NK_TEXT_LEFT);
+					nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, loc, DXF_MAX_CHARS - 1, nk_filter_decimal);
+					if (nk_button_label(gui->ctx, "Print")){
+						long i_loc = strtol(loc, NULL, 10);
+						char msg[DXF_MAX_CHARS];
+						ok = lua_getstack(gui->lua_script, 0, &ar);
+						if (ok){
+							const char * name;
+
+							if (name = lua_getlocal(gui->lua_script, &ar, i_loc)) {
+								
+								print_lua_var(str_tmp, gui->lua_script);
+								snprintf(msg, DXF_MAX_CHARS-1, "Local %s - %s\n", name, str_tmp);
+								nk_str_append_str_char(&gui->debug_edit.string, msg);
+								lua_pop(gui->lua_script, 1);
+								
+							}
+						}
+						
+						
+					}
+					
+					nk_group_end(gui->ctx);
+				}
+				if (nk_group_begin(gui->ctx, "list_vars", NK_WINDOW_BORDER)) {
 					nk_layout_row_dynamic(gui->ctx, 20, 2);
+					
+					
+					
 					for (i = 0; i < num_vars; i++){
 						
 						sel_type = &gui->b_icon_unsel;
@@ -312,7 +427,7 @@ int script_win (gui_obj *gui){
 			nk_str_clear(&gui->debug_edit.string);
 		}
 		nk_layout_row_dynamic(gui->ctx, 100, 1);
-		nk_edit_buffer_wrap(gui->ctx, NK_EDIT_EDITOR, &(gui->debug_edit), nk_filter_default);
+		nk_edit_buffer_wrap(gui->ctx, NK_EDIT_EDITOR|NK_EDIT_GOTO_END_ON_ACTIVATE, &(gui->debug_edit), nk_filter_default);
 		
 		
 		

@@ -70,6 +70,7 @@ void script_check(lua_State *L, lua_Debug *ar){
 				char source[DXF_MAX_CHARS];
 				lua_getinfo(L, "Sl", ar); /* fill debug informations */
 				strncpy(source, get_filename(ar->short_src), DXF_MAX_CHARS - 1);
+				
 				if (strcmp(source, gui->brk_pts[i].source) == 0){
 					/* pause execution*/
 					snprintf(msg, DXF_MAX_CHARS-1, "db: Thread paused at: %s-line %d\n", source, ar->currentline);
@@ -117,6 +118,7 @@ void script_check(lua_State *L, lua_Debug *ar){
 	}
 }
 
+/* equivalent to a "print" lua function, that outputs to a text edit widget */
 static int debug_print (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -124,13 +126,71 @@ static int debug_print (lua_State *L) {
 	gui_obj *gui = lua_touserdata (L, -1);
 	lua_pop(L, 1);
 	
-	if (gui){
-		char msg[DXF_MAX_CHARS];
-		snprintf(msg, DXF_MAX_CHARS - 1, "db: %s\n", lua_tostring(L, -1));
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	char msg[DXF_MAX_CHARS];
+	int n = lua_gettop(L);    /* number of arguments */
+	int i;
+	int type;
+	
+	for (i = 1; i <= n; i++) {
+		type = lua_type(L, i); /* identify Lua variable type */
+		
+		/* print variables separator (4 spaces) */
+		if (i > 1) nk_str_append_str_char(&gui->debug_edit.string, "    ");
+		
+		switch(type) {
+			case LUA_TSTRING: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "%s", lua_tostring(L, i));
+				break;
+			}
+			case LUA_TNUMBER: {
+			/* LUA_NUMBER may be double or integer */
+				snprintf(msg, DXF_MAX_CHARS - 1, "%.9g", lua_tonumber(L, i));
+				break;
+			}
+			case LUA_TTABLE: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_topointer(L, i));
+				break;
+			}
+			case LUA_TFUNCTION: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_topointer(L, i));
+				break;		}
+			case LUA_TUSERDATA: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_touserdata(L, i));
+				break;
+			}
+			case LUA_TLIGHTUSERDATA: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_touserdata(L, i));
+				break;
+			}
+			case LUA_TBOOLEAN: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "%d", lua_toboolean(L, i) ? 1 : 0);
+				break;
+			}
+			case LUA_TTHREAD: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_topointer(L, i));
+				break;
+			}
+			case LUA_TNIL: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "nil");
+				break;
+			}
+		}
 		nk_str_append_str_char(&gui->debug_edit.string, msg);
 	}
+	/*enter a new line*/
+	nk_str_append_str_char(&gui->debug_edit.string, "\n");
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
 }
 
+/* run script from file */
 int script_run (gui_obj *gui, char *fname) {
 	if(!gui->lua_main) return 0;
 	char msg[DXF_MAX_CHARS];
@@ -148,6 +208,7 @@ int script_run (gui_obj *gui, char *fname) {
 	/* add functions in cadzinho object*/
 	static const luaL_Reg cz_lib[] = {
 		{"db_print",   debug_print},
+		{"set_timeout", set_timeout},
 		{NULL, NULL}
 	};
 	luaL_newlib(T, cz_lib);
@@ -187,9 +248,11 @@ int script_run (gui_obj *gui, char *fname) {
 	
 }
 
+/* GUI window for scripts */
 int script_win (gui_obj *gui){
 	int show_script = 1;
 	int i = 0;
+	static int init = 0;
 	static char source[DXF_MAX_CHARS], line[DXF_MAX_CHARS];
 	static char glob[DXF_MAX_CHARS], loc[DXF_MAX_CHARS];
 	char str_tmp[DXF_MAX_CHARS];
@@ -200,9 +263,7 @@ int script_win (gui_obj *gui){
 		VARS
 	} static script_tab = EXECUTE;
 	
-	static int init = 0;
-	
-	if (!init){
+	if (!init){ /* initialize static strings */
 		nk_str_clear(&gui->debug_edit.string);
 		source[0] = 0;
 		line[0] = 0;
@@ -228,8 +289,10 @@ int script_win (gui_obj *gui){
 		nk_style_pop_vec2(gui->ctx);
 		nk_layout_row_end(gui->ctx);
 		
+		/* body of tab control */
 		nk_layout_row_dynamic(gui->ctx, 180, 1);
 		if (nk_group_begin(gui->ctx, "Script_controls", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+			/* run script tab*/
 			if (script_tab == EXECUTE){
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				nk_label(gui->ctx, "Script file:", NK_TEXT_LEFT);
@@ -238,7 +301,12 @@ int script_win (gui_obj *gui){
 				//nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_script, MAX_PATH_LEN, nk_filter_default);
 				
+				nk_layout_row_static(gui->ctx, 28, 28, 6);
+				nk_button_symbol(gui->ctx, NK_SYMBOL_TRIANGLE_RIGHT);
+				nk_button_symbol(gui->ctx, NK_SYMBOL_RECT_SOLID);
+				
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				//nk_button_symbol(struct nk_context*, enum nk_symbol_type);
 				if (nk_button_label(gui->ctx, "Run")){
 					script_run (gui, gui->curr_script);
 				}
@@ -251,6 +319,7 @@ int script_win (gui_obj *gui){
 				}
 				
 			}
+			/* breakpoints tab */
 			else if (script_tab == BREAKS){
 				static int sel_brk = -1;
 				
@@ -312,6 +381,7 @@ int script_win (gui_obj *gui){
 					nk_group_end(gui->ctx);
 				}
 			}
+			/* view variables tabs */
 			else if (script_tab == VARS && gui->lua_script){
 				static int num_vars = 0;
 				int ok = 0;
@@ -421,9 +491,11 @@ int script_win (gui_obj *gui){
 			
 			nk_group_end(gui->ctx);
 		}
+		
+		/* text edit control - emulate stdout, showing script "print" outputs */ 
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		nk_label(gui->ctx, "Output:", NK_TEXT_LEFT);
-		if (nk_button_label(gui->ctx, "Clear")){
+		if (nk_button_label(gui->ctx, "Clear")){ /* clear text */
 			nk_str_clear(&gui->debug_edit.string);
 		}
 		nk_layout_row_dynamic(gui->ctx, 100, 1);

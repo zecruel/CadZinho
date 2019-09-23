@@ -209,6 +209,9 @@ int script_run (gui_obj *gui, char *fname) {
 	static const luaL_Reg cz_lib[] = {
 		{"db_print",   debug_print},
 		{"set_timeout", set_timeout},
+		{"ent_append", script_ent_append},
+		{"new_pline", script_new_pline},
+		{"pline_append", script_pline_append},
 		{NULL, NULL}
 	};
 	luaL_newlib(T, cz_lib);
@@ -232,6 +235,9 @@ int script_run (gui_obj *gui, char *fname) {
 	
 	/* run Lua script*/
 	else {
+		/* add main entry to do/redo list */
+		do_add_entry(&gui->list_do, "SCRIPT");
+		
 		int e = lua_resume(T, NULL, 0); /* start thread */
 		if (e != LUA_OK && e != LUA_YIELD){
 			/* execution error */

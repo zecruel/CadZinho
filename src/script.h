@@ -8,6 +8,9 @@
 #include "gui.h"
 
 int set_timeout (lua_State *L);
+int script_ent_append (lua_State *L);
+int script_new_pline (lua_State *L);
+int script_pline_append (lua_State *L);
 
 
 #endif

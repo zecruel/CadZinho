@@ -204,6 +204,8 @@ int init_do_list(struct do_list *list){
 			list->current = entry;
 			entry->prev = NULL;
 			entry->next = NULL;
+			entry->list = NULL;
+			entry->current = NULL;
 			
 			entry->text[0] = 0; /*initialize string*/
 			ret =1;

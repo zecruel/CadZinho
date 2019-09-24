@@ -212,6 +212,8 @@ int script_run (gui_obj *gui, char *fname) {
 		{"ent_append", script_ent_append},
 		{"new_pline", script_new_pline},
 		{"pline_append", script_pline_append},
+		{"pline_close", script_pline_close},
+		{"new_circle", script_new_circle},
 		{NULL, NULL}
 	};
 	luaL_newlib(T, cz_lib);

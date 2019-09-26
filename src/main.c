@@ -658,6 +658,7 @@ int main(int argc, char** argv){
 			SDL_ShowCursor(SDL_DISABLE);
 			if (ev_type != 0){
 				SDL_Keymod modstates = SDL_GetModState();
+				double wheel = 1.0;
 				switch (event.type){
 					case SDL_MOUSEBUTTONUP:
 						gui->mouse_x = event.button.x;
@@ -693,8 +694,10 @@ int main(int argc, char** argv){
 						gui->draw = 1;
 						break;
 					case SDL_MOUSEWHEEL:
+						
+						if(event.wheel.y < 0) wheel = -1.0; // scroll down
 						gui->prev_zoom = gui->zoom;
-						gui->zoom = gui->zoom + event.wheel.y * 0.2 * gui->zoom;
+						gui->zoom = gui->zoom + wheel * 0.3 * gui->zoom;
 						
 						SDL_GetMouseState(&gui->mouse_x, &gui->mouse_y);
 						gui->mouse_y = gui->main_h - gui->mouse_y;

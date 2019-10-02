@@ -1193,7 +1193,7 @@ int gui_start(gui_obj *gui){
 	if(gui->lua_main = luaL_newstate()) /* opens Lua */
 		luaL_openlibs(gui->lua_main); /* opens the standard libraries */
 	gui->lua_script = NULL;
-	strncpy(gui->curr_script, "D:\\documentos\\cadzinho\\script\\test.lua", MAX_PATH_LEN - 1);
+	strncpy(gui->curr_script, "D:\\documentos\\cadzinho\\lua\\test.lua", MAX_PATH_LEN - 1);
 	gui->script_timeout = 10.0;
 	
 	#if(0)

@@ -256,6 +256,108 @@ int script_run (gui_obj *gui, char *fname) {
 	
 }
 
+/* run script from file */
+int script_run2 (gui_obj *gui, struct script_obj *script, char *fname) {
+	if(!gui) return 0;
+	if(!script) return 0;
+	char msg[DXF_MAX_CHARS];
+	//char p_path[5 * DXF_MAX_CHARS];
+	
+	//p_path[0] = 0;
+	
+	/* initialize script object */ 
+	if(!(script->L = luaL_newstate())) return 0; /* opens Lua */
+	script->T = NULL;
+	script->status = LUA_OK;
+	script->active = 0;
+	strncpy(script->path, fname, DXF_MAX_CHARS - 1);
+	
+	luaL_openlibs(script->L); /* opens the standard libraries */
+	
+	/* create a new lua thread, allowing yield */
+	lua_State *T = lua_newthread(script->L);
+	if(!T) {
+		lua_close(script->L);
+		return 0;
+	}
+	script->T = T;
+	
+	/* put the gui structure in lua global registry */
+	lua_pushstring(T, "cz_gui");
+	lua_pushlightuserdata(T, (void *)gui);
+	lua_settable(T, LUA_REGISTRYINDEX);
+	
+	/* add functions in cadzinho object*/
+	static const luaL_Reg cz_lib[] = {
+		{"db_print",   debug_print},
+		{"set_timeout", set_timeout},
+		{"ent_append", script_ent_append},
+		{"new_pline", script_new_pline},
+		{"pline_append", script_pline_append},
+		{"pline_close", script_pline_close},
+		{"new_circle", script_new_circle},
+		{NULL, NULL}
+	};
+	luaL_newlib(T, cz_lib);
+	lua_setglobal(T, "cadzinho");
+	
+	#if(0)
+	/* adjust package path for "require" in script file*/
+	lua_getglobal( T, "package");
+	strncpy (p_path, gui->base_dir, 5 * DXF_MAX_CHARS - strlen(p_path) - 1);
+	strncat(p_path, "script", 5 * DXF_MAX_CHARS - strlen(p_path) - 1);
+	strncat(p_path, (char []){DIR_SEPARATOR, 0}, 5 * DXF_MAX_CHARS - strlen(p_path) - 1);
+	strncat(p_path, "?.lua", 5 * DXF_MAX_CHARS - strlen(p_path) - 1);
+	lua_pushstring( T, p_path); /* new package path */
+	lua_setfield( T, -2, "path"); 
+	lua_pop( T, 1 ); /* get rid of package table from top of stack */
+	#endif
+	
+	/* set start time of script execution */
+	gui->script_time = clock();
+	gui->script_timeout = 10.0; /* default timeout value */
+	
+	/* hook function to breakpoints and  timeout verification*/
+	lua_sethook(T, script_check, LUA_MASKCOUNT|LUA_MASKLINE, 500);
+		
+	/* load lua script file */
+	if (luaL_loadfile(T, (const char *) fname) != LUA_OK){
+		/* error on loading */
+		snprintf(msg, DXF_MAX_CHARS-1, "cannot run script file: %s", lua_tostring(T, -1));
+		nk_str_append_str_char(&gui->debug_edit.string, msg);
+		
+		lua_pop(T, 1); /* pop error message from Lua stack */
+	}
+	
+	/* run Lua script*/
+	else {
+		
+		script->active = 1;
+		
+		/* add main entry to do/redo list */
+		do_add_entry(&gui->list_do, "SCRIPT");
+		
+		script->status = lua_resume(T, NULL, 0); /* start thread */
+		if (script->status != LUA_OK && script->status != LUA_YIELD){
+			/* execution error */
+			snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(T, -1));
+			nk_str_append_str_char(&gui->debug_edit.string, msg);
+			
+			lua_pop(T, 1); /* pop error message from Lua stack */
+		}
+		/* clear variable if thread is no yielded*/
+		if (script->status != LUA_YIELD) {
+			lua_close(script->L);
+			script->L = NULL;
+			script->T = NULL;
+			script->active = 0;
+		}
+	}
+	
+	return 1;
+	
+}
+
 /* GUI window for scripts */
 int script_win (gui_obj *gui){
 	int show_script = 1;
@@ -265,18 +367,28 @@ int script_win (gui_obj *gui){
 	static char glob[DXF_MAX_CHARS], loc[DXF_MAX_CHARS];
 	char str_tmp[DXF_MAX_CHARS];
 	
+	static struct script_obj script;
+	
+	
 	enum Script_tab {
 		EXECUTE,
 		BREAKS,
 		VARS
 	} static script_tab = EXECUTE;
 	
-	if (!init){ /* initialize static strings */
+	if (!init){ /* initialize static vars */
 		nk_str_clear(&gui->debug_edit.string);
 		source[0] = 0;
 		line[0] = 0;
 		glob[0] = 0;
 		loc[0] = 0;
+		
+		script.L = NULL;
+		script.T = NULL;
+		script.active = 0;
+		script.status = LUA_OK;
+		script.path[0] = 0;
+		
 		init = 1;
 	}
 	
@@ -316,12 +428,15 @@ int script_win (gui_obj *gui){
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				//nk_button_symbol(struct nk_context*, enum nk_symbol_type);
 				if (nk_button_label(gui->ctx, "Run")){
-					script_run (gui, gui->curr_script);
+					//script_run (gui, gui->curr_script);
+					script_run2 (gui, &script, gui->curr_script);
 				}
 				if (nk_button_label(gui->ctx, "Continue")){
-					if (gui->lua_script) {
+					//if (gui->lua_script) {
+					if (script.active){
 						gui->script_time = clock();
-						lua_resume(gui->lua_script, NULL, 0);
+						//lua_resume(gui->lua_script, NULL, 0);
+						lua_resume(script.T, NULL, 0);
 						
 					}
 				}
@@ -390,7 +505,7 @@ int script_win (gui_obj *gui){
 				}
 			}
 			/* view variables tabs */
-			else if (script_tab == VARS && gui->lua_script){
+			else if (script_tab == VARS && script.active){
 				static int num_vars = 0;
 				int ok = 0;
 				lua_Debug ar;
@@ -399,34 +514,34 @@ int script_win (gui_obj *gui){
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				if (nk_button_label(gui->ctx, "All Globals")){
-					lua_pushglobaltable(gui->lua_script);
-					lua_pushnil(gui->lua_script);
+					lua_pushglobaltable(script.T);
+					lua_pushnil(script.T);
 					i = 0;
-					while (lua_next(gui->lua_script, -2) != 0) {
-						snprintf(vars[i], DXF_MAX_CHARS-1, "%s", lua_tostring(gui->lua_script, -2));
-						lua_getglobal(gui->lua_script, vars[i]);
-						print_lua_var(values[i], gui->lua_script);
-						lua_pop(gui->lua_script, 1);
+					while (lua_next(script.T, -2) != 0) {
+						snprintf(vars[i], DXF_MAX_CHARS-1, "%s", lua_tostring(script.T, -2));
+						lua_getglobal(script.T, vars[i]);
+						print_lua_var(values[i], script.T);
+						lua_pop(script.T, 1);
 						
 						
 						//snprintf(values[i], DXF_MAX_CHARS-1, "-");
-						lua_pop(gui->lua_script, 1);
+						lua_pop(script.T, 1);
 						i++;
 					}
-					lua_pop(gui->lua_script, 1);
+					lua_pop(script.T, 1);
 					num_vars = i;
 				}
 				if (nk_button_label(gui->ctx, "All Locals")){
-					ok = lua_getstack(gui->lua_script, 0, &ar);
+					ok = lua_getstack(script.T, 0, &ar);
 					if (ok){
 						i = 0;
 						const char * name;
 
-						while ((name = lua_getlocal(gui->lua_script, &ar, i+1))) {
+						while ((name = lua_getlocal(script.T, &ar, i+1))) {
 							strncpy(vars[i], name, DXF_MAX_CHARS - 1);
 							//snprintf(values[i], DXF_MAX_CHARS-1, "%s", lua_tostring(gui->lua_script, -1));
-							print_lua_var(values[i], gui->lua_script);
-							lua_pop(gui->lua_script, 1);
+							print_lua_var(values[i], script.T);
+							lua_pop(script.T, 1);
 							i++;
 						}
 						num_vars = i;
@@ -442,9 +557,9 @@ int script_win (gui_obj *gui){
 					nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, glob, DXF_MAX_CHARS - 1, nk_filter_default);
 					if (nk_button_label(gui->ctx, "Print")){
 						char msg[DXF_MAX_CHARS];
-						lua_getglobal(gui->lua_script, glob);
-						print_lua_var(str_tmp, gui->lua_script);
-						lua_pop(gui->lua_script, 1);
+						lua_getglobal(script.T, glob);
+						print_lua_var(str_tmp, script.T);
+						lua_pop(script.T, 1);
 						
 						snprintf(msg, DXF_MAX_CHARS-1, "Global %s - %s\n", glob, str_tmp);
 						nk_str_append_str_char(&gui->debug_edit.string, msg);
@@ -455,16 +570,16 @@ int script_win (gui_obj *gui){
 					if (nk_button_label(gui->ctx, "Print")){
 						long i_loc = strtol(loc, NULL, 10);
 						char msg[DXF_MAX_CHARS];
-						ok = lua_getstack(gui->lua_script, 0, &ar);
+						ok = lua_getstack(script.T, 0, &ar);
 						if (ok){
 							const char * name;
 
-							if (name = lua_getlocal(gui->lua_script, &ar, i_loc)) {
+							if (name = lua_getlocal(script.T, &ar, i_loc)) {
 								
-								print_lua_var(str_tmp, gui->lua_script);
+								print_lua_var(str_tmp, script.T);
 								snprintf(msg, DXF_MAX_CHARS-1, "Local %s - %s\n", name, str_tmp);
 								nk_str_append_str_char(&gui->debug_edit.string, msg);
-								lua_pop(gui->lua_script, 1);
+								lua_pop(script.T, 1);
 								
 							}
 						}

@@ -1017,8 +1017,8 @@ NK_API
 void nk_sdl_shutdown(gui_obj *gui)
 {
 	if(gui){
-		
-		lua_close(gui->lua_main);
+		if (gui->lua_script.L != NULL)
+			lua_close(gui->lua_script.L);
 		
 		nk_textedit_free(&(gui->text_edit));
 		nk_textedit_free(&(gui->debug_edit));
@@ -1190,9 +1190,11 @@ int gui_start(gui_obj *gui){
 	
 	gui->keep_orig = 0;
 	
-	if(gui->lua_main = luaL_newstate()) /* opens Lua */
-		luaL_openlibs(gui->lua_main); /* opens the standard libraries */
-	gui->lua_script = NULL;
+	gui->lua_script.L = NULL;
+	gui->lua_script.T = NULL;
+	gui->lua_script.active = 0;
+	gui->lua_script.status = LUA_OK;
+	gui->lua_script.path[0] = 0;
 	strncpy(gui->curr_script, "D:\\documentos\\cadzinho\\lua\\test.lua", MAX_PATH_LEN - 1);
 	gui->script_timeout = 10.0;
 	

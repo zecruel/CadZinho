@@ -108,10 +108,10 @@ void script_check(lua_State *L, lua_Debug *ar){
 			lua_getinfo(L, "Sl", ar); /* fill debug informations */
 			
 			/* stop script execution */
-			snprintf(msg, DXF_MAX_CHARS-1, "Auto check: reached number of iterations on %s, line %d, exec time %f\n", ar->source, ar->currentline, diff_t);
-			nk_str_append_str_char(&gui->debug_edit.string, msg);
+			snprintf(msg, DXF_MAX_CHARS-1, "script timeout exceeded in %s, line %d, exec time %f s\n", ar->source, ar->currentline, diff_t);
+			//nk_str_append_str_char(&gui->debug_edit.string, msg);
 			
-			lua_pushstring(L, "Auto check: Script execution time exceeds timeout");
+			lua_pushstring(L, msg);
 			lua_error(L);
 			return;
 		}
@@ -191,73 +191,7 @@ static int debug_print (lua_State *L) {
 }
 
 /* run script from file */
-int script_run (gui_obj *gui, char *fname) {
-	if(!gui->lua_main) return 0;
-	char msg[DXF_MAX_CHARS];
-	
-	/* create a new lua thread, allowing yield */
-	lua_State *T = lua_newthread(gui->lua_main);
-	if(!T) return 0;
-	gui->lua_script = T;
-	
-	/* put the gui structure in lua global registry */
-	lua_pushstring(T, "cz_gui");
-	lua_pushlightuserdata(T, (void *)gui);
-	lua_settable(T, LUA_REGISTRYINDEX);
-	
-	/* add functions in cadzinho object*/
-	static const luaL_Reg cz_lib[] = {
-		{"db_print",   debug_print},
-		{"set_timeout", set_timeout},
-		{"ent_append", script_ent_append},
-		{"new_pline", script_new_pline},
-		{"pline_append", script_pline_append},
-		{"pline_close", script_pline_close},
-		{"new_circle", script_new_circle},
-		{NULL, NULL}
-	};
-	luaL_newlib(T, cz_lib);
-	lua_setglobal(T, "cadzinho");
-	
-	/* set start time of script execution */
-	gui->script_time = clock();
-	gui->script_timeout = 10.0; /* default timeout value */
-	
-	/* hook function to breakpoints and  timeout verification*/
-	lua_sethook(T, script_check, LUA_MASKCOUNT|LUA_MASKLINE, 500);
-		
-	/* load lua script file */
-	if (luaL_loadfile(T, (const char *) fname) != LUA_OK){
-		/* error on loading */
-		snprintf(msg, DXF_MAX_CHARS-1, "cannot run script file: %s", lua_tostring(T, -1));
-		nk_str_append_str_char(&gui->debug_edit.string, msg);
-		
-		lua_pop(T, 1); /* pop error message from Lua stack */
-	}
-	
-	/* run Lua script*/
-	else {
-		/* add main entry to do/redo list */
-		do_add_entry(&gui->list_do, "SCRIPT");
-		
-		int e = lua_resume(T, NULL, 0); /* start thread */
-		if (e != LUA_OK && e != LUA_YIELD){
-			/* execution error */
-			snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(T, -1));
-			nk_str_append_str_char(&gui->debug_edit.string, msg);
-			
-			lua_pop(T, 1); /* pop error message from Lua stack */
-		}
-		/* clear variable if thread is no yielded*/
-		if (e != LUA_YIELD) gui->lua_script = NULL;
-	}
-	
-	return 1;
-	
-}
-
-/* run script from file */
-int script_run2 (gui_obj *gui, struct script_obj *script, char *fname) {
+int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	if(!gui) return 0;
 	if(!script) return 0;
 	char msg[DXF_MAX_CHARS];
@@ -332,7 +266,7 @@ int script_run2 (gui_obj *gui, struct script_obj *script, char *fname) {
 	/* run Lua script*/
 	else {
 		
-		script->active = 1;
+		//script->active = 1;
 		
 		/* add main entry to do/redo list */
 		do_add_entry(&gui->list_do, "SCRIPT");
@@ -346,7 +280,8 @@ int script_run2 (gui_obj *gui, struct script_obj *script, char *fname) {
 			lua_pop(T, 1); /* pop error message from Lua stack */
 		}
 		/* clear variable if thread is no yielded*/
-		if (script->status != LUA_YIELD) {
+		if ((script->status != LUA_YIELD && script->active == 0) ||
+			(script->status != LUA_YIELD && script->status != LUA_OK)) {
 			lua_close(script->L);
 			script->L = NULL;
 			script->T = NULL;
@@ -422,22 +357,30 @@ int script_win (gui_obj *gui){
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_script, MAX_PATH_LEN, nk_filter_default);
 				
 				nk_layout_row_static(gui->ctx, 28, 28, 6);
-				nk_button_symbol(gui->ctx, NK_SYMBOL_TRIANGLE_RIGHT);
-				nk_button_symbol(gui->ctx, NK_SYMBOL_RECT_SOLID);
-				
-				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				//nk_button_symbol(struct nk_context*, enum nk_symbol_type);
-				if (nk_button_label(gui->ctx, "Run")){
-					//script_run (gui, gui->curr_script);
-					script_run2 (gui, &script, gui->curr_script);
-				}
-				if (nk_button_label(gui->ctx, "Continue")){
-					//if (gui->lua_script) {
-					if (script.active){
+				if (nk_button_symbol(gui->ctx, NK_SYMBOL_TRIANGLE_RIGHT)){
+					if (script.status == LUA_YIELD){
 						gui->script_time = clock();
 						//lua_resume(gui->lua_script, NULL, 0);
-						lua_resume(script.T, NULL, 0);
-						
+						script.status = lua_resume(script.T, NULL, 0);
+						/* clear variable if thread is no yielded*/
+						if ((script.status != LUA_YIELD && script.active == 0) ||
+							(script.status != LUA_YIELD && script.status != LUA_OK)) {
+							lua_close(script.L);
+							script.L = NULL;
+							script.T = NULL;
+							script.active = 0;
+						}
+					}
+					else if (script.active == 0){
+						script_run (gui, &script, gui->curr_script);
+					}
+				}
+				if (script.status == LUA_YIELD || script.active){
+					if(nk_button_symbol(gui->ctx, NK_SYMBOL_RECT_SOLID)){
+						lua_close(script.L);
+						script.L = NULL;
+						script.T = NULL;
+						script.active = 0;
 					}
 				}
 				
@@ -505,7 +448,7 @@ int script_win (gui_obj *gui){
 				}
 			}
 			/* view variables tabs */
-			else if (script_tab == VARS && script.active){
+			else if (script_tab == VARS && script.status == LUA_YIELD){
 				static int num_vars = 0;
 				int ok = 0;
 				lua_Debug ar;

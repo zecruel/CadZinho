@@ -1,4 +1,5 @@
 #include "script.h"
+#include "gui.h"
 
 /* set timeout variable */
 int set_timeout (lua_State *L) {
@@ -23,7 +24,6 @@ int set_timeout (lua_State *L) {
 		lua_pushboolean(L, 1); /* return success */
 		return 1;
 	}
-	
 	lua_pushboolean(L, 0); /* return fail */
 	return 1;
 }

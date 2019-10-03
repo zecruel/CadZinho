@@ -15,6 +15,7 @@
 #include "dxf_attract.h"
 #include "dxf_hatch.h"
 #include "font.h"
+#include "script.h"
 
 #include "lua.h"
 #include "lauxlib.h"
@@ -251,8 +252,7 @@ struct Gui_obj {
 	
 	dxf_drawing *clip_drwg;
 	
-	lua_State *lua_main;
-	lua_State *lua_script;
+	struct script_obj lua_script;
 	char curr_script[MAX_PATH_LEN];
 	clock_t script_time;
 	double script_timeout;

@@ -5,7 +5,7 @@
 #include "lauxlib.h"
 #include "lualib.h"
 
-#include "gui.h"
+#include "dxf.h"
 
 struct script_obj{
 	lua_State *L; /* main lua state */

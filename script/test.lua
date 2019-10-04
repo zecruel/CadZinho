@@ -89,8 +89,8 @@ a = r * math.cos(math.pi/n)
 circle = cadzinho.new_circle(cx,cy,a)
 cadzinho.ent_append(circle)
 
---while(true)
---do
---end
+while(true)
+do
+end
 
---for i = 1, 152 do print(i) end
+for i = 1, 152 do print(i) end

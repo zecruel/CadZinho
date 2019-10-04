@@ -14,7 +14,7 @@
 
 --d/(da)(2 a sinh(h/(2 a)) - sqrt(s^2 - v^2)) = 2 sinh(h/(2 a)) - (h cosh(h/(2 a)))/a
 
-package.path = package.path .. ";D:\\documentos\\cadzinho\\script\\?.lua"
+--package.path = package.path .. ";D:\\documentos\\cadzinho\\script\\?.lua"
 local hyp = require "hyperbolic"
 
 -- input data

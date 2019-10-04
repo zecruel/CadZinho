@@ -259,6 +259,8 @@ struct Gui_obj {
 	struct script_brk_pt brk_pts[BRK_PTS_MAX];
 	int num_brk_pts;
 	
+	char script_win[DXF_MAX_CHARS];
+	
 };
 typedef struct Gui_obj gui_obj;
 

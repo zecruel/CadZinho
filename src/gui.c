@@ -1198,6 +1198,8 @@ int gui_start(gui_obj *gui){
 	strncpy(gui->curr_script, "D:\\documentos\\cadzinho\\lua\\test.lua", MAX_PATH_LEN - 1);
 	gui->script_timeout = 10.0;
 	
+	gui->script_win[0] = 0;
+	
 	#if(0)
 	#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 	strncpy(gui->dflt_fonts_path, "C:\\Windows\\Fonts\\", 5 * DXF_MAX_CHARS);

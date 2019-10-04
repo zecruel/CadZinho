@@ -2036,7 +2036,32 @@ int main(int argc, char** argv){
 		gui_ed_text_interactive(gui);
 		
 		
-		
+		if (gui->lua_script.L != NULL && gui->lua_script.T != NULL){
+			if (strlen(gui->script_win) > 0 && gui->lua_script.active){
+				lua_getglobal(gui->lua_script.T, gui->script_win);
+				gui->script_time = clock();
+				gui->lua_script.status = lua_pcall(gui->lua_script.T, 0, 0, 0);
+			}
+			
+			if (gui->lua_script.status != LUA_YIELD && gui->lua_script.status != LUA_OK){
+				/* execution error */
+				char msg[DXF_MAX_CHARS];
+				snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(gui->lua_script.T, -1));
+				nk_str_append_str_char(&gui->debug_edit.string, msg);
+				
+				lua_pop(gui->lua_script.T, 1); /* pop error message from Lua stack */
+			}
+			
+			if((gui->lua_script.status != LUA_YIELD && gui->lua_script.active == 0) ||
+				(gui->lua_script.status != LUA_YIELD && gui->lua_script.status != LUA_OK))
+			{
+				lua_close(gui->lua_script.L);
+				gui->lua_script.L = NULL;
+				gui->lua_script.T = NULL;
+				gui->lua_script.active = 0;
+				gui->script_win[0] = 0;
+			}
+		}
 		
 		if (gui_check_draw(gui) != 0){
 			gui->draw = 1;

@@ -235,6 +235,7 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 		{"nk_layout", script_nk_layout},
 		{"nk_button", script_nk_button},
 		{"nk_label", script_nk_label},
+		{"nk_edit", script_nk_edit},
 		{NULL, NULL}
 	};
 	luaL_newlib(T, cz_lib);

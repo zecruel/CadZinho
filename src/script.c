@@ -362,3 +362,43 @@ int script_nk_label (lua_State *L) {
 	nk_label(gui->ctx, lua_tostring(L, 1), NK_TEXT_LEFT);
 	return 0;
 }
+
+int script_nk_edit (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "nk_edit: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_istable(L, 1)) {
+		lua_pushliteral(L, "nk_edit: incorrect argument type");
+		lua_error(L);
+	}
+	lua_getfield(L, 1, "value");
+	if (!lua_isstring(L, -1)){
+		lua_pushliteral(L, "nk_edit: incorrect argument type");
+		lua_error(L);
+	}
+	const char *value = lua_tostring(L, -1);
+	lua_pop(L, 1);
+	char buff[DXF_MAX_CHARS];
+	strncpy(buff, value, DXF_MAX_CHARS);
+	nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, buff, DXF_MAX_CHARS, nk_filter_default);
+	lua_pushstring(L, buff);
+	lua_setfield(L, -2, "value");
+	lua_pop(L, 1);
+	
+	return 0;
+}

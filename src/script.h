@@ -28,6 +28,6 @@ int script_win_close (lua_State *L);
 int script_nk_layout (lua_State *L);
 int script_nk_button (lua_State *L);
 int script_nk_label (lua_State *L);
-
+int script_nk_edit (lua_State *L);
 
 #endif

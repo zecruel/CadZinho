@@ -2038,9 +2038,24 @@ int main(int argc, char** argv){
 		
 		if (gui->lua_script.L != NULL && gui->lua_script.T != NULL){
 			if (strlen(gui->script_win) > 0 && gui->lua_script.active){
-				lua_getglobal(gui->lua_script.T, gui->script_win);
-				gui->script_time = clock();
-				gui->lua_script.status = lua_pcall(gui->lua_script.T, 0, 0, 0);
+				int win;
+				if (win = nk_begin(gui->ctx, gui->script_win_title,
+					nk_rect(gui->script_win_x, gui->script_win_y,
+						gui->script_win_w, gui->script_win_h),
+					NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|
+					NK_WINDOW_SCALABLE|
+					NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE))
+				{
+					lua_getglobal(gui->lua_script.T, gui->script_win);
+					gui->script_time = clock();
+					gui->lua_script.status = lua_pcall(gui->lua_script.T, 0, 0, 0);
+				}
+				nk_end(gui->ctx);
+				
+				if (!win){
+					gui->lua_script.active = 0;
+					gui->script_win[0] = 0;
+				}
 			}
 			
 			if (gui->lua_script.status != LUA_YIELD && gui->lua_script.status != LUA_OK){

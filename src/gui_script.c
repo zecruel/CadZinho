@@ -230,10 +230,11 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 		{"pline_append", script_pline_append},
 		{"pline_close", script_pline_close},
 		{"new_circle", script_new_circle},
-		{"nk_begin", script_nk_begin},
-		{"nk_end", script_nk_end},
 		{"win_show", script_win_show},
 		{"win_close", script_win_close},
+		{"nk_layout", script_nk_layout},
+		{"nk_button", script_nk_button},
+		{"nk_label", script_nk_label},
 		{NULL, NULL}
 	};
 	luaL_newlib(T, cz_lib);

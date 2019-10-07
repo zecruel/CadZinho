@@ -200,67 +200,6 @@ int script_new_circle (lua_State *L) {
 	return 1;
 }
 
-int script_nk_begin (lua_State *L) {
-	/* get gui object from Lua instance */
-	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
-	lua_gettable(L, LUA_REGISTRYINDEX); 
-	gui_obj *gui = lua_touserdata (L, -1);
-	lua_pop(L, 1);
-	
-	/* verify if gui is valid */
-	if (!gui){
-		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
-		lua_error(L);
-	}
-	
-	int n = lua_gettop(L);    /* number of arguments */
-	if (n < 5){
-		lua_pushliteral(L, "nk_begin: invalid number of arguments");
-		lua_error(L);
-	}
-	
-	if (!lua_isstring(L, 1)) {
-		lua_pushliteral(L, "nk_begin: incorrect argument type");
-		lua_error(L);
-	}
-	
-	int i;
-	for (i = 2; i <= 5; i++) {
-		if (!lua_isnumber(L, i)) {
-			lua_pushliteral(L, "nk_begin: incorrect argument type");
-			lua_error(L);
-		}
-	}
-	
-	int ret = nk_begin(gui->ctx, lua_tostring(L, 1),
-		nk_rect(lua_tonumber(L, 2), lua_tonumber(L, 3),
-			lua_tonumber(L, 4), lua_tonumber(L, 5)),
-		NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|
-		NK_WINDOW_SCALABLE|
-		NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE);
-	
-	if (ret) lua_pushboolean(L, 1); /* return success */
-	else lua_pushboolean(L, 0); /* return fail */
-	return 1;
-}
-
-int script_nk_end (lua_State *L) {
-	/* get gui object from Lua instance */
-	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
-	lua_gettable(L, LUA_REGISTRYINDEX); 
-	gui_obj *gui = lua_touserdata (L, -1);
-	lua_pop(L, 1);
-	
-	/* verify if gui is valid */
-	if (!gui){
-		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
-		lua_error(L);
-	}
-	
-	nk_end(gui->ctx);
-	return 0;
-}
-
 int script_win_show (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -275,23 +214,41 @@ int script_win_show (lua_State *L) {
 	}
 	
 	int n = lua_gettop(L);    /* number of arguments */
-	if (n < 1){
+	if (n < 6){
 		lua_pushliteral(L, "win_show: invalid number of arguments");
 		lua_error(L);
 	}
 	
-	if (!lua_isstring(L, 1)) {
-		lua_pushliteral(L, "win_show: incorrect argument type");
-		lua_error(L);
+	int i;
+	for (i = 1; i <= 2; i++) {
+		if (!lua_isstring(L, i)) {
+			lua_pushliteral(L, "win_show: incorrect argument type");
+			lua_error(L);
+		}
 	}
+	
+	for (i = 3; i <= 6; i++) {
+		if (!lua_isnumber(L, i)) {
+			lua_pushliteral(L, "win_show: incorrect argument type");
+			lua_error(L);
+		}
+	}
+	
 	const char *name = lua_tostring(L, 1);
-	if (strlen(name) > 0){
-		gui->lua_script.active = 1;
-		strncpy(gui->script_win, name, DXF_MAX_CHARS - 1);
-		lua_pushboolean(L, 1); /* return success */
+	if (strlen(name) <= 0){
+		lua_pushboolean(L, 0); /* return fail */
 		return 1;
 	}
-	lua_pushboolean(L, 0); /* return fail */
+	gui->lua_script.active = 1;
+	strncpy(gui->script_win, name, DXF_MAX_CHARS - 1);
+	
+	strncpy(gui->script_win_title, lua_tostring(L, 2), DXF_MAX_CHARS - 1);
+	gui->script_win_x = lua_tonumber(L, 3);
+	gui->script_win_y = lua_tonumber(L, 4);
+	gui->script_win_w = lua_tonumber(L, 5);
+	gui->script_win_h = lua_tonumber(L, 6);
+	
+	lua_pushboolean(L, 1); /* return success */
 	return 1;
 }
 
@@ -310,5 +267,98 @@ int script_win_close (lua_State *L) {
 	
 	gui->lua_script.active = 0;
 	gui->script_win[0] = 0;
+	return 0;
+}
+
+int script_nk_layout (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "nk_layout: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	int i;
+	for (i = 1; i <= 2; i++) {
+		if (!lua_isnumber(L, i)) {
+			lua_pushliteral(L, "nk_layout: incorrect argument type");
+			lua_error(L);
+		}
+	}
+	
+	nk_layout_row_dynamic(gui->ctx, lua_tonumber(L, 1), lua_tonumber(L, 2));
+	
+	return 0;
+}
+
+int script_nk_button (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "nk_button: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_isstring(L, 1)) {
+		lua_pushliteral(L, "nk_button: incorrect argument type");
+		lua_error(L);
+	}
+	
+	int ret = nk_button_label(gui->ctx, lua_tostring(L, 1));
+	
+	if (ret) lua_pushboolean(L, 1); /* return success */
+	else lua_pushboolean(L, 0); /* return fail */
+	return 1;
+}
+
+int script_nk_label (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "nk_label: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	/*
+	if (!lua_isstring(L, 1)) {
+		lua_pushliteral(L, "nk_label: incorrect argument type");
+		lua_error(L);
+	}
+	*/
+	
+	nk_label(gui->ctx, lua_tostring(L, 1), NK_TEXT_LEFT);
 	return 0;
 }

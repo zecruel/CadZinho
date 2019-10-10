@@ -23,6 +23,13 @@ int script_new_pline (lua_State *L);
 int script_pline_append (lua_State *L);
 int script_pline_close (lua_State *L);
 int script_new_circle (lua_State *L);
+
+int script_set_layer (lua_State *L);
+int script_set_color (lua_State *L);
+int script_set_ltype (lua_State *L);
+int script_set_style (lua_State *L);
+int script_set_lw (lua_State *L);
+
 int script_win_show (lua_State *L);
 int script_win_close (lua_State *L);
 int script_nk_layout (lua_State *L);

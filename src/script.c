@@ -200,6 +200,252 @@ int script_new_circle (lua_State *L) {
 	return 1;
 }
 
+int script_set_layer (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "set_layer: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (lua_type(L, 1) == LUA_TNUMBER) {
+		int idx = lua_tonumber(L, 1);
+		int num_layers = gui->drawing->num_layers;
+		if (idx >= num_layers && idx < 0){
+			lua_pushboolean(L, 0); /* return fail */
+			return 1;
+		}
+		/* change current layer*/
+		gui->layer_idx = idx;
+	}
+	else if (lua_isstring(L, 1)) {
+		char *name = (char *) lua_tostring(L, 1);
+		int idx = dxf_lay_idx (gui->drawing, name);
+		/* change current layer*/
+		gui->layer_idx = idx;
+	}
+	else {
+		lua_pushliteral(L, "set_layer: incorrect argument type");
+		lua_error(L);
+	}
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+
+int script_set_color (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "set_color: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (lua_isnumber(L, 1)) {
+		int idx = lua_tonumber(L, 1);
+		if (idx >= 257 && idx < 0){
+			lua_pushboolean(L, 0); /* return fail */
+			return 1;
+		}
+		/* change current color*/
+		gui->color_idx = idx;
+	}
+	else if (lua_isstring(L, 1)) {
+		char name[DXF_MAX_CHARS];
+		strncpy(name, lua_tostring(L, 1), DXF_MAX_CHARS - 1);
+		str_upp(name);
+		char *new_name = trimwhitespace(name);
+		
+		if (strcmp(new_name, "BY BLOCK") == 0){
+			/* change current color*/
+			gui->color_idx = 0;
+		}
+		else if (strcmp(new_name, "BY LAYER") == 0){
+			/* change current color*/
+			gui->color_idx = 256;
+		}
+		else {
+			lua_pushboolean(L, 0); /* return fail */
+			return 1;
+		}
+		
+	}
+	else {
+		lua_pushliteral(L, "set_color: incorrect argument type");
+		lua_error(L);
+	}
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+
+int script_set_ltype (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "set_ltype: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (lua_type(L, 1) == LUA_TNUMBER) {
+		int idx = lua_tonumber(L, 1);
+		int num_ltypes = gui->drawing->num_ltypes;
+		if (idx >= num_ltypes && idx < 0){
+			lua_pushboolean(L, 0); /* return fail */
+			return 1;
+		}
+		/* change current layer*/
+		gui->ltypes_idx = idx;
+	}
+	else if (lua_isstring(L, 1)) {
+		char *name = (char *) lua_tostring(L, 1);
+		int idx = dxf_ltype_idx (gui->drawing, name);
+		/* change current layer*/
+		gui->ltypes_idx = idx;
+	}
+	else {
+		lua_pushliteral(L, "set_ltype: incorrect argument type");
+		lua_error(L);
+	}
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+
+int script_set_style (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "set_style: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (lua_type(L, 1) == LUA_TNUMBER) {
+		int idx = lua_tonumber(L, 1);
+		int num_tstyles = gui->drawing->num_tstyles;
+		if (idx >= num_tstyles && idx < 0){
+			lua_pushboolean(L, 0); /* return fail */
+			return 1;
+		}
+		/* change current layer*/
+		gui->t_sty_idx = idx;
+	}
+	else if (lua_isstring(L, 1)) {
+		char *name = (char *) lua_tostring(L, 1);
+		int idx = dxf_tstyle_idx (gui->drawing, name);
+		/* change current layer*/
+		gui->t_sty_idx = idx;
+	}
+	else {
+		lua_pushliteral(L, "set_style: incorrect argument type");
+		lua_error(L);
+	}
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+
+int script_set_lw (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "set_lw: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (lua_isnumber(L, 1)) {
+		int idx = lua_tonumber(L, 1);
+		if (idx >= DXF_LW_LEN && idx < 0){
+			lua_pushboolean(L, 0); /* return fail */
+			return 1;
+		}
+		/* change current color*/
+		gui->lw_idx = idx;
+	}
+	else if (lua_isstring(L, 1)) {
+		char name[DXF_MAX_CHARS];
+		strncpy(name, lua_tostring(L, 1), DXF_MAX_CHARS - 1);
+		str_upp(name);
+		char *new_name = trimwhitespace(name);
+		
+		if (strcmp(new_name, "BY BLOCK") == 0){
+			/* change current color*/
+			gui->lw_idx = DXF_LW_LEN + 1;
+		}
+		else if (strcmp(new_name, "BY LAYER") == 0){
+			/* change current color*/
+			gui->lw_idx = DXF_LW_LEN;
+		}
+		else {
+			lua_pushboolean(L, 0); /* return fail */
+			return 1;
+		}
+		
+	}
+	else {
+		lua_pushliteral(L, "set_lw: incorrect argument type");
+		lua_error(L);
+	}
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+
 int script_win_show (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */

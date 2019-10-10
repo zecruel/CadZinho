@@ -44,6 +44,9 @@ cadzinho.db_print(1+3/2)
 
 cadzinho.set_timeout(1)
 
+cadzinho.set_layer("0")
+cadzinho.set_ltype("Continuous")
+cadzinho.set_color(1)
 pts = 32
 step = 1/pts
 
@@ -61,7 +64,7 @@ end
 
 cadzinho.ent_append(pline)
 
-
+cadzinho.set_color("by layer")
 cx = 5
 cy = 2
 r = 2
@@ -86,8 +89,11 @@ cadzinho.ent_append(circle)
 
 a = r * math.cos(math.pi/n)
 
+cadzinho.set_lw(14)
+
 circle = cadzinho.new_circle(cx,cy,a)
 cadzinho.ent_append(circle)
+
 
 while(true)
 do

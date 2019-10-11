@@ -1193,6 +1193,7 @@ int gui_start(gui_obj *gui){
 	gui->lua_script.L = NULL;
 	gui->lua_script.T = NULL;
 	gui->lua_script.active = 0;
+	gui->lua_script.dynamic = 0;
 	gui->lua_script.status = LUA_OK;
 	gui->lua_script.path[0] = 0;
 	strncpy(gui->curr_script, "D:\\documentos\\cadzinho\\lua\\test.lua", MAX_PATH_LEN - 1);
@@ -1200,6 +1201,8 @@ int gui_start(gui_obj *gui){
 	
 	gui->script_win[0] = 0;
 	gui->script_win_title[0] = 0;
+	
+	gui->script_dynamic[0] = 0;
 	
 	#if(0)
 	#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)

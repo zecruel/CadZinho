@@ -2067,14 +2067,16 @@ int main(int argc, char** argv){
 				lua_pop(gui->lua_script.T, 1); /* pop error message from Lua stack */
 			}
 			
-			if((gui->lua_script.status != LUA_YIELD && gui->lua_script.active == 0) ||
+			if((gui->lua_script.status != LUA_YIELD && gui->lua_script.active == 0 && gui->lua_script.dynamic == 0) ||
 				(gui->lua_script.status != LUA_YIELD && gui->lua_script.status != LUA_OK))
 			{
 				lua_close(gui->lua_script.L);
 				gui->lua_script.L = NULL;
 				gui->lua_script.T = NULL;
 				gui->lua_script.active = 0;
+				gui->lua_script.dynamic = 0;
 				gui->script_win[0] = 0;
+				gui->script_dynamic[0] = 0;
 			}
 		}
 		
@@ -2112,6 +2114,19 @@ int main(int argc, char** argv){
 			bmp_fill_clip(img, img->bkg); /* clear bitmap */
 			//dxf_ents_draw(gui->drawing, img, gui->ofs_x, gui->ofs_y, gui->zoom); /* redraw */
 			dxf_ents_draw(gui->drawing, img, d_param);
+			
+			
+			if (gui->lua_script.L != NULL && gui->lua_script.T != NULL &&
+				strlen(gui->script_dynamic) > 0 && gui->lua_script.dynamic)
+			{
+				lua_getglobal(gui->lua_script.T, gui->script_dynamic);
+				gui->script_time = clock();
+				gui->lua_script.status = lua_pcall(gui->lua_script.T, 0, 0, 0);
+				
+				if (!gui->lua_script.dynamic){
+					gui->script_dynamic[0] = 0;
+				}
+			}
 			
 			/*===================== teste ===============*/
 			//graph_list_draw(tt_test, img, gui->ofs_x, gui->ofs_y, gui->zoom);

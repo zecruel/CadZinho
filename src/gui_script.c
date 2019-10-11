@@ -204,6 +204,7 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	script->T = NULL;
 	script->status = LUA_OK;
 	script->active = 0;
+	script->dynamic = 0;
 	strncpy(script->path, fname, DXF_MAX_CHARS - 1);
 	
 	luaL_openlibs(script->L); /* opens the standard libraries */
@@ -291,12 +292,13 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 			lua_pop(T, 1); /* pop error message from Lua stack */
 		}
 		/* clear variable if thread is no yielded*/
-		if ((script->status != LUA_YIELD && script->active == 0) ||
+		if ((script->status != LUA_YIELD && script->active == 0 && script->dynamic == 0) ||
 			(script->status != LUA_YIELD && script->status != LUA_OK)) {
 			lua_close(script->L);
 			script->L = NULL;
 			script->T = NULL;
 			script->active = 0;
+			script->dynamic = 0;
 		}
 	}
 	
@@ -374,24 +376,26 @@ int script_win (gui_obj *gui){
 							lua_pop(gui->lua_script.T, 1); /* pop error message from Lua stack */
 						}
 						/* clear variable if thread is no yielded*/
-						if ((gui->lua_script.status != LUA_YIELD && gui->lua_script.active == 0) ||
+						if ((gui->lua_script.status != LUA_YIELD && gui->lua_script.active == 0 && gui->lua_script.dynamic == 0) ||
 							(gui->lua_script.status != LUA_YIELD && gui->lua_script.status != LUA_OK)) {
 							lua_close(gui->lua_script.L);
 							gui->lua_script.L = NULL;
 							gui->lua_script.T = NULL;
 							gui->lua_script.active = 0;
+							gui->lua_script.dynamic = 0;
 						}
 					}
-					else if (gui->lua_script.active == 0){
+					else if (gui->lua_script.active == 0 && gui->lua_script.dynamic == 0){
 						script_run (gui, &gui->lua_script, gui->curr_script);
 					}
 				}
-				if (gui->lua_script.status == LUA_YIELD || gui->lua_script.active){
+				if (gui->lua_script.status == LUA_YIELD || gui->lua_script.active || gui->lua_script.dynamic){
 					if(nk_button_symbol(gui->ctx, NK_SYMBOL_RECT_SOLID)){
 						lua_close(gui->lua_script.L);
 						gui->lua_script.L = NULL;
 						gui->lua_script.T = NULL;
 						gui->lua_script.active = 0;
+						gui->lua_script.dynamic == 0;
 					}
 				}
 				

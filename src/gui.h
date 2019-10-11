@@ -263,6 +263,8 @@ struct Gui_obj {
 	char script_win_title[DXF_MAX_CHARS];
 	int script_win_x, script_win_y, script_win_w, script_win_h;
 	
+	char script_dynamic[DXF_MAX_CHARS];
+	
 };
 typedef struct Gui_obj gui_obj;
 

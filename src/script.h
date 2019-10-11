@@ -12,6 +12,7 @@ struct script_obj{
 	lua_State *T; /* thread for execution */
 	int status;
 	int active;
+	int dynamic;
 	char path[DXF_MAX_CHARS];
 };
 

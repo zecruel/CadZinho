@@ -84,7 +84,8 @@ enum Modal {
 	PASTE,
 	MIRROR,
 	ED_TEXT,
-	ED_ATTR
+	ED_ATTR,
+	SCRIPT
 };
 
 enum Gui_ev {

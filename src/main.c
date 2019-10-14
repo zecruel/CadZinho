@@ -959,6 +959,11 @@ int main(int argc, char** argv){
 				gui_paste_info (gui);
 				gui_ed_text_info (gui);
 				
+				if (gui->modal == SCRIPT) {
+					nk_layout_row_dynamic(gui->ctx, 20, 1);
+					nk_label(gui->ctx, "Runing Script", NK_TEXT_LEFT);
+				}
+				
 				nk_group_end(gui->ctx);
 			}
 		}
@@ -2016,6 +2021,7 @@ int main(int argc, char** argv){
 		
 		
 		
+		
 		gui_select_interactive(gui);
 		gui_line_interactive(gui);
 		gui_pline_interactive(gui);
@@ -2034,51 +2040,9 @@ int main(int argc, char** argv){
 		gui_hatch_interactive(gui);
 		gui_paste_interactive(gui);
 		gui_ed_text_interactive(gui);
+		gui_script_interactive(gui);
 		
 		
-		if (gui->lua_script.L != NULL && gui->lua_script.T != NULL){
-			if (strlen(gui->script_win) > 0 && gui->lua_script.active){
-				int win;
-				if (win = nk_begin(gui->ctx, gui->script_win_title,
-					nk_rect(gui->script_win_x, gui->script_win_y,
-						gui->script_win_w, gui->script_win_h),
-					NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|
-					NK_WINDOW_SCALABLE|
-					NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE))
-				{
-					lua_getglobal(gui->lua_script.T, gui->script_win);
-					gui->script_time = clock();
-					gui->lua_script.status = lua_pcall(gui->lua_script.T, 0, 0, 0);
-				}
-				nk_end(gui->ctx);
-				
-				if (!win){
-					gui->lua_script.active = 0;
-					gui->script_win[0] = 0;
-				}
-			}
-			
-			if (gui->lua_script.status != LUA_YIELD && gui->lua_script.status != LUA_OK){
-				/* execution error */
-				char msg[DXF_MAX_CHARS];
-				snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(gui->lua_script.T, -1));
-				nk_str_append_str_char(&gui->debug_edit.string, msg);
-				
-				lua_pop(gui->lua_script.T, 1); /* pop error message from Lua stack */
-			}
-			
-			if((gui->lua_script.status != LUA_YIELD && gui->lua_script.active == 0 && gui->lua_script.dynamic == 0) ||
-				(gui->lua_script.status != LUA_YIELD && gui->lua_script.status != LUA_OK))
-			{
-				lua_close(gui->lua_script.L);
-				gui->lua_script.L = NULL;
-				gui->lua_script.T = NULL;
-				gui->lua_script.active = 0;
-				gui->lua_script.dynamic = 0;
-				gui->script_win[0] = 0;
-				gui->script_dynamic[0] = 0;
-			}
-		}
 		
 		if (gui_check_draw(gui) != 0){
 			gui->draw = 1;
@@ -2114,19 +2078,6 @@ int main(int argc, char** argv){
 			bmp_fill_clip(img, img->bkg); /* clear bitmap */
 			//dxf_ents_draw(gui->drawing, img, gui->ofs_x, gui->ofs_y, gui->zoom); /* redraw */
 			dxf_ents_draw(gui->drawing, img, d_param);
-			
-			
-			if (gui->lua_script.L != NULL && gui->lua_script.T != NULL &&
-				strlen(gui->script_dynamic) > 0 && gui->lua_script.dynamic)
-			{
-				lua_getglobal(gui->lua_script.T, gui->script_dynamic);
-				gui->script_time = clock();
-				gui->lua_script.status = lua_pcall(gui->lua_script.T, 0, 0, 0);
-				
-				if (!gui->lua_script.dynamic){
-					gui->script_dynamic[0] = 0;
-				}
-			}
 			
 			/*===================== teste ===============*/
 			//graph_list_draw(tt_test, img, gui->ofs_x, gui->ofs_y, gui->zoom);

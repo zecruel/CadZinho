@@ -446,6 +446,64 @@ int script_set_lw (lua_State *L) {
 	return 1;
 }
 
+int script_start_dynamic (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "start_dynamic: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_isstring(L, 1)) {
+		lua_pushliteral(L, "start_dynamic: incorrect argument type");
+		lua_error(L);
+	}
+	
+	const char *name = lua_tostring(L, 1);
+	if (strlen(name) <= 0){
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	gui->lua_script.dynamic = 1;
+	gui->modal = SCRIPT;
+	gui_first_step(gui);
+	strncpy(gui->script_dynamic, name, DXF_MAX_CHARS - 1);
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+
+int script_stop_dynamic (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	gui->lua_script.dynamic = 0;
+	gui->script_dynamic[0] = 0;
+	gui_default_modal(gui);
+	
+	return 0;
+}
+
 int script_win_show (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -486,6 +544,8 @@ int script_win_show (lua_State *L) {
 		return 1;
 	}
 	gui->lua_script.active = 1;
+	gui->modal = SCRIPT;
+	gui_first_step(gui);
 	strncpy(gui->script_win, name, DXF_MAX_CHARS - 1);
 	
 	strncpy(gui->script_win_title, lua_tostring(L, 2), DXF_MAX_CHARS - 1);
@@ -513,6 +573,8 @@ int script_win_close (lua_State *L) {
 	
 	gui->lua_script.active = 0;
 	gui->script_win[0] = 0;
+	gui_default_modal(gui);
+	
 	return 0;
 }
 

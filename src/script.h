@@ -33,6 +33,7 @@ int script_set_lw (lua_State *L);
 
 int script_start_dynamic (lua_State *L);
 int script_stop_dynamic (lua_State *L);
+int script_ent_draw (lua_State *L);
 
 int script_win_show (lua_State *L);
 int script_win_close (lua_State *L);

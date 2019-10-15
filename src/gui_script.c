@@ -244,6 +244,7 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 		{"nk_edit", script_nk_edit},
 		{"start_dynamic", script_start_dynamic},
 		{"stop_dynamic", script_stop_dynamic},
+		{"ent_draw", script_ent_draw},
 		{NULL, NULL}
 	};
 	luaL_newlib(T, cz_lib);
@@ -603,6 +604,7 @@ int script_win (gui_obj *gui){
 int gui_script_interactive(gui_obj *gui){
 	if (gui->modal == SCRIPT) {
 		gui->phanton = NULL;
+		gui->draw_phanton = 0;
 	}
 	if (gui->lua_script.L != NULL && gui->lua_script.T != NULL &&
 		strlen(gui->script_dynamic) > 0 && gui->lua_script.dynamic)
@@ -626,6 +628,8 @@ int gui_script_interactive(gui_obj *gui){
 			lua_pushliteral(gui->lua_script.T, "none");
 		lua_setfield(gui->lua_script.T, -2, "type");
 		gui->lua_script.status = lua_pcall(gui->lua_script.T, 1, 0, 0);
+		
+		if(gui->phanton) gui->draw_phanton = 1;
 		
 		if (!gui->lua_script.dynamic){
 			gui->script_dynamic[0] = 0;

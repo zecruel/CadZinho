@@ -2000,7 +2000,7 @@ int main(int argc, char** argv){
 		/**********************************/
 		
 		if (gui->prev_modal != gui->modal){
-			gui->prev_modal = gui->modal;
+			
 			gui->en_distance = 0;
 			gui->draw_tmp = 0;
 			gui->element = NULL;
@@ -2017,6 +2017,13 @@ int main(int argc, char** argv){
 			gui->user_flag_x = 0;
 			gui->user_flag_y = 0;
 			//printf("change tool\n");
+			
+			if (gui->prev_modal == SCRIPT){
+				gui->lua_script.active = 0;
+				gui->lua_script.dynamic = 0;
+			}
+			
+			gui->prev_modal = gui->modal;
 		}
 		
 		
@@ -2151,6 +2158,7 @@ int main(int argc, char** argv){
 		graph_mem_pool(ZERO_GRAPH, FRAME_LIFE);
 		graph_mem_pool(ZERO_LINE, FRAME_LIFE);
 		list_mem_pool(ZERO_LIST, FRAME_LIFE);
+		dxf_mem_pool(ZERO_DXF, FRAME_LIFE);
 		
 		nk_clear(gui->ctx); /*IMPORTANT */
 		if (low_proc){

@@ -45,15 +45,25 @@ int script_ent_append (lua_State *L) {
 		lua_error(L);
 	}
 	
-	dxf_node *new_el = (dxf_node *) lua_touserdata (L, 1);
-	if (new_el) {
-		new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
-		drawing_ent_append(gui->drawing, new_el);
-		
-		do_add_item(gui->list_do.current, NULL, new_el);
-		lua_pushboolean(L, 1); /* return success */
+	dxf_node *ent = (dxf_node *) lua_touserdata (L, 1);
+	if (!ent) {
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
 	}
-	else lua_pushboolean(L, 0); /* return fail */
+	
+	dxf_node *new_ent = dxf_ent_copy(ent, DWG_LIFE);
+	
+	if (!new_ent) {
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
+	drawing_ent_append(gui->drawing, new_ent);
+	
+	do_add_item(gui->list_do.current, NULL, new_ent);
+	
+	lua_pushboolean(L, 1); /* return success */
 	return 1;
 }
 
@@ -89,8 +99,8 @@ int script_new_pline (lua_State *L) {
 		lua_tonumber(L, 3), /* bulge */
 		gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-		0, DWG_LIFE); /* paper space */
-	dxf_lwpoly_append (new_el, lua_tonumber(L, 4), lua_tonumber(L, 5), 0.0, lua_tonumber(L, 6), DWG_LIFE);
+		0, FRAME_LIFE); /* paper space */
+	dxf_lwpoly_append (new_el, lua_tonumber(L, 4), lua_tonumber(L, 5), 0.0, lua_tonumber(L, 6), FRAME_LIFE);
 	
 	if (!new_el) lua_pushnil(L); /* return fail */
 	else lua_pushlightuserdata(L, (void *) new_el); /* return success */
@@ -124,7 +134,7 @@ int script_pline_append (lua_State *L) {
 	
 	dxf_node *new_el = (dxf_node *) lua_touserdata (L, 1);
 	if (new_el) {
-		dxf_lwpoly_append (new_el, lua_tonumber(L, 2), lua_tonumber(L, 3), 0.0, lua_tonumber(L, 4), DWG_LIFE);
+		dxf_lwpoly_append (new_el, lua_tonumber(L, 2), lua_tonumber(L, 3), 0.0, lua_tonumber(L, 4), FRAME_LIFE);
 		lua_pushboolean(L, 1); /* return success */
 	}
 	else lua_pushboolean(L, 0); /* return fail */
@@ -193,7 +203,7 @@ int script_new_circle (lua_State *L) {
 		lua_tonumber(L, 1), lua_tonumber(L, 2), 0.0, lua_tonumber(L, 3), /* pt1, radius */
 		gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-		0, DWG_LIFE); /* paper space */
+		0, FRAME_LIFE); /* paper space */
 	
 	if (!new_el) lua_pushnil(L); /* return fail */
 	else lua_pushlightuserdata(L, (void *) new_el); /* return success */
@@ -502,6 +512,45 @@ int script_stop_dynamic (lua_State *L) {
 	gui_default_modal(gui);
 	
 	return 0;
+}
+
+int script_ent_draw (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	if (!lua_isuserdata(L, 1)) {
+		lua_pushliteral(L, "ent_draw: incorrect argument type");
+		lua_error(L);
+	}
+	
+	dxf_node *ent = (dxf_node *) lua_touserdata (L, 1);
+	if (ent) {
+		list_node *vec_graph = dxf_graph_parse(gui->drawing, ent, 0, FRAME_LIFE);
+		if (!vec_graph){
+			lua_pushboolean(L, 0); /* return fail */
+			return 1;
+		}
+		
+		if (!gui->phanton)
+			gui->phanton = vec_graph;
+		else
+			list_merge(gui->phanton, vec_graph);
+		
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	
+	lua_pushboolean(L, 0); /* return fail */
+	return 1;
 }
 
 int script_win_show (lua_State *L) {

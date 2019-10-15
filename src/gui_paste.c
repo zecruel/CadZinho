@@ -42,7 +42,7 @@ int gui_paste_interactive(gui_obj *gui){
 		else{
 			if (gui->ev & EV_ENTER){
 				//list_node * dxf_drwg_ent_cpy_all(dxf_drawing *source, dxf_drawing *dest, int pool_idx){
-				list_node * list = dxf_drwg_ent_cpy_all(gui->clip_drwg, gui->drawing, FRAME_LIFE);
+				list_node * list = dxf_drwg_ent_cpy_all(gui->clip_drwg, gui->drawing, DWG_LIFE);
 				if (!list) gui_default_modal(gui);
 				dxf_cpy_lay_drwg(gui->clip_drwg, gui->drawing);
 				dxf_cpy_sty_drwg(gui->clip_drwg, gui->drawing);

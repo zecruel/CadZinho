@@ -1,9 +1,10 @@
 #include "script.h"
 
+/* for debug purposes - print a Lua variable in given buffer string (idx is its position on Lua stack)*/
 static int print_lua_var(char * value, lua_State * L, int idx){
-	int type = lua_type(L, idx);
+	int type = lua_type(L, idx); /*get  Lua type*/
 
-	switch(type) {
+	switch(type) { /*print according type */
 		case LUA_TSTRING: {
 			snprintf(value, DXF_MAX_CHARS - 1, "s: %s", lua_tostring(L, idx));
 			break;
@@ -43,10 +44,10 @@ static int print_lua_var(char * value, lua_State * L, int idx){
 	}
 }
 
+/* for debug purposes - print to stdout the entire Lua stack */
 void print_lua_stack(lua_State * L){
-	int n = lua_gettop(L);    /* number of arguments */
+	int n = lua_gettop(L);    /* number of arguments in stack*/
 	int i;
-	
 	char value[DXF_MAX_CHARS];
 	
 	for (i = 1; i <= n; i++) {
@@ -55,7 +56,15 @@ void print_lua_stack(lua_State * L){
 	}
 }
 
+
+/* --------Lua functions------- */
+
 /* set timeout variable */
+/* given parameters:
+	- time in seconds, as number
+returns:
+	- success, as boolean
+*/
 int set_timeout (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -82,6 +91,12 @@ int set_timeout (lua_State *L) {
 	return 1;
 }
 
+/* append a DXF entity to current drawing */
+/* given parameters:
+	- DXF entity, as userdata
+returns:
+	- success, as boolean
+*/
 int script_ent_append (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -95,17 +110,19 @@ int script_ent_append (lua_State *L) {
 		lua_error(L);
 	}
 	
-	if (!lua_isuserdata(L, 1)) {
+	/* the entity is a pointer stored in Lua as userdata type*/
+	if (!lua_isuserdata(L, 1)) { /* verify passed arguments */
 		lua_pushliteral(L, "ent_append: incorrect argument type");
 		lua_error(L);
 	}
-	
+	/* get entity */
 	dxf_node *ent = (dxf_node *) lua_touserdata (L, 1);
 	if (!ent) {
 		lua_pushboolean(L, 0); /* return fail */
 		return 1;
 	}
 	
+	/* copy the entity to drawing's compatible memory pool*/
 	dxf_node *new_ent = dxf_ent_copy(ent, DWG_LIFE);
 	
 	if (!new_ent) {
@@ -113,15 +130,28 @@ int script_ent_append (lua_State *L) {
 		return 1;
 	}
 	
+	/* parse entity to graphics */
 	new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
+	/*append to drawing */
 	drawing_ent_append(gui->drawing, new_ent);
-	
+	/* add to undo/redo list*/
 	do_add_item(gui->list_do.current, NULL, new_ent);
 	
 	lua_pushboolean(L, 1); /* return success */
 	return 1;
 }
 
+/* create a LWPOLYLINE DXF entity */
+/* given parameters:
+	- first vertex x, y and bulge, as numbers
+	- second vertex x, y and bulge, as numbers
+returns:
+	- DXF entity, as userdata
+Notes:
+	- The returned data is for one shot use in Lua script, because
+	the alocated memory is valid in single iteration of main loop.
+	It is assumed that soon afterwards it will be appended or drawn.
+*/
 int script_new_pline (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -135,26 +165,28 @@ int script_new_pline (lua_State *L) {
 		lua_error(L);
 	}
 	
+	/* verify passed arguments */
 	int n = lua_gettop(L);    /* number of arguments */
 	if (n < 6){
 		lua_pushliteral(L, "new_pline: invalid number of arguments");
 		lua_error(L);
 	}
-	
 	int i;
-	for (i = 1; i <= 6; i++) {
+	for (i = 1; i <= 6; i++) { /* arguments types */
 		if (!lua_isnumber(L, i)) {
 			lua_pushliteral(L, "new_pline: incorrect argument type");
 			lua_error(L);
 		}
 	}
 	
+	/* new LWPOLYLINE entity */
 	dxf_node *new_el = (dxf_node *) dxf_new_lwpolyline (
 		lua_tonumber(L, 1), lua_tonumber(L, 2), 0.0, /* pt1, */
 		lua_tonumber(L, 3), /* bulge */
 		gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 		0, FRAME_LIFE); /* paper space */
+	/* append second vertex to ensure entity's validity */
 	dxf_lwpoly_append (new_el, lua_tonumber(L, 4), lua_tonumber(L, 5), 0.0, lua_tonumber(L, 6), FRAME_LIFE);
 	
 	if (!new_el) lua_pushnil(L); /* return fail */
@@ -162,6 +194,12 @@ int script_new_pline (lua_State *L) {
 	return 1;
 }
 
+/* append a vertex to LWPOLYLINE DXF entity */
+/* given parameters:
+	- vertex x, y and bulge, as numbers
+returns:
+	- success, as boolean
+*/
 int script_pline_append (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -175,20 +213,28 @@ int script_pline_append (lua_State *L) {
 		lua_error(L);
 	}
 	
-	if (!lua_isuserdata(L, 1)) {
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 4){
+		lua_pushliteral(L, "pline_append: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!lua_isuserdata(L, 1)) { /* arguments types */
 		lua_pushliteral(L, "pline_append: incorrect argument type");
 		lua_error(L);
 	}
 	int i;
-	for (i = 2; i <= 4; i++) {
+	for (i = 2; i <= 4; i++) { /* arguments types */
 		if (!lua_isnumber(L, i)) {
 			lua_pushliteral(L, "pline_append: incorrect argument type");
 			lua_error(L);
 		}
 	}
 	
+	/* get polyline */
 	dxf_node *new_el = (dxf_node *) lua_touserdata (L, 1);
 	if (new_el) {
+		/* append vertex */
 		dxf_lwpoly_append (new_el, lua_tonumber(L, 2), lua_tonumber(L, 3), 0.0, lua_tonumber(L, 4), FRAME_LIFE);
 		lua_pushboolean(L, 1); /* return success */
 	}
@@ -196,6 +242,12 @@ int script_pline_append (lua_State *L) {
 	return 1;
 }
 
+/* change closed flag of a LWPOLYLINE DXF entity */
+/* given parameters:
+	- closed flag, as boolean
+returns:
+	- success, as boolean
+*/
 int script_pline_close (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -208,18 +260,24 @@ int script_pline_close (lua_State *L) {
 		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
 		lua_error(L);
 	}
-	
-	if (!lua_isuserdata(L, 1)) {
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "pline_close: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!lua_isuserdata(L, 1)) { /* arguments types */
 		lua_pushliteral(L, "pline_close: incorrect argument type");
 		lua_error(L);
 	}
-	if (!lua_isboolean(L, 2)) {
+	if (!lua_isboolean(L, 2)) { /* arguments types */
 		lua_pushliteral(L, "pline_close: incorrect argument type");
 		lua_error(L);
 	}
-	
+	/* get polyline */
 	dxf_node *new_el = (dxf_node *) lua_touserdata (L, 1);
 	if (new_el) {
+		/* change flag */
 		int closed = lua_toboolean(L, 2);
 		lua_pushboolean(L, dxf_attr_change_i(new_el, 70, (void *) &closed, 0)); /* return success */
 	}

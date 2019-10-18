@@ -38,8 +38,10 @@ function test_script_dyn(event)
 			n = tonumber(sides.value)
 
 			pline = reg_poly(cx, cy, n, r, ang)
-			
 			cadzinho.ent_draw(pline)
+			
+			circle = cadzinho.new_circle(cx,cy,r)
+			cadzinho.ent_draw(circle)
 			
 		elseif event.type == 'enter' then
 			r = ((event.x - cx)^2 + (event.y - cy)^2) ^ 0.5

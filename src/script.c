@@ -1,5 +1,60 @@
 #include "script.h"
 
+static int print_lua_var(char * value, lua_State * L, int idx){
+	int type = lua_type(L, idx);
+
+	switch(type) {
+		case LUA_TSTRING: {
+			snprintf(value, DXF_MAX_CHARS - 1, "s: %s", lua_tostring(L, idx));
+			break;
+		}
+		case LUA_TNUMBER: {
+		/* LUA_NUMBER may be double or integer */
+			snprintf(value, DXF_MAX_CHARS - 1, "n: %.9g", lua_tonumber(L, idx));
+			break;
+		}
+		case LUA_TTABLE: {
+			snprintf(value, DXF_MAX_CHARS - 1, "t: 0x%08x", lua_topointer(L, idx));
+			break;
+		}
+		case LUA_TFUNCTION: {
+			snprintf(value, DXF_MAX_CHARS - 1, "f: 0x%08x", lua_topointer(L, idx));
+			break;		}
+		case LUA_TUSERDATA: {
+			snprintf(value, DXF_MAX_CHARS - 1, "u: 0x%08x", lua_touserdata(L, idx));
+			break;
+		}
+		case LUA_TLIGHTUSERDATA: {
+			snprintf(value, DXF_MAX_CHARS - 1, "U: 0x%08x", lua_touserdata(L, idx));
+			break;
+		}
+		case LUA_TBOOLEAN: {
+			snprintf(value, DXF_MAX_CHARS - 1, "b: %d", lua_toboolean(L, idx) ? 1 : 0);
+			break;
+		}
+		case LUA_TTHREAD: {
+			snprintf(value, DXF_MAX_CHARS - 1, "d: 0x%08x", lua_topointer(L, idx));
+			break;
+		}
+		case LUA_TNIL: {
+			snprintf(value, DXF_MAX_CHARS - 1, "nil");
+			break;
+		}
+	}
+}
+
+void print_lua_stack(lua_State * L){
+	int n = lua_gettop(L);    /* number of arguments */
+	int i;
+	
+	char value[DXF_MAX_CHARS];
+	
+	for (i = 1; i <= n; i++) {
+		print_lua_var(value, L, i);
+		printf("%d=%s\n", i, value);
+	}
+}
+
 /* set timeout variable */
 int set_timeout (lua_State *L) {
 	/* get gui object from Lua instance */
@@ -204,6 +259,139 @@ int script_new_circle (lua_State *L) {
 		gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 		0, FRAME_LIFE); /* paper space */
+	
+	if (!new_el) lua_pushnil(L); /* return fail */
+	else lua_pushlightuserdata(L, (void *) new_el); /* return success */
+	return 1;
+}
+
+int script_new_hatch (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "new_hatch: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_istable(L, 1)) {
+		lua_pushliteral(L, "new_hatch: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 2)) {
+		lua_pushliteral(L, "new_hatch: incorrect argument type");
+		lua_error(L);
+	}
+	
+	graph_obj *bound = graph_new(FRAME_LIFE);
+	
+	if (!bound){
+		lua_pushliteral(L, "new_hatch: internal error");
+		lua_error(L);
+	}
+	
+	int i = 0;
+	double x0, y0, x1, y1, x2, y2;
+	double rot = 0.0, scale = 1.0;
+	int solid = 0;
+	struct h_pattern *curr_h;
+	struct h_family *curr_fam = gui->hatch_fam.next;
+	
+	/* iterate over table */
+	lua_pushnil(L);  /* first key */
+	while (lua_next(L, 1) != 0) { /* table index are shifted*/
+		/* uses 'key' (at index -2) and 'value' (at index -1) */
+		if (lua_istable(L, -1)){
+			lua_getfield(L, -1, "x");
+			x2 = lua_tonumber(L, -1);
+			lua_pop(L, 1);
+			lua_getfield(L, -1, "y");
+			y2 = lua_tonumber(L, -1);
+			lua_pop(L, 1);
+			if (i > 0)
+				line_add(bound, x1, y1, 0, x2, y2, 0);
+			else {
+				x0 = x2;
+				y0 = y2;
+			}
+			x1 = x2;
+			y1 = y2;
+			i++;
+		}
+		/* removes 'value'; keeps 'key' for next iteration */
+		lua_pop(L, 1);
+	}
+	
+	/* close polygon, if not yet */
+	if (fabs(x0 - x1) > 1e-9 || fabs(y0 - y1) > 1e-9)
+		line_add(bound, x1, y1, 0, x0, y0, 0);
+	
+	char type[DXF_MAX_CHARS];
+	strncpy(type, lua_tostring(L, 2), DXF_MAX_CHARS - 1);
+	str_upp(type);
+	char *new_type = trimwhitespace(type);
+	
+	if (strcmp(new_type, "USER") == 0){
+		strncpy(gui->list_pattern.name, "USER_DEF", DXF_MAX_CHARS - 1);
+		curr_h = &(gui->list_pattern);
+		rot = 0.0;
+		scale = 1.0;
+	}
+	else if (strcmp(new_type, "SOLID") == 0){
+		strncpy(gui->list_pattern.name, "SOLID", DXF_MAX_CHARS - 1);
+		curr_h = &(gui->list_pattern);
+		rot = 0.0;
+		scale = 1.0;
+		solid = 1;
+	}
+	else if (strcmp(new_type, "PREDEF") == 0){
+		/* get current family */
+		curr_h = NULL;
+		i = 0;
+		while (curr_fam){
+			if (gui->hatch_fam_idx == i){
+				curr_h = curr_fam->list->next;
+				break;
+			}
+			
+			i++;
+			curr_fam = curr_fam->next;
+		}
+		
+		/* get current hatch pattern */
+		i = 0;
+		while ((curr_h) && (i < gui->hatch_idx)){
+			i++;
+			curr_h = curr_h->next;
+		}
+		/* optional rotation and scale */
+		rot = gui->patt_ang;
+		scale = gui->patt_scale;
+	}
+	else {
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	
+	/* make DXF HATCH entity */
+	dxf_node *new_el = dxf_new_hatch (curr_h, bound,
+	solid, gui->hatch_assoc,
+	0, 0, /* style, type */
+	rot, scale,
+	gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+	gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+	0, FRAME_LIFE); /* paper space */
 	
 	if (!new_el) lua_pushnil(L); /* return fail */
 	else lua_pushlightuserdata(L, (void *) new_el); /* return success */

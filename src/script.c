@@ -285,6 +285,17 @@ int script_pline_close (lua_State *L) {
 	return 1;
 }
 
+/* create a CIRCLE DXF entity */
+/* given parameters:
+	- center x, y, as numbers
+	- radius, as number
+returns:
+	- DXF entity, as userdata
+Notes:
+	- The returned data is for one shot use in Lua script, because
+	the alocated memory is valid in single iteration of main loop.
+	It is assumed that soon afterwards it will be appended or drawn.
+*/
 int script_new_circle (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -297,7 +308,7 @@ int script_new_circle (lua_State *L) {
 		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
 		lua_error(L);
 	}
-	
+	/* verify passed arguments */
 	int n = lua_gettop(L);    /* number of arguments */
 	if (n < 3){
 		lua_pushliteral(L, "new_circle: invalid number of arguments");
@@ -305,13 +316,13 @@ int script_new_circle (lua_State *L) {
 	}
 	
 	int i;
-	for (i = 1; i <= 3; i++) {
+	for (i = 1; i <= 3; i++) { /* arguments types */
 		if (!lua_isnumber(L, i)) {
 			lua_pushliteral(L, "new_circle: incorrect argument type");
 			lua_error(L);
 		}
 	}
-	
+	/* new CIRCLE entity */
 	dxf_node * new_el = (dxf_node *) dxf_new_circle (
 		lua_tonumber(L, 1), lua_tonumber(L, 2), 0.0, lua_tonumber(L, 3), /* pt1, radius */
 		gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
@@ -323,6 +334,18 @@ int script_new_circle (lua_State *L) {
 	return 1;
 }
 
+/* create a HATCH DXF entity */
+/* given parameters:
+	- boundary vertexes, as table (elements in table are tables too,
+		with "x" and "y" labeled numbers elements)
+	- hatch type, as string ( aceptable values = USER, SOLID, PREDEF)
+returns:
+	- DXF entity, as userdata
+Notes:
+	- The returned data is for one shot use in Lua script, because
+	the alocated memory is valid in single iteration of main loop.
+	It is assumed that soon afterwards it will be appended or drawn.
+*/
 int script_new_hatch (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -336,21 +359,23 @@ int script_new_hatch (lua_State *L) {
 		lua_error(L);
 	}
 	
+	/* verify passed arguments */
 	int n = lua_gettop(L);    /* number of arguments */
 	if (n < 2){
 		lua_pushliteral(L, "new_hatch: invalid number of arguments");
 		lua_error(L);
 	}
 	
-	if (!lua_istable(L, 1)) {
+	if (!lua_istable(L, 1)) { /* arguments types */
 		lua_pushliteral(L, "new_hatch: incorrect argument type");
 		lua_error(L);
 	}
-	if (!lua_isstring(L, 2)) {
+	if (!lua_isstring(L, 2)) { /* arguments types */
 		lua_pushliteral(L, "new_hatch: incorrect argument type");
 		lua_error(L);
 	}
 	
+	/* -----------create boundary as graph vector -------------- */
 	graph_obj *bound = graph_new(FRAME_LIFE);
 	
 	if (!bound){
@@ -370,18 +395,20 @@ int script_new_hatch (lua_State *L) {
 	while (lua_next(L, 1) != 0) { /* table index are shifted*/
 		/* uses 'key' (at index -2) and 'value' (at index -1) */
 		if (lua_istable(L, -1)){
+			/* get vertex coordinates */
 			lua_getfield(L, -1, "x");
 			x2 = lua_tonumber(L, -1);
 			lua_pop(L, 1);
 			lua_getfield(L, -1, "y");
 			y2 = lua_tonumber(L, -1);
 			lua_pop(L, 1);
-			if (i > 0)
+			if (i > 0) /* add line bondary */
 				line_add(bound, x1, y1, 0, x2, y2, 0);
-			else {
+			else { /* first vertex */
 				x0 = x2;
 				y0 = y2;
 			}
+			/* prepare for next vertex */
 			x1 = x2;
 			y1 = y2;
 			i++;
@@ -393,7 +420,9 @@ int script_new_hatch (lua_State *L) {
 	/* close polygon, if not yet */
 	if (fabs(x0 - x1) > 1e-9 || fabs(y0 - y1) > 1e-9)
 		line_add(bound, x1, y1, 0, x0, y0, 0);
+	/*-----------------------------------------------------*/
 	
+	/* ----------------switch the hatch type options --------------*/
 	char type[DXF_MAX_CHARS];
 	strncpy(type, lua_tostring(L, 2), DXF_MAX_CHARS - 1);
 	str_upp(type);
@@ -436,10 +465,11 @@ int script_new_hatch (lua_State *L) {
 		rot = gui->patt_ang;
 		scale = gui->patt_scale;
 	}
-	else {
+	else { /* invalid type */
 		lua_pushboolean(L, 0); /* return fail */
 		return 1;
 	}
+	/*--------------------------------*/
 	
 	
 	/* make DXF HATCH entity */
@@ -450,6 +480,110 @@ int script_new_hatch (lua_State *L) {
 	gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 	gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 	0, FRAME_LIFE); /* paper space */
+	
+	if (!new_el) lua_pushnil(L); /* return fail */
+	else lua_pushlightuserdata(L, (void *) new_el); /* return success */
+	return 1;
+}
+
+/* create a TEXT DXF entity */
+/* given parameters:
+	- insertion point x, y, as numbers
+	- text, as string
+	- height, as number - OPTIONAL
+	- horizontal alingment, as string - OPTIONAL
+	- vertical alingment, as string - OPTIONAL
+returns:
+	- DXF entity, as userdata
+Notes:
+	- The returned data is for one shot use in Lua script, because
+	the alocated memory is valid in single iteration of main loop.
+	It is assumed that soon afterwards it will be appended or drawn.
+*/
+int script_new_text (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 3){
+		lua_pushliteral(L, "new_text: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	int i;
+	for (i = 1; i <= 2; i++) { /* arguments types */
+		if (!lua_isnumber(L, i)) {
+			lua_pushliteral(L, "new_text: incorrect argument type");
+			lua_error(L);
+		}
+	}
+	if (!lua_isstring(L, 3)) { /* arguments types */
+		lua_pushliteral(L, "new_text: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* get text */
+	char txt[DXF_MAX_CHARS];
+	txt[0] = 0;
+	strncpy(txt, lua_tostring(L, 3), DXF_MAX_CHARS - 1);
+	if (strlen(txt) <= 0) { /* invalid text */
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	/* get height, if exist*/
+	double txt_h = 1;
+	if (lua_isnumber(L, 4)) {
+		txt_h = lua_tonumber(L, 4);
+	}
+	
+	int t_al_h = 0, t_al_v = 0;
+	const char *al_v[] = {"BASE LINE", "BOTTOM", "MIDDLE", "TOP"};
+	const char *al_h[] = {"LEFT", "CENTER", "RIGHT", "ALIGNED", "MIDDLE", "FIT"};
+	
+	/* get horizontal aligment, if exist*/
+	if (lua_isstring(L, 5)) {
+		char al[DXF_MAX_CHARS];
+		strncpy(al, lua_tostring(L, 5), DXF_MAX_CHARS - 1);
+		str_upp(al);
+		char *new_al = trimwhitespace(al);
+		
+		for (i = 0; i < 6; i++){
+			if (strcmp(al, al_h[i]) == 0) t_al_h = i;
+		}
+	}
+	
+	/* get vertical aligment, if exist*/
+	if (lua_isstring(L, 6)) {
+		char al[DXF_MAX_CHARS];
+		strncpy(al, lua_tostring(L, 6), DXF_MAX_CHARS - 1);
+		str_upp(al);
+		char *new_al = trimwhitespace(al);
+		
+		for (i = 0; i < 4; i++){
+			if (strcmp(al, al_v[i]) == 0) t_al_v = i;
+		}
+	}
+	
+	/* create a new DXF TEXT */
+	dxf_node * new_el = (dxf_node *) dxf_new_text (
+		lua_tonumber(L, 1), lua_tonumber(L, 2), 0.0, txt_h, /* pt1, height */
+		txt, /* text, */
+		gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+		0, DWG_LIFE); /* paper space */
+	dxf_attr_change_i(new_el, 72, &t_al_h, -1);
+	dxf_attr_change_i(new_el, 73, &t_al_v, -1);
+	dxf_attr_change(new_el, 7, gui->drawing->text_styles[gui->t_sty_idx].name);
 	
 	if (!new_el) lua_pushnil(L); /* return fail */
 	else lua_pushlightuserdata(L, (void *) new_el); /* return success */

@@ -536,7 +536,7 @@ int script_new_text (lua_State *L) {
 	txt[0] = 0;
 	strncpy(txt, lua_tostring(L, 3), DXF_MAX_CHARS - 1);
 	if (strlen(txt) <= 0) { /* invalid text */
-		lua_pushboolean(L, 0); /* return fail */
+		lua_pushnil(L); /* return fail */
 		return 1;
 	}
 	
@@ -587,6 +587,147 @@ int script_new_text (lua_State *L) {
 	
 	if (!new_el) lua_pushnil(L); /* return fail */
 	else lua_pushlightuserdata(L, (void *) new_el); /* return success */
+	return 1;
+}
+
+/* create a BLOCK */
+/* given parameters:
+	- entities, as table of userdata
+	- block name, as string
+returns:
+	- block entry, as userdata
+Notes:
+	- This function will append the created block to drawing's Block section.
+	No actions are requiried after this.
+*/
+int script_new_block (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "new_block: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_istable(L, 1)) { /* arguments types */
+		lua_pushliteral(L, "new_block: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 2)) { /* arguments types */
+		lua_pushliteral(L, "new_block: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* verify if table is empty */
+	if (lua_rawlen(L, 1) <=0){
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	/* get name */
+	char name[DXF_MAX_CHARS];
+	name[0] = 0;
+	strncpy(name, lua_tostring(L, 2), DXF_MAX_CHARS - 1);
+	if (strlen(name) <= 0) { /* invalid text */
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	dxf_drawing *drawing = gui->drawing;
+	
+	/* verify if block not exist */
+	if (dxf_find_obj_descr2(drawing->blks, "BLOCK", name) != NULL){
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	dxf_node *blkrec = NULL, *blk = NULL, *endblk = NULL, *handle = NULL;
+	dxf_node *obj, *new_ent, *text, *attdef;
+	//list_node *vec_graph = NULL;
+	double max_x = 0.0, max_y = 0.0;
+	double min_x = 0.0, min_y = 0.0;
+	int init_ext = 0, ok = 0;
+	char txt[DXF_MAX_CHARS], tag[DXF_MAX_CHARS];
+	txt[0] = 0;
+	tag[0] = 0;
+	
+	//int mark_len = strlen(mark);
+	
+	/* create BLOCK_RECORD table entry*/
+	blkrec = dxf_new_blkrec (name, DWG_LIFE);
+	ok = ent_handle(drawing, blkrec);
+	if (ok) handle = dxf_find_attr2(blkrec, 5); ok = 0;
+	
+	/* begin block */
+	if (handle) blk = dxf_new_begblk (name, gui->drawing->layers[gui->layer_idx].name, (char *)handle->value.s_data, DWG_LIFE);
+	/* get a handle */
+	ok = ent_handle(drawing, blk);
+	/* use the handle to owning the ENDBLK ent */
+	if (ok) handle = dxf_find_attr2(blk, 5); ok = 0;
+	if (handle) endblk = dxf_new_endblk (gui->drawing->layers[gui->layer_idx].name, (char *)handle->value.s_data, DWG_LIFE);
+	else {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	/* first get the list coordinates extention */
+	/* iterate over table */
+	lua_pushnil(L);  /* first key */
+	while (lua_next(L, 1) != 0) { /* table index are shifted*/
+		/* uses 'key' (at index -2) and 'value' (at index -1) */
+		if (lua_isuserdata(L, -1)){
+			obj = (dxf_node *) lua_touserdata (L, -1);
+			obj->obj.graphics = dxf_graph_parse(gui->drawing, obj, 0, FRAME_LIFE);
+			graph_list_ext(obj->obj.graphics, &init_ext, &min_x, &min_y, &max_x, &max_y);
+		}
+		/* removes 'value'; keeps 'key' for next iteration */
+		lua_pop(L, 1);
+	}
+	
+	/*then copy the entities of list and apply offset in their coordinates*/
+	/* iterate over table */
+	lua_pushnil(L);  /* first key */
+	while (lua_next(L, 1) != 0) { /* table index are shifted*/
+		/* uses 'key' (at index -2) and 'value' (at index -1) */
+		if (lua_isuserdata(L, -1)){
+			obj = (dxf_node *) lua_touserdata (L, -1);
+			if (obj->type == DXF_ENT){ /* DXF entity  */
+				
+				new_ent = dxf_ent_copy(obj, DWG_LIFE);
+				ent_handle(drawing, new_ent);
+				dxf_edit_move(new_ent, -min_x, -min_y, 0.0);
+				dxf_obj_append(blk, new_ent);
+			}
+		}
+		/* removes 'value'; keeps 'key' for next iteration */
+		lua_pop(L, 1);
+	}
+	
+	/* end the block*/
+	if (endblk) ok = ent_handle(drawing, endblk);
+	if (ok) ok = dxf_obj_append(blk, endblk);
+	
+	/*attach to blocks section*/
+	if (ok) ok = dxf_obj_append(drawing->blks_rec, blkrec);
+	if (ok) ok = dxf_obj_append(drawing->blks, blk);
+	
+	if (ok) {
+		/* undo/redo list*/
+		do_add_item(gui->list_do.current, NULL, blkrec);
+		do_add_item(gui->list_do.current, NULL, blk);
+		lua_pushlightuserdata(L, (void *) blk); /* return success */
+	}
+	else lua_pushnil(L); /* return fail */
 	return 1;
 }
 

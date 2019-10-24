@@ -26,6 +26,7 @@ int script_pline_close (lua_State *L);
 int script_new_circle (lua_State *L);
 int script_new_hatch (lua_State *L);
 int script_new_text (lua_State *L);
+int script_new_block (lua_State *L);
 
 int script_set_layer (lua_State *L);
 int script_set_color (lua_State *L);

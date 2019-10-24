@@ -233,6 +233,7 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 		{"new_circle", script_new_circle},
 		{"new_hatch", script_new_hatch},
 		{"new_text", script_new_text},
+		{"new_block", script_new_block},
 		{"set_layer", script_set_layer},
 		{"set_color", script_set_color},
 		{"set_ltype", script_set_ltype},

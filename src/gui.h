@@ -140,6 +140,10 @@ struct Gui_obj {
 	dxf_drawing *drawing;
 	dxf_node *element, *near_el;
 	
+	list_node *near_list;
+	int near_count;
+	int sel_idx;
+	
 	/* background image dimension */
 	unsigned int main_w;
 	unsigned int main_h;
@@ -184,6 +188,7 @@ struct Gui_obj {
 	enum Action action;
 	enum Modal modal, prev_modal;
 	enum Gui_ev ev;
+	int modstates;
 	enum attract_type curr_attr_t;
 	
 	bmp_color background;

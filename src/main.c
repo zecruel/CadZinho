@@ -531,10 +531,17 @@ int main(int argc, char** argv){
 	gui->drawing->dflt_font = gui->dflt_font;
 	
 	url = NULL; /* pass a null file only for initialize the drawing structure */
-	//dxf_open(gui->drawing, url);
+	
+	/* **************** init the main drawing ************ */
 	while (dxf_read (gui->drawing, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &progress) > 0){
 		
 	}
+	gui->layer_idx = dxf_lay_idx (gui->drawing, "0");
+	gui->ltypes_idx = dxf_ltype_idx (gui->drawing, "BYLAYER");
+	gui->t_sty_idx = dxf_tstyle_idx (gui->drawing, "STANDARD");
+	gui->color_idx = 256;
+	gui->lw_idx = DXF_LW_LEN;
+	/* *************************************************** */
 	
 	/* **************** init the clipboard drawing ************ */
 	gui->clip_drwg = dxf_drawing_new(ONE_TIME);
@@ -657,7 +664,7 @@ int main(int argc, char** argv){
 		else{
 			SDL_ShowCursor(SDL_DISABLE);
 			if (ev_type != 0){
-				SDL_Keymod modstates = SDL_GetModState();
+				gui->modstates = SDL_GetModState();
 				double wheel = 1.0;
 				switch (event.type){
 					case SDL_MOUSEBUTTONUP:
@@ -748,23 +755,23 @@ int main(int argc, char** argv){
 							//gui->ev |= EV_DEL;
 							gui->action = DELETE;
 						}
-						else if (event.key.keysym.sym == SDLK_c && (modstates & KMOD_CTRL)){
+						else if (event.key.keysym.sym == SDLK_c && (gui->modstates & KMOD_CTRL)){
 							//gui->ev |= EV_YANK;
 							gui->action = YANK;
 						}
-						else if (event.key.keysym.sym == SDLK_x && (modstates & KMOD_CTRL)){
+						else if (event.key.keysym.sym == SDLK_x && (gui->modstates & KMOD_CTRL)){
 							//gui->ev |= EV_CUT;
 							gui->action = CUT;
 						}
-						else if (event.key.keysym.sym == SDLK_v && (modstates & KMOD_CTRL)){
+						else if (event.key.keysym.sym == SDLK_v && (gui->modstates & KMOD_CTRL)){
 							//gui->ev |= EV_PASTE;
 							gui->action = START_PASTE;
 						}
-						else if (event.key.keysym.sym == SDLK_z && (modstates & KMOD_CTRL)){
+						else if (event.key.keysym.sym == SDLK_z && (gui->modstates & KMOD_CTRL)){
 							//gui->ev |= EV_UNDO;
 							gui->action = UNDO;
 						}
-						else if (event.key.keysym.sym == SDLK_r && (modstates & KMOD_CTRL)){
+						else if (event.key.keysym.sym == SDLK_r && (gui->modstates & KMOD_CTRL)){
 							//gui->ev |= EV_REDO;
 							gui->action = REDO;
 						}
@@ -982,7 +989,16 @@ int main(int argc, char** argv){
 				nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
 				
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEW]))){
-					printf("NEW\n");
+					while (dxf_read (gui->drawing, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &progress) > 0){
+		
+					}
+					gui->layer_idx = dxf_lay_idx (gui->drawing, "0");
+					gui->ltypes_idx = dxf_ltype_idx (gui->drawing, "BYLAYER");
+					gui->t_sty_idx = dxf_tstyle_idx (gui->drawing, "STANDARD");
+					gui->color_idx = 256;
+					gui->lw_idx = DXF_LW_LEN;
+					gui->curr_path[0] = 0;
+					gui->drwg_hist_pos ++;
 				}
 				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_OPEN]))){
 					gui->action = FILE_OPEN;
@@ -1558,10 +1574,11 @@ int main(int argc, char** argv){
 				gui_tstyle(gui);
 				dxf_ents_parse(gui->drawing);				
 				gui->action = VIEW_ZOOM_EXT;
-				gui->layer_idx = 0;
-				gui->ltypes_idx = 0;
-				gui->t_sty_idx = 0;
+				gui->layer_idx = dxf_lay_idx (gui->drawing, "0");
+				gui->ltypes_idx = dxf_ltype_idx (gui->drawing, "BYLAYER");
+				gui->t_sty_idx = dxf_tstyle_idx (gui->drawing, "STANDARD");
 				gui->color_idx = 256;
+				gui->lw_idx = DXF_LW_LEN;
 				wait_open = 0;
 				progr_end = 1;
 				list_clear(gui->sel_list);

@@ -1058,6 +1058,10 @@ int gui_start(gui_obj *gui){
 	gui->element = NULL;
 	gui->near_el = NULL;
 	
+	gui->near_list = NULL;
+	gui->near_count = 0;
+	gui->sel_idx = 0;
+	
 	gui->main_w = 2048;
 	gui->main_h = 2048;
 	
@@ -1118,6 +1122,7 @@ int gui_start(gui_obj *gui){
 	gui->modal = SELECT;
 	gui->prev_modal = SELECT;
 	gui->ev = EV_NONE;
+	gui->modstates = 0;
 	gui->curr_attr_t = ATRC_END|ATRC_MID|ATRC_QUAD;
 	
 	gui->background = gray;

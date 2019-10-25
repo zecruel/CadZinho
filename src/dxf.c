@@ -1005,7 +1005,7 @@ void dxf_layer_assemb (dxf_drawing *drawing){
 	int off;
 	
 	/* always set the index 0 as the default layer*/
-	drawing->num_layers = 1;
+	drawing->num_layers = 0;
 	drawing->layers[0].name[0] = 0;
 	drawing->layers[0].ltype[0] = 0;
 	drawing->layers[0].color = 0;
@@ -1057,22 +1057,22 @@ void dxf_layer_assemb (dxf_drawing *drawing){
 			}
 			current = current->next;
 		}
-		if ((i + 1) < DXF_MAX_LAYERS){
+		if (i < DXF_MAX_LAYERS){
 			/* set the variables on the current layer in drawing structure */
-			strcpy(drawing->layers[i+1].name, name);
-			strcpy(drawing->layers[i+1].ltype, ltype);
-			drawing->layers[i+1].color = color;
-			drawing->layers[i+1].line_w = line_w;
-			drawing->layers[i+1].frozen = frozen;
-			drawing->layers[i+1].lock = lock;
-			drawing->layers[i+1].off = off;
-			drawing->layers[i+1].num_el = 0;
-			drawing->layers[i+1].obj = curr_layer;
+			strcpy(drawing->layers[i].name, name);
+			strcpy(drawing->layers[i].ltype, ltype);
+			drawing->layers[i].color = color;
+			drawing->layers[i].line_w = line_w;
+			drawing->layers[i].frozen = frozen;
+			drawing->layers[i].lock = lock;
+			drawing->layers[i].off = off;
+			drawing->layers[i].num_el = 0;
+			drawing->layers[i].obj = curr_layer;
 		}
 		
 		i++;
 	}
-	if ((i + 1) < DXF_MAX_LAYERS) drawing->num_layers += i;
+	if (i< DXF_MAX_LAYERS) drawing->num_layers += i;
 	else drawing->num_layers = DXF_MAX_LAYERS;
 	//printf("Num Layers = %d\n", drawing->num_layers);
 }
@@ -1087,7 +1087,7 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 	double length, max;
 	
 	/* always set the index 0 as the default ltype*/
-	drawing->num_ltypes = 1;
+	drawing->num_ltypes = 0;
 	drawing->ltypes[0].name[0] = 0;
 	drawing->ltypes[0].descr[0] = 0;
 	drawing->ltypes[0].size = 1;
@@ -1151,19 +1151,19 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 		*/
 		
 		/* set the variables on the current ltype in drawing structure */
-		if ((i + 1) < DXF_MAX_LTYPES){
-			strcpy(drawing->ltypes[i+1].name, name);
-			strcpy(drawing->ltypes[i+1].descr, descr);
-			memcpy(drawing->ltypes[i+1].pat, pat, size * sizeof(double));
-			drawing->ltypes[i+1].size = size;
-			drawing->ltypes[i+1].length = length;
-			drawing->ltypes[i+1].num_el = 0;
-			drawing->ltypes[i+1].obj = curr_ltype;
+		if (i < DXF_MAX_LTYPES){
+			strcpy(drawing->ltypes[i].name, name);
+			strcpy(drawing->ltypes[i].descr, descr);
+			memcpy(drawing->ltypes[i].pat, pat, size * sizeof(double));
+			drawing->ltypes[i].size = size;
+			drawing->ltypes[i].length = length;
+			drawing->ltypes[i].num_el = 0;
+			drawing->ltypes[i].obj = curr_ltype;
 		}
 		
 		i++;
 	}
-	if ((i + 1) < DXF_MAX_LTYPES) drawing->num_ltypes += i;
+	if (i < DXF_MAX_LTYPES) drawing->num_ltypes += i;
 	else drawing->num_ltypes = DXF_MAX_LTYPES;
 }
 
@@ -1191,8 +1191,8 @@ void dxf_tstyles_assemb (dxf_drawing *drawing){
 	//shape *shx_font = NULL;
 	
 	//if (shx_font){
-		/* always set the index 0 as the default font
-		drawing->num_tstyles = 1;
+		/* always set the index 0 as the default font */
+		//drawing->num_tstyles = 1;
 		drawing->text_styles[0].name[0] = 0;
 		drawing->text_styles[0].file[0] = 0;
 		drawing->text_styles[0].big_file[0] = 0;
@@ -1204,10 +1204,9 @@ void dxf_tstyles_assemb (dxf_drawing *drawing){
 		drawing->text_styles[0].width_f = 1.0;
 		drawing->text_styles[0].oblique = 0.0;
 		
-		drawing->text_styles[0].shx_font = shx_font;
 		drawing->text_styles[0].num_el = 0;
 		drawing->text_styles[0].obj = NULL;
-	//}*/
+	//}
 	
 	i = 0;
 	while (curr_tstyle = dxf_find_obj_i(drawing->t_style, "STYLE", i)){/* get the next text style */

@@ -129,6 +129,34 @@ list_node *list_find_data(list_node * list, void *data){
 	return NULL; /* return fail */
 }
 
+int list_remove(list_node * list, list_node *node){
+	list_node *current = NULL;
+	
+	if (list && node){
+		if (node == list->end){
+			if (node->prev)
+				list->end = node->prev;
+			else
+				list->end = list;
+		}
+		
+		if (node->prev){
+			node->prev->next = node->next;
+			if (node == node->end)
+				node->prev->end = node->prev;
+			else
+				node->prev->end = node->end;
+		}
+		
+		if (node->next){
+			node->next->prev = node->prev;
+		}
+		
+		return 1; /* return success */
+	}
+	return 0; /* return fail */
+}
+
 list_node *list_get_idx(list_node * list, int idx){
 	list_node *current = NULL, *last = NULL;
 	int i = 0;

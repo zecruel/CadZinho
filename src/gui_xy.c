@@ -31,6 +31,10 @@ int gui_update_pos(gui_obj *gui){
 		gui->near_el = NULL;
 		gui->near_el = (dxf_node *)dxf_ents_isect(gui->drawing, rect_pt1, rect_pt2);
 		
+		gui->near_list = list_new(NULL, FRAME_LIFE);
+		gui->near_count = dxf_ents_isect2(gui->near_list, gui->drawing, rect_pt1, rect_pt2);
+		
+		
 		if ((gui->step >= 0) && (gui->step < 10)){
 			/* update current position by the mouse */
 			gui->step_x[gui->step] = (double) gui->mouse_x/gui->zoom + gui->ofs_x;

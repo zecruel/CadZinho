@@ -43,6 +43,8 @@ list_node *list_pop(list_node * list);
 
 list_node *list_find_data(list_node * list, void *data);
 
+int list_remove(list_node * list, list_node *node);
+
 list_node *list_get_idx(list_node * list, int idx);
 
 int list_clear(list_node * list);

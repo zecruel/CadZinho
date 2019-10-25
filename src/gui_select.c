@@ -14,10 +14,32 @@ void sel_list_append(list_node *list, dxf_node *ent){
 	}
 }
 
+void sel_list_toggle(list_node *list, dxf_node *ent){
+	if (list && ent){
+		list_node * list_el = NULL;
+		
+		if (list_el = list_find_data(list, ent)){
+			list_remove(list, list_el);
+		}
+		else{
+			list_el = list_new(ent, 0);
+			if (list_el){
+				list_push(list, list_el);
+			}
+		}
+	}
+}
+
 int gui_select_interactive(gui_obj *gui){
 	if (gui->modal == SELECT){
 		if (gui->ev & EV_ENTER){
-			sel_list_append(gui->sel_list, gui->element);
+			if (gui->element)
+				//sel_list_append(gui->sel_list, gui->element);
+				sel_list_toggle(gui->sel_list, gui->element);
+			else {
+				list_clear(gui->sel_list);
+				gui->draw = 1;
+			}
 			/* -------------------------------test-------------- */
 			
 			/*dxf_edit_move (gui->element, 0.0 , 0.0, 0.0);
@@ -69,12 +91,44 @@ int gui_select_interactive(gui_obj *gui){
 			/*---------------------------------------------  */
 		}
 		if (gui->ev & EV_CANCEL){
-			list_clear(gui->sel_list);
+			gui->sel_idx++;
+			
+			if (gui->sel_idx >= gui->near_count)
+				gui->sel_idx = 0;
+			
+			gui->element = NULL;
+			list_node *list_el = NULL;
+			if (gui->near_count > 0) {
+				int i = 0;
+				list_el = gui->near_list->next;
+				while (list_el){
+					if (gui->sel_idx == i)
+						gui->element = (dxf_node *)list_el->data;
+					list_el = list_el->next;
+					i++;
+				}
+			}
 			gui->draw = 1;
 		}
-		if (gui->ev & EV_MOTION){				
+		if (gui->ev & EV_MOTION){
+			if (gui->sel_idx >= gui->near_count)
+				gui->sel_idx = 0;
+			
+			gui->element = NULL;
+			list_node *list_el = NULL;
+			if (gui->near_count > 0) {
+				int i = 0;
+				list_el = gui->near_list->next;
+				while (list_el){
+					if (gui->sel_idx == i)
+						gui->element = (dxf_node *)list_el->data;
+					list_el = list_el->next;
+					i++;
+				}
+			}
+			
 			/* for hilite test */
-			gui->element = gui->near_el;
+			//gui->element = gui->near_el;
 			gui->draw = 1;
 		}
 	}

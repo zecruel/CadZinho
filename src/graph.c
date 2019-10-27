@@ -516,7 +516,7 @@ int graph_draw2(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 		double last;
 		
 		/* get the pattern length */
-		for (i = 0; i <= master->patt_size && i < 20; i++){
+		for (i = 0; i < master->patt_size && i < 20; i++){
 			patt_len += fabs(master->pattern[i]);
 		}
 		//patt_len *= scale;
@@ -760,7 +760,7 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 		double last;
 		
 		/* get the pattern length */
-		for (i = 0; i <= master->patt_size && i < 20; i++){
+		for (i = 0; i < master->patt_size && i < 20; i++){
 			patt_len += fabs(master->pattern[i]);
 		}
 		//patt_len *= param.scale;

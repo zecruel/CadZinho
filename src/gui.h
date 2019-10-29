@@ -111,6 +111,17 @@ enum Font_sizes {
 	FONT_NUM_SIZE
 };
 
+enum Sel_type {
+	SEL_ELEMENT,
+	SEL_RECTANGLE
+};
+
+enum Sel_mode {
+	SEL_ADD,
+	SEL_SUB,
+	SEL_TOGGLE
+};
+
 struct gui_glyph{
 	int code_p, x, y, w, h;
 	double adv;
@@ -143,6 +154,9 @@ struct Gui_obj {
 	list_node *near_list;
 	int near_count;
 	int sel_idx;
+	enum Sel_mode sel_mode;
+	enum Sel_type sel_type;
+	
 	
 	/* background image dimension */
 	unsigned int main_w;

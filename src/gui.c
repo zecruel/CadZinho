@@ -1061,6 +1061,8 @@ int gui_start(gui_obj *gui){
 	gui->near_list = NULL;
 	gui->near_count = 0;
 	gui->sel_idx = 0;
+	gui->sel_mode = SEL_TOGGLE;
+	gui->sel_type = SEL_ELEMENT;
 	
 	gui->main_w = 2048;
 	gui->main_h = 2048;

@@ -1,27 +1,14 @@
 #include "gui_use.h"
 
-void sel_list_append(list_node *list, dxf_node *ent){
-	if (list && ent){
-		if (list_find_data(list, ent)){
-			//printf ("ja existe!\n");
-		}
-		else{
-			list_node * new_el = list_new(ent, 0);
-			if (new_el){
-				list_push(list, new_el);
-			}
-		}
-	}
-}
-
-void sel_list_toggle(list_node *list, dxf_node *ent){
+void sel_list_modify(list_node *list, dxf_node *ent, enum Sel_mode mode){
 	if (list && ent){
 		list_node * list_el = NULL;
 		
 		if (list_el = list_find_data(list, ent)){
-			list_remove(list, list_el);
+			if (mode == SEL_SUB || mode == SEL_TOGGLE)
+				list_remove(list, list_el);
 		}
-		else{
+		else if (mode == SEL_ADD || mode == SEL_TOGGLE){
 			list_el = list_new(ent, 0);
 			if (list_el){
 				list_push(list, list_el);
@@ -31,64 +18,17 @@ void sel_list_toggle(list_node *list, dxf_node *ent){
 }
 
 int gui_select_interactive(gui_obj *gui){
-	if (gui->modal == SELECT){
+	if (gui->modal != SELECT) return 0;
+	
+	if (gui->sel_type == SEL_ELEMENT){
 		if (gui->ev & EV_ENTER){
 			if (gui->element)
-				//sel_list_append(gui->sel_list, gui->element);
-				sel_list_toggle(gui->sel_list, gui->element);
-			else {
+				sel_list_modify(gui->sel_list, gui->element, gui->sel_mode);
+			else if (gui->sel_mode == SEL_TOGGLE){
 				list_clear(gui->sel_list);
 				gui->draw = 1;
 			}
-			/* -------------------------------test-------------- */
 			
-			/*dxf_edit_move (gui->element, 0.0 , 0.0, 0.0);
-			
-			/*--------------------------------------------- 
-			dxf_node *current, *start, *end;
-			if(dxf_find_ext_appid(gui->element, "ZECRUEL", &start, &end)){
-				printf("ext data Zecruel, start = %d, end = %d\n", start, end);
-				current = start;
-				while (current != NULL){
-					printf ("%d = ", current->value.group); 
-					
-					switch (current->value.t_data) {
-						case DXF_STR:
-							if(current->value.s_data){
-								printf(current->value.s_data);
-							}
-							break;
-						case DXF_FLOAT:
-							printf("%f", current->value.d_data);
-							break;
-						case DXF_INT:
-							printf("%d", current->value.i_data);
-					}
-					printf("\n");
-					//printf ("%x\n", current);
-					if (current == end) break;
-					current = current->next;
-				}
-			}*/
-			/* -------------------------------test-------------- */
-			
-			//dxf_ent_attract (dxf_node * obj, enum attract_type type, double pos_x, double pos_y, double sensi, double *ret_x, double *ret_y)
-			if (gui->element){
-				if(gui->element->type == DXF_ENT){
-					//dxf_ent_print2(gui->element);
-					/*
-					printf("%s\n",gui->element->obj.name);
-					if (dxf_ident_ent_type (gui->element)  ==  DXF_INSERT){
-						dxf_node *volta = dxf_find_attr2(gui->element, 2);
-						if (volta){
-							printf("%s\n",volta->value.s_data);
-						}
-					}*/
-				}
-			}
-			//double ret_x, ret_y;
-			
-			/*---------------------------------------------  */
 		}
 		if (gui->ev & EV_CANCEL){
 			gui->sel_idx++;
@@ -107,6 +47,10 @@ int gui_select_interactive(gui_obj *gui){
 					list_el = list_el->next;
 					i++;
 				}
+			}
+			else if (gui->sel_mode == SEL_ADD){
+				list_clear(gui->sel_list);
+				gui->draw = 1;
 			}
 			gui->draw = 1;
 		}
@@ -132,13 +76,133 @@ int gui_select_interactive(gui_obj *gui){
 			gui->draw = 1;
 		}
 	}
+	else if (gui->sel_type == SEL_RECTANGLE){
+		static dxf_node *new_el;
+		
+		if (gui->step == 0){
+			if (gui->ev & EV_ENTER){
+				
+				gui->draw_tmp = 1;
+				
+				gui->step = 1;
+				gui->en_distance = 1;
+				gui_next_step(gui);
+			}
+			else if (gui->ev & EV_CANCEL){
+				list_clear(gui->sel_list);
+				gui->draw = 1;
+				
+				gui_default_modal(gui);
+			}
+		}
+		else{
+			if (gui->ev & EV_ENTER){
+				double rect_pt1[2], rect_pt2[2];
+				rect_pt1[0] = (gui->step_x[gui->step - 1] < gui->step_x[gui->step]) ? gui->step_x[gui->step - 1] : gui->step_x[gui->step];
+				rect_pt1[1] = (gui->step_y[gui->step - 1] < gui->step_y[gui->step]) ? gui->step_y[gui->step - 1] : gui->step_y[gui->step];
+				rect_pt2[0] = (gui->step_x[gui->step - 1] > gui->step_x[gui->step]) ? gui->step_x[gui->step - 1] : gui->step_x[gui->step];
+				rect_pt2[1] = (gui->step_y[gui->step - 1] > gui->step_y[gui->step]) ? gui->step_y[gui->step - 1] : gui->step_y[gui->step];
+				
+				list_node *list = list_new(NULL, FRAME_LIFE);
+				list_clear(list);
+				int count = 0;
+				
+				if (gui->step_x[gui->step - 1] > gui->step_x[gui->step])
+					count = dxf_ents_isect2(list, gui->drawing, rect_pt1, rect_pt2);
+				else count = dxf_ents_in_rect(list, gui->drawing, rect_pt1, rect_pt2);
+				
+				list_node *list_el = NULL;
+				if (count > 0) {
+					list_el = list->next;
+					while (list_el){
+						sel_list_modify(gui->sel_list, (dxf_node *)list_el->data, gui->sel_mode);
+						list_el = list_el->next;
+					}
+				}
+				
+				gui_first_step(gui);
+			}
+			else if (gui->ev & EV_CANCEL){
+				gui_first_step(gui);
+			}
+			if (gui->ev & EV_MOTION){
+				int closed = 1;
+				/* create a new DXF lwpolyline */
+				new_el = (dxf_node *) dxf_new_lwpolyline (
+					gui->step_x[gui->step - 1], gui->step_y[gui->step - 1], 0.0, /* pt1, */
+					0.0,  /* bulge, */
+					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+					0, FRAME_LIFE); /* paper space */
+				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step - 1], 0.0, 0.0, FRAME_LIFE);
+				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, 0.0, FRAME_LIFE);
+				dxf_lwpoly_append (new_el, gui->step_x[gui->step - 1], gui->step_y[gui->step], 0.0, 0.0, FRAME_LIFE);
+				dxf_attr_change_i(new_el, 70, (void *) &closed, 0);
+				
+				
+				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
+				gui->element = new_el;
+			}
+		}
+	}
 	return 1;
 }
 
 int gui_select_info (gui_obj *gui){
 	if (gui->modal == SELECT) {
+		static int prev_type = -1;
+		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Select an object", NK_TEXT_LEFT);
+		
+		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
+		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
+		if (gui_tab (gui, "+", gui->sel_mode == SEL_ADD)) gui->sel_mode = SEL_ADD;
+		if (gui_tab (gui, "-", gui->sel_mode == SEL_SUB)) gui->sel_mode = SEL_SUB;
+		if (gui_tab (gui, "Toggle", gui->sel_mode == SEL_TOGGLE)) gui->sel_mode = SEL_TOGGLE;
+		nk_style_pop_vec2(gui->ctx);
+		nk_layout_row_end(gui->ctx);
+		
+		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
+		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
+		if (gui_tab (gui, "Element", gui->sel_type == SEL_ELEMENT)) gui->sel_type = SEL_ELEMENT;
+		if (gui_tab (gui, "Rectangle", gui->sel_type == SEL_RECTANGLE)) gui->sel_type = SEL_RECTANGLE;
+		nk_style_pop_vec2(gui->ctx);
+		nk_layout_row_end(gui->ctx);
+		
+		if (prev_type != gui->sel_type){
+			prev_type = gui->sel_type;
+			gui->step = 0;
+		}
 	}
 	return 1;
 }
+
+
+/*--------------------------------------------- 
+dxf_node *current, *start, *end;
+if(dxf_find_ext_appid(gui->element, "ZECRUEL", &start, &end)){
+	printf("ext data Zecruel, start = %d, end = %d\n", start, end);
+	current = start;
+	while (current != NULL){
+		printf ("%d = ", current->value.group); 
+		
+		switch (current->value.t_data) {
+			case DXF_STR:
+				if(current->value.s_data){
+					printf(current->value.s_data);
+				}
+				break;
+			case DXF_FLOAT:
+				printf("%f", current->value.d_data);
+				break;
+			case DXF_INT:
+				printf("%d", current->value.i_data);
+		}
+		printf("\n");
+		//printf ("%x\n", current);
+		if (current == end) break;
+		current = current->next;
+	}
+}*/
+/* -------------------------------test-------------- */

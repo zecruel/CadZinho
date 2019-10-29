@@ -1797,10 +1797,10 @@ int graph_isect(graph_obj * master, double rect_pt1[2], double rect_pt2[2]){
 				lin_pt1[1] = current->y0;
 				lin_pt2[0] = current->x1;
 				lin_pt2[1] = current->y1;
-				if ((lin_pt1[0] > rect_pt1[0] && lin_pt1[0] < rect_pt2[0]) &&
-					(lin_pt1[1] > rect_pt1[1] && lin_pt1[1] < rect_pt2[1]) &&
-					(lin_pt2[0] > rect_pt1[0] && lin_pt2[0] < rect_pt2[0]) &&
-					(lin_pt2[1] > rect_pt1[1] && lin_pt2[1] < rect_pt2[1]))
+				if (((lin_pt1[0] > rect_pt1[0] && lin_pt1[0] < rect_pt2[0]) &&
+					(lin_pt1[1] > rect_pt1[1] && lin_pt1[1] < rect_pt2[1])) ||
+					((lin_pt2[0] > rect_pt1[0] && lin_pt2[0] < rect_pt2[0]) &&
+					(lin_pt2[1] > rect_pt1[1] && lin_pt2[1] < rect_pt2[1])))
 					return 1;
 				if(l_r_isect(lin_pt1, lin_pt2, rect_pt1, rect_pt2)){
 					return 1;
@@ -1811,6 +1811,30 @@ int graph_isect(graph_obj * master, double rect_pt1[2], double rect_pt2[2]){
 		}
 	}
 	return 0;
+}
+
+int graph_in_rect(graph_obj * master, double rect_pt1[2], double rect_pt2[2]){
+	if (!master) return 0;
+	if(!master->list->next) return 0; /* check if list is not empty */
+	
+	double lin_pt1[2], lin_pt2[2];
+	line_node *current = master->list->next;
+	
+	while(current){ /*sweep the list content */
+		/* update the graph */
+		lin_pt1[0] = current->x0;
+		lin_pt1[1] = current->y0;
+		lin_pt2[0] = current->x1;
+		lin_pt2[1] = current->y1;
+		if (!(((lin_pt1[0] > rect_pt1[0] && lin_pt1[0] < rect_pt2[0]) &&
+			(lin_pt1[1] > rect_pt1[1] && lin_pt1[1] < rect_pt2[1])) &&
+			((lin_pt2[0] > rect_pt1[0] && lin_pt2[0] < rect_pt2[0]) &&
+			(lin_pt2[1] > rect_pt1[1] && lin_pt2[1] < rect_pt2[1]))))
+			return 0;
+		
+		current = current->next; /* go to next */
+	}
+	return 1;
 }
 
 #if(0)
@@ -2052,6 +2076,26 @@ graph_obj * graph_list_isect(list_node *list, double rect_pt1[2], double rect_pt
 		}
 	}
 	return NULL;
+}
+
+int graph_list_in_rect(list_node *list, double rect_pt1[2], double rect_pt2[2]){
+	list_node *current = NULL;
+	graph_obj *curr_graph = NULL;
+		
+	if (!list) return 0;
+	current = list->next;
+	
+	/* sweep the main list */
+	while (current != NULL){
+		if (current->data){
+			curr_graph = (graph_obj *)current->data;
+			if(!graph_in_rect(curr_graph, rect_pt1, rect_pt2))
+				return 0;
+		}
+		current = current->next;
+	}
+	
+	return 1;
 }
 
 int graph_list_color(list_node *list, bmp_color color){

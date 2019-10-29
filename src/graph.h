@@ -130,6 +130,8 @@ int graph_list_mod_ax(list_node *list, double normal[3], double elev, int start_
 
 graph_obj * graph_list_isect(list_node *list, double rect_pt1[2], double rect_pt2[2]);
 
+int graph_list_in_rect(list_node *list, double rect_pt1[2], double rect_pt2[2]);
+
 int graph_list_color(list_node *list, bmp_color color);
 
 double dot_product(double a[3], double b[3]);

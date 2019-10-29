@@ -3663,6 +3663,50 @@ int dxf_ents_isect2(list_node *list, dxf_drawing *drawing, double rect_pt1[2], d
 	return num;
 }
 
+int dxf_ents_in_rect(list_node *list, dxf_drawing *drawing, double rect_pt1[2], double rect_pt2[2]){
+	/* find all visible elements all inside the given rectangle */
+	/* return the number of found elements */
+	
+	dxf_node *current = NULL;
+	int num = 0;
+	//int lay_idx = 0;
+		
+	if ((drawing->ents != NULL) && /*verify the integrity of drawing */
+	(drawing->main_struct != NULL)
+	&& (list != NULL)){ /* and if list exists */
+		
+		list_clear(list);
+		
+		/* sweep the drawing content */
+		current = drawing->ents->obj.content->next;
+		while (current != NULL){
+			if (current->type == DXF_ENT){ /* found a DXF entity  */
+				/*verify if entity layer is on and thaw */
+				//lay_idx = dxf_layer_get(drawing, current);
+				if ((!drawing->layers[current->obj.layer].off) &&
+					(!drawing->layers[current->obj.layer].frozen)){
+					/* look for entity's visible graphics inside rectangle*/
+					if(graph_list_in_rect(current->obj.graphics, rect_pt1, rect_pt2)){
+						/* append entity,  if it does not already exist in the list */
+						if (list_find_data(list, current)){
+							//printf ("DEBUG: already exists!\n");
+						}
+						else{
+							list_node * new_el = list_new(current, 1);
+							if (new_el){
+								list_push(list, new_el);
+								num++;
+							}
+						}
+					}
+				}
+			}
+			current = current->next;
+		}
+	}
+	
+	return num;
+}
 
 int dxf_find_hatch_bound(dxf_node *obj, dxf_node **start, dxf_node **end){
 	/* find the range of attributes of boundary data of hatch */

@@ -142,10 +142,6 @@ int list_remove(list_node * list, list_node *node){
 		
 		if (node->prev){
 			node->prev->next = node->next;
-			if (node == node->end)
-				node->prev->end = node->prev;
-			else
-				node->prev->end = node->end;
 		}
 		
 		if (node->next){

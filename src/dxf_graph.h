@@ -34,6 +34,8 @@ dxf_node * dxf_ents_isect(dxf_drawing *drawing, double rect_pt1[2], double rect_
 
 int dxf_ents_isect2(list_node *list, dxf_drawing *drawing, double rect_pt1[2], double rect_pt2[2]);
 
+int dxf_ents_in_rect(list_node *list, dxf_drawing *drawing, double rect_pt1[2], double rect_pt2[2]);
+
 int dxf_list_draw(list_node *list, bmp_img * img, struct draw_param param);
 
 graph_obj * dxf_lwpline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx);

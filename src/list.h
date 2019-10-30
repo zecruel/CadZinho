@@ -15,6 +15,12 @@ enum list_pool_action{
 	FREE_LIST
 };
 
+enum list_op_mode {
+	LIST_ADD,
+	LIST_SUB,
+	LIST_TOGGLE
+};
+
 struct List_pool_slot{
 	void *pool[LIST_POOL_PAGES];
 	/* the pool is a vector of pages. The size of each page is out of this definition */
@@ -50,5 +56,9 @@ list_node *list_get_idx(list_node * list, int idx);
 int list_clear(list_node * list);
 
 int list_merge(list_node * dest, list_node * src);
+
+int list_modify(list_node *list, void *data, enum list_op_mode mode, int pool);
+
+int list_len(list_node *list);
 
 #endif

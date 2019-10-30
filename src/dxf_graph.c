@@ -3643,16 +3643,7 @@ int dxf_ents_isect2(list_node *list, dxf_drawing *drawing, double rect_pt1[2], d
 					/* look for a instersect in entity's visible graphics */
 					if(graph_list_isect(current->obj.graphics, rect_pt1, rect_pt2)){
 						/* append entity,  if it does not already exist in the list */
-						if (list_find_data(list, current)){
-							//printf ("DEBUG: already exists!\n");
-						}
-						else{
-							list_node * new_el = list_new(current, 1);
-							if (new_el){
-								list_push(list, new_el);
-								num++;
-							}
-						}
+						if (list_modify(list, current, LIST_ADD, 1)) num++;
 					}
 				}
 			}
@@ -3688,16 +3679,7 @@ int dxf_ents_in_rect(list_node *list, dxf_drawing *drawing, double rect_pt1[2], 
 					/* look for entity's visible graphics inside rectangle*/
 					if(graph_list_in_rect(current->obj.graphics, rect_pt1, rect_pt2)){
 						/* append entity,  if it does not already exist in the list */
-						if (list_find_data(list, current)){
-							//printf ("DEBUG: already exists!\n");
-						}
-						else{
-							list_node * new_el = list_new(current, 1);
-							if (new_el){
-								list_push(list, new_el);
-								num++;
-							}
-						}
+						if (list_modify(list, current, LIST_ADD, 1)) num++;
 					}
 				}
 			}

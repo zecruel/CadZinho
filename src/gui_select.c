@@ -1,33 +1,12 @@
 #include "gui_use.h"
 
-void sel_list_modify(list_node *list, dxf_node *ent, enum Sel_mode mode){
-	if (list && ent){
-		list_node * list_el = NULL;
-		
-		if (list_el = list_find_data(list, ent)){
-			if (mode == SEL_SUB || mode == SEL_TOGGLE)
-				list_remove(list, list_el);
-		}
-		else if (mode == SEL_ADD || mode == SEL_TOGGLE){
-			list_el = list_new(ent, 0);
-			if (list_el){
-				list_push(list, list_el);
-			}
-		}
-	}
-}
-
 int gui_select_interactive(gui_obj *gui){
 	if (gui->modal != SELECT) return 0;
 	
 	if (gui->sel_type == SEL_ELEMENT){
 		if (gui->ev & EV_ENTER){
 			if (gui->element)
-				sel_list_modify(gui->sel_list, gui->element, gui->sel_mode);
-			else if (gui->sel_mode == SEL_TOGGLE){
-				list_clear(gui->sel_list);
-				gui->draw = 1;
-			}
+				list_modify(gui->sel_list, gui->element, gui->sel_mode, 0);
 			
 		}
 		if (gui->ev & EV_CANCEL){
@@ -48,7 +27,7 @@ int gui_select_interactive(gui_obj *gui){
 					i++;
 				}
 			}
-			else if (gui->sel_mode == SEL_ADD){
+			else {
 				list_clear(gui->sel_list);
 				gui->draw = 1;
 			}
@@ -115,7 +94,7 @@ int gui_select_interactive(gui_obj *gui){
 				if (count > 0) {
 					list_el = list->next;
 					while (list_el){
-						sel_list_modify(gui->sel_list, (dxf_node *)list_el->data, gui->sel_mode);
+						list_modify(gui->sel_list, (dxf_node *)list_el->data, gui->sel_mode, 0);
 						list_el = list_el->next;
 					}
 				}
@@ -157,9 +136,9 @@ int gui_select_info (gui_obj *gui){
 		
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
-		if (gui_tab (gui, "+", gui->sel_mode == SEL_ADD)) gui->sel_mode = SEL_ADD;
-		if (gui_tab (gui, "-", gui->sel_mode == SEL_SUB)) gui->sel_mode = SEL_SUB;
-		if (gui_tab (gui, "Toggle", gui->sel_mode == SEL_TOGGLE)) gui->sel_mode = SEL_TOGGLE;
+		if (gui_tab (gui, "Toggle", gui->sel_mode == LIST_TOGGLE)) gui->sel_mode = LIST_TOGGLE;
+		if (gui_tab (gui, "+", gui->sel_mode == LIST_ADD)) gui->sel_mode = LIST_ADD;
+		if (gui_tab (gui, "-", gui->sel_mode == LIST_SUB)) gui->sel_mode = LIST_SUB;
 		nk_style_pop_vec2(gui->ctx);
 		nk_layout_row_end(gui->ctx);
 		

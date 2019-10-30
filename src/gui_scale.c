@@ -70,6 +70,15 @@ int gui_scale_interactive(gui_obj *gui){
 
 int gui_scale_info (gui_obj *gui){
 	if (gui->modal == SCALE) {
+		static char scale_str[64];
+		static int init = 0;
+		nk_flags res;
+		
+		if (!init){
+			snprintf(scale_str, 63, "%.9g", gui->scale);
+			init = 1;
+		}
+		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Scale a selection", NK_TEXT_LEFT);
 		if (gui->step == 0){
@@ -77,7 +86,17 @@ int gui_scale_info (gui_obj *gui){
 		} else {
 			nk_label(gui->ctx, "Enter destination point", NK_TEXT_LEFT);
 		}
-		gui->scale = nk_propertyd(gui->ctx, "Scale", 0.0d, gui->scale, 100.0d, 0.1d, 0.1d);
+		//gui->scale = nk_propertyd(gui->ctx, "Scale", 0.0d, gui->scale, 100.0d, 0.1d, 0.1d);
+		
+		
+		
+		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, scale_str, 63, nk_filter_float);
+		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
+			if (strlen(scale_str)){
+				gui->scale = atof(scale_str);
+				snprintf(scale_str, 63, "%.9g", gui->scale);
+			}
+		}
 	}
 	return 1;
 }

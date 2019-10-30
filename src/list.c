@@ -201,3 +201,42 @@ int list_merge(list_node * dest, list_node * src){
 	
 	return 0; /* return fail */
 }
+
+int list_modify(list_node *list, void *data, enum list_op_mode mode, int pool){
+	/* modify passed data pointer in list */
+	/* This function consider unique data in list */
+	if (list && data){
+		list_node * list_el = NULL;
+		
+		if (list_el = list_find_data(list, data)){ /* if data is present in list */
+			if (mode == LIST_SUB || mode == LIST_TOGGLE)
+				list_remove(list, list_el); /* remove it */
+		}
+		else if (mode == LIST_ADD || mode == LIST_TOGGLE){
+			/* add to list */
+			list_el = list_new(data, pool);
+			if (list_el){
+				list_push(list, list_el);
+			}
+		}
+		else return 0; /* operation not recognized */
+		return 1; /* success */
+	}
+	
+	return 0;
+}
+
+int list_len(list_node *list){
+	if (!list) return 0;
+	if (!list->next) return 0;
+	
+	int count = 0;
+	
+	list_node *current = list->next;
+	while (current != NULL){
+		count++;
+		current = current->next;
+	}
+	
+	return count;
+}

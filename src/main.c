@@ -1412,6 +1412,7 @@ int main(int argc, char** argv){
 		if (nk_begin(gui->ctx, "POS", nk_rect(2, gui->win_h - 92, gui->win_w - 4, 90),
 		NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR))
 		{
+			char text[64];
 			nk_layout_row_begin(gui->ctx, NK_STATIC, 55, 5);
 			nk_layout_row_push(gui->ctx, 380);
 			
@@ -1505,7 +1506,7 @@ int main(int argc, char** argv){
 				/* show position and size of history */
 				nk_layout_row_dynamic(gui->ctx, 17, 1);
 				nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
-				char text[64];
+				
 				snprintf(text, 63, "%d of %d", gui->drwg_hist_wr, gui->drwg_hist_size);
 				nk_label(gui->ctx, text, NK_TEXT_CENTERED);
 				nk_style_pop_font(gui->ctx); /* return to the default font*/
@@ -1529,8 +1530,14 @@ int main(int argc, char** argv){
 			
 			nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny */
 			
-			nk_layout_row_push(gui->ctx, 280);
+			nk_layout_row_push(gui->ctx, 580);
 			nk_label(gui->ctx, gui->log_msg, NK_TEXT_LEFT);
+			
+			text[0] = 0;
+			gui->sel_count = list_len(gui->sel_list);
+			if (gui->sel_count > 0) snprintf(text, 63, ":%d", gui->sel_count);
+			nk_layout_row_push(gui->ctx, 280);
+			nk_label(gui->ctx, text, NK_TEXT_LEFT);
 			
 			nk_style_pop_font(gui->ctx); /* return to the default font*/
 			

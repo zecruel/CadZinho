@@ -65,7 +65,8 @@ enum dxf_pool_life{
 	DWG_LIFE = 0,
 	FRAME_LIFE = 1,
 	ONE_TIME = 2,
-	PRG_LIFE = 3
+	PRG_LIFE = 3,
+	SEL_LIFE = 4
 };
 
 struct Dxf_pool_slot{

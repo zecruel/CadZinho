@@ -1,5 +1,10 @@
 #include "gui.h"
 
+void sel_list_clear (gui_obj *gui){
+	list_clear(gui->sel_list);
+	list_mem_pool(ZERO_LIST, SEL_LIFE);
+}
+
 /* ***********************************************************
 the fowling functions are for rendering text in gui, by rastering each
 glyphs in a monochrome image in memory. */

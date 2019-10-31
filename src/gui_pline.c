@@ -79,7 +79,7 @@ int gui_pline_info (gui_obj *gui){
 		} else {
 			nk_label(gui->ctx, "Enter next point", NK_TEXT_LEFT);
 		}
-		gui->bulge = nk_propertyd(gui->ctx, "Bulge", -1.0d, gui->bulge, 1.0d, 0.1d, 0.1d);
+		gui->bulge = nk_propertyd(gui->ctx, "Bulge", -10.0d, gui->bulge, 10.0d, 0.1d, 0.1d);
 	}
 	return 1;
 }

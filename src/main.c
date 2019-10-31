@@ -434,7 +434,7 @@ int main(int argc, char** argv){
 	double continuous[] = {1};
 	
 	/* initialize the selection list */
-	gui->sel_list = list_new(NULL, 0);
+	gui->sel_list = list_new(NULL, PRG_LIFE);
 	
 	/* initialize the undo/redo list */
 	//struct do_list gui->list_do;
@@ -1588,7 +1588,7 @@ int main(int argc, char** argv){
 				gui->lw_idx = DXF_LW_LEN;
 				wait_open = 0;
 				progr_end = 1;
-				list_clear(gui->sel_list);
+				sel_list_clear (gui);
 			}
 			
 		}
@@ -1753,7 +1753,7 @@ int main(int argc, char** argv){
 					}
 					current = current->next;
 				}
-				list_clear(gui->sel_list);
+				sel_list_clear (gui);
 				gui->element = NULL;
 			}
 			
@@ -1813,14 +1813,14 @@ int main(int argc, char** argv){
 					}
 					current = current->next;
 				}
-				list_clear(gui->sel_list);
+				sel_list_clear (gui);
 				gui->element = NULL;
 			}
 			gui->draw = 1;
 		}
 		else if(gui->action == UNDO){
 			gui->action = NONE;
-			list_clear(gui->sel_list);
+			sel_list_clear (gui);
 			char *text = gui->list_do.current->text;
 			
 			if (do_undo(&gui->list_do)){
@@ -1835,7 +1835,7 @@ int main(int argc, char** argv){
 		
 		else if(gui->action == REDO){
 			gui->action = NONE;
-			list_clear(gui->sel_list);
+			sel_list_clear (gui);
 			if (do_redo(&gui->list_do)){
 				snprintf(gui->log_msg, 63, "REDO: %s", gui->list_do.current->text);
 				gui_first_step(gui);
@@ -2177,6 +2177,8 @@ int main(int argc, char** argv){
 		//graph_mem_pool(ZERO_GRAPH, 2);
 		//graph_mem_pool(ZERO_LINE, 2);
 		
+		//gui->phanton = NULL;
+		
 		graph_mem_pool(ZERO_GRAPH, 1);
 		graph_mem_pool(ZERO_LINE, 1);
 		graph_mem_pool(ZERO_GRAPH, FRAME_LIFE);
@@ -2209,6 +2211,7 @@ int main(int argc, char** argv){
 	list_mem_pool(FREE_LIST, 1);
 	list_mem_pool(FREE_LIST, ONE_TIME);
 	list_mem_pool(FREE_LIST, PRG_LIFE);
+	list_mem_pool(FREE_LIST, SEL_LIFE);
 	dxf_mem_pool(FREE_DXF, 0);
 	graph_mem_pool(FREE_ALL, 0);
 	graph_mem_pool(FREE_ALL, 1);

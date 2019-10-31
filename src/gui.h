@@ -285,6 +285,8 @@ typedef struct Gui_obj gui_obj;
 
 enum theme {THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK, THEME_ZE};
 
+void sel_list_clear (gui_obj *gui);
+
 int gui_tab (gui_obj *gui, const char *title, int active);
 
 void set_style(struct nk_context *ctx, enum theme theme);

@@ -1024,6 +1024,7 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 		char *pos_st, *pos_curr, *pos_tmp, special;
 		
 		int fnt_idx, i, paper = 0;
+		int hidden = 0, count70 = 0; /*for ATTRIB objects */
 		
 		/*flags*/
 		int pt1 = 0, pt2 = 0;
@@ -1091,10 +1092,18 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 					case 67:
 						paper = current->value.i_data;
 						break;
+					case 70:
+						if (count70 == 0)
+							hidden = current->value.i_data & 1;
+						count70++;
+						break;
 					case 72:
 						t_alin_h = current->value.i_data;
 						break;
 					case 73:
+						t_alin_v = current->value.i_data;
+						break;
+					case 74: /*for ATTRIB objects */
 						t_alin_v = current->value.i_data;
 						break;
 					case 210:
@@ -1109,7 +1118,7 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 			}
 			current = current->next; /* go to the next in the list */
 		}
-		if (((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))){
+		if ((((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))) && !hidden){
 			
 			/* find the tstyle index and font*/
 			if (strlen(t_style) > 0){
@@ -1180,6 +1189,18 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 							over_l = !over_l;
 							ofs = 3;
 							code_p = 0;
+							break;
+						/* stike line */
+						case 'k':
+						case 'K':
+							stike = !stike;
+							ofs = 3;
+							code_p = 0;
+							break;
+						/* % symbol */
+						case '%':
+							ofs = 3;
+							code_p = '%';
 							break;
 						default:
 						{
@@ -2977,7 +2998,8 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			else if (strcmp(current->obj.name, "ATTRIB") == 0){
 				ent_type = DXF_ATTRIB;
 				
-				list_node * text_list = dxf_attrib_parse(drawing, current, p_space, pool_idx);
+				//list_node * text_list = dxf_attrib_parse(drawing, current, p_space, pool_idx);
+				list_node * text_list = dxf_text_parse(drawing, current, p_space, pool_idx);
 				if (text_list){
 					list_node *curr_node = text_list->next;
 					

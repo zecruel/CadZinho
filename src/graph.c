@@ -1644,6 +1644,7 @@ void rbspline(int npts, int k, int p1, double b[], double h[], double p[]){
 	}
 }
 
+
 double dot_product(double a[3], double b[3]){
 	return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
 }
@@ -1830,7 +1831,7 @@ int graph_in_rect(graph_obj * master, double rect_pt1[2], double rect_pt2[2]){
 			(lin_pt1[1] > rect_pt1[1] && lin_pt1[1] < rect_pt2[1])) &&
 			((lin_pt2[0] > rect_pt1[0] && lin_pt2[0] < rect_pt2[0]) &&
 			(lin_pt2[1] > rect_pt1[1] && lin_pt2[1] < rect_pt2[1]))))
-			return 0;
+			return -1;
 		
 		current = current->next; /* go to next */
 	}
@@ -2081,6 +2082,7 @@ graph_obj * graph_list_isect(list_node *list, double rect_pt1[2], double rect_pt
 int graph_list_in_rect(list_node *list, double rect_pt1[2], double rect_pt2[2]){
 	list_node *current = NULL;
 	graph_obj *curr_graph = NULL;
+	int num = 0;
 		
 	if (!list) return 0;
 	current = list->next;
@@ -2089,13 +2091,16 @@ int graph_list_in_rect(list_node *list, double rect_pt1[2], double rect_pt2[2]){
 	while (current != NULL){
 		if (current->data){
 			curr_graph = (graph_obj *)current->data;
-			if(!graph_in_rect(curr_graph, rect_pt1, rect_pt2))
+			int ret = graph_in_rect(curr_graph, rect_pt1, rect_pt2);
+			if(ret < 0)
 				return 0;
+			num += ret;
 		}
 		current = current->next;
 	}
 	
-	return 1;
+	if (num) return 1;
+	return 0;
 }
 
 int graph_list_color(list_node *list, bmp_color color){

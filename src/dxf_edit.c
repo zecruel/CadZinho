@@ -1,6 +1,77 @@
 #include "dxf_edit.h"
 #include "math.h"
 
+
+static double dot_product(double a[3], double b[3]){
+	return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+}
+ 
+static void cross_product(double a[3], double b[3], double c[3]){
+	c[0] = a[1]*b[2] - a[2]*b[1];
+	c[1] = a[2]*b[0] - a[0]*b[2];
+	c[2] = a[0]*b[1] - a[1]*b[0];
+}
+
+static void unit_vector(double a[3]){
+	double mod;
+	
+	mod = sqrt(pow(a[0], 2) + pow(a[1], 2) + pow(a[2], 2));
+	if (mod > 0.0) {
+		a[0] /= mod;
+		a[1] /= mod;
+		a[2] /= mod;
+	}
+}
+
+
+void mod_axis(double result[3], double normal[3] , double elev){
+	
+	double x_axis[3], y_axis[3], point[3], x_col[3], y_col[3], z_col[3];
+	double wy_axis[3] = {0.0, 1.0, 0.0};
+	double wz_axis[3] = {0.0, 0.0, 1.0};
+	
+	
+	double x0, y0, z0;
+	
+	if ((fabs(normal[0] < 0.015625)) && (fabs(normal[1] < 0.015625))){
+		cross_product(wy_axis, normal, x_axis);
+	}
+	else{
+		cross_product(wz_axis, normal, x_axis);
+	}
+	cross_product(normal, x_axis, y_axis);
+	
+	unit_vector(x_axis);
+	unit_vector(y_axis);
+	unit_vector(normal);
+	
+	x_col[0] = x_axis[0];
+	x_col[1] = y_axis[0];
+	x_col[2] = normal[0];
+	
+	y_col[0] = x_axis[1];
+	y_col[1] = y_axis[1];
+	y_col[2] = normal[1];
+	
+	z_col[0] = x_axis[2];
+	z_col[1] = y_axis[2];
+	z_col[2] = normal[2];
+	
+	point[0] = result[0];
+	point[1] = result[1];
+	point[2] = result[2];
+	if (fabs(point[2]) < 1e-9) point[2] = elev;
+	x0 = dot_product(point, x_col);
+	y0 = dot_product(point, y_col);
+	z0 = dot_product(point, z_col);
+	
+	result[0] = x0;
+	result[1] = y0;
+	result[2] = z0;
+	
+}
+
+
 int dxf_edit_move2 (dxf_node * obj, double ofs_x, double ofs_y, double ofs_z){
 	/* move the object relactive to offset distances */
 	if (obj){

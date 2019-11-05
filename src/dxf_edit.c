@@ -71,6 +71,42 @@ void mod_axis(double result[3], double normal[3] , double elev){
 	
 }
 
+void dxf_get_extru(dxf_node * ent, double result[3]){
+	if(!ent) return;
+	dxf_node *current = NULL;
+	double normal[3];
+	double elev = 0.0;
+	
+	normal[0] = 0.0;
+	normal[1] = 0.0;
+	normal[2] = 1.0;
+	
+	if (ent->type == DXF_ENT){
+		if (ent->obj.content){
+			current = ent->obj.content->next;
+		}
+	}
+	while (current){
+		if (current->type == DXF_ATTR){ /* DXF attibute */
+			switch (current->value.group){
+				case 38:
+					elev = current->value.d_data;
+					break;
+				case 210:
+					normal[0] = current->value.d_data;
+					break;
+				case 220:
+					normal[1] = current->value.d_data;
+					break;
+				case 230:
+					normal[2] = current->value.d_data;
+			}
+		}
+		current = current->next; /* go to the next in the list */
+	}
+	mod_axis(result, normal , elev);
+}
+
 
 int dxf_edit_move2 (dxf_node * obj, double ofs_x, double ofs_y, double ofs_z){
 	/* move the object relactive to offset distances */
@@ -93,17 +129,29 @@ int dxf_edit_move2 (dxf_node * obj, double ofs_x, double ofs_y, double ofs_z){
 	return 0;
 }
 
-int dxf_edit_move (dxf_node * obj, double ofs_x, double ofs_y, double ofs_z){
+int dxf_edit_move (dxf_node * obj, double of_x, double of_y, double of_z){
 	/* move the object and its childrens,  relactive to offset distances */
 	dxf_node *current = NULL;
 	dxf_node *prev = NULL, *stop = NULL;
 	int ret = 0;
 	enum dxf_graph ent_type = DXF_NONE;
+	double ofs_x = 0.0, ofs_y = 0.0, ofs_z = 0.0;
+	double point[3];
 	
 	int ellip = 0;
 	
 	if (!obj) return 0;
 	if (obj->type != DXF_ENT) return 0;
+	
+	point[0] = of_x;
+	point[1] = of_y;
+	point[2] = of_z;
+	
+	dxf_get_extru(obj, point);
+	
+	ofs_x = point[0];
+	ofs_y = point[1];
+	ofs_z = point[2];
 	
 	stop = obj;
 	ent_type =  dxf_ident_ent_type (obj);
@@ -127,11 +175,20 @@ int dxf_edit_move (dxf_node * obj, double ofs_x, double ofs_y, double ofs_z){
 		prev = current;
 		if (current->type == DXF_ENT){
 			
+			point[0] = of_x;
+			point[1] = of_y;
+			point[2] = of_z;
+			
+			dxf_get_extru(obj, point);
+			
+			ofs_x = point[0];
+			ofs_y = point[1];
+			ofs_z = point[2];
+			
 			if (current->obj.content){
 				ent_type =  dxf_ident_ent_type (current);
 				/* starts the content sweep */
 				current = current->obj.content->next;
-				
 				
 				continue;
 			}
@@ -1004,7 +1061,7 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 			}
 		}
 	}
-	if (ent_type == DXF_CIRCLE || ent_type == DXF_ARC ||
+	if (ent_type == DXF_CIRCLE || //ent_type == DXF_ARC ||
 	(ent_type == DXF_HATCH && arc) || ent_type == DXF_MTEXT ||
 	ent_type == DXF_INSERT){
 		x = dxf_find_attr_i2(current, stop, 50, 0);
@@ -1017,14 +1074,22 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 		}
 	}
 	if (ent_type == DXF_ARC){
-		x = dxf_find_attr_i2(current, stop, 51, 0);
-		if (x){
-			double angle = ang;
-			if(fabs(rad) > M_PI/2){
-				angle -=180.0;
-			}
-			x->value.d_data += angle;
+		double angle = atan2(dy, dx);
+	
+		if (angle > M_PI) angle -= 2 * M_PI;
+		if (angle < -M_PI) angle += 2 * M_PI;
+		
+		angle = angle * 180/M_PI;
+		
+		x = dxf_find_attr_i2(current, stop, 50, 0);
+		y = dxf_find_attr_i2(current, stop, 51, 0);
+		if (x && y){
+			double begin = -(x->value.d_data - angle) + angle;
+			double end = -(y->value.d_data - angle) + angle;
+			x->value.d_data = end;
+			y->value.d_data = begin;
 		}
+		
 	}
 	
 	if (ent_type == DXF_INSERT && (obj->obj.content)){

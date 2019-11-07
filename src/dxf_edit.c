@@ -23,6 +23,20 @@ static void unit_vector(double a[3]){
 	}
 }
 
+double ellip_par (double ang, double a, double b){
+	/* find the polar parameter (t) for ellipse */
+	double t = atan(a*tan(ang)/b);
+	if ((ang > M_PI/2) && (ang < M_PI)){
+		t += M_PI; 
+	}
+	else if ((ang >= M_PI) && (ang <= 3*M_PI/2)){
+		t -= M_PI; 
+	}
+	if (t < 0 ) t += 2*M_PI;
+	
+	return t;
+}
+
 
 void mod_axis(double result[3], double normal[3] , double elev){
 	
@@ -934,17 +948,88 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 			x->value.d_data *= -1;
 		}
 	}
-	if (ent_type == DXF_HATCH){
-		/* hatch bondary path type */
-		if (current->value.group == 72){ 
-			if (current->value.i_data == 2)
-				arc = 1; /* arc */
-			else if (current->value.i_data == 3)
-				ellip = 1; /* ellipse */
+	
+	if (ent_type == DXF_HATCH && (obj->obj.content)){
+		int bound_type = 0;
+		int poly = 0;
+		
+		dxf_node *p1x = NULL, *p1y = NULL, 
+			*p2x = NULL, *p2y = NULL,
+			*r = NULL, *b = NULL,
+			*sa = NULL, *ea = NULL;
+		
+		while (current && current != stop){
+			if (current->value.group == 92){
+				poly = current->value.i_data & 2;
+			}
+			else if (current->value.group == 72){
+				if (!poly) bound_type  = current->value.i_data;
+			}
+			else if (current->value.group == 11){
+				p2x = current;
+			}
+			else if (current->value.group == 21){
+				p2y = current;
+				if (p2x && bound_type != 3){
+					/* calcule distance between point and reflection line */
+					if (bound_type == 3)
+						dist = (-dy*p2x->value.d_data + dx*p2y->value.d_data)/modulus;
+					else
+						dist = (-dy*p2x->value.d_data + dx*p2y->value.d_data + dy*x1 - dx*y1)/modulus;
+					
+					x_new = p2x->value.d_data + 2 * dist * (dy/modulus);
+					y_new = p2y->value.d_data + 2 * dist * (-dx/modulus);
+					p2x->value.d_data = x_new;
+					p2y->value.d_data = y_new;
+				}
+				p2x = NULL;
+				p2y = NULL;
+			}
+			else if (current->value.group == 40){
+				r = current;
+			}
+			else if (current->value.group == 42){
+				b = current;
+			}
+			else if (current->value.group == 50){
+				sa = current;
+			}
+			else if (current->value.group == 51){
+				ea = current;
+				if (sa){
+					if (bound_type == 3){
+						double begin = 360 - sa->value.d_data;
+						double end = 360 - ea->value.d_data;
+						
+						sa->value.d_data = end;
+						ea->value.d_data = begin;
+					}
+					else {
+						double angle = atan2(dy, dx);
+	
+						if (angle > M_PI) angle -= 2 * M_PI;
+						if (angle < -M_PI) angle += 2 * M_PI;
+						
+						angle = angle * 180/M_PI;
+						
+						double begin = -(sa->value.d_data - angle) + angle;
+						double end = -(ea->value.d_data - angle) + angle;
+						sa->value.d_data = end;
+						ea->value.d_data = begin;
+					}
+					
+					
+				}
+				sa = NULL;
+				ea = NULL;
+			}
+			
+			
+			current = current->next; /* go to the next in the list */
 		}
 	}
-	if (ent_type == DXF_LINE || ent_type == DXF_TEXT ||
-	ent_type == DXF_HATCH || ent_type == DXF_ELLIPSE){
+	if (ent_type == DXF_LINE || ent_type == DXF_TEXT){
+	//||(ent_type == DXF_HATCH && !ellip)){
 		//for (i = 0; x = dxf_find_attr_i(obj, 10, i); i++){
 		//	y = dxf_find_attr_i(obj, 20, i);
 		for (i = 0; x = dxf_find_attr_i2(current, stop, 11, i); i++){
@@ -958,6 +1043,32 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 				x->value.d_data = x_new;
 				y->value.d_data = y_new;
 			}
+		}
+	}
+	if (ent_type == DXF_ELLIPSE){
+		
+		/* reflect main vector */
+		x = dxf_find_attr_i2(current, stop, 11, 0);
+		y = dxf_find_attr_i2(current, stop, 21, 0);
+		if (x && y){
+			/* calcule distance between point and reflection line */
+			dist = (-dy*x->value.d_data + dx*y->value.d_data)/modulus;
+			
+			x_new = x->value.d_data + 2 * dist * (dy/modulus);
+			y_new = y->value.d_data + 2 * dist * (-dx/modulus);
+			x->value.d_data = x_new;
+			y->value.d_data = y_new;
+		}
+		
+		/* adjust the angles */
+		x = dxf_find_attr_i2(current, stop, 41, 0);
+		y = dxf_find_attr_i2(current, stop, 42, 0);
+		if (x && y){
+			double begin = 2*M_PI - x->value.d_data;
+			double end = 2*M_PI -y->value.d_data;
+			
+			x->value.d_data = end;
+			y->value.d_data = begin;
 		}
 	}
 	if (ent_type == DXF_MTEXT){
@@ -1061,8 +1172,7 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 			}
 		}
 	}
-	if (ent_type == DXF_CIRCLE || //ent_type == DXF_ARC ||
-	(ent_type == DXF_HATCH && arc) || ent_type == DXF_MTEXT ||
+	if (ent_type == DXF_CIRCLE || ent_type == DXF_MTEXT ||
 	ent_type == DXF_INSERT){
 		x = dxf_find_attr_i2(current, stop, 50, 0);
 		if (x){

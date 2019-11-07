@@ -113,7 +113,8 @@ enum Font_sizes {
 
 enum Sel_type {
 	SEL_ELEMENT,
-	SEL_RECTANGLE
+	SEL_RECTANGLE,
+	SEL_INTL
 };
 
 struct gui_glyph{
@@ -288,6 +289,7 @@ enum theme {THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK, THEME_Z
 void sel_list_clear (gui_obj *gui);
 
 int gui_tab (gui_obj *gui, const char *title, int active);
+int gui_tab_img (gui_obj *gui, bmp_img *img, int active, int w);
 
 void set_style(struct nk_context *ctx, enum theme theme);
 

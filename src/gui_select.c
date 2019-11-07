@@ -6,14 +6,14 @@ int gui_select_interactive(gui_obj *gui){
 	static int tmp_rect = 0;
 	
 	/* select single element */
-	if (gui->sel_type == SEL_ELEMENT){
+	if ((gui->sel_type == SEL_ELEMENT || gui->sel_type == SEL_INTL) && !tmp_rect){
 		if (gui->ev & EV_ENTER){ /* user hit an enter point */
 			if (gui->element)
 				/* select an object if cursor is over */
 				list_modify(gui->sel_list, gui->element, gui->sel_mode, SEL_LIFE);
-			else {
+			else if (gui->sel_type == SEL_INTL){
 				/* if not any hovered object, change type to start rectangle selection temporarily*/
-				gui->sel_type = SEL_RECTANGLE;
+				//gui->sel_type = SEL_RECTANGLE;
 				tmp_rect = 1;
 			}
 		}
@@ -66,7 +66,7 @@ int gui_select_interactive(gui_obj *gui){
 		}
 	}
 	/* rectangle selection */
-	if (gui->sel_type == SEL_RECTANGLE){
+	if (gui->sel_type == SEL_RECTANGLE || tmp_rect){
 		static dxf_node *new_el;
 		
 		if (gui->step == 0){
@@ -124,7 +124,7 @@ int gui_select_interactive(gui_obj *gui){
 				gui_first_step(gui);
 				if (tmp_rect) {
 					/* return to single element selection, if entered temporarily*/
-					gui->sel_type = SEL_ELEMENT;
+					//gui->sel_type = SEL_ELEMENT;
 					tmp_rect = 0;
 				}
 			}
@@ -134,7 +134,7 @@ int gui_select_interactive(gui_obj *gui){
 				gui_first_step(gui);
 				if (tmp_rect) {
 					/* return to single element selection, if entered temporarily*/
-					gui->sel_type = SEL_ELEMENT;
+					//gui->sel_type = SEL_ELEMENT;
 					tmp_rect = 0;
 				}
 			}
@@ -191,9 +191,16 @@ int gui_select_info (gui_obj *gui){
 		
 		/* Selection type option - single element or by rectangle */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
-		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
-		if (gui_tab (gui, "Element", gui->sel_type == SEL_ELEMENT)) gui->sel_type = SEL_ELEMENT;
-		if (gui_tab (gui, "Rectangle", gui->sel_type == SEL_RECTANGLE)) gui->sel_type = SEL_RECTANGLE;
+		nk_layout_row_begin(gui->ctx, NK_STATIC, 30, 4);
+		if (gui_tab_img (gui, gui->svg_bmp[SVG_I_SEL],
+			gui->sel_type == SEL_INTL, 30))
+			gui->sel_type = SEL_INTL;
+		if (gui_tab_img (gui, gui->svg_bmp[SVG_SINGLE_SEL],
+			gui->sel_type == SEL_ELEMENT, 30))
+			gui->sel_type = SEL_ELEMENT;
+		if (gui_tab_img (gui, gui->svg_bmp[SVG_RECT_SEL],
+			gui->sel_type == SEL_RECTANGLE, 30))
+			gui->sel_type = SEL_RECTANGLE;
 		nk_style_pop_vec2(gui->ctx);
 		nk_layout_row_end(gui->ctx);
 		

@@ -191,6 +191,20 @@ int gui_tab (gui_obj *gui, const char *title, int active){
 	return r;
 }
 
+int gui_tab_img (gui_obj *gui, bmp_img *img, int active, int w){
+	
+	struct nk_style_button *sel_type;
+	
+	/* verify if active or not */
+	sel_type = &gui->b_icon_unsel;
+	if (active) sel_type = &gui->b_icon_sel;
+	/* do the button */
+	nk_layout_row_push(gui->ctx, w);
+	int r = nk_button_image_styled(gui->ctx, sel_type, nk_image_ptr(img));
+	
+	return r;
+}
+
 /* ************************************************** */
 
 int gui_default_modal(gui_obj *gui){
@@ -1067,7 +1081,7 @@ int gui_start(gui_obj *gui){
 	gui->near_count = 0;
 	gui->sel_idx = 0;
 	gui->sel_mode = LIST_TOGGLE;
-	gui->sel_type = SEL_ELEMENT;
+	gui->sel_type = SEL_INTL;
 	gui->sel_count = 0;
 	
 	gui->main_w = 2048;

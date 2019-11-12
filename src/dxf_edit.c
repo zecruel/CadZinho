@@ -37,6 +37,23 @@ double ellip_par (double ang, double a, double b){
 	return t;
 }
 
+//Normalize to [0,360):
+
+double ang_adjust_360(double x){
+    x = fmod(x,360);
+    if (x < 0)
+        x += 360;
+    return x;
+}
+/*Normalize to [-180,180):
+
+double constrainAngle(double x){
+    x = fmod(x + 180,360);
+    if (x < 0)
+        x += 360;
+    return x - 180;
+}*/
+
 
 void mod_axis(double result[3], double normal[3] , double elev){
 	
@@ -953,6 +970,8 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 		int bound_type = 0;
 		int poly = 0;
 		
+		double el_ang = 0.0, el_ang2 = 0.0;
+		
 		dxf_node *p1x = NULL, *p1y = NULL, 
 			*p2x = NULL, *p2y = NULL,
 			*r = NULL, *b = NULL,
@@ -970,7 +989,11 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 			}
 			else if (current->value.group == 21){
 				p2y = current;
-				if (p2x && bound_type != 3){
+				if (p2x){
+					el_ang = atan2(p2y->value.d_data, p2x->value.d_data) * 180/M_PI;
+					el_ang = ang_adjust_360(el_ang);
+					
+					
 					/* calcule distance between point and reflection line */
 					if (bound_type == 3)
 						dist = (-dy*p2x->value.d_data + dx*p2y->value.d_data)/modulus;
@@ -981,6 +1004,9 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 					y_new = p2y->value.d_data + 2 * dist * (-dx/modulus);
 					p2x->value.d_data = x_new;
 					p2y->value.d_data = y_new;
+					
+					el_ang2 = atan2(p2y->value.d_data, p2x->value.d_data) * 180/M_PI;
+					el_ang2 = ang_adjust_360(el_ang2);
 				}
 				p2x = NULL;
 				p2y = NULL;
@@ -998,22 +1024,25 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 				ea = current;
 				if (sa){
 					if (bound_type == 3){
-						double begin = 360 - sa->value.d_data;
-						double end = 360 - ea->value.d_data;
 						
+						double angle = atan2(dy, dx) * 180/M_PI;
+						angle = ang_adjust_360(angle);
+						
+						double begin = -(sa->value.d_data + el_ang - angle) + angle - el_ang2;
+						begin = ang_adjust_360(begin);
+						double end = -(ea->value.d_data + el_ang - angle) + angle - el_ang2;
+						end = ang_adjust_360(end);
 						sa->value.d_data = end;
 						ea->value.d_data = begin;
 					}
 					else {
-						double angle = atan2(dy, dx);
-	
-						if (angle > M_PI) angle -= 2 * M_PI;
-						if (angle < -M_PI) angle += 2 * M_PI;
-						
-						angle = angle * 180/M_PI;
+						double angle = atan2(dy, dx) * 180/M_PI;
+						angle = ang_adjust_360(angle);
 						
 						double begin = -(sa->value.d_data - angle) + angle;
+						begin = ang_adjust_360(begin);
 						double end = -(ea->value.d_data - angle) + angle;
+						end = ang_adjust_360(end);
 						sa->value.d_data = end;
 						ea->value.d_data = begin;
 					}
@@ -1023,7 +1052,6 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 				sa = NULL;
 				ea = NULL;
 			}
-			
 			
 			current = current->next; /* go to the next in the list */
 		}
@@ -1184,18 +1212,17 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 		}
 	}
 	if (ent_type == DXF_ARC){
-		double angle = atan2(dy, dx);
-	
-		if (angle > M_PI) angle -= 2 * M_PI;
-		if (angle < -M_PI) angle += 2 * M_PI;
-		
-		angle = angle * 180/M_PI;
 		
 		x = dxf_find_attr_i2(current, stop, 50, 0);
 		y = dxf_find_attr_i2(current, stop, 51, 0);
 		if (x && y){
+			double angle = atan2(dy, dx) * 180/M_PI;
+			angle = ang_adjust_360(angle);
+			
 			double begin = -(x->value.d_data - angle) + angle;
+			begin = ang_adjust_360(begin);
 			double end = -(y->value.d_data - angle) + angle;
+			end = ang_adjust_360(end);
 			x->value.d_data = end;
 			y->value.d_data = begin;
 		}

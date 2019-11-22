@@ -121,4 +121,11 @@ int type, /* 0 = user, 1 = predefined, 2 =custom */
 double rot, double scale,
 int color, char *layer, char *ltype, int lw, int paper, int pool);
 
+dxf_node * dxf_new_hatch2 (struct h_pattern *pattern, list_node *bound_list,
+int solid, int assoc,
+int style, /* 0 = normal odd, 1 = outer, 2 = ignore */
+int type, /* 0 = user, 1 = predefined, 2 =custom */
+double rot, double scale,
+int color, char *layer, char *ltype, int lw, int paper, int pool);
+
 #endif

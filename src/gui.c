@@ -1170,6 +1170,8 @@ int gui_start(gui_obj *gui){
 	gui->font_list = NULL;
 	
 	
+	gui->hatch_sel = 0;
+	
 	/* initialize the hatch pattern list */
 	gui->hatch_fam_idx = 0;
 	gui->hatch_idx = 0;
@@ -1216,6 +1218,8 @@ int gui_start(gui_obj *gui){
 	gui->sel_paper = 6;
 	
 	gui->keep_orig = 0;
+	
+	gui->closed = 0;
 	
 	gui->lua_script.L = NULL;
 	gui->lua_script.T = NULL;

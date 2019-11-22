@@ -5,133 +5,203 @@ int gui_hatch_interactive(gui_obj *gui){
 	/* Initially, uses a lwpolyline (without bulge) as bondary. */
 	if (gui->modal == HATCH){
 		static dxf_node *new_el;
-		
-		if (gui->step == 0){
-			if (gui->ev & EV_ENTER){
-				/* create a new DXF lwpolyline */
-				new_el = (dxf_node *) dxf_new_lwpolyline (
-					gui->step_x[gui->step], gui->step_y[gui->step], 0.0, /* pt1, */
-					0.0, /* bulge */
-					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-					0, DWG_LIFE); /* paper space */
-				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge, DWG_LIFE);
-				dxf_attr_change_i(new_el, 70, (void *) (int[]){1}, 0);
-				gui->element = new_el;
-				gui->step = 1;
-				gui->en_distance = 1;
-				gui->draw_tmp = 1;
-				gui_next_step(gui);
+		if (!gui->hatch_sel){	
+			if (gui->step == 0){
+				if (gui->ev & EV_ENTER){
+					/* create a new DXF lwpolyline */
+					new_el = (dxf_node *) dxf_new_lwpolyline (
+						gui->step_x[gui->step], gui->step_y[gui->step], 0.0, /* pt1, */
+						0.0, /* bulge */
+						gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+						gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+						0, DWG_LIFE); /* paper space */
+					dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge, DWG_LIFE);
+					dxf_attr_change_i(new_el, 70, (void *) (int[]){1}, 0);
+					gui->element = new_el;
+					gui->step = 1;
+					gui->en_distance = 1;
+					gui->draw_tmp = 1;
+					gui_next_step(gui);
+				}
+				else if (gui->ev & EV_CANCEL){
+					gui_default_modal(gui);
+				}
 			}
-			else if (gui->ev & EV_CANCEL){
-				gui_default_modal(gui);
+			else{
+				if (gui->ev & EV_ENTER){
+					gui->step_x[gui->step - 1] = gui->step_x[gui->step];
+					gui->step_y[gui->step - 1] = gui->step_y[gui->step];
+					
+					dxf_attr_change_i(new_el, 10, &gui->step_x[gui->step], -1);
+					dxf_attr_change_i(new_el, 20, &gui->step_y[gui->step], -1);
+					//dxf_attr_change_i(new_el, 42, &gui->bulge, -1);
+					
+					new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
+					
+					dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge, DWG_LIFE);
+					gui->step = 2;
+					gui_next_step(gui);
+				}
+				else if (gui->ev & EV_CANCEL){
+					gui->draw_tmp = 0;
+					if (gui->step == 2){
+						dxf_lwpoly_remove (new_el, -1);
+						//new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
+						//drawing_ent_append(gui->drawing, new_el);
+						
+						graph_obj *bound = dxf_lwpline_parse(gui->drawing, new_el, 0 , 0);
+						
+						struct h_pattern *curr_h;// = &(gui->list_pattern);
+						struct h_family *curr_fam = gui->hatch_fam.next;
+						int i = 0;
+						
+						double rot = 0.0, scale = 1.0;
+						
+						if(gui->h_type == HATCH_USER) { /* user definied simple pattern */
+							strncpy(gui->list_pattern.name, "USER_DEF", DXF_MAX_CHARS);
+							curr_h = &(gui->list_pattern);
+							rot = 0.0;
+							scale = 1.0;
+						}
+						else if(gui->h_type == HATCH_SOLID) { /* solid pattern */
+							strncpy(gui->list_pattern.name, "SOLID", DXF_MAX_CHARS);
+							curr_h = &(gui->list_pattern);
+							rot = 0.0;
+							scale = 1.0;
+						}
+						else{ /* pattern from library */
+							
+							/* get current family */
+							curr_h = NULL;
+							i = 0;
+							while (curr_fam){
+								if (gui->hatch_fam_idx == i){
+									curr_h = curr_fam->list->next;
+									break;
+								}
+								
+								i++;
+								curr_fam = curr_fam->next;
+							}
+							
+							/* get current hatch pattern */
+							i = 0;
+							while ((curr_h) && (i < gui->hatch_idx)){
+								i++;
+								curr_h = curr_h->next;
+							}
+							/* optional rotation and scale */
+							rot = gui->patt_ang;
+							scale = gui->patt_scale;
+						}
+						
+						/* make DXF HATCH entity */
+						dxf_node *new_hatch_el = dxf_new_hatch (curr_h, bound,
+						gui->h_type == HATCH_SOLID, gui->hatch_assoc,
+						0, 0, /* style, type */
+						rot, scale,
+						gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+						gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+						0, DWG_LIFE); /* paper space */
+						
+						if (new_hatch_el){
+							/* parse entity */
+							new_hatch_el->obj.graphics = dxf_graph_parse(gui->drawing, new_hatch_el, 0 , 0);
+							/* and append to drawing */
+							drawing_ent_append(gui->drawing, new_hatch_el);
+							/* add to the undo/redo list*/
+							do_add_entry(&gui->list_do, "HATCH");
+							do_add_item(gui->list_do.current, NULL, new_hatch_el);
+						}
+						
+						gui->step = 0;
+					}
+					gui->element = NULL;
+					gui_next_step(gui);
+				}
+				if (gui->ev & EV_MOTION){
+					dxf_attr_change(new_el, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
+					dxf_attr_change(new_el, 8, gui->drawing->layers[gui->layer_idx].name);
+					dxf_attr_change_i(new_el, 10, &gui->step_x[gui->step], -1);
+					dxf_attr_change_i(new_el, 20, &gui->step_y[gui->step], -1);
+					//dxf_attr_change_i(new_el, 42, &gui->bulge, -1);
+					dxf_attr_change(new_el, 370, &dxf_lw[gui->lw_idx]);
+					dxf_attr_change(new_el, 62, &gui->color_idx);
+					
+					new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
+				}
 			}
 		}
 		else{
 			if (gui->ev & EV_ENTER){
-				gui->step_x[gui->step - 1] = gui->step_x[gui->step];
-				gui->step_y[gui->step - 1] = gui->step_y[gui->step];
+				struct h_pattern *curr_h;// = &(gui->list_pattern);
+				struct h_family *curr_fam = gui->hatch_fam.next;
+				int i = 0;
 				
-				dxf_attr_change_i(new_el, 10, &gui->step_x[gui->step], -1);
-				dxf_attr_change_i(new_el, 20, &gui->step_y[gui->step], -1);
-				//dxf_attr_change_i(new_el, 42, &gui->bulge, -1);
+				double rot = 0.0, scale = 1.0;
 				
-				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
+				if(gui->h_type == HATCH_USER) { /* user definied simple pattern */
+					strncpy(gui->list_pattern.name, "USER_DEF", DXF_MAX_CHARS);
+					curr_h = &(gui->list_pattern);
+					rot = 0.0;
+					scale = 1.0;
+				}
+				else if(gui->h_type == HATCH_SOLID) { /* solid pattern */
+					strncpy(gui->list_pattern.name, "SOLID", DXF_MAX_CHARS);
+					curr_h = &(gui->list_pattern);
+					rot = 0.0;
+					scale = 1.0;
+				}
+				else{ /* pattern from library */
+					
+					/* get current family */
+					curr_h = NULL;
+					i = 0;
+					while (curr_fam){
+						if (gui->hatch_fam_idx == i){
+							curr_h = curr_fam->list->next;
+							break;
+						}
+						
+						i++;
+						curr_fam = curr_fam->next;
+					}
+					
+					/* get current hatch pattern */
+					i = 0;
+					while ((curr_h) && (i < gui->hatch_idx)){
+						i++;
+						curr_h = curr_h->next;
+					}
+					/* optional rotation and scale */
+					rot = gui->patt_ang;
+					scale = gui->patt_scale;
+				}
 				
-				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge, DWG_LIFE);
-				gui->step = 2;
-				gui_next_step(gui);
+				/* make DXF HATCH entity */
+				dxf_node *new_hatch_el = dxf_new_hatch2 (curr_h, gui->sel_list,
+				gui->h_type == HATCH_SOLID, gui->hatch_assoc,
+				0, 0, /* style, type */
+				rot, scale,
+				gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+				gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+				0, DWG_LIFE); /* paper space */
+				
+				if (new_hatch_el){
+					/* parse entity */
+					new_hatch_el->obj.graphics = dxf_graph_parse(gui->drawing, new_hatch_el, 0 , 0);
+					/* and append to drawing */
+					drawing_ent_append(gui->drawing, new_hatch_el);
+					/* add to the undo/redo list*/
+					do_add_entry(&gui->list_do, "HATCH");
+					do_add_item(gui->list_do.current, NULL, new_hatch_el);
+				}
 			}
 			else if (gui->ev & EV_CANCEL){
-				gui->draw_tmp = 0;
-				if (gui->step == 2){
-					dxf_lwpoly_remove (new_el, -1);
-					//new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
-					//drawing_ent_append(gui->drawing, new_el);
-					
-					graph_obj *bound = dxf_lwpline_parse(gui->drawing, new_el, 0 , 0);
-					
-					struct h_pattern *curr_h;// = &(gui->list_pattern);
-					struct h_family *curr_fam = gui->hatch_fam.next;
-					int i = 0;
-					
-					double rot = 0.0, scale = 1.0;
-					
-					if(gui->h_type == HATCH_USER) { /* user definied simple pattern */
-						strncpy(gui->list_pattern.name, "USER_DEF", DXF_MAX_CHARS);
-						curr_h = &(gui->list_pattern);
-						rot = 0.0;
-						scale = 1.0;
-					}
-					else if(gui->h_type == HATCH_SOLID) { /* solid pattern */
-						strncpy(gui->list_pattern.name, "SOLID", DXF_MAX_CHARS);
-						curr_h = &(gui->list_pattern);
-						rot = 0.0;
-						scale = 1.0;
-					}
-					else{ /* pattern from library */
-						
-						/* get current family */
-						curr_h = NULL;
-						i = 0;
-						while (curr_fam){
-							if (gui->hatch_fam_idx == i){
-								curr_h = curr_fam->list->next;
-								break;
-							}
-							
-							i++;
-							curr_fam = curr_fam->next;
-						}
-						
-						/* get current hatch pattern */
-						i = 0;
-						while ((curr_h) && (i < gui->hatch_idx)){
-							i++;
-							curr_h = curr_h->next;
-						}
-						/* optional rotation and scale */
-						rot = gui->patt_ang;
-						scale = gui->patt_scale;
-					}
-					
-					/* make DXF HATCH entity */
-					dxf_node *new_hatch_el = dxf_new_hatch (curr_h, bound,
-					gui->h_type == HATCH_SOLID, gui->hatch_assoc,
-					0, 0, /* style, type */
-					rot, scale,
-					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-					0, DWG_LIFE); /* paper space */
-					
-					if (new_hatch_el){
-						/* parse entity */
-						new_hatch_el->obj.graphics = dxf_graph_parse(gui->drawing, new_hatch_el, 0 , 0);
-						/* and append to drawing */
-						drawing_ent_append(gui->drawing, new_hatch_el);
-						/* add to the undo/redo list*/
-						do_add_entry(&gui->list_do, "HATCH");
-						do_add_item(gui->list_do.current, NULL, new_hatch_el);
-					}
-					
-					gui->step = 0;
-				}
-				gui->element = NULL;
-				gui_next_step(gui);
+				gui_default_modal(gui);
 			}
-			if (gui->ev & EV_MOTION){
-				dxf_attr_change(new_el, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
-				dxf_attr_change(new_el, 8, gui->drawing->layers[gui->layer_idx].name);
-				dxf_attr_change_i(new_el, 10, &gui->step_x[gui->step], -1);
-				dxf_attr_change_i(new_el, 20, &gui->step_y[gui->step], -1);
-				//dxf_attr_change_i(new_el, 42, &gui->bulge, -1);
-				dxf_attr_change(new_el, 370, &dxf_lw[gui->lw_idx]);
-				dxf_attr_change(new_el, 62, &gui->color_idx);
-				
-				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
-			}
+			
 		}
-		
 	}
 	return 1;
 }
@@ -257,13 +327,18 @@ int gui_hatch_info (gui_obj *gui){
 		/* associative flag for Hatch*/
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_checkbox_label(gui->ctx, "Associative", &gui->hatch_assoc);
+		nk_checkbox_label(gui->ctx, "Selection", &gui->hatch_sel);
 		
 		/*messages for user in iteractive mode*/
-		if (gui->step == 0){
-			nk_label(gui->ctx, "Enter first point", NK_TEXT_LEFT);
-		} else {
-			nk_label(gui->ctx, "Enter next point", NK_TEXT_LEFT);
+		if (!gui->hatch_sel){
+			if (gui->step == 0){
+				nk_label(gui->ctx, "Enter first point", NK_TEXT_LEFT);
+			} else {
+				nk_label(gui->ctx, "Enter next point", NK_TEXT_LEFT);
+			}
 		}
+		else
+			nk_label(gui->ctx, "Confirm", NK_TEXT_LEFT);
 		
 		if (show_pat_pp){
 			/* selection pattern popup window */

@@ -14,6 +14,7 @@ int gui_pline_interactive(gui_obj *gui){
 					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 					0, DWG_LIFE); /* paper space */
 				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge, DWG_LIFE);
+				dxf_attr_change(new_el, 70, &gui->closed);
 				gui->element = new_el;
 				gui->step = 1;
 				gui->en_distance = 1;
@@ -52,7 +53,7 @@ int gui_pline_interactive(gui_obj *gui){
 					gui->step = 0;
 				}
 				gui->element = NULL;
-				gui_next_step(gui);
+				gui_first_step(gui);
 			}
 			if (gui->ev & EV_MOTION){
 				dxf_attr_change(new_el, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
@@ -62,6 +63,7 @@ int gui_pline_interactive(gui_obj *gui){
 				dxf_attr_change_i(new_el, 42, &gui->bulge, -1);
 				dxf_attr_change(new_el, 370, &dxf_lw[gui->lw_idx]);
 				dxf_attr_change(new_el, 62, &gui->color_idx);
+				dxf_attr_change(new_el, 70, &gui->closed);
 				
 				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
 			}
@@ -79,6 +81,7 @@ int gui_pline_info (gui_obj *gui){
 		} else {
 			nk_label(gui->ctx, "Enter next point", NK_TEXT_LEFT);
 		}
+		nk_checkbox_label(gui->ctx, "Closed", &gui->closed);
 		gui->bulge = nk_propertyd(gui->ctx, "Bulge", -10.0d, gui->bulge, 10.0d, 0.1d, 0.1d);
 	}
 	return 1;

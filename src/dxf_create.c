@@ -1538,3 +1538,197 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 
 	return NULL;
 }
+
+dxf_node * dxf_new_hatch2 (struct h_pattern *pattern, list_node *bound_list,
+int solid, int assoc,
+int style, /* 0 = normal odd, 1 = outer, 2 = ignore */
+int type, /* 0 = user, 1 = predefined, 2 =custom */
+double rot, double scale,
+int color, char *layer, char *ltype, int lw, int paper, int pool){
+	/* create a new hatch */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbEntity";
+	const char *dxf_subclass = "AcDbHatch";
+	int ok = 1, int_zero = 0;
+	double d_zero = 0.0, d_one = 1.0;
+	dxf_node * hatch = dxf_obj_new ("HATCH", pool);
+	dxf_node * obj = NULL;
+	int loops = 0;
+	
+	if ((!pattern) || (!bound_list)) return NULL;
+	
+	ok &= dxf_attr_append(hatch, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(hatch, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(hatch, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(hatch, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(hatch, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(hatch, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(hatch, 370, (void *) &lw, pool);
+	
+	ok &= dxf_attr_append(hatch, 100, (void *) dxf_subclass, pool);
+	
+	/* elevation point */
+	ok &= dxf_attr_append(hatch, 10, (void *) &d_zero, pool); /*always zero*/
+	ok &= dxf_attr_append(hatch, 20, (void *) &d_zero, pool); /*always zero*/
+	ok &= dxf_attr_append(hatch, 30, (void *) &d_zero, pool); /* z coordinate is the elevation*/
+	
+	ok &= dxf_attr_append(hatch, 210, (void *) &d_zero, pool);
+	ok &= dxf_attr_append(hatch, 220, (void *) &d_zero, pool);
+	ok &= dxf_attr_append(hatch, 230, (void *) &d_one, pool);
+	
+	/* pattern name */
+	ok &= dxf_attr_append(hatch, 2, (void *) pattern->name, pool);
+	
+	/* fill flag */
+	ok &= dxf_attr_append(hatch, 70, (void *) &solid, pool);
+	/* associativity flag */
+	ok &= dxf_attr_append(hatch, 71, (void *) &assoc, pool);
+	
+	/* number of boundary loops */
+	
+	list_node *current = bound_list->next;
+	while (current != NULL){
+		if (current->data){
+			obj = (dxf_node *)current->data;
+			if (dxf_ident_ent_type(obj) == DXF_LWPOLYLINE)
+				loops++; /* increment loops if is a polyline */
+		}
+		current = current->next;
+	}
+	if (loops <= 0) ok = 0; /* error if no valid loops*/
+	
+	ok &= dxf_attr_append(hatch, 91, (void *) &loops, pool);
+	
+	
+	/*============== bondaries =============*/
+	current = bound_list->next;
+	while (current != NULL){
+		if (current->data){
+			obj = (dxf_node *)current->data;
+			if (dxf_ident_ent_type(obj) == DXF_LWPOLYLINE){
+				/* boundary type */
+				ok &= dxf_attr_append(hatch, 92, (void *) (int[]){2}, pool); /* polyline*/
+				ok &= dxf_attr_append(hatch, 72, (void *) (int[]){1}, pool); /* has bulge*/
+				
+				int closed = 0, num_vert = 0;
+				
+				dxf_node *closed_o = dxf_find_attr_i(obj, 70, 0);
+				if (closed_o) closed = closed_o->value.i_data & 1;
+				
+				dxf_node *num_vert_o = dxf_find_attr_i(obj, 90, 0);
+				if (num_vert_o) num_vert = num_vert_o->value.i_data;
+				
+				ok &= dxf_attr_append(hatch, 73, (void *) &closed, pool);
+				ok &= dxf_attr_append(hatch, 93, (void *) &num_vert, pool);
+				
+				dxf_node *curr_attr = obj->obj.content->next;
+				double x = 0, y = 0, bulge = 0, prev_x = 0;
+				int vert = 0, first = 0;
+				while (curr_attr){
+					switch (curr_attr->value.group){
+						case 10:
+							x = curr_attr->value.d_data;
+							vert = 1; /* set flag */
+							break;
+						case 20:
+							y = curr_attr->value.d_data;
+							break;
+						case 42:
+							bulge = curr_attr->value.d_data;
+							break;
+					}
+					
+					if (vert){
+						if (!first) first = 1;
+						else{
+							ok &= dxf_attr_append(hatch, 10, (void *) &prev_x, pool);
+							ok &= dxf_attr_append(hatch, 20, (void *) &y, pool);
+							ok &= dxf_attr_append(hatch, 42, (void *) &bulge, pool);
+						}
+						prev_x = x;
+						bulge = 0; vert = 0;
+					}
+					
+					//x = 0; y = 0; bulge = 0; vert = 0;
+					curr_attr = curr_attr->next;
+				}
+				/* last vertex */
+				ok &= dxf_attr_append(hatch, 10, (void *) &prev_x, pool);
+				ok &= dxf_attr_append(hatch, 20, (void *) &y, pool);
+				ok &= dxf_attr_append(hatch, 42, (void *) &bulge, pool);
+				
+				/* number of source boundary objects - ?? */
+				ok &= dxf_attr_append(hatch, 97, (void *) &int_zero, pool);
+			}
+		}
+		current = current->next; /* go to next */
+	}
+	
+	/*===================================*/
+	
+	/* hatch style */
+	ok &= dxf_attr_append(hatch, 75, (void *) &style, pool);
+	/* pattern type */
+	ok &= dxf_attr_append(hatch, 76, (void *) &type, pool);
+	
+	if (!solid){
+		/* pattern rotation */
+		ok &= dxf_attr_append(hatch, 52, (void *) &rot, pool);
+		/* pattern scale */
+		ok &= dxf_attr_append(hatch, 41, (void *) &scale, pool);
+		/* double pattern - ?? */
+		ok &= dxf_attr_append(hatch, 77, (void *) &int_zero, pool);
+		
+		/* number of definition lines */
+		ok &= dxf_attr_append(hatch, 78, (void *) &(pattern->num_lines), pool);
+		
+		/*============== lines =============*/
+		struct hatch_line *curr_l = pattern->lines;
+		while (curr_l){
+			double ang = fmod(curr_l->ang + rot, 360.0);
+			double cosine = cos(ang * M_PI/180);
+			double sine = sin(ang * M_PI/180);
+			double dx = scale * (cosine*curr_l->dx - sine*curr_l->dy);
+			double dy = scale * (sine*curr_l->dx + cosine*curr_l->dy);
+			cosine = cos(rot * M_PI/180);
+			sine = sin(rot * M_PI/180);
+			double ox = scale * (cosine*curr_l->ox - sine*curr_l->oy);
+			double oy = scale * (sine*curr_l->ox + cosine*curr_l->oy);
+			int i;
+			double dash[20];
+			
+			for (i = 0; i < curr_l->num_dash; i++){
+				dash[i] = scale * curr_l->dash[i];
+			}
+			
+			 /* line angle */
+			ok &= dxf_attr_append(hatch, 53, (void *) &ang, pool);
+			/* base point */
+			ok &= dxf_attr_append(hatch, 43, (void *) &ox, pool);
+			ok &= dxf_attr_append(hatch, 44, (void *) &oy, pool);
+			/*offset*/
+			ok &= dxf_attr_append(hatch, 45, (void *) &dx, pool);
+			ok &= dxf_attr_append(hatch, 46, (void *) &dy, pool);
+			/*number of dash elements*/
+			ok &= dxf_attr_append(hatch, 79, (void *) &(curr_l->num_dash), pool);
+			
+			for (i = 0; i < curr_l->num_dash; i++){
+				ok &= dxf_attr_append(hatch, 49, (void *) &(dash[i]), pool);
+			}
+			
+			curr_l = curr_l->next;
+		}
+	
+		/*===================================*/
+		
+	}
+	
+	/* number seed points - ?? */
+	ok &= dxf_attr_append(hatch, 98, (void *) &int_zero, pool);
+	
+	if(ok){
+		return hatch;
+	}
+
+	return NULL;
+}

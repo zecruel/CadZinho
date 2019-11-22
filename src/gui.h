@@ -188,8 +188,10 @@ struct Gui_obj {
 	int text2tag;
 	
 	int hatch_fam_idx, hatch_idx, h_type, hatch_assoc;
+	int hatch_sel;
 	
 	int keep_orig;
+	int closed;
 	
 	
 	int en_distance; /* enable distance entry */

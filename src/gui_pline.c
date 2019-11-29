@@ -44,6 +44,11 @@ int gui_pline_interactive(gui_obj *gui){
 				gui->draw_tmp = 0;
 				if (gui->step == 2){
 					dxf_lwpoly_remove (new_el, -1);
+					
+					if(gui->closed){
+						dxf_attr_append(new_el, 42, (void *) &gui->bulge, DWG_LIFE);
+					}
+					
 					new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
 					drawing_ent_append(gui->drawing, new_el);
 					

@@ -86,10 +86,10 @@ int gui_scale_info (gui_obj *gui){
 		} else {
 			nk_label(gui->ctx, "Enter destination point", NK_TEXT_LEFT);
 		}
-		//gui->scale = nk_propertyd(gui->ctx, "Scale", 0.0d, gui->scale, 100.0d, 0.1d, 0.1d);
+		gui->scale = nk_propertyd(gui->ctx, "Scale", 1.0e-9d, gui->scale, 1.0e9d, 0.1d, 0.1d);
 		
 		
-		
+		#if(0)
 		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, scale_str, 63, nk_filter_float);
 		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 			if (strlen(scale_str)){
@@ -97,6 +97,7 @@ int gui_scale_info (gui_obj *gui){
 				snprintf(scale_str, 63, "%.9g", gui->scale);
 			}
 		}
+		#endif
 	}
 	return 1;
 }

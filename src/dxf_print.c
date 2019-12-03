@@ -356,7 +356,7 @@ void print_graph_svg(graph_obj * master, FILE *file, struct print_param param){
 				init = 1;
 			}
 			/*finaly, draw current line */
-			else if (((x0 != prev_x)||(y0 != prev_y)))
+			else if ((fabs(x0 - prev_x) > 1e-4) || (fabs(y0 - prev_y) > 1e-4))
 				fprintf(file, "M%.4g %.4g ", x0, y0);
 
 			fprintf(file, "L%.4g %.4g ", x1, y1);

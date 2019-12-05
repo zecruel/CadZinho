@@ -6,16 +6,18 @@ int gui_spline_interactive(gui_obj *gui){
 		
 		if (gui->step == 0){
 			if (gui->ev & EV_ENTER){
+				dxf_mem_pool(ZERO_DXF, ONE_TIME);
+				
 				/* create a new DXF spline */
 				new_el = (dxf_node *) dxf_new_lwpolyline (
 					gui->step_x[gui->step], gui->step_y[gui->step], 0.0, /* pt1, */
 					0.0,//gui->bulge, /* bulge */
-					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-					0, DWG_LIFE); /* paper space */
+					7, "0", /* color, layer */
+					"Continuous", 0, /* line type, line weight */
+					0, ONE_TIME); /* paper space */
 				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge, DWG_LIFE);
 				dxf_attr_change(new_el, 70, &gui->closed);
-				gui->element = new_el;
+				//gui->element = new_el;
 				gui->step = 1;
 				gui->en_distance = 1;
 				gui->draw_tmp = 1;
@@ -32,10 +34,6 @@ int gui_spline_interactive(gui_obj *gui){
 				
 				dxf_attr_change_i(new_el, 10, &gui->step_x[gui->step], -1);
 				dxf_attr_change_i(new_el, 20, &gui->step_y[gui->step], -1);
-				dxf_attr_change_i(new_el, 42, &gui->bulge, -1);
-				
-				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
-				graph_list_change_patt(new_el->obj.graphics, (double[]){10/gui->zoom,-10/gui->zoom}, 2);
 				
 				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge, DWG_LIFE);
 				gui->step = 2;
@@ -46,18 +44,14 @@ int gui_spline_interactive(gui_obj *gui){
 				gui->draw_phanton = 0;
 				if (gui->step == 2){
 					dxf_lwpoly_remove (new_el, -1);
-					
-					if(gui->closed){
-						dxf_attr_append(new_el, 42, (void *) &gui->bulge, DWG_LIFE);
-					}
-					
+						
 					dxf_node *spline =  dxf_new_spline (new_el, gui->sp_degree - 1,
 						gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 						gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 						0, DWG_LIFE); /* paper space */
 					
 					if (spline){
-						spline->obj.graphics = dxf_graph_parse(gui->drawing, spline, 0 , 0);
+						spline->obj.graphics = dxf_graph_parse(gui->drawing, spline, 0 , DWG_LIFE);
 						drawing_ent_append(gui->drawing, spline);
 						
 						do_add_entry(&gui->list_do, "SPLINE");
@@ -69,31 +63,34 @@ int gui_spline_interactive(gui_obj *gui){
 				gui_first_step(gui);
 			}
 			if (gui->ev & EV_MOTION){
-				dxf_attr_change(new_el, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
-				dxf_attr_change(new_el, 8, gui->drawing->layers[gui->layer_idx].name);
 				dxf_attr_change_i(new_el, 10, &gui->step_x[gui->step], -1);
 				dxf_attr_change_i(new_el, 20, &gui->step_y[gui->step], -1);
-				//dxf_attr_change_i(new_el, 42, &gui->bulge, -1);
-				dxf_attr_change(new_el, 370, &dxf_lw[gui->lw_idx]);
-				dxf_attr_change(new_el, 62, &gui->color_idx);
-				dxf_attr_change(new_el, 70, &gui->closed);
-				
-				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
-				graph_list_change_patt(new_el->obj.graphics, (double[]){10/gui->zoom,-10/gui->zoom}, 2);
-				
 			}
+			
+			gui->draw_phanton = 1;
 			dxf_node *spline =  dxf_new_spline (new_el, gui->sp_degree - 1,
 				gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 				gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 				0, FRAME_LIFE); /* paper space */
-			if (spline){
-				gui->draw_phanton = 1;
+			if (spline)
 				gui->phanton = dxf_graph_parse(gui->drawing, spline, 0 , FRAME_LIFE);
+			else
+				gui->phanton = NULL;
+			
+			graph_obj *graph = dxf_lwpline_parse(gui->drawing, new_el, 0 , FRAME_LIFE);
+			
+			if (graph){
+				graph->patt_size = 2;
+				graph->pattern[0] = 10 / gui->zoom;
+				graph->pattern[1] = -10 / gui->zoom;
+				
+				if(!gui->phanton)
+					gui->phanton = list_new(NULL, FRAME_LIFE);
+				
+				list_node * new_node = list_new(graph, FRAME_LIFE);
+				list_push(gui->phanton, new_node);
 			}
-			else{
-				gui->draw_phanton = 0;
-			}
-	}
+		}
 	}
 	return 1;
 }

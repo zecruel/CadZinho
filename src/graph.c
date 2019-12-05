@@ -2872,3 +2872,37 @@ int graph_list_matrix(list_node *list, double matrix[3][3]){
 	}
 	return ok;
 }
+
+int graph_change_patt (graph_obj * graph, double pattern[20], int size){
+	/* change the graph line pattern */
+	if(graph){
+		int i;
+		graph->patt_size = size;
+		for (i = 0; i < size; i++){
+			graph->pattern[i] = pattern[i];
+		}
+		return 1;
+	}
+	return 0;
+}
+
+int graph_list_change_patt(list_node *list, double pattern[20], int size){
+	list_node *current = NULL;
+	graph_obj *curr_graph = NULL;
+	int ok = 0;
+		
+	if (list != NULL){
+		current = list->next;
+		
+		/* sweep the main list */
+		while (current != NULL){
+			if (current->data){
+				curr_graph = (graph_obj *)current->data;
+				graph_change_patt(curr_graph, pattern, size);
+			}
+			current = current->next;
+		}
+		ok = 1;
+	}
+	return ok;
+}

@@ -1221,6 +1221,8 @@ int gui_start(gui_obj *gui){
 	
 	gui->closed = 0;
 	
+	gui->sp_degree = 4;
+	
 	gui->lua_script.L = NULL;
 	gui->lua_script.T = NULL;
 	gui->lua_script.active = 0;

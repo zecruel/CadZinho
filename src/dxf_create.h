@@ -128,4 +128,7 @@ int type, /* 0 = user, 1 = predefined, 2 =custom */
 double rot, double scale,
 int color, char *layer, char *ltype, int lw, int paper, int pool);
 
+dxf_node * dxf_new_spline (dxf_node *poly, int degree,
+int color, char *layer, char *ltype, int lw, int paper, int pool);
+
 #endif

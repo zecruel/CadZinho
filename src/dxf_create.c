@@ -1732,3 +1732,100 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 
 	return NULL;
 }
+
+dxf_node * dxf_new_spline (dxf_node *poly, int degree,
+int color, char *layer, char *ltype, int lw, int paper, int pool){
+	if (dxf_ident_ent_type(poly) != DXF_LWPOLYLINE) return NULL;
+	if (degree < 1 || degree > 15) return NULL; /* aceptable curve degree 2 --- 15*/
+	
+	
+	int closed = 0, num_vert = 0, num_knot = 0;
+	
+	dxf_node *closed_o = dxf_find_attr_i(poly, 70, 0);
+	if (closed_o) closed = closed_o->value.i_data & 1;
+	
+	dxf_node *num_vert_o = dxf_find_attr_i(poly, 90, 0);
+	if (num_vert_o) num_vert = num_vert_o->value.i_data;
+	
+	if (num_vert <= degree) return NULL;
+	
+	num_knot = degree + num_vert + 1;
+	
+	/* create a new DXF SPLINE */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbEntity";
+	const char *dxf_subclass = "AcDbSpline";
+	int ok = 1, i = 0;
+	int flags = 0;
+	dxf_node * spline = dxf_obj_new ("SPLINE", pool);
+	double knot = 0;
+	
+	ok &= dxf_attr_append(spline, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(spline, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(spline, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(spline, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(spline, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(spline, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(spline, 370, (void *) &lw, pool);
+	
+	ok &= dxf_attr_append(spline, 100, (void *) dxf_subclass, pool);
+	ok &= dxf_attr_append(spline, 70, (void *) &flags, pool);
+	/* degree */
+	ok &= dxf_attr_append(spline, 71, (void *) &degree, pool);
+	
+	/*knots*/
+	ok &= dxf_attr_append(spline, 72, (void *) &num_knot, pool);
+	
+	/*control points */
+	ok &= dxf_attr_append(spline, 73, (void *) &num_vert, pool);
+	
+	/*fit points*/
+	ok &= dxf_attr_append(spline, 74, (void *) (int[]){0}, pool);
+	
+	for (i = 0; i < num_knot; i++){
+		if (i > degree && i < num_vert + 1)
+			knot += 1.0;
+		ok &= dxf_attr_append(spline, 40, (void *) &knot, pool);
+	}
+	
+	dxf_node *curr_attr = poly->obj.content->next;
+	double x = 0, y = 0, prev_x = 0;
+	int vert = 0, first = 0;
+	while (curr_attr){
+		switch (curr_attr->value.group){
+			case 10:
+				x = curr_attr->value.d_data;
+				vert = 1; /* set flag */
+				break;
+			case 20:
+				y = curr_attr->value.d_data;
+				break;
+		}
+		
+		if (vert){
+			if (!first) first = 1;
+			else{
+				//ok &= dxf_attr_append(spline, 40, (void *) &knot, pool);
+				ok &= dxf_attr_append(spline, 10, (void *) &prev_x, pool);
+				ok &= dxf_attr_append(spline, 20, (void *) &y, pool);
+				ok &= dxf_attr_append(spline, 30, (void *) (double[]){0.0}, pool);
+			}
+			prev_x = x;
+			vert = 0;
+			
+		}
+		curr_attr = curr_attr->next;
+	}
+	/* last vertex */
+	//ok &= dxf_attr_append(spline, 40, (void *) &knot, pool);
+	ok &= dxf_attr_append(spline, 10, (void *) &prev_x, pool);
+	ok &= dxf_attr_append(spline, 20, (void *) &y, pool);
+	ok &= dxf_attr_append(spline, 30, (void *) (double[]){0.0}, pool);
+	
+	
+	if(ok){
+		return spline;
+	}
+
+	return NULL;
+}

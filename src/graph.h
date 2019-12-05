@@ -162,4 +162,8 @@ void vec_2_rot_matrix(double matrix[3][3], double x, double y, double z);
 
 bmp_color validate_color (bmp_color color, bmp_color list[], bmp_color subst[], int len);
 
+int graph_change_patt (graph_obj * graph, double pattern[20], int size);
+
+int graph_list_change_patt(list_node *list, double pattern[20], int size);
+
 #endif

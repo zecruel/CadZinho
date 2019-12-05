@@ -72,4 +72,9 @@ int gui_ed_text_interactive(gui_obj *gui);
 
 int gui_ed_text_info (gui_obj *gui);
 
+
+int gui_spline_interactive(gui_obj *gui);
+
+int gui_spline_info (gui_obj *gui);
+
 #endif

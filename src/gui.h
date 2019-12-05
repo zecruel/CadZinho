@@ -85,7 +85,8 @@ enum Modal {
 	MIRROR,
 	ED_TEXT,
 	ED_ATTR,
-	SCRIPT
+	SCRIPT,
+	SPLINE
 };
 
 enum Gui_ev {
@@ -192,6 +193,8 @@ struct Gui_obj {
 	
 	int keep_orig;
 	int closed;
+	
+	int sp_degree;
 	
 	
 	int en_distance; /* enable distance entry */

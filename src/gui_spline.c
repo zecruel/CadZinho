@@ -45,7 +45,7 @@ int gui_spline_interactive(gui_obj *gui){
 				if (gui->step == 2){
 					dxf_lwpoly_remove (new_el, -1);
 						
-					dxf_node *spline =  dxf_new_spline (new_el, gui->sp_degree - 1,
+					dxf_node *spline =  dxf_new_spline (new_el, gui->sp_degree - 1, gui->closed,
 						gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 						gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 						0, DWG_LIFE); /* paper space */
@@ -68,7 +68,7 @@ int gui_spline_interactive(gui_obj *gui){
 			}
 			
 			gui->draw_phanton = 1;
-			dxf_node *spline =  dxf_new_spline (new_el, gui->sp_degree - 1,
+			dxf_node *spline =  dxf_new_spline (new_el, gui->sp_degree - 1, gui->closed,
 				gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 				gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 				0, FRAME_LIFE); /* paper space */

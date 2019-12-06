@@ -1733,21 +1733,23 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	return NULL;
 }
 
-dxf_node * dxf_new_spline (dxf_node *poly, int degree,
+dxf_node * dxf_new_spline (dxf_node *poly, int degree, int closed,
 int color, char *layer, char *ltype, int lw, int paper, int pool){
 	if (dxf_ident_ent_type(poly) != DXF_LWPOLYLINE) return NULL;
 	if (degree < 1 || degree > 15) return NULL; /* aceptable curve degree 2 --- 15*/
 	
 	
-	int closed = 0, num_vert = 0, num_knot = 0;
+	int p_closed = 0, num_vert = 0, num_knot = 0;
 	
-	dxf_node *closed_o = dxf_find_attr_i(poly, 70, 0);
-	if (closed_o) closed = closed_o->value.i_data & 1;
+	dxf_node *p_closed_o = dxf_find_attr_i(poly, 70, 0);
+	if (p_closed_o) p_closed = p_closed_o->value.i_data & 1;
 	
 	dxf_node *num_vert_o = dxf_find_attr_i(poly, 90, 0);
 	if (num_vert_o) num_vert = num_vert_o->value.i_data;
 	
 	if (num_vert <= degree) return NULL;
+	
+	if (closed) num_vert += degree;
 	
 	num_knot = degree + num_vert + 1;
 	
@@ -1769,7 +1771,10 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	ok &= dxf_attr_append(spline, 370, (void *) &lw, pool);
 	
 	ok &= dxf_attr_append(spline, 100, (void *) dxf_subclass, pool);
-	ok &= dxf_attr_append(spline, 70, (void *) &flags, pool);
+	
+	if (closed) ok &= dxf_attr_append(spline, 70, (void *) (int[]){3}, pool);
+	else ok &= dxf_attr_append(spline, 70, (void *) (int[]){0}, pool);
+	
 	/* degree */
 	ok &= dxf_attr_append(spline, 71, (void *) &degree, pool);
 	
@@ -1783,8 +1788,9 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	ok &= dxf_attr_append(spline, 74, (void *) (int[]){0}, pool);
 	
 	for (i = 0; i < num_knot; i++){
-		if (i > degree && i < num_vert + 1)
+		if (!closed && i > degree && i < num_vert + 1)
 			knot += 1.0;
+		if (closed) knot += 1.0;
 		ok &= dxf_attr_append(spline, 40, (void *) &knot, pool);
 	}
 	
@@ -1821,6 +1827,20 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	ok &= dxf_attr_append(spline, 10, (void *) &prev_x, pool);
 	ok &= dxf_attr_append(spline, 20, (void *) &y, pool);
 	ok &= dxf_attr_append(spline, 30, (void *) (double[]){0.0}, pool);
+	
+	if (closed){
+		dxf_node *x, *y;
+		for (i = 0;  i < degree; i++){
+			x = dxf_find_attr_i(poly, 10, i);
+			y = dxf_find_attr_i(poly, 20, i);
+			if (x && y){
+				ok &= dxf_attr_append(spline, 10, (void *) &x->value.d_data, pool);
+				ok &= dxf_attr_append(spline, 20, (void *) &y->value.d_data, pool);
+				ok &= dxf_attr_append(spline, 30, (void *) (double[]){0.0}, pool);
+
+			}
+		}
+	}
 	
 	
 	if(ok){

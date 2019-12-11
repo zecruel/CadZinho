@@ -777,7 +777,7 @@ dxf_node * dxf_find_attr_i2(dxf_node * start, dxf_node * end, int attr, int idx)
 	dxf_node *found = NULL;
 	int i = 0;
 	
-	if((start != NULL) && (end != NULL)){ /* check if exist */
+	if (start != NULL){ /* check if exist */
 		
 		current = start;
 		while (current){

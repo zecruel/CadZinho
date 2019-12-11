@@ -996,53 +996,187 @@ graph_obj * dxf_spline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 	return NULL;
 }
 
-graph_obj * dxf_spline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
-	if(ent){
-		dxf_node *current = NULL, *prev;
-		graph_obj *curr_graph = NULL;
-		double pt1_x = 0, pt1_y = 0, pt1_z = 0;
-		
-		int pline_flag = 0, closed = 0, count, i;
-		double prev_x, prev_y, prev_z, curr_x;
-		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
-				
-		/*flags*/
-		int pt1 = 0, init = 0, paper = 0;
-		
-		int num_cpts, order, num_ret, num_knots;
-		double weight = 1.0;
-		double ctrl_pts[3 * MAX_SPLINE_PTS], ret[3 * MAX_SPLINE_PTS];
-		double weights[20], knots[20];
-		int knot_count = 1;
-		
-		
-		
-		dxf_node *x, *y;
-		x = dxf_find_attr_i(ent, 71, 0);
-		if (x){
-			order = x->value.i_data + 1;
+int basis_func(int order, double t, double knot[], double weight[], double ret[]){
+	/*  Subroutine to generate rational B-spline basis functions
+
+	Adapted from: An Introduction to NURBS- David F. Rogers - 2000 - Chapter 4, Sec. 4. , p 296
+
+	order        = order of the B-spline basis function
+	d        = first term of the basis function recursion relation
+	e        = second term of the basis function recursion relation
+	weight[]	     = array containing the homogeneous weights
+	num_pts     = number of defining polygon vertices
+	num_knots   = constant -- num_pts + order -- maximum number of knot values
+	ret[]      = array containing the rationalbasis functions
+	       ret[1] contains the basis function associated with B1 etc.
+	t        = parameter value
+	temp[]   = temporary array
+	knot[]      = knot vector
+	*/
+	
+	int num_pts, num_knots;
+	int i,j,k;
+	double d,e;
+	double sum;
+	double temp[120];
+
+	num_pts = order + 1;
+	num_knots = num_pts + order;
+	
+	/* calculate the first order nonrational basis functions n[i]	*/
+	for (i = 0; i < num_knots - 2; i++){
+		if (( t >= knot[i]) && (t < knot[i+1]))
+			temp[i] = 1;
+		else
+			temp[i] = 0;
+	}
+
+	/* calculate the higher order nonrational basis functions */
+
+	for (k = 1; k < num_pts; k++){
+		for (i = 0; i < num_knots - k; i++){
+			if (temp[i] != 0)    /* if the lower order basis function is zero skip the calculation */
+				d = ((t-knot[i])*temp[i])/(knot[i+k]-knot[i]);
+			else
+				d = 0;
+
+			if (temp[i+1] != 0)     /* if the lower order basis function is zero skip the calculation */
+				e = ((knot[i+k+1]-t)*temp[i+1])/(knot[i+k+1]-knot[i+1]);
+			else
+				e = 0;
+
+			temp[i] = d + e;
 		}
-		
-		
-		for (i = 0;  i < 4; i++){
-			x = dxf_find_attr_i(ent, 40, i);
+	}
+	
+	/* calculate sum for denominator of rational basis functions */
+	sum = 0.;
+	for (i = 0; i < num_pts; i++){
+		sum = sum + temp[i]*weight[i];
+	}
+
+	/* form rational basis functions and put in ret vector */
+	for (i = 0; i < num_pts; i++){
+		if (sum != 0){
+			ret[i] = (temp[i]*weight[i])/(sum);}
+		else
+			ret[i] = 0;
+	}
+}
+
+graph_obj * dxf_spline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
+	if(!ent) return NULL;
+	
+	dxf_node * start = NULL;
+	if (ent->type == DXF_ENT){
+		if (ent->obj.content){
+			start = ent->obj.content->next;
+		}
+	}
+	if (!start) return NULL;
+	
+	
+	
+	
+	graph_obj *curr_graph = NULL;
+	
+	int i, j;
+	double prev_x, prev_y, curr_x, curr_y, temp;
+	double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
+	
+	/*flags*/
+	int paper = 0;
+	
+	int num_pts, order, num_knots;
+	double weights[20], knots[20], basis[20];
+	double step, t;
+	int num_seg = 32;
+	int num_ctrl = 0, num_fit = 0, n_ctrl = 0, ctrl = 0;
+	
+	dxf_node *x, *y;
+	
+	x = dxf_find_attr_i2(start, NULL, 67, 0);
+	if (x) paper = x->value.i_data;
+	
+	if(!((p_space == 0 && paper == 0) || 
+		(p_space != 0 && paper != 0))) return NULL;
+	
+	
+	x = dxf_find_attr_i2(start, NULL, 71, 0);
+	if (x) order = x->value.i_data;
+	
+	x = dxf_find_attr_i2(start, NULL, 73, 0);
+	if (x) num_ctrl = x->value.i_data;
+	
+	x = dxf_find_attr_i2(start, NULL, 74, 0);
+	if (x) num_fit = x->value.i_data;
+	
+	n_ctrl = num_ctrl; //+ numfit * order;
+	
+	
+	
+	for (i = 0;  i < 20; i++){
+		weights[i] = 1.0;
+	}
+	
+	num_pts = order + 1;
+	num_knots = num_pts + order + 1;
+	
+	curr_graph = graph_new(pool_idx);	
+	
+	for (ctrl = 0; ctrl < (n_ctrl - order); ctrl+= order-1){
+		for (i = 0;  i < num_knots; i++){
+			x = dxf_find_attr_i(ent, 40, i + ctrl);
 			if (x){
 				knots[i] = x->value.d_data;
 			}
 		}
 		
-		for (i = 0;  i < 20; i++){
-			weights[i] = 1.0;
+		step = (knots[num_knots-1] - knots[0])/num_seg;
+		
+		/* jump of cat */
+		temp = step * 1e-5;
+		for (i = 0;  i < num_knots; i++){
+			knots[i] += temp;
+			temp += step * 1e-5;
 		}
 		
+		t = knots[0] + step * 1e-5;
 		
-		curr_graph = graph_new(pool_idx);
-		if (curr_graph){
-			//line_add(curr_graph, prev_x, prev_y, prev_z, ret[i], ret[i+1], ret[i+2]);
+		
+		for (i = 0;  i <= num_seg; i++){
+			for (j = 0; j < 20; j++){
+				basis[j] = 0.0;
+			}
+			
+			basis_func(order, t, knots, weights, basis);
+			curr_x = 0;
+			curr_y = 0;
+			
+			for (j = 0; j < num_pts; j++){
+			
+				x = dxf_find_attr_i(ent, 10, j + ctrl);
+				y = dxf_find_attr_i(ent, 20, j + ctrl);
+				if (x && y){
+					temp = basis[j] * x->value.d_data;
+					curr_x += temp;
+					temp = basis[j] * y->value.d_data;
+					curr_y += temp;
+				}
+			}
+			if (curr_graph && i + ctrl > 0){
+				line_add(curr_graph, prev_x, prev_y, 0.0, curr_x, curr_y, 0.0);
+			}
+			prev_x = curr_x;
+			prev_y = curr_y;
+			
+			if (i == 0) t-= step * 1.1e-5;
+			
+			t += step;
 		}
-		return curr_graph;
 	}
-	return NULL;
+	return curr_graph;
+	
 }
 
 list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
@@ -3036,7 +3170,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			}
 			else if (strcmp(current->obj.name, "SPLINE") == 0){
 				//ent_type = DXF_LWPOLYLINE;
-				curr_graph = dxf_spline_parse(drawing, current, p_space, pool_idx);
+				curr_graph = dxf_spline_parse2(drawing, current, p_space, pool_idx);
 				if (curr_graph){
 					/* store the graph in the return vector */
 					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
@@ -4443,76 +4577,4 @@ int dxf_hatch_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, i
 		}
 	}
 	return num_graph;
-}
-
-int basis_func(int order, double t, int knot[], double weight[], double ret[]){
-	/*  Subroutine to generate rational B-spline basis functions
-
-	Adapted from: An Introduction to NURBS- David F. Rogers - 2000 - Chapter 4, Sec. 4. , p 296
-
-	order        = order of the B-spline basis function
-	d        = first term of the basis function recursion relation
-	e        = second term of the basis function recursion relation
-	weight[]	     = array containing the homogeneous weights
-	num_pts     = number of defining polygon vertices
-	num_knots   = constant -- num_pts + order -- maximum number of knot values
-	ret[]      = array containing the rationalbasis functions
-	       ret[1] contains the basis function associated with B1 etc.
-	t        = parameter value
-	temp[]   = temporary array
-	knot[]      = knot vector
-	*/
-	
-	int num_pts, num_knots;
-	int i,j,k;
-	double d,e;
-	double sum;
-	double temp[20];
-
-	num_pts = order + 1;
-	num_knots = num_pts + order;
-	
-	/* calculate the first order nonrational basis functions n[i]	*/
-	for (i = 0; i < num_knots - 1; i++){
-		if (( t >= knot[i]) && (t < knot[i+1]))
-			temp[i] = 1;
-		else
-			temp[i] = 0;
-	}
-
-	/* calculate the higher order nonrational basis functions */
-
-	for (k = 1; k < order; k++){
-		for (i = 0; i < num_knots - k; i++){
-			if (temp[i] != 0)    /* if the lower order basis function is zero skip the calculation */
-				d = ((t-knot[i])*temp[i])/(knot[i+k-1]-knot[i]);
-			else
-				d = 0;
-
-			if (temp[i+1] != 0)     /* if the lower order basis function is zero skip the calculation */
-				e = ((knot[i+k]-t)*temp[i+1])/(knot[i+k]-knot[i+1]);
-			else
-				e = 0;
-
-			temp[i] = d + e;
-		}
-	}
-
-	if (t == (double)knot[num_knots]){		/*    pick up last point	*/
-		temp[num_pts] = 1;
-	}
-	
-	/* calculate sum for denominator of rational basis functions */
-	sum = 0.;
-	for (i = 0; i < num_pts; i++){
-		sum = sum + temp[i]*weight[i];
-	}
-
-	/* form rational basis functions and put in ret vector */
-	for (i = 0; i < num_pts; i++){
-		if (sum != 0){
-			ret[i] = (temp[i]*weight[i])/(sum);}
-		else
-			ret[i] = 0;
-	}
 }

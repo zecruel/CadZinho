@@ -42,6 +42,8 @@ int gui_spline_interactive(gui_obj *gui){
 			else if (gui->ev & EV_CANCEL){
 				gui->draw_tmp = 0;
 				gui->draw_phanton = 0;
+				gui->phanton = NULL;
+				
 				if (gui->step == 2){
 					dxf_lwpoly_remove (new_el, -1);
 						

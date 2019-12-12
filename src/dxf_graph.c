@@ -1021,7 +1021,9 @@ int basis_func(int order, double t, double knot[], double weight[], double ret[]
 	double temp[120];
 
 	num_pts = order + 1;
-	num_knots = num_pts + order;
+	num_knots = num_pts + order + 1;
+	
+	for (i = 0; i< 120; i++) temp[i] = 0.0;
 	
 	/* calculate the first order nonrational basis functions n[i]	*/
 	for (i = 0; i < num_knots - 2; i++){
@@ -1105,6 +1107,9 @@ graph_obj * dxf_spline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space,
 	x = dxf_find_attr_i2(start, NULL, 71, 0);
 	if (x) order = x->value.i_data;
 	
+	x = dxf_find_attr_i2(start, NULL, 72, 0);
+	if (x) num_knots = x->value.i_data;
+	
 	x = dxf_find_attr_i2(start, NULL, 73, 0);
 	if (x) num_ctrl = x->value.i_data;
 	
@@ -1113,6 +1118,15 @@ graph_obj * dxf_spline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space,
 	
 	n_ctrl = num_ctrl; //+ numfit * order;
 	
+	/*
+	x = dxf_find_attr_i(ent, 40, 0);
+	y = dxf_find_attr_i(ent, 40, -1);
+	if (x && y){
+		step = (y->value.d_data - x->value.d_data)/(double)num_knots/num_seg;
+		t = x->value.d_data + step * 1e-5;
+	}
+	*/
+	//printf("step = %f\n", step);
 	
 	
 	for (i = 0;  i < 20; i++){
@@ -1122,18 +1136,18 @@ graph_obj * dxf_spline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space,
 	num_pts = order + 1;
 	num_knots = num_pts + order + 1;
 	
-	curr_graph = graph_new(pool_idx);	
+	curr_graph = NULL;	
 	
-	for (ctrl = 0; ctrl < (n_ctrl - order); ctrl+= order-1){
+	for (ctrl = 0; ctrl < n_ctrl-order; ctrl++){
+		for (i = 0; i< 20; i++) knots[i] = 0.0;
+		
 		for (i = 0;  i < num_knots; i++){
 			x = dxf_find_attr_i(ent, 40, i + ctrl);
 			if (x){
 				knots[i] = x->value.d_data;
 			}
 		}
-		
-		step = (knots[num_knots-1] - knots[0])/num_seg;
-		
+				
 		/* jump of cat */
 		temp = step * 1e-5;
 		for (i = 0;  i < num_knots; i++){
@@ -1141,7 +1155,17 @@ graph_obj * dxf_spline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space,
 			temp += step * 1e-5;
 		}
 		
-		t = knots[0] + step * 1e-5;
+		if (n_ctrl == num_pts){
+			step = (knots[num_knots - 1] - knots[0])/num_seg;
+			t = knots[order] + step * 1e-5;
+		}
+		//else if (ctrl < num_pts - order) step = (knots[num_knots - order - 1] - knots[0])/num_seg;
+		else {
+			step = (knots[num_knots - order - 1] - knots[order])/num_seg;
+			t = knots[order] + step * 1e-5;
+		}
+		
+		
 		
 		
 		for (i = 0;  i <= num_seg; i++){
@@ -1164,6 +1188,7 @@ graph_obj * dxf_spline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space,
 					curr_y += temp;
 				}
 			}
+			if (!curr_graph) curr_graph = graph_new(pool_idx);
 			if (curr_graph && i + ctrl > 0){
 				line_add(curr_graph, prev_x, prev_y, 0.0, curr_x, curr_y, 0.0);
 			}

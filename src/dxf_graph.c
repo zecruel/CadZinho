@@ -854,149 +854,7 @@ graph_obj * dxf_lwpline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space,
 	return NULL;
 }
 
-
-graph_obj * dxf_spline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
-	if(ent){
-		dxf_node *current = NULL, *prev;
-		graph_obj *curr_graph = NULL;
-		double pt1_x = 0, pt1_y = 0, pt1_z = 0;
-		
-		int pline_flag = 0, closed = 0, count, i;
-		double prev_x, prev_y, prev_z, curr_x;
-		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
-				
-		/*flags*/
-		int pt1 = 0, init = 0, paper = 0;
-		
-		int num_cpts, order, num_ret, num_knots;
-		double weight = 1.0;
-		double ctrl_pts[3 * MAX_SPLINE_PTS], ret[3 * MAX_SPLINE_PTS];
-		double weights[MAX_SPLINE_PTS], knots[MAX_SPLINE_PTS];
-		int knot_count = 1;
-
-		count =0;
-		
-		if (ent->type == DXF_ENT){
-			if (ent->obj.content){
-				current = ent->obj.content->next;
-				//printf("%s\n", ent->obj.name);
-			}
-		}
-		while (current){
-			prev = current;
-			if (current->type == DXF_ATTR){ /* DXF attibute */
-				switch (current->value.group){
-	
-					case 10:
-						pt1_x = current->value.d_data;
-						pt1 = 1; /* set flag */
-						break;
-					case 20:
-						pt1_y = current->value.d_data;
-						//pt1 = 1; /* set flag */
-						break;
-					case 30:
-						pt1_z = current->value.d_data;
-						//pt1 = 1; /* set flag */
-						break;
-					case 40:
-						knots[knot_count] = current->value.d_data;
-						knot_count++;
-						break;
-					case 41:
-						weight = current->value.d_data;
-						break;
-					case 70:
-						pline_flag = current->value.i_data;
-						break;
-					case 71:
-						order = current->value.i_data;
-						break;
-					case 72:
-						num_knots = current->value.i_data;
-						break;
-					case 73:
-						num_cpts = current->value.i_data;
-						break;
-					case 67:
-						paper = current->value.i_data;
-						break;
-					case 210:
-						extru_x = current->value.d_data;
-						break;
-					case 220:
-						extru_y = current->value.d_data;
-						break;
-					case 230:
-						extru_z = current->value.d_data;
-				}
-			}
-			if (pt1){
-				pt1 = 0;
-				
-				if ((init != 0) && (count < MAX_SPLINE_PTS)){
-					ctrl_pts[count*3+1] = curr_x;
-					ctrl_pts[count*3+2] = pt1_y;
-					ctrl_pts[count*3+3] = pt1_z;
-					weights[count+1] = weight;
-					count++;
-				}
-				else if((init == 0) &&
-				(((p_space == 0) && (paper == 0)) || 
-				((p_space != 0) && (paper != 0)))){
-					init = 1;
-				}
-				
-				curr_x = pt1_x;
-			}
-			current = current->next; /* go to the next in the list */
-		}
-		
-		/* last vertex */
-		if ((init != 0) && (count < MAX_SPLINE_PTS)){
-			ctrl_pts[count*3+1] = curr_x;
-			ctrl_pts[count*3+2] = pt1_y;
-			ctrl_pts[count*3+3] = pt1_z;
-			weights[count+1] = weight;
-			count++;
-		}
-		
-		curr_graph = graph_new(pool_idx);
-		if ((curr_graph)&&((count + order)*5 < MAX_SPLINE_PTS)){
-			
-			if (pline_flag & 1){
-				closed = 1;
-			}
-			else {
-				closed = 0;
-			}
-		
-			num_ret = (num_cpts + order)*5; /* num pts on curve */
-			
-			for(i = 1; i <= 3*num_ret; i++){
-				ret[i] = 0.0;
-			}
-			
-			rbspline(num_cpts, order+1, num_ret, ctrl_pts, weights, ret);
-			
-			prev_x = ret[1];
-			prev_y = ret[2];
-			prev_z = ret[3];
-			
-			for(i =4 ; i <= 3*num_ret; i = i+3){
-				line_add(curr_graph, prev_x, prev_y, prev_z, ret[i], ret[i+1], ret[i+2]);
-				prev_x = ret[i];
-				prev_y = ret[i+1];
-				prev_z = ret[i+2];
-				/*printf(" %f %f %f \n",ret[i],ret[i+1],ret[i+2]);*/
-			}
-		}
-		return curr_graph;
-	}
-	return NULL;
-}
-
-int basis_func(int order, double t, double knot[], double weight[], double ret[]){
+int basis_func(int order, double t, double knot[], double ret[]){
 	/*  Subroutine to generate rational B-spline basis functions
 
 	Adapted from: An Introduction to NURBS- David F. Rogers - 2000 - Chapter 4, Sec. 4. , p 296
@@ -1004,7 +862,6 @@ int basis_func(int order, double t, double knot[], double weight[], double ret[]
 	order        = order of the B-spline basis function
 	d        = first term of the basis function recursion relation
 	e        = second term of the basis function recursion relation
-	weight[]	     = array containing the homogeneous weights
 	num_pts     = number of defining polygon vertices
 	num_knots   = constant -- num_pts + order -- maximum number of knot values
 	ret[]      = array containing the rationalbasis functions
@@ -1023,6 +880,7 @@ int basis_func(int order, double t, double knot[], double weight[], double ret[]
 	num_pts = order + 1;
 	num_knots = num_pts + order + 1;
 	
+	/* initialize temporary storage vector */
 	for (i = 0; i< 120; i++) temp[i] = 0.0;
 	
 	/* calculate the first order nonrational basis functions n[i]	*/
@@ -1034,41 +892,30 @@ int basis_func(int order, double t, double knot[], double weight[], double ret[]
 	}
 
 	/* calculate the higher order nonrational basis functions */
-
 	for (k = 1; k < num_pts; k++){
 		for (i = 0; i < num_knots - k; i++){
 			if (temp[i] != 0)    /* if the lower order basis function is zero skip the calculation */
 				d = ((t-knot[i])*temp[i])/(knot[i+k]-knot[i]);
-			else
-				d = 0;
+			else d = 0;
 
 			if (temp[i+1] != 0)     /* if the lower order basis function is zero skip the calculation */
 				e = ((knot[i+k+1]-t)*temp[i+1])/(knot[i+k+1]-knot[i+1]);
-			else
-				e = 0;
+			else e = 0;
 
 			temp[i] = d + e;
 		}
 	}
 	
-	/* calculate sum for denominator of rational basis functions */
-	sum = 0.;
-	for (i = 0; i < num_pts; i++){
-		sum = sum + temp[i]*weight[i];
-	}
-
-	/* form rational basis functions and put in ret vector */
-	for (i = 0; i < num_pts; i++){
-		if (sum != 0){
-			ret[i] = (temp[i]*weight[i])/(sum);}
-		else
-			ret[i] = 0;
-	}
+	for (i = 0; i < num_pts; i++) ret[i] = temp[i];
 }
 
-graph_obj * dxf_spline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
-	if(!ent) return NULL;
+graph_obj * dxf_spline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
+	/* parse a SPLINE entity.
+	This function interpolate a NURBS curve by fractions (locally), depending its order*/
 	
+	if(!ent) return NULL; /* verify if the entity exists. */
+	
+	/* verify if entity is consistent */
 	dxf_node * start = NULL;
 	if (ent->type == DXF_ENT){
 		if (ent->obj.content){
@@ -1077,128 +924,173 @@ graph_obj * dxf_spline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space,
 	}
 	if (!start) return NULL;
 	
-	
-	
-	
 	graph_obj *curr_graph = NULL;
 	
 	int i, j;
-	double prev_x, prev_y, curr_x, curr_y, temp;
+	double prev_x, prev_y, prev_z, curr_x, curr_y, curr_z, curr_w;
 	double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
 	
 	/*flags*/
 	int paper = 0;
 	
 	int num_pts, order, num_knots;
-	double weights[20], knots[20], basis[20];
+	double knots[20], basis[20], px[20], py[20], pz[20], w[20];
+	double knot_jump;
 	double step, t;
 	int num_seg = 32;
 	int num_ctrl = 0, num_fit = 0, n_ctrl = 0, ctrl = 0;
 	
-	dxf_node *x, *y;
+	dxf_node *attr;
+	dxf_node *curr_pt = NULL;
+	dxf_node *next_pt = NULL;
+	dxf_node *curr_knot = NULL;
 	
-	x = dxf_find_attr_i2(start, NULL, 67, 0);
-	if (x) paper = x->value.i_data;
-	
+	/* verify if entity is drawable, depending its model or paper space */
+	attr = dxf_find_attr_i2(start, NULL, 67, 0);
+	if (attr) paper = attr->value.i_data;
 	if(!((p_space == 0 && paper == 0) || 
 		(p_space != 0 && paper != 0))) return NULL;
 	
 	
-	x = dxf_find_attr_i2(start, NULL, 71, 0);
-	if (x) order = x->value.i_data;
+	/* get gobal NURBS parameters */
+	attr = dxf_find_attr_i2(start, NULL, 71, 0);
+	if (attr) order = attr->value.i_data; /* order */
 	
-	x = dxf_find_attr_i2(start, NULL, 72, 0);
-	if (x) num_knots = x->value.i_data;
+	attr = dxf_find_attr_i2(start, NULL, 72, 0);
+	if (attr) num_knots = attr->value.i_data; /* number of knots */
 	
-	x = dxf_find_attr_i2(start, NULL, 73, 0);
-	if (x) num_ctrl = x->value.i_data;
+	attr = dxf_find_attr_i2(start, NULL, 73, 0);
+	if (attr) num_ctrl = attr->value.i_data; /* number of control points */
 	
-	x = dxf_find_attr_i2(start, NULL, 74, 0);
-	if (x) num_fit = x->value.i_data;
+	attr = dxf_find_attr_i2(start, NULL, 74, 0);
+	if (attr) num_fit = attr->value.i_data; /* number of fit points */
 	
 	n_ctrl = num_ctrl; //+ numfit * order;
 	
-	/*
-	x = dxf_find_attr_i(ent, 40, 0);
-	y = dxf_find_attr_i(ent, 40, -1);
-	if (x && y){
-		step = (y->value.d_data - x->value.d_data)/(double)num_knots/num_seg;
-		t = x->value.d_data + step * 1e-5;
-	}
-	*/
-	//printf("step = %f\n", step);
+	/*verify if NURBS is valid*/
+	if (order < 1 && order > 14) return NULL;
+	if (n_ctrl < order + 1) return NULL;
 	
-	
-	for (i = 0;  i < 20; i++){
-		weights[i] = 1.0;
-	}
-	
+	/* number of necessary control points and knots to interpolate the curve locally */
 	num_pts = order + 1;
 	num_knots = num_pts + order + 1;
 	
 	curr_graph = NULL;	
 	
+	/* initialize the knots vector with first values in curve*/
+	for (i = 0; i< 20; i++) knots[i] = 0.0;
+	curr_knot = dxf_find_attr_i2(start, NULL, 40, 0);
+	knot_jump = step * 1e-5; /* ace in the hole - jump of cat */
+	for (i = 0;  (i < num_knots) && (curr_knot); i++){
+		knots[i] = curr_knot->value.d_data + knot_jump;
+		curr_knot = dxf_find_attr_i2(curr_knot, NULL, 40, 1);
+		knot_jump += step * 1e-5;
+	}
+	
+	/* initialize the points and weights vectors with first values in curve*/
+	curr_pt = dxf_find_attr_i2(start, NULL, 10, 0);
+	next_pt = dxf_find_attr_i2(start, NULL, 10, 1);
+	for (i = 0; (i < num_pts) && (curr_pt); i++){
+		px[i] = curr_pt->value.d_data;
+		py[i] = 0.0; pz[i] = 0.0; w[i] = 1.0;
+		
+		attr = dxf_find_attr_i2(curr_pt, next_pt, 20, 0);
+		if (attr) py[i] = attr->value.d_data;
+		attr = dxf_find_attr_i2(curr_pt, next_pt, 30, 0);
+		if (attr) pz[i] = attr->value.d_data;
+		attr = dxf_find_attr_i2(curr_pt, next_pt, 41, 0);
+		if (attr) w[i] = attr->value.d_data;
+		
+		curr_pt = next_pt;
+		next_pt = dxf_find_attr_i2(curr_pt, NULL, 10, 1);
+	}
+	
+	/* iterate over control points to interpolate full curve */
 	for (ctrl = 0; ctrl < n_ctrl-order; ctrl++){
-		for (i = 0; i< 20; i++) knots[i] = 0.0;
 		
-		for (i = 0;  i < num_knots; i++){
-			x = dxf_find_attr_i(ent, 40, i + ctrl);
-			if (x){
-				knots[i] = x->value.d_data;
-			}
-		}
-				
-		/* jump of cat */
-		temp = step * 1e-5;
-		for (i = 0;  i < num_knots; i++){
-			knots[i] += temp;
-			temp += step * 1e-5;
-		}
-		
+		/* calcule the initial value of parameter t and its step iteration to trace each segment in curve */
 		if (n_ctrl == num_pts){
 			step = (knots[num_knots - 1] - knots[0])/num_seg;
 			t = knots[order] + step * 1e-5;
 		}
-		//else if (ctrl < num_pts - order) step = (knots[num_knots - order - 1] - knots[0])/num_seg;
 		else {
 			step = (knots[num_knots - order - 1] - knots[order])/num_seg;
 			t = knots[order] + step * 1e-5;
 		}
 		
-		
-		
-		
+		/* iterate over each segment in curve */
 		for (i = 0;  i <= num_seg; i++){
 			for (j = 0; j < 20; j++){
 				basis[j] = 0.0;
 			}
 			
-			basis_func(order, t, knots, weights, basis);
+			/* calcule basis function values relating to current t */
+			basis_func(order, t, knots, basis);
+			
+			/* calcule the summations*/
 			curr_x = 0;
 			curr_y = 0;
-			
+			curr_z = 0;
+			curr_w = 0;
 			for (j = 0; j < num_pts; j++){
+				curr_x += w[j] * basis[j] * px[j];
+				curr_y += w[j] * basis[j] * py[j];
+				curr_z += w[j] * basis[j] * pz[j];
+				curr_w += w[j] * basis[j];
+			}
+			/* obtain the resulting points */
+			if (curr_w > 1e-9){
+				curr_x /= curr_w;
+				curr_y /= curr_w;
+				curr_z /= curr_w;
+			}
 			
-				x = dxf_find_attr_i(ent, 10, j + ctrl);
-				y = dxf_find_attr_i(ent, 20, j + ctrl);
-				if (x && y){
-					temp = basis[j] * x->value.d_data;
-					curr_x += temp;
-					temp = basis[j] * y->value.d_data;
-					curr_y += temp;
-				}
-			}
+			/* draw the segments of curve*/
 			if (!curr_graph) curr_graph = graph_new(pool_idx);
-			if (curr_graph && i + ctrl > 0){
-				line_add(curr_graph, prev_x, prev_y, 0.0, curr_x, curr_y, 0.0);
+			if (curr_graph && (i + ctrl > 0)){
+				line_add(curr_graph, prev_x, prev_y, prev_z, curr_x, curr_y, curr_z);
 			}
+			
+			if (i == 0) t-= step * 1.1e-5; /* to  preserve parameter in interval */
+			
+			/* prepare for next iteration*/
 			prev_x = curr_x;
 			prev_y = curr_y;
-			
-			if (i == 0) t-= step * 1.1e-5;
-			
+			prev_z = curr_z;
 			t += step;
 		}
+		
+		/* shift the vectors and get values to next iteration */
+		/* shift the knots vector */
+		for (i = 0;  i < num_knots - 1; i++) knots[i] = knots[i+1];
+		if (curr_knot){ /* fill the last vector element with next knot value */
+			knots[num_knots - 1] = curr_knot->value.d_data + knot_jump;
+			knot_jump += step * 1e-5;
+			curr_knot = dxf_find_attr_i2(curr_knot, NULL, 40, 1);
+		}
+		/* shift the points and weigths vectors */
+		for (i = 0;  i < num_pts - 1; i++){
+			px[i] = px[i+1];
+			py[i] = py[i+1];
+			pz[i] = pz[i+1];
+			w[i] = w[i+1];
+		}
+		if (curr_pt){
+			/* fill the last vector element with next values */
+			px[num_pts - 1] = curr_pt->value.d_data;
+			py[num_pts - 1] = 0.0; pz[i] = 0.0; w[i] = 1.0;
+			
+			attr = dxf_find_attr_i2(curr_pt, next_pt, 20, 0);
+			if (attr) py[num_pts - 1] = attr->value.d_data;
+			attr = dxf_find_attr_i2(curr_pt, next_pt, 30, 0);
+			if (attr) pz[num_pts - 1] = attr->value.d_data;
+			attr = dxf_find_attr_i2(curr_pt, next_pt, 41, 0);
+			if (attr) w[num_pts - 1] = attr->value.d_data;
+			
+			curr_pt = next_pt;
+			next_pt = dxf_find_attr_i2(curr_pt, NULL, 10, 1);
+		}
+		
 	}
 	return curr_graph;
 	
@@ -3195,7 +3087,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			}
 			else if (strcmp(current->obj.name, "SPLINE") == 0){
 				//ent_type = DXF_LWPOLYLINE;
-				curr_graph = dxf_spline_parse2(drawing, current, p_space, pool_idx);
+				curr_graph = dxf_spline_parse(drawing, current, p_space, pool_idx);
 				if (curr_graph){
 					/* store the graph in the return vector */
 					list_push(list_ret, list_new((void *)curr_graph, pool_idx));

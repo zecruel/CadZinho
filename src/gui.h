@@ -118,6 +118,11 @@ enum Sel_type {
 	SEL_INTL
 };
 
+enum Spline_mode {
+	SP_CTRL,
+	SP_FIT
+};
+
 struct gui_glyph{
 	int code_p, x, y, w, h;
 	double adv;
@@ -195,6 +200,7 @@ struct Gui_obj {
 	int closed;
 	
 	int sp_degree;
+	enum Spline_mode spline_mode;
 	
 	
 	int en_distance; /* enable distance entry */

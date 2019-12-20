@@ -3,6 +3,7 @@
 int gui_spline_interactive(gui_obj *gui){
 	if (gui->modal == SPLINE){
 		static dxf_node *new_el;
+		dxf_node *spline = NULL;
 		
 		if (gui->step == 0){
 			if (gui->ev & EV_ENTER){
@@ -16,8 +17,6 @@ int gui_spline_interactive(gui_obj *gui){
 					"Continuous", 0, /* line type, line weight */
 					0, ONE_TIME); /* paper space */
 				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge, DWG_LIFE);
-				dxf_attr_change(new_el, 70, &gui->closed);
-				//gui->element = new_el;
 				gui->step = 1;
 				gui->en_distance = 1;
 				gui->draw_tmp = 1;
@@ -46,11 +45,19 @@ int gui_spline_interactive(gui_obj *gui){
 				
 				if (gui->step == 2){
 					dxf_lwpoly_remove (new_el, -1);
-						
-					dxf_node *spline =  dxf_new_spline (new_el, gui->sp_degree - 1, gui->closed,
-						gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-						gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-						0, DWG_LIFE); /* paper space */
+					
+					if (gui->spline_mode == SP_CTRL){					
+						spline =  dxf_new_spline (new_el, gui->sp_degree - 1, gui->closed,
+							gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+							gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+							0, DWG_LIFE); /* paper space */
+					}
+					else {
+						spline =  dxf_new_spline2 (new_el, gui->closed,
+							gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+							gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+							0, DWG_LIFE); /* paper space */
+					}
 					
 					if (spline){
 						spline->obj.graphics = dxf_graph_parse(gui->drawing, spline, 0 , DWG_LIFE);
@@ -70,10 +77,18 @@ int gui_spline_interactive(gui_obj *gui){
 			}
 			
 			gui->draw_phanton = 1;
-			dxf_node *spline =  dxf_new_spline (new_el, gui->sp_degree - 1, gui->closed,
-				gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-				gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-				0, FRAME_LIFE); /* paper space */
+			if (gui->spline_mode == SP_CTRL){
+				spline =  dxf_new_spline (new_el, gui->sp_degree - 1, gui->closed,
+					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+					0, FRAME_LIFE); /* paper space */
+			}
+			else {
+				spline =  dxf_new_spline2 (new_el, gui->closed,
+					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+					0, FRAME_LIFE); /* paper space */
+			}
 			if (spline)
 				gui->phanton = dxf_graph_parse(gui->drawing, spline, 0 , FRAME_LIFE);
 			else
@@ -108,6 +123,14 @@ int gui_spline_info (gui_obj *gui){
 		}
 		nk_property_int(gui->ctx, "Degree", 2, &gui->sp_degree, 15, 1, 0.1);
 		nk_checkbox_label(gui->ctx, "Closed", &gui->closed);
+		
+		/* Spline mode option - control points or fit points */
+		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
+		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
+		if (gui_tab (gui, "Control points", gui->spline_mode == SP_CTRL)) gui->spline_mode = SP_CTRL;
+		if (gui_tab (gui, "Fit points", gui->spline_mode == SP_FIT)) gui->spline_mode = SP_FIT;
+		nk_style_pop_vec2(gui->ctx);
+		nk_layout_row_end(gui->ctx);
 		
 	}
 	return 1;

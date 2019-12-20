@@ -1222,6 +1222,7 @@ int gui_start(gui_obj *gui){
 	gui->closed = 0;
 	
 	gui->sp_degree = 4;
+	gui->spline_mode = SP_CTRL;
 	
 	gui->lua_script.L = NULL;
 	gui->lua_script.T = NULL;

@@ -4,6 +4,8 @@
 #define DO_PAGES 1000
 #define DO_PAGE 10000
 
+#define MAX_FIT_PTS 1000
+
 #include "dxf.h"
 #include "list.h"
 #include "graph.h"
@@ -129,6 +131,9 @@ double rot, double scale,
 int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 dxf_node * dxf_new_spline (dxf_node *poly, int degree, int closed,
+int color, char *layer, char *ltype, int lw, int paper, int pool);
+
+dxf_node * dxf_new_spline2 (dxf_node *poly, int closed,
 int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 #endif

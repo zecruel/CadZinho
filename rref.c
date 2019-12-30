@@ -171,7 +171,7 @@ int main(int argc, char** argv){
 	
 	int i, j;
 	
-	InitMatrix(m1, 6, 5 );
+	InitMatrix(m1, 7, 5 );
 	
 	for (i = 0; i < 5; i++){
 		basis_func(3, t[i], knots, ret, 5);
@@ -179,6 +179,7 @@ int main(int argc, char** argv){
 			m1->mtx[i][j] = ret[j];
 		}
 		m1->mtx[i][5] = x[i];
+		m1->mtx[i][6] = y[i];
 	}
 	
 	m1->mtx[0][0] = 1.0;
@@ -188,25 +189,6 @@ int main(int argc, char** argv){
 	//MtxDisplay(m1);
 	MtxToReducedREForm(m1);
 	printf("X\n");
-	MtxDisplay(m1);
-	
-
-	
-	for (i = 0; i < 5; i++){
-		basis_func(3, t[i], knots, ret, 5);
-		for (j = 0; j < 5; j++){
-			m1->mtx[i][j] = ret[j];
-		}
-		m1->mtx[i][5] = y[i];
-	}
-	
-	m1->mtx[0][0] = 1.0;
-	m1->mtx[4][4] = 1.0;
-	
-	//printf("Initial\n");
-	//MtxDisplay(m1);
-	MtxToReducedREForm(m1);
-	printf("Y\n");
 	MtxDisplay(m1);
 
 	free(m1);

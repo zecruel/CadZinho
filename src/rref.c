@@ -3,38 +3,12 @@ https://rosettacode.org/wiki/Reduced_row_echelon_form#C */
 
 #include "rref.h"
  
-void MtxSetRow(struct Matrix * m, int irow, double *v){
-    int ix;
-    double *mr;
-    mr = m->mtx[irow];
-    for(ix=0; ix<m->dim_x; ix++)
-        mr[ix] = v[ix];
-}
- 
-void InitMatrix(struct Matrix *m, int x_dim, int y_dim, double **v){
+void InitMatrix(struct Matrix *m, int x_dim, int y_dim){
 	int i;
 	m->dim_x = x_dim;
 	m->dim_y = y_dim;
 	for(i = 0; i < y_dim; i++)
 		m->mtx[i] = m->m_stor + i *x_dim;
-	for (i = 0; i < y_dim; i++) 
-		MtxSetRow(m, i, v[i]);
-}
- 
-void MtxDisplay( struct Matrix * m )
-{
-    int iy, ix;
-    const char *sc;
-    for (iy=0; iy<m->dim_y; iy++) {
-        printf("   ");
-        sc = " ";
-        for (ix=0; ix<m->dim_x; ix++) {
-            printf("%s %0.9g", sc, m->mtx[iy][ix]);
-            sc = ",";
-        }
-        printf("\n");
-    }
-    printf("\n");
 }
  
 void MtxMulAndAddRows(struct Matrix * m, int ixrdest, int ixrsrc, double mplr)

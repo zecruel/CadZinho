@@ -2,6 +2,7 @@
 #include "dxf_hatch.h"
 #include "dxf_copy.h"
 #include "dxf_edit.h"
+#include "rref.h"
 
 /*
 enum LineWeight { //AcDb::LineWeight
@@ -1847,12 +1848,99 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	return NULL;
 }
 
+static int basis_func(int order, double t, double knot[], double ret[], int num_pts){
+	/*  Subroutine to generate rational B-spline basis functions
+
+	Adapted from: An Introduction to NURBS- David F. Rogers - 2000 - Chapter 4, Sec. 4. , p 296
+
+	order        = order of the B-spline basis function
+	d        = first term of the basis function recursion relation
+	e        = second term of the basis function recursion relation
+	num_pts     = number of defining polygon vertices
+	num_knots   = constant -- num_pts + order -- maximum number of knot values
+	ret[]      = array containing the rationalbasis functions
+	       ret[1] contains the basis function associated with B1 etc.
+	t        = parameter value
+	temp[]   = temporary array
+	knot[]      = knot vector
+	*/
+	
+	//int num_pts;
+	int num_knots;
+	int i,j,k;
+	double d,e;
+	double sum;
+	double temp[1000];
+
+	//num_pts = order + 1;
+	num_knots = num_pts + order + 1;
+	
+	/* initialize temporary storage vector */
+	for (i = 0; i< 1000; i++) temp[i] = 0.0;
+	
+	/* calculate the first order nonrational basis functions n[i]	*/
+	for (i = 0; i < num_knots - 2; i++){
+		if (( t >= knot[i]) && (t < knot[i+1]))
+			temp[i] = 1;
+		else
+			temp[i] = 0;
+	}
+
+	/* calculate the higher order nonrational basis functions */
+	for (k = 1; k <= order; k++){
+		for (i = 0; i < num_knots - k; i++){
+			if (temp[i] != 0)    /* if the lower order basis function is zero skip the calculation */
+				d = ((t-knot[i])*temp[i])/(knot[i+k]-knot[i]);
+			else d = 0;
+
+			if (temp[i+1] != 0)     /* if the lower order basis function is zero skip the calculation */
+				e = ((knot[i+k+1]-t)*temp[i+1])/(knot[i+k+1]-knot[i+1]);
+			else e = 0;
+
+			temp[i] = d + e;
+		}
+	}
+	
+	for (i = 0; i < num_pts; i++) ret[i] = temp[i];
+}
+
+double mod_dist (double x0, double y0, double x1, double y1){
+	double x, y;
+	x = x1 - x0;
+	y = y1 - y0;
+	return sqrt(x*x + y*y);
+}
+
 int findCPoints(double Px[], double Py[], int n, double dx[], double dy[]){
+	static struct Matrix *m1 = NULL;
+	
+	if(m1 == NULL) m1 = malloc(sizeof(struct Matrix));
+	
+	if(m1 == NULL) return 0;
+	
+	int i, j;
+	
+	double u[1000], knot[1000];
+	double d = 0.0;
+	
+	u[0] = 0.0;
+	u[n-1] = 1.0;
+	
+	d = 0.0;
+	for (i = 1; i < n -1 ; i++){
+		u[i] = mod_dist(Px[i], Py[i], Px[i-1], Py[i-1]);
+		d += u[i];
+	}
+	for (i = 1; i < n -1 ; i++){
+		u[i] /= d;
+	}
+	
+	
 	/* Adapted from http://ibiblio.org/e-notes/Splines/b-int.html*/
 	if (n >= MAX_FIT_PTS) return 0;
 	
 	double Ax[MAX_FIT_PTS], Ay[MAX_FIT_PTS], Bi[MAX_FIT_PTS];
-	int i;
+	
 	
 	dx[0] = (Px[1] - Px[0])/3;  
 	dy[0] = (Py[1] - Py[0])/3;

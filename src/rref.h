@@ -9,4 +9,9 @@ struct Matrix {
     double *mtx[1000];
 };
 
+
+void InitMatrix(struct Matrix *m, int x_dim, int y_dim);
+
+void MtxToReducedREForm(struct Matrix * m);
+
 #endif

@@ -1911,7 +1911,7 @@ double mod_dist (double x0, double y0, double x1, double y1){
 	return sqrt(x*x + y*y);
 }
 
-int findCPoints(double Px[], double Py[], int n, double dx[], double dy[]){
+int findCPoints(double Px[], double Py[], int n, double dx[], double dy[], double k[]){
 	static struct Matrix *m1 = NULL;
 	
 	if(m1 == NULL) m1 = malloc(sizeof(struct Matrix));
@@ -1920,8 +1920,9 @@ int findCPoints(double Px[], double Py[], int n, double dx[], double dy[]){
 	
 	int i, j;
 	
-	double u[1000], knot[1000];
+	double u[1000], knot[1000], basis[1000];
 	double d = 0.0;
+	double tmp = 0.0;
 	
 	u[0] = 0.0;
 	u[n-1] = 1.0;
@@ -1932,31 +1933,47 @@ int findCPoints(double Px[], double Py[], int n, double dx[], double dy[]){
 		d += u[i];
 	}
 	for (i = 1; i < n -1 ; i++){
-		u[i] /= d;
+		
+		u[i] = u[i-1] + u[i]/d;
 	}
 	
+	int num_knots = n + 4;
 	
-	/* Adapted from http://ibiblio.org/e-notes/Splines/b-int.html*/
-	if (n >= MAX_FIT_PTS) return 0;
-	
-	double Ax[MAX_FIT_PTS], Ay[MAX_FIT_PTS], Bi[MAX_FIT_PTS];
-	
-	
-	dx[0] = (Px[1] - Px[0])/3;  
-	dy[0] = (Py[1] - Py[0])/3;
-	dx[n-1] = (Px[n-1] - Px[n-2])/3;
-	dy[n-1] = (Py[n-1] - Py[n-2])/3;
-	
-	Bi[1] = -.25;
-	Ax[1] = (Px[2] - Px[0] - dx[0])/4;
-	Ay[1] = (Py[2] - Py[0] - dy[0])/4;
-	for (i = 2; i < n-1; i++){
-		Bi[i] = -1/(4 + Bi[i-1]);
-		Ax[i] = -(Px[i+1] - Px[i-1] - Ax[i-1])*Bi[i];
-		Ay[i] = -(Py[i+1] - Py[i-1] - Ay[i-1])*Bi[i];
+	for (i = 0; i < num_knots; i++){
+		if(i <= 3) knot[i] = 0.0;
+		else if (i >= num_knots - 4) knot[i] = 1.0;
+		else{
+			tmp = 0.0;
+			for (j = 0; j < 3; j++){
+				tmp += u[i - 3 + j];
+			}
+			knot[i] = tmp/3.0;
+		}
 	}
-	for (i = n-2; i > 0; i--){
-		dx[i] = Ax[i] + dx[i+1]*Bi[i];  dy[i] = Ay[i] + dy[i+1]*Bi[i]; 
+	
+	InitMatrix(m1, n+2, n );
+	
+	for (i = 0; i < n; i++){
+		basis_func(3, u[i], knot, basis, n);
+		for (j = 0; j < n; j++){
+			m1->mtx[i][j] = basis[j];
+		}
+		m1->mtx[i][n] = Px[i];
+		m1->mtx[i][n+1] = Py[i];
+	}
+	
+	m1->mtx[0][0] = 1.0;
+	m1->mtx[n-1][n-1] = 1.0;
+	
+	MtxToReducedREForm(m1);
+	
+	for (i = 0; i < n; i++){
+		dx[i] = m1->mtx[i][n];
+		dy[i] = m1->mtx[i][n+1];
+	}
+	
+	for (i = 0; i < num_knots; i++){
+		k[i] =  knot[i];
 	}
 	
 	return 1;
@@ -1966,7 +1983,7 @@ dxf_node * dxf_new_spline2 (dxf_node *poly, int closed,
 int color, char *layer, char *ltype, int lw, int paper, int pool){
 	if (dxf_ident_ent_type(poly) != DXF_LWPOLYLINE) return NULL;
 	
-	int degree = 2;
+	int degree = 3;
 	
 	int num_vert = 0, num_knot = 0;
 	
@@ -1976,7 +1993,7 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	if (num_vert < 2) return NULL;
 	if (num_vert >= MAX_FIT_PTS) return NULL;
 	
-	double px[MAX_FIT_PTS], py[MAX_FIT_PTS];
+	double px[MAX_FIT_PTS], py[MAX_FIT_PTS], knots[MAX_FIT_PTS];
 	int vert_idx = 0;
 	
 	dxf_node *curr_attr = poly->obj.content->next;
@@ -2013,15 +2030,16 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	vert_idx++;
 	
 	double dx[MAX_FIT_PTS], dy[MAX_FIT_PTS];
-	if (!findCPoints(px, py, vert_idx, dx, dy)) return NULL;
+	if (!findCPoints(px, py, vert_idx, dx, dy, knots)) return NULL;
 	
 	
 	
 	//if (closed) num_vert++;
 	
-	num_vert = (num_vert - 2)*(degree) + 4;
+	//num_vert = (num_vert - 2)*(degree) + 4;
 	
 	num_knot = degree + num_vert + 1;
+	
 	
 	/* create a new DXF SPLINE */
 	const char *handle = "0";
@@ -2058,41 +2076,20 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	ok &= dxf_attr_append(spline, 74, (void *) &vert_idx, pool);
 	
 	for (i = 0; i < num_knot; i++){
-		if (!closed && i > degree && i < num_vert + 1)
-			knot += 1.0;
-		if (closed) knot += 1.0;
+		knot = knots[i];
 		ok &= dxf_attr_append(spline, 40, (void *) &knot, pool);
 	}
 	
 	double cx, cy;
 	
-	/* first control point */
-	cx = px[0];
-	cy = py[0];
-	ok &= dxf_attr_append(spline, 10, (void *) &cx, pool);
-	ok &= dxf_attr_append(spline, 20, (void *) &cy, pool);
-	ok &= dxf_attr_append(spline, 30, (void *) (double[]){0.0}, pool);
 	
-	for (i = 1; i < vert_idx; i++){
-		cx = px[i-1] + dx[i-1];
-		cy = py[i-1] + dy[i-1];
-		ok &= dxf_attr_append(spline, 10, (void *) &cx, pool);
-		ok &= dxf_attr_append(spline, 20, (void *) &cy, pool);
-		ok &= dxf_attr_append(spline, 30, (void *) (double[]){0.0}, pool);
-		
-		cx = px[i] - dx[i];
-		cy = py[i] - dy[i];
+	for (i = 0; i < vert_idx; i++){
+		cx = dx[i];
+		cy = dy[i];
 		ok &= dxf_attr_append(spline, 10, (void *) &cx, pool);
 		ok &= dxf_attr_append(spline, 20, (void *) &cy, pool);
 		ok &= dxf_attr_append(spline, 30, (void *) (double[]){0.0}, pool);
 	}
-	
-	/* last control point */
-	cx = px[vert_idx-1];
-	cy = py[vert_idx-1];
-	ok &= dxf_attr_append(spline, 10, (void *) &cx, pool);
-	ok &= dxf_attr_append(spline, 20, (void *) &cy, pool);
-	ok &= dxf_attr_append(spline, 30, (void *) (double[]){0.0}, pool);
 	
 	/* fit points */
 	for (i = 0; i < vert_idx; i++){

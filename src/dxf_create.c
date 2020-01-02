@@ -1928,14 +1928,18 @@ int findCPoints(double Px[], double Py[], int n, double dx[], double dy[], doubl
 	u[n-1] = 1.0;
 	
 	d = 0.0;
-	for (i = 1; i < n -1 ; i++){
-		u[i] = mod_dist(Px[i], Py[i], Px[i-1], Py[i-1]);
+	for (i = 1; i < n ; i++){
+		u[i] = sqrt(mod_dist(Px[i], Py[i], Px[i-1], Py[i-1]));
+		if (u[i] <= 1e-30) return 0;
 		d += u[i];
 	}
 	for (i = 1; i < n -1 ; i++){
 		
 		u[i] = u[i-1] + u[i]/d;
 	}
+	
+	u[0] = 0.0;
+	u[n-1] = 1.0;
 	
 	int num_knots = n + 4;
 	
@@ -1970,6 +1974,8 @@ int findCPoints(double Px[], double Py[], int n, double dx[], double dy[], doubl
 	for (i = 0; i < n; i++){
 		dx[i] = m1->mtx[i][n];
 		dy[i] = m1->mtx[i][n+1];
+		if (!isfinite(dx[i])) return 0;
+		if (!isfinite(dy[i])) return 0;
 	}
 	
 	for (i = 0; i < num_knots; i++){

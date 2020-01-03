@@ -114,24 +114,22 @@ int gui_spline_interactive(gui_obj *gui){
 
 int gui_spline_info (gui_obj *gui){
 	if (gui->modal == SPLINE) {
+		static const char *mode[] = {"Control points","Fit points"};
+		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Place a spline", NK_TEXT_LEFT);
+		nk_label(gui->ctx, "Place a spline by:", NK_TEXT_LEFT);
+		
+		gui->spline_mode = nk_combo(gui->ctx, mode, 2, gui->spline_mode, 20, nk_vec2(150, 55));
+		if (gui->spline_mode == SP_CTRL)
+			nk_property_int(gui->ctx, "Degree", 2, &gui->sp_degree, 15, 1, 0.1);
+		nk_checkbox_label(gui->ctx, "Closed", &gui->closed);
+		
+		
 		if (gui->step == 0){
 			nk_label(gui->ctx, "Enter first point", NK_TEXT_LEFT);
 		} else {
 			nk_label(gui->ctx, "Enter next point", NK_TEXT_LEFT);
 		}
-		nk_property_int(gui->ctx, "Degree", 2, &gui->sp_degree, 15, 1, 0.1);
-		nk_checkbox_label(gui->ctx, "Closed", &gui->closed);
-		
-		/* Spline mode option - control points or fit points */
-		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
-		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
-		if (gui_tab (gui, "Control points", gui->spline_mode == SP_CTRL)) gui->spline_mode = SP_CTRL;
-		if (gui_tab (gui, "Fit points", gui->spline_mode == SP_FIT)) gui->spline_mode = SP_FIT;
-		nk_style_pop_vec2(gui->ctx);
-		nk_layout_row_end(gui->ctx);
-		
 	}
 	return 1;
 }

@@ -25,6 +25,8 @@
 #include "gui_config.h"
 #include "gui_script.h"
 
+#include "rref.h"
+
 #include <stdio.h> 
 #include <stdlib.h> 
 #include <math.h>
@@ -58,8 +60,13 @@
 
 #include <whereami.h>
 
-#include "dxf_colors.h"
+/* ---------------------------------------------------------*/
+/* ------------------   GLOBALS  ----------------------- */
 
+#include "dxf_colors.h"
+struct Matrix *aux_mtx1 = NULL;
+
+/* ---------------------------------------------------------*/
 void draw_cursor(bmp_img *img, int x, int y, bmp_color color){
 	/* draw cursor */
 	/* set the pattern */
@@ -234,6 +241,8 @@ void zoom_ext2(dxf_drawing *drawing, int x, int y, int width, int height, double
 }
 
 int main(int argc, char** argv){
+	aux_mtx1 = malloc(sizeof(struct Matrix));
+	
 	gui_obj *gui = malloc(sizeof(gui_obj));
 	gui_start(gui);
 	{ /* get base path */
@@ -2239,6 +2248,7 @@ int main(int argc, char** argv){
 	free(gui->clip_drwg);
 	
 	free(gui->drawing);
+	free(aux_mtx1);
 	nk_sdl_shutdown(gui);
 	
 	return 0;

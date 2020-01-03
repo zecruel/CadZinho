@@ -36,6 +36,8 @@ enum LineWeight { //AcDb::LineWeight
 };
 */
 
+extern struct Matrix *aux_mtx1;
+
 void * do_mem_pool(enum dxf_pool_action action){
 	
 	static struct do_pool_slot entry, item;
@@ -1905,18 +1907,18 @@ static int basis_func(int order, double t, double knot[], double ret[], int num_
 }
 
 double mod_dist (double x0, double y0, double x1, double y1){
+	/* calcule distance between two points */
 	double x, y;
 	x = x1 - x0;
 	y = y1 - y0;
 	return sqrt(x*x + y*y);
 }
 
-int findCPoints(double Px[], double Py[], int n, double dx[], double dy[], double k[]){
-	static struct Matrix *m1 = NULL;
+int findCPoints2(double Px[], double Py[], int n, double dx[], double dy[], double k[]){
+	/*
+	find control points of a spline that pass through the data points */
 	
-	if(m1 == NULL) m1 = malloc(sizeof(struct Matrix));
-	
-	if(m1 == NULL) return 0;
+	if(aux_mtx1 == NULL) return 0;
 	
 	int i, j;
 	
@@ -1924,12 +1926,17 @@ int findCPoints(double Px[], double Py[], int n, double dx[], double dy[], doubl
 	double d = 0.0;
 	double tmp = 0.0;
 	
+	/* find parameters for each data point 
+	
+	Please refer to the Equations 9.4 and 9.5 for chord length parametrization, and Equation 9.6 for centripetal method
+	on The NURBS Book (2nd Edition), pp.364-365.*/
 	u[0] = 0.0;
 	u[n-1] = 1.0;
 	
 	d = 0.0;
 	for (i = 1; i < n ; i++){
-		u[i] = sqrt(mod_dist(Px[i], Py[i], Px[i-1], Py[i-1]));
+		//u[i] = mod_dist(Px[i], Py[i], Px[i-1], Py[i-1]); /* chord length method */
+		u[i] = sqrt(mod_dist(Px[i], Py[i], Px[i-1], Py[i-1])); /* centripedal method */
 		if (u[i] <= 1e-30) return 0;
 		d += u[i];
 	}
@@ -1941,8 +1948,8 @@ int findCPoints(double Px[], double Py[], int n, double dx[], double dy[], doubl
 	u[0] = 0.0;
 	u[n-1] = 1.0;
 	
+	/* find knots vector by averaging method */
 	int num_knots = n + 4;
-	
 	for (i = 0; i < num_knots; i++){
 		if(i <= 3) knot[i] = 0.0;
 		else if (i >= num_knots - 4) knot[i] = 1.0;
@@ -1955,25 +1962,31 @@ int findCPoints(double Px[], double Py[], int n, double dx[], double dy[], doubl
 		}
 	}
 	
-	InitMatrix(m1, n+2, n );
+	/* Please refer to Algorithm A9.1 on The NURBS Book (2nd Edition), pp.369-370 for details.*/
 	
+	InitMatrix(aux_mtx1, n+2, n );
 	for (i = 0; i < n; i++){
 		basis_func(3, u[i], knot, basis, n);
+		/* assembly the matrix with spline basis functions */
 		for (j = 0; j < n; j++){
-			m1->mtx[i][j] = basis[j];
+			aux_mtx1->mtx[i][j] = basis[j];
 		}
-		m1->mtx[i][n] = Px[i];
-		m1->mtx[i][n+1] = Py[i];
+		/* columns with data points coordinates, to perform solution */
+		aux_mtx1->mtx[i][n] = Px[i];
+		aux_mtx1->mtx[i][n+1] = Py[i];
 	}
 	
-	m1->mtx[0][0] = 1.0;
-	m1->mtx[n-1][n-1] = 1.0;
+	aux_mtx1->mtx[0][0] = 1.0;
+	aux_mtx1->mtx[n-1][n-1] = 1.0;
 	
-	MtxToReducedREForm(m1);
+	/* get solution of linear equation system by Reduced row echelon form matrix */
+	MtxToReducedREForm(aux_mtx1);
 	
 	for (i = 0; i < n; i++){
-		dx[i] = m1->mtx[i][n];
-		dy[i] = m1->mtx[i][n+1];
+		/* return control points */
+		dx[i] = aux_mtx1->mtx[i][n];
+		dy[i] = aux_mtx1->mtx[i][n+1];
+		/* verifiy if are a valid solution */
 		if (!isfinite(dx[i])) return 0;
 		if (!isfinite(dy[i])) return 0;
 	}
@@ -1985,11 +1998,81 @@ int findCPoints(double Px[], double Py[], int n, double dx[], double dy[], doubl
 	return 1;
 }
 
+int findCPoints(double Px[], double Py[], int n, double dx[], double dy[], double knot[]){
+	/* Find control points of a spline that pass through the data points. (cubic B-spline, order = 3)
+	The knots vector is given in function call. */
+	
+	if(aux_mtx1 == NULL) return 0; /* verify if global matrix is valid */
+	
+	int i, j;
+	double u[1000], basis[1000], b_max[1000];
+	double tmp = 0.0, delta = 0.0;
+	int num_knots = n + 4;
+	int samples = 10 * n;
+	
+	/* initialize vectors */
+	for (i = 0; i < n; i++){
+		b_max[i] = 0.0;
+		u[i] = 0.0;
+	}
+	
+	/* find parameters for each data point */
+	/* The Universal Method - https://pages.mtu.edu/~shene/COURSES/cs3621/NOTES/INT-APP/PARA-universal.html*/
+	/* Sweep parameter and choose to maximum value of each basis function */
+	delta = (knot[num_knots-1]-knot[0])/(samples);
+	tmp = knot[0];
+	for (i = 0; i < samples; i++){
+		basis_func(3, tmp, knot, basis, n);
+		for (j = 0; j < n; j++){
+			if (basis[j] > b_max[j]){
+				u[j] = tmp;
+				b_max[j] = basis[j];
+			}
+		}
+		tmp += delta;
+	}
+	
+	u[0] = knot[0];
+	u[n-1] = knot[num_knots-1];
+	
+	/* Please refer to Algorithm A9.1 on The NURBS Book (2nd Edition), pp.369-370 for details.*/
+	
+	InitMatrix(aux_mtx1, n+2, n );
+	for (i = 0; i < n; i++){
+		basis_func(3, u[i], knot, basis, n);
+		/* assembly the matrix with spline basis functions */
+		for (j = 0; j < n; j++){
+			aux_mtx1->mtx[i][j] = basis[j];
+		}
+		/* columns with data points coordinates, to perform solution */
+		aux_mtx1->mtx[i][n] = Px[i];
+		aux_mtx1->mtx[i][n+1] = Py[i];
+	}
+	
+	aux_mtx1->mtx[0][0] = 1.0;
+	aux_mtx1->mtx[n-1][n-1] = 1.0;
+	
+	/* get solution of linear equation system by Reduced row echelon form matrix */
+	MtxToReducedREForm(aux_mtx1);
+	
+	for (i = 0; i < n; i++){
+		/* return control points */
+		dx[i] = aux_mtx1->mtx[i][n];
+		dy[i] = aux_mtx1->mtx[i][n+1];
+		/* verifiy if are a valid solution */
+		if (!isfinite(dx[i])) return 0;
+		if (!isfinite(dy[i])) return 0;
+	}
+	
+	return 1;
+}
+
 dxf_node * dxf_new_spline2 (dxf_node *poly, int closed,
 int color, char *layer, char *ltype, int lw, int paper, int pool){
+	/* create a new spline entity by fit points, passed by a lwpolyline entity coordinates */
 	if (dxf_ident_ent_type(poly) != DXF_LWPOLYLINE) return NULL;
 	
-	int degree = 3;
+	int degree = 3, i;
 	
 	int num_vert = 0, num_knot = 0;
 	
@@ -1999,9 +2082,11 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	if (num_vert < 2) return NULL;
 	if (num_vert >= MAX_FIT_PTS) return NULL;
 	
+	double knot = 0.0, delta = 0.0;
+	
+	/* get the data points vectors in a lwpolyline entity coordinates */
 	double px[MAX_FIT_PTS], py[MAX_FIT_PTS], knots[MAX_FIT_PTS];
 	int vert_idx = 0;
-	
 	dxf_node *curr_attr = poly->obj.content->next;
 	double x = 0, y = 0, prev_x = 0;
 	int vert = 0, first = 0;
@@ -2035,26 +2120,36 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	py[vert_idx] = y;
 	vert_idx++;
 	
+	if (closed){
+		for (i = 0;  i < degree; i++){
+			px[vert_idx] = px[i];
+			py[vert_idx] = py[i];
+			vert_idx++;
+		}
+	}
+	
+	/* generate knots vector equally spaced */
+	num_knot = degree + vert_idx + 1;
+	delta = 0.10;
+	knot = 0.0;
+	for (i = 0; i < num_knot; i++){
+		if (!closed && i > degree && i < vert_idx + 1)
+			knot += delta;
+		if (closed) knot += delta;
+		knots[i] = knot;
+	}
+	
+	/* find the spline control points */
 	double dx[MAX_FIT_PTS], dy[MAX_FIT_PTS];
-	if (!findCPoints(px, py, vert_idx, dx, dy, knots)) return NULL;
-	
-	
-	
-	//if (closed) num_vert++;
-	
-	//num_vert = (num_vert - 2)*(degree) + 4;
-	
-	num_knot = degree + num_vert + 1;
-	
+	if (!findCPoints(px, py, vert_idx, dx, dy, knots)) return NULL; /* verify if a valid solution */
 	
 	/* create a new DXF SPLINE */
 	const char *handle = "0";
 	const char *dxf_class = "AcDbEntity";
 	const char *dxf_subclass = "AcDbSpline";
-	int ok = 1, i = 0;
+	int ok = 1;
 	int flags = 0;
 	dxf_node * spline = dxf_obj_new ("SPLINE", pool);
-	double knot = 0;
 	
 	ok &= dxf_attr_append(spline, 5, (void *) handle, pool);
 	ok &= dxf_attr_append(spline, 100, (void *) dxf_class, pool);
@@ -2076,10 +2171,10 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	ok &= dxf_attr_append(spline, 72, (void *) &num_knot, pool);
 	
 	/*control points */
-	ok &= dxf_attr_append(spline, 73, (void *) &num_vert, pool);
+	ok &= dxf_attr_append(spline, 73, (void *) &vert_idx, pool);
 	
 	/*fit points*/
-	ok &= dxf_attr_append(spline, 74, (void *) &vert_idx, pool);
+	ok &= dxf_attr_append(spline, 74, (void *) &num_vert, pool);
 	
 	for (i = 0; i < num_knot; i++){
 		knot = knots[i];
@@ -2087,7 +2182,6 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	}
 	
 	double cx, cy;
-	
 	
 	for (i = 0; i < vert_idx; i++){
 		cx = dx[i];
@@ -2098,9 +2192,16 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	}
 	
 	/* fit points */
-	for (i = 0; i < vert_idx; i++){
+	for (i = 0; i < num_vert; i++){
 		cx = px[i];
 		cy = py[i];
+		ok &= dxf_attr_append(spline, 11, (void *) &cx, pool);
+		ok &= dxf_attr_append(spline, 21, (void *) &cy, pool);
+		ok &= dxf_attr_append(spline, 31, (void *) (double[]){0.0}, pool);
+	}
+	if (closed){
+		cx = px[0];
+		cy = py[0];
 		ok &= dxf_attr_append(spline, 11, (void *) &cx, pool);
 		ok &= dxf_attr_append(spline, 21, (void *) &cy, pool);
 		ok &= dxf_attr_append(spline, 31, (void *) (double[]){0.0}, pool);

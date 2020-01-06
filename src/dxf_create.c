@@ -2213,3 +2213,41 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 
 	return NULL;
 }
+
+dxf_node * dxf_new_arc (double x0, double y0, double z0,
+double r, double start, double end,
+int color, char *layer, char *ltype, int lw, int paper, int pool){
+	
+	/* create a new DXF ARC */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbEntity";
+	const char *dxf_subclass = "AcDbCircle";
+	const char *dxf_subclass2 = "AcDbArc";
+	int ok = 1;
+	dxf_node * new_arc = dxf_obj_new ("ARC", pool);
+	
+	ok &= dxf_attr_append(new_arc, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_arc, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_arc, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(new_arc, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_arc, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(new_arc, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(new_arc, 370, (void *) &lw, pool);
+	
+	ok &= dxf_attr_append(new_arc, 100, (void *) dxf_subclass, pool);
+	/* place the center */
+	ok &= dxf_attr_append(new_arc, 10, (void *) &x0, pool);
+	ok &= dxf_attr_append(new_arc, 20, (void *) &y0, pool);
+	ok &= dxf_attr_append(new_arc, 30, (void *) &z0, pool);
+	ok &= dxf_attr_append(new_arc, 40, (void *) &r, pool);
+	
+	ok &= dxf_attr_append(new_arc, 100, (void *) dxf_subclass2, pool);
+	ok &= dxf_attr_append(new_arc, 50, (void *) &start, pool);
+	ok &= dxf_attr_append(new_arc, 51, (void *) &end, pool);
+	
+	if(ok){
+		return new_arc;
+	}
+
+	return NULL;
+}

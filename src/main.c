@@ -928,7 +928,8 @@ int main(int argc, char** argv){
 				
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ARC]))){
-				
+				gui->modal = ARC;
+				gui->step = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SPLINE]))){
 				gui->modal = SPLINE;
@@ -976,6 +977,7 @@ int main(int argc, char** argv){
 				gui_paste_info (gui);
 				gui_ed_text_info (gui);
 				gui_spline_info (gui);
+				gui_arc_info (gui);
 				
 				if (gui->modal == SCRIPT) {
 					nk_layout_row_dynamic(gui->ctx, 20, 1);
@@ -2084,6 +2086,7 @@ int main(int argc, char** argv){
 		gui_ed_text_interactive(gui);
 		gui_script_interactive(gui);
 		gui_spline_interactive(gui);
+		gui_arc_interactive(gui);
 		
 		
 		if (gui_check_draw(gui) != 0){

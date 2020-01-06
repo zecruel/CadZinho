@@ -136,4 +136,8 @@ int color, char *layer, char *ltype, int lw, int paper, int pool);
 dxf_node * dxf_new_spline2 (dxf_node *poly, int closed,
 int color, char *layer, char *ltype, int lw, int paper, int pool);
 
+dxf_node * dxf_new_arc (double x0, double y0, double z0,
+double r, double start, double end,
+int color, char *layer, char *ltype, int lw, int paper, int pool);
+
 #endif

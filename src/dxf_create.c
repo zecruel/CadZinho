@@ -2251,3 +2251,49 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 
 	return NULL;
 }
+
+dxf_node * dxf_new_ellipse (double x0, double y0, double z0,
+double x1, double y1, double z1,
+double r, double start, double end,
+int color, char *layer, char *ltype, int lw, int paper, int pool){
+	
+	/* create a new DXF ELLIPSE */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbEntity";
+	const char *dxf_subclass = "AcDbEllipse";
+	int ok = 1;
+	dxf_node * new_ellip = dxf_obj_new ("ELLIPSE", pool);
+	
+	ok &= dxf_attr_append(new_ellip, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_ellip, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_ellip, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(new_ellip, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_ellip, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(new_ellip, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(new_ellip, 370, (void *) &lw, pool);
+	
+	ok &= dxf_attr_append(new_ellip, 100, (void *) dxf_subclass, pool);
+	
+	/* place the center */
+	ok &= dxf_attr_append(new_ellip, 10, (void *) &x0, pool);
+	ok &= dxf_attr_append(new_ellip, 20, (void *) &y0, pool);
+	ok &= dxf_attr_append(new_ellip, 30, (void *) &z0, pool);
+	
+	/* major axis vector */
+	ok &= dxf_attr_append(new_ellip, 11, (void *) &x1, pool);
+	ok &= dxf_attr_append(new_ellip, 21, (void *) &y1, pool);
+	ok &= dxf_attr_append(new_ellip, 31, (void *) &z1, pool);
+	
+	/* minor axis ratio */
+	ok &= dxf_attr_append(new_ellip, 40, (void *) &r, pool);
+	
+	/* start and end parameters */
+	ok &= dxf_attr_append(new_ellip, 41, (void *) &start, pool);
+	ok &= dxf_attr_append(new_ellip, 42, (void *) &end, pool);
+	
+	if(ok){
+		return new_ellip;
+	}
+
+	return NULL;
+}

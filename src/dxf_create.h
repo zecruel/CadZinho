@@ -140,4 +140,9 @@ dxf_node * dxf_new_arc (double x0, double y0, double z0,
 double r, double start, double end,
 int color, char *layer, char *ltype, int lw, int paper, int pool);
 
+dxf_node * dxf_new_ellipse (double x0, double y0, double z0,
+double x1, double y1, double z1,
+double r, double start, double end,
+int color, char *layer, char *ltype, int lw, int paper, int pool);
+
 #endif

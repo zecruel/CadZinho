@@ -170,7 +170,10 @@ int gui_arc_info (gui_obj *gui){
 	nk_label(gui->ctx, "Place a arc", NK_TEXT_LEFT);
 	if (gui->step == 0){
 		nk_label(gui->ctx, "Enter center point", NK_TEXT_LEFT);
-	} else {
+	} else if (gui->step == 1){
+		nk_label(gui->ctx, "Enter start point", NK_TEXT_LEFT);
+	}
+	else {
 		nk_label(gui->ctx, "Enter end point", NK_TEXT_LEFT);
 	}
 	

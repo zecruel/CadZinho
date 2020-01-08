@@ -1224,6 +1224,9 @@ int gui_start(gui_obj *gui){
 	gui->sp_degree = 4;
 	gui->spline_mode = SP_CTRL;
 	
+	gui->el_mode = EL_FULL;
+	gui->o_view = O_TOP;
+	
 	gui->lua_script.L = NULL;
 	gui->lua_script.T = NULL;
 	gui->lua_script.active = 0;

@@ -18,7 +18,11 @@ int gui_ellip_interactive(gui_obj *gui){
 		/* define ellipse center */
 		if (gui->ev & EV_ENTER){
 			/* accept point */
-			gui->step = 1;
+			if (gui->el_mode == EL_ISO_CIRCLE || gui->el_mode == EL_ISO_ARC){
+				gui->step = 2;
+				gui->step_x[2] = gui->step_x[0];
+				gui->step_y[2] = gui->step_y[0];
+			} else gui->step = 1;
 			gui->step_x[gui->step] = gui->step_x[gui->step - 1];
 			gui->step_y[gui->step] = gui->step_y[gui->step - 1];
 			/* next step */
@@ -63,9 +67,16 @@ int gui_ellip_interactive(gui_obj *gui){
 	}
 	else if (gui->step == 2){
 		/* define ellipse's minor axis */
-		ratio = sqrt(pow((gui->step_x[2] - gui->step_x[0]), 2) + pow((gui->step_y[2] - gui->step_y[0]), 2))/major;
-		if (ratio > 1.0) ratio = 1.0; /* limits the minor axis to major axis maximum size*/
 		
+		if (gui->el_mode == EL_ISO_CIRCLE || gui->el_mode == EL_ISO_ARC){
+			major = sqrt(pow((gui->step_x[2] - gui->step_x[0]), 2) + pow((gui->step_y[2] - gui->step_y[0]), 2)) * 1.2247448713915890490986420373529;
+			ratio = 0.57735026918962576450914878050196;
+			gui->step_x[1] = major + gui->step_x[0];
+			gui->step_y[1] = gui->step_y[0];
+		} else {
+			ratio = sqrt(pow((gui->step_x[2] - gui->step_x[0]), 2) + pow((gui->step_y[2] - gui->step_y[0]), 2))/major;
+			if (ratio > 1.0) ratio = 1.0; /* limits the minor axis to major axis maximum size*/
+		}
 		/* draw a ellipse skecth to helps user */
 		gui->draw_phanton = 0;
 		gui->phanton = list_new(NULL, FRAME_LIFE);
@@ -95,7 +106,12 @@ int gui_ellip_interactive(gui_obj *gui){
 		
 		if (gui->ev & EV_ENTER){
 			/* acept second axis */
-			gui->step = 3;
+			if (gui->el_mode == EL_FULL || gui->el_mode == EL_ISO_CIRCLE){
+				gui->step = 5;
+				start = 0.0;
+				end = 2*M_PI;
+			}
+			else gui->step = 3;
 			gui->step_x[gui->step] = gui->step_x[gui->step - 1];
 			gui->step_y[gui->step] = gui->step_y[gui->step - 1];
 			gui_next_step(gui);
@@ -210,7 +226,6 @@ int gui_ellip_interactive(gui_obj *gui){
 			list_node * new_node = list_new(graph, FRAME_LIFE);
 			list_push(gui->phanton, new_node);
 		}
-		
 		if (gui->ev & EV_ENTER){
 			/* accept the end point */
 			gui->step = 5;
@@ -223,7 +238,6 @@ int gui_ellip_interactive(gui_obj *gui){
 		else if (gui->ev & EV_CANCEL){
 			gui_first_step(gui);
 		}
-		
 	}
 	
 	else{
@@ -251,15 +265,29 @@ int gui_ellip_interactive(gui_obj *gui){
 int gui_ellip_info (gui_obj *gui){
 	if (gui->modal != ELLIPSE) return 0;
 	
+	static const char *mode[] = {"Full ellipse","Elliptical arc", "Isometric Circle", "Isometric Arc"};
+	static const char *view[] = {"Top","Front", "Left"};
+	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, "Place a ellipse", NK_TEXT_LEFT);
+	gui->el_mode = nk_combo(gui->ctx, mode, 4, gui->el_mode, 20, nk_vec2(150, 105));
+	if (gui->el_mode == EL_ISO_CIRCLE || gui->el_mode == EL_ISO_ARC){
+		gui->o_view = nk_combo(gui->ctx, view, 3, gui->o_view, 20, nk_vec2(150, 80));
+	}
+	
 	if (gui->step == 0){
 		nk_label(gui->ctx, "Enter center point", NK_TEXT_LEFT);
 	} else if (gui->step == 1){
-		nk_label(gui->ctx, "Enter start point", NK_TEXT_LEFT);
+		nk_label(gui->ctx, "Define major axis", NK_TEXT_LEFT);
+	}
+	else if (gui->step == 2){
+		nk_label(gui->ctx, "Define minor axis", NK_TEXT_LEFT);
+	}
+	else if (gui->step == 3){
+		nk_label(gui->ctx, "Enter arc start point", NK_TEXT_LEFT);
 	}
 	else {
-		nk_label(gui->ctx, "Enter end point", NK_TEXT_LEFT);
+		nk_label(gui->ctx, "Enter arc end point", NK_TEXT_LEFT);
 	}
 	
 	return 1;

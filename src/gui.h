@@ -124,6 +124,22 @@ enum Spline_mode {
 	SP_FIT
 };
 
+enum Ellipse_mode{
+	EL_FULL,
+	EL_ARC,
+	EL_ISO_CIRCLE,
+	EL_ISO_ARC
+};
+
+enum Ortho_view{
+	O_TOP,
+	O_FRONT,
+	O_LEFT,
+	O_BOT,
+	O_RIGHT,
+	O_BACK
+};
+
 struct gui_glyph{
 	int code_p, x, y, w, h;
 	double adv;
@@ -202,6 +218,9 @@ struct Gui_obj {
 	
 	int sp_degree;
 	enum Spline_mode spline_mode;
+	
+	enum Ellipse_mode el_mode;
+	enum Ortho_view o_view;
 	
 	
 	int en_distance; /* enable distance entry */

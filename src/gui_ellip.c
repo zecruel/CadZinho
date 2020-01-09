@@ -76,11 +76,11 @@ int gui_ellip_interactive(gui_obj *gui){
 			
 			/* for circle equivalent in isometric view,
 			ellipse's major axis must be sqrt(3)/sqrt(2)*radius
-			and minor axis ratio is 1/sqrt(2) */
+			and minor axis ratio is 1/sqrt(3) */
 			major *= 1.2247448713915890490986420373529;
 			ratio = 0.57735026918962576450914878050196;
 			
-			/* elipse rotation constants (cosine and sine), according view
+			/* elipse rotation constants (cosine and sine), according ortho view
 			Top view -> angle = 0
 			Front -> angle = 60 degrees
 			Left  -> angle = 120 degrees */			

@@ -69,10 +69,42 @@ int gui_ellip_interactive(gui_obj *gui){
 		/* define ellipse's minor axis */
 		
 		if (gui->el_mode == EL_ISO_CIRCLE || gui->el_mode == EL_ISO_ARC){
-			major = sqrt(pow((gui->step_x[2] - gui->step_x[0]), 2) + pow((gui->step_y[2] - gui->step_y[0]), 2)) * 1.2247448713915890490986420373529;
+			major = sqrt(pow((gui->step_x[2] - gui->step_x[0]), 2) + pow((gui->step_y[2] - gui->step_y[0]), 2));
+			/* rotation parameters of entered point,  relative to center */
+			cosine = (gui->step_x[2] - gui->step_x[0])/ major;
+			sine = (gui->step_y[2] - gui->step_y[0])/ major;
+			
+			/* for circle equivalent in isometric view,
+			ellipse's major axis must be sqrt(3)/sqrt(2)*radius
+			and minor axis ratio is 1/sqrt(2) */
+			major *= 1.2247448713915890490986420373529;
 			ratio = 0.57735026918962576450914878050196;
-			gui->step_x[1] = major + gui->step_x[0];
-			gui->step_y[1] = gui->step_y[0];
+			
+			/* elipse rotation constants (cosine and sine), according view
+			Top view -> angle = 0
+			Front -> angle = 60 degrees
+			Left  -> angle = 120 degrees */			
+			double x = 1.0 , y = 0.0;
+			if (gui->o_view == O_TOP){
+				x = 1.0;
+				y = 0.0;
+			}
+			else if (gui->o_view == O_FRONT){
+				x = 0.5;
+				y = 0.86602540378443864676372317075294;
+			}
+			else if (gui->o_view == O_LEFT){
+				x = -0.5;
+				y = 0.86602540378443864676372317075294;
+			}
+			if ( x * cosine + y * sine < 0){
+				/* flip elipse start point, according entered point */
+				x = -x;
+				y = -y;
+			}
+			
+			gui->step_x[1] = x * major + gui->step_x[0];
+			gui->step_y[1] = y * major + gui->step_y[0];
 		} else {
 			ratio = sqrt(pow((gui->step_x[2] - gui->step_x[0]), 2) + pow((gui->step_y[2] - gui->step_y[0]), 2))/major;
 			if (ratio > 1.0) ratio = 1.0; /* limits the minor axis to major axis maximum size*/
@@ -281,7 +313,9 @@ int gui_ellip_info (gui_obj *gui){
 		nk_label(gui->ctx, "Define major axis", NK_TEXT_LEFT);
 	}
 	else if (gui->step == 2){
-		nk_label(gui->ctx, "Define minor axis", NK_TEXT_LEFT);
+		if (gui->el_mode == EL_ISO_CIRCLE || gui->el_mode == EL_ISO_ARC)
+			nk_label(gui->ctx, "Define circle radius", NK_TEXT_LEFT);
+		else nk_label(gui->ctx, "Define minor axis", NK_TEXT_LEFT);
 	}
 	else if (gui->step == 3){
 		nk_label(gui->ctx, "Enter arc start point", NK_TEXT_LEFT);

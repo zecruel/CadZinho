@@ -1759,6 +1759,8 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 		if (part) drawing->blks = part;
 		part = dxf_find_obj_descr2(main_struct, "SECTION", "ENTITIES");
 		if (part) drawing->ents = part;
+		part = dxf_find_obj_descr2(main_struct, "SECTION", "OBJECTS");
+		if (part) drawing->objs = part;
 		
 		/* the tables */
 		part = dxf_find_obj_descr2(drawing->tabs, "TABLE", "LTYPE");
@@ -1906,7 +1908,8 @@ int dxf_drawing_clear (dxf_drawing *drawing){
 		drawing->head = NULL;
 		drawing->tabs = NULL;
 		drawing->blks = NULL;
-		drawing->ents = NULL; 
+		drawing->ents = NULL;
+		drawing->objs = NULL; 
 		drawing->t_ltype = NULL;
 		drawing->t_layer = NULL;
 		drawing->t_style = NULL;
@@ -1923,6 +1926,7 @@ int dxf_drawing_clear (dxf_drawing *drawing){
 		drawing->num_tstyles = 0;
 		drawing->font_list = NULL;
 		drawing->dflt_font = NULL;
+		drawing->img_list = NULL;
 		
 		/* create a new main_struct */
 		dxf_node *main_struct = dxf_obj_new(NULL, drawing->pool);

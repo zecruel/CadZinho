@@ -3198,6 +3198,19 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				
 			}
 			
+			if (strcmp(current->obj.name, "IMAGE") == 0){
+				ent_type = DXF_IMAGE;
+				curr_graph = dxf_image_parse(drawing, current, p_space, pool_idx);
+				if (curr_graph){
+						
+					/* store the graph in the return vector */
+					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
+					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+					mod_idx++;
+				}
+				
+			}
+			
 			/* ============================================================= */
 			/* complex entities */
 			else if (strcmp(current->obj.name, "INSERT") == 0){
@@ -4494,4 +4507,126 @@ int dxf_hatch_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, i
 		}
 	}
 	return num_graph;
+}
+
+graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
+	if(ent){
+		dxf_node *current = NULL, *img_def = NULL;
+		double pt1_x = 0.0, pt1_y = 0.0, pt1_z = 0.0;
+		double u_x = 0.0, u_y = 0.0, u_z = 0.0;
+		double v_x = 0.0, v_y = 0.0, v_z = 0.0;
+		double w = 0.0, h = 0.0;
+		double x0, y0, z0, x1, y1, z1;
+		long img_id = 0;
+		
+		/*flags*/
+		int paper = 0;
+		
+		if (ent->type == DXF_ENT){
+			if (ent->obj.content){
+				current = ent->obj.content->next;
+			}
+		}
+		while (current){
+			if (current->type == DXF_ATTR){ /* DXF attibute */
+				switch (current->value.group){
+					case 10:
+						pt1_x = current->value.d_data;
+						break;
+					case 20:
+						pt1_y = current->value.d_data;
+						break;
+					case 30:
+						pt1_z = current->value.d_data;
+						break;
+					
+					case 11:
+						u_x = current->value.d_data;
+						break;
+					case 21:
+						u_y = current->value.d_data;
+						break;
+					case 31:
+						u_z = current->value.d_data;
+						break;
+					
+					case 12:
+						v_x = current->value.d_data;
+						break;
+					case 22:
+						v_y = current->value.d_data;
+						break;
+					case 32:
+						v_z = current->value.d_data;
+						break;
+					
+					case 13:
+						w = current->value.d_data;
+						break;
+					case 23:
+						h = current->value.d_data;
+						break;
+					
+					case 67:
+						paper = current->value.i_data;
+						break;
+					
+					case 340:
+						img_id = strtol(current->value.s_data, NULL, 16);
+						break;
+				}
+			}
+			current = current->next; /* go to the next in the list */
+		}
+		
+		
+		if (((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))){
+			graph_obj *curr_graph = graph_new(pool_idx);
+			
+			if (curr_graph){
+				
+				x0 = pt1_x;
+				y0 = pt1_y;
+				z0 = pt1_z;
+				x1 = x0 + w * u_x;
+				y1 = y0 + w * u_y;
+				z1 = z0 + w * u_z;
+				line_add(curr_graph, x0, y0, z0, x1, y1, z1);
+				
+				x0 = x1;
+				y0 = y1;
+				z0 = z1;
+				x1 = x0 + h * v_x;
+				y1 = y0 + h * v_y;
+				z1 = z0 + h * v_z;
+				line_add(curr_graph, x0, y0, z0, x1, y1, z1);
+				
+				x0 = x1;
+				y0 = y1;
+				z0 = z1;
+				x1 = x0 - w * u_x;
+				y1 = y0 - w * u_y;
+				z1 = z0 - w * u_z;
+				line_add(curr_graph, x0, y0, z0, x1, y1, z1);
+				
+				x0 = x1;
+				y0 = y1;
+				z0 = z1;
+				x1 = pt1_x;
+				y1 = pt1_y;
+				z1 = pt1_z;
+				line_add(curr_graph, x0, y0, z0, x1, y1, z1);
+				
+				
+				if (img_id)
+					img_def = dxf_find_handle(drawing->objs, img_id);
+				
+				if (img_def)
+					dxf_ent_print2 (img_def);
+			}
+			
+			return curr_graph;
+		}
+	}
+	return NULL;
 }

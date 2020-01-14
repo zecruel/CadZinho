@@ -52,7 +52,9 @@ enum dxf_graph {
 	DXF_BLK,
 	DXF_ENDBLK,
 	DXF_HATCH,
-	DXF_DIMSTYLE
+	DXF_DIMSTYLE,
+	DXF_IMAGE,
+	DXF_IMAGE_DEF
 };
 
 enum dxf_pool_action{
@@ -164,7 +166,8 @@ struct Dxf_drawing{
 	*head,  /* header with drawing variables */
 	*tabs,  /* tables - see next */
 	*blks, /* blocks definitions */
-	*ents; /* entities - grahics elements */
+	*ents, /* entities - grahics elements */
+	*objs; /* objects - non grahics elements */
 	
 	/* DXF tables */
 	dxf_node 
@@ -194,6 +197,8 @@ struct Dxf_drawing{
 	
 	void *font_list;
 	void *dflt_font;
+	
+	void *img_list;
 	
 	int version;
 	

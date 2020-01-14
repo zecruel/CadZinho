@@ -40,4 +40,6 @@ int dxf_list_draw(list_node *list, bmp_img * img, struct draw_param param);
 
 graph_obj * dxf_lwpline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx);
 
+graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx);
+
 #endif

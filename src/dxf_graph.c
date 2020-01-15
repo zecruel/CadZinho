@@ -4621,8 +4621,11 @@ graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				if (img_id)
 					img_def = dxf_find_handle(drawing->objs, img_id);
 				
-				if (img_def)
-					dxf_ent_print2 (img_def);
+				if (img_def){
+					//dxf_ent_print2 (img_def);
+					bmp_img * img = dxf_image_def_list(drawing, img_def);
+					if (img) curr_graph->img = img;
+				}
 			}
 			
 			return curr_graph;

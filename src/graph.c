@@ -324,6 +324,8 @@ graph_obj * graph_new(int pool_idx){
 			//free(new_obj); /* clear the main struct */
 			new_obj = NULL;
 		}
+		
+		new_obj->img = NULL;
 	}
 	return new_obj;
 }
@@ -424,7 +426,7 @@ void graph_draw(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 			double xd0, yd0, xd1, yd1;
 			line_node *current = master->list->next;
 			int corners = 0, prev_x, prev_y; /* for fill */
-			int corner_x[1000], corner_y[1000], stroke[1000];
+			int corner_x[10000], corner_y[10000], stroke[10000];
 			
 			/* set the pattern */
 			patt_change(img, master->pattern, master->patt_size);
@@ -458,7 +460,7 @@ void graph_draw(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 					bmp_line(img, xd0, yd0, xd1, yd1);
 					//printf("%f %d %d %d %d\n", scale, x0, y0, x1, y1);
 					
-					if (master->fill && (corners < 1000)){ /* check if object is filled */
+					if (master->fill && (corners < 10000)){ /* check if object is filled */
 						/*build the lists of corners */
 						if (((x0 != prev_x)||(y0 != prev_y))||(corners == 0)){
 							corner_x[corners] = x0;
@@ -478,7 +480,7 @@ void graph_draw(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 				current = current->next; /* go to next */
 			}
 			
-			if (master->fill && corners){ /* check if object is filled */
+			if (master->fill && corners < 10000){ /* check if object is filled */
 				/* draw a filled polygon */
 				bmp_poly_fill(img, corners, corner_x, corner_y, stroke);
 			}
@@ -971,6 +973,15 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 	}
 	if (master->fill){
 		graph_fill(master, img, param.ofs_x, param.ofs_y, param.scale);
+	}
+	
+	
+	if (master->img){
+		current = master->list->next;
+		x0 = (current->x0 - param.ofs_x) * param.scale;
+		y0 =(current->y0 - param.ofs_y) * param.scale;
+		bmp_copy(master->img, img, x0, y0);
+		//bmp_put(master->img, img, x0, y0, param.scale);
 	}
 }
 

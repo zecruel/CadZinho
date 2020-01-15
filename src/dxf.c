@@ -1926,7 +1926,9 @@ int dxf_drawing_clear (dxf_drawing *drawing){
 		drawing->num_tstyles = 0;
 		drawing->font_list = NULL;
 		drawing->dflt_font = NULL;
-		drawing->img_list = NULL;
+		
+		dxf_image_clear_list(drawing);
+		//drawing->img_list = NULL;
 		
 		/* create a new main_struct */
 		dxf_node *main_struct = dxf_obj_new(NULL, drawing->pool);
@@ -1943,6 +1945,7 @@ int dxf_drawing_clear (dxf_drawing *drawing){
 dxf_drawing *dxf_drawing_new(int pool){
 	dxf_drawing *drawing = malloc(sizeof(dxf_drawing));
 	if (drawing){
+		drawing->img_list = NULL;
 		if (!dxf_drawing_clear(drawing)){
 			free(drawing);
 			return NULL;

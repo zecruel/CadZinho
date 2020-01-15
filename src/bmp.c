@@ -1,6 +1,8 @@
 #include "bmp.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "stb_image_resize.h"
 #define TOL 1e-12
 
 // Quick sort function
@@ -1059,6 +1061,12 @@ bmp_img * bmp_load_img(char *url){
 			img->clip_y = 0;
 			img->clip_w = w;
 			img->clip_h = h;
+			
+			img->prev_x = 0;
+			img->prev_y = 0;
+			
+			img->end_x[0] = 0; img->end_x[1] = 0; img->end_x[2] = 0; img->end_x[3] = 0;
+			img->end_y[0] = 0; img->end_y[1] = 0; img->end_y[2] = 0; img->end_y[3] = 0;
 	
 			/*order of color components in buffer. Init with RGBA */
 			img->r_i = 0;
@@ -1107,6 +1115,12 @@ bmp_img * bmp_load_img2(unsigned char *data, int w, int h){
 			img->clip_y = 0;
 			img->clip_w = w;
 			img->clip_h = h;
+			
+			img->prev_x = 0;
+			img->prev_y = 0;
+			
+			img->end_x[0] = 0; img->end_x[1] = 0; img->end_x[2] = 0; img->end_x[3] = 0;
+			img->end_y[0] = 0; img->end_y[1] = 0; img->end_y[2] = 0; img->end_y[3] = 0;
 	
 			/*order of color components in buffer. Init with RGBA */
 			img->r_i = 0;
@@ -1117,6 +1131,107 @@ bmp_img * bmp_load_img2(unsigned char *data, int w, int h){
 		return img;
 	}
 	return NULL;
+}
+
+void bmp_put(bmp_img *in, bmp_img *dst, int x, int y, double scale){
+	
+	unsigned int i, j, ofs_src, ofs_dst, src_r, src_g, src_b, src_a, dst_r, dst_g, dst_b, dst_a;
+	int ofs_x, ofs_y;
+	double alpha_d, alpha_s;
+	struct {double r,g,b,a;} out;
+	
+	unsigned char *buf_r, *buf_g, *buf_b, *buf_a;
+	
+	
+	bmp_img *src = bmp_new ((unsigned int)ceil(in->width * scale), (unsigned int)ceil(in->height * scale), in->bkg, in->frg);
+	
+	if (src != NULL){
+		stbir_resize_uint8(in->buf, in->width, in->height, 0,
+                               src->buf, src->width, src->height, 0, 4);
+		src->r_i = 0;
+		src->g_i = 1;
+		src->b_i = 2;
+		src->a_i = 3;
+	}
+	
+	if((src != NULL) && (dst != NULL)){
+		/* get the order of color components */
+		src_r= src->r_i;
+		src_g = src->g_i;
+		src_b = src->b_i;
+		src_a = src->a_i;
+		dst_r= dst->r_i;
+		dst_g = dst->g_i;
+		dst_b = dst->b_i;
+		dst_a = dst->a_i;
+		
+		/* sweep the source image */
+		for (i=0; i < src->width; i++){
+			for (j=0; j < src->height; j++){
+				/* check if point is in destination bounds */
+				ofs_x = i + x;
+				ofs_y = j + y;
+				if((ofs_x >= 0) && (ofs_x < dst->width) && 
+					(ofs_y >= 0) && (ofs_y < dst->height) &&
+					/*and in clip rectangle*/
+					(ofs_x >= dst->clip_x) && (ofs_x < (dst->clip_x + dst->clip_w)) && 
+					(ofs_y >= dst->clip_y) && (ofs_y < (dst->clip_y + dst->clip_h))){
+					/* find the position on destination buffer */
+					/* (y = dst->height - y) emulate the cartesian coordinates */
+						
+					if (dst->zero_tl != 0){
+						ofs_dst = 4 * ((ofs_y * dst->width) + ofs_x);
+					}
+					else{
+						ofs_dst = 4 * (((dst->height - 1 - ofs_y) * dst->width) + ofs_x);
+					}
+					if (src->zero_tl != 0){
+						ofs_src = 4 * ((j * src->width) + i);
+					}
+					else{
+						ofs_src = 4 * (((src->height - 1 - j) * src->width) + i);
+					}
+					
+					buf_r = dst->buf + ofs_dst + dst_r;
+					buf_g = dst->buf + ofs_dst + dst_g;
+					buf_b = dst->buf + ofs_dst + dst_b;
+					buf_a = dst->buf + ofs_dst + dst_a;
+					
+					if (src->buf[ofs_src + src_a] < 255){
+						/* Alpha compositing */
+						/*normalize alfa channels */
+						alpha_s = (double) src->buf[ofs_src + src_a] / 255;
+						alpha_d = ((double)*buf_a / 255)*(1 - alpha_s);
+						
+						out.a = alpha_s + alpha_d;
+						if (out.a == 0){
+							out.r = 0;
+							out.g = 0;
+							out.b = 0;
+						}
+						else{
+							out.r = (src->buf[ofs_src + src_r]*alpha_s + *buf_r*alpha_d)/out.a;
+							out.g = (src->buf[ofs_src + src_g]*alpha_s + *buf_g*alpha_d)/out.a;
+							out.b = (src->buf[ofs_src + src_b]*alpha_s + *buf_b*alpha_d)/out.a;
+							out.a *= 255;
+						}
+						*buf_r = (unsigned char) (out.r);
+						*buf_g = (unsigned char) (out.g);
+						*buf_b = (unsigned char) (out.b);
+						*buf_a = (unsigned char) (out.a);
+					}
+					else{
+						/* store each component in memory buffer */
+						*buf_r = src->buf[ofs_src + src_r];
+						*buf_g = src->buf[ofs_src + src_g];
+						*buf_b = src->buf[ofs_src + src_b];
+						*buf_a = src->buf[ofs_src + src_a];
+					}
+				}
+			}
+		}
+		bmp_free(src);
+	}
 }
 	
 /*If you scan along octants as explained for the Midpoint circle algorithm, your major coordinate y will always increase by one. You can then draw two circles at once, because their major coordinates are in sync.

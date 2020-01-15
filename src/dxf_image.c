@@ -3,9 +3,6 @@
 #include "graph.h"
 #include "list.h"
 
-//#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
 struct dxf_img_def {
 	long id;
 	bmp_img *img;
@@ -16,7 +13,6 @@ struct dxf_img_def * get_img_list(list_node *list, long id){
 	if (list == NULL) return NULL;
 	if (!id) return NULL;
 	
-	char nam[DXF_MAX_CHARS];
 	struct dxf_img_def * img_def;
 	
 	list_node *current = list->next;
@@ -34,7 +30,36 @@ struct dxf_img_def * get_img_list(list_node *list, long id){
 	
 }
 
-struct dxf_img_def * dxf_image_def_list(dxf_drawing *drawing, dxf_node *img_def){
+int dxf_image_clear_list(dxf_drawing *drawing){
+	if(!drawing) return 0;
+	if (drawing->img_list == NULL) return 0;
+	
+	list_node *list = drawing->img_list;
+	
+	struct dxf_img_def * img_def;
+	bmp_img * img;
+	
+	list_node *current = list->next;
+	while (current != NULL){ /* sweep the list */
+		if (current->data){
+			img_def = (struct dxf_img_def *)current->data;
+			img = img_def->img;
+			if (img){
+				free(img->buf);
+				free(img);
+			}
+			free(img_def);
+		}
+		current = current->next;
+	}
+	
+	drawing->img_list = NULL;
+	
+	return 1;
+	
+}
+
+bmp_img * dxf_image_def_list(dxf_drawing *drawing, dxf_node *img_def){
 	if(!img_def) return NULL;
 	if(!drawing) return NULL;
 	long id = 0;
@@ -51,12 +76,26 @@ struct dxf_img_def * dxf_image_def_list(dxf_drawing *drawing, dxf_node *img_def)
 		id = strtol(current->value.s_data, NULL, 16);
 	if (!id) return NULL;
 	
+	struct dxf_img_def * img = get_img_list(drawing->img_list, id);
+	
+	if (img) return img->img;
+	
 	current = dxf_find_attr2(img_def, 1); /* get image path */
 	if (!current) return NULL;
-		//id = strtol(current->value.s_data, NULL, 16);
-
-	int w, h, n;
 	
-	unsigned char *data = stbi_load(current->value.s_data, &w, &h, &n, 4);
+	img = malloc(sizeof(struct dxf_img_def));
+	if (!img) return NULL;
 	
+	img->img = bmp_load_img(current->value.s_data);
+	if (!img->img){
+		free(img);
+		return NULL;
+	}
+	
+	img->id = id;
+	
+	list_node * new_node = list_new(img, DWG_LIFE);
+	list_push(drawing->img_list, new_node);
+	
+	return img->img;
 }

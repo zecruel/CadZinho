@@ -53,6 +53,7 @@ struct Graph_obj{
 	int fill;
 	
 	line_node * list;
+	bmp_img * img;
 };
 typedef struct Graph_obj graph_obj;
 

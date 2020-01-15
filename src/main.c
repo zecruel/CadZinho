@@ -2211,6 +2211,10 @@ int main(int argc, char** argv){
 	
 	/* safe quit */
 	//SDL_free(base_path);
+	
+	dxf_drawing_clear(gui->drawing);
+	dxf_drawing_clear(gui->clip_drwg);
+	
 	SDL_DestroyTexture(canvas);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);

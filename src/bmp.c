@@ -1,8 +1,6 @@
 #include "bmp.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#define STB_IMAGE_RESIZE_IMPLEMENTATION
-#include "stb_image_resize.h"
 #define TOL 1e-12
 
 // Quick sort function
@@ -1133,7 +1131,7 @@ bmp_img * bmp_load_img2(unsigned char *data, int w, int h){
 	return NULL;
 }
 
-void bmp_put(bmp_img *in, bmp_img *dst, int x, int y, double scale){
+void bmp_put(bmp_img *src, bmp_img *dst, int x, int y, double u[3], double v[3]){
 	
 	unsigned int i, j, ofs_src, ofs_dst, src_r, src_g, src_b, src_a, dst_r, dst_g, dst_b, dst_a;
 	int ofs_x, ofs_y;
@@ -1142,17 +1140,11 @@ void bmp_put(bmp_img *in, bmp_img *dst, int x, int y, double scale){
 	
 	unsigned char *buf_r, *buf_g, *buf_b, *buf_a;
 	
+	int w, h;
+	double dx, dy, sx, sy;
 	
-	bmp_img *src = bmp_new ((unsigned int)ceil(in->width * scale), (unsigned int)ceil(in->height * scale), in->bkg, in->frg);
-	
-	if (src != NULL){
-		stbir_resize_uint8(in->buf, in->width, in->height, 0,
-                               src->buf, src->width, src->height, 0, 4);
-		src->r_i = 0;
-		src->g_i = 1;
-		src->b_i = 2;
-		src->a_i = 3;
-	}
+	w = (int) ceil(u[0] * src->width);
+	h = (int) ceil(v[1] * src->height);
 	
 	if((src != NULL) && (dst != NULL)){
 		/* get the order of color components */
@@ -1165,9 +1157,14 @@ void bmp_put(bmp_img *in, bmp_img *dst, int x, int y, double scale){
 		dst_b = dst->b_i;
 		dst_a = dst->a_i;
 		
+		dx = 1.0/u[0];
+		dy = 1.0/v[1];
+		
 		/* sweep the source image */
-		for (i=0; i < src->width; i++){
-			for (j=0; j < src->height; j++){
+		sx = 0.0;
+		for (i=0; i < w; i++){
+			sy = 0.0;
+			for (j=0; j < h; j++){
 				/* check if point is in destination bounds */
 				ofs_x = i + x;
 				ofs_y = j + y;
@@ -1186,10 +1183,10 @@ void bmp_put(bmp_img *in, bmp_img *dst, int x, int y, double scale){
 						ofs_dst = 4 * (((dst->height - 1 - ofs_y) * dst->width) + ofs_x);
 					}
 					if (src->zero_tl != 0){
-						ofs_src = 4 * ((j * src->width) + i);
+						ofs_src = 4 * ((int)sy * src->width + (int)sx);
 					}
 					else{
-						ofs_src = 4 * (((src->height - 1 - j) * src->width) + i);
+						ofs_src = 4 * ((src->height - 1 - (int)sy) * src->width + (int)sx);
 					}
 					
 					buf_r = dst->buf + ofs_dst + dst_r;
@@ -1228,9 +1225,11 @@ void bmp_put(bmp_img *in, bmp_img *dst, int x, int y, double scale){
 						*buf_a = src->buf[ofs_src + src_a];
 					}
 				}
+				sy += dy;
 			}
+			sx += dx;
 		}
-		bmp_free(src);
+		
 	}
 }
 	

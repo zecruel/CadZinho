@@ -39,7 +39,7 @@ struct Graph_obj{
 	int pool_idx;
 	dxf_node * owner;
 	bmp_color color;
-	double rot, scale, ofs_x, ofs_y, ofs_z;
+	//double rot, scale, ofs_x, ofs_y, ofs_z;
 	double tick;
 	int thick_const;
 	/* pattern information */
@@ -54,6 +54,8 @@ struct Graph_obj{
 	
 	line_node * list;
 	bmp_img * img;
+	/* image dimmension vectors */
+	double u[3], v[3];
 };
 typedef struct Graph_obj graph_obj;
 

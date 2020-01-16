@@ -3205,7 +3205,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 						
 					/* store the graph in the return vector */
 					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+					//proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
 					mod_idx++;
 				}
 				
@@ -4584,6 +4584,10 @@ graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			graph_obj *curr_graph = graph_new(pool_idx);
 			
 			if (curr_graph){
+				curr_graph->color.r = 254;
+				curr_graph->color.g = 254;
+				curr_graph->color.b = 254;
+				curr_graph->color.a = 0;
 				
 				x0 = pt1_x;
 				y0 = pt1_y;
@@ -4624,7 +4628,15 @@ graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				if (img_def){
 					//dxf_ent_print2 (img_def);
 					bmp_img * img = dxf_image_def_list(drawing, img_def);
-					if (img) curr_graph->img = img;
+					if (img) {
+						curr_graph->img = img;
+						curr_graph->u[0] = u_x;
+						curr_graph->u[1] = u_y;
+						curr_graph->u[2] = u_z;
+						curr_graph->v[0] = v_x;
+						curr_graph->v[1] = v_y;
+						curr_graph->v[2] = v_z;
+					}
 				}
 			}
 			

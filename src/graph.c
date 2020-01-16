@@ -293,10 +293,10 @@ graph_obj * graph_new(int pool_idx){
 		new_obj->color.b =0;
 		new_obj->color.a = 255;
 		
-		new_obj->rot = 0;
+		/*new_obj->rot = 0;
 		new_obj->scale = 1;
 		new_obj->ofs_x = 0;
-		new_obj->ofs_y = 0;
+		new_obj->ofs_y = 0;*/
 		new_obj->tick = 0;
 		new_obj->thick_const = 0;
 		new_obj->fill = 0;
@@ -326,6 +326,14 @@ graph_obj * graph_new(int pool_idx){
 		}
 		
 		new_obj->img = NULL;
+		
+		new_obj->u[0] = 1.0;
+		new_obj->u[1] = 0.0;
+		new_obj->u[2] = 0.0;
+		
+		new_obj->v[0] = 0.0;
+		new_obj->v[1] = 1.0;
+		new_obj->v[2] = 0.0;
 	}
 	return new_obj;
 }
@@ -743,6 +751,28 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 	line_node *current = master->list->next;
 	int i, iter;
 	
+	
+	if (master->img){
+		current = master->list->next;
+		x0 = (current->x0 - param.ofs_x) * param.scale;
+		y0 =(current->y0 - param.ofs_y) * param.scale;
+		//bmp_copy(master->img, img, x0, y0);
+		
+		double u[3], v[3];
+		u[0] = master->u[0] * param.scale;
+		u[1] = master->u[1] * param.scale;
+		u[2] = master->u[2] * param.scale;
+		
+		v[0] = master->v[0] * param.scale;
+		v[1] = master->v[1] * param.scale;
+		v[2] = master->v[2] * param.scale;
+		
+		
+		bmp_put(master->img, img, x0, y0, u, v);
+	}
+	
+	
+	
 	/* set the pattern */
 	patt_change(img, (double[]){1.0,}, 1);
 	/* set the color */
@@ -973,15 +1003,6 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 	}
 	if (master->fill){
 		graph_fill(master, img, param.ofs_x, param.ofs_y, param.scale);
-	}
-	
-	
-	if (master->img){
-		current = master->list->next;
-		x0 = (current->x0 - param.ofs_x) * param.scale;
-		y0 =(current->y0 - param.ofs_y) * param.scale;
-		bmp_copy(master->img, img, x0, y0);
-		//bmp_put(master->img, img, x0, y0, param.scale);
 	}
 }
 

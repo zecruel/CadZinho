@@ -107,4 +107,6 @@ void bmp_circle(bmp_img *img, int x0, int y0, int radius);
 
 void bmp_circle_fill(bmp_img *img, int x0, int y0, int radius);
 
+void bmp_put(bmp_img *src, bmp_img *dst, int x, int y, double u[3], double v[3]);
+
 #endif

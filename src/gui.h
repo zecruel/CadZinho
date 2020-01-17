@@ -87,7 +87,8 @@ enum Modal {
 	ED_ATTR,
 	SCRIPT,
 	SPLINE,
-	ELLIPSE
+	ELLIPSE,
+	IMAGE
 };
 
 enum Gui_ev {

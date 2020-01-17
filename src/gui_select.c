@@ -67,7 +67,7 @@ int gui_select_interactive(gui_obj *gui){
 	}
 	/* rectangle selection */
 	if (gui->sel_type == SEL_RECTANGLE || tmp_rect){
-		static dxf_node *new_el;
+		//static dxf_node *new_el;
 		
 		if (gui->step == 0){
 			if (gui->ev & EV_ENTER){
@@ -171,7 +171,7 @@ int gui_select_interactive(gui_obj *gui){
 
 int gui_select_info (gui_obj *gui){
 	if (gui->modal == SELECT) {
-		static int prev_type = -1;
+		//static int prev_type = -1;
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Select objects", NK_TEXT_LEFT);

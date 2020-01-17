@@ -949,7 +949,8 @@ int main(int argc, char** argv){
 				snprintf(recv_comm, 64, "%s","INSERT");
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_IMAGE]))){
-				
+				gui->modal = IMAGE;
+				gui->step = 0;
 			}
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 1); /*space*/
@@ -980,6 +981,7 @@ int main(int argc, char** argv){
 				gui_spline_info (gui);
 				gui_arc_info (gui);
 				gui_ellip_info (gui);
+				gui_image_info (gui);
 				
 				if (gui->modal == SCRIPT) {
 					nk_layout_row_dynamic(gui->ctx, 20, 1);
@@ -2090,6 +2092,7 @@ int main(int argc, char** argv){
 		gui_spline_interactive(gui);
 		gui_arc_interactive(gui);
 		gui_ellip_interactive(gui);
+		gui_image_interactive(gui);
 		
 		if (gui_check_draw(gui) != 0){
 			gui->draw = 1;

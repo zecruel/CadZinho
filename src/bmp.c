@@ -1132,6 +1132,9 @@ bmp_img * bmp_load_img2(unsigned char *data, int w, int h){
 }
 
 void bmp_put(bmp_img *src, bmp_img *dst, int x, int y, double u[3], double v[3]){
+	/* Put a source bitmap (src) in a destination image (dst).
+	x and y are initial position in destination image
+	rotation and scale for each image dimmensions are definied in u and v vectors*/
 	
 	unsigned int i, j, ofs_src, ofs_dst, src_r, src_g, src_b, src_a, dst_r, dst_g, dst_b, dst_a;
 	int ofs_x, ofs_y;
@@ -1141,10 +1144,27 @@ void bmp_put(bmp_img *src, bmp_img *dst, int x, int y, double u[3], double v[3])
 	unsigned char *buf_r, *buf_g, *buf_b, *buf_a;
 	
 	int w, h;
-	double dx, dy, sx, sy;
+	double dx, dy, dx1, dy1, dx2, dy2;
+	double sx, sy, sx1, sy1, sx2, sy2;
 	
-	w = (int) ceil(u[0] * src->width);
-	h = (int) ceil(v[1] * src->height);
+	/* step for sweep source bitmap*/
+	dx = sqrt(u[0] * u[0] + u[1] * u[1]);
+	dy = sqrt(v[0] * v[0] + v[1] * v[1]);
+	
+	/* increase the sweep proccess to correct fill in rotated image*/
+	dx *= 1 + 2.0 * fabs(u[0] / dx) * fabs(u[1] / dx);
+	dy *= 1 + 2.0 * fabs(v[0] / dx) * fabs(v[1] / dx);
+	
+	/* final size in destination image */
+	w = (int) ceil(dx * src->width);
+	h = (int) ceil(dy * src->height);
+	
+	dx = 1.0/dx;
+	dy = 1.0/dy;
+	
+	/* step for sweep destination bitmap, considering transformations*/
+	dx1 = u[0] * dx; dy1 = v[0] * dy;
+	dx2 = u[1] * dx; dy2 = v[1] * dy;
 	
 	if((src != NULL) && (dst != NULL)){
 		/* get the order of color components */
@@ -1157,25 +1177,21 @@ void bmp_put(bmp_img *src, bmp_img *dst, int x, int y, double u[3], double v[3])
 		dst_b = dst->b_i;
 		dst_a = dst->a_i;
 		
-		dx = 1.0/u[0];
-		dy = 1.0/v[1];
-		
 		/* sweep the source image */
-		sx = 0.0;
+		sx = 0.0; sx1 = 0.0; sx2 = 0.0;
 		for (i=0; i < w; i++){
-			sy = 0.0;
+			sy = 0.0; sy1 = 0.0; sy2 = 0.0;
 			for (j=0; j < h; j++){
+				/* pixel position in destination */
+				ofs_x = x + round(sx1 + sy1);
+				ofs_y = y + round(sx2 + sy2);
 				/* check if point is in destination bounds */
-				ofs_x = i + x;
-				ofs_y = j + y;
 				if((ofs_x >= 0) && (ofs_x < dst->width) && 
 					(ofs_y >= 0) && (ofs_y < dst->height) &&
 					/*and in clip rectangle*/
 					(ofs_x >= dst->clip_x) && (ofs_x < (dst->clip_x + dst->clip_w)) && 
 					(ofs_y >= dst->clip_y) && (ofs_y < (dst->clip_y + dst->clip_h))){
-					/* find the position on destination buffer */
-					/* (y = dst->height - y) emulate the cartesian coordinates */
-						
+					/* find the position on destination buffer, according top or bottom alingment*/
 					if (dst->zero_tl != 0){
 						ofs_dst = 4 * ((ofs_y * dst->width) + ofs_x);
 					}
@@ -1189,6 +1205,7 @@ void bmp_put(bmp_img *src, bmp_img *dst, int x, int y, double u[3], double v[3])
 						ofs_src = 4 * ((src->height - 1 - (int)sy) * src->width + (int)sx);
 					}
 					
+					/* raw position of each color component */
 					buf_r = dst->buf + ofs_dst + dst_r;
 					buf_g = dst->buf + ofs_dst + dst_g;
 					buf_b = dst->buf + ofs_dst + dst_b;
@@ -1226,8 +1243,12 @@ void bmp_put(bmp_img *src, bmp_img *dst, int x, int y, double u[3], double v[3])
 					}
 				}
 				sy += dy;
+				sy1 += dy1;
+				sy2 += dy2;
 			}
 			sx += dx;
+			sx1 += dx1;
+			sx2 += dx2;
 		}
 		
 	}

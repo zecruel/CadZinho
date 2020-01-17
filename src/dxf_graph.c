@@ -4510,6 +4510,7 @@ int dxf_hatch_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, i
 }
 
 graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
+	/* parse DXF IMAGE entity */
 	if(ent){
 		dxf_node *current = NULL, *img_def = NULL;
 		double pt1_x = 0.0, pt1_y = 0.0, pt1_z = 0.0;
@@ -4527,9 +4528,11 @@ graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				current = ent->obj.content->next;
 			}
 		}
+		/* get parameters */
 		while (current){
 			if (current->type == DXF_ATTR){ /* DXF attibute */
 				switch (current->value.group){
+					/* insertion point*/
 					case 10:
 						pt1_x = current->value.d_data;
 						break;
@@ -4539,7 +4542,7 @@ graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 					case 30:
 						pt1_z = current->value.d_data;
 						break;
-					
+					/* width vector */
 					case 11:
 						u_x = current->value.d_data;
 						break;
@@ -4549,7 +4552,7 @@ graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 					case 31:
 						u_z = current->value.d_data;
 						break;
-					
+					/* height vector */
 					case 12:
 						v_x = current->value.d_data;
 						break;
@@ -4559,7 +4562,7 @@ graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 					case 32:
 						v_z = current->value.d_data;
 						break;
-					
+					/* image size */
 					case 13:
 						w = current->value.d_data;
 						break;
@@ -4570,7 +4573,7 @@ graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 					case 67:
 						paper = current->value.i_data;
 						break;
-					
+					/* pointer to IMAGE_DEF object */
 					case 340:
 						img_id = strtol(current->value.s_data, NULL, 16);
 						break;
@@ -4584,11 +4587,13 @@ graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			graph_obj *curr_graph = graph_new(pool_idx);
 			
 			if (curr_graph){
+				/* set transparent color to bound lines */
 				curr_graph->color.r = 254;
 				curr_graph->color.g = 254;
 				curr_graph->color.b = 254;
 				curr_graph->color.a = 0;
 				
+				/* set boundary lines */
 				x0 = pt1_x;
 				y0 = pt1_y;
 				z0 = pt1_z;
@@ -4621,12 +4626,12 @@ graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				z1 = pt1_z;
 				line_add(curr_graph, x0, y0, z0, x1, y1, z1);
 				
-				
+				/* get IMAGE_DEF object in drawing structure */
 				if (img_id)
 					img_def = dxf_find_handle(drawing->objs, img_id);
 				
 				if (img_def){
-					//dxf_ent_print2 (img_def);
+					/* get bitmap image and link it to entity */
 					bmp_img * img = dxf_image_def_list(drawing, img_def);
 					if (img) {
 						curr_graph->img = img;

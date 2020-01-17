@@ -1,7 +1,4 @@
-#include "dxf.h"
-#include "bmp.h"
-#include "graph.h"
-#include "list.h"
+#include "dxf_image.h"
 
 struct dxf_img_def {
 	long id;

@@ -5,6 +5,7 @@
 #include "bmp.h"
 #include "graph.h"
 #include "list.h"
+#include "dxf_image.h"
 
 /* for insert objects */
 struct ins_save{

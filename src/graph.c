@@ -751,12 +751,13 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 	line_node *current = master->list->next;
 	int i, iter;
 	
-	
+	/* if has a bitmap image associated */
 	if (master->img){
+		/* apply  offset an scale */
+		/* insertion point is first vertice */
 		current = master->list->next;
 		x0 = (current->x0 - param.ofs_x) * param.scale;
 		y0 =(current->y0 - param.ofs_y) * param.scale;
-		//bmp_copy(master->img, img, x0, y0);
 		
 		double u[3], v[3];
 		u[0] = master->u[0] * param.scale;
@@ -767,11 +768,9 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 		v[1] = master->v[1] * param.scale;
 		v[2] = master->v[2] * param.scale;
 		
-		
+		/* draw bitmap image */
 		bmp_put(master->img, img, x0, y0, u, v);
 	}
-	
-	
 	
 	/* set the pattern */
 	patt_change(img, (double[]){1.0,}, 1);

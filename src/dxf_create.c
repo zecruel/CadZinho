@@ -2297,3 +2297,90 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 
 	return NULL;
 }
+
+dxf_node * dxf_new_imgdef (char *path, int pool){
+	/* create a new IMAGEDEF object */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbRasterImageDef";
+	int ok = 1, int_zero = 0;
+	dxf_node * new_imdef = dxf_obj_new ("IMAGEDEF", pool);
+	
+	ok &= dxf_attr_append(new_imdef, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_imdef, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_imdef, 90, (void *) &int_zero, pool);
+	ok &= dxf_attr_append(new_imdef, 1, (void *) path, pool);
+	
+	
+	if(ok){
+		return new_imdef;
+	}
+
+	return NULL;
+}
+
+dxf_node * dxf_new_image (dxf_drawing *drawing,
+double x0, double y0, double z0,
+double u[3], double v[3], double w, double h,
+char *path,
+int color, char *layer, char *ltype, int lw, int paper, int pool){
+	
+	/* create a new DXF IMAGE */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbEntity";
+	const char *dxf_subclass = "AcDbRasterImage";
+	int ok = 1;
+	dxf_node * new_img = dxf_obj_new ("IMAGE", pool);
+	
+	ok &= dxf_attr_append(new_img, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_img, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_img, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(new_img, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_img, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(new_img, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(new_img, 370, (void *) &lw, pool);
+	
+	ok &= dxf_attr_append(new_img, 100, (void *) dxf_subclass, pool);
+	
+	/* class version (?) - zero*/
+	ok &= dxf_attr_append(new_img, 90, (void *) (int[]){0}, pool);
+	
+	/* insertion point */
+	ok &= dxf_attr_append(new_img, 10, (void *) &x0, pool);
+	ok &= dxf_attr_append(new_img, 20, (void *) &y0, pool);
+	ok &= dxf_attr_append(new_img, 30, (void *) &z0, pool);
+	
+	/* u vector */
+	ok &= dxf_attr_append(new_img, 11, (void *) &u[0], pool);
+	ok &= dxf_attr_append(new_img, 21, (void *) &u[1], pool);
+	ok &= dxf_attr_append(new_img, 31, (void *) &u[2], pool);
+	
+	/* v vector */
+	ok &= dxf_attr_append(new_img, 12, (void *) &v[0], pool);
+	ok &= dxf_attr_append(new_img, 22, (void *) &v[1], pool);
+	ok &= dxf_attr_append(new_img, 32, (void *) &v[2], pool);
+	
+	/* image size */
+	ok &= dxf_attr_append(new_img, 13, (void *) &w, pool);
+	ok &= dxf_attr_append(new_img, 23, (void *) &h, pool);
+	
+	if(ok){
+		/* create and append IMAGEDEF object */
+		dxf_node *handle = NULL;
+		dxf_node *imgdef = dxf_new_imgdef (path, pool);
+		ok = ent_handle(drawing, imgdef);
+		if (ok) handle = dxf_find_attr2(imgdef, 5); ok = 0;
+		if (handle) ok = dxf_obj_append(drawing->objs, imgdef);
+		
+		/* link IMAGEDEF to IMAGE entity */
+		if (ok) ok = dxf_attr_append(new_img, 340, (void *) handle->value.s_data, pool);
+	}
+	
+	/* image flags -> show image yet not aligned */
+	ok &= dxf_attr_append(new_img, 70, (void *) (int[]){3}, pool);
+	
+	if(ok){
+		return new_img;
+	}
+
+	return NULL;
+}

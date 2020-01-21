@@ -215,7 +215,7 @@ struct Gui_obj {
 	int hatch_sel;
 	
 	int keep_orig;
-	int closed;
+	int closed, proportional;
 	
 	int sp_degree;
 	enum Spline_mode spline_mode;
@@ -223,6 +223,7 @@ struct Gui_obj {
 	enum Ellipse_mode el_mode;
 	enum Ortho_view o_view;
 	
+	int image_w, image_h;
 	
 	int en_distance; /* enable distance entry */
 	int entry_relative;
@@ -312,6 +313,8 @@ struct Gui_obj {
 	int script_win_x, script_win_y, script_win_w, script_win_h;
 	
 	char script_dynamic[DXF_MAX_CHARS];
+	
+	char image_path[DXF_MAX_CHARS];
 	
 };
 typedef struct Gui_obj gui_obj;

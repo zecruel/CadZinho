@@ -1220,12 +1220,16 @@ int gui_start(gui_obj *gui){
 	gui->keep_orig = 0;
 	
 	gui->closed = 0;
+	gui->proportional = 0;
 	
 	gui->sp_degree = 4;
 	gui->spline_mode = SP_CTRL;
 	
 	gui->el_mode = EL_FULL;
 	gui->o_view = O_TOP;
+	
+	gui->image_w = 0;
+	gui->image_h = 0;
 	
 	gui->lua_script.L = NULL;
 	gui->lua_script.T = NULL;
@@ -1240,6 +1244,8 @@ int gui_start(gui_obj *gui){
 	gui->script_win_title[0] = 0;
 	
 	gui->script_dynamic[0] = 0;
+	
+	gui->image_path[0] = 0;
 	
 	#if(0)
 	#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)

@@ -2104,6 +2104,28 @@ static pdf_object *pdf_add_raw_jpeg(struct pdf_doc *pdf,
     return obj;
 }
 
+pdf_object *pdf_add_raw_img(struct pdf_doc *pdf, long id,
+                                    uint8_t *data, size_t len, int width, int height)
+{   /*------------------------ cadzinho ------------------*/
+    struct pdf_object *obj;
+
+    obj = pdf_add_object(pdf, OBJ_image);
+    if (!obj)
+        return NULL;
+    dstr_printf(&obj->stream,
+                "<<\r\n/Type /XObject\r\n/Name /Image%d\r\n"
+                "/Subtype /Image\r\n/ColorSpace /DeviceRGB\r\n"
+                "/Width %d\r\n/Height %d\r\n"
+                "/BitsPerComponent 8\r\n/Filter /FlateDecode\r\n"
+                "/Length %d\r\n>>stream\r\n",
+                id, width, height, (int)len);
+    dstr_append_data(&obj->stream, data, len);
+
+    dstr_printf(&obj->stream, "\r\nendstream\r\n");
+
+    return obj;
+}
+
 static int pdf_add_image(struct pdf_doc *pdf, struct pdf_object *page,
                          struct pdf_object *image, int x, int y, int width,
                          int height)

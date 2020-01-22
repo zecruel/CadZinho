@@ -480,7 +480,7 @@ int main(int argc, char** argv){
 	bmp_free(gui->svg_bmp[SVG_FREEZE]);
 	gui->svg_bmp[SVG_FREEZE] = i_svg_bmp(gui->svg_curves[SVG_FREEZE], 16, 16);
 	bmp_free(gui->svg_bmp[SVG_CZ]);
-	gui->svg_bmp[SVG_CZ] = i_svg_bmp(gui->svg_curves[SVG_CZ], 16, 16);
+	gui->svg_bmp[SVG_CZ] = i_svg_bmp(gui->svg_curves[SVG_CZ], 32, 32);
 	
 	bmp_img *i_cz48 = i_svg_bmp(gui->svg_curves[SVG_CZ], 48, 48);
 	

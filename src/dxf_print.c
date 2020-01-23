@@ -9,31 +9,36 @@ void print_img_pdf(struct pdf_doc *pdf, bmp_img *img){
 	if (!img) return;
 	if (!img->buf) return;
 	
-	unsigned char * buf;
+	unsigned char *buf, *alpha;
 	int w = img->width;
 	int h = img->height;
 	
 	buf = malloc (3 * w * h);
+	alpha = malloc (w * h);
 	
 	if(!buf) return;
+	if(!alpha) return;
 	
 	int i, j;
 	int r = img->r_i;
 	int g = img->g_i;
 	int b = img->b_i;
 	int a = img->a_i;
-	int ofs_src, ofs_dst;
+	int ofs, ofs_src, ofs_dst;
 	unsigned char *img_buf = img->buf;
 	
-	/* fill buffer without alfa chanel */
+	/* fill colors and alpha buffers separatedly */
 	for (i = 0; i < w; i++){
 		for (j = 0; j < h; j++){
-			ofs_src = 4 * ((j * w) + i);
-			ofs_dst = 3 * ((j * w) + i);
+			ofs = j * w + i;
+			ofs_src = 4 * ofs;
+			ofs_dst = 3 * ofs;
 			
 			buf[ofs_dst] = img_buf[ofs_src + r];
 			buf[ofs_dst + 1] = img_buf[ofs_src + g];
 			buf[ofs_dst + 2] = img_buf[ofs_src + b];
+			
+			alpha[ofs] = img_buf[ofs_src + a];
 		}
 	}
 	
@@ -46,21 +51,36 @@ void print_img_pdf(struct pdf_doc *pdf, bmp_img *img){
 	mz_uint8 *pCmp = (mz_uint8 *)malloc((size_t)cmp_len);
 	if (!pCmp) {
 		free(buf);
+		free(alpha);
 		return;
 	}
+	
+	struct pdf_object *mask = NULL;
+	src_len = w * h;
+	cmp_len = compressBound(src_len);
+	
+	cmp_status = compress(pCmp, &cmp_len, (const unsigned char *)alpha, src_len);
+	if (cmp_status == Z_OK){
+		mask = pdf_add_smask(pdf, (uintptr_t)img, pCmp, cmp_len, w, h);
+	}
+	
+	src_len = 3 * w * h;
+	cmp_len = compressBound(src_len);
+	
 	/* Compress buffer string. */
 	cmp_status = compress(pCmp, &cmp_len, (const unsigned char *)buf, src_len);
-	if (cmp_status != Z_OK){
-		free(pCmp);
-		free(buf);
-		return;
+	if (cmp_status == Z_OK){
+		struct pdf_object *obj = pdf_add_raw_img(pdf, (uintptr_t)img, pCmp, cmp_len, w, h, mask);
 	}
+	
+	
 	/*-------------------------*/
 	
-	struct pdf_object *obj = pdf_add_raw_img(pdf, (uintptr_t)img, pCmp, cmp_len, w, h);
+	
 	
 	free(pCmp);
 	free(buf);
+	free(alpha);
 }
 
 void print_graph_pdf(graph_obj * master, struct txt_buf *buf, struct print_param param){
@@ -81,6 +101,7 @@ void print_graph_pdf(graph_obj * master, struct txt_buf *buf, struct print_param
 		&& (!(pos_p0 & pos_p1)) /* and in bounds of page */
 		/* and too if is drawable pattern */
 		&& (!(master->patt_size <= 1 && master->pattern[0] < 0.0 && !master->fill))
+		&& master->color.a > 0
 	){
 		int x0, y0, x1, y1, i;
 		line_node *current = master->list->next;

@@ -145,6 +145,7 @@ enum {
     OBJ_catalog,
     OBJ_pages,
     OBJ_image,
+    OBJ_smask,
 
     OBJ_count,
 };
@@ -588,6 +589,9 @@ static void pdf_object_destroy(struct pdf_object *object)
     case OBJ_image:
         dstr_free(&object->stream);
         break;
+    case OBJ_smask:
+        dstr_free(&object->stream);
+        break;
     case OBJ_page:
         flexarray_clear(&object->page.children);
         break;
@@ -690,6 +694,10 @@ static int pdf_save_object(struct pdf_doc *pdf, FILE *fp, int index)
     switch (object->type) {
     case OBJ_stream:
     case OBJ_image: {
+        fwrite(dstr_data(&object->stream), dstr_len(&object->stream), 1, fp);
+        break;
+    }
+    case OBJ_smask: {
         fwrite(dstr_data(&object->stream), dstr_len(&object->stream), 1, fp);
         break;
     }
@@ -1981,7 +1989,7 @@ static pdf_object *pdf_add_raw_rgb24(struct pdf_doc *pdf, uint8_t *data,
     obj = pdf_add_object(pdf, OBJ_image);
     if (!obj)
         return NULL;
-
+    snprintf(obj->name, 63, "/Image%d", flexarray_size(&pdf->objects));
     dstr_printf(
         &obj->stream,
         "<<\r\n/Type /XObject\r\n/Name /Image%d\r\n/Subtype /Image\r\n"
@@ -2089,6 +2097,7 @@ static pdf_object *pdf_add_raw_jpeg(struct pdf_doc *pdf,
     obj = pdf_add_object(pdf, OBJ_image);
     if (!obj)
         return NULL;
+    snprintf(obj->name, 63, "/Image%d", flexarray_size(&pdf->objects));
     dstr_printf(&obj->stream,
                 "<<\r\n/Type /XObject\r\n/Name /Image%d\r\n"
                 "/Subtype /Image\r\n/ColorSpace /DeviceRGB\r\n"
@@ -2106,18 +2115,46 @@ static pdf_object *pdf_add_raw_jpeg(struct pdf_doc *pdf,
 }
 
 pdf_object *pdf_add_raw_img(struct pdf_doc *pdf, unsigned long id,
-                                    uint8_t *data, int len, int width, int height)
+                                    uint8_t *data, int len, int width, int height, struct pdf_object *mask)
 {   /*------------------------ cadzinho ------------------*/
     struct pdf_object *obj;
 
     obj = pdf_add_object(pdf, OBJ_image);
     if (!obj)
         return NULL;
-    
     snprintf(obj->name, 63, "/Img%lu", id);
     dstr_printf(&obj->stream,
                 "<<\r\n/Type /XObject\r\n/Name /Img%lu\r\n"
                 "/Subtype /Image\r\n/ColorSpace /DeviceRGB\r\n"
+                "/Width %d\r\n/Height %d\r\n"
+                "/BitsPerComponent 8\r\n/Filter /FlateDecode\r\n",
+                id, width, height);
+    
+    if (mask) dstr_printf(&obj->stream,
+                "/SMask %d 0 R\r\n", mask->index);
+	    
+    dstr_printf(&obj->stream,
+                "/Length %d\r\n>>stream\r\n", len);
+    dstr_append_data(&obj->stream, data, len);
+
+    dstr_printf(&obj->stream, "\r\nendstream\r\n");
+
+    return obj;
+}
+
+pdf_object *pdf_add_smask(struct pdf_doc *pdf, unsigned long id,
+                                    uint8_t *data, int len, int width, int height)
+{   /*------------------------ cadzinho ------------------*/
+    struct pdf_object *obj;
+
+    obj = pdf_add_object(pdf, OBJ_smask);
+    if (!obj)
+        return NULL;
+    
+    snprintf(obj->name, 63, "/Ma%lu", id);
+    dstr_printf(&obj->stream,
+                "<<\r\n/Type /XObject\r\n/Name /Ma%lu\r\n"
+                "/Subtype /Image\r\n/ColorSpace /DeviceGray\r\n"
                 "/Width %d\r\n/Height %d\r\n"
                 "/BitsPerComponent 8\r\n/Filter /FlateDecode\r\n"
                 "/Length %d\r\n>>stream\r\n",
@@ -2138,7 +2175,7 @@ static int pdf_add_image(struct pdf_doc *pdf, struct pdf_object *page,
 
     dstr_append(&str, "q ");
     dstr_printf(&str, "%d 0 0 %d %d %d cm ", width, height, x, y);
-    dstr_printf(&str, "/Image%d Do ", image->index);
+    dstr_printf(&str, "% Do ", image->name);
     dstr_append(&str, "Q");
 
     ret = pdf_add_stream(pdf, page, dstr_data(&str));

@@ -2,10 +2,6 @@
 
 /* load and store raster images in drawing */
 
-struct dxf_img_def { /* struct to store images indexed by DXF handle */
-	long id;
-	bmp_img *img;
-};
 
 struct dxf_img_def * get_img_list(list_node *list, long id){
 	/* get a specific image from list, by its id */

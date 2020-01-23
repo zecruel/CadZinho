@@ -3,6 +3,66 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+void print_img_pdf(struct pdf_doc *pdf, bmp_img *img){
+	/* convert and append bitmap image data in pdf document*/
+	if (!pdf) return;
+	if (!img) return;
+	if (!img->buf) return;
+	
+	unsigned char * buf;
+	int w = img->width;
+	int h = img->height;
+	
+	buf = malloc (3 * w * h);
+	
+	if(!buf) return;
+	
+	int i, j;
+	int r = img->r_i;
+	int g = img->g_i;
+	int b = img->b_i;
+	int a = img->a_i;
+	int ofs_src, ofs_dst;
+	unsigned char *img_buf = img->buf;
+	
+	/* fill buffer without alfa chanel */
+	for (i = 0; i < w; i++){
+		for (j = 0; j < h; j++){
+			ofs_src = 4 * ((j * w) + i);
+			ofs_dst = 3 * ((j * w) + i);
+			
+			buf[ofs_dst] = img_buf[ofs_src + r];
+			buf[ofs_dst + 1] = img_buf[ofs_src + g];
+			buf[ofs_dst + 2] = img_buf[ofs_src + b];
+		}
+	}
+	
+	
+	/* -------------- compress the command buffer stream (deflate algorithm)*/
+	int cmp_status;
+	long src_len = 3 * w * h;
+	long cmp_len = compressBound(src_len);
+	/* Allocate buffers to hold compressed and uncompressed data. */
+	mz_uint8 *pCmp = (mz_uint8 *)malloc((size_t)cmp_len);
+	if (!pCmp) {
+		free(buf);
+		return;
+	}
+	/* Compress buffer string. */
+	cmp_status = compress(pCmp, &cmp_len, (const unsigned char *)buf, src_len);
+	if (cmp_status != Z_OK){
+		free(pCmp);
+		free(buf);
+		return;
+	}
+	/*-------------------------*/
+	
+	struct pdf_object *obj = pdf_add_raw_img(pdf, (uintptr_t)img, pCmp, cmp_len, w, h);
+	
+	free(pCmp);
+	free(buf);
+}
+
 void print_graph_pdf(graph_obj * master, struct txt_buf *buf, struct print_param param){
 	/* convert a single graph object to pdf commands*/
 	
@@ -116,6 +176,32 @@ void print_graph_pdf(graph_obj * master, struct txt_buf *buf, struct print_param
 		else buf->pos +=snprintf(buf->data + buf->pos,
 					PDF_BUF_SIZE - buf->pos,
 					"S\r\n");
+	}
+	if((master->img) /* check if has an image */
+		&& (!(pos_p0 & pos_p1))) /* and in bounds of page */
+	{
+		int x0, y0;
+		/* insertion point is first vertice */
+		line_node *current = master->list->next;
+		/* apply the scale and offset */
+		x0 = (int) ((current->x0 - param.ofs_x) * param.scale * param.resolution);
+		y0 = (int) ((current->y0 - param.ofs_y) * param.scale * param.resolution);
+		int w = master->img->width;
+		int h = master->img->height;
+		
+		double u[3], v[3];
+		u[0] = master->u[0] * param.scale * param.resolution * w;
+		u[1] = master->u[1] * param.scale * param.resolution * w;
+		u[2] = master->u[2] * param.scale * param.resolution * w;
+		
+		v[0] = master->v[0] * param.scale * param.resolution * h;
+		v[1] = master->v[1] * param.scale * param.resolution * h;
+		v[2] = master->v[2] * param.scale * param.resolution * h;
+		
+		/* do the image */
+		buf->pos +=snprintf(buf->data + buf->pos,
+			PDF_BUF_SIZE - buf->pos,
+			"\r\nq %.4f %.4f %.4f %.4f %d %d cm /Img%lu Do Q\r\n", u[0], u[1], v[0], v[1], x0, y0, master->img);
 	}
 }
 
@@ -240,6 +326,32 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	};
 	/* pdf main struct */
 	struct pdf_doc *pdf = pdf_create((int)param.w, (int)param.h, &info);
+	
+	
+	/*---------------------*/
+	/* add  the drawing images in pdf */
+	if (drawing->img_list != NULL){
+		
+		list_node *list = drawing->img_list;
+		
+		struct dxf_img_def * img_def;
+		bmp_img * img;
+		
+		list_node *current = list->next;
+		while (current != NULL){ /* sweep the image list */
+			if (current->data){
+				img_def = (struct dxf_img_def *)current->data;
+				img = img_def->img;
+				if (img){
+					/* convert and append image data*/
+					print_img_pdf(pdf, img);
+				}
+			}
+			current = current->next;
+		}
+	}
+	/*---------------------*/
+	
 	
 	/* add a page to pdf file */
 	struct pdf_object *page = pdf_append_page(pdf);

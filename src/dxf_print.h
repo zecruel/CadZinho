@@ -9,6 +9,7 @@
 #include "list.h"
 #include "font.h"
 #include "dxf_graph.h"
+#include "dxf_image.h"
 
 #define PDF_BUF_SIZE 50*1024*1024
 

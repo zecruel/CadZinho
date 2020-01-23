@@ -169,6 +169,7 @@ struct dstr {
 struct pdf_object {
     int type;                /* See OBJ_xxxx */
     int index;               /* PDF output index */
+    char name[64];
     int offset;              /* Byte position within the output file */
     struct pdf_object *prev; /* Previous of this type */
     struct pdf_object *next; /* Next of this type */
@@ -730,7 +731,7 @@ static int pdf_save_object(struct pdf_doc *pdf, FILE *fp, int index)
         if (image) {
             fprintf(fp, "  /XObject <<");
             for (; image; image = image->next)
-                fprintf(fp, "/Image%d %d 0 R ", image->index, image->index);
+                fprintf(fp, "%s %d 0 R ", image->name, image->index);
             fprintf(fp, ">>\r\n");
         }
 
@@ -2104,21 +2105,23 @@ static pdf_object *pdf_add_raw_jpeg(struct pdf_doc *pdf,
     return obj;
 }
 
-pdf_object *pdf_add_raw_img(struct pdf_doc *pdf, long id,
-                                    uint8_t *data, size_t len, int width, int height)
+pdf_object *pdf_add_raw_img(struct pdf_doc *pdf, unsigned long id,
+                                    uint8_t *data, int len, int width, int height)
 {   /*------------------------ cadzinho ------------------*/
     struct pdf_object *obj;
 
     obj = pdf_add_object(pdf, OBJ_image);
     if (!obj)
         return NULL;
+    
+    snprintf(obj->name, 63, "/Img%lu", id);
     dstr_printf(&obj->stream,
-                "<<\r\n/Type /XObject\r\n/Name /Image%d\r\n"
+                "<<\r\n/Type /XObject\r\n/Name /Img%lu\r\n"
                 "/Subtype /Image\r\n/ColorSpace /DeviceRGB\r\n"
                 "/Width %d\r\n/Height %d\r\n"
                 "/BitsPerComponent 8\r\n/Filter /FlateDecode\r\n"
                 "/Length %d\r\n>>stream\r\n",
-                id, width, height, (int)len);
+                id, width, height, len);
     dstr_append_data(&obj->stream, data, len);
 
     dstr_printf(&obj->stream, "\r\nendstream\r\n");

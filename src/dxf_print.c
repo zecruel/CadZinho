@@ -373,7 +373,6 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	}
 	/*---------------------*/
 	
-	
 	/* add a page to pdf file */
 	struct pdf_object *page = pdf_append_page(pdf);
 	
@@ -394,6 +393,71 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	return 1;
 }
 
+void svg_img_base64(void *context, void *data, int size){
+	/* callback function from stbi_write
+	Convert to base64 and write to file */
+	
+	static char base64_table[] = {
+		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+		'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+		'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+		'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+		'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+		'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+		'w', 'x', 'y', 'z', '0', '1', '2', '3',
+		'4', '5', '6', '7', '8', '9', '+', '/'
+	};
+	
+	unsigned long triple = 0;
+	static unsigned long octets[3];
+	static int count = 0;
+	int i, j;
+	
+	FILE *file = (FILE *)context; /*file to write*/
+	
+	if (!file) return;
+	
+	
+	unsigned char *stream = (unsigned char *)data;
+	if (stream){
+		/* sweep the stream data */
+		for (i = 0; i < size; i++){
+			octets[count] = stream[i];
+			count++;
+			/* for each 3 inputs bytes, generate 4 output bytes in base64 notation*/
+			if (count >= 3){
+				/* combine input data in unique variable */
+				triple = (octets[0] << 0x10) + (octets[1] << 0x08) + octets[2];
+				for (j = 0; j < 4; j++){
+					/* break the result variable  in correspondent base64 codes*/
+					char c = base64_table[(triple >> (3 - j) * 6) & 0x3F];
+					fputc(c, file); /* write to file */
+				}
+				count = 0; /* reset status */
+			}
+		}
+	}
+	else if (count > 0){ /* if has pendent bytes to write */
+		/* complete remainder input bytes whith zeros */
+		i = count;
+		while (i < 3){
+			octets[i] = 0;
+			i++;
+		}
+		/* combine input data in unique variable */
+		triple = (octets[0] << 0x10) + (octets[1] << 0x08) + octets[2];
+		for (j = 0; j < 4; j++){
+			char c;
+			/* break the result variable  in correspondent base64 codes*/
+			if (j <= count) c = base64_table[(triple >> (3 - j) * 6) & 0x3F];
+			else c = '='; /* complete remainder output bytes whith '=' */
+			fputc(c, file); /* write to file */
+		}
+		
+		count = 0; /* reset status */
+	}
+	else count = 0; /* reset status */
+}
 
 void print_graph_svg(graph_obj * master, FILE *file, struct print_param param){
 	/* convert a single graph object to svg commands*/
@@ -413,6 +477,7 @@ void print_graph_svg(graph_obj * master, FILE *file, struct print_param param){
 		&& (!(pos_p0 & pos_p1)) /* and in bounds of page */
 		/* and too if is drawable pattern */
 		&& (!(master->patt_size <= 1 && master->pattern[0] < 0.0 && !master->fill))
+		&& master->color.a > 0
 	){
 		double x0, y0, x1, y1;
 		line_node *current = master->list->next;
@@ -500,6 +565,43 @@ void print_graph_svg(graph_obj * master, FILE *file, struct print_param param){
 			current = current->next; /* go to next line */
 		}
 		/* stroke the graph */
+		fprintf(file, "\"/>\n");
+	}
+	if((master->img) /* check if has an image */
+		&& (!(pos_p0 & pos_p1))) /* and in bounds of page */
+	{
+		double x0, y0;
+		int w = master->img->width;
+		int h = master->img->height;
+		
+		double u[3], v[3];
+		u[0] = master->u[0] * param.scale * param.resolution;
+		u[1] = master->u[1] * param.scale * param.resolution;
+		u[2] = master->u[2] * param.scale * param.resolution;
+		
+		v[0] = master->v[0] * param.scale * param.resolution;
+		v[1] = master->v[1] * param.scale * param.resolution;
+		v[2] = master->v[2] * param.scale * param.resolution;
+		
+		/* insertion point is first vertice */
+		line_node *current = master->list->next;
+		
+		/* apply the scale and offset */
+		x0 = ((current->x0 - param.ofs_x) * param.scale * param.resolution);
+		y0 = param.h * param.resolution - ((current->y0 - param.ofs_y) * param.scale * param.resolution);
+		
+		/* top left image correction */
+		x0 += v[0] * h;
+		y0 -= v[1] * h;
+		
+		/* do the image */
+		fprintf(file,"<image height=\"%dpx\" width=\"%dpx\" "
+		"transform=\"matrix(%f %f %f %f %f %f)\" "
+		"xlink:href=\"data:image/png;base64,",
+		h, w, u[0], -u[1], -v[0], v[1], x0, y0);
+		/* convert bitmap image buffer to PNG and write to base64 enconding */
+		stbi_write_png_to_func(&svg_img_base64, file, w, h, 4, master->img->buf, w * 4);
+		svg_img_base64(file, NULL, 0); /* terminate base64 convetion, if has pendent bytes */
 		fprintf(file, "\"/>\n");
 	}
 }

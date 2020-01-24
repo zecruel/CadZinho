@@ -66,4 +66,6 @@ int print_img(dxf_drawing *drawing, struct print_param param, char *dest);
 
 int print_ps(dxf_drawing *drawing, struct print_param param, char *dest);
 
+void svg_img_base64(void *context, void *data, int size);
+
 #endif

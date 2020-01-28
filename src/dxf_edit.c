@@ -520,6 +520,31 @@ int dxf_edit_scale (dxf_node * obj, double scale_x, double scale_y, double scale
 					current->value.d_data *= scale_z;
 				}
 			}
+			else if (ent_type == DXF_IMAGE){
+				/* width axis*/
+				if (current->value.group == 11){ 
+					current->value.d_data *= scale_x;
+				}
+				if (current->value.group == 21){ 
+					current->value.d_data *= scale_y;
+					ellip = 0;
+				}
+				if (current->value.group == 31){ 
+					current->value.d_data *= scale_z;
+				}
+				
+				/* height axis*/
+				if (current->value.group == 12){ 
+					current->value.d_data *= scale_x;
+				}
+				if (current->value.group == 22){ 
+					current->value.d_data *= scale_y;
+					ellip = 0;
+				}
+				if (current->value.group == 33){ 
+					current->value.d_data *= scale_z;
+				}
+			}
 			else if (ent_type == DXF_TRACE || ent_type == DXF_SOLID){
 				if (current->value.group == 11){ 
 					current->value.d_data *= scale_x;
@@ -773,6 +798,25 @@ int dxf_edit_rot (dxf_node * obj, double ang){
 				x->value.d_data = x_new;
 				y->value.d_data = y_new;
 			}
+		}
+	}
+	else if (ent_type == DXF_IMAGE){
+		x = dxf_find_attr_i2(current, stop, 11, 0);
+		y = dxf_find_attr_i2(current, stop, 21, 0);
+		if (x && y){
+			x_new = x->value.d_data * cosine - y->value.d_data * sine;
+			y_new = x->value.d_data * sine + y->value.d_data * cosine;
+			x->value.d_data = x_new;
+			y->value.d_data = y_new;
+		}
+		
+		x = dxf_find_attr_i2(current, stop, 12, 0);
+		y = dxf_find_attr_i2(current, stop, 22, 0);
+		if (x && y){
+			x_new = x->value.d_data * cosine - y->value.d_data * sine;
+			y_new = x->value.d_data * sine + y->value.d_data * cosine;
+			x->value.d_data = x_new;
+			y->value.d_data = y_new;
 		}
 	}
 	else if (ent_type == DXF_TRACE || ent_type == DXF_SOLID){
@@ -1097,6 +1141,34 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 			
 			x->value.d_data = end;
 			y->value.d_data = begin;
+		}
+	}
+	if (ent_type == DXF_IMAGE){
+		
+		/* reflect width vector */
+		x = dxf_find_attr_i2(current, stop, 11, 0);
+		y = dxf_find_attr_i2(current, stop, 21, 0);
+		if (x && y){
+			/* calcule distance between point and reflection line */
+			dist = (-dy*x->value.d_data + dx*y->value.d_data)/modulus;
+			
+			x_new = x->value.d_data + 2 * dist * (dy/modulus);
+			y_new = y->value.d_data + 2 * dist * (-dx/modulus);
+			x->value.d_data = x_new;
+			y->value.d_data = y_new;
+		}
+		
+		/* reflect height vector */
+		x = dxf_find_attr_i2(current, stop, 12, 0);
+		y = dxf_find_attr_i2(current, stop, 22, 0);
+		if (x && y){
+			/* calcule distance between point and reflection line */
+			dist = (-dy*x->value.d_data + dx*y->value.d_data)/modulus;
+			
+			x_new = x->value.d_data + 2 * dist * (dy/modulus);
+			y_new = y->value.d_data + 2 * dist * (-dx/modulus);
+			x->value.d_data = x_new;
+			y->value.d_data = y_new;
 		}
 	}
 	if (ent_type == DXF_MTEXT){

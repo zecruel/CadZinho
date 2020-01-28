@@ -112,7 +112,42 @@ dxf_node * dxf_drwg_cpy(dxf_drawing *source, dxf_drawing *dest, dxf_node *obj){
 			if (!ok) return NULL;
 		}
 	}
-	new_ent = dxf_ent_copy(obj, dest->pool);
+	
+	if (strcmp(obj->obj.name, "IMAGE") == 0){
+		/*copy IMAGEDEF and IMAGEDEF_REACTOR */
+		
+		dxf_node *imgdef_obj = dxf_find_attr2(obj, 340);
+		if(imgdef_obj){
+			long imgdef_id = strtol(imgdef_obj->value.s_data, NULL, 16);
+			/* try to find original IMAGEDEF object */
+			dxf_node *imgdef = dxf_find_handle(source->objs, imgdef_id);
+			if (imgdef) {
+				/* copy IMAGEDEF obj to destination drawing */
+
+				dxf_node *path = dxf_find_attr2(imgdef, 1);
+				if (!path) return NULL;
+				imgdef = dxf_new_imgdef (path->value.s_data, dest->pool);
+				
+				dxf_node *handle = NULL;
+				if (ent_handle(dest, imgdef))
+					handle = dxf_find_attr2(imgdef, 5);
+				else return NULL; /* Fail */
+				if (handle) {
+					if(!dxf_obj_append(dest->objs, imgdef)) return NULL; /* Fail */
+				}
+				else return NULL; /* Fail */
+				
+				if (!(new_ent = dxf_ent_copy(obj, dest->pool))) return NULL;
+				if (!(imgdef_obj = dxf_find_attr2(new_ent, 340))) return NULL;
+				
+				/* update pointer in linetype to new obj */
+				snprintf(imgdef_obj->value.s_data, DXF_MAX_CHARS, "%s", handle->value.s_data);
+			}
+		}
+		else return NULL; /* Fail */
+		
+	}
+	else new_ent = dxf_ent_copy(obj, dest->pool);
 	
 	
 	return new_ent;
@@ -485,12 +520,17 @@ int dxf_cpy_ltyp_drwg(dxf_drawing *source, dxf_drawing *dest){
 				if (ltyp_name){
 					ltyp_obj = dxf_find_obj_descr2(source->t_ltype, "LTYPE", ltyp_name->value.s_data);
 					ltyp_obj = dxf_cpy_ltype (dest, ltyp_obj);
+					
+					/* for complex linetype, copy the STYLE object associated */
 					long int sty_id = 0;
 					for (j = 0; sty_obj = dxf_find_attr_i(ltyp_obj, 340, j); j++){
 						sty_id = strtol(sty_obj->value.s_data, NULL, 16);
+						/* try to find original STYLE object */
 						style = dxf_find_handle(source->t_style, sty_id);
 						if (style) {
+							/* copy STYLE obj to destination drawing */
 							sty_id = dxf_cpy_style (dest, style);
+							/* update pointer in linetype to new obj */
 							snprintf(sty_obj->value.s_data, DXF_MAX_CHARS, "%X", sty_id);
 						}
 					}

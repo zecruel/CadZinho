@@ -654,6 +654,9 @@ int dxf_ident_ent_type (dxf_node *obj){
 			else if (strcmp(obj->obj.name, "DIMSTYLE") == 0){
 				ent_type = DXF_DIMSTYLE;
 			}
+			else if (strcmp(obj->obj.name, "IMAGE") == 0){
+				ent_type = DXF_IMAGE;
+			}
 		}
 	}
 	return ent_type;

@@ -114,7 +114,7 @@ dxf_node * dxf_drwg_cpy(dxf_drawing *source, dxf_drawing *dest, dxf_node *obj){
 	}
 	
 	if (strcmp(obj->obj.name, "IMAGE") == 0){
-		/*copy IMAGEDEF and IMAGEDEF_REACTOR */
+		/*copy IMAGEDEF */
 		
 		dxf_node *imgdef_obj = dxf_find_attr2(obj, 340);
 		if(imgdef_obj){
@@ -143,8 +143,14 @@ dxf_node * dxf_drwg_cpy(dxf_drawing *source, dxf_drawing *dest, dxf_node *obj){
 				/* update pointer in linetype to new obj */
 				snprintf(imgdef_obj->value.s_data, DXF_MAX_CHARS, "%s", handle->value.s_data);
 			}
+			else return NULL; /* Fail */
 		}
 		else return NULL; /* Fail */
+		
+		/* remove link to IMAGEDEF_REACTOR, if exists */
+		imgdef_obj = dxf_find_attr2(new_ent, 360);
+		if(imgdef_obj)
+			dxf_obj_subst(imgdef_obj, NULL);
 		
 	}
 	else new_ent = dxf_ent_copy(obj, dest->pool);

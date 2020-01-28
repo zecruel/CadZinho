@@ -2298,6 +2298,25 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	return NULL;
 }
 
+dxf_node * dxf_new_imgdef_react (char *id, int pool){
+	/* create a new IMAGEDEF_REACTOR object */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbRasterImageDefReactor";
+	int ok = 1;
+	dxf_node * new_imdefr = dxf_obj_new ("IMAGEDEF_REACTOR", pool);
+	
+	ok &= dxf_attr_append(new_imdefr, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_imdefr, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_imdefr, 90, (void *) (int[]){2}, pool);
+	ok &= dxf_attr_append(new_imdefr, 330, (void *) id, pool);
+	
+	if(ok){
+		return new_imdefr;
+	}
+
+	return NULL;
+}
+
 dxf_node * dxf_new_imgdef (char *path, int pool){
 	/* create a new IMAGEDEF object */
 	const char *handle = "0";

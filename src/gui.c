@@ -1220,7 +1220,7 @@ int gui_start(gui_obj *gui){
 	gui->keep_orig = 0;
 	
 	gui->closed = 0;
-	gui->proportional = 0;
+	gui->proportional = 1;
 	
 	gui->sp_degree = 4;
 	gui->spline_mode = SP_CTRL;

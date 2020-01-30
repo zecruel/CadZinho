@@ -322,6 +322,26 @@ int print_win (gui_obj *gui){
 				snprintf(scale_str, 63, "%.9g", scale);
 				update = 1;
 			}
+			/* adjust print parameters to centralize small figure in page*/
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			if (nk_button_label(gui->ctx, "Centralize")){
+				double min_x, min_y, max_x, max_y;
+				
+				/* get drawing extents */
+				dxf_ents_ext(gui->drawing, &min_x, &min_y, &max_x, &max_y);
+				
+				scale = atof(scale_str);
+				
+				/* get origin */
+				ofs_x = min_x - (fabs((max_x - min_x) * scale - page_w)/2) / scale;
+				ofs_y = min_y - (fabs((max_y - min_y) * scale - page_h)/2) / scale;
+				
+				/* update parameters */
+				snprintf(ofs_x_str, 63, "%.9g", ofs_x);
+				snprintf(ofs_y_str, 63, "%.9g", ofs_y);
+				//snprintf(scale_str, 63, "%.9g", scale);
+				update = 1;
+			}
 			
 			nk_group_end(gui->ctx);
 		}

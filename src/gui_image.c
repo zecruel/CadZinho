@@ -132,18 +132,61 @@ int gui_image_interactive(gui_obj *gui){
 
 int gui_image_info (gui_obj *gui){
 	if (gui->modal == IMAGE) {
-		static char path[DXF_MAX_CHARS];
-		static int path_len = 0;
+		static char path[DXF_MAX_CHARS] = "";
+		static int show_app_file = 0;
+		int i;
+
+		/* supported image formats */
+		static const char *ext_type[] = {
+			//"PDF",
+			//"SVG",
+			"PNG",
+			"JPG",
+			"BMP",
+			"*"
+		};
+		static const char *ext_descr[] = {
+			//"Portable Document Format (.pdf)",
+			//"Scalable Vector Graphics (.svg)",
+			"Image PNG (.png)",
+			"Image JPG (.jpg)",
+			"Image Bitmap (.bmp)",
+			"All files (*)"
+		};
+		#define FILTER_COUNT 4
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Place Raster Image", NK_TEXT_LEFT);
-		nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
-		nk_edit_string(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, path, &path_len, DXF_MAX_CHARS, nk_filter_default);
+		
+		if (nk_button_label(gui->ctx, "Browse")){/* call file browser */
+			show_app_file = 1;
+			/* set filter for suported output formats */
+			for (i = 0; i < FILTER_COUNT; i++){
+				gui->file_filter_types[i] = ext_type[i];
+				gui->file_filter_descr[i] = ext_descr[i];
+			}
+			gui->file_filter_count = FILTER_COUNT;
+			gui->filter_idx = 0;
+			
+			gui->show_file_br = 1;
+			gui->curr_path[0] = 0;
+		}
+		if (show_app_file){ /* running file browser */
+			if (gui->show_file_br == 2){ /* return file OK */
+				/* close browser window*/
+				gui->show_file_br = 0;
+				show_app_file = 0;
+				/* update output path */
+				strncpy(path, get_filename(gui->curr_path), DXF_MAX_CHARS - 1);
+			}
+		} /* manual entry to output path */
+		
+		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, path, DXF_MAX_CHARS - 1, nk_filter_default);
 		nk_checkbox_label(gui->ctx, "Proportional", &gui->proportional);
 		
 		if(gui->step == 0){
 			if (nk_button_label(gui->ctx, "Attach")){
-				path[path_len] = 0;
+				strncpy(path, get_filename(path), DXF_MAX_CHARS - 1);
 				int w, h, comp;
 				if(stbi_info (path, &w, &h, &comp)){
 					gui->image_w = w;

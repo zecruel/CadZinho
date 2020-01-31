@@ -223,7 +223,7 @@ int gui_first_step(gui_obj *gui){
 	return gui_next_step(gui);
 }
 int gui_next_step(gui_obj *gui){
-	
+	gui->free_sel = 0;
 	gui->lock_ax_x = 0;
 	gui->lock_ax_y = 0;
 	gui->user_flag_x = 0;
@@ -1083,6 +1083,7 @@ int gui_start(gui_obj *gui){
 	gui->sel_mode = LIST_TOGGLE;
 	gui->sel_type = SEL_INTL;
 	gui->sel_count = 0;
+	gui->free_sel = 1;
 	
 	gui->main_w = 2048;
 	gui->main_h = 2048;
@@ -1395,6 +1396,61 @@ int gui_tstyle2(gui_obj *gui, dxf_drawing *drawing){
 	
 	
 	return 1;
+}
+
+void gui_simple_select(gui_obj *gui){
+	if (gui->ev & EV_ENTER){ /* user hit an enter point */
+		if (gui->element)
+			/* select an object if cursor is over */
+			list_modify(gui->sel_list, gui->element, LIST_TOGGLE, SEL_LIFE);
+		
+	}
+	else if (gui->ev & EV_CANCEL){
+		gui->element = NULL;
+		list_node *list_el = NULL;
+		if (gui->near_count > 0) {
+			/* try to switch to another object that is overlaid */
+			gui->sel_idx++;
+			if (gui->sel_idx >= gui->near_count)
+				gui->sel_idx = 0; /* back to list begin */
+			
+			/* examine the list of objects near cursor */
+			int i = 0;
+			list_el = gui->near_list->next;
+			while (list_el){
+				if (gui->sel_idx == i)
+					/* show the candidate object */
+					gui->element = (dxf_node *)list_el->data;
+				list_el = list_el->next;
+				i++;
+			}
+		}
+		else {
+			/* if not any hovered object, clear selection */
+			gui_default_modal(gui);
+		}
+		gui->draw = 1;
+	}
+	if (gui->ev & EV_MOTION){ /* cursor motion */
+		if (gui->sel_idx >= gui->near_count)
+			gui->sel_idx = 0;
+		
+		/* examine the list of objects near cursor */
+		gui->element = NULL;
+		list_node *list_el = NULL;
+		if (gui->near_count > 0) {
+			int i = 0;
+			list_el = gui->near_list->next;
+			while (list_el){
+				if (gui->sel_idx == i)
+					/* show the candidate object */
+					gui->element = (dxf_node *)list_el->data;
+				list_el = list_el->next;
+				i++;
+			}
+		}
+		gui->draw = 1;
+	}
 }
 
 //#endif

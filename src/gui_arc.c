@@ -9,6 +9,7 @@ int gui_arc_interactive(gui_obj *gui){
 	
 	static dxf_node *new_el;
 	if (gui->step == 0){
+		gui->free_sel = 0;
 		if (gui->ev & EV_ENTER){
 			dir = 0;
 			

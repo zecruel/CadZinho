@@ -6,6 +6,7 @@ int gui_mtext_interactive(gui_obj *gui){
 		char *blank = "";
 		int attch_pt = (2 - gui->t_al_v) * 3 + gui->t_al_h +1;
 		if (gui->step == 0){
+			gui->free_sel = 1;
 			gui->draw_tmp = 1;
 			/* create a new DXF text */
 			//dxf_node * dxf_new_mtext (double x0, double y0, double z0, double h,char *txt[], int num_txt, int color, char *layer, char *ltype, int lw, int paper)

@@ -672,8 +672,9 @@ int main(int argc, char** argv){
 		}
 		else{
 			SDL_ShowCursor(SDL_DISABLE);
+			gui->modstates = SDL_GetModState();
+			if (gui->modstates & KMOD_CTRL) gui->ev |= EV_ADD;
 			if (ev_type != 0){
-				gui->modstates = SDL_GetModState();
 				double wheel = 1.0;
 				switch (event.type){
 					case SDL_MOUSEBUTTONUP:
@@ -1568,16 +1569,19 @@ int main(int argc, char** argv){
 		
 		if (!(nk_window_is_any_hovered(gui->ctx)) && (gui->modal != SELECT)){
 			nk_window_set_focus(gui->ctx, "POS");
+			
+			
 		}
+		if (MouseMotion) gui->ev |= EV_MOTION;
+		if (leftMouseButtonClick) gui->ev |= EV_ENTER;
+		if (rightMouseButtonClick) gui->ev |= EV_CANCEL;
+		if (gui->keyEnter) gui->ev |= EV_LOCK_AX;
 		
 		/*================================================
 		==================================================
 		=================================================*/
 		
-		if (leftMouseButtonClick) gui->ev |= EV_ENTER;
-		if (rightMouseButtonClick) gui->ev |= EV_CANCEL;
-		if (MouseMotion) gui->ev |= EV_MOTION;
-		if (gui->keyEnter) gui->ev |= EV_LOCK_AX;
+		
 		
 		if (wait_open != 0){
 			low_proc = 0;

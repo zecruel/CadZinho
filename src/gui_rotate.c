@@ -3,6 +3,7 @@
 int gui_rotate_interactive(gui_obj *gui){
 	if (gui->modal == ROTATE){
 		if (gui->step == 0){
+			gui->free_sel = 0;
 			if (gui->ev & EV_ENTER){
 				gui->draw_tmp = 1;
 				/* phantom object */

@@ -41,16 +41,7 @@ int gui_update_pos(gui_obj *gui){
 			gui->step_y[gui->step] = (double) gui->mouse_y/gui->zoom + gui->ofs_y;
 			gui->near_attr = ATRC_NONE;
 			
-			if ((gui->modal != SELECT)&& (gui->step >= 1)){
-				/* update current position by the attractor of near element */
-				if (gui->near_attr = dxf_ent_attract(gui->drawing, gui->near_el, gui->curr_attr_t,
-				gui->step_x[gui->step], gui->step_y[gui->step], gui->step_x[gui->step-1], gui->step_y[gui->step-1],
-				(double) 20/gui->zoom, &gui->near_x , &gui->near_y)){
-					gui->step_x[gui->step] = gui->near_x;
-					gui->step_y[gui->step] = gui->near_y;
-				}
-			}
-			else if (gui->modal != SELECT){
+			if (!gui->free_sel){
 				/* update current position by the attractor of near element */
 				if (gui->near_attr = dxf_ent_attract(gui->drawing, gui->near_el, gui->curr_attr_t,
 				gui->step_x[gui->step], gui->step_y[gui->step], gui->step_x[gui->step], gui->step_y[gui->step],

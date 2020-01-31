@@ -8,6 +8,7 @@ int gui_mirror_interactive(gui_obj *gui){
 		
 		
 		if (gui->step == 0){
+			gui->free_sel = 0;
 			if (gui->ev & EV_ENTER){
 				if (!list) list = list_new(NULL, 0);
 				list_clear(list);

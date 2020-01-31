@@ -5,6 +5,7 @@ int gui_line_interactive(gui_obj *gui){
 		static dxf_node *new_el;
 		
 		if (gui->step == 0){
+			gui->free_sel = 0;
 			if (gui->ev & EV_ENTER){
 				gui->draw_tmp = 1;
 				/* create a new DXF line */

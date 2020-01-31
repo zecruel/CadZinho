@@ -20,6 +20,7 @@ int gui_text_interactive(gui_obj *gui){
 			gui_next_step(gui);
 		}
 		else{
+			gui->free_sel = 0;
 			if (gui->ev & EV_ENTER){
 				dxf_attr_change_i(new_el, 10, &gui->step_x[gui->step], -1);
 				dxf_attr_change_i(new_el, 20, &gui->step_y[gui->step], -1);

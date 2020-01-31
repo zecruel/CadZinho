@@ -7,12 +7,16 @@ int gui_image_interactive(gui_obj *gui){
 	
 	static double x = 0.0, y = 0.0;
 	
-	if (gui->step == 0 && (gui->ev & EV_CANCEL)){
-		gui->draw_phanton = 0;
-		gui_default_modal(gui);
+	if (gui->step == 0){
+		gui->free_sel = 1;
+		if (gui->ev & EV_CANCEL){
+			gui->draw_phanton = 0;
+			gui_default_modal(gui);
+		}
 	}
 		
 	if (gui->step == 1){
+		gui->free_sel = 0;
 		if (gui->ev & EV_ENTER){
 			/* starts rectangle - first corner*/
 			gui->draw_phanton = 1;

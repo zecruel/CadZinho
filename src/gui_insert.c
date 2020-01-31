@@ -6,6 +6,7 @@ int gui_insert_interactive(gui_obj *gui){
 		int i;
 		
 		if (gui->step == 0){
+			gui->free_sel = 0;
 			if (gui->ev & EV_ENTER){
 				/* verify if block exist */					
 				if (dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name)){

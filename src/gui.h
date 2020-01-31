@@ -103,6 +103,7 @@ enum Gui_ev {
 	EV_UNDO = 128,
 	EV_REDO = 256,
 	EV_DEL = 512,
+	EV_ADD = 1024,
 };
 
 enum Font_sizes {
@@ -176,6 +177,7 @@ struct Gui_obj {
 	enum list_op_mode sel_mode;
 	enum Sel_type sel_type;
 	int sel_count;
+	int free_sel;
 	
 	
 	/* background image dimension */
@@ -357,6 +359,8 @@ int gui_default_modal(gui_obj *gui);
 int gui_first_step(gui_obj *gui);
 
 int gui_next_step(gui_obj *gui);
+
+void gui_simple_select(gui_obj *gui);
 
 extern int dxf_lw[];
 extern const char *dxf_lw_descr[];

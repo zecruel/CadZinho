@@ -3,6 +3,8 @@
 int gui_select_interactive(gui_obj *gui){
 	if (gui->modal != SELECT) return 0;
 	
+	gui->free_sel = 1;
+	
 	static int tmp_rect = 0;
 	
 	/* select single element */

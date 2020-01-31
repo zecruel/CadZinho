@@ -15,6 +15,8 @@ int gui_ellip_interactive(gui_obj *gui){
 	
 	static dxf_node *new_el;
 	if (gui->step == 0){
+		gui->free_sel = 0;
+		
 		/* define ellipse center */
 		if (gui->ev & EV_ENTER){
 			/* accept point */

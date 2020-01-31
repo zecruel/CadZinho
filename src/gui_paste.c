@@ -40,6 +40,7 @@ int gui_paste_interactive(gui_obj *gui){
 			gui_next_step(gui);
 		}
 		else{
+			gui->free_sel = 0;
 			if (gui->ev & EV_ENTER){
 				//list_node * dxf_drwg_ent_cpy_all(dxf_drawing *source, dxf_drawing *dest, int pool_idx){
 				list_node * list = dxf_drwg_ent_cpy_all(gui->clip_drwg, gui->drawing, DWG_LIFE);

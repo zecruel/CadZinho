@@ -6,6 +6,7 @@ int gui_spline_interactive(gui_obj *gui){
 		dxf_node *spline = NULL;
 		
 		if (gui->step == 0){
+			gui->free_sel = 0;
 			if (gui->ev & EV_ENTER){
 				dxf_mem_pool(ZERO_DXF, ONE_TIME);
 				

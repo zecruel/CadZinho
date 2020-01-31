@@ -5,6 +5,7 @@ int gui_pline_interactive(gui_obj *gui){
 		static dxf_node *new_el;
 		
 		if (gui->step == 0){
+			gui->free_sel = 0;
 			if (gui->ev & EV_ENTER){
 				/* create a new DXF lwpolyline */
 				new_el = (dxf_node *) dxf_new_lwpolyline (

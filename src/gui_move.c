@@ -4,7 +4,20 @@ int gui_move_interactive(gui_obj *gui){
 	if (gui->modal == MOVE){
 		//static dxf_node *new_el;
 		
+		if (gui->step == 0) {
+			gui->step = 1;
+			gui->free_sel = 0;
+		}
+		if (gui->step == 1 && (!gui->sel_list->next || (gui->ev & EV_ADD))){
+			gui->step = 0;
+			gui->free_sel = 1;
+		}
+		
 		if (gui->step == 0){
+			gui->en_distance = 0;
+			gui_simple_select(gui);
+		}
+		else if (gui->step == 1){
 			if (gui->ev & EV_ENTER){
 				gui->draw_tmp = 1;
 				/* phantom object */
@@ -14,7 +27,7 @@ int gui_move_interactive(gui_obj *gui){
 				gui->en_distance = 1;
 				gui->step_x[gui->step + 1] = gui->step_x[gui->step];
 				gui->step_y[gui->step + 1] = gui->step_y[gui->step];
-				gui->step = 1;
+				gui->step = 2;
 				gui->step_x[gui->step + 1] = gui->step_x[gui->step];
 				gui->step_y[gui->step + 1] = gui->step_y[gui->step];
 				gui_next_step(gui);
@@ -52,9 +65,11 @@ int gui_move_interactive(gui_obj *gui){
 					//list_clear(gui->sel_list);
 				}
 				gui_first_step(gui);
+				gui->step = 1;
 			}
 			else if (gui->ev & EV_CANCEL){
 				gui_first_step(gui);
+				gui->step = 1;
 			}
 			if (gui->ev & EV_MOTION){
 				graph_list_modify(gui->phanton, gui->step_x[gui->step] - gui->step_x[gui->step + 1], gui->step_y[gui->step] - gui->step_y[gui->step + 1], 1.0, 1.0, 0.0);
@@ -71,6 +86,9 @@ int gui_move_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Move a selection", NK_TEXT_LEFT);
 		if (gui->step == 0){
+			nk_label(gui->ctx, "Select/Add element", NK_TEXT_LEFT);
+		}
+		else if (gui->step == 1){
 			nk_label(gui->ctx, "Enter base point", NK_TEXT_LEFT);
 		} else {
 			nk_label(gui->ctx, "Enter destination point", NK_TEXT_LEFT);

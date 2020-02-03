@@ -304,7 +304,9 @@ int gui_ellip_info (gui_obj *gui){
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, "Place a ellipse", NK_TEXT_LEFT);
-	gui->el_mode = nk_combo(gui->ctx, mode, 4, gui->el_mode, 20, nk_vec2(150, 105));
+	
+	int h = 4 * 25 + 5;
+	gui->el_mode = nk_combo(gui->ctx, mode, 4, gui->el_mode, 20, nk_vec2(150, h));
 	if (gui->el_mode == EL_ISO_CIRCLE || gui->el_mode == EL_ISO_ARC){
 		gui->o_view = nk_combo(gui->ctx, view, 3, gui->o_view, 20, nk_vec2(150, 80));
 	}

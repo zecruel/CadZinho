@@ -133,6 +133,16 @@ enum Ellipse_mode{
 	EL_ISO_ARC
 };
 
+enum Rotate_mode{
+	ROT_ANGLE,
+	ROT_3POINTS
+};
+
+enum Scale_mode{
+	SCALE_FACTOR,
+	SCALE_3POINTS
+};
+
 enum Ortho_view{
 	O_TOP,
 	O_FRONT,
@@ -197,7 +207,7 @@ struct Gui_obj {
 	double user_x, user_y;
 	double step_x[10], step_y[10];
 	double near_x, near_y;
-	double bulge, scale, angle;
+	double bulge, scale_x, scale_y, angle;
 	double txt_h;
 	double rect_w;
 	
@@ -221,6 +231,9 @@ struct Gui_obj {
 	
 	int sp_degree;
 	enum Spline_mode spline_mode;
+	
+	enum Scale_mode scale_mode;
+	enum Rotate_mode rot_mode;
 	
 	enum Ellipse_mode el_mode;
 	enum Ortho_view o_view;

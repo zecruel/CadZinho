@@ -5,15 +5,19 @@ int gui_move_interactive(gui_obj *gui){
 		//static dxf_node *new_el;
 		
 		if (gui->step == 0) {
+			/* try to go to next step */
 			gui->step = 1;
 			gui->free_sel = 0;
 		}
+		/* verify if elements in selection list */
 		if (gui->step == 1 && (!gui->sel_list->next || (gui->ev & EV_ADD))){
+			/* if selection list is empty, back to first step */
 			gui->step = 0;
 			gui->free_sel = 1;
 		}
 		
 		if (gui->step == 0){
+			/* in first step, select the elements to proccess*/
 			gui->en_distance = 0;
 			gui_simple_select(gui);
 		}

@@ -6,8 +6,24 @@ int gui_mirror_interactive(gui_obj *gui){
 		list_node *current = NULL;
 		dxf_node *new_ent = NULL;
 		
+		if (gui->step == 0) {
+			/* try to go to next step */
+			gui->step = 1;
+			gui->free_sel = 0;
+		}
+		/* verify if elements in selection list */
+		if (gui->step == 1 && (!gui->sel_list->next || (gui->ev & EV_ADD))){
+			/* if selection list is empty, back to first step */
+			gui->step = 0;
+			gui->free_sel = 1;
+		}
 		
 		if (gui->step == 0){
+			/* in first step, select the elements to proccess*/
+			gui->en_distance = 0;
+			gui_simple_select(gui);
+		}
+		else if (gui->step == 1){
 			gui->free_sel = 0;
 			if (gui->ev & EV_ENTER){
 				if (!list) list = list_new(NULL, 0);
@@ -35,7 +51,7 @@ int gui_mirror_interactive(gui_obj *gui){
 				gui->en_distance = 1;
 				gui->step_x[gui->step + 1] = gui->step_x[gui->step];
 				gui->step_y[gui->step + 1] = gui->step_y[gui->step];
-				gui->step = 1;
+				gui->step = 2;
 				gui->step_x[gui->step + 1] = gui->step_x[gui->step];
 				gui->step_y[gui->step + 1] = gui->step_y[gui->step];
 				gui_next_step(gui);
@@ -77,9 +93,11 @@ int gui_mirror_interactive(gui_obj *gui){
 					//list_clear(gui->sel_list);
 				}
 				gui_first_step(gui);
+				gui->step = 1;
 			}
 			else if (gui->ev & EV_CANCEL){
 				gui_first_step(gui);
+				gui->step = 1;
 			}
 			if (gui->ev & EV_MOTION){
 				/*current = list->next;
@@ -120,10 +138,15 @@ int gui_mirror_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Mirror a selection", NK_TEXT_LEFT);
 		nk_checkbox_label(gui->ctx, "Keep Original", &gui->keep_orig);
-		nk_label(gui->ctx, "Set the reflection line", NK_TEXT_LEFT);
+		
 		if (gui->step == 0){
+			nk_label(gui->ctx, "Select/Add element", NK_TEXT_LEFT);
+		}
+		else if (gui->step == 1){
+			nk_label(gui->ctx, "Set the reflection line", NK_TEXT_LEFT);
 			nk_label(gui->ctx, "Enter first point", NK_TEXT_LEFT);
 		} else {
+			nk_label(gui->ctx, "Set the reflection line", NK_TEXT_LEFT);
 			nk_label(gui->ctx, "Enter second point", NK_TEXT_LEFT);
 		}
 	}

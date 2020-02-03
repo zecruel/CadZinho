@@ -1113,7 +1113,8 @@ int gui_start(gui_obj *gui){
 	gui->near_x = 0.0;
 	gui->near_y = 0.0;
 	gui->bulge = 0.0;
-	gui->scale = 1.0;
+	gui->scale_x = 1.0;
+	gui->scale_y = 1.0;
 	gui->angle = 0.0;
 	gui->txt_h = 1.0;
 	gui->rect_w = 0.0;
@@ -1225,6 +1226,9 @@ int gui_start(gui_obj *gui){
 	
 	gui->sp_degree = 4;
 	gui->spline_mode = SP_CTRL;
+	
+	gui->scale_mode = SCALE_FACTOR;
+	gui->rot_mode = ROT_ANGLE;
 	
 	gui->el_mode = EL_FULL;
 	gui->o_view = O_TOP;

@@ -27,7 +27,7 @@ int gui_paste_interactive(gui_obj *gui){
 			graph_list_modify(gui->phanton, -center_x, -center_y, 1.0, 1.0, 0.0);
 			graph_list_modify(gui->phanton, 0.0, 0.0, 1.0, 1.0, gui->angle);
 			graph_list_modify(gui->phanton, gui->step_x[gui->step] , gui->step_y[gui->step], 1.0, 1.0, 0.0);
-			graph_list_modify(gui->phanton, (gui->step_x[gui->step])*(1 - gui->scale), (gui->step_y[gui->step]) *(1 - gui->scale), gui->scale, gui->scale, 0.0);
+			graph_list_modify(gui->phanton, (gui->step_x[gui->step])*(1 - gui->scale_x), (gui->step_y[gui->step]) *(1 - gui->scale_x), gui->scale_x, gui->scale_x, 0.0);
 			
 			gui->element = NULL;
 			gui->draw_phanton = 1;
@@ -66,8 +66,8 @@ int gui_paste_interactive(gui_obj *gui){
 								dxf_edit_move(new_ent, -center_x, -center_y, 0.0);
 								dxf_edit_rot(new_ent, gui->angle);
 								dxf_edit_move(new_ent, gui->step_x[gui->step], gui->step_y[gui->step], 0.0);
-								dxf_edit_scale(new_ent, gui->scale, gui->scale, gui->scale);
-								dxf_edit_move(new_ent, gui->step_x[gui->step] * (1 - gui->scale), gui->step_y[gui->step] * (1 - gui->scale), 0.0);
+								dxf_edit_scale(new_ent, gui->scale_x, gui->scale_x, gui->scale_x);
+								dxf_edit_move(new_ent, gui->step_x[gui->step] * (1 - gui->scale_x), gui->step_y[gui->step] * (1 - gui->scale_x), 0.0);
 								
 								
 								new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
@@ -90,7 +90,7 @@ int gui_paste_interactive(gui_obj *gui){
 				graph_list_modify(gui->phanton, -center_x, -center_y, 1.0, 1.0, 0.0);
 				graph_list_modify(gui->phanton, 0.0, 0.0, 1.0, 1.0, gui->angle);
 				graph_list_modify(gui->phanton, gui->step_x[gui->step] , gui->step_y[gui->step], 1.0, 1.0, 0.0);
-				graph_list_modify(gui->phanton, (gui->step_x[gui->step])*(1 - gui->scale), (gui->step_y[gui->step]) *(1 - gui->scale), gui->scale, gui->scale, 0.0);
+				graph_list_modify(gui->phanton, (gui->step_x[gui->step])*(1 - gui->scale_x), (gui->step_y[gui->step]) *(1 - gui->scale_x), gui->scale_x, gui->scale_x, 0.0);
 				gui->step_x[gui->step + 1] = gui->step_x[gui->step];
 				gui->step_y[gui->step + 1] = gui->step_y[gui->step];
 			}
@@ -104,7 +104,7 @@ int gui_paste_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Paste a selection", NK_TEXT_LEFT);
 		nk_label(gui->ctx, "Enter destination point", NK_TEXT_LEFT);
-		gui->scale = nk_propertyd(gui->ctx, "Scale", 0.0d, gui->scale, 100.0d, 0.1d, 0.1d);
+		gui->scale_x = nk_propertyd(gui->ctx, "Scale", 0.0d, gui->scale_x, 100.0d, 0.1d, 0.1d);
 		gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0d, gui->angle, 180.0d, 0.1d, 0.1d);
 	}
 	return 1;

@@ -26,7 +26,7 @@ int gui_mirror_interactive(gui_obj *gui){
 		else if (gui->step == 1){
 			gui->free_sel = 0;
 			if (gui->ev & EV_ENTER){
-				if (!list) list = list_new(NULL, 0);
+				list = list_new(NULL, FRAME_LIFE);
 				list_clear(list);
 				current = gui->sel_list->next;
 				while (current != NULL){
@@ -45,7 +45,7 @@ int gui_mirror_interactive(gui_obj *gui){
 				
 				gui->draw_tmp = 1;
 				/* phantom object */
-				gui->phanton = dxf_list_parse(gui->drawing, list, 0, 0);
+				gui->phanton = dxf_list_parse(gui->drawing, list, 0, FRAME_LIFE);
 				gui->element = NULL;
 				gui->draw_phanton = 1;
 				gui->en_distance = 1;
@@ -109,7 +109,7 @@ int gui_mirror_interactive(gui_obj *gui){
 					}
 					current = current->next;
 				}*/
-				
+				list = list_new(NULL, FRAME_LIFE);
 				list_clear(list);
 				current = gui->sel_list->next;
 				while (current != NULL){
@@ -126,7 +126,7 @@ int gui_mirror_interactive(gui_obj *gui){
 					current = current->next;
 				}
 				
-				gui->phanton = dxf_list_parse(gui->drawing, list, 0, 0);
+				gui->phanton = dxf_list_parse(gui->drawing, list, 0, FRAME_LIFE);
 			}
 		}
 	}

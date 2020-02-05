@@ -10,6 +10,7 @@ int gui_mirror_interactive(gui_obj *gui){
 			/* try to go to next step */
 			gui->step = 1;
 			gui->free_sel = 0;
+			gui->phanton = NULL;
 		}
 		/* verify if elements in selection list */
 		if (gui->step == 1 && (!gui->sel_list->next || (gui->ev & EV_ADD))){
@@ -24,14 +25,19 @@ int gui_mirror_interactive(gui_obj *gui){
 			gui_simple_select(gui);
 		}
 		else if (gui->step == 1){
+			/* user enters first point of reflection line */
 			gui->free_sel = 0;
 			if (gui->ev & EV_ENTER){
+				/* make phantom list */
 				list = list_new(NULL, FRAME_LIFE);
 				list_clear(list);
+				
+				/* sweep selection list */
 				current = gui->sel_list->next;
 				while (current != NULL){
-					if (current->data){
-						if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
+					if (current->data){/* current entity */
+						if (((dxf_node *)current->data)->type == DXF_ENT){
+							/* get a temporary copy of current entity */
 							new_ent = dxf_ent_copy((dxf_node *)current->data, FRAME_LIFE);
 							list_node * new_el = list_new(new_ent, FRAME_LIFE);
 							if (new_el){
@@ -44,7 +50,7 @@ int gui_mirror_interactive(gui_obj *gui){
 				
 				
 				gui->draw_tmp = 1;
-				/* phantom object */
+				/* draw phantom */
 				gui->phanton = dxf_list_parse(gui->drawing, list, 0, FRAME_LIFE);
 				gui->element = NULL;
 				gui->draw_phanton = 1;
@@ -61,36 +67,41 @@ int gui_mirror_interactive(gui_obj *gui){
 			}
 		}
 		else{
+			/* user enters second point of reflection line */
 			if (gui->ev & EV_ENTER){
+				/* completes the operation */
 				if (gui->sel_list != NULL){
-					/* sweep the selection list */
+					new_ent = NULL;
 					current = gui->sel_list->next;
-					
 					if (current != NULL){
+						/* add to undo/redo list */
 						do_add_entry(&gui->list_do, "MIRROR");
 					}
+					/* sweep the selection list */
 					while (current != NULL){
-						if (current->data){
-							if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
-								new_ent = dxf_ent_copy((dxf_node *)current->data, 0);
+						if (current->data){ /* current entity */
+							if (((dxf_node *)current->data)->type == DXF_ENT){
+								/* get a copy of current entity */
+								new_ent = dxf_ent_copy((dxf_node *)current->data, DWG_LIFE);
+								/* apply modifications */
 								dxf_edit_mirror(new_ent, gui->step_x[gui->step], gui->step_y[gui->step], gui->step_x[gui->step - 1], gui->step_y[gui->step - 1]);
-								new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
+								/* draw the new entity */
+								new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , DWG_LIFE);
 								
-								if(!gui->keep_orig){
+								if(!gui->keep_orig){ /* add the new entity in drawing, replacing the old one  */
 									dxf_obj_subst((dxf_node *)current->data, new_ent);
 									do_add_item(gui->list_do.current, (dxf_node *)current->data, new_ent);
 								}
-								else{
+								else{ /* maintains the original entity*/
 									drawing_ent_append(gui->drawing, new_ent);
 									do_add_item(gui->list_do.current, NULL, new_ent);
 								}
 								
-								current->data = new_ent;
+								current->data = new_ent; /* replancing in selection list */
 							}
 						}
 						current = current->next;
 					}
-					//list_clear(gui->sel_list);
 				}
 				gui_first_step(gui);
 				gui->step = 1;
@@ -100,23 +111,19 @@ int gui_mirror_interactive(gui_obj *gui){
 				gui->step = 1;
 			}
 			if (gui->ev & EV_MOTION){
-				/*current = list->next;
-				while (current != NULL){
-					if (current->data){
-						if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
-							dxf_edit_mirror(((dxf_node *)current->data), gui->step_x[gui->step], gui->step_y[gui->step], gui->step_x[gui->step - 1], gui->step_y[gui->step - 1]);
-						}
-					}
-					current = current->next;
-				}*/
+				/* make phantom list */
 				list = list_new(NULL, FRAME_LIFE);
 				list_clear(list);
+				
+				/* sweep selection list */
 				current = gui->sel_list->next;
 				while (current != NULL){
-					if (current->data){
-						if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
+					if (current->data){ /* current entity*/
+						if (((dxf_node *)current->data)->type == DXF_ENT){
+							/* get a temporary copy of current entity */
 							new_ent = dxf_ent_copy((dxf_node *)current->data, FRAME_LIFE);
 							list_node * new_el = list_new(new_ent, FRAME_LIFE);
+							/* apply modifications */
 							dxf_edit_mirror(new_ent, gui->step_x[gui->step], gui->step_y[gui->step], gui->step_x[gui->step - 1], gui->step_y[gui->step - 1]);
 							if (new_el){
 								list_push(list, new_el);

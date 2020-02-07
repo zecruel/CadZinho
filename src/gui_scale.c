@@ -6,6 +6,7 @@ int gui_scale_interactive(gui_obj *gui){
 		list_node *current = NULL;
 		dxf_node *new_ent = NULL;
 		double scale_x = gui->scale_x;
+		double scale_y = gui->scale_y;
 		
 		if (gui->step == 0) {
 			/* try to go to next step */
@@ -42,6 +43,7 @@ int gui_scale_interactive(gui_obj *gui){
 				
 				if (gui->scale_mode != SCALE_3POINTS){
 					scale_x = gui->scale_x; /* Entered factor - default mode */
+					scale_y = gui->scale_y; /* Entered factor - default mode */
 					
 					/* make phantom list */
 					list = list_new(NULL, FRAME_LIFE);
@@ -56,8 +58,8 @@ int gui_scale_interactive(gui_obj *gui){
 								new_ent = dxf_ent_copy((dxf_node *)current->data, FRAME_LIFE);
 								list_node * new_el = list_new(new_ent, FRAME_LIFE);
 								/* apply modifications */
-								dxf_edit_scale(new_ent, scale_x, scale_x, scale_x);
-								dxf_edit_move(new_ent, gui->step_x[1]*(1 - scale_x), gui->step_y[1]*(1 - gui->scale_x), 0.0);
+								dxf_edit_scale(new_ent, scale_x, scale_y, 1.0);
+								dxf_edit_move(new_ent, gui->step_x[1]*(1 - scale_x), gui->step_y[1]*(1 - scale_y), 0.0);
 								//dxf_edit_move(new_ent, gui->step_x[2] - gui->step_x[1], gui->step_y[2] - gui->step_y[1], 0.0);
 								
 								if (new_el){
@@ -81,6 +83,7 @@ int gui_scale_interactive(gui_obj *gui){
 			
 			/* get and adjust scale */
 			scale_x = gui->scale_x;
+			scale_y = gui->scale_y;
 			
 			if (gui->ev & EV_ENTER){
 				new_ent = NULL;
@@ -96,8 +99,8 @@ int gui_scale_interactive(gui_obj *gui){
 							/* get a copy of current entity */
 							new_ent = dxf_ent_copy((dxf_node *)current->data, DWG_LIFE);
 							/* apply modifications */
-							dxf_edit_scale(new_ent, scale_x, scale_x, scale_x);
-							dxf_edit_move(new_ent, gui->step_x[1]*(1 - scale_x), gui->step_y[1]*(1 - gui->scale_x), 0.0);
+							dxf_edit_scale(new_ent, scale_x, scale_y, 1.0);
+							dxf_edit_move(new_ent, gui->step_x[1]*(1 - scale_x), gui->step_y[1]*(1 - gui->scale_y), 0.0);
 							dxf_edit_move(new_ent, gui->step_x[2] - gui->step_x[1], gui->step_y[2] - gui->step_y[1], 0.0);
 							
 							/* draw the new entity */
@@ -139,8 +142,8 @@ int gui_scale_interactive(gui_obj *gui){
 							new_ent = dxf_ent_copy((dxf_node *)current->data, FRAME_LIFE);
 							list_node * new_el = list_new(new_ent, FRAME_LIFE);
 							/* apply modifications */
-							dxf_edit_scale(new_ent, scale_x, scale_x, scale_x);
-							dxf_edit_move(new_ent, gui->step_x[1]*(1 - scale_x), gui->step_y[1]*(1 - gui->scale_x), 0.0);
+							dxf_edit_scale(new_ent, scale_x, scale_y, 1.0);
+							dxf_edit_move(new_ent, gui->step_x[1]*(1 - scale_x), gui->step_y[1]*(1 - gui->scale_y), 0.0);
 							dxf_edit_move(new_ent, gui->step_x[2] - gui->step_x[1], gui->step_y[2] - gui->step_y[1], 0.0);
 							
 							if (new_el){
@@ -192,8 +195,21 @@ int gui_scale_interactive(gui_obj *gui){
 		}
 		else if (gui->step == 3 && gui->scale_mode == SCALE_3POINTS){
 			/* completes the operation in 3 points mode */
-			scale_x = sqrt(pow(gui->step_y[3] - gui->step_y[1], 2) + pow(gui->step_x[3] - gui->step_x[1], 2) )/
-				sqrt(pow(gui->step_y[2] - gui->step_y[1], 2) + pow(gui->step_x[2] - gui->step_x[1], 2));
+			
+			if (gui->proportional){
+				scale_x = sqrt(pow(gui->step_y[3] - gui->step_y[1], 2)
+					+ pow(gui->step_x[3] - gui->step_x[1], 2))
+					/
+					sqrt(pow(gui->step_y[2] - gui->step_y[1], 2) 
+					+ pow(gui->step_x[2] - gui->step_x[1], 2));
+				scale_y = scale_x;
+			}
+			else {
+				scale_x = fabs((gui->step_x[3] - gui->step_x[1]) /
+					(gui->step_x[2] - gui->step_x[1]));
+				scale_y = fabs((gui->step_y[3] - gui->step_y[1]) /
+					(gui->step_y[2] - gui->step_y[1]));
+			}
 			
 			
 			if (gui->ev & EV_ENTER){
@@ -210,8 +226,8 @@ int gui_scale_interactive(gui_obj *gui){
 							/* get a copy of current entity */
 							new_ent = dxf_ent_copy((dxf_node *)current->data, DWG_LIFE);
 							/* apply modifications */
-							dxf_edit_scale(new_ent, scale_x, scale_x, scale_x);
-							dxf_edit_move(new_ent, gui->step_x[1]*(1 - scale_x), gui->step_y[1]*(1 - scale_x), 0.0);
+							dxf_edit_scale(new_ent, scale_x, scale_y, 1.0);
+							dxf_edit_move(new_ent, gui->step_x[1]*(1 - scale_x), gui->step_y[1]*(1 - scale_y), 0.0);
 							//dxf_edit_move(new_ent, gui->step_x[2] - gui->step_x[1], gui->step_y[2] - gui->step_y[1], 0.0);
 							
 							/* draw the new entity */
@@ -253,8 +269,8 @@ int gui_scale_interactive(gui_obj *gui){
 							new_ent = dxf_ent_copy((dxf_node *)current->data, FRAME_LIFE);
 							list_node * new_el = list_new(new_ent, FRAME_LIFE);
 							/* apply modifications */
-							dxf_edit_scale(new_ent, scale_x, scale_x, scale_x);
-							dxf_edit_move(new_ent, gui->step_x[1]*(1 - scale_x), gui->step_y[1]*(1 - scale_x), 0.0);
+							dxf_edit_scale(new_ent, scale_x, scale_y, 1.0);
+							dxf_edit_move(new_ent, gui->step_x[1]*(1 - scale_x), gui->step_y[1]*(1 - scale_y), 0.0);
 							//dxf_edit_move(new_ent, gui->step_x[2] - gui->step_x[1], gui->step_y[2] - gui->step_y[1], 0.0);
 							
 							if (new_el){
@@ -280,6 +296,7 @@ int gui_scale_info (gui_obj *gui){
 		nk_label(gui->ctx, "Scale a selection", NK_TEXT_LEFT);
 		
 		nk_checkbox_label(gui->ctx, "Keep Original", &gui->keep_orig);
+		nk_checkbox_label(gui->ctx, "Proportional", &gui->proportional);
 		
 		int h = 2 * 25 + 5;
 		gui->scale_mode = nk_combo(gui->ctx, mode, 2, gui->scale_mode, 20, nk_vec2(150, h));
@@ -306,8 +323,17 @@ int gui_scale_info (gui_obj *gui){
 			snprintf(ang_str, 63, "Factor=%.4g", scale_x);
 			nk_label(gui->ctx, ang_str, NK_TEXT_LEFT);
 		}
-		if (gui->scale_mode != SCALE_3POINTS)
-			gui->scale_x = nk_propertyd(gui->ctx, "Factor", -180.0d, gui->scale_x, 180.0d, 0.1d, 0.1d);
+		if (gui->scale_mode != SCALE_3POINTS){
+			
+			if (gui->proportional){
+				gui->scale_x = nk_propertyd(gui->ctx, "Factor", 0.0d, gui->scale_x, 1.0e9, 0.1d, 0.1d);
+				gui->scale_y = gui->scale_x;
+			}
+			else {
+				gui->scale_x = nk_propertyd(gui->ctx, "X factor", 0.0d, gui->scale_x, 1.0e9, 0.1d, 0.1d);
+				gui->scale_y = nk_propertyd(gui->ctx, "Y factor", 0.0d, gui->scale_y, 1.0e9, 0.1d, 0.1d);
+			}
+		}
 	}
 	return 1;
 }

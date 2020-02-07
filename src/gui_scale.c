@@ -295,11 +295,23 @@ int gui_scale_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Scale a selection", NK_TEXT_LEFT);
 		
+		int h = 2 * 25 + 5;
+		gui->scale_mode = nk_combo(gui->ctx, mode, 2, gui->scale_mode, 20, nk_vec2(150, h));
+		
 		nk_checkbox_label(gui->ctx, "Keep Original", &gui->keep_orig);
 		nk_checkbox_label(gui->ctx, "Proportional", &gui->proportional);
 		
-		int h = 2 * 25 + 5;
-		gui->scale_mode = nk_combo(gui->ctx, mode, 2, gui->scale_mode, 20, nk_vec2(150, h));
+		if (gui->scale_mode != SCALE_3POINTS){
+			
+			if (gui->proportional){
+				gui->scale_x = nk_propertyd(gui->ctx, "Factor", 0.0d, gui->scale_x, 1.0e9, 0.1d, 0.1d);
+				gui->scale_y = gui->scale_x;
+			}
+			else {
+				gui->scale_x = nk_propertyd(gui->ctx, "X factor", 0.0d, gui->scale_x, 1.0e9, 0.1d, 0.1d);
+				gui->scale_y = nk_propertyd(gui->ctx, "Y factor", 0.0d, gui->scale_y, 1.0e9, 0.1d, 0.1d);
+			}
+		}
 		
 		if (gui->step == 0){
 			nk_label(gui->ctx, "Select/Add element", NK_TEXT_LEFT);
@@ -322,17 +334,6 @@ int gui_scale_info (gui_obj *gui){
 			
 			snprintf(ang_str, 63, "Factor=%.4g", scale_x);
 			nk_label(gui->ctx, ang_str, NK_TEXT_LEFT);
-		}
-		if (gui->scale_mode != SCALE_3POINTS){
-			
-			if (gui->proportional){
-				gui->scale_x = nk_propertyd(gui->ctx, "Factor", 0.0d, gui->scale_x, 1.0e9, 0.1d, 0.1d);
-				gui->scale_y = gui->scale_x;
-			}
-			else {
-				gui->scale_x = nk_propertyd(gui->ctx, "X factor", 0.0d, gui->scale_x, 1.0e9, 0.1d, 0.1d);
-				gui->scale_y = nk_propertyd(gui->ctx, "Y factor", 0.0d, gui->scale_y, 1.0e9, 0.1d, 0.1d);
-			}
 		}
 	}
 	return 1;

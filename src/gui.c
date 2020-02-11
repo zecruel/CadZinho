@@ -896,8 +896,9 @@ nk_sdl_handle_event(gui_obj *gui, SDL_Window *win, SDL_Event *evt)
 	if (evt->type == SDL_KEYUP || evt->type == SDL_KEYDOWN) {
 	/* key events */
 		int down = evt->type == SDL_KEYDOWN;
-		const Uint8* state = SDL_GetKeyboardState(0);
+		//const Uint8* state = SDL_GetKeyboardState(0);
 		SDL_Keycode sym = evt->key.keysym.sym;
+		SDL_Keymod mod = evt->key.keysym.mod;
 		
 		if (sym == SDLK_RSHIFT || sym == SDLK_LSHIFT)
 			nk_input_key(ctx, NK_KEY_SHIFT, down);
@@ -924,13 +925,13 @@ nk_sdl_handle_event(gui_obj *gui, SDL_Window *win, SDL_Event *evt)
 			nk_input_key(ctx, NK_KEY_SCROLL_UP, down);
 		}
 		else if (sym == SDLK_z)
-			nk_input_key(ctx, NK_KEY_TEXT_UNDO, down && state[SDL_SCANCODE_LCTRL]);
+			nk_input_key(ctx, NK_KEY_TEXT_UNDO, down && (mod & KMOD_CTRL));
 		else if (sym == SDLK_r)
-			nk_input_key(ctx, NK_KEY_TEXT_REDO, down && state[SDL_SCANCODE_LCTRL]);
+			nk_input_key(ctx, NK_KEY_TEXT_REDO, down && (mod & KMOD_CTRL));
 		else if (sym == SDLK_c)
-			nk_input_key(ctx, NK_KEY_COPY, down && state[SDL_SCANCODE_LCTRL]);
-		else if ((sym == SDLK_v) && (state[SDL_SCANCODE_LCTRL])){
-			nk_input_key(ctx, NK_KEY_PASTE, down && state[SDL_SCANCODE_LCTRL]);
+			nk_input_key(ctx, NK_KEY_COPY, down && (mod & KMOD_CTRL));
+		else if ((sym == SDLK_v) && ((mod & KMOD_CTRL))){
+			nk_input_key(ctx, NK_KEY_PASTE, down && (mod & KMOD_CTRL));
 			/*
 			const char *text = SDL_GetClipboardText();
 			if (text){
@@ -954,22 +955,22 @@ nk_sdl_handle_event(gui_obj *gui, SDL_Window *win, SDL_Event *evt)
 			}*/
 		}
 		else if (sym == SDLK_x)
-			nk_input_key(ctx, NK_KEY_CUT, down && state[SDL_SCANCODE_LCTRL]);
+			nk_input_key(ctx, NK_KEY_CUT, down && (mod & KMOD_CTRL));
 		else if (sym == SDLK_b)
-			nk_input_key(ctx, NK_KEY_TEXT_LINE_START, down && state[SDL_SCANCODE_LCTRL]);
+			nk_input_key(ctx, NK_KEY_TEXT_LINE_START, down && (mod & KMOD_CTRL));
 		else if (sym == SDLK_e)
-			nk_input_key(ctx, NK_KEY_TEXT_LINE_END, down && state[SDL_SCANCODE_LCTRL]);
+			nk_input_key(ctx, NK_KEY_TEXT_LINE_END, down && (mod & KMOD_CTRL));
 		else if (sym == SDLK_UP)
 			nk_input_key(ctx, NK_KEY_UP, down);
 		else if (sym == SDLK_DOWN)
 			nk_input_key(ctx, NK_KEY_DOWN, down);
 		else if (sym == SDLK_LEFT) {
-			if (state[SDL_SCANCODE_LCTRL])
+			if (mod & KMOD_CTRL)
 				nk_input_key(ctx, NK_KEY_TEXT_WORD_LEFT, down);
 			else nk_input_key(ctx, NK_KEY_LEFT, down);
 		} 
 		else if (sym == SDLK_RIGHT) {
-			if (state[SDL_SCANCODE_LCTRL])
+			if (mod & KMOD_CTRL)
 				nk_input_key(ctx, NK_KEY_TEXT_WORD_RIGHT, down);
 			else nk_input_key(ctx, NK_KEY_RIGHT, down);
 		} else return 0;
@@ -1146,7 +1147,6 @@ int gui_start(gui_obj *gui){
 	gui->modal = SELECT;
 	gui->prev_modal = SELECT;
 	gui->ev = EV_NONE;
-	gui->modstates = 0;
 	gui->curr_attr_t = ATRC_END|ATRC_MID|ATRC_QUAD;
 	
 	gui->background = gray;

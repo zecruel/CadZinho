@@ -391,14 +391,12 @@ int main(int argc, char** argv){
 	int leftMouseButtonClick = 0;
 	int rightMouseButtonClick = 0;
 	int MouseMotion = 0;
+	int ctrlDown = 0;
 	
 	int en_attr = 1;
 	
 	SDL_Event event;
 	int low_proc = 1;
-		
-	char recv_comm[64];
-	int recv_comm_flag = 0;
 	
 	char *url = NULL;
 	//char const * lFilterPatterns[2] = { "*.dxf", "*.txt" };
@@ -528,10 +526,6 @@ int main(int argc, char** argv){
 	//bmp_img * gui->preview_img;
 	gui->preview_img = bmp_new(160, 160, grey, red);
 	//char tag_mark[DXF_MAX_CHARS];
-	
-	
-	/* init comands */
-	recv_comm[0] = 0;
 	
 	
 	/* init the drawing */
@@ -672,8 +666,7 @@ int main(int argc, char** argv){
 		}
 		else{
 			SDL_ShowCursor(SDL_DISABLE);
-			gui->modstates = SDL_GetModState();
-			if (gui->modstates & KMOD_CTRL) gui->ev |= EV_ADD;
+			
 			if (ev_type != 0){
 				double wheel = 1.0;
 				switch (event.type){
@@ -736,56 +729,68 @@ int main(int argc, char** argv){
 						//SDL_free(dropped_filedir);    // Free dropped_filedir memory
 						}
 						break;
-					case SDL_KEYDOWN:
+					case SDL_KEYDOWN: {
+						SDL_Keycode key = event.key.keysym.sym;
+						SDL_Keymod mod = event.key.keysym.mod;
+						
+						if (key == SDLK_RCTRL || key == SDLK_LCTRL) ctrlDown = 1;
+					
 						//printf("%s\n", SDL_GetKeyName(event.key.keysym.sym));
-						if ((event.key.keysym.sym == SDLK_RETURN) || (event.key.keysym.sym == SDLK_RETURN2)){
+						if ((key == SDLK_RETURN) || (key == SDLK_RETURN2)){
 							gui->keyEnter = 1;
 						}
-						else if (event.key.keysym.sym == SDLK_UP){
+						else if (key == SDLK_UP){
 							gui->action = VIEW_PAN_U;
 							//printf("%d\n", SDL_GetKeyFromName("x"));
 							//printf("%d\n", SDL_GetKeyFromName("X"));
 						}
-						else if (event.key.keysym.sym == SDLK_DOWN){
+						else if (key == SDLK_DOWN){
 							gui->action = VIEW_PAN_D;
 						}
-						else if (event.key.keysym.sym == SDLK_LEFT){
+						else if (key == SDLK_LEFT){
 							gui->action = VIEW_PAN_L;
 						}
-						else if (event.key.keysym.sym == SDLK_RIGHT){
+						else if (key == SDLK_RIGHT){
 							gui->action = VIEW_PAN_R;
 						}
-						else if (event.key.keysym.sym == SDLK_KP_MINUS){
+						else if (key == SDLK_KP_MINUS){
 							gui->action = VIEW_ZOOM_M;
 						}
-						else if (event.key.keysym.sym == SDLK_KP_PLUS){
+						else if (key == SDLK_KP_PLUS){
 							gui->action = VIEW_ZOOM_P;
 						}
-						else if (event.key.keysym.sym == SDLK_DELETE){
+						else if (key == SDLK_DELETE){
 							//gui->ev |= EV_DEL;
 							gui->action = DELETE;
 						}
-						else if (event.key.keysym.sym == SDLK_c && (gui->modstates & KMOD_CTRL)){
+						else if (key == SDLK_c && (mod & KMOD_CTRL)){
 							//gui->ev |= EV_YANK;
 							gui->action = YANK;
 						}
-						else if (event.key.keysym.sym == SDLK_x && (gui->modstates & KMOD_CTRL)){
+						else if (key == SDLK_x && (mod & KMOD_CTRL)){
 							//gui->ev |= EV_CUT;
 							gui->action = CUT;
 						}
-						else if (event.key.keysym.sym == SDLK_v && (gui->modstates & KMOD_CTRL)){
+						else if (key == SDLK_v && (mod & KMOD_CTRL)){
 							//gui->ev |= EV_PASTE;
 							gui->action = START_PASTE;
 						}
-						else if (event.key.keysym.sym == SDLK_z && (gui->modstates & KMOD_CTRL)){
+						else if (key == SDLK_z && (mod & KMOD_CTRL)){
 							//gui->ev |= EV_UNDO;
 							gui->action = UNDO;
 						}
-						else if (event.key.keysym.sym == SDLK_r && (gui->modstates & KMOD_CTRL)){
+						else if (key == SDLK_r && (mod & KMOD_CTRL)){
 							//gui->ev |= EV_REDO;
 							gui->action = REDO;
-						}
+						}}
 						break;
+						
+					case SDL_KEYUP: {
+						SDL_Keycode key = event.key.keysym.sym;
+						SDL_Keymod mod = event.key.keysym.mod;
+						
+						if (key == SDLK_RCTRL || key == SDLK_LCTRL) ctrlDown = 0;
+						}break;
 					case SDL_TEXTINPUT:
 						/* text input */
 						/* if the user enters a character relative a number */
@@ -827,174 +832,7 @@ int main(int argc, char** argv){
 		gui->next_win_w = 210;
 		gui->next_win_h = 500;
 		
-		if (nk_begin(gui->ctx, "Toolbox", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
-		NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
-		NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)){
-			
-			//if (nk_tree_push(gui->ctx, NK_TREE_TAB, "Place", NK_MAXIMIZED)) {
-			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			nk_label(gui->ctx, "Modify:", NK_TEXT_LEFT);
-			
-			nk_layout_row_static(gui->ctx, 28, 28, 6);
-			
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CURSOR]))){
-				recv_comm_flag = 1;
-				snprintf(recv_comm, 64, "%s","SELECT");
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT_E]))){
-				gui->modal = ED_TEXT;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_MOVE]))){
-				recv_comm_flag = 1;
-				snprintf(recv_comm, 64, "%s","MOVE");
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DUPLI]))){
-				recv_comm_flag = 1;
-				snprintf(recv_comm, 64, "%s","DUPLI");
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SCALE]))){
-				recv_comm_flag = 1;
-				snprintf(recv_comm, 64, "%s","SCALE");
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ROT]))){
-				gui->modal = ROTATE;
-				gui->step = 0;
-				
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_MIRROR]))){
-				gui->modal = MIRROR;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BLOCK]))){
-				recv_comm_flag = 1;
-				snprintf(recv_comm, 64, "%s","NEW_BLK");
-				/*dxf_new_block(gui->drawing, "teste", "0", gui->sel_list, &gui->list_do);
-				dxf_ent_print2(gui->drawing->blks);
-				dxf_ent_print2(gui->drawing->blks_rec);*/
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPLODE]))){
-				
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EDIT]))){
-				
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TAG]))){
-				
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TAG_E]))){
-				
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_FIND]))){
-				
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_RULER]))){
-				
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_STYLE]))){
-				
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TRASH]))){
-				recv_comm_flag = 1;
-				snprintf(recv_comm, 64, "%s","DELETE");
-			}
-				
-			
-			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			nk_label(gui->ctx, "Place:", NK_TEXT_LEFT);
-				
-			nk_layout_row_static(gui->ctx, 28, 28, 6);
-			
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LINE]))){
-				recv_comm_flag = 1;
-				snprintf(recv_comm, 64, "%s","LINE");
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PLINE]))){
-				recv_comm_flag = 1;
-				snprintf(recv_comm, 64, "%s","POLYLINE");
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_RECT]))){
-				recv_comm_flag = 1;
-				snprintf(recv_comm, 64, "%s","RECT");
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT]))){
-				recv_comm_flag = 1;
-				snprintf(recv_comm, 64, "%s","TEXT");
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CIRCLE]))){
-				recv_comm_flag = 1;
-				snprintf(recv_comm, 64, "%s","CIRCLE");
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ELIPSE]))){
-				gui->modal = ELLIPSE;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ARC]))){
-				gui->modal = ARC;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SPLINE]))){
-				gui->modal = SPLINE;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_HATCH]))){
-				gui->modal = HATCH;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_I_TEXT]))){
-				gui->modal = MTEXT;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BOOK]))){
-				recv_comm_flag = 1;
-				snprintf(recv_comm, 64, "%s","INSERT");
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_IMAGE]))){
-				gui->modal = IMAGE;
-				gui->step = 0;
-			}
-			
-			nk_layout_row_dynamic(gui->ctx, 20, 1); /*space*/
-			
-			struct nk_vec2 wid_pos = nk_widget_position(gui->ctx);
-			struct nk_vec2 win_pos = nk_window_get_position(gui->ctx);
-			struct nk_rect win_cont = nk_window_get_content_region(gui->ctx);
-		
-			nk_layout_row_dynamic(gui->ctx, win_cont.h - (wid_pos.y - win_pos.y), 1);
-			if (nk_group_begin(gui->ctx, "especific", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-				gui_select_info (gui);
-				gui_line_info (gui);
-				gui_pline_info (gui);
-				gui_circle_info (gui);
-				gui_rect_info (gui);
-				gui_text_info (gui);
-				gui_mtext_info (gui);
-				gui_move_info (gui);
-				gui_dupli_info (gui);
-				gui_scale_info (gui);
-				gui_rotate_info (gui);
-				gui_mirror_info (gui);
-				gui_insert_info (gui);
-				gui_block_info (gui);
-				gui_hatch_info (gui);
-				gui_paste_info (gui);
-				gui_ed_text_info (gui);
-				gui_spline_info (gui);
-				gui_arc_info (gui);
-				gui_ellip_info (gui);
-				gui_image_info (gui);
-				
-				if (gui->modal == SCRIPT) {
-					nk_layout_row_dynamic(gui->ctx, 20, 1);
-					nk_label(gui->ctx, "Runing Script", NK_TEXT_LEFT);
-				}
-				
-				nk_group_end(gui->ctx);
-			}
-		}
-		nk_end(gui->ctx);
-		
-		
+		gui_tools_win (gui);
 		
 		if (nk_begin(gui->ctx, "Main", nk_rect(2, 2, gui->win_w - 4, 6 + 4 + ICON_SIZE + 4 + 6 + 4 + ICON_SIZE + 4 + 6 + 8),
 		NK_WINDOW_BORDER)){
@@ -1576,6 +1414,7 @@ int main(int argc, char** argv){
 		if (leftMouseButtonClick) gui->ev |= EV_ENTER;
 		if (rightMouseButtonClick) gui->ev |= EV_CANCEL;
 		if (gui->keyEnter) gui->ev |= EV_LOCK_AX;
+		if (ctrlDown) gui->ev |= EV_ADD;
 		
 		/*================================================
 		==================================================
@@ -1986,58 +1825,6 @@ int main(int argc, char** argv){
 			gui->draw = 1;
 		}
 		
-		if(recv_comm_flag){
-			recv_comm_flag =0;
-			str_upp(recv_comm);
-			if (strcmp(recv_comm, "SELECT") == 0){
-				gui->modal = SELECT;
-				gui->step = 0;
-			}
-			else if (strcmp(recv_comm, "LINE") == 0){
-				gui->modal = LINE;
-				gui->step = 0;
-			}
-			else if (strcmp(recv_comm, "POLYLINE") == 0){
-				gui->modal = POLYLINE;
-				gui->step = 0;
-			}
-			else if (strcmp(recv_comm, "DELETE") == 0){
-				gui->action = DELETE;
-				gui->step = 0;
-			}
-			else if (strcmp(recv_comm, "CIRCLE") == 0){
-				gui->modal = CIRCLE;
-				gui->step = 0;
-			}
-			else if (strcmp(recv_comm, "RECT") == 0){
-				gui->modal = RECT;
-				gui->step = 0;
-			}
-			else if (strcmp(recv_comm, "TEXT") == 0){
-				gui->modal = TEXT;
-				gui->step = 0;
-			}
-			else if (strcmp(recv_comm, "MOVE") == 0){
-				gui->modal = MOVE;
-				gui->step = 0;
-			}
-			else if (strcmp(recv_comm, "DUPLI") == 0){
-				gui->modal = DUPLI;
-				gui->step = 0;
-			}
-			else if (strcmp(recv_comm, "SCALE") == 0){
-				gui->modal = SCALE;
-				gui->step = 0;
-			}
-			else if (strcmp(recv_comm, "NEW_BLK") == 0){
-				gui->modal = NEW_BLK;
-				gui->step = 0;
-			}
-			else if (strcmp(recv_comm, "INSERT") == 0){
-				gui->modal = INSERT;
-				gui->step = 0;
-			}
-		}
 		/**********************************/
 		
 		gui_update_pos(gui);

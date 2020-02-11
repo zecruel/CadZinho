@@ -246,7 +246,6 @@ struct Gui_obj {
 	enum Action action;
 	enum Modal modal, prev_modal;
 	enum Gui_ev ev;
-	int modstates;
 	enum attract_type curr_attr_t;
 	
 	bmp_color background;

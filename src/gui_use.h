@@ -5,8 +5,9 @@
 
 int gui_tools_win (gui_obj *gui);
 
-int gui_main_win(gui_obj *gui);
+int gui_main_win (gui_obj *gui);
 
+int gui_bottom_win (gui_obj *gui);
 
 
 int gui_select_interactive(gui_obj *gui);

@@ -393,7 +393,7 @@ int main(int argc, char** argv){
 	int MouseMotion = 0;
 	int ctrlDown = 0;
 	
-	int en_attr = 1;
+	//int en_attr = 1;
 	
 	SDL_Event event;
 	int low_proc = 1;
@@ -482,8 +482,8 @@ int main(int argc, char** argv){
 	
 	gui->i_cz48 = i_svg_bmp(gui->svg_curves[SVG_CZ], 48, 48);
 	
-	bmp_img * attr_vec[15];
-	attrc_get_imgs(attr_vec, 15, 16, 16);
+	
+	attrc_get_imgs(gui->attr_vec, 15, 16, 16);
 	
 	//struct nk_style_button b_icon_style;
 	if (gui){
@@ -892,143 +892,7 @@ int main(int argc, char** argv){
 			}
 		}
 		
-		/* interface to the user visualize and enter coordinates distances*/
-		if (nk_begin(gui->ctx, "POS", nk_rect(2, gui->win_h - 92, gui->win_w - 4, 90),
-		NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR))
-		{
-			char text[64];
-			nk_layout_row_begin(gui->ctx, NK_STATIC, 55, 5);
-			nk_layout_row_push(gui->ctx, 380);
-			
-			/* interface to the user visualize and enter coordinates and distances*/
-			gui_xy(gui);
-			
-			
-			/*----------- attractors --------------*/
-			//nk_layout_row_push(gui->ctx, 160);
-			//nk_label(gui->ctx, "Attractors ->", NK_TEXT_RIGHT);
-			
-			/* Toggle on/off attractors*/
-			nk_layout_row_push(gui->ctx, 30);
-			/*if (en_attr){
-				nk_selectable_label(gui->ctx, "On", NK_TEXT_CENTERED, &en_attr);
-			}
-			else nk_selectable_label(gui->ctx, "Off", NK_TEXT_CENTERED, &en_attr);*/
-			if (en_attr){
-				if (nk_button_image_styled(gui->ctx, &gui->b_icon_sel, nk_image_ptr(gui->svg_bmp[SVG_MAGNET]))){
-					en_attr = 0;
-				}
-			}else {
-				if (nk_button_image_styled(gui->ctx, &gui->b_icon_unsel, nk_image_ptr(gui->svg_bmp[SVG_MAGNET]))){
-					en_attr = 1;
-				}
-			}
-			nk_layout_row_push(gui->ctx, 16*(22 + 3) + 13);
-			if (nk_group_begin(gui->ctx, "attractors", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-				/* Buttons to select attractor mode*/
-				int selected, i, attr = 1;
-				nk_layout_row_static(gui->ctx, 22, 22, 15);
-				for (i = 0; i < 15; i++){
-					selected = (gui->curr_attr_t & attr);
-					/* uses styles "sel" or "unsel", deppending each status*/
-					//nk_layout_row_push(gui->ctx, 22);
-					if (selected){
-						if (nk_button_image_styled(gui->ctx, &gui->b_icon_sel, nk_image_ptr(attr_vec[i]))){
-							gui->curr_attr_t &= ~attr; /* clear bit of current type*/
-						}
-					}else {
-						if (nk_button_image_styled(gui->ctx, &gui->b_icon_unsel, nk_image_ptr(attr_vec[i]))){
-							gui->curr_attr_t |= attr; /* set bit of current type*/
-						}
-					}
-					attr <<= 1; /* next attractor type (bit coded)*/
-				}
-				/*-------------------------------*/
-				nk_group_end(gui->ctx);
-			}
-			
-			nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
-			
-			if (nk_group_begin(gui->ctx, "history", NK_WINDOW_NO_SCROLLBAR)) {
-				nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 2);
-				
-				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PREV]))){
-					if (gui->drwg_hist_size > 1 && gui->drwg_hist_pos > 0){ /* verify if not at begining */
-						/* get previous position in history, considering as circular buffer */
-						int pos = (gui->drwg_hist_pos - 1 + gui->drwg_hist_head) % DRWG_HIST_MAX;
-						/* get path from history */
-						gui->curr_path[0] = 0;
-						strncpy (gui->curr_path, gui->drwg_hist[pos], DXF_MAX_CHARS);
-						/* update position */
-						gui->drwg_hist_pos --;
-						gui->drwg_hist_wr = gui->drwg_hist_pos + 1; /* next write position */
-						/* open file in history */
-						gui->action = FILE_OPEN;
-						gui->path_ok = 1;
-						gui->hist_new = 0; /* not change history entries */
-					}
-					
-				}
-				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEXT]))){
-					if (gui->drwg_hist_pos < gui->drwg_hist_size - 1 &&
-					gui->drwg_hist_size > 1){ /* verify if not at end *
-						/* get next position in history, considering as circular buffer */
-						int pos = (gui->drwg_hist_pos + 1 + gui->drwg_hist_head) % DRWG_HIST_MAX;
-						/* get path from history */
-						gui->curr_path[0] = 0;
-						strncpy (gui->curr_path, gui->drwg_hist[pos], DXF_MAX_CHARS);
-						/* update position */
-						gui->drwg_hist_pos ++;
-						gui->drwg_hist_wr = gui->drwg_hist_pos + 1; /* next write position */
-						/* open file in history */
-						gui->action = FILE_OPEN;
-						gui->path_ok = 1;
-						gui->hist_new = 0; /* not change history entries */
-					}
-				}
-				
-				/* show position and size of history */
-				nk_layout_row_dynamic(gui->ctx, 17, 1);
-				nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
-				
-				snprintf(text, 63, "%d of %d", gui->drwg_hist_wr, gui->drwg_hist_size);
-				nk_label(gui->ctx, text, NK_TEXT_CENTERED);
-				nk_style_pop_font(gui->ctx); /* return to the default font*/
-				
-				nk_group_end(gui->ctx);
-			}
-			nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
-			if (nk_group_begin(gui->ctx, "script", NK_WINDOW_NO_SCROLLBAR)) {
-				nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 2);
-				
-				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SCRIPT1]))){
-					
-					gui->show_script = 1;
-				}
-				
-				nk_group_end(gui->ctx);
-			}
-			nk_layout_row_end(gui->ctx);
-			
-			nk_layout_row_begin(gui->ctx, NK_STATIC, 17, 10);
-			
-			nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny */
-			
-			nk_layout_row_push(gui->ctx, 580);
-			nk_label(gui->ctx, gui->log_msg, NK_TEXT_LEFT);
-			
-			text[0] = 0;
-			gui->sel_count = list_len(gui->sel_list);
-			if (gui->sel_count > 0) snprintf(text, 63, ":%d", gui->sel_count);
-			nk_layout_row_push(gui->ctx, 280);
-			nk_label(gui->ctx, text, NK_TEXT_LEFT);
-			
-			nk_style_pop_font(gui->ctx); /* return to the default font*/
-			
-			/*-------------------------------*/
-			nk_layout_row_end(gui->ctx);
-		}
-		nk_end(gui->ctx);
+		gui_bottom_win (gui);
 		
 		/* */
 		

@@ -39,6 +39,8 @@
 #define DRWG_HIST_MAX 50
 #define BRK_PTS_MAX 50
 
+#define ICON_SIZE 24
+
 enum Action {
 	NONE,
 	FILE_OPEN,
@@ -253,6 +255,8 @@ struct Gui_obj {
 	NSVGimage **svg_curves;
 	bmp_img **svg_bmp;
 	bmp_img *preview_img;
+	bmp_img * color_img;
+	bmp_img *i_cz48;
 	
 	struct nk_style_button b_icon;
 	
@@ -293,6 +297,20 @@ struct Gui_obj {
 	char const * file_filter_descr[20];
 	int file_filter_count;
 	int filter_idx;
+	
+	int show_app_about;
+	int show_app_file;
+	int path_ok;
+	int show_info;
+	int show_script;
+	int show_print;
+	
+	int progress;
+	int hist_new;
+	int show_lay_mng;
+	int show_color_pick;
+	int show_tstyles_mng;
+	
 	
 	char curr_path[MAX_PATH_LEN];
 	char base_dir[DXF_MAX_CHARS];

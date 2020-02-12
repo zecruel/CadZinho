@@ -1211,6 +1211,19 @@ int gui_start(gui_obj *gui){
 	
 	gui->dflt_fonts_path[0] = 0;
 	
+	gui->show_app_about = 0;
+	gui->show_app_file = 0;
+	gui->path_ok = 0;
+	gui->show_info = 0;
+	gui->show_script = 0;
+	gui->show_print= 0;
+	
+	gui->progress = 0;
+	gui->hist_new = 0;
+	gui->show_lay_mng = 0;
+	gui->show_color_pick = 0;
+	gui->show_tstyles_mng = 0;
+	
 	gui->curr_path[0] = 0;
 	gui->base_dir[0] = 0;
 	gui->dwg_file[0] = 0;

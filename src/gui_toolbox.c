@@ -280,7 +280,8 @@ int gui_main_win(gui_obj *gui){
 				printf("Line types\n");
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PUZZLE]))){
-				printf("Blocks\n");
+				//printf("Blocks\n");
+				gui->show_blk_mng = 1;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TAGS]))){
 				printf("APPID\n");

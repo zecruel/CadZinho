@@ -1223,6 +1223,7 @@ int gui_start(gui_obj *gui){
 	gui->show_lay_mng = 0;
 	gui->show_color_pick = 0;
 	gui->show_tstyles_mng = 0;
+	gui->show_blk_mng = 0;
 	
 	gui->curr_path[0] = 0;
 	gui->base_dir[0] = 0;

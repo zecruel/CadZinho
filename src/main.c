@@ -859,6 +859,10 @@ int main(int argc, char** argv){
 			gui->show_print = print_win(gui);
 		}
 		
+		if (gui->show_blk_mng){
+			gui->show_blk_mng = gui_blk_mng (gui);
+		}
+		
 		if (gui->show_file_br == 1){			
 			gui->show_file_br = file_win(gui, gui->file_filter_types, gui->file_filter_descr, gui->file_filter_count, NULL);
 			strncpy(file_path, gui->curr_path, DXF_MAX_CHARS);

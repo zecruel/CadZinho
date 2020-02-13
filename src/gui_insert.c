@@ -76,8 +76,8 @@ int gui_insert_info (gui_obj *gui){
 	if (gui->modal == INSERT) {
 		int i;
 		static int show_blk_pp = 0, show_hidden_blks = 0;
-		static char txt[DXF_MAX_CHARS] = "";
-		
+		static char txt[DXF_MAX_CHARS+1] = "";
+		static char descr[DXF_MAX_CHARS+1] = "";
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Place a block", NK_TEXT_LEFT);
@@ -89,7 +89,7 @@ int gui_insert_info (gui_obj *gui){
 		if (nk_button_label(gui->ctx, "Explore")) show_blk_pp = 1;
 		if (show_blk_pp){
 			/* select block popup */
-			static struct nk_rect s = {20, 10, 420, 330};
+			static struct nk_rect s = {20, 10, 420, 380};
 			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Select Block", NK_WINDOW_CLOSABLE, s)){
 				
 				list_node *blk_g; /*graphic object of current block */
@@ -98,7 +98,7 @@ int gui_insert_info (gui_obj *gui){
 				/* extents and zoom parameters */
 				double blk_x0, blk_y0, blk_x1, blk_y1, z, z_x, z_y, o_x, o_y;
 				
-				nk_layout_row_dynamic(gui->ctx, 225, 2);
+				nk_layout_row_dynamic(gui->ctx, 280, 2);
 				i = 0;
 				int blk_idx = -1;
 				if (nk_group_begin(gui->ctx, "Block_names", NK_WINDOW_BORDER)) {
@@ -123,6 +123,13 @@ int gui_insert_info (gui_obj *gui){
 				if (blk_idx >= 0){
 					blk = dxf_find_obj_i(gui->drawing->blks, "BLOCK", blk_idx);
 					blk_idx = -1;
+					
+					/* get description of current block */
+					blk_nm = dxf_find_attr2(blk, 1);
+					if (blk_nm){
+						strncpy(descr, blk_nm->value.s_data, DXF_MAX_CHARS);
+						
+					}
 					
 					blk_ei = 0;
 					/* get graphics of current block*/
@@ -158,19 +165,23 @@ int gui_insert_info (gui_obj *gui){
 					
 				}
 				if (nk_group_begin(gui->ctx, "Block_prev", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+					/* current block name */
+					nk_layout_row_dynamic(gui->ctx, 20, 1);
+					nk_label_colored(gui->ctx, gui->blk_name, NK_TEXT_CENTERED, nk_rgb(255,255,0));
+					
 					/* preview img */
 					nk_layout_row_dynamic(gui->ctx, 175, 1);
 					nk_button_image(gui->ctx,  nk_image_ptr(gui->preview_img));
 					
-					/* current block name */
-					nk_layout_row_dynamic(gui->ctx, 20, 1);
-					nk_label(gui->ctx, gui->blk_name, NK_TEXT_CENTERED);
-					
 					/* current block corners */
 					nk_layout_row_dynamic(gui->ctx, 15, 1);
-					//nk_style_push_font(gui->ctx, &font_tiny_nk); /* change font to tiny*/
+					nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
 					nk_label(gui->ctx, txt, NK_TEXT_CENTERED);
-					//nk_style_pop_font(gui->ctx); /* back to default font*/
+					nk_style_pop_font(gui->ctx); /* back to default font*/
+					
+					/* description */
+					nk_layout_row_dynamic(gui->ctx, 50, 1);
+					nk_label_colored_wrap(gui->ctx, descr, nk_rgb(100,115,255));
 					
 					nk_group_end(gui->ctx);
 				}

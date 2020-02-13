@@ -311,6 +311,7 @@ struct Gui_obj {
 	int show_lay_mng;
 	int show_color_pick;
 	int show_tstyles_mng;
+	int show_blk_mng;
 	
 	
 	char curr_path[MAX_PATH_LEN];

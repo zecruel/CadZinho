@@ -53,6 +53,7 @@ int gui_blk_mng (gui_obj *gui){
 	if (nk_begin(gui->ctx, "Blocks Manager", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
+		struct nk_style_button *sel_type;
 		
 		list_node *blk_g; /*graphic object of current block */
 		dxf_node *blk, *blk_nm; /* current block and its name attribute */
@@ -62,32 +63,60 @@ int gui_blk_mng (gui_obj *gui){
 		
 		block_use(gui->drawing); /* update blocks in use*/
 		
-		/* dynamic width for block name and fixed width for preview image */
+		/* dynamic width for block list and fixed width for preview image */
 		nk_layout_row_template_begin(gui->ctx, 280);
 		nk_layout_row_template_push_dynamic(gui->ctx);
 		nk_layout_row_template_push_static(gui->ctx, 190);
 		nk_layout_row_template_end(gui->ctx);
 		i = 0;
 		int blk_idx = -1;
-		if (nk_group_begin(gui->ctx, "Block_names", NK_WINDOW_BORDER)) {
-			nk_layout_row_dynamic(gui->ctx, 20, 2);
-			while (blk = dxf_find_obj_i(gui->drawing->blks, "BLOCK", i)){
+		if (nk_group_begin(gui->ctx, "Block_list", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+			nk_layout_row_dynamic(gui->ctx, 32, 1);
+			if (nk_group_begin(gui->ctx, "Block_head", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+				nk_layout_row_template_begin(gui->ctx, 22);
+				nk_layout_row_template_push_dynamic(gui->ctx);
+				nk_layout_row_template_push_static(gui->ctx, 50);
+				nk_layout_row_template_push_static(gui->ctx, 8);
+				nk_layout_row_template_end(gui->ctx);
 				
-				/* get name of current block */
-				blk_nm = dxf_find_attr2(blk, 2);
-				if (blk_nm){
-					if((blk_nm->value.s_data[0] != '*') || (show_hidden_blks)){
-						if (nk_button_label(gui->ctx, blk_nm->value.s_data)){
-							blk_idx = i;
-							strncpy(gui->blk_name, blk_nm->value.s_data, DXF_MAX_CHARS-1);
-						}
-						if (blk->obj.layer > 0)
-							nk_button_label(gui->ctx, "x");
-						else nk_button_label(gui->ctx, " ");
-					}
+				if (nk_button_label(gui->ctx, "Name")){
+					
 				}
+				if (nk_button_label(gui->ctx, "Used")){
+					
+				}
+				nk_group_end(gui->ctx);
+			}
+			nk_layout_row_dynamic(gui->ctx, 225, 1);
+			if (nk_group_begin(gui->ctx, "Block_names", NK_WINDOW_BORDER)) {
+				nk_layout_row_template_begin(gui->ctx, 20);
+				nk_layout_row_template_push_dynamic(gui->ctx);
+				nk_layout_row_template_push_static(gui->ctx, 50);
+				nk_layout_row_template_end(gui->ctx);
 				
-				i++;
+				while (blk = dxf_find_obj_i(gui->drawing->blks, "BLOCK", i)){
+				
+					/* get name of current block */
+					blk_nm = dxf_find_attr2(blk, 2);
+					if (blk_nm){
+						if((blk_nm->value.s_data[0] != '*') || (show_hidden_blks)){
+							
+							sel_type = &gui->b_icon_unsel;
+							if (strcmp(gui->blk_name, blk_nm->value.s_data) == 0) sel_type = &gui->b_icon_sel;
+							
+							if (nk_button_label_styled(gui->ctx, sel_type, blk_nm->value.s_data)){
+								blk_idx = i;
+								strncpy(gui->blk_name, blk_nm->value.s_data, DXF_MAX_CHARS-1);
+							}
+							if (blk->obj.layer > 0)
+								nk_label(gui->ctx, "x", NK_TEXT_CENTERED);
+							else nk_label(gui->ctx, " ", NK_TEXT_CENTERED);
+						}
+					}
+					
+					i++;
+				}
+				nk_group_end(gui->ctx);
 			}
 			nk_group_end(gui->ctx);
 		}
@@ -160,6 +189,36 @@ int gui_blk_mng (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		
 		nk_checkbox_label(gui->ctx, "Hidden", &show_hidden_blks);
+		
+		nk_layout_row_dynamic(gui->ctx, 20, 2);
+		/* delete selected Block */
+		if (nk_button_label(gui->ctx, "Remove")){
+			block_use(gui->drawing); /* update blocks in use for sure*/
+			
+			/*get block object by selected name */
+			blk = dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name);
+			if(blk) {
+				
+				/* don't remove block in use */
+				if (blk->obj.layer){ /* uses block's layer index to count */
+					snprintf(gui->log_msg, 63, "Error: Don't remove Block in use");
+				}
+				else{
+					/* remove block from main structure */
+					dxf_obj_subst(blk, NULL);
+					
+					
+					/*get BLOCK_RECORD object by selected name */
+					blk = dxf_find_obj_descr2(gui->drawing->blks_rec, "BLOCK_RECORD", gui->blk_name);
+					if(blk) {
+						/* remove block from main structure */
+						dxf_obj_subst(blk, NULL);
+					}
+				}
+			}
+			
+			
+		}
 		
 		
 		

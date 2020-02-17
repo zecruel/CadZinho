@@ -204,7 +204,10 @@ int gui_blk_mng (gui_obj *gui){
 					snprintf(gui->log_msg, 63, "Error: Don't remove Block in use");
 				}
 				else{
+					do_add_entry(&gui->list_do, "Remove Block");
+					
 					/* remove block from main structure */
+					do_add_item(gui->list_do.current, blk, NULL);
 					dxf_obj_subst(blk, NULL);
 					
 					
@@ -212,6 +215,7 @@ int gui_blk_mng (gui_obj *gui){
 					blk = dxf_find_obj_descr2(gui->drawing->blks_rec, "BLOCK_RECORD", gui->blk_name);
 					if(blk) {
 						/* remove block from main structure */
+						do_add_item(gui->list_do.current, blk, NULL);
 						dxf_obj_subst(blk, NULL);
 					}
 				}
@@ -248,9 +252,22 @@ int block_use(dxf_drawing *drawing){
 	if (current) current = current->obj.content;
 	while (current){ /* sweep elements in section */
 		if (current->type == DXF_ENT){
-			if (strcmp(current->obj.name, "BLOCK") == 0)
+			if (strcmp(current->obj.name, "BLOCK") == 0){
 				/* uses block's layer index to count */
 				current->obj.layer= 0;
+				
+				
+				/* get name of current block */
+				dxf_node * blk_nm = dxf_find_attr2(current, 2);
+				if (blk_nm){
+					char name[DXF_MAX_CHARS + 1];
+					strncpy(name, blk_nm->value.s_data, DXF_MAX_CHARS);
+					str_upp(name);
+					/* mark used if is a system block*/
+					if (strcmp(name, "*MODEL_SPACE") == 0) current->obj.layer= 1;
+					else if (strcmp(name, "*PAPER_SPACE") == 0) current->obj.layer= 1;
+				}
+			}
 		}
 		current = current->next; /* go to the next in the list*/
 	}

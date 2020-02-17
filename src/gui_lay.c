@@ -594,6 +594,8 @@ int lay_mng (gui_obj *gui){
 			}
 			else{
 				/* remove layer from main structure */
+				do_add_entry(&gui->list_do, "Remove Layer");
+				do_add_item(gui->list_do.current, layers[sel_lay].obj, NULL);
 				dxf_obj_subst(layers[sel_lay].obj, NULL);
 				sel_lay = -1;
 				/* update the drawing */

@@ -532,6 +532,8 @@ int tstyles_mng (gui_obj *gui){
 					snprintf(gui->log_msg, 63, "Error: Don't remove Style in use");
 				}
 				else{ /* if allowed, proceed to remove */
+					do_add_entry(&gui->list_do, "Remove Style");
+					do_add_item(gui->list_do.current, t_sty[sel_t_sty].obj, NULL);
 					dxf_obj_subst(t_sty[sel_t_sty].obj, NULL);
 					sel_t_sty = 0;
 					dxf_tstyles_assemb (gui->drawing); /*update drawing*/

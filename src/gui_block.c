@@ -1,6 +1,7 @@
 #include "gui_use.h"
 
 int block_use(dxf_drawing *drawing);
+int block_rename(dxf_drawing *drawing, char *curr_name, char *new_name);
 
 int gui_block_interactive(gui_obj *gui){
 	if (gui->modal == NEW_BLK){
@@ -41,9 +42,10 @@ int gui_block_info (gui_obj *gui){
 int gui_blk_mng (gui_obj *gui){
 	int i, show_blk_mng = 1;
 	
-	static int show_hidden_blks = 0;
+	static int show_hidden_blks = 0, show_blk_name = 0;
 	static char txt[DXF_MAX_CHARS+1] = "";
 	static char descr[DXF_MAX_CHARS+1] = "";
+	static char new_name[DXF_MAX_CHARS+1] = "";
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
@@ -220,11 +222,44 @@ int gui_blk_mng (gui_obj *gui){
 					}
 				}
 			}
-			
-			
+		}
+		if (nk_button_label(gui->ctx, "Rename")){
+			if(dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name)){
+				show_blk_name = 1;
+				new_name[0] = 0;
+				strncpy(new_name, gui->blk_name, DXF_MAX_CHARS);
+			}
 		}
 		
-		
+		if ((show_blk_name)){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "New Block Name", NK_WINDOW_CLOSABLE, nk_rect(200, 40, 220, 100))){
+				nk_layout_row_dynamic(gui->ctx, 20, 1);
+				nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, new_name, DXF_MAX_CHARS, nk_filter_default);
+				
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				if (nk_button_label(gui->ctx, "Rename")){
+					/* verify if exists other block with same name */
+					if(dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", new_name)){
+						snprintf(gui->log_msg, 63, "Error: exists Block with same name");
+					}
+					else{
+						block_rename(gui->drawing, gui->blk_name, new_name);
+						show_blk_name = 0;
+						nk_popup_close(gui->ctx);
+					}
+				}
+				if (nk_button_label(gui->ctx, "Cancel")){
+					
+					show_blk_name = 0;
+					nk_popup_close(gui->ctx);
+				}
+				
+				nk_popup_end(gui->ctx);
+			} else {
+				show_blk_name = 0;
+			}
+		}
 		
 	} else {
 		show_blk_mng = 0;
@@ -288,6 +323,116 @@ int block_use(dxf_drawing *drawing){
 						if(block) {
 							/* uses block's layer index to count */
 							block->obj.layer++;
+						}
+					}
+				}
+				/* search also in sub elements */
+				if (current->obj.content){
+					/* starts the content sweep */
+					current = current->obj.content;
+					continue;
+				}
+			}
+				
+			current = current->next; /* go to the next in the list*/
+			
+			if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
+				current = NULL;
+				break;
+			}
+
+			/* ============================================================= */
+			while (current == NULL){
+				/* end of list sweeping */
+				if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
+					//printf("para\n");
+					current = NULL;
+					break;
+				}
+				/* try to back in structure hierarchy */
+				prev = prev->master;
+				if (prev){ /* up in structure */
+					/* try to continue on previous point in structure */
+					current = prev->next;
+					
+				}
+				else{ /* stop the search if structure ends */
+					current = NULL;
+					break;
+				}
+			}
+		}
+	}
+	
+	return ok;
+}
+
+int block_rename(dxf_drawing *drawing, char *curr_name, char *new_name){
+	/* count drawing elements related to layer */
+	int ok = 0, i;
+	dxf_node *current, *prev, *obj = NULL, *list[2];
+	
+	list[0] = NULL; list[1] = NULL;
+	if (drawing){
+		list[0] = drawing->ents;
+		list[1] = drawing->blks;
+	}
+	else return 0;
+	
+	if (!curr_name || !new_name) return 0;
+	if (strlen(curr_name) == 0 || strlen (new_name) == 0) return 0;
+	
+	
+	/* copy string for secure manipulation */
+	char old_cpy[DXF_MAX_CHARS], *curr_name_cpy;
+	char new_cpy[DXF_MAX_CHARS], *new_name_cpy;
+	strncpy(old_cpy, curr_name, DXF_MAX_CHARS);
+	strncpy(new_cpy, new_name, DXF_MAX_CHARS);
+	/* remove trailing spaces */
+	curr_name_cpy = trimwhitespace(old_cpy);
+	new_name_cpy = trimwhitespace(new_cpy);
+	
+	
+	/* first, rename main block object */
+	current = dxf_find_obj_descr2(drawing->blks, "BLOCK", curr_name_cpy);
+	if(current) {
+		dxf_attr_change(current, 2, new_name_cpy);
+	}
+	else return 0;
+	
+	/* then, rename block_record object*/
+	current = dxf_find_obj_descr2(drawing->blks_rec, "BLOCK_RECORD", curr_name_cpy);
+	if(current) {
+		dxf_attr_change(current, 2, new_name_cpy);
+	}	
+	
+	/* change to upper case for  consistent comparison*/
+	char curr_upp[DXF_MAX_CHARS];
+	strncpy(curr_upp, curr_name_cpy, DXF_MAX_CHARS);
+	str_upp(curr_upp);
+	
+	for (i = 0; i< 2; i++){ /* look in BLOCKS and ENTITIES sections */
+		obj = list[i];
+		current = obj;
+		while (current){ /* sweep elements in section */
+			ok = 1;
+			prev = current;
+			if (current->type == DXF_ENT){
+				if ((strcmp(current->obj.name, "INSERT") == 0) ||
+					(strcmp(current->obj.name, "DIMENSION")) == 0){
+					dxf_node *block = NULL, *blk_name = NULL;
+					blk_name = dxf_find_attr2(current, 2);
+					if(blk_name) {
+						/* change to upper case for  consistent comparison*/
+						char name_upp[DXF_MAX_CHARS];
+						strncpy(name_upp, blk_name->value.s_data, DXF_MAX_CHARS);
+						str_upp(name_upp);
+						
+						/* verify if is a looking name*/
+						if (strcmp(name_upp, curr_upp) == 0){
+							/* change to new name */
+							blk_name->value.s_data[0] = 0;
+							strncpy(blk_name->value.s_data, new_name_cpy, DXF_MAX_CHARS);
 						}
 					}
 				}

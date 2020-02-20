@@ -5,17 +5,54 @@ int block_rename(dxf_drawing *drawing, char *curr_name, char *new_name);
 
 int gui_block_interactive(gui_obj *gui){
 	if (gui->modal == NEW_BLK){
+		if (gui->step == 0) {
+			/* try to go to next step */
+			gui->step = 1;
+			gui->free_sel = 0;
+		}
+		/* verify if elements in selection list */
+		if (gui->step == 1 && (!gui->sel_list->next || (gui->ev & EV_ADD))){
+			/* if selection list is empty, back to first step */
+			gui->step = 0;
+			gui->free_sel = 1;
+		}
+		
 		if (gui->step == 0){
+			/* in first step, select the elements to proccess*/
+			gui->en_distance = 0;
+			gui_simple_select(gui);
+		}
+		else if (gui->step == 1){
 			if (gui->ev & EV_ENTER){
-				/* verify if text is valid */
-				if (strlen(gui->blk_name) > 0){
-					if(!gui->text2tag)
-						dxf_new_block(gui->drawing, gui->blk_name, "0", gui->sel_list, &gui->list_do, DWG_LIFE);
-					else dxf_new_block2(gui->drawing, gui->blk_name, gui->tag_mark, "0", gui->sel_list, &gui->list_do, DWG_LIFE);
-				}
+				gui->en_distance = 1;
+				gui->step_x[gui->step + 1] = gui->step_x[gui->step];
+				gui->step_y[gui->step + 1] = gui->step_y[gui->step];
+				gui->step = 2;
+				gui->step_x[gui->step + 1] = gui->step_x[gui->step];
+				gui->step_y[gui->step + 1] = gui->step_y[gui->step];
+				gui_next_step(gui);
 			}
 			else if (gui->ev & EV_CANCEL){
 				gui_default_modal(gui);
+				gui->show_blk_mng = 1;
+			}
+		}
+		else{
+			if (gui->ev & EV_ENTER){
+				if(!gui->text2tag)
+					dxf_new_block(gui->drawing, gui->blk_name, "0", gui->sel_list, &gui->list_do, DWG_LIFE);
+				else 
+					//dxf_new_block2(gui->drawing, gui->blk_name, gui->tag_mark, gui->hide_mark, "0", gui->sel_list, &gui->list_do, DWG_LIFE);
+					dxf_new_block3(gui->drawing, gui->blk_name, gui->blk_descr,
+					gui->step_x[1], gui->step_y[1], 0.0,
+					gui->tag_mark, gui->hide_mark,
+					"0", gui->sel_list, &gui->list_do, DWG_LIFE);				
+				gui_default_modal(gui);
+				gui->show_blk_mng = 1;
+			}
+			else if (gui->ev & EV_CANCEL){
+				gui_default_modal(gui);
+				gui->show_blk_mng = 1;
 			}
 		}
 	}
@@ -43,6 +80,7 @@ int gui_blk_mng (gui_obj *gui){
 	int i, show_blk_mng = 1;
 	
 	static int show_hidden_blks = 0, show_blk_name = 0;
+	static int create = 0, show_blk_create = 0;
 	static char txt[DXF_MAX_CHARS+1] = "";
 	static char descr[DXF_MAX_CHARS+1] = "";
 	static char new_name[DXF_MAX_CHARS+1] = "";
@@ -71,7 +109,7 @@ int gui_blk_mng (gui_obj *gui){
 		nk_layout_row_template_push_static(gui->ctx, 190);
 		nk_layout_row_template_end(gui->ctx);
 		i = 0;
-		int blk_idx = -1;
+		static int blk_idx = -1;
 		
 		/*  show block list */
 		if (nk_group_begin(gui->ctx, "Block_list", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
@@ -201,7 +239,15 @@ int gui_blk_mng (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_checkbox_label(gui->ctx, "Hidden", &show_hidden_blks);
 		
-		nk_layout_row_dynamic(gui->ctx, 20, 2);
+		nk_layout_row_dynamic(gui->ctx, 20, 3);
+		
+		/* create new block */
+		if (nk_button_label(gui->ctx, "Create")){
+			/* show create popup */
+			show_blk_create = 1;
+			new_name[0] = 0;
+			gui->blk_descr[0] = 0;
+		}
 		
 		/* delete selected Block */
 		if (nk_button_label(gui->ctx, "Remove")){
@@ -242,10 +288,11 @@ int gui_blk_mng (gui_obj *gui){
 		}
 		
 		if ((show_blk_name)){ /* rename popup interface */
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "New Block Name", NK_WINDOW_CLOSABLE, nk_rect(200, 40, 220, 100))){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Rename Block", NK_WINDOW_CLOSABLE, nk_rect(200, 40, 220, 140))){
 				
 				/* enter new name */
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
+				nk_label(gui->ctx, "New name:", NK_TEXT_LEFT);
 				nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, new_name, DXF_MAX_CHARS, nk_filter_default);
 				
@@ -275,6 +322,66 @@ int gui_blk_mng (gui_obj *gui){
 				nk_popup_end(gui->ctx);
 			} else {
 				show_blk_name = 0;
+			}
+		}
+		
+		if ((show_blk_create)){ /* block creation popup interface */
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "New Block", NK_WINDOW_CLOSABLE, nk_rect(200, 40, 320, 300))){
+				/* enter new name */
+				nk_layout_row_dynamic(gui->ctx, 20, 1);
+				nk_label(gui->ctx, "Name:", NK_TEXT_LEFT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, new_name, DXF_MAX_CHARS, nk_filter_default);
+				nk_label(gui->ctx, "Description:", NK_TEXT_LEFT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, gui->blk_descr, DXF_MAX_CHARS, nk_filter_default);
+				nk_checkbox_label(gui->ctx, "Text to Attributes", &gui->text2tag);
+				if(gui->text2tag){
+					nk_layout_row_dynamic(gui->ctx, 20, 2);
+					nk_label(gui->ctx, "Attrib. mark:", NK_TEXT_LEFT);
+					nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->tag_mark, DXF_MAX_CHARS, nk_filter_default);
+					nk_label(gui->ctx, "Hide mark:", NK_TEXT_LEFT);
+					nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->hide_mark, DXF_MAX_CHARS, nk_filter_default);
+				}
+				
+				/* confirm */
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				if (nk_button_label(gui->ctx, "Create")){
+					create = 0;
+					
+					/* verify if exists other block with same name */
+					if(dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", new_name)){
+						snprintf(gui->log_msg, 63, "Error: exists Block with same name");
+					}
+					else{ /* proceed to create */
+						create = 1;
+						gui->modal = NEW_BLK;
+						gui->step = 0;
+						strncpy(gui->blk_name, new_name, DXF_MAX_CHARS);
+						
+						/* close window temporaly to complete steps */
+						show_blk_mng = 0;
+					}
+				}
+				/* cancel - close popup */
+				if (nk_button_label(gui->ctx, "Cancel")){
+					create = 0;
+					show_blk_create = 0;
+					nk_popup_close(gui->ctx);
+				}
+				
+				/* verify creation complete */
+				if (create && dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name)){
+					create = 0;
+					/* update informations */
+					blk_idx = 1;
+					/* close popup */
+					show_blk_create = 0;
+					nk_popup_close(gui->ctx);
+				}
+				
+				nk_popup_end(gui->ctx);
+			} else {
+				create = 0;
+				show_blk_create = 0;
 			}
 		}
 		

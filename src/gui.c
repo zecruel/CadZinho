@@ -1164,7 +1164,9 @@ int gui_start(gui_obj *gui){
 	gui->txt[0] = 0;
 	gui->long_txt[0] = 0;
 	gui->blk_name[0] = 0;
-	gui->tag_mark[0] = 0;
+	gui->blk_descr[0] = 0;
+	gui->tag_mark[0] = '#'; gui->tag_mark[1] = 0;
+	gui->hide_mark[0] = '*'; gui->hide_mark[1] = 0;
 	
 	gui->sel_list = NULL;
 	gui->phanton = NULL;

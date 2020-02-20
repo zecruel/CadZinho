@@ -657,7 +657,7 @@ char *txt, char *tag, int color, char *layer, char *ltype, int lw, int paper, in
 	return NULL;
 }
 
-dxf_node * dxf_attdef_cpy (dxf_node *text, char *tag, double x0, double y0, double z0, int pool){
+dxf_node * dxf_attdef_cpy (dxf_node *text, char *tag, double x0, double y0, double z0, int hide, int pool){
 	/*create new attdef ent by copying parameters of an text ent */
 	/* offset position of attdef by x0, y0, z0*/
 	if(text){
@@ -773,6 +773,7 @@ dxf_node * dxf_attdef_cpy (dxf_node *text, char *tag, double x0, double y0, doub
 		dxf_attr_change(attdef, 210, (void *)&extru_x);
 		dxf_attr_change(attdef, 220, (void *)&extru_y);
 		dxf_attr_change(attdef, 230, (void *)&extru_z);
+		if (hide) dxf_attr_change(attdef, 70, (void *)(int[]){1});
 		
 		return attdef;
 	}
@@ -798,7 +799,7 @@ dxf_node * dxf_attrib_cpy (dxf_node *attdef, double x0, double y0, double z0, in
 		char txt[DXF_MAX_CHARS], tag[DXF_MAX_CHARS];
 		char layer[DXF_MAX_CHARS], l_type[DXF_MAX_CHARS];
 		char t_style[DXF_MAX_CHARS];
-		int color = 0, paper = 0, lw = -2;
+		int color = 0, paper = 0, lw = -2, flags = 0;
 		int t_alin_v = 0, t_alin_h = 0;
 		
 		
@@ -864,6 +865,9 @@ dxf_node * dxf_attrib_cpy (dxf_node *attdef, double x0, double y0, double z0, in
 					case 67:
 						paper = current->value.i_data;
 						break;
+					case 70:
+						flags = current->value.i_data;
+						break;
 					case 72:
 						t_alin_h = current->value.i_data;
 						break;
@@ -900,6 +904,7 @@ dxf_node * dxf_attrib_cpy (dxf_node *attdef, double x0, double y0, double z0, in
 		dxf_attr_change(attrib, 210, (void *)&extru_x);
 		dxf_attr_change(attrib, 220, (void *)&extru_y);
 		dxf_attr_change(attrib, 230, (void *)&extru_z);
+		dxf_attr_change(attrib, 70, (void *)&flags);
 		
 		return attrib;
 	}
@@ -1103,7 +1108,7 @@ int dxf_new_block(dxf_drawing *drawing, char *name, char *layer, list_node *list
 	return ok;
 }
 
-int dxf_new_block2(dxf_drawing *drawing, char *name, char *mark, char *layer, list_node *list, struct do_list *list_do, int pool){
+int dxf_new_block2(dxf_drawing *drawing, char *name, char *mark, char *hide_mark, char *layer, list_node *list, struct do_list *list_do, int pool){
 	int ok = 0;
 	
 	if ((drawing) && (name)){
@@ -1120,6 +1125,7 @@ int dxf_new_block2(dxf_drawing *drawing, char *name, char *mark, char *layer, li
 			tag[0] = 0;
 			
 			int mark_len = strlen(mark);
+			int hide_mark_len = strlen(hide_mark);
 			
 			/* create BLOCK_RECORD table entry*/
 			blkrec = dxf_new_blkrec (name, pool);
@@ -1179,7 +1185,116 @@ int dxf_new_block2(dxf_drawing *drawing, char *name, char *mark, char *layer, li
 								text = dxf_find_attr2(obj, 1);
 								if (text){
 									if (strncmp (text->value.s_data, mark, mark_len) == 0){
-										new_ent = dxf_attdef_cpy (obj, text->value.s_data + mark_len, min_x, min_y, 0.0, pool);
+										/* verify if is marked to invisible attribute*/
+										if (strncmp (text->value.s_data + mark_len, hide_mark, hide_mark_len) == 0){
+											new_ent = dxf_attdef_cpy (obj, text->value.s_data + mark_len + hide_mark_len, min_x, min_y, 0.0, 1, pool);
+										}
+										else new_ent = dxf_attdef_cpy (obj, text->value.s_data + mark_len, min_x, min_y, 0.0, 0, pool);
+										ent_handle(drawing, new_ent);
+										dxf_obj_append(blk, new_ent);
+									}
+								}
+							}
+						}
+					}
+					current = current->next;
+				}
+			}
+			
+			
+			/* end the block*/
+			if (endblk) ok = ent_handle(drawing, endblk);
+			if (ok) ok = dxf_obj_append(blk, endblk);
+			
+			/*attach to blocks section*/
+			if (ok) do_add_entry(list_do, "NEW BLOCK"); /* undo/redo list*/
+			if (ok) ok = dxf_obj_append(drawing->blks_rec, blkrec);
+			if (ok) do_add_item(list_do->current, NULL, blkrec);/* undo/redo list*/
+			if (ok) ok = dxf_obj_append(drawing->blks, blk);
+			if (ok) do_add_item(list_do->current, NULL, blk);/* undo/redo list*/
+			
+		}
+	}
+	
+	return ok;
+}
+
+int dxf_new_block3(dxf_drawing *drawing, char *name, char *descr,
+	double x, double y, double z,
+	char *mark, char *hide_mark, 
+	char *layer, list_node *list,
+	struct do_list *list_do, int pool)
+{
+	int ok = 0;
+	
+	if ((drawing) && (name)){
+		dxf_node *blkrec = NULL, *blk = NULL, *endblk = NULL, *handle = NULL;
+		dxf_node *obj, *new_ent, *text, *attdef;
+		
+		/* verify if block not exist */
+		if (dxf_find_obj_descr2(drawing->blks, "BLOCK", name) == NULL){
+			char txt[DXF_MAX_CHARS], tag[DXF_MAX_CHARS];
+			txt[0] = 0;
+			tag[0] = 0;
+			
+			int mark_len = strlen(mark);
+			int hide_mark_len = strlen(hide_mark);
+			
+			/* create BLOCK_RECORD table entry*/
+			blkrec = dxf_new_blkrec (name, pool);
+			ok = ent_handle(drawing, blkrec);
+			if (ok) handle = dxf_find_attr2(blkrec, 5); ok = 0;
+			
+			/* begin block */
+			if (handle) blk = dxf_new_begblk (name, layer, (char *)handle->value.s_data, pool);
+			/* change the block description */
+			dxf_attr_change(blk, 1, (void *)descr);
+			/* get a handle */
+			ok = ent_handle(drawing, blk);
+			/* use the handle to owning the ENDBLK ent */
+			if (ok) handle = dxf_find_attr2(blk, 5); ok = 0;
+			if (handle) endblk = dxf_new_endblk (layer, (char *)handle->value.s_data, pool);
+			
+			if (list != NULL){ /* append list of objects in block*/
+				list_node *current = list->next;
+				
+				/*then copy the entities of list and apply offset in their coordinates*/
+				while (current != NULL){
+					if (current->data){
+						obj = (dxf_node *)current->data;
+						if (obj->type == DXF_ENT){ /* DXF entity  */
+							if(strcmp(obj->obj.name, "TEXT") == 0){
+								text = dxf_find_attr2(obj, 1);
+								if (text){
+									if (strncmp (text->value.s_data, mark, mark_len) == 0){
+										current = current->next;
+										continue;
+									}
+								}
+							}
+							new_ent = dxf_ent_copy(obj, pool);
+							ent_handle(drawing, new_ent);
+							dxf_edit_move(new_ent, -x, -y, -z);
+							dxf_obj_append(blk, new_ent);
+						}
+					}
+					current = current->next;
+				}
+				/*then transform marked text entities to attdef*/
+				current = list->next;
+				while (current != NULL){
+					if (current->data){
+						obj = (dxf_node *)current->data;
+						if (obj->type == DXF_ENT){ /* DXF entity  */
+							if(strcmp(obj->obj.name, "TEXT") == 0){
+								text = dxf_find_attr2(obj, 1);
+								if (text){
+									if (strncmp (text->value.s_data, mark, mark_len) == 0){
+										/* verify if is marked to invisible attribute*/
+										if (strncmp (text->value.s_data + mark_len, hide_mark, hide_mark_len) == 0){
+											new_ent = dxf_attdef_cpy (obj, text->value.s_data + mark_len + hide_mark_len, x, y, z, 1, pool);
+										}
+										else new_ent = dxf_attdef_cpy (obj, text->value.s_data + mark_len, x, y, z, 0, pool);
 										ent_handle(drawing, new_ent);
 										dxf_obj_append(blk, new_ent);
 									}

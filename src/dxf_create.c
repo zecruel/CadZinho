@@ -973,6 +973,7 @@ dxf_node * dxf_new_begblk (char *name, char *layer, char *owner, int pool){
 	ok &= dxf_attr_append(blk, 30, (void *) &d_zero, pool);
 	ok &= dxf_attr_append(blk, 3, (void *) name, pool);
 	ok &= dxf_attr_append(blk, 1, (void *) str_zero, pool);
+	ok &= dxf_attr_append(blk, 4, (void *) str_zero, pool);
 	
 	if(ok){
 		return blk;
@@ -1221,7 +1222,7 @@ int dxf_new_block2(dxf_drawing *drawing, char *name, char *mark, char *hide_mark
 
 int dxf_new_block3(dxf_drawing *drawing, char *name, char *descr,
 	double x, double y, double z,
-	char *mark, char *hide_mark, 
+	int txt2attr, char *mark, char *hide_mark, 
 	char *layer, list_node *list,
 	struct do_list *list_do, int pool)
 {
@@ -1248,7 +1249,7 @@ int dxf_new_block3(dxf_drawing *drawing, char *name, char *descr,
 			/* begin block */
 			if (handle) blk = dxf_new_begblk (name, layer, (char *)handle->value.s_data, pool);
 			/* change the block description */
-			dxf_attr_change(blk, 1, (void *)descr);
+			dxf_attr_change(blk, 4, (void *)descr);
 			/* get a handle */
 			ok = ent_handle(drawing, blk);
 			/* use the handle to owning the ENDBLK ent */
@@ -1263,7 +1264,7 @@ int dxf_new_block3(dxf_drawing *drawing, char *name, char *descr,
 					if (current->data){
 						obj = (dxf_node *)current->data;
 						if (obj->type == DXF_ENT){ /* DXF entity  */
-							if(strcmp(obj->obj.name, "TEXT") == 0){
+							if(strcmp(obj->obj.name, "TEXT") == 0 && txt2attr){
 								text = dxf_find_attr2(obj, 1);
 								if (text){
 									if (strncmp (text->value.s_data, mark, mark_len) == 0){
@@ -1282,7 +1283,7 @@ int dxf_new_block3(dxf_drawing *drawing, char *name, char *descr,
 				}
 				/*then transform marked text entities to attdef*/
 				current = list->next;
-				while (current != NULL){
+				while (current != NULL && txt2attr){
 					if (current->data){
 						obj = (dxf_node *)current->data;
 						if (obj->type == DXF_ENT){ /* DXF entity  */

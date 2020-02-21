@@ -109,7 +109,7 @@ int dxf_new_block2(dxf_drawing *drawing, char *name, char *mark, char *hide_mark
 
 int dxf_new_block3(dxf_drawing *drawing, char *name, char *descr,
 	double x, double y, double z,
-	char *mark, char *hide_mark, 
+	int txt2attr, char *mark, char *hide_mark, 
 	char *layer, list_node *list,
 	struct do_list *list_do, int pool);
 

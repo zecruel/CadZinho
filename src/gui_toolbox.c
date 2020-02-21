@@ -46,10 +46,11 @@ int gui_tools_win (gui_obj *gui){
 			gui->modal = MIRROR;
 			gui->step = 0;
 		}
+		/*
 		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BLOCK]))){
 			gui->modal = NEW_BLK;
 			gui->step = 0;
-		}
+		}*/
 		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPLODE]))){
 			
 		}

@@ -208,6 +208,9 @@ int gui_tab_img (gui_obj *gui, bmp_img *img, int active, int w){
 /* ************************************************** */
 
 int gui_default_modal(gui_obj *gui){
+	if (gui->modal == NEW_BLK)
+		gui->show_blk_mng = 1;
+	
 	gui->modal = SELECT;
 	
 	return gui_first_step(gui);

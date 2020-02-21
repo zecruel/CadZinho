@@ -23,6 +23,7 @@ int gui_block_interactive(gui_obj *gui){
 			gui_simple_select(gui);
 		}
 		else if (gui->step == 1){
+			/* Enter insert point */
 			if (gui->ev & EV_ENTER){
 				gui->en_distance = 1;
 				gui->step_x[gui->step + 1] = gui->step_x[gui->step];
@@ -34,25 +35,20 @@ int gui_block_interactive(gui_obj *gui){
 			}
 			else if (gui->ev & EV_CANCEL){
 				gui_default_modal(gui);
-				gui->show_blk_mng = 1;
 			}
 		}
 		else{
 			if (gui->ev & EV_ENTER){
-				if(!gui->text2tag)
-					dxf_new_block(gui->drawing, gui->blk_name, "0", gui->sel_list, &gui->list_do, DWG_LIFE);
-				else 
-					//dxf_new_block2(gui->drawing, gui->blk_name, gui->tag_mark, gui->hide_mark, "0", gui->sel_list, &gui->list_do, DWG_LIFE);
-					dxf_new_block3(gui->drawing, gui->blk_name, gui->blk_descr,
-					gui->step_x[1], gui->step_y[1], 0.0,
-					gui->tag_mark, gui->hide_mark,
-					"0", gui->sel_list, &gui->list_do, DWG_LIFE);				
+				/* confirm block creation */
+				dxf_new_block3(gui->drawing, gui->blk_name, gui->blk_descr,
+				gui->step_x[1], gui->step_y[1], 0.0,
+				gui->text2tag, gui->tag_mark, gui->hide_mark,
+				"0", gui->sel_list, &gui->list_do, DWG_LIFE);				
 				gui_default_modal(gui);
-				gui->show_blk_mng = 1;
 			}
 			else if (gui->ev & EV_CANCEL){
-				gui_default_modal(gui);
-				gui->show_blk_mng = 1;
+				//gui_default_modal(gui);
+				gui->step = 1;
 			}
 		}
 	}
@@ -63,13 +59,16 @@ int gui_block_interactive(gui_obj *gui){
 int gui_block_info (gui_obj *gui){
 	if (gui->modal == NEW_BLK) {
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Create a new block from selection", NK_TEXT_LEFT);
-		
-		nk_label(gui->ctx, "Block Name:", NK_TEXT_LEFT);
-		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->blk_name, DXF_MAX_CHARS, nk_filter_default);
-		nk_checkbox_label(gui->ctx, "Text to Tags", &gui->text2tag);
-		nk_label(gui->ctx, "Tag mark:", NK_TEXT_LEFT);
-		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->tag_mark, DXF_MAX_CHARS, nk_filter_default);
+		nk_label(gui->ctx, "Create a new block", NK_TEXT_LEFT);
+		nk_label_colored(gui->ctx, gui->blk_name, NK_TEXT_CENTERED, nk_rgb(255,255,0));
+		if (gui->step == 0){
+			nk_label(gui->ctx, "Select/Add element", NK_TEXT_LEFT);
+		}
+		else if (gui->step == 1){
+			nk_label(gui->ctx, "Enter insert point", NK_TEXT_LEFT);
+		} else {
+			nk_label(gui->ctx, "Confirm", NK_TEXT_LEFT);
+		}
 		
 	}
 	return 1;
@@ -79,11 +78,12 @@ int gui_block_info (gui_obj *gui){
 int gui_blk_mng (gui_obj *gui){
 	int i, show_blk_mng = 1;
 	
-	static int show_hidden_blks = 0, show_blk_name = 0;
+	static int show_hidden_blks = 0, show_blk_edit = 0;
 	static int create = 0, show_blk_create = 0;
 	static char txt[DXF_MAX_CHARS+1] = "";
 	static char descr[DXF_MAX_CHARS+1] = "";
 	static char new_name[DXF_MAX_CHARS+1] = "";
+	static char new_descr[DXF_MAX_CHARS+1] = "";
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
@@ -175,7 +175,7 @@ int gui_blk_mng (gui_obj *gui){
 			blk_idx = -1;
 			
 			/* get description of current block */
-			blk_nm = dxf_find_attr2(blk, 1);
+			blk_nm = dxf_find_attr2(blk, 4);
 			if (blk_nm){
 				strncpy(descr, blk_nm->value.s_data, DXF_MAX_CHARS);
 				
@@ -249,6 +249,18 @@ int gui_blk_mng (gui_obj *gui){
 			gui->blk_descr[0] = 0;
 		}
 		
+		/* edit selected block */
+		if (nk_button_label(gui->ctx, "Edit")){
+			/* verify if block point by name exists in structure */
+			if(dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name)){
+				/* show edit popup */
+				show_blk_edit = 1;
+				new_name[0] = 0;
+				strncpy(new_name, gui->blk_name, DXF_MAX_CHARS);
+				strncpy(new_descr, descr, DXF_MAX_CHARS);
+			}
+		}
+		
 		/* delete selected Block */
 		if (nk_button_label(gui->ctx, "Remove")){
 			block_use(gui->drawing); /* update blocks in use for sure*/
@@ -276,28 +288,16 @@ int gui_blk_mng (gui_obj *gui){
 				}
 			}
 		}
-		/* rename selected block */
-		if (nk_button_label(gui->ctx, "Rename")){
-			/* verify if block point by name exists in structure */
-			if(dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name)){
-				/* show rename popup */
-				show_blk_name = 1;
-				new_name[0] = 0;
-				strncpy(new_name, gui->blk_name, DXF_MAX_CHARS);
-			}
-		}
 		
-		if ((show_blk_name)){ /* rename popup interface */
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Rename Block", NK_WINDOW_CLOSABLE, nk_rect(200, 40, 220, 140))){
+		if ((show_blk_edit)){ /* block edit popup interface */
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Edit Block", NK_WINDOW_CLOSABLE, nk_rect(200, 40, 250, 220))){
 				
 				/* enter new name */
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				nk_label(gui->ctx, "New name:", NK_TEXT_LEFT);
-				nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, new_name, DXF_MAX_CHARS, nk_filter_default);
 				
-				/* confirm */
-				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				/* Rename */
 				if (nk_button_label(gui->ctx, "Rename")){
 					/* verify if exists other block with same name */
 					if(dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", new_name)){
@@ -309,19 +309,29 @@ int gui_blk_mng (gui_obj *gui){
 						strncpy(gui->blk_name, new_name, DXF_MAX_CHARS);
 						blk_idx = 1;
 						
-						show_blk_name = 0;
+						show_blk_edit = 0;
 						nk_popup_close(gui->ctx);
 					}
 				}
+				nk_label(gui->ctx, "New description:", NK_TEXT_LEFT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, new_descr, DXF_MAX_CHARS, nk_filter_default);
+				if (nk_button_label(gui->ctx, "Update")){
+					blk = dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name);
+					dxf_attr_change(blk, 4, (void *)new_descr);
+					blk_idx = 1;
+						
+					show_blk_edit = 0;
+					nk_popup_close(gui->ctx);
+				}
 				/* cancel - close popup */
 				if (nk_button_label(gui->ctx, "Cancel")){
-					show_blk_name = 0;
+					show_blk_edit = 0;
 					nk_popup_close(gui->ctx);
 				}
 				
 				nk_popup_end(gui->ctx);
 			} else {
-				show_blk_name = 0;
+				show_blk_edit = 0;
 			}
 		}
 		

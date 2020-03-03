@@ -76,9 +76,9 @@ int gui_block_info (gui_obj *gui){
 
 /* block manager window */
 int gui_blk_mng (gui_obj *gui){
-	int i, show_blk_mng = 1;
+	int i, j, show_blk_mng = 1;
 	
-	static int show_hidden_blks = 0, show_blk_edit = 0;
+	static int show_hidden_blks = 0, show_blk_edit = 0, show_attr_edit = 0;
 	static int create = 0, show_blk_create = 0;
 	static char txt[DXF_MAX_CHARS+1] = "";
 	static char descr[DXF_MAX_CHARS+1] = "";
@@ -87,7 +87,7 @@ int gui_blk_mng (gui_obj *gui){
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
-	gui->next_win_w = 550;
+	gui->next_win_w = 650;
 	gui->next_win_h = 400;
 	
 	if (nk_begin(gui->ctx, "Blocks Manager", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
@@ -120,10 +120,14 @@ int gui_blk_mng (gui_obj *gui){
 				nk_layout_row_template_begin(gui->ctx, 22);
 				nk_layout_row_template_push_dynamic(gui->ctx);
 				nk_layout_row_template_push_static(gui->ctx, 50);
+				nk_layout_row_template_push_static(gui->ctx, 50);
 				nk_layout_row_template_push_static(gui->ctx, 8);
 				nk_layout_row_template_end(gui->ctx);
 				
 				if (nk_button_label(gui->ctx, "Name")){
+					
+				}
+				if (nk_button_label(gui->ctx, "Attr")){
 					
 				}
 				if (nk_button_label(gui->ctx, "Used")){
@@ -136,6 +140,7 @@ int gui_blk_mng (gui_obj *gui){
 			if (nk_group_begin(gui->ctx, "Block_names", NK_WINDOW_BORDER)) {
 				nk_layout_row_template_begin(gui->ctx, 20);
 				nk_layout_row_template_push_dynamic(gui->ctx);
+				nk_layout_row_template_push_static(gui->ctx, 50);
 				nk_layout_row_template_push_static(gui->ctx, 50);
 				nk_layout_row_template_end(gui->ctx);
 				
@@ -156,6 +161,17 @@ int gui_blk_mng (gui_obj *gui){
 								blk_idx = i;
 								strncpy(gui->blk_name, blk_nm->value.s_data, DXF_MAX_CHARS);
 							}
+							
+							/* Attributes definition in block */
+							char num_attr[10];
+							j = 0;
+							while (dxf_find_obj_i(blk, "ATTDEF", j)){
+								j++;
+							}
+							if (j == 0) snprintf(num_attr, 9, "-");
+							else snprintf(num_attr, 9, "%d", j);
+							nk_label(gui->ctx, num_attr, NK_TEXT_CENTERED);
+							
 							/* verify if block is used in drawing, by count in layer index*/
 							if (blk->obj.layer > 0)
 								nk_label(gui->ctx, "x", NK_TEXT_CENTERED);
@@ -239,7 +255,7 @@ int gui_blk_mng (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_checkbox_label(gui->ctx, "Hidden", &show_hidden_blks);
 		
-		nk_layout_row_dynamic(gui->ctx, 20, 3);
+		nk_layout_row_dynamic(gui->ctx, 20, 4);
 		
 		/* create new block */
 		if (nk_button_label(gui->ctx, "Create")){
@@ -287,6 +303,10 @@ int gui_blk_mng (gui_obj *gui){
 					}
 				}
 			}
+		}
+		/* delete selected Block */
+		if (nk_button_label(gui->ctx, "Attributes")){
+			show_attr_edit = 1;
 		}
 		
 		if ((show_blk_edit)){ /* block edit popup interface */
@@ -399,6 +419,104 @@ int gui_blk_mng (gui_obj *gui){
 		show_blk_mng = 0;
 	}
 	nk_end(gui->ctx);
+	
+	if (show_attr_edit){
+		static dxf_node *blk = NULL, *attr = NULL;
+		static int init = 0;
+		static dxf_node *attributes[1000];
+		static int num_attr = 0;
+		static char tag[1000][DXF_MAX_CHARS+1];
+		static char value[1000][DXF_MAX_CHARS+1];
+		dxf_node *tmp;
+		
+		if (!init){
+			blk = dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name);
+			
+			if (blk){
+				num_attr = 0;
+				while ((attr = dxf_find_obj_i(blk, "ATTDEF", num_attr)) && num_attr < 999){
+					attributes[num_attr] = attr;
+					tag[num_attr][0] = 0;
+					value[num_attr][0] = 0;
+					if(tmp = dxf_find_attr2(attr, 2))
+						strncpy(tag[num_attr], tmp->value.s_data, DXF_MAX_CHARS);
+					if(tmp = dxf_find_attr2(attr, 1))
+						strncpy(value[num_attr], tmp->value.s_data, DXF_MAX_CHARS);
+					
+					num_attr++;
+				}
+				
+				if(num_attr)
+					init = 1;
+				else show_attr_edit = 0;
+			}
+			else show_attr_edit = 0;
+		}
+		
+		if (init){
+			/* edit attributes window */
+			if (nk_begin(gui->ctx, "Edit Attributes", nk_rect(gui->next_win_x, gui->next_win_y + gui->next_win_h + 3, 330, 220), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
+				nk_layout_row_dynamic(gui->ctx, 100, 1);
+				if (nk_group_begin(gui->ctx, "Attr_list", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+					/* header */
+					nk_layout_row_dynamic(gui->ctx, 32, 1);
+					if (nk_group_begin(gui->ctx, "Attr_head", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+						/* dynamic width for Attribute name and fixed width for flags */
+						nk_layout_row_template_begin(gui->ctx, 22);
+						nk_layout_row_template_push_dynamic(gui->ctx);
+						nk_layout_row_template_push_dynamic(gui->ctx);
+						nk_layout_row_template_push_static(gui->ctx, 50);
+						nk_layout_row_template_push_static(gui->ctx, 8);
+						nk_layout_row_template_end(gui->ctx);
+						
+						if (nk_button_label(gui->ctx, "Tag")){
+							
+						}
+						if (nk_button_label(gui->ctx, "Value")){
+							
+						}
+						if (nk_button_label(gui->ctx, "Hide")){
+							
+						}
+						nk_group_end(gui->ctx);
+					}
+					/* list */
+					nk_layout_row_dynamic(gui->ctx, 225, 1);
+					if (nk_group_begin(gui->ctx, "Attr_names", NK_WINDOW_BORDER)) {
+						nk_layout_row_template_begin(gui->ctx, 20);
+						nk_layout_row_template_push_dynamic(gui->ctx);
+						nk_layout_row_template_push_dynamic(gui->ctx);
+						nk_layout_row_template_push_static(gui->ctx, 50);
+						nk_layout_row_template_end(gui->ctx);
+						
+						for (i = 0; i < num_attr; i++){
+							nk_label(gui->ctx, tag[i], NK_TEXT_CENTERED);
+							nk_label(gui->ctx, value[i], NK_TEXT_CENTERED);
+							nk_label(gui->ctx, " ", NK_TEXT_CENTERED);
+						}
+						
+						nk_group_end(gui->ctx);
+					}
+					nk_group_end(gui->ctx);
+				}
+				
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				if (nk_button_label(gui->ctx, "OK")){
+					
+					init = 0;
+					show_attr_edit = 0;
+				}
+				if (nk_button_label(gui->ctx, "Cancel")){
+					init = 0;
+					show_attr_edit = 0;
+				}
+			} else {
+				init = 0;
+				show_attr_edit = 0;
+			}
+			nk_end(gui->ctx);
+		}
+	}
 	
 	
 	return show_blk_mng;

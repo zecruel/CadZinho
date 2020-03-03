@@ -312,6 +312,16 @@ graph_obj * graph_new(int pool_idx){
 		new_obj->ext_max_x = 0.0;
 		new_obj->ext_max_y = 0.0;
 		
+		new_obj->img = NULL;
+		
+		new_obj->u[0] = 1.0;
+		new_obj->u[1] = 0.0;
+		new_obj->u[2] = 0.0;
+		
+		new_obj->v[0] = 0.0;
+		new_obj->v[1] = 1.0;
+		new_obj->v[2] = 0.0;
+		
 		/* allocate the line list */
 		//new_obj->list = malloc(sizeof(line_node));
 		new_obj->list = graph_mem_pool(ADD_LINE, pool_idx);
@@ -325,15 +335,6 @@ graph_obj * graph_new(int pool_idx){
 			new_obj = NULL;
 		}
 		
-		new_obj->img = NULL;
-		
-		new_obj->u[0] = 1.0;
-		new_obj->u[1] = 0.0;
-		new_obj->u[2] = 0.0;
-		
-		new_obj->v[0] = 0.0;
-		new_obj->v[1] = 1.0;
-		new_obj->v[2] = 0.0;
 	}
 	return new_obj;
 }

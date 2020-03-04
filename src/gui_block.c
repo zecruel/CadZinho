@@ -84,6 +84,7 @@ int gui_blk_mng (gui_obj *gui){
 	static char descr[DXF_MAX_CHARS+1] = "";
 	static char new_name[DXF_MAX_CHARS+1] = "";
 	static char new_descr[DXF_MAX_CHARS+1] = "";
+	static int blk_idx = -1;
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
@@ -109,7 +110,6 @@ int gui_blk_mng (gui_obj *gui){
 		nk_layout_row_template_push_static(gui->ctx, 190);
 		nk_layout_row_template_end(gui->ctx);
 		i = 0;
-		static int blk_idx = -1;
 		
 		/*  show block list */
 		if (nk_group_begin(gui->ctx, "Block_list", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
@@ -427,21 +427,29 @@ int gui_blk_mng (gui_obj *gui){
 		static int num_attr = 0;
 		static char tag[1000][DXF_MAX_CHARS+1];
 		static char value[1000][DXF_MAX_CHARS+1];
+		static int hidden[1000];
 		dxf_node *tmp;
+		char *new_str;
+		
+		static char blk_name[DXF_MAX_CHARS+1];
 		
 		if (!init){
 			blk = dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name);
-			
+			blk_name[0] = 0;
 			if (blk){
+				strncpy (blk_name, gui->blk_name, DXF_MAX_CHARS);
 				num_attr = 0;
 				while ((attr = dxf_find_obj_i(blk, "ATTDEF", num_attr)) && num_attr < 999){
 					attributes[num_attr] = attr;
 					tag[num_attr][0] = 0;
 					value[num_attr][0] = 0;
+					hidden[num_attr] = 0;
 					if(tmp = dxf_find_attr2(attr, 2))
 						strncpy(tag[num_attr], tmp->value.s_data, DXF_MAX_CHARS);
 					if(tmp = dxf_find_attr2(attr, 1))
 						strncpy(value[num_attr], tmp->value.s_data, DXF_MAX_CHARS);
+					if(tmp = dxf_find_attr2(attr, 70))
+						hidden[num_attr] = tmp->value.i_data & 1;
 					
 					num_attr++;
 				}
@@ -455,8 +463,10 @@ int gui_blk_mng (gui_obj *gui){
 		
 		if (init){
 			/* edit attributes window */
-			if (nk_begin(gui->ctx, "Edit Attributes", nk_rect(gui->next_win_x, gui->next_win_y + gui->next_win_h + 3, 330, 220), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
-				nk_layout_row_dynamic(gui->ctx, 100, 1);
+			if (nk_begin(gui->ctx, "Edit Attributes", nk_rect(gui->next_win_x + 100, gui->next_win_y + 100, 330, 360), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
+				nk_layout_row_dynamic(gui->ctx, 20, 1);
+				nk_label_colored(gui->ctx, blk_name, NK_TEXT_CENTERED, nk_rgb(255,255,0));
+				nk_layout_row_dynamic(gui->ctx, 250, 1);
 				if (nk_group_begin(gui->ctx, "Attr_list", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 					/* header */
 					nk_layout_row_dynamic(gui->ctx, 32, 1);
@@ -481,7 +491,7 @@ int gui_blk_mng (gui_obj *gui){
 						nk_group_end(gui->ctx);
 					}
 					/* list */
-					nk_layout_row_dynamic(gui->ctx, 225, 1);
+					nk_layout_row_dynamic(gui->ctx, 200, 1);
 					if (nk_group_begin(gui->ctx, "Attr_names", NK_WINDOW_BORDER)) {
 						nk_layout_row_template_begin(gui->ctx, 20);
 						nk_layout_row_template_push_dynamic(gui->ctx);
@@ -490,9 +500,15 @@ int gui_blk_mng (gui_obj *gui){
 						nk_layout_row_template_end(gui->ctx);
 						
 						for (i = 0; i < num_attr; i++){
-							nk_label(gui->ctx, tag[i], NK_TEXT_CENTERED);
-							nk_label(gui->ctx, value[i], NK_TEXT_CENTERED);
-							nk_label(gui->ctx, " ", NK_TEXT_CENTERED);
+							nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, tag[i], DXF_MAX_CHARS, nk_filter_default);
+							nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, value[i], DXF_MAX_CHARS, nk_filter_default);
+							if (hidden[i]){
+								if (nk_button_label_styled(gui->ctx, &gui->b_icon_unsel, "X"))
+									hidden[i] = 0;
+							} else{
+								if (nk_button_label_styled(gui->ctx, &gui->b_icon_unsel, " "))
+									hidden[i] = 1;
+							}
 						}
 						
 						nk_group_end(gui->ctx);
@@ -502,7 +518,15 @@ int gui_blk_mng (gui_obj *gui){
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				if (nk_button_label(gui->ctx, "OK")){
+					for (i = 0; i < num_attr; i++){
+						new_str = trimwhitespace(tag[i]);
+						dxf_attr_change(attributes[i], 2, new_str);
+						new_str = trimwhitespace(value[i]);
+						dxf_attr_change(attributes[i], 1, new_str);
+						dxf_attr_change(attributes[i], 70, &hidden[i]);
+					}
 					
+					blk_idx = 1;
 					init = 0;
 					show_attr_edit = 0;
 				}

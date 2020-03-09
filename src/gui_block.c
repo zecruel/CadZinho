@@ -2,6 +2,7 @@
 
 int block_use(dxf_drawing *drawing);
 int block_rename(dxf_drawing *drawing, char *curr_name, char *new_name);
+int block_select(gui_obj *gui, char *name);
 
 int gui_block_interactive(gui_obj *gui){
 	if (gui->modal == NEW_BLK){
@@ -40,7 +41,7 @@ int gui_block_interactive(gui_obj *gui){
 		else{
 			if (gui->ev & EV_ENTER){
 				/* confirm block creation */
-				dxf_new_block3(gui->drawing, gui->blk_name, gui->blk_descr,
+				dxf_new_block(gui->drawing, gui->blk_name, gui->blk_descr,
 				gui->step_x[1], gui->step_y[1], 0.0,
 				gui->text2tag, gui->tag_mark, gui->hide_mark,
 				"0", gui->sel_list, &gui->list_do, DWG_LIFE);				
@@ -255,7 +256,7 @@ int gui_blk_mng (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_checkbox_label(gui->ctx, "Hidden", &show_hidden_blks);
 		
-		nk_layout_row_dynamic(gui->ctx, 20, 4);
+		nk_layout_row_dynamic(gui->ctx, 20, 5);
 		
 		/* create new block */
 		if (nk_button_label(gui->ctx, "Create")){
@@ -304,9 +305,13 @@ int gui_blk_mng (gui_obj *gui){
 				}
 			}
 		}
-		/* delete selected Block */
+		/* edit attrib_def in Block */
 		if (nk_button_label(gui->ctx, "Attributes")){
 			show_attr_edit = 1;
+		}
+		/* select block relative entities in drawing*/
+		if (nk_button_label(gui->ctx, "Select")){
+			block_select(gui, gui->blk_name);
 		}
 		
 		if ((show_blk_edit)){ /* block edit popup interface */
@@ -680,7 +685,7 @@ int block_use(dxf_drawing *drawing){
 }
 
 int block_rename(dxf_drawing *drawing, char *curr_name, char *new_name){
-	/* count drawing elements related to layer */
+	/* Rename block and its relative inserts and dimensions */
 	int ok = 0, i;
 	dxf_node *current, *prev, *obj = NULL, *list[2];
 	
@@ -784,6 +789,56 @@ int block_rename(dxf_drawing *drawing, char *curr_name, char *new_name){
 				}
 			}
 		}
+	}
+	
+	return ok;
+}
+
+int block_select(gui_obj *gui, char *name){
+	/* add to selection inserts and dimensions relative to block name */
+	int ok = 0, i;
+	dxf_node *current;
+	
+	if (!name || !gui) return 0;
+	if (strlen(name) == 0) return 0;
+	
+	/* copy string for secure manipulation */
+	char name_cpy[DXF_MAX_CHARS], *name_upp;
+	strncpy(name_cpy, name, DXF_MAX_CHARS);
+	/* remove trailing spaces and change to upper case for  consistent comparison*/
+	name_upp = trimwhitespace(name_cpy);
+	str_upp(name_upp);
+	
+	current = gui->drawing->ents->obj.content;
+	while (current){ /* sweep elements in section */
+		ok = 1;
+		if (current->type == DXF_ENT){
+			/*verify if entity layer is on and thaw */
+			if ((!gui->drawing->layers[current->obj.layer].off) && 
+				(!gui->drawing->layers[current->obj.layer].frozen)){
+				/* look for inserts and dimensions */
+				if ((strcmp(current->obj.name, "INSERT") == 0) ||
+					(strcmp(current->obj.name, "DIMENSION")) == 0){
+					dxf_node *block = NULL, *blk_name = NULL;
+					blk_name = dxf_find_attr2(current, 2);
+					if(blk_name) {
+						/* change to upper case for  consistent comparison*/
+						char blk_name_upp[DXF_MAX_CHARS];
+						strncpy(blk_name_upp, blk_name->value.s_data, DXF_MAX_CHARS);
+						str_upp(blk_name_upp);
+						
+						/* verify if is a looking name*/
+						if (strcmp(name_upp, blk_name_upp) == 0){
+							/* add to selection list */
+							list_modify(gui->sel_list, current, LIST_ADD, SEL_LIFE);
+							
+						}
+					}
+				}
+			}
+		}
+			
+		current = current->next; /* go to the next in the list*/
 	}
 	
 	return ok;

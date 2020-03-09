@@ -7,6 +7,8 @@
 
 dxf_node *dxf_ent_copy(dxf_node *source, int pool_dest);
 
+dxf_node *dxf_ent_cpy_simple(dxf_node *source, int pool_dest);
+
 int dxf_drwg_ent_cpy(dxf_drawing *source, dxf_drawing *dest, list_node *list);
 
 list_node * dxf_drwg_ent_cpy_all(dxf_drawing *source, dxf_drawing *dest, int pool_idx);

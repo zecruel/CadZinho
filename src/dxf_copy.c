@@ -74,6 +74,41 @@ dxf_node *dxf_ent_copy(dxf_node *source, int pool_dest){
 	return dest;
 }
 
+dxf_node *dxf_ent_cpy_simple(dxf_node *source, int pool_dest){
+	dxf_node *current = NULL;
+	dxf_node *prev = NULL, *dest = NULL, *curr_dest = NULL, *new_ent = NULL;
+	
+	if (source){ 
+		if (source->type == DXF_ENT){
+			if (source->obj.content){
+				current = source->obj.content->next;
+				prev = current;
+				
+				dest = dxf_obj_new (source->obj.name, pool_dest);
+				curr_dest = dest;
+			}
+		}
+	}
+
+	while ((current) && (curr_dest)){
+		if (current->type == DXF_ATTR){ /* DXF attibute */
+			if (current->value.t_data == DXF_STR){
+				dxf_attr_append(curr_dest, current->value.group, current->value.s_data, pool_dest);
+			} else if (current->value.t_data == DXF_FLOAT){
+				dxf_attr_append(curr_dest, current->value.group, &current->value.d_data, pool_dest);
+			} else if (current->value.t_data == DXF_INT){
+				dxf_attr_append(curr_dest, current->value.group, &current->value.i_data, pool_dest);
+			}
+			
+		}
+		
+		current = current->next; /* go to the next in the list */
+		
+	}
+	
+	return dest;
+}
+
 dxf_node * dxf_drwg_cpy(dxf_drawing *source, dxf_drawing *dest, dxf_node *obj){
 	dxf_node *new_ent = NULL;
 	if (obj->type != DXF_ENT) return NULL;

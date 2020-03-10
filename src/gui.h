@@ -190,6 +190,7 @@ struct Gui_obj {
 	enum Sel_type sel_type;
 	int sel_count;
 	int free_sel;
+	enum dxf_graph sel_ent_filter;
 	
 	
 	/* background image dimension */
@@ -334,6 +335,7 @@ struct Gui_obj {
 	int sel_paper;
 	
 	int show_edit_text;
+	int show_edit_attr;
 	
 	dxf_drawing *clip_drwg;
 	

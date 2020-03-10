@@ -212,6 +212,7 @@ int gui_default_modal(gui_obj *gui){
 		gui->show_blk_mng = 1;
 	
 	gui->modal = SELECT;
+	gui->sel_ent_filter = ~DXF_NONE;
 	
 	return gui_first_step(gui);
 }
@@ -1088,6 +1089,7 @@ int gui_start(gui_obj *gui){
 	gui->sel_type = SEL_INTL;
 	gui->sel_count = 0;
 	gui->free_sel = 1;
+	gui->sel_ent_filter = ~DXF_NONE;
 	
 	gui->main_w = 2048;
 	gui->main_h = 2048;
@@ -1363,6 +1365,7 @@ int gui_start(gui_obj *gui){
 	gui->drwg_hist_head = 0;
 	
 	gui->show_edit_text = 0;
+	gui->show_edit_attr = 0;
 	
 	gui->num_brk_pts = 0;
 	
@@ -1422,6 +1425,7 @@ int gui_tstyle2(gui_obj *gui, dxf_drawing *drawing){
 }
 
 void gui_simple_select(gui_obj *gui){
+	enum dxf_graph ent_type = DXF_NONE;
 	if (gui->ev & EV_ENTER){ /* user hit an enter point */
 		if (gui->element)
 			/* select an object if cursor is over */
@@ -1465,11 +1469,17 @@ void gui_simple_select(gui_obj *gui){
 			int i = 0;
 			list_el = gui->near_list->next;
 			while (list_el){
-				if (gui->sel_idx == i)
-					/* show the candidate object */
-					gui->element = (dxf_node *)list_el->data;
+				ent_type = dxf_ident_ent_type ((dxf_node *)list_el->data);
+				if (ent_type & gui->sel_ent_filter){
+					if (gui->sel_idx == i){
+						/* show the candidate object */
+						gui->element = (dxf_node *)list_el->data;
+						break;
+					}
+					i++;
+				}
 				list_el = list_el->next;
-				i++;
+				
 			}
 		}
 		gui->draw = 1;

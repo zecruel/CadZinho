@@ -7,6 +7,10 @@ int gui_select_interactive(gui_obj *gui){
 	
 	static int tmp_rect = 0;
 	
+	/******************/
+	gui->sel_ent_filter = ~DXF_NONE;
+	/******************/
+	
 	/* select single element */
 	if ((gui->sel_type == SEL_ELEMENT || gui->sel_type == SEL_INTL) && !tmp_rect){
 		if (gui->ev & EV_ENTER){ /* user hit an enter point */

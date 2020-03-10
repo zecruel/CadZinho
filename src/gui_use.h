@@ -99,5 +99,9 @@ int gui_image_interactive(gui_obj *gui);
 
 int gui_image_info (gui_obj *gui);
 
+int gui_ed_attr_interactive(gui_obj *gui);
+
+int gui_ed_attr_info (gui_obj *gui);
+
 
 #endif

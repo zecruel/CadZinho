@@ -22,6 +22,7 @@ int gui_mirror_interactive(gui_obj *gui){
 		if (gui->step == 0){
 			/* in first step, select the elements to proccess*/
 			gui->en_distance = 0;
+			gui->sel_ent_filter = ~DXF_NONE;
 			gui_simple_select(gui);
 		}
 		else if (gui->step == 1){

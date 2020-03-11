@@ -46,31 +46,39 @@ int gui_ed_attr_info (gui_obj *gui){
 		} else {
 			nk_label(gui->ctx, "Edit data and hit OK", NK_TEXT_LEFT);
 			
-			static dxf_node *ins_ent = NULL, *attr = NULL;
+			static dxf_node *ins_ent = NULL, *attr = NULL, *new_ent = NULL;
 			static int init = 0;
+			static dxf_node *attributes[1000];
 			static int num_attr = 0;
 			static char tag[1000][DXF_MAX_CHARS+1];
 			static char value[1000][DXF_MAX_CHARS+1];
 			static int hidden[1000];
-			dxf_node *tmp, *new_ent = NULL;
+			dxf_node *tmp;
 			char *new_str;
 			
 			int i;
 			
 			static char blk_name[DXF_MAX_CHARS+1];
 			
+			if (!new_ent){
+				/* copy original insert entity */
+				ins_ent = gui->element;
+				new_ent = dxf_ent_copy(ins_ent, DWG_LIFE);
+			}
+			
 			/* init the interface */
 			if (!init){
-				ins_ent = gui->element;
+				
 				blk_name[0] = 0;
-				if (ins_ent){
+				if (new_ent){
 					/* get block name */
-					if(tmp = dxf_find_attr2(ins_ent, 2))
+					if(tmp = dxf_find_attr2(new_ent, 2))
 						strncpy (blk_name, tmp->value.s_data, DXF_MAX_CHARS);
 					/* find attibutes */
 					num_attr = 0;
-					while ((attr = dxf_find_obj_i(ins_ent, "ATTRIB", num_attr)) && num_attr < 999){
+					while ((attr = dxf_find_obj_i(new_ent, "ATTRIB", num_attr)) && num_attr < 999){
 						/* construct tables with each attribute informations */
+						attributes[num_attr] = attr;
 						tag[num_attr][0] = 0;
 						value[num_attr][0] = 0;
 						hidden[num_attr] = 0;
@@ -86,8 +94,11 @@ int gui_ed_attr_info (gui_obj *gui){
 					
 					if(num_attr) init = 1; /* init success */
 					else { /* init fail -  no attributes found */
-						gui->step = 0;
 						snprintf(gui->log_msg, 63, "Error: No attributes found");
+						gui->element = NULL;
+						init = 0;
+						gui->step = 0;
+						new_ent = NULL;
 						sel_list_clear (gui);
 					}
 				}
@@ -120,6 +131,7 @@ int gui_ed_attr_info (gui_obj *gui){
 							nk_layout_row_template_push_dynamic(gui->ctx);
 							nk_layout_row_template_push_dynamic(gui->ctx);
 							nk_layout_row_template_push_static(gui->ctx, 50);
+							nk_layout_row_template_push_static(gui->ctx, 40);
 							nk_layout_row_template_push_static(gui->ctx, 8);
 							nk_layout_row_template_end(gui->ctx);
 							
@@ -142,6 +154,7 @@ int gui_ed_attr_info (gui_obj *gui){
 							nk_layout_row_template_push_dynamic(gui->ctx);
 							nk_layout_row_template_push_dynamic(gui->ctx);
 							nk_layout_row_template_push_static(gui->ctx, 50);
+							nk_layout_row_template_push_static(gui->ctx, 40);
 							nk_layout_row_template_end(gui->ctx);
 							
 							for (i = 0; i < num_attr; i++){
@@ -157,6 +170,11 @@ int gui_ed_attr_info (gui_obj *gui){
 									if (nk_button_label_styled(gui->ctx, &gui->b_icon_unsel, " "))
 										hidden[i] = 1;
 								}
+								if (nk_button_label(gui->ctx, "Del")){
+									dxf_obj_subst(attributes[i], NULL);
+									init = 0;
+								}
+								
 							}
 							nk_group_end(gui->ctx);
 						}
@@ -175,7 +193,7 @@ int gui_ed_attr_info (gui_obj *gui){
 							}
 							
 							if (!init_do){
-								new_ent = dxf_ent_copy(ins_ent, DWG_LIFE); /* copy original insert entity */
+								
 								init_do = 1;
 							}
 							
@@ -197,17 +215,21 @@ int gui_ed_attr_info (gui_obj *gui){
 							/* update undo/redo list */
 							do_add_entry(&gui->list_do, "Edit Insert Attributes");
 							do_add_item(gui->list_do.current, ins_ent, new_ent);
+							
+							gui->draw = 1;
 						}
 						
-						//blk_idx = 1; /* update block preview */
 						/* close edit window */
+						gui->element = NULL;
 						init = 0;
 						gui->step = 0;
+						new_ent = NULL;
 						sel_list_clear (gui);
 					}
 					if (nk_button_label(gui->ctx, "Cancel")){
 						/* close edit window */
 						init = 0;
+						new_ent = NULL;
 						gui->step = 0;
 						sel_list_clear (gui);
 					}
@@ -216,6 +238,7 @@ int gui_ed_attr_info (gui_obj *gui){
 					/* close edit window */
 					init = 0;
 					gui->step = 0;
+					new_ent = NULL;
 					sel_list_clear (gui);
 				}
 				nk_popup_end(gui->ctx);

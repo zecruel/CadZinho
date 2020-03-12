@@ -44,7 +44,7 @@ int gui_ed_attr_info (gui_obj *gui){
 		if (gui->step == 0){
 			nk_label(gui->ctx, "Select a Insert element", NK_TEXT_LEFT);
 		} else {
-			nk_label(gui->ctx, "Edit data and hit OK", NK_TEXT_LEFT);
+			nk_label(gui->ctx, "Edit data", NK_TEXT_LEFT);
 			
 			static dxf_node *ins_ent = NULL, *attr = NULL, *new_ent = NULL;
 			static int init = 0;
@@ -103,7 +103,11 @@ int gui_ed_attr_info (gui_obj *gui){
 					}
 				}
 				else{
-					gui->step = 0; /* init fail -  no block found */
+					/* init fail -  no block found */
+					gui->element = NULL;
+					init = 0;
+					gui->step = 0;
+					new_ent = NULL;
 					sel_list_clear (gui);
 				}
 			}
@@ -113,11 +117,11 @@ int gui_ed_attr_info (gui_obj *gui){
 				static struct nk_rect s = {150, 10, 420, 350};
 				if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Edit Attributes", NK_WINDOW_CLOSABLE|NK_WINDOW_MOVABLE, s)){
 					
+					/* show refered block name */
 					nk_layout_row_template_begin(gui->ctx, 20);
 					nk_layout_row_template_push_static(gui->ctx, 50);
 					nk_layout_row_template_push_dynamic(gui->ctx);
 					nk_layout_row_template_end(gui->ctx);
-					
 					nk_label(gui->ctx, "Block:", NK_TEXT_RIGHT);
 					nk_label_colored(gui->ctx, blk_name, NK_TEXT_LEFT, nk_rgb(255,255,0));
 					
@@ -131,7 +135,7 @@ int gui_ed_attr_info (gui_obj *gui){
 							nk_layout_row_template_push_dynamic(gui->ctx);
 							nk_layout_row_template_push_dynamic(gui->ctx);
 							nk_layout_row_template_push_static(gui->ctx, 50);
-							nk_layout_row_template_push_static(gui->ctx, 40);
+							nk_layout_row_template_push_static(gui->ctx, 20);
 							nk_layout_row_template_push_static(gui->ctx, 8);
 							nk_layout_row_template_end(gui->ctx);
 							
@@ -154,7 +158,7 @@ int gui_ed_attr_info (gui_obj *gui){
 							nk_layout_row_template_push_dynamic(gui->ctx);
 							nk_layout_row_template_push_dynamic(gui->ctx);
 							nk_layout_row_template_push_static(gui->ctx, 50);
-							nk_layout_row_template_push_static(gui->ctx, 40);
+							nk_layout_row_template_push_static(gui->ctx, 20);
 							nk_layout_row_template_end(gui->ctx);
 							
 							for (i = 0; i < num_attr; i++){
@@ -170,9 +174,10 @@ int gui_ed_attr_info (gui_obj *gui){
 									if (nk_button_label_styled(gui->ctx, &gui->b_icon_unsel, " "))
 										hidden[i] = 1;
 								}
-								if (nk_button_label(gui->ctx, "Del")){
+								/* delete current attribute */
+								if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->i_trash))){
 									dxf_obj_subst(attributes[i], NULL);
-									init = 0;
+									init = 0; /* reinit the list */
 								}
 								
 							}
@@ -182,7 +187,7 @@ int gui_ed_attr_info (gui_obj *gui){
 					}
 					nk_layout_row_dynamic(gui->ctx, 20, 2);
 					if (nk_button_label(gui->ctx, "OK")){
-						/* update changes in attributes */
+						/* update changes in insert */
 						int init_do = 0;
 						for (i = 0; i < num_attr; i++){
 							new_str = trimwhitespace(tag[i]);
@@ -208,11 +213,10 @@ int gui_ed_attr_info (gui_obj *gui){
 							dxf_attr_change(attr, 70, &hidden[i]);
 							
 						}
-						if (init_do){
+						if (init_do){ /* update insert entity */
 							new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0, DWG_LIFE);
 							dxf_obj_subst(ins_ent, new_ent);
-							
-							/* update undo/redo list */
+							/* add to undo/redo list */
 							do_add_entry(&gui->list_do, "Edit Insert Attributes");
 							do_add_item(gui->list_do.current, ins_ent, new_ent);
 							

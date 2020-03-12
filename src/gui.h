@@ -258,6 +258,7 @@ struct Gui_obj {
 	bmp_img *preview_img;
 	bmp_img * color_img;
 	bmp_img *i_cz48;
+	bmp_img *i_trash;
 	bmp_img * attr_vec[15];
 	
 	struct nk_style_button b_icon;

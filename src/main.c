@@ -481,6 +481,7 @@ int main(int argc, char** argv){
 	gui->svg_bmp[SVG_CZ] = i_svg_bmp(gui->svg_curves[SVG_CZ], 32, 32);
 	
 	gui->i_cz48 = i_svg_bmp(gui->svg_curves[SVG_CZ], 48, 48);
+	gui->i_trash = i_svg_bmp(gui->svg_curves[SVG_TRASH], 16, 16);
 	
 	
 	attrc_get_imgs(gui->attr_vec, 15, 16, 16);
@@ -1536,6 +1537,7 @@ int main(int argc, char** argv){
 	bmp_free(gui->color_img);
 	bmp_free(gui->preview_img);
 	bmp_free(gui->i_cz48);
+	bmp_free(gui->i_trash);
 	
 	i_svg_free_bmp(gui->svg_bmp);
 	i_svg_free_curves(gui->svg_curves);

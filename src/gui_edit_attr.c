@@ -28,7 +28,14 @@ int gui_ed_attr_interactive(gui_obj *gui){
 		gui_simple_select(gui);
 	}
 	else if (gui->step == 1){
-		gui->element = gui->sel_list->next->data;
+		if (dxf_find_obj2(gui->sel_list->next->data, "ATTRIB"))
+			gui->element = gui->sel_list->next->data;
+		else{
+			snprintf(gui->log_msg, 63, "Error: No attributes found");
+			gui->step = 0;
+			gui->element = NULL;
+			sel_list_clear (gui);
+		}
 		if (gui->ev & EV_CANCEL){
 			gui->element = NULL;
 			gui_default_modal(gui);
@@ -92,15 +99,7 @@ int gui_ed_attr_info (gui_obj *gui){
 						num_attr++;
 					}
 					
-					if(num_attr) init = 1; /* init success */
-					else { /* init fail -  no attributes found */
-						snprintf(gui->log_msg, 63, "Error: No attributes found");
-						gui->element = NULL;
-						init = 0;
-						gui->step = 0;
-						new_ent = NULL;
-						sel_list_clear (gui);
-					}
+					init = 1; /* init success */
 				}
 				else{
 					/* init fail -  no block found */
@@ -188,7 +187,6 @@ int gui_ed_attr_info (gui_obj *gui){
 					nk_layout_row_dynamic(gui->ctx, 20, 2);
 					if (nk_button_label(gui->ctx, "OK")){
 						/* update changes in insert */
-						int init_do = 0;
 						for (i = 0; i < num_attr; i++){
 							new_str = trimwhitespace(tag[i]);
 							/* verify if tags contain spaces */
@@ -196,12 +194,6 @@ int gui_ed_attr_info (gui_obj *gui){
 								snprintf(gui->log_msg, 63, "Error: No spaces allowed in tags");
 								continue; /* skip change */
 							}
-							
-							if (!init_do){
-								
-								init_do = 1;
-							}
-							
 							attr = dxf_find_obj_i(new_ent, "ATTRIB", i);
 							
 							/* update tag */
@@ -213,15 +205,18 @@ int gui_ed_attr_info (gui_obj *gui){
 							dxf_attr_change(attr, 70, &hidden[i]);
 							
 						}
-						if (init_do){ /* update insert entity */
-							new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0, DWG_LIFE);
-							dxf_obj_subst(ins_ent, new_ent);
-							/* add to undo/redo list */
-							do_add_entry(&gui->list_do, "Edit Insert Attributes");
-							do_add_item(gui->list_do.current, ins_ent, new_ent);
-							
-							gui->draw = 1;
+						if (num_attr == 0){
+							dxf_attr_change(ins_ent, 66, (int[]){0});
 						}
+						/* update insert entity */
+						new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0, DWG_LIFE);
+						dxf_obj_subst(ins_ent, new_ent);
+						/* add to undo/redo list */
+						do_add_entry(&gui->list_do, "Edit Insert Attributes");
+						do_add_item(gui->list_do.current, ins_ent, new_ent);
+						
+						gui->draw = 1;
+						
 						
 						/* close edit window */
 						gui->element = NULL;

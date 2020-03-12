@@ -308,10 +308,17 @@ int gui_blk_mng (gui_obj *gui){
 		}
 		/* edit attrib_def in Block */
 		if (nk_button_label(gui->ctx, "Attributes")){
-			show_attr_edit = 1;
+			/* verify if block point by name exists in structure */
+			if(blk = dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name)){
+				if (dxf_find_obj2(blk, "ATTDEF"))
+					/* show attdef edit popup */
+					show_attr_edit = 1;
+			}
+			
 		}
 		/* select block relative entities in drawing*/
 		if (nk_button_label(gui->ctx, "Select")){
+			gui->modal = SELECT;
 			block_select(gui, gui->blk_name);
 		}
 		
@@ -428,7 +435,7 @@ int gui_blk_mng (gui_obj *gui){
 	
 	/* edit attributes definitions in block */
 	if (show_attr_edit){
-		static dxf_node *blk = NULL, *attr = NULL;
+		static dxf_node *blk = NULL, *attr = NULL, *new_ent = NULL;
 		static int init = 0;
 		static dxf_node *attributes[1000];
 		static int num_attr = 0;
@@ -440,17 +447,23 @@ int gui_blk_mng (gui_obj *gui){
 		
 		static char blk_name[DXF_MAX_CHARS+1];
 		
+		if (!new_ent){
+			/* copy original block entity */
+			blk = dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name);
+			new_ent = dxf_ent_copy(blk, DWG_LIFE);
+		}
+		
 		/* init the interface */
 		if (!init){
 			/* get current block form it's gui name */
-			blk = dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name);
+			
 			blk_name[0] = 0;
 			if (blk){
 				/* save block name */
 				strncpy (blk_name, gui->blk_name, DXF_MAX_CHARS);
 				/* find attibutes */
 				num_attr = 0;
-				while ((attr = dxf_find_obj_i(blk, "ATTDEF", num_attr)) && num_attr < 999){
+				while ((attr = dxf_find_obj_i(new_ent, "ATTDEF", num_attr)) && num_attr < 999){
 					/* construct tables with each attribute informations */
 					attributes[num_attr] = attr;
 					tag[num_attr][0] = 0;
@@ -466,10 +479,13 @@ int gui_blk_mng (gui_obj *gui){
 					num_attr++;
 				}
 				
-				if(num_attr) init = 1; /* init success */
-				else show_attr_edit = 0; /* init fail -  no attributes found */
+				init = 1; /* init success */
 			}
-			else show_attr_edit = 0; /* init fail -  no block found */
+			else { /* init fail -  no block found */
+				init = 0;
+				new_ent = NULL;
+				show_attr_edit = 0;
+			}
 		}
 		
 		if (init){
@@ -487,6 +503,7 @@ int gui_blk_mng (gui_obj *gui){
 						nk_layout_row_template_push_dynamic(gui->ctx);
 						nk_layout_row_template_push_dynamic(gui->ctx);
 						nk_layout_row_template_push_static(gui->ctx, 50);
+						nk_layout_row_template_push_static(gui->ctx, 20);
 						nk_layout_row_template_push_static(gui->ctx, 8);
 						nk_layout_row_template_end(gui->ctx);
 						
@@ -509,6 +526,7 @@ int gui_blk_mng (gui_obj *gui){
 						nk_layout_row_template_push_dynamic(gui->ctx);
 						nk_layout_row_template_push_dynamic(gui->ctx);
 						nk_layout_row_template_push_static(gui->ctx, 50);
+						nk_layout_row_template_push_static(gui->ctx, 20);
 						nk_layout_row_template_end(gui->ctx);
 						
 						for (i = 0; i < num_attr; i++){
@@ -524,6 +542,11 @@ int gui_blk_mng (gui_obj *gui){
 								if (nk_button_label_styled(gui->ctx, &gui->b_icon_unsel, " "))
 									hidden[i] = 1;
 							}
+							/* delete current attribute */
+							if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->i_trash))){
+								dxf_obj_subst(attributes[i], NULL);
+								init = 0; /* reinit the list */
+							}
 						}
 						nk_group_end(gui->ctx);
 					}
@@ -532,7 +555,6 @@ int gui_blk_mng (gui_obj *gui){
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				if (nk_button_label(gui->ctx, "OK")){
 					/* update changes in attributes */
-					int init_do = 0;
 					for (i = 0; i < num_attr; i++){
 						new_str = trimwhitespace(tag[i]);
 						/* verify if tags contain spaces */
@@ -540,46 +562,38 @@ int gui_blk_mng (gui_obj *gui){
 							snprintf(gui->log_msg, 63, "Error: No spaces allowed in tags");
 							continue; /* skip change */
 						}
-						/* add to redo/undo list */
-						if (!init_do){
-							do_add_entry(&gui->list_do, "Edit Block Attributes");
-							init_do = 1;
-						}
+						attr = dxf_find_obj_i(new_ent, "ATTDEF", i);
 						
 						/* update tag */
-						tmp = dxf_find_attr2(attributes[i], 2);
-						tmp2 = dxf_attr_new (2, DXF_STR, new_str, DWG_LIFE);
-						do_add_item(gui->list_do.current, tmp, tmp2);
-						dxf_obj_subst(tmp, tmp2);
-						
+						dxf_attr_change(attr, 2, new_str);
 						/* update value */
 						new_str = trimwhitespace(value[i]);
-						tmp = dxf_find_attr2(attributes[i], 1);
-						tmp2 = dxf_attr_new (1, DXF_STR, new_str, DWG_LIFE);
-						do_add_item(gui->list_do.current, tmp, tmp2);
-						dxf_obj_subst(tmp, tmp2);
-						
+						dxf_attr_change(attr, 1, new_str);
 						/* update hide flag */
-						tmp = dxf_find_attr2(attributes[i], 70);
-						tmp2 = dxf_attr_new (70, DXF_STR, &hidden[i], DWG_LIFE);
-						do_add_item(gui->list_do.current, tmp, tmp2);
-						dxf_obj_subst(tmp, tmp2);
+						dxf_attr_change(attr, 70, &hidden[i]);
 						
 					}
+					dxf_obj_subst(blk, new_ent);
+					/* add to undo/redo list */
+					do_add_entry(&gui->list_do, "Edit Block Attributes");
+					do_add_item(gui->list_do.current, blk, new_ent);
 					
 					blk_idx = 1; /* update block preview */
 					/* close edit window */
 					init = 0;
+					new_ent = NULL;
 					show_attr_edit = 0;
 				}
 				if (nk_button_label(gui->ctx, "Cancel")){
 					/* close edit window */
 					init = 0;
+					new_ent = NULL;
 					show_attr_edit = 0;
 				}
 			} else {
 				/* close edit window */
 				init = 0;
+				new_ent = NULL;
 				show_attr_edit = 0;
 			}
 			nk_end(gui->ctx);

@@ -335,9 +335,6 @@ struct Gui_obj {
 	int paper_fam;
 	int sel_paper;
 	
-	int show_edit_text;
-	int show_edit_attr;
-	
 	dxf_drawing *clip_drwg;
 	
 	struct script_obj lua_script;

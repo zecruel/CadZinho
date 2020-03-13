@@ -28,6 +28,7 @@ int gui_ed_attr_interactive(gui_obj *gui){
 		gui_simple_select(gui);
 	}
 	else if (gui->step == 1){
+		/* verify if selected insert have attributes */
 		if (dxf_find_obj2(gui->sel_list->next->data, "ATTRIB"))
 			gui->element = gui->sel_list->next->data;
 		else{
@@ -36,6 +37,7 @@ int gui_ed_attr_interactive(gui_obj *gui){
 			gui->element = NULL;
 			sel_list_clear (gui);
 		}
+		/* user cancel operation */
 		if (gui->ev & EV_CANCEL){
 			gui->element = NULL;
 			gui_default_modal(gui);
@@ -114,7 +116,7 @@ int gui_ed_attr_info (gui_obj *gui){
 			if (init){
 				/* edit attributes window */
 				static struct nk_rect s = {150, 10, 420, 350};
-				if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Edit Attributes", NK_WINDOW_CLOSABLE|NK_WINDOW_MOVABLE, s)){
+				if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Edit Insert Attributes", NK_WINDOW_CLOSABLE|NK_WINDOW_MOVABLE, s)){
 					
 					/* show refered block name */
 					nk_layout_row_template_begin(gui->ctx, 20);

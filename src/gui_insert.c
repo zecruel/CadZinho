@@ -5,41 +5,40 @@ int gui_insert_interactive(gui_obj *gui){
 		static dxf_node *new_el;
 		int i;
 		
-		if (gui->step == 0){
+		
+		if (gui->step == 0 && (gui->ev & EV_CANCEL)){
+			gui_default_modal(gui);
+		}
+		else if (gui->step == 1){
 			gui->free_sel = 0;
-			if (gui->ev & EV_ENTER){
-				/* verify if block exist */					
-				if (dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name)){
-					gui->draw_tmp = 1;
-					//dxf_new_insert (char *name, double x0, double y0, double z0,int color, char *layer, char *ltype, int paper);
-					new_el = dxf_new_insert (gui->blk_name,
-						gui->step_x[gui->step], gui->step_y[gui->step], 0.0, /* pt1 */
-						gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-						gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-						0, DWG_LIFE); /* paper space */
-					gui->element = new_el;
-					gui->step = 1;
-					gui->en_distance = 1;
-					gui_next_step(gui);
-				}
-			}
-			else if (gui->ev & EV_CANCEL){
-				gui_default_modal(gui);
+			/* verify if block exist */					
+			if (dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name)){
+				gui->draw_tmp = 1;
+				/* create a candidate insert element */
+				new_el = dxf_new_insert (gui->blk_name,
+					gui->step_x[gui->step], gui->step_y[gui->step], 0.0, /* pt1 */
+					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+					0, DWG_LIFE);
+				/* go to next step */
+				gui->element = new_el;
+				gui->step = 2;
+				gui->en_distance = 1;
+				gui_next_step(gui);
 			}
 		}
-		else{
+		else if (gui->step == 2){
 			if (gui->ev & EV_ENTER){
 				dxf_attr_change_i(new_el, 10, &gui->step_x[gui->step], -1);
 				dxf_attr_change_i(new_el, 20, &gui->step_y[gui->step], -1);
 				
-				drawing_ent_append(gui->drawing, new_el);
-				
-				
-				/*=========================*/
+				/* convert block's ATTDEF to ATTRIBUTES*/
 				dxf_node *blk = dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name);
 				dxf_node *attdef, *attrib;
 				i = 0;
+				/* get attdef */
 				while (attdef = dxf_find_obj_i(blk, "ATTDEF", i)){
+					/* convert and append to insert */
 					attrib = dxf_attrib_cpy(attdef, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, DWG_LIFE);
 					ent_handle(gui->drawing, attrib);
 					dxf_insert_append(gui->drawing, new_el, attrib, DWG_LIFE);
@@ -47,17 +46,22 @@ int gui_insert_interactive(gui_obj *gui){
 					i++;
 				}
 				
-				/*===================*/
+				/* append to drawing */
+				drawing_ent_append(gui->drawing, new_el);
 				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
 				do_add_entry(&gui->list_do, "INSERT");
 				do_add_item(gui->list_do.current, NULL, new_el);
 				
+				/* prepare to new insert */
 				gui->step_x[gui->step - 1] = gui->step_x[gui->step];
 				gui->step_y[gui->step - 1] = gui->step_y[gui->step];
 				gui_first_step(gui);
+				gui->step = 1;
+				new_el = NULL;
 			}
 			else if (gui->ev & EV_CANCEL){
-				gui_default_modal(gui);
+				gui_first_step(gui);
+				gui->step = 0;
 			}
 			if (gui->ev & EV_MOTION){
 				dxf_attr_change_i(new_el, 10, &gui->step_x[gui->step], -1);
@@ -65,7 +69,7 @@ int gui_insert_interactive(gui_obj *gui){
 				dxf_attr_change(new_el, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
 				dxf_attr_change(new_el, 8, gui->drawing->layers[gui->layer_idx].name);
 				dxf_attr_change(new_el, 62, &gui->color_idx);					
-				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
+				if (new_el) new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
 			}
 		}
 	}
@@ -80,13 +84,37 @@ int gui_insert_info (gui_obj *gui){
 		static char descr[DXF_MAX_CHARS+1] = "";
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Place a block", NK_TEXT_LEFT);
+		nk_label(gui->ctx, "Place a Insert", NK_TEXT_LEFT);
 		
-		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Block Name:", NK_TEXT_LEFT);
-		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->blk_name, DXF_MAX_CHARS, nk_filter_default);
-		
-		if (nk_button_label(gui->ctx, "Explore")) show_blk_pp = 1;
+		if (gui->step == 0){
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			nk_label(gui->ctx, "Choose Block:", NK_TEXT_LEFT);
+			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->blk_name, DXF_MAX_CHARS, nk_filter_default);
+			
+			nk_layout_row_dynamic(gui->ctx, 20, 2);
+			
+			if (nk_button_label(gui->ctx, "OK")){
+				if (dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name)){
+					gui->step = 1;
+					gui_next_step(gui);
+				}
+				else {
+					snprintf(gui->log_msg, 63, "Error: Block not found");
+				}
+			}
+			if (nk_button_label(gui->ctx, "Explore")) show_blk_pp = 1;
+		}
+		else{
+			/* show refered block name */
+			nk_layout_row_template_begin(gui->ctx, 20);
+			nk_layout_row_template_push_static(gui->ctx, 50);
+			nk_layout_row_template_push_dynamic(gui->ctx);
+			nk_layout_row_template_end(gui->ctx);
+			nk_label(gui->ctx, "Block:", NK_TEXT_RIGHT);
+			nk_label_colored(gui->ctx, gui->blk_name, NK_TEXT_LEFT, nk_rgb(255,255,0));
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			nk_label(gui->ctx, "Enter place point", NK_TEXT_LEFT);
+		}
 		if (show_blk_pp){
 			/* select block popup */
 			static struct nk_rect s = {20, 10, 420, 380};

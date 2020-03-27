@@ -104,7 +104,7 @@ int gui_paste_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Paste a selection", NK_TEXT_LEFT);
 		nk_label(gui->ctx, "Enter destination point", NK_TEXT_LEFT);
-		gui->scale_x = nk_propertyd(gui->ctx, "Scale", 0.0d, gui->scale_x, 100.0d, 0.1d, 0.1d);
+		gui->scale_x = nk_propertyd(gui->ctx, "Scale", 0.0d, gui->scale_x, 100000.0d, 0.1d, 0.1d);
 		gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0d, gui->angle, 180.0d, 0.1d, 0.1d);
 	}
 	return 1;

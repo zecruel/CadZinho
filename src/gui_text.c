@@ -58,6 +58,10 @@ int gui_text_interactive(gui_obj *gui){
 				dxf_attr_change_i(new_el, 72, &gui->t_al_h, -1);
 				dxf_attr_change_i(new_el, 73, &gui->t_al_v, -1);
 				dxf_attr_change(new_el, 7, gui->drawing->text_styles[gui->t_sty_idx].name);
+				double angle = gui->angle;
+				if (angle <= 0.0) angle = 360.0 - angle;
+				angle = fmod(angle, 360.0);
+				dxf_attr_change(new_el, 50, &angle);
 				
 				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
 			}
@@ -77,6 +81,12 @@ int gui_text_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Place an text", NK_TEXT_LEFT);
 		
+		
+		/* text style */
+		nk_layout_row_template_begin(gui->ctx, 20);
+		nk_layout_row_template_push_static(gui->ctx, 45);
+		nk_layout_row_template_push_dynamic(gui->ctx);
+		nk_layout_row_template_end(gui->ctx);
 		nk_label(gui->ctx, "Style:", NK_TEXT_LEFT);
 		
 		int h = num_tstyles * 25 + 5;
@@ -97,11 +107,15 @@ int gui_text_info (gui_obj *gui){
 			nk_combo_end(gui->ctx);
 		}
 		
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Text:", NK_TEXT_LEFT);
 		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->txt, DXF_MAX_CHARS, nk_filter_default);
-		gui->txt_h = nk_propertyd(gui->ctx, "Text Height", 0.0d, gui->txt_h, 100.0d, 0.1d, 0.1d);
+		gui->txt_h = nk_propertyd(gui->ctx, "Height", 0.0d, gui->txt_h, 100.0d, 0.1d, 0.1d);
+		gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0d, gui->angle, 180.0d, 0.1d, 0.1d);
+		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		gui->t_al_v = nk_combo(gui->ctx, text_al_v, T_AL_V_LEN, gui->t_al_v, 20, nk_vec2(100,105));
 		gui->t_al_h = nk_combo(gui->ctx, text_al_h, T_AL_H_LEN, gui->t_al_h, 20, nk_vec2(100,105));
+		
 	}
 	return 1;
 }

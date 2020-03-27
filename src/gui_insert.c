@@ -39,7 +39,7 @@ int gui_insert_interactive(gui_obj *gui){
 				/* get attdef */
 				while (attdef = dxf_find_obj_i(blk, "ATTDEF", i)){
 					/* convert and append to insert */
-					attrib = dxf_attrib_cpy(attdef, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, DWG_LIFE);
+					attrib = dxf_attrib_cpy2(attdef, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->scale_x, gui->angle, DWG_LIFE);
 					ent_handle(gui->drawing, attrib);
 					dxf_insert_append(gui->drawing, new_el, attrib, DWG_LIFE);
 					
@@ -68,7 +68,14 @@ int gui_insert_interactive(gui_obj *gui){
 				dxf_attr_change_i(new_el, 20, &gui->step_y[gui->step], -1);
 				dxf_attr_change(new_el, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
 				dxf_attr_change(new_el, 8, gui->drawing->layers[gui->layer_idx].name);
-				dxf_attr_change(new_el, 62, &gui->color_idx);					
+				dxf_attr_change(new_el, 62, &gui->color_idx);
+				dxf_attr_change(new_el, 41, &gui->scale_x);
+				dxf_attr_change(new_el, 42, &gui->scale_y);
+				dxf_attr_change(new_el, 43, &gui->scale_x);//
+				double angle = gui->angle;
+				if (angle <= 0.0) angle = 360.0 - angle;
+				angle = fmod(angle, 360.0);
+				dxf_attr_change(new_el, 50, &angle);
 				if (new_el) new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
 			}
 		}
@@ -114,10 +121,13 @@ int gui_insert_info (gui_obj *gui){
 			nk_label_colored(gui->ctx, gui->blk_name, NK_TEXT_LEFT, nk_rgb(255,255,0));
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			nk_label(gui->ctx, "Enter place point", NK_TEXT_LEFT);
+			gui->scale_x = nk_propertyd(gui->ctx, "Scale", 0.0d, gui->scale_x, 100000.0d, 0.1d, 0.1d);
+			gui->scale_y = gui->scale_x; //gui->scale_z = gui->scale_x;
+			gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0d, gui->angle, 180.0d, 0.1d, 0.1d);
 		}
 		if (show_blk_pp){
 			/* select block popup */
-			static struct nk_rect s = {20, 10, 420, 380};
+			static struct nk_rect s = {20, -80, 420, 380};
 			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Select Block", NK_WINDOW_CLOSABLE, s)){
 				
 				list_node *blk_g; /*graphic object of current block */

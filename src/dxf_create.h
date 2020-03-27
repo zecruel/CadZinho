@@ -93,6 +93,9 @@ dxf_node * dxf_attdef_cpy (dxf_node *text, char *tag, double x0, double y0, doub
 
 dxf_node * dxf_attrib_cpy (dxf_node *attdef, double x0, double y0, double z0, int pool);
 
+dxf_node * dxf_attrib_cpy2 (dxf_node *attdef, double x0, double y0, double z0, 
+double scale, double rotation, int pool);
+
 dxf_node * dxf_new_seqend (char *layer, int pool);
 
 dxf_node * dxf_new_endblk (char *layer, char *owner, int pool);

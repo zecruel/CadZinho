@@ -91,9 +91,7 @@ char *txt, char *tag, int color, char *layer, char *ltype, int lw, int paper, in
 
 dxf_node * dxf_attdef_cpy (dxf_node *text, char *tag, double x0, double y0, double z0, int hide, int pool);
 
-dxf_node * dxf_attrib_cpy (dxf_node *attdef, double x0, double y0, double z0, int pool);
-
-dxf_node * dxf_attrib_cpy2 (dxf_node *attdef, double x0, double y0, double z0, 
+dxf_node * dxf_attrib_cpy (dxf_node *attdef, double x0, double y0, double z0, 
 double scale, double rotation, int pool);
 
 dxf_node * dxf_new_seqend (char *layer, int pool);

@@ -781,138 +781,7 @@ dxf_node * dxf_attdef_cpy (dxf_node *text, char *tag, double x0, double y0, doub
 	return NULL;
 }
 
-dxf_node * dxf_attrib_cpy (dxf_node *attdef, double x0, double y0, double z0, int pool){
-	/*create new attrib ent by copying parameters of an attdef ent */
-	/* translate position of attrib by x0, y0, z0*/
-	if(attdef){
-		if (attdef->type != DXF_ENT){
-			return NULL; /*Fail - wrong type */
-		}
-		if (strcmp(attdef->obj.name, "ATTDEF") != 0){
-			return NULL; /*Fail - wrong attdef */
-		}
-		
-		double x1= 0.0, y1 = 0.0, z1 = 0.0;
-		double x2= 0.0, y2 = 0.0, z2 = 0.0;
-		double h = 1.0, rot = 0.0, t_scale_x = 1.0;
-		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0;
-		char txt[DXF_MAX_CHARS], tag[DXF_MAX_CHARS];
-		char layer[DXF_MAX_CHARS], l_type[DXF_MAX_CHARS];
-		char t_style[DXF_MAX_CHARS];
-		int color = 0, paper = 0, lw = -2, flags = 0;
-		int t_alin_v = 0, t_alin_h = 0;
-		
-		
-		/* clear the strings */
-		txt[0] = 0;
-		tag[0] = 0;
-		layer[0] = 0;
-		l_type[0] = 0;
-		t_style[0] = 0;
-		
-		dxf_node *current = NULL;
-		if (attdef->obj.content){
-			current = attdef->obj.content->next;
-		}
-		while (current){
-			if (current->type == DXF_ATTR){ /* scan parameters */
-				switch (current->value.group){
-					case 1:
-						strcpy(txt, current->value.s_data);
-						break;
-					case 2:
-						strcpy(tag, current->value.s_data);
-						break;
-					case 7:
-						strcpy(t_style, current->value.s_data);
-						break;
-					case 6:
-						strcpy(l_type, current->value.s_data);
-						break;
-					case 8:
-						strcpy(layer, current->value.s_data);
-						break;
-					case 10:
-						x1 = current->value.d_data;
-						break;
-					case 11:
-						x2 = current->value.d_data;
-						break;
-					case 20:
-						y1 = current->value.d_data;
-						break;
-					case 21:
-						y2 = current->value.d_data;
-						break;
-					case 30:
-						z1 = current->value.d_data;
-						break;
-					case 31:
-						z2 = current->value.d_data;
-						break;
-					case 40:
-						h = current->value.d_data;
-						break;
-					case 41:
-						t_scale_x = current->value.d_data;
-						break;
-					case 50:
-						rot = current->value.d_data;
-						break;
-					case 62:
-						color = current->value.i_data;
-						break;
-					case 67:
-						paper = current->value.i_data;
-						break;
-					case 70:
-						flags = current->value.i_data;
-						break;
-					case 72:
-						t_alin_h = current->value.i_data;
-						break;
-					case 74:
-						t_alin_v = current->value.i_data;
-						break;
-					case 210:
-						extru_x = current->value.d_data;
-						break;
-					case 220:
-						extru_y = current->value.d_data;
-						break;
-					case 230:
-						extru_z = current->value.d_data;
-						break;
-					case 370:
-						lw = current->value.i_data;
-				}
-			}
-			current = current->next; /* go to the next in the list */
-		}
-		
-		dxf_node * attrib = dxf_new_attrib (x1 + x0, y1 + y0, z1 + z0, h,
-			txt, tag, color, layer, l_type, lw, paper, pool);
-		
-		dxf_attr_change(attrib, 11, (void *)(double[]){x2 + x0});
-		dxf_attr_change(attrib, 21, (void *)(double[]){y2 + y0});
-		dxf_attr_change(attrib, 31, (void *)(double[]){z2 + z0});
-		dxf_attr_change(attrib, 50, (void *)&rot);
-		dxf_attr_change(attrib, 7, (void *)t_style);
-		dxf_attr_change(attrib, 41, (void *)&t_scale_x);
-		dxf_attr_change(attrib, 72, (void *)&t_alin_h);
-		dxf_attr_change(attrib, 74, (void *)&t_alin_v);
-		dxf_attr_change(attrib, 210, (void *)&extru_x);
-		dxf_attr_change(attrib, 220, (void *)&extru_y);
-		dxf_attr_change(attrib, 230, (void *)&extru_z);
-		dxf_attr_change(attrib, 70, (void *)&flags);
-		
-		return attrib;
-	}
-
-	return NULL;
-}
-
-dxf_node * dxf_attrib_cpy2 (dxf_node *attdef, double x0, double y0, double z0, 
+dxf_node * dxf_attrib_cpy (dxf_node *attdef, double x0, double y0, double z0, 
 double scale, double rotation, int pool){
 	/*create new attrib ent by copying parameters of an attdef ent */
 	/* translate position of attrib by x0, y0, z0, rotate and scale*/
@@ -934,11 +803,10 @@ double scale, double rotation, int pool){
 		int color = 0, paper = 0, lw = -2, flags = 0;
 		int t_alin_v = 0, t_alin_h = 0;
 		
+		/* rotation parameters */
 		double sine, cosine;
-		
 		sine = sin(rotation * M_PI/180.0);
 		cosine = cos(rotation * M_PI/180.0);
-		
 		
 		/* clear the strings */
 		txt[0] = 0;
@@ -952,7 +820,7 @@ double scale, double rotation, int pool){
 			current = attdef->obj.content->next;
 		}
 		while (current){
-			if (current->type == DXF_ATTR){ /* scan parameters */
+			if (current->type == DXF_ATTR){ /* get source attdef parameters */
 				switch (current->value.group){
 					case 1:
 						strcpy(txt, current->value.s_data);
@@ -1027,36 +895,34 @@ double scale, double rotation, int pool){
 			current = current->next; /* go to the next in the list */
 		}
 		
+		/* apply scale */
 		x1 *= scale;
 		y1 *= scale;
 		z1 *= scale;
-		
 		x2 *= scale;
 		y2 *= scale;
 		z2 *= scale;
-		
-		double x_new = x1 * cosine - y1 * sine;
-		double y_new = x1 * sine + y1 * cosine;
-		
-		x1 = x_new;
-		y1 = y_new;
-		
-		x_new = x2 * cosine - y2 * sine;
-		y_new = x2 * sine + y2 * cosine;
-		
-		x2 = x_new;
-		y2 = y_new;
-		
 		h *= scale;
 		
+		/* apply rotation */		
+		double x_new = x1 * cosine - y1 * sine;
+		double y_new = x1 * sine + y1 * cosine;
+		x1 = x_new;
+		y1 = y_new;
+		x_new = x2 * cosine - y2 * sine;
+		y_new = x2 * sine + y2 * cosine;
+		x2 = x_new;
+		y2 = y_new;
 		rot = fmod(rot, 360.0);
 		rot +=  rotation;
 		rot = fmod(rot, 360.0);
 		if (rot <= 0.0) rot = 360.0 - rot;
 		
+		/* create new ATTRIB element */
 		dxf_node * attrib = dxf_new_attrib (x1 + x0, y1 + y0, z1 + z0, h,
 			txt, tag, color, layer, l_type, lw, paper, pool);
 		
+		/* adjust its parameters */
 		dxf_attr_change(attrib, 11, (void *)(double[]){x2 + x0});
 		dxf_attr_change(attrib, 21, (void *)(double[]){y2 + y0});
 		dxf_attr_change(attrib, 31, (void *)(double[]){z2 + z0});

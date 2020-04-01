@@ -7,6 +7,7 @@ int gui_insert_interactive(gui_obj *gui){
 		
 		
 		if (gui->step == 0 && (gui->ev & EV_CANCEL)){
+			/* cancel insert mode */
 			gui_default_modal(gui);
 		}
 		else if (gui->step == 1){
@@ -28,7 +29,8 @@ int gui_insert_interactive(gui_obj *gui){
 			}
 		}
 		else if (gui->step == 2){
-			if (gui->ev & EV_ENTER){
+			if (gui->ev & EV_ENTER){ /* confirm */
+				/* insertion point */
 				dxf_attr_change_i(new_el, 10, &gui->step_x[gui->step], -1);
 				dxf_attr_change_i(new_el, 20, &gui->step_y[gui->step], -1);
 				
@@ -38,8 +40,8 @@ int gui_insert_interactive(gui_obj *gui){
 				i = 0;
 				/* get attdef */
 				while (attdef = dxf_find_obj_i(blk, "ATTDEF", i)){
-					/* convert and append to insert */
-					attrib = dxf_attrib_cpy2(attdef, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->scale_x, gui->angle, DWG_LIFE);
+					/* convert and append to insert with translate, rotation and scale */
+					attrib = dxf_attrib_cpy(attdef, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->scale_x, gui->angle, DWG_LIFE);
 					ent_handle(gui->drawing, attrib);
 					dxf_insert_append(gui->drawing, new_el, attrib, DWG_LIFE);
 					
@@ -48,7 +50,7 @@ int gui_insert_interactive(gui_obj *gui){
 				
 				/* append to drawing */
 				drawing_ent_append(gui->drawing, new_el);
-				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
+				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , DWG_LIFE);
 				do_add_entry(&gui->list_do, "INSERT");
 				do_add_item(gui->list_do.current, NULL, new_el);
 				
@@ -64,6 +66,7 @@ int gui_insert_interactive(gui_obj *gui){
 				gui->step = 0;
 			}
 			if (gui->ev & EV_MOTION){
+				/* Modify insert parameters */
 				dxf_attr_change_i(new_el, 10, &gui->step_x[gui->step], -1);
 				dxf_attr_change_i(new_el, 20, &gui->step_y[gui->step], -1);
 				dxf_attr_change(new_el, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
@@ -76,7 +79,8 @@ int gui_insert_interactive(gui_obj *gui){
 				if (angle <= 0.0) angle = 360.0 - angle;
 				angle = fmod(angle, 360.0);
 				dxf_attr_change(new_el, 50, &angle);
-				if (new_el) new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
+				/* generate current graph to show */
+				if (new_el) new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , FRAME_LIFE);
 			}
 		}
 	}
@@ -93,14 +97,16 @@ int gui_insert_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Place a Insert", NK_TEXT_LEFT);
 		
-		if (gui->step == 0){
+		if (gui->step == 0){ /* choose a block description */
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			nk_label(gui->ctx, "Choose Block:", NK_TEXT_LEFT);
+			
+			/* enter a block name directly */
 			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->blk_name, DXF_MAX_CHARS, nk_filter_default);
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 2);
-			
-			if (nk_button_label(gui->ctx, "OK")){
+			if (nk_button_label(gui->ctx, "OK")){ /* try go to next step */
+				/* check if block exists */
 				if (dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name)){
 					gui->step = 1;
 					gui_next_step(gui);
@@ -109,9 +115,11 @@ int gui_insert_info (gui_obj *gui){
 					snprintf(gui->log_msg, 63, "Error: Block not found");
 				}
 			}
+			
+			/* explore to view available blocks in drawing */
 			if (nk_button_label(gui->ctx, "Explore")) show_blk_pp = 1;
 		}
-		else{
+		else{ /* define parameters and place a insert */
 			/* show refered block name */
 			nk_layout_row_template_begin(gui->ctx, 20);
 			nk_layout_row_template_push_static(gui->ctx, 50);
@@ -119,14 +127,18 @@ int gui_insert_info (gui_obj *gui){
 			nk_layout_row_template_end(gui->ctx);
 			nk_label(gui->ctx, "Block:", NK_TEXT_RIGHT);
 			nk_label_colored(gui->ctx, gui->blk_name, NK_TEXT_LEFT, nk_rgb(255,255,0));
+			
+			/* dinamicaly, choose a place point and confirm */
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			nk_label(gui->ctx, "Enter place point", NK_TEXT_LEFT);
+			
+			/* scale and rotation parameters */
 			gui->scale_x = nk_propertyd(gui->ctx, "Scale", 0.0d, gui->scale_x, 100000.0d, 0.1d, 0.1d);
 			gui->scale_y = gui->scale_x; //gui->scale_z = gui->scale_x;
 			gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0d, gui->angle, 180.0d, 0.1d, 0.1d);
 		}
 		if (show_blk_pp){
-			/* select block popup */
+			/* explore and select block popup */
 			static struct nk_rect s = {20, -80, 420, 380};
 			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Select Block", NK_WINDOW_CLOSABLE, s)){
 				
@@ -139,6 +151,7 @@ int gui_insert_info (gui_obj *gui){
 				nk_layout_row_dynamic(gui->ctx, 280, 2);
 				i = 0;
 				int blk_idx = -1;
+				/* list of available blocks */
 				if (nk_group_begin(gui->ctx, "Block_names", NK_WINDOW_BORDER)) {
 					nk_layout_row_dynamic(gui->ctx, 20, 1);
 					while (blk = dxf_find_obj_i(gui->drawing->blks, "BLOCK", i)){
@@ -191,7 +204,6 @@ int gui_insert_info (gui_obj *gui){
 					bmp_fill(gui->preview_img, gui->preview_img->bkg); /* clear bitmap */
 					//graph_list_draw(blk_g, gui->preview_img, o_x, o_y, z);
 					struct draw_param d_param;
-	
 					d_param.ofs_x = o_x;
 					d_param.ofs_y = o_y;
 					d_param.scale = z;
@@ -225,32 +237,13 @@ int gui_insert_info (gui_obj *gui){
 				}
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				
+				/* option to show hidden blocks */
 				nk_checkbox_label(gui->ctx, "Hidden", &show_hidden_blks);
 				
-				if (nk_button_label(gui->ctx, "Select")){
+				if (nk_button_label(gui->ctx, "Select")){ /* select block and close popup */
 					show_blk_pp = 0;
 					nk_popup_close(gui->ctx);
 				}
-				/*
-				if (nk_button_label(gui->ctx, "test")){
-					//snprintf(txt, DXF_MAX_CHARS, "text");
-					blk = dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name);
-					if(blk){
-						/* create a new attdef text 
-						//dxf_node * dxf_new_attdef (double x0, double y0, double z0, double h,
-						//char *txt, char *tag, double thick, int color, char *layer, char *ltype, int paper){
-
-						dxf_node * new_el = dxf_new_attdef (
-							0.0, 0.0, 0.0, 1.0, /* pt1, height 
-							"test", "tag1",(double) thick, /* text, thickness 
-							gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer 
-							gui->drawing->ltypes[gui->ltypes_idx].name, 0); /* line type, paper space 
-						ent_handle(gui->drawing, new_el);
-						dxf_block_append(blk, new_el);
-						snprintf(txt, DXF_MAX_CHARS, "attdef");
-					}
-				}*/
 				
 				nk_popup_end(gui->ctx);
 			}

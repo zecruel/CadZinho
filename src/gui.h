@@ -90,7 +90,9 @@ enum Modal {
 	SCRIPT,
 	SPLINE,
 	ELLIPSE,
-	IMAGE
+	IMAGE,
+	ADD_ATTRIB,
+	ADD_XDATA
 };
 
 enum Gui_ev {
@@ -268,6 +270,7 @@ struct Gui_obj {
 	
 	char log_msg[64];
 	char txt[DXF_MAX_CHARS];
+	char tag[DXF_MAX_CHARS];
 	char long_txt[5 * DXF_MAX_CHARS];
 	char blk_name[DXF_MAX_CHARS];
 	char blk_descr[DXF_MAX_CHARS];

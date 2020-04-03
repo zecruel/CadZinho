@@ -59,7 +59,9 @@ int gui_tools_win (gui_obj *gui){
 			
 		}
 		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TAG]))){
-			
+			gui->modal = ADD_ATTRIB;
+			gui->step = 0;
+			sel_list_clear (gui);
 		}
 		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TAG_E]))){
 			gui->modal = ED_ATTR;
@@ -166,6 +168,7 @@ int gui_tools_win (gui_obj *gui){
 			gui_image_info (gui);
 			
 			gui_ed_attr_info (gui);
+			gui_attrib_info (gui);
 			
 			if (gui->modal == SCRIPT) {
 				nk_layout_row_dynamic(gui->ctx, 20, 1);

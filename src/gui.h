@@ -226,7 +226,7 @@ struct Gui_obj {
 	int draw, draw_tmp, draw_phanton;
 	int near_attr;
 	
-	int text2tag;
+	int text2tag, hide_tag;
 	
 	int hatch_fam_idx, hatch_idx, h_type, hatch_assoc;
 	int hatch_sel;

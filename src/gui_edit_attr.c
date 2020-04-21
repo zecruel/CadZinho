@@ -27,7 +27,7 @@ int gui_ed_attr_interactive(gui_obj *gui){
 		gui->sel_ent_filter = DXF_INSERT;
 		gui_simple_select(gui);
 	}
-	else if (gui->step == 1){
+	else if (gui->step >= 1){
 		/* verify if selected insert have attributes */
 		if (dxf_find_obj2(gui->sel_list->next->data, "ATTRIB"))
 			gui->element = gui->sel_list->next->data;
@@ -48,15 +48,24 @@ int gui_ed_attr_interactive(gui_obj *gui){
 
 int gui_ed_attr_info (gui_obj *gui){
 	if (gui->modal == ED_ATTR) {
+		static int init = 0;
+		static dxf_node *new_ent = NULL;
+		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Edit Attributes", NK_TEXT_LEFT);
-		if (gui->step == 0){
+		if (gui->step == 0){ /* get insert element to edit */
 			nk_label(gui->ctx, "Select a Insert element", NK_TEXT_LEFT);
-		} else {
+			init = 0;
+		}
+		else if (gui->step == 1){ /* init */
+			init = 0;
+			new_ent = NULL;
+			gui->step = 2;
+		}
+		else { /* all inited */
 			nk_label(gui->ctx, "Edit data", NK_TEXT_LEFT);
 			
-			static dxf_node *ins_ent = NULL, *attr = NULL, *new_ent = NULL;
-			static int init = 0;
+			static dxf_node *ins_ent = NULL, *attr = NULL;
 			static dxf_node *attributes[1000];
 			static int num_attr = 0;
 			static char tag[1000][DXF_MAX_CHARS+1];
@@ -115,7 +124,7 @@ int gui_ed_attr_info (gui_obj *gui){
 			
 			if (init){
 				/* edit attributes window */
-				static struct nk_rect s = {150, 10, 420, 350};
+				static struct nk_rect s = {150, -50, 420, 350};
 				if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Edit Insert Attributes", NK_WINDOW_CLOSABLE|NK_WINDOW_MOVABLE, s)){
 					
 					/* show refered block name */

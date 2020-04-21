@@ -1145,6 +1145,7 @@ int gui_start(gui_obj *gui){
 	gui->draw_phanton = 0;
 	gui->near_attr = 0;
 	gui->text2tag = 0;
+	gui->hide_tag = 0;
 	gui->en_distance = 0;
 	gui->entry_relative = 1;
 	

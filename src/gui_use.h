@@ -107,5 +107,9 @@ int gui_attrib_interactive(gui_obj *gui);
 
 int gui_attrib_info (gui_obj *gui);
 
+int gui_expl_interactive(gui_obj *gui);
+
+int gui_expl_info (gui_obj *gui);
+
 
 #endif

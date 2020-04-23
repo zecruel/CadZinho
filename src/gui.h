@@ -92,7 +92,8 @@ enum Modal {
 	ELLIPSE,
 	IMAGE,
 	ADD_ATTRIB,
-	ADD_XDATA
+	ADD_XDATA,
+	EXPLODE
 };
 
 enum Gui_ev {

@@ -16,4 +16,6 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 
 int mtext_change_text (dxf_node *obj, char *text, int len, int pool);
 
+list_node * dxf_edit_expl_ins(dxf_drawing *drawing, dxf_node * ins_ent);
+
 #endif

@@ -1,4 +1,5 @@
 #include "dxf_edit.h"
+#include "dxf_copy.h"
 #include "math.h"
 
 
@@ -40,9 +41,9 @@ double ellip_par (double ang, double a, double b){
 //Normalize to [0,360):
 
 double ang_adjust_360(double x){
-    x = fmod(x,360);
+    x = fmod(x,360.0);
     if (x < 0)
-        x += 360;
+        x += 360.0;
     return x;
 }
 /*Normalize to [-180,180):
@@ -1441,4 +1442,79 @@ int mtext_change_text (dxf_node *obj, char *text, int len, int pool){
 		else dxf_attr_change(obj, 1, curr_text);
 	}
 	return 1;
+}
+
+list_node * dxf_edit_expl_ins(dxf_drawing *drawing, dxf_node * ins_ent){
+	if (!drawing) return NULL;
+	if (!ins_ent) return NULL;
+	
+	dxf_node *current = NULL;
+	dxf_node *block = NULL, *blk_name = NULL;
+	
+	double x = 0.0, y = 0.0, z = 0.0, angle = 0.0;
+	double scale_x = 1.0, scale_y = 1.0, scale_z = 1.0;
+	
+	/* get insert parameters */
+	current = ins_ent->obj.content;
+	while (current){
+		if (current->type == DXF_ATTR){ /* DXF attibute */
+			switch (current->value.group){
+				case 10:
+					x = current->value.d_data;
+					break;
+				case 20:
+					y = current->value.d_data;
+					break;
+				case 30:
+					z = current->value.d_data;
+					break;
+				case 41:
+					scale_x = current->value.d_data;
+					break;
+				case 42:
+					scale_y = current->value.d_data;
+					break;
+				case 43:
+					scale_z = current->value.d_data;
+					break;
+				case 50:
+					angle = current->value.d_data;
+					break;
+				case 2:
+					blk_name = current;
+					break;
+			}
+		}
+		current = current->next; /* go to the next in the list */
+	}
+	
+	/* find relative block */
+	if(blk_name) {
+		block = dxf_find_obj_descr2(drawing->blks, "BLOCK", blk_name->value.s_data);
+		if(block) {
+			list_node *list = list_new(NULL, FRAME_LIFE);
+			current = block->obj.content;
+			while (current){ /* sweep elements in block */
+				if (current->type == DXF_ENT){
+					if (strcmp(current->obj.name, "ATTDEF") != 0){ /* skip ATTDEF elements */
+						dxf_node *new_ent = dxf_ent_copy(current, FRAME_LIFE);
+						/* apply modifications */
+						dxf_edit_scale(new_ent, scale_x, scale_y, scale_z);
+						dxf_edit_rot(new_ent, angle);
+						dxf_edit_move(new_ent, x, y, z);
+						
+						/* append to list*/
+						list_node * new_node = list_new(new_ent, FRAME_LIFE);
+						list_push(list, new_node);
+						
+					}
+				}
+				current = current->next; /* go to the next in the list*/
+			}
+			return list;
+		}
+	}
+	
+	return NULL;
+	
 }

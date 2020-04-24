@@ -1,4 +1,5 @@
 #include "dxf_copy.h"
+#include "dxf_create.h"
 
 dxf_node *dxf_ent_copy(dxf_node *source, int pool_dest){
 	dxf_node *current = NULL;
@@ -813,7 +814,7 @@ int dxf_block_cpy(dxf_drawing *source, dxf_drawing *dest, dxf_node *block){
 	
 	/* get block name */
 	obj = dxf_find_attr2(block, 2);
-	if(!obj) return NULL;
+	if(!obj) return 0;
 	strncpy (name, obj->value.s_data, DXF_MAX_CHARS);
 	
 	/* get block layer */

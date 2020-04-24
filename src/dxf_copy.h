@@ -3,7 +3,6 @@
 
 #include "dxf.h"
 #include "list.h"
-#include "dxf_create.h"
 
 dxf_node *dxf_ent_copy(dxf_node *source, int pool_dest);
 

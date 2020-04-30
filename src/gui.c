@@ -1253,6 +1253,8 @@ int gui_start(gui_obj *gui){
 	gui->scale_mode = SCALE_FACTOR;
 	gui->rot_mode = ROT_ANGLE;
 	
+	gui->expl_mode = EXPL_DEFAULT;
+	
 	gui->el_mode = EL_FULL;
 	gui->o_view = O_TOP;
 	

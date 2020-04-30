@@ -241,6 +241,8 @@ struct Gui_obj {
 	enum Scale_mode scale_mode;
 	enum Rotate_mode rot_mode;
 	
+	enum Explode_mode expl_mode;
+	
 	enum Ellipse_mode el_mode;
 	enum Ortho_view o_view;
 	

@@ -1,28 +1,7 @@
 #include "dxf_edit.h"
 #include "dxf_copy.h"
+#include "dxf_create.h"
 #include "math.h"
-
-
-static double dot_product(double a[3], double b[3]){
-	return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
-}
- 
-static void cross_product(double a[3], double b[3], double c[3]){
-	c[0] = a[1]*b[2] - a[2]*b[1];
-	c[1] = a[2]*b[0] - a[0]*b[2];
-	c[2] = a[0]*b[1] - a[1]*b[0];
-}
-
-static void unit_vector(double a[3]){
-	double mod;
-	
-	mod = sqrt(pow(a[0], 2) + pow(a[1], 2) + pow(a[2], 2));
-	if (mod > 0.0) {
-		a[0] /= mod;
-		a[1] /= mod;
-		a[2] /= mod;
-	}
-}
 
 double ellip_par (double ang, double a, double b){
 	/* find the polar parameter (t) for ellipse */
@@ -1444,10 +1423,143 @@ int mtext_change_text (dxf_node *obj, char *text, int len, int pool){
 	return 1;
 }
 
-list_node * dxf_edit_expl_ins(dxf_drawing *drawing, dxf_node * ins_ent){
+dxf_node * dxf_attr2text (dxf_node *attrib, int mode, int pool){
+	/*create new attdef ent by copying parameters of an text ent */
+	/* offset position of attdef by x0, y0, z0*/
+	if(attrib){
+		if (attrib->type != DXF_ENT){
+			return NULL; /*Fail - wrong type */
+		}
+		if (strcmp(attrib->obj.name, "ATTRIB") != 0){
+			return NULL; /*Fail - wrong entity */
+		}
+		
+		double x1= 0.0, y1 = 0.0, z1 = 0.0;
+		double x2= 0.0, y2 = 0.0, z2 = 0.0;
+		double h = 1.0, rot = 0.0, t_scale_x = 1.0;
+		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0;
+		char txt[DXF_MAX_CHARS], tag[DXF_MAX_CHARS+1];
+		char layer[DXF_MAX_CHARS], l_type[DXF_MAX_CHARS];
+		char t_style[DXF_MAX_CHARS];
+		int color = 0, paper = 0, lw = -2;
+		int t_alin_v = 0, t_alin_h = 0;
+		
+		
+		/* clear the strings */
+		txt[0] = 0;
+		tag[0] = '#';
+		tag[1] = 0;
+		layer[0] = 0;
+		l_type[0] = 0;
+		t_style[0] = 0;
+		
+		dxf_node *current = NULL;
+		if (attrib->obj.content){
+			current = attrib->obj.content->next;
+		}
+		while (current){
+			if (current->type == DXF_ATTR){ /* scan parameters */
+				switch (current->value.group){
+					case 1:
+						strcpy(txt, current->value.s_data);
+						break;
+					case 2:
+						strcpy(tag+1, current->value.s_data);
+						break;
+					case 7:
+						strcpy(t_style, current->value.s_data);
+						break;
+					case 6:
+						strcpy(l_type, current->value.s_data);
+						break;
+					case 8:
+						strcpy(layer, current->value.s_data);
+						break;
+					case 10:
+						x1 = current->value.d_data;
+						break;
+					case 11:
+						x2 = current->value.d_data;
+						break;
+					case 20:
+						y1 = current->value.d_data;
+						break;
+					case 21:
+						y2 = current->value.d_data;
+						break;
+					case 30:
+						z1 = current->value.d_data;
+						break;
+					case 31:
+						z2 = current->value.d_data;
+						break;
+					case 40:
+						h = current->value.d_data;
+						break;
+					case 41:
+						t_scale_x = current->value.d_data;
+						break;
+					case 50:
+						rot = current->value.d_data;
+						break;
+					case 62:
+						color = current->value.i_data;
+						break;
+					case 67:
+						paper = current->value.i_data;
+						break;
+					case 72:
+						t_alin_h = current->value.i_data;
+						break;
+					case 74:
+						t_alin_v = current->value.i_data;
+						break;
+					case 210:
+						extru_x = current->value.d_data;
+						break;
+					case 220:
+						extru_y = current->value.d_data;
+						break;
+					case 230:
+						extru_z = current->value.d_data;
+						break;
+					case 370:
+						lw = current->value.i_data;
+				}
+			}
+			current = current->next; /* go to the next in the list */
+		}
+		
+		dxf_node * text = NULL;
+		
+		if (mode & EXPL_VALUE)
+			text = dxf_new_text (x1, y1, z1, h, txt, color, layer, l_type, lw, paper, pool);
+		if (mode & EXPL_TAG)
+			text = dxf_new_text (x1, y1, z1, h, tag, color, layer, l_type, lw, paper, pool);
+		
+		dxf_attr_change(text, 11, (void *)(double[]){x2});
+		dxf_attr_change(text, 21, (void *)(double[]){y2});
+		dxf_attr_change(text, 31, (void *)(double[]){z2});
+		dxf_attr_change(text, 50, (void *)&rot);
+		dxf_attr_change(text, 7, (void *)t_style);
+		dxf_attr_change(text, 41, (void *)&t_scale_x);
+		dxf_attr_change(text, 72, (void *)&t_alin_h);
+		dxf_attr_change(text, 73, (void *)&t_alin_v);
+		dxf_attr_change(text, 210, (void *)&extru_x);
+		dxf_attr_change(text, 220, (void *)&extru_y);
+		dxf_attr_change(text, 230, (void *)&extru_z);
+		
+		return text;
+	}
+
+	return NULL;
+}
+
+list_node * dxf_edit_expl_ins(dxf_drawing *drawing, dxf_node * ins_ent, int mode){
 	if (!drawing) return NULL;
 	if (!ins_ent) return NULL;
 	
+	list_node *list = NULL;
 	dxf_node *current = NULL;
 	dxf_node *block = NULL, *blk_name = NULL;
 	
@@ -1457,7 +1569,7 @@ list_node * dxf_edit_expl_ins(dxf_drawing *drawing, dxf_node * ins_ent){
 	/* get insert parameters */
 	current = ins_ent->obj.content;
 	while (current){
-		if (current->type == DXF_ATTR){ /* DXF attibute */
+		if (current->type == DXF_ATTR){
 			switch (current->value.group){
 				case 10:
 					x = current->value.d_data;
@@ -1492,7 +1604,7 @@ list_node * dxf_edit_expl_ins(dxf_drawing *drawing, dxf_node * ins_ent){
 	if(blk_name) {
 		block = dxf_find_obj_descr2(drawing->blks, "BLOCK", blk_name->value.s_data);
 		if(block) {
-			list_node *list = list_new(NULL, FRAME_LIFE);
+			list = list_new(NULL, FRAME_LIFE);
 			current = block->obj.content;
 			while (current){ /* sweep elements in block */
 				if (current->type == DXF_ENT){
@@ -1511,10 +1623,35 @@ list_node * dxf_edit_expl_ins(dxf_drawing *drawing, dxf_node * ins_ent){
 				}
 				current = current->next; /* go to the next in the list*/
 			}
-			return list;
 		}
 	}
 	
-	return NULL;
+	if (!(mode & (EXPL_VALUE | EXPL_TAG))) return list;
+	
+	/* get insert attributes */
+	current = ins_ent->obj.content;
+	while (current){
+		if (current->type == DXF_ENT){ /* look for DXF entity */
+			if (strcmp(current->obj.name, "ATTRIB") == 0){
+				/* init return list, if it needed */
+				if (!list) list = list_new(NULL, FRAME_LIFE);
+				if (mode & EXPL_VALUE){ /* convert value to text */
+					dxf_node *new_ent = dxf_attr2text (current, EXPL_VALUE, FRAME_LIFE);
+					/* append to list*/
+					list_node * new_node = list_new(new_ent, FRAME_LIFE);
+					list_push(list, new_node);
+				}
+				if (mode & EXPL_TAG){ /* convert tag to text */
+					dxf_node *new_ent = dxf_attr2text (current, EXPL_TAG, FRAME_LIFE);
+					/* append to list*/
+					list_node * new_node = list_new(new_ent, FRAME_LIFE);
+					list_push(list, new_node);
+				}
+			}
+		}
+		current = current->next; /* go to the next in the list */
+	}
+	
+	return list;
 	
 }

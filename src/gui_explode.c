@@ -29,7 +29,7 @@ int gui_expl_interactive(gui_obj *gui){
 			ins_ent = gui->sel_list->next->data;
 			
 			/* explode insert entity in a list of entities */
-			list_node * list = dxf_edit_expl_ins(gui->drawing, ins_ent);
+			list_node * list = dxf_edit_expl_ins(gui->drawing, ins_ent, gui->expl_mode);
 			
 			
 			/* sweep the  list */
@@ -40,8 +40,9 @@ int gui_expl_interactive(gui_obj *gui){
 				/* create a item in do/redo list */
 				do_add_entry(&gui->list_do, "EXPLODE");
 				/* remove selected insert */
-				dxf_obj_subst(ins_ent, NULL);
 				do_add_item(gui->list_do.current, ins_ent, NULL);
+				dxf_obj_subst(ins_ent, NULL);
+				
 			}
 			while (current != NULL){
 				if (current->data){
@@ -81,6 +82,21 @@ int gui_expl_info (gui_obj *gui){
 	} else {
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Confirm", NK_TEXT_LEFT);
+	
+		/* attributes to text options*/
+		nk_label(gui->ctx, "Attributes to text:", NK_TEXT_LEFT);
+		int tag = gui->expl_mode & EXPL_TAG;
+		int value = gui->expl_mode & EXPL_VALUE;
+		
+		nk_layout_row_dynamic(gui->ctx, 20, 2);
+		nk_checkbox_label(gui->ctx, "Value", &value);
+		nk_checkbox_label(gui->ctx, "Tag", &tag);
+		
+		if(tag) gui->expl_mode |= EXPL_TAG;
+		else gui->expl_mode &= ~EXPL_TAG;
+		if(value) gui->expl_mode |= EXPL_VALUE;
+		else gui->expl_mode &= ~EXPL_VALUE;
 	}
+	
 	return 1;
 }

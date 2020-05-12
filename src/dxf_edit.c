@@ -1556,6 +1556,9 @@ dxf_node * dxf_attr2text (dxf_node *attrib, int mode, int pool){
 }
 
 list_node * dxf_edit_expl_ins(dxf_drawing *drawing, dxf_node * ins_ent, int mode){
+	
+	if (!(mode & EXPL_INS)) return NULL; /* verify if mode is valid */
+	/* check main structures */
 	if (!drawing) return NULL;
 	if (!ins_ent) return NULL;
 	
@@ -1608,7 +1611,8 @@ list_node * dxf_edit_expl_ins(dxf_drawing *drawing, dxf_node * ins_ent, int mode
 			current = block->obj.content;
 			while (current){ /* sweep elements in block */
 				if (current->type == DXF_ENT){
-					if (strcmp(current->obj.name, "ATTDEF") != 0){ /* skip ATTDEF elements */
+					if (strcmp(current->obj.name, "ATTDEF") != 0 &&
+						strcmp(current->obj.name, "ENDBLK") != 0){ /* skip ATTDEF and ENDBLK elements */
 						dxf_node *new_ent = dxf_ent_copy(current, FRAME_LIFE);
 						/* apply modifications */
 						dxf_edit_scale(new_ent, scale_x, scale_y, scale_z);
@@ -1626,6 +1630,7 @@ list_node * dxf_edit_expl_ins(dxf_drawing *drawing, dxf_node * ins_ent, int mode
 		}
 	}
 	
+	/* verify if mode is valid for attributes processing*/
 	if (!(mode & (EXPL_VALUE | EXPL_TAG))) return list;
 	
 	/* get insert attributes */
@@ -1650,6 +1655,103 @@ list_node * dxf_edit_expl_ins(dxf_drawing *drawing, dxf_node * ins_ent, int mode
 			}
 		}
 		current = current->next; /* go to the next in the list */
+	}
+	
+	return list;
+	
+}
+
+list_node * dxf_edit_expl_raw(dxf_drawing *drawing, dxf_node * ent, int mode){
+	
+	/* verify if mode is valid */
+	if (!(mode & (EXPL_RAW_LINE | EXPL_RAW_PLINE))) return NULL;
+	/* check main structures */
+	if (!drawing) return NULL;
+	if (!ent) return NULL;
+	if (!ent->obj.graphics) return NULL;
+	
+	list_node *list = NULL;
+	dxf_node *current = NULL, *new_ent = NULL;
+	list_node *curr_list = NULL;
+	graph_obj *curr_graph = NULL;
+	line_node *curr_line = NULL;
+	
+	double prev_x = 0.0, prev_y = 0.0, prev_z = 0.0;
+	
+	int color = 7, lw = 0;
+	char layer[DXF_MAX_CHARS], ltype[DXF_MAX_CHARS];
+	
+	layer[0] = 0;
+	ltype[0] = 0;
+	
+	/* get original entity parameters */
+	current = ent->obj.content;
+	while (current){
+		if (current->type == DXF_ATTR){
+			switch (current->value.group){
+				case 6:
+					strncpy(ltype, current->value.s_data, DXF_MAX_CHARS);
+					str_upp(ltype);
+					break;
+				case 8:
+					strncpy(layer, current->value.s_data, DXF_MAX_CHARS);
+					str_upp(layer);
+					break;
+				case 62:
+					color = current->value.i_data;
+					break;
+				case 370:
+					lw = current->value.i_data;
+					break;
+			}
+		}
+		current = current->next; /* go to the next in the list */
+	}
+	
+	curr_list = ((list_node *)ent->obj.graphics)->next;
+	
+	/* sweep the main list */
+	while (curr_list != NULL){
+		if (curr_list->data){
+			curr_graph = (graph_obj *)curr_list->data;
+			if (curr_line = curr_graph->list->next){
+				while (curr_line != NULL){
+					if (!list) list = list_new(NULL, FRAME_LIFE);
+					
+					if (mode & EXPL_RAW_LINE){ /* create single line */
+						new_ent = dxf_new_line (curr_line->x0, curr_line->y0, curr_line->z0,
+							curr_line->x1, curr_line->y1, curr_line->z1, 
+							color, layer, ltype, lw, 0, FRAME_LIFE);
+						
+						/* append to list*/
+						list_node * new_node = list_new(new_ent, FRAME_LIFE);
+						list_push(list, new_node);
+					} 
+					else { /* create or continue a polyline */
+						/* check if previous point isn't a continuation */
+						if ( (fabs(prev_x - curr_line->x0) > 1e-9) ||
+						(fabs(prev_y - curr_line->y0) > 1e-9) ||
+						(fabs(prev_z - curr_line->z0) > 1e-9) ){
+							/* new polyline*/
+							new_ent = dxf_new_lwpolyline (curr_line->x0, curr_line->y0, curr_line->z0,
+								0.0, color, layer, ltype, lw, 0, FRAME_LIFE);
+							/* append to list*/
+							list_node * new_node = list_new(new_ent, FRAME_LIFE);
+							list_push(list, new_node);
+						}
+						/* add point to polyline */
+						dxf_lwpoly_append (new_ent, curr_line->x1, curr_line->y1, curr_line->z1, 0.0, FRAME_LIFE);
+						prev_x = curr_line->x1;
+						prev_y = curr_line->y1;
+						prev_z = curr_line->z1;
+					}
+					
+					curr_line = curr_line->next;
+				}
+			}
+			
+		}
+		curr_list = curr_list->next;
 	}
 	
 	return list;

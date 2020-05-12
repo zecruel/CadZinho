@@ -222,11 +222,12 @@ int do_undo(struct do_list *list){
 	if (list != NULL){
 		struct do_entry *entry = list->current;
 		if (entry){ if (entry->prev){
-			struct do_item *curr_item = entry->list;
+			/* sweep list in reverse order */
+			struct do_item *curr_item = entry->current;
 			while (curr_item){
 				ret =1;
 				dxf_obj_subst(curr_item->new_obj, curr_item->old_obj);
-				curr_item = curr_item->next;
+				curr_item = curr_item->prev;
 			}
 			list->current = entry->prev; /* change current in the list to prev*/
 		}}

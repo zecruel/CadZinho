@@ -75,6 +75,14 @@ double ellipse_par (double ang, double a, double b){
 	return t;
 }
 
+
+
+void angle_range(double *ang){
+	/* set angle range to 0-2*pi */
+	if (fabs(*ang) > 2*M_PI) *ang = fmod(*ang, 2*M_PI);
+	if (*ang < 0) *ang += 2*M_PI;
+}
+
 //Normalize to [0,360):
 
 double ang_adjust_360(double x){

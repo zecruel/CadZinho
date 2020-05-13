@@ -5,6 +5,7 @@
 #include "list.h"
 #include "graph.h"
 #include "dxf_math.h"
+#include "dxf_ent.h"
 
 enum Explode_mode{
 	EXPL_DEFAULT = 0,
@@ -34,6 +35,12 @@ int mtext_change_text (dxf_node *obj, char *text, int len, int pool);
 
 list_node * dxf_edit_expl_ins(dxf_drawing *drawing, dxf_node * ins_ent, int mode);
 
+list_node * dxf_edit_expl_dim(dxf_drawing *drawing, dxf_node * dim_ent, int mode);
+
 list_node * dxf_edit_expl_raw(dxf_drawing *drawing, dxf_node * ent, int mode);
+
+list_node * dxf_edit_expl_lwpoly(dxf_drawing *drawing, dxf_node * ent, int mode);
+
+list_node * dxf_edit_expl_poly(dxf_drawing *drawing, dxf_node * ent, int mode);
 
 #endif

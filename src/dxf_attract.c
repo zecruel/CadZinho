@@ -155,12 +155,6 @@ double axis, double ratio, double rot){
 	return 0;
 }
 
-void angle_range(double *ang){
-	/* set angle range to 0-2*pi */
-	if (fabs(*ang) > 2*M_PI) *ang = fmod(*ang, 2*M_PI);
-	if (*ang < 0) *ang += 2*M_PI;
-}
-
 int arc_near(double axis, double ratio, double rot,
 double ang_start, double ang_end,
 double center_x, double center_y, 
@@ -531,203 +525,6 @@ double *start_ang, double *end_ang){
 		//*start_ang *= M_PI/180;
 		//*end_ang *= M_PI/180;
 	}
-	return ok;
-}
-
-int dxf_lwpline_get_pt(dxf_drawing *drawing,
-dxf_node * obj, dxf_node ** next,
-double *pt1_x, double *pt1_y, double *pt1_z, double *bulge){
-	
-	dxf_node *current = NULL;
-	static dxf_node *last = NULL;
-	static double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
-	
-	/*flags*/
-	int first = 0, pt1 = 0, ok = 0;
-	static int pline_flag = 0, closed =0, init = 0;
-	
-	double px = 0.0, py = 0.0, pz = 0.0, bul = 0.0;
-	static double last_x, last_y, last_z, curr_x, elev;
-	
-	double x, y, z; /*return values */
-	
-	if (*next == NULL){ /* parse object first time */
-		pline_flag = 0; closed =0; init = 0;
-		last = NULL;
-		if(obj){
-			if (obj->type == DXF_ENT){
-				if (obj->obj.content){
-					current = obj->obj.content->next;
-					//printf("%s\n", obj->obj.name);
-				}
-			}
-		}
-		/* get general parameters of polyline */
-		while (current){
-			if (current->type == DXF_ATTR){ /* DXF attibute */
-				switch (current->value.group){
-					case 10:
-						px = current->value.d_data;
-						pt1 = 1; /* set flag */
-						break;
-					case 20:
-						py = current->value.d_data;
-						//pt1 = 1; /* set flag */
-						break;
-					case 30:
-						pz = current->value.d_data;
-						//pt1 = 1; /* set flag */
-						break;
-					case 42:
-						bul = current->value.d_data;
-						break;
-					case 70:
-						pline_flag = current->value.i_data;
-						break;
-					case 38:
-						elev = current->value.d_data;
-						break;
-					case 210:
-						extru_x = current->value.d_data;
-						break;
-					case 220:
-						extru_y = current->value.d_data;
-						break;
-					case 230:
-						extru_z = current->value.d_data;
-						break;
-				}
-			}
-			if (pt1){
-				pt1 = 0;
-				if (init == 0){
-					init = 1;
-					curr_x = px;
-					last = current;
-				}
-				else{
-					*next = current;
-					break;
-				}
-			}
-			current = current->next; /* go to the next in the list */
-			//*next = current->next;
-		}
-		if (init){
-			if (pline_flag & 1){
-				closed = 1;
-				/* if closed, the last vertex is first */
-				last_x = curr_x;
-				last_y = py;
-				last_z = pz;
-			}
-			else {
-				closed = 0;
-				last = NULL;
-			}
-			
-			/* to convert OCS to WCS */
-			normal[0] = extru_x;
-			normal[1] = extru_y;
-			normal[2] = extru_z;			
-			
-			x = curr_x;
-			y = py;
-			z = pz;
-			*bulge = bul;
-			ok = 1;
-			
-		}
-	}
-	else if ((init) && (*next != last)){ /* continue search in next point */
-		current = *next;
-		while (current){
-			if (current->type == DXF_ATTR){ /* DXF attibute */
-				switch (current->value.group){
-					case 10:
-						px = current->value.d_data;
-						pt1 = 1; /* set flag */
-						break;
-					case 20:
-						py = current->value.d_data;
-						//pt1 = 1; /* set flag */
-						break;
-					case 30:
-						pz = current->value.d_data;
-						//pt1 = 1; /* set flag */
-						break;
-					case 42:
-						bul = current->value.d_data;
-						break;
-				}
-			}
-			if (pt1){
-				pt1 = 0;
-				if (first == 0){
-					first = 1;
-					curr_x = px;
-				}
-				else{
-					*next = current;
-					break;
-				}
-			}
-			current = current->next; /* go to the next in the list */
-		}
-		if (first){
-			
-			x = curr_x;
-			y = py;
-			z = pz;
-			*bulge = bul;
-			ok = 1;
-			if (current == NULL){
-				if (closed){
-					*next = last;
-				}
-				else {
-					*next = NULL;
-					pline_flag = 0; closed =0; init = 0;
-					last = NULL;
-				}
-			}
-		}
-		else if (closed){
-			*next = last;
-		}
-		else {
-			*next = NULL;
-			pline_flag = 0; closed =0; init = 0;
-			last = NULL;
-		}
-	}
-	else { /* last vertex */
-		x = last_x;
-		y = last_y;
-		z = last_z;
-		*bulge = 0.0;
-		ok = 1;
-		*next = NULL;
-		pline_flag = 0; closed =0; init = 0;
-		last = NULL;
-	}
-	
-	if (ok == 0){
-		*next = NULL;
-		pline_flag = 0; closed =0; init = 0;
-		last = NULL;
-	}
-	/* convert OCS to WCS */
-	else {
-		double pt[3] ={x, y, z};
-		//if (axis_transform(&x, &y, &z, normal)){
-		mod_axis(pt, normal , 0.0);
-		/* update return values */
-		*pt1_x = pt[0];
-		*pt1_y = pt[1];
-		*pt1_z = pt[2];
-	}
-	
 	return ok;
 }
 
@@ -2034,14 +1831,14 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 					double pt1_x = 0, pt1_y = 0, pt1_z = 0, bulge = 0;
 					double pt2_x = 0, pt2_y = 0, pt2_z = 0, prev_bulge = 0;
 					dxf_node * next_vert = NULL;
-					if(dxf_lwpline_get_pt(drawing, current, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge)){
+					if(dxf_lwpline_get_pt(current, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge)){
 						//printf("%0.f,%0.2f  -  %d\n",pt2_x, pt2_y, next_vert);
 						/* transform coordinates, according insert space */
 						while (next_vert){
 							transform(&pt2_x, &pt2_y, ins_stack[ins_stack_pos]);
 							pt1_x = pt2_x; pt1_y = pt2_y; prev_bulge = bulge;
 							
-							if(!dxf_lwpline_get_pt(drawing, current, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge)){
+							if(!dxf_lwpline_get_pt(current, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge)){
 								break;
 							}
 							

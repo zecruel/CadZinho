@@ -17,6 +17,8 @@ double *center_x, double *center_y);
 
 double ellipse_par (double ang, double a, double b);
 
+void angle_range(double *ang);
+
 double ang_adjust_360(double x);
 
 void mod_axis(double result[3], double normal[3] , double elev);

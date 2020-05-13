@@ -36,6 +36,18 @@ int gui_expl_interactive(gui_obj *gui){
 					/* explode insert entity in a list of entities */
 					list = dxf_edit_expl_ins(gui->drawing, ent, gui->expl_mode);
 				}
+				else if( (strcmp(ent->obj.name, "LWPOLYLINE") == 0) && (gui->expl_mode & EXPL_POLY) ){
+					/* explode polyline entity in a list of lines and arcs */
+					list = dxf_edit_expl_lwpoly(gui->drawing, ent, gui->expl_mode);
+				}
+				else if( (strcmp(ent->obj.name, "POLYLINE") == 0) && (gui->expl_mode & EXPL_POLY) ){
+					/* explode polyline entity in a list of lines and arcs */
+					list = dxf_edit_expl_poly(gui->drawing, ent, gui->expl_mode);
+				}
+				else if( (strcmp(ent->obj.name, "DIMENSION") == 0) && (gui->expl_mode & EXPL_DIM) ){
+					/* explode dimension entity in a list of entities */
+					list = dxf_edit_expl_dim(gui->drawing, ent, gui->expl_mode);
+				}
 				else if(gui->expl_mode & (EXPL_RAW_LINE | EXPL_RAW_PLINE)){
 					list = dxf_edit_expl_raw(gui->drawing, ent, gui->expl_mode);
 				}
@@ -139,6 +151,7 @@ int gui_expl_info (gui_obj *gui){
 		if(dim) gui->expl_mode |= EXPL_DIM;
 		else gui->expl_mode &= ~EXPL_DIM;
 		
+		/*  // TODO
 		nk_checkbox_label(gui->ctx, "M Text", &mtext);
 		if(mtext) gui->expl_mode |= EXPL_MTEXT;
 		else gui->expl_mode &= ~EXPL_MTEXT;
@@ -150,6 +163,7 @@ int gui_expl_info (gui_obj *gui){
 		nk_checkbox_label(gui->ctx, "Hatch", &hatch);
 		if(hatch) gui->expl_mode |= EXPL_HATCH;
 		else gui->expl_mode &= ~EXPL_HATCH;
+		*/
 		
 		nk_checkbox_label(gui->ctx, "Raw", &raw);
 		if (raw){

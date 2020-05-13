@@ -3,6 +3,7 @@
 #include "dxf_create.h"
 #include "math.h"
 
+
 void dxf_get_extru(dxf_node * ent, double result[3]){
 	if(!ent) return;
 	dxf_node *current = NULL;
@@ -1582,6 +1583,46 @@ list_node * dxf_edit_expl_ins(dxf_drawing *drawing, dxf_node * ins_ent, int mode
 	
 }
 
+list_node * dxf_edit_expl_dim(dxf_drawing *drawing, dxf_node * dim_ent, int mode){
+	
+	if (!(mode & EXPL_DIM)) return NULL; /* verify if mode is valid */
+	/* check main structures */
+	if (!drawing) return NULL;
+	if (!dim_ent) return NULL;
+	
+	list_node *list = NULL;
+	dxf_node *current = NULL;
+	dxf_node *block = NULL, *blk_name = NULL;
+	
+	blk_name = dxf_find_attr2(dim_ent, 2); /* get block name */
+	
+	/* find relative block */
+	if(blk_name) {
+		block = dxf_find_obj_descr2(drawing->blks, "BLOCK", blk_name->value.s_data);
+		if(block) {
+			list = list_new(NULL, FRAME_LIFE);
+			current = block->obj.content;
+			while (current){ /* sweep elements in block */
+				if (current->type == DXF_ENT){
+					if (strcmp(current->obj.name, "ATTDEF") != 0 &&
+						strcmp(current->obj.name, "ENDBLK") != 0){ /* skip ATTDEF and ENDBLK elements */
+						dxf_node *new_ent = dxf_ent_copy(current, FRAME_LIFE);
+						
+						/* append to list*/
+						list_node * new_node = list_new(new_ent, FRAME_LIFE);
+						list_push(list, new_node);
+						
+					}
+				}
+				current = current->next; /* go to the next in the list*/
+			}
+		}
+	}
+	
+	return list;
+	
+}
+
 list_node * dxf_edit_expl_raw(dxf_drawing *drawing, dxf_node * ent, int mode){
 	
 	/* verify if mode is valid */
@@ -1677,4 +1718,166 @@ list_node * dxf_edit_expl_raw(dxf_drawing *drawing, dxf_node * ent, int mode){
 	
 	return list;
 	
+}
+
+list_node * dxf_edit_expl_lwpoly(dxf_drawing *drawing, dxf_node * ent, int mode){
+	/* verify if mode is valid */
+	if (!(mode & EXPL_POLY)) return NULL;
+	/* check main structures */
+	if (!drawing) return NULL;
+	if (!ent) return NULL;
+	
+	list_node *list = NULL;
+	dxf_node *current = NULL, *new_ent = NULL;
+	list_node *curr_list = NULL;
+	
+	int color = 7, lw = 0;
+	char layer[DXF_MAX_CHARS], ltype[DXF_MAX_CHARS];
+	
+	layer[0] = 0;
+	ltype[0] = 0;
+	
+	/* get original entity parameters */
+	current = ent->obj.content;
+	while (current){
+		if (current->type == DXF_ATTR){
+			switch (current->value.group){
+				case 6:
+					strncpy(ltype, current->value.s_data, DXF_MAX_CHARS);
+					str_upp(ltype);
+					break;
+				case 8:
+					strncpy(layer, current->value.s_data, DXF_MAX_CHARS);
+					str_upp(layer);
+					break;
+				case 62:
+					color = current->value.i_data;
+					break;
+				case 370:
+					lw = current->value.i_data;
+					break;
+			}
+		}
+		current = current->next; /* go to the next in the list */
+	}
+	
+	
+	double pt1_x = 0.0, pt1_y = 0.0, pt1_z = 0.0, bulge = 0.0;
+	double pt2_x = 0.0, pt2_y = 0.0, pt2_z = 0.0, prev_bulge = 0.0;
+	dxf_node * next_vert = NULL;
+	if(dxf_lwpline_get_pt(ent, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge)){
+		while (next_vert){
+			if (!list) list = list_new(NULL, FRAME_LIFE);
+			pt1_x = pt2_x; pt1_y = pt2_y; prev_bulge = bulge;
+			
+			if(!dxf_lwpline_get_pt(ent, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge)){
+				break;
+			}
+			
+			if (fabs(prev_bulge) < 1e-9){ /* segment is a straight line*/
+				new_ent = dxf_new_line (pt1_x, pt1_y, pt1_z,
+					pt2_x, pt2_y, pt2_z, 
+					color, layer, ltype, lw, 0, FRAME_LIFE);
+				
+				/* append to list*/
+				list_node * new_node = list_new(new_ent, FRAME_LIFE);
+				list_push(list, new_node);
+			}
+			else{ /* segment is an arc*/
+				double radius, ang_start, ang_end, center_x, center_y, center_z = 0.0;
+				double axis = 0, rot = 0, ratio = 1;
+				arc_bulge(pt1_x, pt1_y, pt2_x, pt2_y, prev_bulge, &radius, &ang_start, &ang_end, &center_x, &center_y);
+				
+				new_ent = dxf_new_arc (center_x, center_y, pt1_z,
+					radius, ang_start * 180/M_PI, ang_end * 180/M_PI,
+					color, layer, ltype, lw, 0, FRAME_LIFE);
+				/* append to list*/
+				list_node * new_node = list_new(new_ent, FRAME_LIFE);
+				list_push(list, new_node);
+			}
+		}
+	}
+	
+	return list;
+}
+
+list_node * dxf_edit_expl_poly(dxf_drawing *drawing, dxf_node * ent, int mode){
+	/* verify if mode is valid */
+	if (!(mode & EXPL_POLY)) return NULL;
+	/* check main structures */
+	if (!drawing) return NULL;
+	if (!ent) return NULL;
+	
+	list_node *list = NULL;
+	dxf_node *current = NULL, *new_ent = NULL;
+	list_node *curr_list = NULL;
+	
+	int color = 7, lw = 0;
+	char layer[DXF_MAX_CHARS], ltype[DXF_MAX_CHARS];
+	
+	layer[0] = 0;
+	ltype[0] = 0;
+	
+	/* get original entity parameters */
+	current = ent->obj.content;
+	while (current){
+		if (current->type == DXF_ATTR){
+			switch (current->value.group){
+				case 6:
+					strncpy(ltype, current->value.s_data, DXF_MAX_CHARS);
+					str_upp(ltype);
+					break;
+				case 8:
+					strncpy(layer, current->value.s_data, DXF_MAX_CHARS);
+					str_upp(layer);
+					break;
+				case 62:
+					color = current->value.i_data;
+					break;
+				case 370:
+					lw = current->value.i_data;
+					break;
+			}
+		}
+		current = current->next; /* go to the next in the list */
+	}
+	
+	
+	double pt1_x = 0.0, pt1_y = 0.0, pt1_z = 0.0, bulge = 0.0;
+	double pt2_x = 0.0, pt2_y = 0.0, pt2_z = 0.0, prev_bulge = 0.0;
+	dxf_node * next_vert = NULL;
+	if(dxf_pline_get_pt(ent, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge)){
+		while (next_vert){
+			if (!list) list = list_new(NULL, FRAME_LIFE);
+			pt1_x = pt2_x; pt1_y = pt2_y; prev_bulge = bulge;
+			
+			if(!dxf_pline_get_pt(ent, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge)){
+				break;
+			}
+			
+			if (fabs(prev_bulge) < 1e-9){ /* segment is a straight line*/
+				new_ent = dxf_new_line (pt1_x, pt1_y, pt1_z,
+					pt2_x, pt2_y, pt2_z, 
+					color, layer, ltype, lw, 0, FRAME_LIFE);
+				
+				/* append to list*/
+				list_node * new_node = list_new(new_ent, FRAME_LIFE);
+				list_push(list, new_node);
+			}
+			else{ /* segment is an arc*/
+				double radius, ang_start, ang_end, center_x, center_y, center_z = 0.0;
+				double axis = 0, rot = 0, ratio = 1;
+				arc_bulge(pt1_x, pt1_y, pt2_x, pt2_y, prev_bulge, &radius, &ang_start, &ang_end, &center_x, &center_y);
+				
+				new_ent = dxf_new_arc (center_x, center_y, pt1_z,
+					radius, ang_start * 180/M_PI, ang_end * 180/M_PI,
+					color, layer, ltype, lw, 0, FRAME_LIFE);
+				/* append to list*/
+				list_node * new_node = list_new(new_ent, FRAME_LIFE);
+				list_push(list, new_node);
+			}
+		}
+	}
+	
+	return list;
 }

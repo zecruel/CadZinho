@@ -1676,28 +1676,6 @@ void rbspline(int npts, int k, int p1, double b[], double h[], double p[]){
 	}
 }
 
-
-double dot_product(double a[3], double b[3]){
-	return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
-}
- 
-void cross_product(double a[3], double b[3], double c[3]){
-	c[0] = a[1]*b[2] - a[2]*b[1];
-	c[1] = a[2]*b[0] - a[0]*b[2];
-	c[2] = a[0]*b[1] - a[1]*b[0];
-}
-
-void unit_vector(double a[3]){
-	double mod;
-	
-	mod = sqrt(pow(a[0], 2) + pow(a[1], 2) + pow(a[2], 2));
-	if (mod > 0.0) {
-		a[0] /= mod;
-		a[1] /= mod;
-		a[2] /= mod;
-	}
-}
-
 void graph_mod_axis(graph_obj * master, double normal[3] , double elev){
 	if ((master != NULL)){
 		if(master->list->next){ /* check if list is not empty */

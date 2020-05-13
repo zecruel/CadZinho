@@ -55,7 +55,7 @@ int gui_tools_win (gui_obj *gui){
 		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPLODE]))){
 			gui->modal = EXPLODE;
 			gui->step = 0;
-			sel_list_clear (gui);
+			//sel_list_clear (gui);
 		}
 		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EDIT]))){
 			

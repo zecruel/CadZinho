@@ -8,6 +8,7 @@
 #include "dxf.h"
 #include "bmp.h"
 #include "list.h"
+#include "dxf_math.h"
 
 #define MAX_SPLINE_PTS 10000
 #define GRAPH_POOL_PAGES 1000
@@ -136,12 +137,6 @@ graph_obj * graph_list_isect(list_node *list, double rect_pt1[2], double rect_pt
 int graph_list_in_rect(list_node *list, double rect_pt1[2], double rect_pt2[2]);
 
 int graph_list_color(list_node *list, bmp_color color);
-
-double dot_product(double a[3], double b[3]);
-
-void cross_product(double a[3], double b[3], double c[3]);
-
-void unit_vector(double a[3]);
 
 graph_obj * graph_hatch(graph_obj * ref, 
 double angle,

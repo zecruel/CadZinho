@@ -4,6 +4,7 @@
 #include "dxf.h"
 #include "list.h"
 #include "graph.h"
+#include "dxf_math.h"
 
 enum Explode_mode{
 	EXPL_DEFAULT = 0,

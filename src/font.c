@@ -63,7 +63,7 @@ struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 	if (list == NULL) return NULL;
 	if (path == NULL) return NULL;
 	
-	char *name, *ext, full_path[DXF_MAX_CHARS];
+	char *name, *ext, full_path[DXF_MAX_CHARS+1];
 	struct tfont * font = NULL;
 	
 	strncpy(full_path, path, DXF_MAX_CHARS); /* preserve original string */

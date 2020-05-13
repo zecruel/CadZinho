@@ -35,45 +35,7 @@ double x, double y){
 	return 0;
 }
 
-void arc_bulge(double pt1_x, double pt1_y,
-double pt2_x, double pt2_y, double bulge,
-double *radius, double *ang_start, double *ang_end,
-double *center_x, double *center_y){
-	
-	double theta, alfa, d, ang_c, start, end;
-	/* some math to find radius and center point */
-	
-	theta = 2 * atan(bulge);
-	alfa = atan2(pt2_y-pt1_y, pt2_x-pt1_x);
-	d = sqrt((pt2_y-pt1_y)*(pt2_y-pt1_y) + (pt2_x-pt1_x)*(pt2_x-pt1_x)) / 2;
-	*radius = d*(bulge*bulge + 1)/(2*bulge);
-	
-	ang_c = M_PI+(alfa - M_PI/2 - theta);
-	*center_x = *radius*cos(ang_c) + pt1_x;
-	*center_y = *radius*sin(ang_c) + pt1_y;
-	
-	/* start and end angles found by points coordinates*/
-	start = atan2(pt1_y - *center_y, pt1_x - *center_x);
-	end = atan2(pt2_y - *center_y, pt2_x - *center_x);
-	
-	/* set angle range to 0-2*pi */
-	if (start < 0){
-		start += 2*M_PI;
-	}
-	if (end < 0){
-		end += 2*M_PI;
-	}
-	if (*radius >= 0){
-		*ang_start = start;
-		*ang_end = end;
-	}
-	else{
-		*ang_start = end;
-		*ang_end = start;
-		*radius = fabs(*radius);
-	}
-}
-
+#if(0)
 int axis_transform(double *x, double *y, double *z, double normal[3]){
 	if ((x != NULL) && (y != NULL) && (z != NULL)){
 		double x0, y0, z0;
@@ -109,6 +71,7 @@ int axis_transform(double *x, double *y, double *z, double normal[3]){
 	}
 	return 0;
 }
+#endif
 
 int transform(double *x, double *y, struct ins_space space){
 	if ((x != NULL) && (y != NULL)){
@@ -140,35 +103,27 @@ double *axis, double *ratio, double *rot, double normal[3]){
 	int ok = 0;
 	
 	if ((center_x != NULL) && (center_y != NULL) && (center_z != NULL) && (axis != NULL) && (ratio != NULL) && (rot != NULL) && (normal != NULL)){
-		double pt1_x, pt1_y, pt1_z;
+		double pt[3];
 		/* convert OCS to WCS */
-		axis_transform(center_x, center_y, center_z, normal);
+		pt[0] = *center_x; pt[1] = *center_y; pt[2] = *center_z;
+		//axis_transform(center_x, center_y, center_z, normal);
+		mod_axis(pt, normal, 0.0);
+		*center_x = pt[0];
+		*center_y = pt[1];
+		*center_z = pt[2];
 		
 		/* transform the circle in ellipse, by the OCS */
-		pt1_x = 1.0;
-		pt1_y = 1.0;
-		pt1_z = 0.0;
-		axis_transform(&pt1_x, &pt1_y, &pt1_z, normal);
-		*axis *= fabs(pt1_x);
-		*ratio *= fabs(pt1_y / pt1_x);
+		pt[0] = 1.0;
+		pt[1] = 1.0;
+		pt[2] = 0.0;
+		//axis_transform(&pt[0], &pt[1], &pt[2], normal);
+		mod_axis(pt, normal, 0.0);
+		*axis *= fabs(pt[0]);
+		*ratio *= fabs(pt[1] / pt[0]);
 		*rot += atan2(normal[0], normal[1]);
 		ok = 1;
 	}
 	return ok;
-}
-
-double ellipse_par (double ang, double a, double b){
-	/* find the polar parameter (t) for ellipse */
-	double t = atan(a*tan(ang)/b);
-	if ((ang > M_PI/2) && (ang < M_PI)){
-		t += M_PI; 
-	}
-	else if ((ang >= M_PI) && (ang <= 3*M_PI/2)){
-		t -= M_PI; 
-	}
-	if (t < 0 ) t += 2*M_PI;
-	
-	return t;
 }
 
 int in_ellip_bound(double pos_x, double pos_y, double sensi,
@@ -763,11 +718,14 @@ double *pt1_x, double *pt1_y, double *pt1_z, double *bulge){
 		last = NULL;
 	}
 	/* convert OCS to WCS */
-	else if (axis_transform(&x, &y, &z, normal)){
+	else {
+		double pt[3] ={x, y, z};
+		//if (axis_transform(&x, &y, &z, normal)){
+		mod_axis(pt, normal , 0.0);
 		/* update return values */
-		*pt1_x = x;
-		*pt1_y = y;
-		*pt1_z = z;
+		*pt1_x = pt[0];
+		*pt1_y = pt[1];
+		*pt1_z = pt[2];
 	}
 	
 	return ok;

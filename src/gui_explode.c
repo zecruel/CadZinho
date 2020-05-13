@@ -17,27 +17,27 @@ int gui_expl_interactive(gui_obj *gui){
 	if (gui->step == 0){
 		/* in first step, select the elements to proccess*/
 		gui->en_distance = 0;
-		gui->sel_ent_filter = DXF_INSERT;
+		gui->sel_ent_filter = ~DXF_NONE;
 		gui_simple_select(gui);
 	}
 	else{
 		//gui->free_sel = 0;
 		
-		if (gui->ev & EV_ENTER){ /* confirm insert explosion */
+		if (gui->ev & EV_ENTER){ /* confirm elment explosion */
 			
-			dxf_node *ins_ent = NULL;
+			dxf_node *ent = NULL;
 			list_node *curr_sel = gui->sel_list->next;
 			int init_do = 0;
 			
 			while(curr_sel){
-				ins_ent = (dxf_node *) curr_sel->data;
+				ent = (dxf_node *) curr_sel->data;
 				list_node * list = NULL;
-				if(gui->expl_mode & EXPL_INS){
+				if( (strcmp(ent->obj.name, "INSERT") == 0) && (gui->expl_mode & EXPL_INS) ){
 					/* explode insert entity in a list of entities */
-					list = dxf_edit_expl_ins(gui->drawing, ins_ent, gui->expl_mode);
+					list = dxf_edit_expl_ins(gui->drawing, ent, gui->expl_mode);
 				}
 				else if(gui->expl_mode & (EXPL_RAW_LINE | EXPL_RAW_PLINE)){
-					list = dxf_edit_expl_raw(gui->drawing, ins_ent, gui->expl_mode);
+					list = dxf_edit_expl_raw(gui->drawing, ent, gui->expl_mode);
 				}
 				/* sweep the  list */
 				list_node *current = NULL;
@@ -50,8 +50,8 @@ int gui_expl_interactive(gui_obj *gui){
 						init_do = 1;
 					}
 					/* remove current element (will substituted for its components) */
-					dxf_obj_subst(ins_ent, NULL);
-					do_add_item(gui->list_do.current, ins_ent, NULL);
+					dxf_obj_subst(ent, NULL);
+					do_add_item(gui->list_do.current, ent, NULL);
 					
 					
 				}
@@ -85,15 +85,14 @@ int gui_expl_interactive(gui_obj *gui){
 
 int gui_expl_info (gui_obj *gui){
 	if (gui->modal != EXPLODE) return 0;
-	nk_layout_row_dynamic(gui->ctx, 20, 1);
-	nk_label(gui->ctx, "Explode insert", NK_TEXT_LEFT);
 	
-	if (gui->step == 0){ /* get insert element to edit */
+	if (gui->step == 0){ /* get elements to edit */
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Select a Insert element", NK_TEXT_LEFT);
+		nk_label(gui->ctx, "Explode elements", NK_TEXT_LEFT);
+		nk_label(gui->ctx, "Select/Add element", NK_TEXT_LEFT);
 	} else {
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Confirm", NK_TEXT_LEFT);
+		nk_label(gui->ctx, "Explode elements", NK_TEXT_LEFT);
 		
 		int ins = gui->expl_mode & EXPL_INS;
 		int poly = gui->expl_mode & EXPL_POLY;
@@ -115,19 +114,23 @@ int gui_expl_info (gui_obj *gui){
 		else gui->expl_mode &= ~EXPL_INS;
 		if (ins){
 			/* attributes to text options*/
-			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			nk_label(gui->ctx, "Attributes to text:", NK_TEXT_LEFT);
-			nk_layout_row_dynamic(gui->ctx, 20, 2);
-			nk_checkbox_label(gui->ctx, "Value", &value);
-			nk_checkbox_label(gui->ctx, "Tag", &tag);
-			
-			if(tag) gui->expl_mode |= EXPL_TAG;
-			else gui->expl_mode &= ~EXPL_TAG;
-			if(value) gui->expl_mode |= EXPL_VALUE;
-			else gui->expl_mode &= ~EXPL_VALUE;
+			nk_layout_row_dynamic(gui->ctx, 45, 1);
+			if (nk_group_begin(gui->ctx, "Attributes to text", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+				nk_layout_row_dynamic(gui->ctx, 15, 1);
+				nk_label(gui->ctx, "Attributes to text:", NK_TEXT_LEFT);
+				nk_layout_row_dynamic(gui->ctx, 15, 2);
+				nk_checkbox_label(gui->ctx, "Value", &value);
+				nk_checkbox_label(gui->ctx, "Tag", &tag);
+				
+				if(tag) gui->expl_mode |= EXPL_TAG;
+				else gui->expl_mode &= ~EXPL_TAG;
+				if(value) gui->expl_mode |= EXPL_VALUE;
+				else gui->expl_mode &= ~EXPL_VALUE;
+				nk_group_end(gui->ctx);
+			}
 		}
 		
-		nk_layout_row_dynamic(gui->ctx, 20, 2);
+		nk_layout_row_dynamic(gui->ctx, 18, 2);
 		nk_checkbox_label(gui->ctx, "Poly Line", &poly);
 		if(poly) gui->expl_mode |= EXPL_POLY;
 		else gui->expl_mode &= ~EXPL_POLY;
@@ -152,17 +155,20 @@ int gui_expl_info (gui_obj *gui){
 		if (raw){
 			if (!prev_raw) gui->expl_mode |= EXPL_RAW_LINE;
 			/* attributes to text options*/
-			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			nk_label(gui->ctx, "Convert to:", NK_TEXT_LEFT);
-			nk_layout_row_dynamic(gui->ctx, 20, 2);
-			if (nk_option_label(gui->ctx, "Line", raw_line)) {
-				gui->expl_mode |= EXPL_RAW_LINE;
-				gui->expl_mode &= ~EXPL_RAW_PLINE;
-				raw_pline = 0;
-			}
-			if (nk_option_label(gui->ctx, "Poly", raw_pline)){
-				gui->expl_mode |= EXPL_RAW_PLINE;
-				gui->expl_mode &= ~EXPL_RAW_LINE;
+			nk_layout_row_dynamic(gui->ctx, 30, 1);
+			if (nk_group_begin(gui->ctx, "Raw options", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				if (nk_option_label(gui->ctx, "Line", raw_line)) {
+					gui->expl_mode |= EXPL_RAW_LINE;
+					gui->expl_mode &= ~EXPL_RAW_PLINE;
+					raw_pline = 0;
+				}
+				if (nk_option_label(gui->ctx, "Poly", raw_pline)){
+					gui->expl_mode |= EXPL_RAW_PLINE;
+					gui->expl_mode &= ~EXPL_RAW_LINE;
+				}
+				
+				nk_group_end(gui->ctx);
 			}
 		}
 		else gui->expl_mode &= ~(EXPL_RAW_LINE | EXPL_RAW_PLINE);

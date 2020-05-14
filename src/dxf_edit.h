@@ -39,8 +39,6 @@ list_node * dxf_edit_expl_dim(dxf_drawing *drawing, dxf_node * dim_ent, int mode
 
 list_node * dxf_edit_expl_raw(dxf_drawing *drawing, dxf_node * ent, int mode);
 
-list_node * dxf_edit_expl_lwpoly(dxf_drawing *drawing, dxf_node * ent, int mode);
-
 list_node * dxf_edit_expl_poly(dxf_drawing *drawing, dxf_node * ent, int mode);
 
 #endif

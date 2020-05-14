@@ -15,7 +15,7 @@ double *pt1_x, double *pt1_y, double *pt1_z, double *bulge){
 	double px = 0.0, py = 0.0, pz = 0.0, bul = 0.0;
 	static double last_x, last_y, last_z, curr_x, elev;
 	
-	double x, y, z; /*return values */
+	double pt[3]; /*return values */
 	
 	if (*next == NULL){ /* parse object first time */
 		pline_flag = 0; closed =0; init = 0;
@@ -97,9 +97,9 @@ double *pt1_x, double *pt1_y, double *pt1_z, double *bulge){
 			normal[1] = extru_y;
 			normal[2] = extru_z;			
 			
-			x = curr_x;
-			y = py;
-			z = pz;
+			pt[0] = curr_x;
+			pt[1] = py;
+			pt[2] = pz;
 			*bulge = bul;
 			ok = 1;
 			
@@ -142,9 +142,9 @@ double *pt1_x, double *pt1_y, double *pt1_z, double *bulge){
 		}
 		if (first){
 			
-			x = curr_x;
-			y = py;
-			z = pz;
+			pt[0] = curr_x;
+			pt[1] = py;
+			pt[2] = pz;
 			*bulge = bul;
 			ok = 1;
 			if (current == NULL){
@@ -168,9 +168,9 @@ double *pt1_x, double *pt1_y, double *pt1_z, double *bulge){
 		}
 	}
 	else { /* last vertex */
-		x = last_x;
-		y = last_y;
-		z = last_z;
+		pt[0] = last_x;
+		pt[1] = last_y;
+		pt[2] = last_z;
 		*bulge = 0.0;
 		ok = 1;
 		*next = NULL;
@@ -185,8 +185,6 @@ double *pt1_x, double *pt1_y, double *pt1_z, double *bulge){
 	}
 	/* convert OCS to WCS */
 	else {
-		double pt[3] ={x, y, z};
-		//if (axis_transform(&x, &y, &z, normal)){
 		mod_axis(pt, normal , 0.0);
 		/* update return values */
 		*pt1_x = pt[0];
@@ -209,9 +207,9 @@ double *pt1_x, double *pt1_y, double *pt1_z, double *bulge){
 	static int pline_flag = 0, closed =0, init = 0;
 	
 	double px = 0.0, py = 0.0, pz = 0.0, bul = 0.0;
-	static double last_x, last_y, last_z, curr_x, elev;
+	static double last_x, last_y, last_z, elev;
 	
-	double x, y, z; /*return values */
+	double pt[3]; /*return values */
 	
 	if (*next == NULL){ /* parse object first time */
 		pline_flag = 0; closed =0; init = 0;
@@ -220,13 +218,12 @@ double *pt1_x, double *pt1_y, double *pt1_z, double *bulge){
 			if (obj->type == DXF_ENT){
 				if (obj->obj.content){
 					current = obj->obj.content->next;
-					//printf("%s\n", obj->obj.name);
 				}
 			}
 		}
 		/* get general parameters of polyline */
 		while (current){
-			if (current->type == DXF_ATTR){ /* DXF attibute */
+			if (current->type == DXF_ATTR){
 				switch (current->value.group){
 					case 70:
 						pline_flag = current->value.i_data;
@@ -247,15 +244,16 @@ double *pt1_x, double *pt1_y, double *pt1_z, double *bulge){
 			}
 			else if (current->type == DXF_ENT){
 				if (strcmp(current->obj.name, "VERTEX") == 0 ){
-					pt1 = 1; /* set flag */
+					pt1 = 1; /* found vertex */
 				}
 			}
 			if (pt1){
 				pt1 = 0;
 				if (init == 0){
+					/* get current vertex parameters */
 					dxf_node *curr_vtx = current->obj.content;
 					while(curr_vtx){
-						if (curr_vtx->type == DXF_ATTR){ /* DXF attibute */
+						if (curr_vtx->type == DXF_ATTR){ 
 							switch (curr_vtx->value.group){
 								case 10:
 									px = curr_vtx->value.d_data;
@@ -302,9 +300,9 @@ double *pt1_x, double *pt1_y, double *pt1_z, double *bulge){
 			normal[1] = extru_y;
 			normal[2] = extru_z;			
 			
-			x = px;
-			y = py;
-			z = pz;
+			pt[0] = px;
+			pt[1] = py;
+			pt[2] = pz;
 			*bulge = bul;
 			ok = 1;
 			
@@ -334,11 +332,19 @@ double *pt1_x, double *pt1_y, double *pt1_z, double *bulge){
 			curr_vtx = curr_vtx->next;
 		}
 		
-		*next = current->next;
+		/* get next vertex */
+		*next = NULL;
+		if (current->next){
+			if (current->next->type == DXF_ENT){
+				if (strcmp(current->next->obj.name, "VERTEX") == 0 ){
+					*next = current->next;
+				}
+			}
+		}
 		
-		x = px;
-		y = py;
-		z = pz;
+		pt[0] = px;
+		pt[1] = py;
+		pt[2] = pz;
 		*bulge = bul;
 		ok = 1;
 		if (*next == NULL){
@@ -353,9 +359,9 @@ double *pt1_x, double *pt1_y, double *pt1_z, double *bulge){
 		}
 	}
 	else { /* last vertex */
-		x = last_x;
-		y = last_y;
-		z = last_z;
+		pt[0] = last_x;
+		pt[1] = last_y;
+		pt[2] = last_z;
 		*bulge = 0.0;
 		ok = 1;
 		*next = NULL;
@@ -370,8 +376,6 @@ double *pt1_x, double *pt1_y, double *pt1_z, double *bulge){
 	}
 	/* convert OCS to WCS */
 	else {
-		double pt[3] ={x, y, z};
-		//if (axis_transform(&x, &y, &z, normal)){
 		mod_axis(pt, normal , 0.0);
 		/* update return values */
 		*pt1_x = pt[0];

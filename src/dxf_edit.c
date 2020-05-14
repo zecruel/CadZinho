@@ -1483,6 +1483,9 @@ list_node * dxf_edit_expl_ins(dxf_drawing *drawing, dxf_node * ins_ent, int mode
 	/* check main structures */
 	if (!drawing) return NULL;
 	if (!ins_ent) return NULL;
+	/* verifiy if entity is valid for this function */
+	if (ins_ent->type != DXF_ENT) return NULL;
+	if (strcmp(ins_ent->obj.name, "INSERT") != 0 ) return NULL;
 	
 	list_node *list = NULL;
 	dxf_node *current = NULL;
@@ -1589,6 +1592,9 @@ list_node * dxf_edit_expl_dim(dxf_drawing *drawing, dxf_node * dim_ent, int mode
 	/* check main structures */
 	if (!drawing) return NULL;
 	if (!dim_ent) return NULL;
+	/* verifiy if entity is valid for this function */
+	if (dim_ent->type != DXF_ENT) return NULL;
+	if (strcmp(dim_ent->obj.name, "DIMENSION") != 0 ) return NULL;
 	
 	list_node *list = NULL;
 	dxf_node *current = NULL;
@@ -1630,6 +1636,8 @@ list_node * dxf_edit_expl_raw(dxf_drawing *drawing, dxf_node * ent, int mode){
 	/* check main structures */
 	if (!drawing) return NULL;
 	if (!ent) return NULL;
+	/* verifiy if entity is valid for this function */
+	if (ent->type != DXF_ENT) return NULL;
 	if (!ent->obj.graphics) return NULL;
 	
 	list_node *list = NULL;
@@ -1640,11 +1648,12 @@ list_node * dxf_edit_expl_raw(dxf_drawing *drawing, dxf_node * ent, int mode){
 	
 	double prev_x = 0.0, prev_y = 0.0, prev_z = 0.0;
 	
-	int color = 7, lw = 0;
-	char layer[DXF_MAX_CHARS], ltype[DXF_MAX_CHARS];
+	/* color, line weight and line type is by layer (DXF default) */
+	int color = 256, lw = -1;
+	char layer[DXF_MAX_CHARS+1], ltype[DXF_MAX_CHARS+1];
+	strncpy(ltype, "BYLAYER", DXF_MAX_CHARS);
 	
-	layer[0] = 0;
-	ltype[0] = 0;
+	strncpy(layer, "0", DXF_MAX_CHARS); /* default layer, if none */
 	
 	/* get original entity parameters */
 	current = ent->obj.content;
@@ -1720,87 +1729,6 @@ list_node * dxf_edit_expl_raw(dxf_drawing *drawing, dxf_node * ent, int mode){
 	
 }
 
-list_node * dxf_edit_expl_lwpoly(dxf_drawing *drawing, dxf_node * ent, int mode){
-	/* verify if mode is valid */
-	if (!(mode & EXPL_POLY)) return NULL;
-	/* check main structures */
-	if (!drawing) return NULL;
-	if (!ent) return NULL;
-	
-	list_node *list = NULL;
-	dxf_node *current = NULL, *new_ent = NULL;
-	list_node *curr_list = NULL;
-	
-	int color = 7, lw = 0;
-	char layer[DXF_MAX_CHARS], ltype[DXF_MAX_CHARS];
-	
-	layer[0] = 0;
-	ltype[0] = 0;
-	
-	/* get original entity parameters */
-	current = ent->obj.content;
-	while (current){
-		if (current->type == DXF_ATTR){
-			switch (current->value.group){
-				case 6:
-					strncpy(ltype, current->value.s_data, DXF_MAX_CHARS);
-					str_upp(ltype);
-					break;
-				case 8:
-					strncpy(layer, current->value.s_data, DXF_MAX_CHARS);
-					str_upp(layer);
-					break;
-				case 62:
-					color = current->value.i_data;
-					break;
-				case 370:
-					lw = current->value.i_data;
-					break;
-			}
-		}
-		current = current->next; /* go to the next in the list */
-	}
-	
-	
-	double pt1_x = 0.0, pt1_y = 0.0, pt1_z = 0.0, bulge = 0.0;
-	double pt2_x = 0.0, pt2_y = 0.0, pt2_z = 0.0, prev_bulge = 0.0;
-	dxf_node * next_vert = NULL;
-	if(dxf_lwpline_get_pt(ent, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge)){
-		while (next_vert){
-			if (!list) list = list_new(NULL, FRAME_LIFE);
-			pt1_x = pt2_x; pt1_y = pt2_y; prev_bulge = bulge;
-			
-			if(!dxf_lwpline_get_pt(ent, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge)){
-				break;
-			}
-			
-			if (fabs(prev_bulge) < 1e-9){ /* segment is a straight line*/
-				new_ent = dxf_new_line (pt1_x, pt1_y, pt1_z,
-					pt2_x, pt2_y, pt2_z, 
-					color, layer, ltype, lw, 0, FRAME_LIFE);
-				
-				/* append to list*/
-				list_node * new_node = list_new(new_ent, FRAME_LIFE);
-				list_push(list, new_node);
-			}
-			else{ /* segment is an arc*/
-				double radius, ang_start, ang_end, center_x, center_y, center_z = 0.0;
-				double axis = 0, rot = 0, ratio = 1;
-				arc_bulge(pt1_x, pt1_y, pt2_x, pt2_y, prev_bulge, &radius, &ang_start, &ang_end, &center_x, &center_y);
-				
-				new_ent = dxf_new_arc (center_x, center_y, pt1_z,
-					radius, ang_start * 180/M_PI, ang_end * 180/M_PI,
-					color, layer, ltype, lw, 0, FRAME_LIFE);
-				/* append to list*/
-				list_node * new_node = list_new(new_ent, FRAME_LIFE);
-				list_push(list, new_node);
-			}
-		}
-	}
-	
-	return list;
-}
-
 list_node * dxf_edit_expl_poly(dxf_drawing *drawing, dxf_node * ent, int mode){
 	/* verify if mode is valid */
 	if (!(mode & EXPL_POLY)) return NULL;
@@ -1811,12 +1739,20 @@ list_node * dxf_edit_expl_poly(dxf_drawing *drawing, dxf_node * ent, int mode){
 	list_node *list = NULL;
 	dxf_node *current = NULL, *new_ent = NULL;
 	list_node *curr_list = NULL;
+	int lw_poly = 0, ok = 0;
 	
-	int color = 7, lw = 0;
-	char layer[DXF_MAX_CHARS], ltype[DXF_MAX_CHARS];
+	/* verifiy if entity is valid for this function */
+	if (ent->type != DXF_ENT) return NULL;
+	if (strcmp(ent->obj.name, "LWPOLYLINE") == 0 ) lw_poly = 1;
+	else if (strcmp(ent->obj.name, "POLYLINE") == 0 ) lw_poly = 0;
+	else return NULL;
 	
-	layer[0] = 0;
-	ltype[0] = 0;
+	/* color, line weight and line type is by layer (DXF default) */
+	int color = 256, lw = -1;
+	char layer[DXF_MAX_CHARS+1], ltype[DXF_MAX_CHARS+1];
+	strncpy(ltype, "BYLAYER", DXF_MAX_CHARS);
+	
+	strncpy(layer, "0", DXF_MAX_CHARS); /* default layer, if none */
 	
 	/* get original entity parameters */
 	current = ent->obj.content;
@@ -1842,40 +1778,44 @@ list_node * dxf_edit_expl_poly(dxf_drawing *drawing, dxf_node * ent, int mode){
 		current = current->next; /* go to the next in the list */
 	}
 	
-	
 	double pt1_x = 0.0, pt1_y = 0.0, pt1_z = 0.0, bulge = 0.0;
 	double pt2_x = 0.0, pt2_y = 0.0, pt2_z = 0.0, prev_bulge = 0.0;
 	dxf_node * next_vert = NULL;
-	if(dxf_pline_get_pt(ent, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge)){
-		while (next_vert){
-			if (!list) list = list_new(NULL, FRAME_LIFE);
-			pt1_x = pt2_x; pt1_y = pt2_y; prev_bulge = bulge;
+	
+	/* get point according polyline type */
+	if(lw_poly) ok = dxf_lwpline_get_pt(ent, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge);
+	else ok = dxf_pline_get_pt(ent, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge);
+	if (!ok) return NULL; /* fail to get point */
+	
+	while (next_vert){
+		if (!list) list = list_new(NULL, FRAME_LIFE);
+		pt1_x = pt2_x; pt1_y = pt2_y; prev_bulge = bulge;
+		
+		/* get point according polyline type */
+		if(lw_poly) ok = dxf_lwpline_get_pt(ent, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge);
+		else ok = dxf_pline_get_pt(ent, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge);
+		if (!ok) break; /* fail to get point */
+		
+		if (fabs(prev_bulge) < 1e-9){ /* segment is a straight line*/
+			new_ent = dxf_new_line (pt1_x, pt1_y, pt1_z,
+				pt2_x, pt2_y, pt2_z, 
+				color, layer, ltype, lw, 0, FRAME_LIFE);
 			
-			if(!dxf_pline_get_pt(ent, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge)){
-				break;
-			}
+			/* append to list*/
+			list_node * new_node = list_new(new_ent, FRAME_LIFE);
+			list_push(list, new_node);
+		}
+		else{ /* segment is an arc*/
+			double radius, ang_start, ang_end, center_x, center_y, center_z = 0.0;
+			double axis = 0, rot = 0, ratio = 1;
+			arc_bulge(pt1_x, pt1_y, pt2_x, pt2_y, prev_bulge, &radius, &ang_start, &ang_end, &center_x, &center_y);
 			
-			if (fabs(prev_bulge) < 1e-9){ /* segment is a straight line*/
-				new_ent = dxf_new_line (pt1_x, pt1_y, pt1_z,
-					pt2_x, pt2_y, pt2_z, 
-					color, layer, ltype, lw, 0, FRAME_LIFE);
-				
-				/* append to list*/
-				list_node * new_node = list_new(new_ent, FRAME_LIFE);
-				list_push(list, new_node);
-			}
-			else{ /* segment is an arc*/
-				double radius, ang_start, ang_end, center_x, center_y, center_z = 0.0;
-				double axis = 0, rot = 0, ratio = 1;
-				arc_bulge(pt1_x, pt1_y, pt2_x, pt2_y, prev_bulge, &radius, &ang_start, &ang_end, &center_x, &center_y);
-				
-				new_ent = dxf_new_arc (center_x, center_y, pt1_z,
-					radius, ang_start * 180/M_PI, ang_end * 180/M_PI,
-					color, layer, ltype, lw, 0, FRAME_LIFE);
-				/* append to list*/
-				list_node * new_node = list_new(new_ent, FRAME_LIFE);
-				list_push(list, new_node);
-			}
+			new_ent = dxf_new_arc (center_x, center_y, pt1_z,
+				radius, ang_start * 180/M_PI, ang_end * 180/M_PI,
+				color, layer, ltype, lw, 0, FRAME_LIFE);
+			/* append to list*/
+			list_node * new_node = list_new(new_ent, FRAME_LIFE);
+			list_push(list, new_node);
 		}
 	}
 	

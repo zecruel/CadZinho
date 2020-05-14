@@ -36,11 +36,9 @@ int gui_expl_interactive(gui_obj *gui){
 					/* explode insert entity in a list of entities */
 					list = dxf_edit_expl_ins(gui->drawing, ent, gui->expl_mode);
 				}
-				else if( (strcmp(ent->obj.name, "LWPOLYLINE") == 0) && (gui->expl_mode & EXPL_POLY) ){
-					/* explode polyline entity in a list of lines and arcs */
-					list = dxf_edit_expl_lwpoly(gui->drawing, ent, gui->expl_mode);
-				}
-				else if( (strcmp(ent->obj.name, "POLYLINE") == 0) && (gui->expl_mode & EXPL_POLY) ){
+				else if( ((strcmp(ent->obj.name, "LWPOLYLINE") == 0) ||
+					(strcmp(ent->obj.name, "POLYLINE") == 0)) && 
+					(gui->expl_mode & EXPL_POLY) ){
 					/* explode polyline entity in a list of lines and arcs */
 					list = dxf_edit_expl_poly(gui->drawing, ent, gui->expl_mode);
 				}

@@ -1,11 +1,5 @@
 #include "gui_use.h"
 
-static void angle_range(double *ang){
-	/* set angle range to 0-2*pi */
-	if (fabs(*ang) > 2*M_PI) *ang = fmod(*ang, 2*M_PI);
-	if (*ang < 0) *ang += 2*M_PI;
-}
-
 int gui_ellip_interactive(gui_obj *gui){
 	
 	if (gui->modal != ELLIPSE) return 0;

@@ -35,7 +35,7 @@ int gui_update_pos(gui_obj *gui){
 		gui->near_count = dxf_ents_isect2(gui->near_list, gui->drawing, rect_pt1, rect_pt2);
 		
 		
-		if ((gui->step >= 0) && (gui->step < 10)){
+		if ((gui->step >= 0) && (gui->step < 1000)){
 			/* update current position by the mouse */
 			gui->step_x[gui->step] = (double) gui->mouse_x/gui->zoom + gui->ofs_x;
 			gui->step_y[gui->step] = (double) gui->mouse_y/gui->zoom + gui->ofs_y;
@@ -53,7 +53,7 @@ int gui_update_pos(gui_obj *gui){
 		}
 		
 		/* compute the next point coordinates by axis distances entry */
-		if ((gui->en_distance) && (gui->step > 0) && (gui->step < 10)){
+		if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000)){
 			/* verify if an axis is locked during a drawing operation */
 			if (gui->lock_ax_y != 0){
 				gui->step_x[gui->step] = gui->step_x[gui->step - 1];
@@ -69,7 +69,7 @@ int gui_update_pos(gui_obj *gui){
 				gui->step_y[gui->step] = gui->step_y[gui->step - 1] + gui->user_y;
 			}
 		}
-		if ((!gui->entry_relative) && (gui->step >= 0) && (gui->step < 10)){
+		if ((!gui->entry_relative) && (gui->step >= 0) && (gui->step < 1000)){
 			/* check the user entry */
 			if (gui->user_flag_x){
 				gui->step_x[gui->step] = gui->user_x;
@@ -96,14 +96,14 @@ int gui_xy(gui_obj *gui){
 		nk_layout_row_push(gui->ctx, 20);
 		/* X distance */
 		/* hilite coordinate, if coord is predominant during a drawing operation*/
-		if ((gui->en_distance) && (gui->step > 0) && (gui->step < 10) && (flag_x)){
+		if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000) && (flag_x)){
 			nk_label_colored(gui->ctx, "X=", NK_TEXT_RIGHT, nk_rgb(255,255,0));
 		}
 		else {
 			nk_label(gui->ctx, "X=", NK_TEXT_RIGHT);
 		}
 		/* verify if the user initiate a number entry during a drawing operation */
-		if (((gui->en_distance)||(!gui->entry_relative)) && (gui->user_number) && (gui->step >= 0) && (gui->step < 10) &&
+		if (((gui->en_distance)||(!gui->entry_relative)) && (gui->user_number) && (gui->step >= 0) && (gui->step < 1000) &&
 		(!gui->user_flag_x) && (flag_x)){
 			gui->user_number = 0; /* clear user flag */
 			user_str_x[0] = 0; /* clear edit string */
@@ -127,10 +127,10 @@ int gui_xy(gui_obj *gui){
 			}
 		}
 		else { /* visualize mode */
-			if ((!gui->entry_relative) && (gui->step >= 0) && (gui->step < 10)){
+			if ((!gui->entry_relative) && (gui->step >= 0) && (gui->step < 1000)){
 				snprintf(user_str_x, 63, "%f", gui->step_x[gui->step]);
 			}
-			else if ((gui->en_distance) && (gui->step > 0) && (gui->step < 10)){
+			else if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000)){
 				snprintf(user_str_x, 63, "%f", gui->step_x[gui->step] - gui->step_x[gui->step - 1]);
 			}
 			else {
@@ -145,14 +145,14 @@ int gui_xy(gui_obj *gui){
 		nk_layout_row_push(gui->ctx, 20);
 		/* Y distance */
 		/* hilite coordinate, if coord is predominant during a drawing operation*/
-		if ((gui->en_distance) && (gui->step > 0) && (gui->step < 10) && (flag_y)){
+		if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000) && (flag_y)){
 			nk_label_colored(gui->ctx, "Y=", NK_TEXT_RIGHT, nk_rgb(255,255,0));
 		}
 		else {
 			nk_label(gui->ctx, "Y=", NK_TEXT_RIGHT);
 		}
 		/* verify if the user initiate a number entry during a drawing operation */
-		if (((gui->en_distance)||(!gui->entry_relative)) && (gui->user_number) && (gui->step >= 0) && (gui->step < 10) &&
+		if (((gui->en_distance)||(!gui->entry_relative)) && (gui->user_number) && (gui->step >= 0) && (gui->step < 1000) &&
 		(!gui->user_flag_y) && (flag_y)){
 			gui->user_number = 0; /* clear user flag */
 			user_str_y[0] = 0; /* clear edit string */
@@ -176,10 +176,10 @@ int gui_xy(gui_obj *gui){
 			}
 		}
 		else { /* visualize mode */
-			if ((!gui->entry_relative) && (gui->step >= 0) && (gui->step < 10)){
+			if ((!gui->entry_relative) && (gui->step >= 0) && (gui->step < 1000)){
 				snprintf(user_str_y, 63, "%f", gui->step_y[gui->step]);
 			}
-			else if ((gui->en_distance) && (gui->step > 0) && (gui->step < 10)){
+			else if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000)){
 				snprintf(user_str_y, 63, "%f", gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
 			}
 			else {

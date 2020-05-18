@@ -93,7 +93,9 @@ enum Modal {
 	IMAGE,
 	ADD_ATTRIB,
 	ADD_XDATA,
-	EXPLODE
+	EXPLODE,
+	MEASURE,
+	FIND
 };
 
 enum Gui_ev {
@@ -211,7 +213,7 @@ struct Gui_obj {
 	double prev_zoom;
 	
 	double user_x, user_y;
-	double step_x[10], step_y[10];
+	double step_x[1000], step_y[1000];
 	double near_x, near_y;
 	double bulge, scale_x, scale_y, angle;
 	double txt_h;

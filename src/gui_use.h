@@ -111,5 +111,12 @@ int gui_expl_interactive(gui_obj *gui);
 
 int gui_expl_info (gui_obj *gui);
 
+int gui_measure_interactive(gui_obj *gui);
+
+int gui_measure_info (gui_obj *gui);
+
+int gui_find_interactive(gui_obj *gui);
+
+int gui_find_info (gui_obj *gui);
 
 #endif

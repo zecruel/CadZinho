@@ -1,5 +1,32 @@
 #include "gui.h"
 
+void gui_scr_coord (gui_obj *gui, int scr_x, int scr_y, double *x, double *y){
+	*x = (double) scr_x / gui->zoom + gui->ofs_x;
+	*y = (double) scr_y / gui->zoom + gui->ofs_y;
+}
+
+void gui_coord_scr (gui_obj *gui, double x, double y, int *scr_x, int *scr_y){
+	*scr_x = (int) (x - gui->ofs_x) * gui->zoom;
+	*scr_y = (int) (y - gui->ofs_y) * gui->zoom;
+}
+
+int gui_scr_visible (gui_obj *gui, double x, double y){
+	int scr_x = 0, scr_y = 0;
+	gui_coord_scr (gui, x, y, &scr_x, &scr_y);
+	
+	return (scr_x > 0 && scr_x < gui->win_w && scr_y > (gui->main_h - gui->win_h) && scr_y < gui->main_h);
+	
+}
+
+void gui_scr_centralize(gui_obj *gui, double x, double y){
+	double ofs_x = gui->win_w / 2 / gui->zoom;
+	double ofs_y = ((gui->main_h - gui->win_h) + gui->win_h / 2) / gui->zoom;
+	
+	gui->ofs_x = x - ofs_x;
+	gui->ofs_y = y - ofs_y;
+	
+}
+
 void sel_list_clear (gui_obj *gui){
 	list_clear(gui->sel_list);
 	list_mem_pool(ZERO_LIST, SEL_LIFE);

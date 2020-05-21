@@ -272,6 +272,9 @@ int gui_find_info (gui_obj *gui){
 			gui->step_x[1] = rect[2];
 			gui->step_y[1] = rect[3];
 			
+			if (!gui_scr_visible(gui, rect[0], rect[1])) 
+				gui_scr_centralize(gui, rect[0], rect[1]);
+			
 			gui->step = 2;
 		}
 		else gui->step = 0;

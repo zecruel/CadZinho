@@ -365,6 +365,16 @@ typedef struct Gui_obj gui_obj;
 
 enum theme {THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK, THEME_ZE};
 
+
+
+void gui_scr_coord (gui_obj *gui, int scr_x, int scr_y, double *x, double *y);
+
+void gui_coord_scr (gui_obj *gui, double x, double y, int *scr_x, int *scr_y);
+
+int gui_scr_visible (gui_obj *gui, double x, double y);
+
+void gui_scr_centralize(gui_obj *gui, double x, double y);
+
 void sel_list_clear (gui_obj *gui);
 
 int gui_tab (gui_obj *gui, const char *title, int active);

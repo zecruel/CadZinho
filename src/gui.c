@@ -14,7 +14,7 @@ int gui_scr_visible (gui_obj *gui, double x, double y){
 	int scr_x = 0, scr_y = 0;
 	gui_coord_scr (gui, x, y, &scr_x, &scr_y);
 	
-	return (scr_x > 0 && scr_x < gui->win_w && scr_y > (gui->main_h - gui->win_h) && scr_y < gui->main_h);
+	return (scr_x > 0 && scr_x < gui->win_w && scr_y > (gui->main_h - gui->win_h) + 90&& scr_y < gui->main_h - 90);
 	
 }
 

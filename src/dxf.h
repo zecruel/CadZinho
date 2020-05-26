@@ -31,7 +31,7 @@ struct sort_by_idx{
 /* supportable graphic entities */
 enum dxf_graph {
 	DXF_NONE 		= 0x0,
-	DXF_LINE 			= 0x1,
+	DXF_LINE 		= 0x1,
 	DXF_POINT 		= 0x2,
 	DXF_CIRCLE 		= 0x4,
 	DXF_ARC 			= 0x8,
@@ -52,7 +52,7 @@ enum dxf_graph {
 	DXF_BLK 			= 0x40000,
 	DXF_ENDBLK 		= 0x80000,
 	DXF_HATCH 		= 0x100000,
-	DXF_DIMSTYLE 		= 0x200000,
+	DXF_DIMSTYLE 	= 0x200000,
 	DXF_IMAGE 		= 0x400000,
 	DXF_IMAGE_DEF 	= 0x800000
 };

@@ -3112,6 +3112,8 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 						curr_node = curr_node->next;
 					}
 					
+					current->obj.graphics = text_list;
+					
 					/* store the graph list  in a temporary list.
 					this approach avoid to modify the attributes inside INSERTs*/
 					list_node * att_el = list_new(text_list, FRAME_LIFE);

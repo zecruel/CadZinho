@@ -1,26 +1,5 @@
 #include "gui_use.h"
 
-int find(lua_State *L, char* source, char* pat){
-	int start = 0, end = 0;
-	
-	lua_getglobal(L, "string"); /* get library */
-	lua_getfield(L, 1, "find"); /* and function to be called */
-	lua_pushstring(L, source);
-	lua_pushstring(L, pat);
-	if (lua_pcall(L, 2, 2, 0) == LUA_OK){
-		if (lua_isnumber(L, -1)) {
-			end = (int)lua_tonumber(L, -1);
-			start = (int)lua_tonumber(L, -2);
-			
-		}
-		lua_pop(L, 2); /* pop returned values */
-	}
-	
-	lua_pop(L, 1); /* pop library "string" */
-	
-	return start;
-}
-
 int txt_ent_find(dxf_node *ent, lua_State *L, char* pat, int *start, int *end){
 	/* using Lua engine, try to find match pattern in DXF entity text */
 	
@@ -61,7 +40,7 @@ int txt_ent_find(dxf_node *ent, lua_State *L, char* pat, int *start, int *end){
 }
 
 char * txt_ent_repl(dxf_node *ent, lua_State *L, char* pat, char* rpl){
-	/* using Lua engine, try to find match pattern in DXF entity text */
+	/* using Lua engine, try to find match and replace pattern in DXF entity text */
 	
 	dxf_node  *x = NULL;
 	luaL_Buffer b;
@@ -84,13 +63,13 @@ char * txt_ent_repl(dxf_node *ent, lua_State *L, char* pat, char* rpl){
 	}
 	luaL_pushresult(&b); /* finalize string and put on Lua stack */
 	
-	/* using Lua, try to find match pattern in text */
+	/* using Lua, try to find match and replace pattern in text */
 	lua_pushstring(L, pat);
 	lua_pushstring(L, rpl);
 	if (lua_pcall(L, 3, 2, 0) == LUA_OK){
 		if (lua_isnumber(L, -1)) { /* success */
-			//*end = (int)lua_tonumber(L, -1);
-			new_text = (char *)lua_tostring(L, -2);
+			int n = (int)lua_tonumber(L, -1); /* number of matches */
+			if (n > 0) new_text = (char *)lua_tostring(L, -2);
 			
 		}
 		lua_pop(L, 2); /* clear Lua stack - pop returned values */
@@ -218,7 +197,7 @@ list_node * list_find(list_node *list, lua_State *L, char* pat, double rect[4], 
 	
 	int start = 0, end = 0;
 	
-	/* sweep entities section */
+	/* sweep list of entities */
 	while (current != NULL){
 		if (current->data){
 			enum dxf_graph ent_type = dxf_ident_ent_type ((dxf_node *)current->data);
@@ -288,7 +267,7 @@ list_node * list_find(list_node *list, lua_State *L, char* pat, double rect[4], 
 	return found;
 }
 
-list_node *  gui_dwg_sel_filter(dxf_drawing *drawing, enum dxf_graph filter){
+list_node *  gui_dwg_sel_filter(dxf_drawing *drawing, enum dxf_graph filter, int pool_idx){
 	dxf_node *current = NULL;
 	list_node *list = NULL;
 	
@@ -308,14 +287,29 @@ list_node *  gui_dwg_sel_filter(dxf_drawing *drawing, enum dxf_graph filter){
 			
 			/*verify if entity layer is on and thaw */
 			if ((!drawing->layers[current->obj.layer].off) && 
-				(!drawing->layers[current->obj.layer].frozen) &&
+				(!drawing->layers[current->obj.layer].frozen) ){
 				/* and if  is a compatible entity */
-				(ent_type & filter)
-			){
-				if (!list) list = list_new(NULL, FRAME_LIFE);
-				/* append to list*/
-				list_node * new_node = list_new(current, FRAME_LIFE);
-				list_push(list, new_node);
+				if (ent_type & filter){
+					if (!list) list = list_new(NULL, pool_idx);
+					/* append to list*/
+					list_node * new_node = list_new(current, pool_idx);
+					list_push(list, new_node);
+				}
+				else if (ent_type == DXF_INSERT && (filter & DXF_ATTRIB) ){
+					int num_attr = 0;
+					dxf_node *attr = NULL;
+					
+					num_attr = 0;
+					while (attr = dxf_find_obj_i(current, "ATTRIB", num_attr)){
+						/* add attribute entity to list */
+						if (!list) list = list_new(NULL, pool_idx);
+						/* append to list*/
+						list_node * new_node = list_new(attr, pool_idx);
+						list_push(list, new_node);
+						
+						num_attr++;
+					}
+				}
 				
 			}
 		}
@@ -359,8 +353,9 @@ int gui_find_interactive(gui_obj *gui){
 
 int gui_find_info (gui_obj *gui){
 	static lua_State *L = NULL;
-	static dxf_node *found = NULL;
-	static dxf_node *next = NULL;
+	static list_node * found = NULL;
+	static list_node * next = NULL;
+	static list_node * look_list = NULL;
 	
 	if (gui->modal != FIND) {
 		if (L) {
@@ -368,6 +363,7 @@ int gui_find_info (gui_obj *gui){
 			L = NULL;
 			next = NULL;
 			found = NULL;
+			look_list = NULL;
 		}
 		return 0;
 	}
@@ -379,6 +375,7 @@ int gui_find_info (gui_obj *gui){
 	
 	static char search[DXF_MAX_CHARS+1] = "";
 	static char repl[DXF_MAX_CHARS+1] = "";
+	static char log[64] = "";
 	
 	double rect[4]; /* to draw a rectangle on found text */
 	
@@ -389,8 +386,13 @@ int gui_find_info (gui_obj *gui){
 	nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, search, DXF_MAX_CHARS, nk_filter_default);
 
 	if (nk_button_label(gui->ctx, "Find Next") && strlen(search) > 0 ){
+		log[0] = 0;
+		if (!next){
+			look_list = gui_dwg_sel_filter(gui->drawing, DXF_TEXT | DXF_MTEXT | DXF_ATTRIB, DWG_LIFE);
+		}
+		
 		/* try to find next match */
-		if(found = dwg_find(gui->drawing, L, search, rect, &next)){
+		if(found = list_find(look_list, L, search, rect, &next, DXF_TEXT | DXF_MTEXT | DXF_ATTRIB)){
 			/* success - draw rectangle on found text pattern */
 			gui->step_x[0] = rect[0];
 			gui->step_y[0] = rect[1];
@@ -410,8 +412,9 @@ int gui_find_info (gui_obj *gui){
 	nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, repl, DXF_MAX_CHARS, nk_filter_default);
 	nk_layout_row_dynamic(gui->ctx, 20, 2);
 	if (nk_button_label(gui->ctx, "Current") && strlen(search) > 0 ){
-		
-		dxf_node *new_ent = dxf_ent_copy(found, DWG_LIFE); /* copy original entity */
+		log[0] = 0;
+		dxf_node *new_ent = NULL;
+		if (found) new_ent = dxf_ent_copy((dxf_node *)found->data, DWG_LIFE); /* copy original entity */
 		if (new_ent){
 			/* get edited text */
 			char *blank = "";
@@ -434,16 +437,16 @@ int gui_find_info (gui_obj *gui){
 					}
 				}
 				new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0, DWG_LIFE);
-				dxf_obj_subst(found, new_ent);
+				dxf_obj_subst((dxf_node *)found->data, new_ent);
 				
 				/* update undo/redo list */
 				do_add_entry(&gui->list_do, "REPLACE");
-				do_add_item(gui->list_do.current, found, new_ent);
+				do_add_item(gui->list_do.current, (dxf_node *)found->data, new_ent);
 			}
 		}
 		
 		/* try to find next match */
-		if(found = dwg_find(gui->drawing, L, search, rect, &next)){
+		if(found = list_find(look_list, L, search, rect, &next, DXF_TEXT | DXF_MTEXT)){
 			/* success - draw rectangle on found text pattern */
 			gui->step_x[0] = rect[0];
 			gui->step_y[0] = rect[1];
@@ -460,7 +463,8 @@ int gui_find_info (gui_obj *gui){
 		
 	}
 	if (nk_button_label(gui->ctx, "Selection")){
-		int ini_do = 0;
+		log[0] = 0;
+		int ini_do = 0, n = 0;
 		
 		list_node *nxt = NULL, *fnd;
 		while(fnd = list_find(gui->sel_list, L, search, rect, &nxt, DXF_TEXT | DXF_MTEXT)){
@@ -495,18 +499,20 @@ int gui_find_info (gui_obj *gui){
 						ini_do = 1;
 					}
 					do_add_item(gui->list_do.current, (dxf_node *)fnd->data, new_ent);
+					fnd->data = new_ent; /* replace in list too */
+					n++;
 				}
-				
-				fnd->data = new_ent; /* replace in list too */
+				snprintf(log, 63, "Total replaced: %d", n);
 			}
 			if(!nxt) break;
 		}
 	}
 	if (nk_button_label(gui->ctx, "All")){
-		int ini_do = 0;
+		log[0] = 0;
+		int ini_do = 0, n = 0;
 		
 		list_node *nxt = NULL, *fnd;
-		list_node * list = gui_dwg_sel_filter(gui->drawing, DXF_TEXT | DXF_MTEXT);
+		list_node * list = gui_dwg_sel_filter(gui->drawing, DXF_TEXT | DXF_MTEXT, FRAME_LIFE);
 		while(fnd = list_find(list, L, search, rect, &nxt, DXF_TEXT | DXF_MTEXT)){
 			dxf_node *new_ent = dxf_ent_copy((dxf_node *)fnd->data, DWG_LIFE); /* copy original entity */
 			if (new_ent){
@@ -539,13 +545,17 @@ int gui_find_info (gui_obj *gui){
 						ini_do = 1;
 					}
 					do_add_item(gui->list_do.current, (dxf_node *)fnd->data, new_ent);
+					fnd->data = new_ent; /* replace in list too */
+					n++;
 				}
-				
-				fnd->data = new_ent; /* replace in list too */
+				snprintf(log, 63, "Total replaced: %d", n);
 			}
 			if(!nxt) break;
 		}
 	}
+	
+	nk_layout_row_dynamic(gui->ctx, 20, 1);
+	nk_label(gui->ctx, log, NK_TEXT_LEFT);
 	
 	return 1;
 }

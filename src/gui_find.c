@@ -39,6 +39,66 @@ int txt_ent_find(dxf_node *ent, lua_State *L, char* pat, int *start, int *end){
 	return *start > 0;
 }
 
+int txt_ent_find2(dxf_node *ent, lua_State *L, char* pat, int *start, int *end, int *pos){
+	/* using Lua engine, try to find match pattern in DXF entity text */
+	
+	dxf_node  *x = NULL;
+	luaL_Buffer b;
+	int i, n = 0;
+	
+	const char *f = 
+	"function find_n(str, pat, idx)"
+	"	n = 0"
+	"	start = 0"
+	"	end_str = 1"
+	"	ret_st = 0"
+	"	ret_end = 0"
+	"	repeat"
+	"		start, end_str = string.find(str, pat, end_str)"
+	"		if start then"
+	"			if n == idx then"
+	"				ret_st = start"
+	"				ret_end = end_str"
+	"			end"
+	"			n = n + 1"
+	"		end"
+	"	until start == nil"
+	"	return n, ret_st, ret_end"
+	"end";
+	luaL_dostring(L, f);
+	
+	*start = 0; *end = 0;
+	lua_getglobal(L, "string"); /* get library */
+	lua_getfield(L, 1, "find"); /* and function to be called */
+	
+	/* get DXF entity text strings */
+	luaL_buffinit(L, &b); /* init the Lua buffer */
+	for (i = 0; x = dxf_find_attr_i(ent, 3, i); i++){
+		/* first, get the additional text (MTEXT ent) */
+		luaL_addstring(&b, x->value.s_data);
+	}
+	for (i = 0; x = dxf_find_attr_i(ent, 1, i); i++){
+		/* finally, get main text */
+		luaL_addstring(&b, x->value.s_data);
+	}
+	luaL_pushresult(&b); /* finalize string and put on Lua stack */
+	
+	/* using Lua, try to find match pattern in text */
+	lua_pushstring(L, pat);
+	if (lua_pcall(L, 2, 2, 0) == LUA_OK){
+		if (lua_isnumber(L, -1)) { /* success */
+			*end = (int)lua_tonumber(L, -1);
+			*start = (int)lua_tonumber(L, -2);
+			
+		}
+		lua_pop(L, 2); /* clear Lua stack - pop returned values */
+	}
+	
+	lua_pop(L, 1); /* clear Lua stack - pop library "string" */
+	
+	return *start > 0;
+}
+
 char * txt_ent_repl(dxf_node *ent, lua_State *L, char* pat, char* rpl){
 	/* using Lua engine, try to find match and replace pattern in DXF entity text */
 	
@@ -175,6 +235,284 @@ dxf_node * dwg_find(dxf_drawing *drawing, lua_State *L, char* pat, double rect[4
 	
 	return found;
 }
+
+dxf_node * dwg_find2 (dxf_drawing *drawing, lua_State *L, char* pat, double rect[4], dxf_node **next, enum dxf_graph filter){
+	/* try to find match pattern in drawing DXF entities text */
+	
+	dxf_node *current = NULL, *prev = NULL;
+	dxf_node *found = NULL, *ent = NULL;
+	
+	/* verify structures */
+	if (!drawing || (drawing->ents == NULL) || (drawing->main_struct == NULL)){
+		/* fail */
+		*next = NULL;
+		return NULL;
+	}
+	
+	/* init the serch */
+	if (*next) current = *next; /* from previous element */
+	else current = drawing->ents->obj.content->next; /* or from begin */
+	
+	prev = current;
+	
+	*next = NULL;
+	
+	int start = 0, end = 0;
+	
+	/* sweep entities section */
+	while (current != NULL){
+		ent = NULL;
+		
+		if (current->type == DXF_ENT){ /* look for DXF entity */
+			enum dxf_graph ent_type = dxf_ident_ent_type (current);
+			
+			/*verify if entity layer is on and thaw */
+			if ((!drawing->layers[current->obj.layer].off) && 
+				(!drawing->layers[current->obj.layer].frozen) ){
+					
+				/* and if  is a compatible entity */
+				if (ent_type & filter){
+					ent = current;
+					prev = current;
+				}
+				else if (ent_type == DXF_INSERT && (filter & DXF_ATTRIB) ){
+					if (current->obj.content){
+						current = current->obj.content->next;
+						prev = current;
+						continue;
+					}
+				}
+				
+				if (found) { /* prepare for next element */
+					*next = current;
+					return found;
+				}
+			}
+		}
+		
+		/* try to find text pattern */
+		if (txt_ent_find(ent, L, pat, &start, &end)){
+			/* success */
+			found = ent;
+			
+			/* get aproximate graphic location of match, 
+			by start-end char indexes and counting graph glyphs */
+			list_node *curr_lst = NULL;
+			graph_obj *curr_graph = NULL;
+			curr_lst = ((list_node *)ent->obj.graphics)->next;
+
+			double min_x, min_y, max_x, max_y, w, h;
+			int ini_pos = 0, i = 1;
+
+			/* sweep glyphs list */
+			while (curr_lst != NULL){
+				if (curr_lst->data){
+					curr_graph = (graph_obj *)curr_lst->data;
+					/* check if count is in range */
+					if ( (i >= start && i <= end) &&
+						(curr_graph->list->next != NULL)){ /*and if graph is not empty */
+						/* get each glyph corners and update the rectangle values */
+						if (ini_pos == 0){
+							ini_pos = 1;
+							min_x = curr_graph->ext_min_x;
+							min_y = curr_graph->ext_min_y;
+							max_x = curr_graph->ext_max_x;
+							max_y = curr_graph->ext_max_y;
+						}
+						else{
+							min_x = (min_x < curr_graph->ext_min_x) ? min_x : curr_graph->ext_min_x;
+							min_y = (min_y < curr_graph->ext_min_y) ? min_y : curr_graph->ext_min_y;
+							max_x = (max_x > curr_graph->ext_max_x) ? max_x : curr_graph->ext_max_x;
+							max_y = (max_y > curr_graph->ext_max_y) ? max_y : curr_graph->ext_max_y;
+						}
+					}
+				}
+				curr_lst = curr_lst->next;
+				i++;
+			}
+			
+			w = max_x - min_x;
+			h = max_y - min_y;
+			
+			if (fabs(w) < 1e-9) w = h;
+			if (fabs(h) < 1e-9) h = w;
+			
+			/* update return value */
+			rect[0] = min_x - 0.1*w;
+			rect[1] = min_y - 0.1*h;
+			rect[2] = max_x + 0.1*w;
+			rect[3] = max_y + 0.1*h;
+		}
+		
+		current = current->next;
+		/* ============================================================= */
+		while (current == NULL){
+			/* end of list sweeping */
+			if ((prev == NULL) || (prev == drawing->ents->obj.content->next)){ /* stop the search if back on initial entity */
+				//printf("para\n");
+				current = NULL;
+				break;
+			}
+			/* try to back in structure hierarchy */
+			prev = prev->master;
+			if (prev){ /* up in structure */
+				/* try to continue on previous point in structure */
+				current = prev->next;
+				if(prev == drawing->ents->obj.content->next){
+					current = NULL;
+					break;
+				}
+				
+			}
+			else{ /* stop the search if structure ends */
+				current = NULL;
+				break;
+			}
+		}
+	}
+	
+	return found;
+}
+
+int txt_ent_find_rect(dxf_node *ent, lua_State *L, char* pat, double rect[4], int *pos){
+	int start = 0, end = 0;
+	
+	
+	/* try to find text pattern */
+	if (!txt_ent_find(ent, L, pat, &start, &end)) return 0;
+	/* success */
+	
+	/* get aproximate graphic location of match, 
+	by start-end char indexes and counting graph glyphs */
+	list_node *curr_lst = NULL;
+	graph_obj *curr_graph = NULL;
+	curr_lst = ((list_node *)ent->obj.graphics)->next;
+
+	double min_x, min_y, max_x, max_y, w, h;
+	int ini_pos = 0, i = 1;
+
+	/* sweep glyphs list */
+	while (curr_lst != NULL){
+		if (curr_lst->data){
+			curr_graph = (graph_obj *)curr_lst->data;
+			/* check if count is in range */
+			if ( (i >= start && i <= end) &&
+				(curr_graph->list->next != NULL)){ /*and if graph is not empty */
+				/* get each glyph corners and update the rectangle values */
+				if (ini_pos == 0){
+					ini_pos = 1;
+					min_x = curr_graph->ext_min_x;
+					min_y = curr_graph->ext_min_y;
+					max_x = curr_graph->ext_max_x;
+					max_y = curr_graph->ext_max_y;
+				}
+				else{
+					min_x = (min_x < curr_graph->ext_min_x) ? min_x : curr_graph->ext_min_x;
+					min_y = (min_y < curr_graph->ext_min_y) ? min_y : curr_graph->ext_min_y;
+					max_x = (max_x > curr_graph->ext_max_x) ? max_x : curr_graph->ext_max_x;
+					max_y = (max_y > curr_graph->ext_max_y) ? max_y : curr_graph->ext_max_y;
+				}
+			}
+		}
+		curr_lst = curr_lst->next;
+		i++;
+	}
+	
+	w = max_x - min_x;
+	h = max_y - min_y;
+	
+	if (fabs(w) < 1e-9) w = h;
+	if (fabs(h) < 1e-9) h = w;
+	
+	/* update return value */
+	rect[0] = min_x - 0.1*w;
+	rect[1] = min_y - 0.1*h;
+	rect[2] = max_x + 0.1*w;
+	rect[3] = max_y + 0.1*h;
+	
+	return ini_pos;
+
+}
+
+
+dxf_node * dwg_find3 (dxf_drawing *drawing, lua_State *L, char* pat, double rect[4], dxf_node **next, enum dxf_graph filter, int *str_idx, int *attr_idx){
+	dxf_node *current = NULL, *first;
+	dxf_node *found = NULL;
+	
+	/* verify structures */
+	if (!drawing || (drawing->ents == NULL) || (drawing->main_struct == NULL)){
+		/* fail */
+		*next = NULL;
+		return NULL;
+		*attr_idx = 0; *str_idx = 0;
+	}
+	
+	first = *next; 
+	
+	/* init the serch */
+	if (*next) current = *next; /* from previous element */
+	else current = drawing->ents->obj.content->next; /* or from begin */
+	
+	*next = NULL;
+	
+	/* sweep entities section */
+	while (current != NULL){
+		if (current != first){
+			*attr_idx = 0; *str_idx = 0;
+		}
+		
+		if (current->type == DXF_ENT){ /* look for DXF entity */
+			enum dxf_graph ent_type = dxf_ident_ent_type (current);
+			
+			/*verify if entity layer is on and thaw */
+			if ((!drawing->layers[current->obj.layer].off) && 
+				(!drawing->layers[current->obj.layer].frozen) ){
+				/* and if  is a compatible entity */
+				if (ent_type & filter){
+					if (found) { /* prepare for next element */
+						*next = current;
+						return found;
+					}
+					if (txt_ent_find_rect(current, L, pat, rect, NULL)){
+						found = current;
+					}
+					
+				}
+				else if (ent_type == DXF_INSERT && (filter & DXF_ATTRIB) ){
+					int num_attr = 0;
+					dxf_node *attr = NULL, *nxt_attr = NULL;
+					
+					num_attr = 0;
+					while (attr = dxf_find_obj_nxt(current, &nxt_attr, "ATTRIB")){
+						num_attr++;
+						
+						
+						if (found) { /* prepare for next element */
+							*next = current;
+							return found;
+						}
+						if (num_attr > *attr_idx){
+							if (txt_ent_find_rect(attr, L, pat, rect, NULL)){
+								found = current;
+								*attr_idx = num_attr;
+							}
+						}
+						
+						
+						if (!nxt_attr) break; 
+					}
+				}
+				
+			}
+		}
+		current = current->next;
+	}
+	
+	*attr_idx = 0; *str_idx = 0;
+	
+	return found;
+}
+
 
 list_node * list_find(list_node *list, lua_State *L, char* pat, double rect[4], list_node **next, enum dxf_graph filter){
 	/* try to find match pattern in drawing DXF entities text */
@@ -353,24 +691,70 @@ int gui_find_interactive(gui_obj *gui){
 
 int gui_find_info (gui_obj *gui){
 	static lua_State *L = NULL;
-	static list_node * found = NULL;
-	static list_node * next = NULL;
+	static dxf_node * found = NULL;
+	static dxf_node * next = NULL;
+	static int str_idx = 0, attr_idx = 0;
+	
 	static list_node * look_list = NULL;
 	
 	if (gui->modal != FIND) {
 		if (L) {
 			lua_close(L);
 			L = NULL;
-			next = NULL;
-			found = NULL;
-			look_list = NULL;
 		}
+		next = NULL;
+		str_idx = 0; attr_idx = 0;
+		
+		found = NULL;
+		look_list = NULL;
 		return 0;
 	}
 	
 	if (!L){
 		L = luaL_newstate(); /* opens Lua */
 		luaL_openlibs(L); /* opens the standard libraries */
+		
+		const char *f =
+		"i = 0"
+		"count = 0"
+		"sub_pat = \"\""
+		""
+		"function count_match (str)"
+		"	count = count + 1"
+		"	if count == i then return sub_pat"
+		"	else return str"
+		"	end"
+		"end"
+		""
+		"function sub_i(str, pat, sub, idx)"
+		"	count = 0"
+		"	i = idx"
+		"	sub_pat = sub"
+		"	ret_str, _ = string.gsub(str, pat, count_match)"
+		"	return ret_str"
+		"end"
+		""
+		"function find_i(str, pat, idx)"
+		"	n = 0"
+		"	start = 0"
+		"	end_str = 1"
+		"	"
+		"	ret_st = 0"
+		"	ret_end = 0"
+		"	"
+		"	repeat"
+		"		start, end_str = string.find(str, pat, end_str)"
+		"		if start then"
+		"			n = n + 1"
+		"			if n == idx then"
+		"				ret_st = start"
+		"				ret_end = end_str"
+		"			end"
+		"		end"
+		"	until start == nil"
+		"	return n, ret_st, ret_end"
+		"end";
+		luaL_dostring(L, f);
 	}
 	
 	static char search[DXF_MAX_CHARS+1] = "";
@@ -392,7 +776,7 @@ int gui_find_info (gui_obj *gui){
 		}
 		
 		/* try to find next match */
-		if(found = list_find(look_list, L, search, rect, &next, DXF_TEXT | DXF_MTEXT | DXF_ATTRIB)){
+		if(found = dwg_find3(gui->drawing, L, search, rect, &next, DXF_TEXT | DXF_MTEXT | DXF_ATTRIB, &str_idx, &attr_idx)){
 			/* success - draw rectangle on found text pattern */
 			gui->step_x[0] = rect[0];
 			gui->step_y[0] = rect[1];
@@ -414,7 +798,7 @@ int gui_find_info (gui_obj *gui){
 	if (nk_button_label(gui->ctx, "Current") && strlen(search) > 0 ){
 		log[0] = 0;
 		dxf_node *new_ent = NULL;
-		if (found) new_ent = dxf_ent_copy((dxf_node *)found->data, DWG_LIFE); /* copy original entity */
+		if (found) new_ent = dxf_ent_copy(found, DWG_LIFE); /* copy original entity */
 		if (new_ent){
 			/* get edited text */
 			char *blank = "";
@@ -437,16 +821,16 @@ int gui_find_info (gui_obj *gui){
 					}
 				}
 				new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0, DWG_LIFE);
-				dxf_obj_subst((dxf_node *)found->data, new_ent);
+				dxf_obj_subst(found, new_ent);
 				
 				/* update undo/redo list */
 				do_add_entry(&gui->list_do, "REPLACE");
-				do_add_item(gui->list_do.current, (dxf_node *)found->data, new_ent);
+				do_add_item(gui->list_do.current, found, new_ent);
 			}
 		}
 		
 		/* try to find next match */
-		if(found = list_find(look_list, L, search, rect, &next, DXF_TEXT | DXF_MTEXT)){
+		if(found = dwg_find2(gui->drawing, L, search, rect, &next, DXF_TEXT | DXF_MTEXT)){
 			/* success - draw rectangle on found text pattern */
 			gui->step_x[0] = rect[0];
 			gui->step_y[0] = rect[1];
@@ -517,24 +901,13 @@ int gui_find_info (gui_obj *gui){
 			dxf_node *new_ent = dxf_ent_copy((dxf_node *)fnd->data, DWG_LIFE); /* copy original entity */
 			if (new_ent){
 				/* get edited text */
-				char *blank = "";
 				char *text = txt_ent_repl(new_ent, L, search, repl);
-				if (text){
-					int len = strlen(text);
-					if (!text) text = blank;
-					int i;
-					dxf_node *x;
-					
+				if (text){					
 					/* replace the text */
 					if (strcmp(new_ent->obj.name, "MTEXT") == 0) 
-						mtext_change_text (new_ent, text, len, DWG_LIFE);
+						mtext_change_text (new_ent, text, strlen(text), DWG_LIFE);
 					else if (strcmp(new_ent->obj.name, "TEXT") == 0) {
-						for (i = 0; x = dxf_find_attr_i(new_ent, 1, i); i++){
-							/* limit of TEXT entity length */
-							len = (len < DXF_MAX_CHARS - 1)? len : DXF_MAX_CHARS - 1;
-							strncpy(x->value.s_data, text, len);
-							x->value.s_data[len] = 0; /* terminate string */
-						}
+						dxf_attr_change(new_ent, 1, text);
 					}
 					new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0, DWG_LIFE);
 					dxf_obj_subst((dxf_node *)fnd->data, new_ent);

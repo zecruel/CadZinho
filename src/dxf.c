@@ -805,6 +805,57 @@ dxf_node * dxf_find_attr_i2(dxf_node * start, dxf_node * end, int attr, int idx)
 	else return NULL;
 }
 
+dxf_node * dxf_find_attr_nxt(dxf_node * obj, dxf_node ** next, int attr){
+	
+	if (obj == NULL) return NULL; /* check if exist */
+	if (obj->type != DXF_ENT) return NULL; /* check if valid object */
+	
+	dxf_node *current = NULL;
+	
+	if (*next == NULL) current = obj->obj.content->next; /* scan from begining */
+	else current = *next; /* or from last point */
+	*next = NULL;
+	
+	while (current){
+		if (current->type == DXF_ATTR){
+			/* verify if matchs */
+			if(current->value.group == attr){
+				/* success */
+				*next = current->next;
+				return current;
+			}
+		}
+		current = current->next;
+	}
+	
+	return NULL;
+}
+
+dxf_node * dxf_find_obj_nxt(dxf_node * obj, dxf_node ** next, char *name){
+	if (obj == NULL) return NULL; /* check if exist */
+	if (obj->type != DXF_ENT) return NULL; /* check if valid object */
+	
+	dxf_node *current = NULL;
+	
+	if (*next == NULL) current = obj->obj.content->next; /* scan from begining */
+	else current = *next; /* or from last point */
+	*next = NULL;
+	
+	while (current){
+		if (current->type == DXF_ENT){
+			/* verify if matchs */
+			if(strcmp(current->obj.name, name) == 0){
+				/* success */
+				*next = current->next;
+				return current;
+			}
+		}
+		current = current->next;
+	}
+	
+	return NULL;
+}
+
 int dxf_count_attr(dxf_node * obj, int attr){
 	int count = 0;
 	dxf_node *current;

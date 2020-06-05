@@ -39,37 +39,15 @@ int txt_ent_find(dxf_node *ent, lua_State *L, char* pat, int *start, int *end){
 	return *start > 0;
 }
 
-int txt_ent_find2(dxf_node *ent, lua_State *L, char* pat, int *start, int *end, int *pos){
+int txt_ent_find_i(dxf_node *ent, lua_State *L, char* pat, int *start, int *end, int *next){
 	/* using Lua engine, try to find match pattern in DXF entity text */
 	
 	dxf_node  *x = NULL;
 	luaL_Buffer b;
 	int i, n = 0;
 	
-	const char *f = 
-	"function find_n(str, pat, idx)"
-	"	n = 0"
-	"	start = 0"
-	"	end_str = 1"
-	"	ret_st = 0"
-	"	ret_end = 0"
-	"	repeat"
-	"		start, end_str = string.find(str, pat, end_str)"
-	"		if start then"
-	"			if n == idx then"
-	"				ret_st = start"
-	"				ret_end = end_str"
-	"			end"
-	"			n = n + 1"
-	"		end"
-	"	until start == nil"
-	"	return n, ret_st, ret_end"
-	"end";
-	luaL_dostring(L, f);
-	
 	*start = 0; *end = 0;
-	lua_getglobal(L, "string"); /* get library */
-	lua_getfield(L, 1, "find"); /* and function to be called */
+	lua_getglobal(L, "find_i"); /* get function to be called */
 	
 	/* get DXF entity text strings */
 	luaL_buffinit(L, &b); /* init the Lua buffer */
@@ -85,18 +63,29 @@ int txt_ent_find2(dxf_node *ent, lua_State *L, char* pat, int *start, int *end, 
 	
 	/* using Lua, try to find match pattern in text */
 	lua_pushstring(L, pat);
-	if (lua_pcall(L, 2, 2, 0) == LUA_OK){
-		if (lua_isnumber(L, -1)) { /* success */
-			*end = (int)lua_tonumber(L, -1);
-			*start = (int)lua_tonumber(L, -2);
-			
-		}
-		lua_pop(L, 2); /* clear Lua stack - pop returned values */
+	
+	lua_pushnumber(L, *next);
+	
+	if (lua_pcall(L, 3, 3, 0) == LUA_OK){
+		 /* success */
+		*end = (int)lua_tonumber(L, -1);
+		*start = (int)lua_tonumber(L, -2);
+		n = (int)lua_tonumber(L, -3);
+		
+		lua_pop(L, 3); /* clear Lua stack - pop returned values */
 	}
 	
-	lua_pop(L, 1); /* clear Lua stack - pop library "string" */
+	if (n > *next){
+		*next = *next + 1;
+		return 1;
+	}
+	else if (n == *next){
+		*next = 1;
+		return 1;
+	}
 	
-	return *start > 0;
+	*next = 1;
+	return 0;
 }
 
 char * txt_ent_repl(dxf_node *ent, lua_State *L, char* pat, char* rpl){
@@ -374,12 +363,12 @@ dxf_node * dwg_find2 (dxf_drawing *drawing, lua_State *L, char* pat, double rect
 	return found;
 }
 
-int txt_ent_find_rect(dxf_node *ent, lua_State *L, char* pat, double rect[4], int *pos){
+int txt_ent_find_rect(dxf_node *ent, lua_State *L, char* pat, double rect[4], int *next){
 	int start = 0, end = 0;
 	
 	
 	/* try to find text pattern */
-	if (!txt_ent_find(ent, L, pat, &start, &end)) return 0;
+	if (!txt_ent_find_i(ent, L, pat, &start, &end, next)) return 0;
 	/* success */
 	
 	/* get aproximate graphic location of match, 
@@ -444,12 +433,12 @@ dxf_node * dwg_find3 (dxf_drawing *drawing, lua_State *L, char* pat, double rect
 		/* fail */
 		*next = NULL;
 		return NULL;
-		*attr_idx = 0; *str_idx = 0;
+		*attr_idx = 0; *str_idx = 1;
 	}
 	
 	first = *next; 
 	
-	/* init the serch */
+	/* init the search */
 	if (*next) current = *next; /* from previous element */
 	else current = drawing->ents->obj.content->next; /* or from begin */
 	
@@ -458,7 +447,7 @@ dxf_node * dwg_find3 (dxf_drawing *drawing, lua_State *L, char* pat, double rect
 	/* sweep entities section */
 	while (current != NULL){
 		if (current != first){
-			*attr_idx = 0; *str_idx = 0;
+			*attr_idx = 0; *str_idx = 1;
 		}
 		
 		if (current->type == DXF_ENT){ /* look for DXF entity */
@@ -473,8 +462,12 @@ dxf_node * dwg_find3 (dxf_drawing *drawing, lua_State *L, char* pat, double rect
 						*next = current;
 						return found;
 					}
-					if (txt_ent_find_rect(current, L, pat, rect, NULL)){
+					if (txt_ent_find_rect(current, L, pat, rect, str_idx)){
 						found = current;
+						if (*str_idx > 1) {
+							*next = current;
+							return found;
+						}
 					}
 					
 				}
@@ -492,7 +485,7 @@ dxf_node * dwg_find3 (dxf_drawing *drawing, lua_State *L, char* pat, double rect
 							return found;
 						}
 						if (num_attr > *attr_idx){
-							if (txt_ent_find_rect(attr, L, pat, rect, NULL)){
+							if (txt_ent_find_rect(attr, L, pat, rect, str_idx)){
 								found = current;
 								*attr_idx = num_attr;
 							}
@@ -508,11 +501,61 @@ dxf_node * dwg_find3 (dxf_drawing *drawing, lua_State *L, char* pat, double rect
 		current = current->next;
 	}
 	
-	*attr_idx = 0; *str_idx = 0;
+	*attr_idx = 0; *str_idx = 1;
 	
 	return found;
 }
 
+int ent_replace (dxf_node * ent, lua_State *L, char * search, char * repl, int *str_idx, int *attr_idx){
+	
+	/* verify structures */
+	if (!ent) return 0;
+	if (!L) return 0;
+	if (ent->type != DXF_ENT) return 0;
+	
+	if ( (strcmp(ent->obj.name, "TEXT") == 0)  ||
+		(strcmp(ent->obj.name, "MTEXT") == 0) )
+	{
+		/* get edited text */
+		char *blank = "";
+		char *text = txt_ent_repl(ent, L, search, repl);
+		if (text){
+			
+			/* replace the text */
+			if (strcmp(ent->obj.name, "MTEXT") == 0) 
+				mtext_change_text (ent, text, strlen(text), DWG_LIFE);
+			else if (strcmp(ent->obj.name, "TEXT") == 0) {
+				dxf_attr_change(ent, 1, text);
+			}
+			
+			return 1;
+			//new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0, DWG_LIFE);
+			//dxf_obj_subst(found, new_ent);
+			
+			/* update undo/redo list */
+			//do_add_entry(&gui->list_do, "REPLACE");
+			//do_add_item(gui->list_do.current, found, new_ent);
+		}
+	}
+	else if (strcmp(ent->obj.name, "INSERT") == 0) {
+		int num_attr = 0;
+		dxf_node *attr = NULL, *nxt_attr = NULL;
+		
+		num_attr = 0;
+		while (attr = dxf_find_obj_nxt(ent, &nxt_attr, "ATTRIB")){
+			if (*attr_idx == num_attr){
+				char *text = txt_ent_repl(ent, L, search, repl);
+				if (text) dxf_attr_change(ent, 1, text);
+				return 1;
+			}
+			
+			if (!nxt_attr) break; 
+		}
+	}
+	
+	
+	return 0;
+}
 
 list_node * list_find(list_node *list, lua_State *L, char* pat, double rect[4], list_node **next, enum dxf_graph filter){
 	/* try to find match pattern in drawing DXF entities text */
@@ -695,18 +738,15 @@ int gui_find_info (gui_obj *gui){
 	static dxf_node * next = NULL;
 	static int str_idx = 0, attr_idx = 0;
 	
-	static list_node * look_list = NULL;
-	
 	if (gui->modal != FIND) {
 		if (L) {
 			lua_close(L);
 			L = NULL;
 		}
 		next = NULL;
-		str_idx = 0; attr_idx = 0;
+		str_idx = 1; attr_idx = 0;
 		
 		found = NULL;
-		look_list = NULL;
 		return 0;
 	}
 	
@@ -715,45 +755,45 @@ int gui_find_info (gui_obj *gui){
 		luaL_openlibs(L); /* opens the standard libraries */
 		
 		const char *f =
-		"i = 0"
-		"count = 0"
-		"sub_pat = \"\""
-		""
-		"function count_match (str)"
-		"	count = count + 1"
-		"	if count == i then return sub_pat"
-		"	else return str"
-		"	end"
-		"end"
-		""
-		"function sub_i(str, pat, sub, idx)"
-		"	count = 0"
-		"	i = idx"
-		"	sub_pat = sub"
-		"	ret_str, _ = string.gsub(str, pat, count_match)"
-		"	return ret_str"
-		"end"
-		""
-		"function find_i(str, pat, idx)"
-		"	n = 0"
-		"	start = 0"
-		"	end_str = 1"
-		"	"
-		"	ret_st = 0"
-		"	ret_end = 0"
-		"	"
-		"	repeat"
-		"		start, end_str = string.find(str, pat, end_str)"
-		"		if start then"
-		"			n = n + 1"
-		"			if n == idx then"
-		"				ret_st = start"
-		"				ret_end = end_str"
-		"			end"
-		"		end"
-		"	until start == nil"
-		"	return n, ret_st, ret_end"
-		"end";
+		"i = 0\n"
+		"count = 0\n"
+		"sub_pat = \"\"\n"
+		"\n"
+		"function count_match (str)\n"
+		"	count = count + 1\n"
+		"	if count == i then return sub_pat\n"
+		"	else return str\n"
+		"	end\n"
+		"end\n"
+		"\n"
+		"function sub_i(str, pat, sub, idx)\n"
+		"	count = 0\n"
+		"	i = idx\n"
+		"	sub_pat = sub\n"
+		"	ret_str, _ = string.gsub(str, pat, count_match)\n"
+		"	return ret_str\n"
+		"end\n"
+		"\n"
+		"function find_i(str, pat, idx)\n"
+		"	n = 0\n"
+		"	start = 0\n"
+		"	end_str = 1\n"
+		"	\n"
+		"	ret_st = 0\n"
+		"	ret_end = 0\n"
+		"	\n"
+		"	repeat\n"
+		"		start, end_str = string.find(str, pat, end_str)\n"
+		"		if start then\n"
+		"			n = n + 1\n"
+		"			if n == idx then\n"
+		"				ret_st = start\n"
+		"				ret_end = end_str\n"
+		"			end\n"
+		"		end\n"
+		"	until start == nil\n"
+		"	return n, ret_st, ret_end\n"
+		"end\n";
 		luaL_dostring(L, f);
 	}
 	
@@ -771,9 +811,6 @@ int gui_find_info (gui_obj *gui){
 
 	if (nk_button_label(gui->ctx, "Find Next") && strlen(search) > 0 ){
 		log[0] = 0;
-		if (!next){
-			look_list = gui_dwg_sel_filter(gui->drawing, DXF_TEXT | DXF_MTEXT | DXF_ATTRIB, DWG_LIFE);
-		}
 		
 		/* try to find next match */
 		if(found = dwg_find3(gui->drawing, L, search, rect, &next, DXF_TEXT | DXF_MTEXT | DXF_ATTRIB, &str_idx, &attr_idx)){

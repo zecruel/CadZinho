@@ -300,6 +300,37 @@ int dwg_find (dxf_drawing *drawing, lua_State *L, char* pat, double rect[4], enu
 	return (found->ent) != NULL;
 }
 
+int ent_find (dxf_node *ent, lua_State *L, char* pat, enum dxf_graph filter){
+	
+	/* verify structures */
+	if (!ent) return 0;
+	if (ent->type == DXF_ENT) return 0;
+	enum dxf_graph ent_type = dxf_ident_ent_type (ent);
+	int start = 0, end = 0, next = 1;
+	
+	/* and if  is a compatible entity */
+	if (ent_type & filter){
+		next = 1;
+		/* try to find text pattern */
+		return txt_ent_find_i(ent, L, pat, &start, &end, &next);
+		
+	}
+	else if (ent_type == DXF_INSERT && (filter & DXF_ATTRIB) ){
+		dxf_node *attr = NULL, *nxt_attr = NULL;
+		int num_attr = 0;
+		
+		while (attr = dxf_find_obj_nxt(ent, &nxt_attr, "ATTRIB")){
+			num_attr++;
+			next = 1;
+			/* try to find text pattern */
+			if (txt_ent_find_i(attr, L, pat, &start, &end, &next)) return num_attr;
+			
+			if (!nxt_attr) break;
+		}
+	}
+	return 0;
+}
+
 int ent_replace (dxf_node * ent, lua_State *L, char * search, char * repl, int str_idx, int attr_idx){
 	
 	/* verify structures */
@@ -657,10 +688,8 @@ int gui_find_info (gui_obj *gui){
 
 			}
 		}
-		#if(0)
-		
 		/* try to find next match */
-		if(found = dwg_find3(gui->drawing, L, search, rect, &next, DXF_TEXT | DXF_MTEXT | DXF_ATTRIB, &str_idx, &attr_idx)){
+		if(dwg_find(gui->drawing, L, search, rect, DXF_TEXT | DXF_MTEXT | DXF_ATTRIB, &found, &next)){
 			/* success - draw rectangle on found text pattern */
 			gui->step_x[0] = rect[0];
 			gui->step_y[0] = rect[1];
@@ -673,9 +702,14 @@ int gui_find_info (gui_obj *gui){
 			
 			gui->step = 2; /* to draw  rectangle in dyamic mode*/
 			
+			if (!next.ent){
+				snprintf(log, 63, "End of search");
+			}
 		}
-		else gui->step = 0;
-		#endif
+		else {
+			gui->step = 0;
+			snprintf(log, 63, "No elements matched");
+		}
 		
 	}
 	

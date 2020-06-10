@@ -6,45 +6,6 @@ struct find_el {
 	int attr_idx;
 };
 
-int txt_ent_find(dxf_node *ent, lua_State *L, char* pat, int *start, int *end){
-	/* using Lua engine, try to find match pattern in DXF entity text */
-	
-	dxf_node  *x = NULL;
-	luaL_Buffer b;
-	int i;
-	
-	*start = 0; *end = 0;
-	lua_getglobal(L, "string"); /* get library */
-	lua_getfield(L, 1, "find"); /* and function to be called */
-	
-	/* get DXF entity text strings */
-	luaL_buffinit(L, &b); /* init the Lua buffer */
-	for (i = 0; x = dxf_find_attr_i(ent, 3, i); i++){
-		/* first, get the additional text (MTEXT ent) */
-		luaL_addstring(&b, x->value.s_data);
-	}
-	for (i = 0; x = dxf_find_attr_i(ent, 1, i); i++){
-		/* finally, get main text */
-		luaL_addstring(&b, x->value.s_data);
-	}
-	luaL_pushresult(&b); /* finalize string and put on Lua stack */
-	
-	/* using Lua, try to find match pattern in text */
-	lua_pushstring(L, pat);
-	if (lua_pcall(L, 2, 2, 0) == LUA_OK){
-		if (lua_isnumber(L, -1)) { /* success */
-			*end = (int)lua_tonumber(L, -1);
-			*start = (int)lua_tonumber(L, -2);
-			
-		}
-		lua_pop(L, 2); /* clear Lua stack - pop returned values */
-	}
-	
-	lua_pop(L, 1); /* clear Lua stack - pop library "string" */
-	
-	return *start > 0;
-}
-
 int txt_ent_find_i(dxf_node *ent, lua_State *L, char* pat, int *start, int *end, int *next){
 	/* using Lua engine, try to find match pattern in DXF entity text */
 	
@@ -304,18 +265,19 @@ int ent_find (dxf_node *ent, lua_State *L, char* pat, enum dxf_graph filter){
 	
 	/* verify structures */
 	if (!ent) return 0;
-	if (ent->type == DXF_ENT) return 0;
-	enum dxf_graph ent_type = dxf_ident_ent_type (ent);
-	int start = 0, end = 0, next = 1;
+	if (ent->type != DXF_ENT) return 0;
+	int start = 0, end = 0, next = 1, ok = 0;
 	
 	/* and if  is a compatible entity */
-	if (ent_type & filter){
+	if ( ( (strcmp(ent->obj.name, "TEXT") == 0) && (filter & DXF_TEXT) ) ||
+		( (strcmp(ent->obj.name, "MTEXT") == 0) && (filter & DXF_MTEXT) ) )
+	{
 		next = 1;
 		/* try to find text pattern */
-		return txt_ent_find_i(ent, L, pat, &start, &end, &next);
+		ok =  txt_ent_find_i(ent, L, pat, &start, &end, &next);
 		
 	}
-	else if (ent_type == DXF_INSERT && (filter & DXF_ATTRIB) ){
+	else if ( (strcmp(ent->obj.name, "INSERT") == 0) && (filter & DXF_ATTRIB) ){
 		dxf_node *attr = NULL, *nxt_attr = NULL;
 		int num_attr = 0;
 		
@@ -323,12 +285,12 @@ int ent_find (dxf_node *ent, lua_State *L, char* pat, enum dxf_graph filter){
 			num_attr++;
 			next = 1;
 			/* try to find text pattern */
-			if (txt_ent_find_i(attr, L, pat, &start, &end, &next)) return num_attr;
+			if (txt_ent_find_i(attr, L, pat, &start, &end, &next)) ok = 1;
 			
 			if (!nxt_attr) break;
 		}
 	}
-	return 0;
+	return ok;
 }
 
 int ent_replace (dxf_node * ent, lua_State *L, char * search, char * repl, int str_idx, int attr_idx){
@@ -376,95 +338,48 @@ int ent_replace (dxf_node * ent, lua_State *L, char * search, char * repl, int s
 	return 0;
 }
 
-list_node * list_find(list_node *list, lua_State *L, char* pat, double rect[4], list_node **next, enum dxf_graph filter){
-	/* try to find match pattern in drawing DXF entities text */
-	
-	list_node *current = NULL;
-	list_node *found = NULL;
+
+int ent_replace_all (dxf_node * ent, lua_State *L, char * search, char * repl, enum dxf_graph filter){
 	
 	/* verify structures */
-	if (!list){
-		/* fail */
-		*next = NULL;
-		return NULL;
-	}
+	if (!ent) return 0;
+	if (!L) return 0;
+	if (ent->type != DXF_ENT) return 0;
 	
-	/* init the serch */
-	if (*next) current = *next; /* from previous element */
-	else current = list->next; /* or from begin */
+	int ok = 0;
 	
-	*next = NULL;
-	
-	int start = 0, end = 0;
-	
-	/* sweep list of entities */
-	while (current != NULL){
-		if (current->data){
-			enum dxf_graph ent_type = dxf_ident_ent_type ((dxf_node *)current->data);
-			if (ent_type & filter) { /* check if  is a compatible entity */
-				if (found) { /* prepare for next element */
-					*next = current;
-					return found;
-				}
-				/* try to find text pattern */
-				if (txt_ent_find((dxf_node *)current->data, L, pat, &start, &end)){
-					/* success */
-					found = current;
-					
-					/* get aproximate graphic location of match, 
-					by start-end char indexes and counting graph glyphs */
-					list_node *curr_lst = NULL;
-					graph_obj *curr_graph = NULL;
-					curr_lst = ((list_node *)((dxf_node *)current->data)->obj.graphics)->next;
-
-					double min_x, min_y, max_x, max_y, w, h;
-					int ini_pos = 0, i = 1;
-
-					/* sweep glyphs list */
-					while (curr_lst != NULL){
-						if (curr_lst->data){
-							curr_graph = (graph_obj *)curr_lst->data;
-							/* check if count is in range */
-							if ( (i >= start && i <= end) &&
-								(curr_graph->list->next != NULL)){ /*and if graph is not empty */
-								/* get each glyph corners and update the rectangle values */
-								if (ini_pos == 0){
-									ini_pos = 1;
-									min_x = curr_graph->ext_min_x;
-									min_y = curr_graph->ext_min_y;
-									max_x = curr_graph->ext_max_x;
-									max_y = curr_graph->ext_max_y;
-								}
-								else{
-									min_x = (min_x < curr_graph->ext_min_x) ? min_x : curr_graph->ext_min_x;
-									min_y = (min_y < curr_graph->ext_min_y) ? min_y : curr_graph->ext_min_y;
-									max_x = (max_x > curr_graph->ext_max_x) ? max_x : curr_graph->ext_max_x;
-									max_y = (max_y > curr_graph->ext_max_y) ? max_y : curr_graph->ext_max_y;
-								}
-							}
-						}
-						curr_lst = curr_lst->next;
-						i++;
-					}
-					
-					w = max_x - min_x;
-					h = max_y - min_y;
-					
-					if (fabs(w) < 1e-9) w = h;
-					if (fabs(h) < 1e-9) h = w;
-					
-					/* update return value */
-					rect[0] = min_x - 0.1*w;
-					rect[1] = min_y - 0.1*h;
-					rect[2] = max_x + 0.1*w;
-					rect[3] = max_y + 0.1*h;
-				}
+	if ( ( (strcmp(ent->obj.name, "TEXT") == 0) && (filter & DXF_TEXT) ) ||
+		( (strcmp(ent->obj.name, "MTEXT") == 0) && (filter & DXF_MTEXT) ) )
+	{
+		/* get edited text */
+		char *text = txt_ent_repl(ent, L, search, repl);
+		if (text){
+			
+			/* replace the text */
+			if (strcmp(ent->obj.name, "MTEXT") == 0) 
+				mtext_change_text (ent, text, strlen(text), DWG_LIFE);
+			else if (strcmp(ent->obj.name, "TEXT") == 0) {
+				dxf_attr_change(ent, 1, text);
 			}
+			
+			ok = 1;
 		}
-		current = current->next;
+	}
+	else if ( (strcmp(ent->obj.name, "INSERT") == 0) && (filter & DXF_ATTRIB) ){
+		dxf_node *attr = NULL, *nxt_attr = NULL;
+		
+		while (attr = dxf_find_obj_nxt(ent, &nxt_attr, "ATTRIB")){
+			char *text = txt_ent_repl(attr, L, search, repl);
+			if (text) {
+				dxf_attr_change(attr, 1, text);
+				ok = 1;
+			}
+			if (!nxt_attr) break; 
+		}
 	}
 	
-	return found;
+	
+	return ok;
 }
 
 list_node *  gui_dwg_sel_filter(dxf_drawing *drawing, enum dxf_graph filter, int pool_idx){
@@ -629,6 +544,7 @@ int gui_find_info (gui_obj *gui){
 	static char search[DXF_MAX_CHARS+1] = "";
 	static char repl[DXF_MAX_CHARS+1] = "";
 	static char log[64] = "";
+	static enum dxf_graph filter = DXF_TEXT | DXF_MTEXT | DXF_ATTRIB;
 	
 	double rect[4]; /* to draw a rectangle on found text */
 	
@@ -642,7 +558,7 @@ int gui_find_info (gui_obj *gui){
 		log[0] = 0;
 		
 		/* try to find next match */
-		if(dwg_find(gui->drawing, L, search, rect, DXF_TEXT | DXF_MTEXT | DXF_ATTRIB, &found, &next)){
+		if(dwg_find(gui->drawing, L, search, rect, filter, &found, &next)){
 			/* success - draw rectangle on found text pattern */
 			gui->step_x[0] = rect[0];
 			gui->step_y[0] = rect[1];
@@ -689,7 +605,7 @@ int gui_find_info (gui_obj *gui){
 			}
 		}
 		/* try to find next match */
-		if(dwg_find(gui->drawing, L, search, rect, DXF_TEXT | DXF_MTEXT | DXF_ATTRIB, &found, &next)){
+		if(dwg_find(gui->drawing, L, search, rect, filter, &found, &next)){
 			/* success - draw rectangle on found text pattern */
 			gui->step_x[0] = rect[0];
 			gui->step_y[0] = rect[1];
@@ -713,85 +629,72 @@ int gui_find_info (gui_obj *gui){
 		
 	}
 	
-	if (nk_button_label(gui->ctx, "Selection")){
+	if (nk_button_label(gui->ctx, "Selection") && strlen(search) > 0 ){
 		log[0] = 0;
 		int ini_do = 0, n = 0;
 		
-		list_node *nxt = NULL, *fnd;
-		while(fnd = list_find(gui->sel_list, L, search, rect, &nxt, DXF_TEXT | DXF_MTEXT)){
-			dxf_node *new_ent = dxf_ent_copy((dxf_node *)fnd->data, DWG_LIFE); /* copy original entity */
-			if (new_ent){
-				/* get edited text */
-				char *blank = "";
-				char *text = txt_ent_repl(new_ent, L, search, repl);
-				if (text){
-					int len = strlen(text);
-					if (!text) text = blank;
-					int i;
-					dxf_node *x;
-					
-					/* replace the text */
-					if (strcmp(new_ent->obj.name, "MTEXT") == 0) 
-						mtext_change_text (new_ent, text, len, DWG_LIFE);
-					else if (strcmp(new_ent->obj.name, "TEXT") == 0) {
-						for (i = 0; x = dxf_find_attr_i(new_ent, 1, i); i++){
-							/* limit of TEXT entity length */
-							len = (len < DXF_MAX_CHARS - 1)? len : DXF_MAX_CHARS - 1;
-							strncpy(x->value.s_data, text, len);
-							x->value.s_data[len] = 0; /* terminate string */
+		list_node *curr_lst = gui->sel_list->next;
+		/* sweep list of entities */
+		while (curr_lst != NULL){
+			if (curr_lst->data){
+				/* look for text */
+				if (ent_find (curr_lst->data, L, search, filter) ){
+					/* copy original entity */
+					dxf_node *new_ent = dxf_ent_copy((dxf_node *)curr_lst->data, DWG_LIFE);
+					if (new_ent){
+						/* replace the text */
+						ent_replace_all (new_ent, L, search, repl, filter);
+						
+						new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0, DWG_LIFE);
+						dxf_obj_subst((dxf_node *)curr_lst->data, new_ent);
+						
+						/* update undo/redo list */
+						if (!ini_do){
+							do_add_entry(&gui->list_do, "REPLACE");
+							ini_do = 1;
 						}
+						do_add_item(gui->list_do.current, (dxf_node *)curr_lst->data, new_ent);
+						curr_lst->data = new_ent; /* replace in list too */
+						n++;
 					}
-					new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0, DWG_LIFE);
-					dxf_obj_subst((dxf_node *)fnd->data, new_ent);
-					
-					/* update undo/redo list */
-					if (!ini_do){
-						do_add_entry(&gui->list_do, "REPLACE");
-						ini_do = 1;
-					}
-					do_add_item(gui->list_do.current, (dxf_node *)fnd->data, new_ent);
-					fnd->data = new_ent; /* replace in list too */
-					n++;
 				}
-				snprintf(log, 63, "Total replaced: %d", n);
 			}
-			if(!nxt) break;
+			curr_lst = curr_lst->next;
 		}
+		if (n >0) snprintf(log, 63, "Total replaced: %d", n);
+		else snprintf(log, 63, "No elements matched");
 	}
-	if (nk_button_label(gui->ctx, "All")){
+	if (nk_button_label(gui->ctx, "All") && strlen(search) > 0 ){
 		log[0] = 0;
 		int ini_do = 0, n = 0;
 		
-		list_node *nxt = NULL, *fnd;
-		list_node * list = gui_dwg_sel_filter(gui->drawing, DXF_TEXT | DXF_MTEXT, FRAME_LIFE);
-		while(fnd = list_find(list, L, search, rect, &nxt, DXF_TEXT | DXF_MTEXT)){
-			dxf_node *new_ent = dxf_ent_copy((dxf_node *)fnd->data, DWG_LIFE); /* copy original entity */
-			if (new_ent){
-				/* get edited text */
-				char *text = txt_ent_repl(new_ent, L, search, repl);
-				if (text){					
+		dxf_node *current = gui->drawing->ents->obj.content->next;
+		/* sweep list of entities */
+		while (current != NULL){
+			/* look for text */
+			if (ent_find (current, L, search, filter) ){
+				/* copy original entity */
+				dxf_node *new_ent = dxf_ent_copy(current, DWG_LIFE);
+				if (new_ent){
 					/* replace the text */
-					if (strcmp(new_ent->obj.name, "MTEXT") == 0) 
-						mtext_change_text (new_ent, text, strlen(text), DWG_LIFE);
-					else if (strcmp(new_ent->obj.name, "TEXT") == 0) {
-						dxf_attr_change(new_ent, 1, text);
-					}
+					ent_replace_all (new_ent, L, search, repl, filter);
+					
 					new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0, DWG_LIFE);
-					dxf_obj_subst((dxf_node *)fnd->data, new_ent);
+					dxf_obj_subst(current, new_ent);
 					
 					/* update undo/redo list */
 					if (!ini_do){
 						do_add_entry(&gui->list_do, "REPLACE");
 						ini_do = 1;
 					}
-					do_add_item(gui->list_do.current, (dxf_node *)fnd->data, new_ent);
-					fnd->data = new_ent; /* replace in list too */
+					do_add_item(gui->list_do.current, current, new_ent);
 					n++;
 				}
-				snprintf(log, 63, "Total replaced: %d", n);
 			}
-			if(!nxt) break;
+			current = current->next;
 		}
+		if (n >0) snprintf(log, 63, "Total replaced: %d", n);
+		else snprintf(log, 63, "No elements matched");
 	}
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);

@@ -11,64 +11,18 @@ int gui_tools_win (gui_obj *gui){
 		NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 		NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)){
 			
-		//if (nk_tree_push(gui->ctx, NK_TREE_TAB, "Place", NK_MAXIMIZED)) {
-		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Modify:", NK_TEXT_LEFT);
+		static enum Tool_group {
+			GRP_PLACE,
+			GRP_MODIFY,
+			GRP_DIM,
+			GRP_XDATA,
+		} tool_grp = GRP_PLACE;
 		
 		nk_layout_row_static(gui->ctx, 28, 28, 6);
 		
 		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CURSOR]))){
 			gui->modal = SELECT;
 			gui->step = 0;
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_MOVE]))){
-			gui->modal = MOVE;
-			gui->step = 0;
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DUPLI]))){
-			gui->modal = DUPLI;
-			gui->step = 0;
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SCALE]))){
-			gui->modal = SCALE;
-			gui->step = 0;
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ROT]))){
-			gui->modal = ROTATE;
-			gui->step = 0;
-			
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_MIRROR]))){
-			gui->modal = MIRROR;
-			gui->step = 0;
-		}
-		/*
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BLOCK]))){
-			gui->modal = NEW_BLK;
-			gui->step = 0;
-		}*/
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPLODE]))){
-			gui->modal = EXPLODE;
-			gui->step = 0;
-			//sel_list_clear (gui);
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EDIT]))){
-			
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TAG]))){
-			gui->modal = ADD_ATTRIB;
-			gui->step = 0;
-			sel_list_clear (gui);
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TAG_E]))){
-			gui->modal = ED_ATTR;
-			gui->step = 0;
-			sel_list_clear (gui);
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT_E]))){
-			gui->modal = ED_TEXT;
-			gui->step = 0;
-			sel_list_clear (gui);
 		}
 		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_FIND]))){
 			gui->modal = FIND;
@@ -81,67 +35,142 @@ int gui_tools_win (gui_obj *gui){
 		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_STYLE]))){
 			
 		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TRASH]))){
-			gui->action = DELETE;
-			gui->step = 0;
-		}
+		
+		nk_layout_row_dynamic(gui->ctx, 10, 1); /*space*/
 			
+		/* Selection mode option - toggle, add or remove */
+		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
+		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
+		if (gui_tab (gui, "Place", tool_grp == GRP_PLACE)) tool_grp = GRP_PLACE;
+		if (gui_tab (gui, "Modify", tool_grp == GRP_MODIFY)) tool_grp = GRP_MODIFY;
+		if (gui_tab (gui, "Dim", tool_grp == GRP_DIM)) tool_grp = GRP_DIM;
+		//if (gui_tab (gui, "XData", too_grp == GRP_XDATA)) too_grp = GRP_XDATA;
+		nk_style_pop_vec2(gui->ctx);
+		nk_layout_row_end(gui->ctx);
 		
-		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Place:", NK_TEXT_LEFT);
+		if(tool_grp == GRP_PLACE){
+			nk_layout_row_static(gui->ctx, 28, 28, 6);
 			
-		nk_layout_row_static(gui->ctx, 28, 28, 6);
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LINE]))){
+				gui->modal = LINE;
+				gui->step = 0;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PLINE]))){
+				gui->modal = POLYLINE;
+				gui->step = 0;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_RECT]))){
+				gui->modal = RECT;
+				gui->step = 0;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT]))){
+				gui->modal = TEXT;
+				gui->step = 0;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CIRCLE]))){
+				gui->modal = CIRCLE;
+				gui->step = 0;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ELIPSE]))){
+				gui->modal = ELLIPSE;
+				gui->step = 0;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ARC]))){
+				gui->modal = ARC;
+				gui->step = 0;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SPLINE]))){
+				gui->modal = SPLINE;
+				gui->step = 0;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_HATCH]))){
+				gui->modal = HATCH;
+				gui->step = 0;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_I_TEXT]))){
+				gui->modal = MTEXT;
+				gui->step = 0;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BOOK]))){
+				gui->modal = INSERT;
+				gui->step = 0;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_IMAGE]))){
+				gui->modal = IMAGE;
+				gui->step = 0;
+			}
+		}
 		
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LINE]))){
-			gui->modal = LINE;
-			gui->step = 0;
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PLINE]))){
-			gui->modal = POLYLINE;
-			gui->step = 0;
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_RECT]))){
-			gui->modal = RECT;
-			gui->step = 0;
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT]))){
-			gui->modal = TEXT;
-			gui->step = 0;
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CIRCLE]))){
-			gui->modal = CIRCLE;
-			gui->step = 0;
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ELIPSE]))){
-			gui->modal = ELLIPSE;
-			gui->step = 0;
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ARC]))){
-			gui->modal = ARC;
-			gui->step = 0;
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SPLINE]))){
-			gui->modal = SPLINE;
-			gui->step = 0;
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_HATCH]))){
-			gui->modal = HATCH;
-			gui->step = 0;
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_I_TEXT]))){
-			gui->modal = MTEXT;
-			gui->step = 0;
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BOOK]))){
-			gui->modal = INSERT;
-			gui->step = 0;
-		}
-		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_IMAGE]))){
-			gui->modal = IMAGE;
-			gui->step = 0;
+		if(tool_grp == GRP_MODIFY){
+		
+			nk_layout_row_static(gui->ctx, 28, 28, 6);
+			
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_MOVE]))){
+				gui->modal = MOVE;
+				gui->step = 0;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DUPLI]))){
+				gui->modal = DUPLI;
+				gui->step = 0;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SCALE]))){
+				gui->modal = SCALE;
+				gui->step = 0;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ROT]))){
+				gui->modal = ROTATE;
+				gui->step = 0;
+				
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_MIRROR]))){
+				gui->modal = MIRROR;
+				gui->step = 0;
+			}
+			
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TRASH]))){
+				gui->action = DELETE;
+				gui->step = 0;
+			}
+			
+			/*
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BLOCK]))){
+				gui->modal = NEW_BLK;
+				gui->step = 0;
+			}*/
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPLODE]))){
+				gui->modal = EXPLODE;
+				gui->step = 0;
+				//sel_list_clear (gui);
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TAG]))){
+				gui->modal = ADD_ATTRIB;
+				gui->step = 0;
+				sel_list_clear (gui);
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TAG_E]))){
+				gui->modal = ED_ATTR;
+				gui->step = 0;
+				sel_list_clear (gui);
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT_E]))){
+				gui->modal = ED_TEXT;
+				gui->step = 0;
+				sel_list_clear (gui);
+			}
+			
+			
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EDIT]))){
+				
+			}
+			
 		}
 		
-		nk_layout_row_dynamic(gui->ctx, 20, 1); /*space*/
+		if(tool_grp == GRP_DIM){
+			nk_layout_row_dynamic(gui->ctx, 28, 1); /*space*/
+			nk_layout_row_dynamic(gui->ctx, 28, 1); /*space*/
+		}
+		
+		nk_layout_row_dynamic(gui->ctx, 10, 1); /*space*/
 		
 		struct nk_vec2 wid_pos = nk_widget_position(gui->ctx);
 		struct nk_vec2 win_pos = nk_window_get_position(gui->ctx);

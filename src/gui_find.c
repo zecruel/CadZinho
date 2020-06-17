@@ -96,6 +96,45 @@ char * txt_ent_repl(dxf_node *ent, lua_State *L, char* pat, char* rpl){
 	return new_text;
 }
 
+char * txt_ent_repl_i(dxf_node *ent, lua_State *L, char* pat, char* rpl, int idx){
+	/* using Lua engine, try to find match and replace pattern in DXF entity text */
+	
+	dxf_node  *x = NULL;
+	luaL_Buffer b;
+	int i;
+	
+	char * new_text = NULL;
+	
+	lua_getglobal(L, "sub_i"); /* get function to be called */
+	
+	/* get DXF entity text strings */
+	luaL_buffinit(L, &b); /* init the Lua buffer */
+	for (i = 0; x = dxf_find_attr_i(ent, 3, i); i++){
+		/* first, get the additional text (MTEXT ent) */
+		luaL_addstring(&b, x->value.s_data);
+	}
+	for (i = 0; x = dxf_find_attr_i(ent, 1, i); i++){
+		/* finally, get main text */
+		luaL_addstring(&b, x->value.s_data);
+	}
+	luaL_pushresult(&b); /* finalize string and put on Lua stack */
+	
+	/* using Lua, try to find match pattern in text */
+	lua_pushstring(L, pat);
+	lua_pushstring(L, rpl);
+	
+	lua_pushnumber(L, idx);
+	
+	if (lua_pcall(L, 4, 1, 0) == LUA_OK){
+		/* success */
+		new_text = (char *)lua_tostring(L, -1);
+		
+		lua_pop(L, 1); /* clear Lua stack - pop returned values */
+	}
+	
+	return new_text;
+}
+
 int txt_ent_find_rect(dxf_node *ent, lua_State *L, char* pat, double rect[4], int *next){
 	int start = 0, end = 0;
 	
@@ -293,7 +332,7 @@ int ent_find (dxf_node *ent, lua_State *L, char* pat, enum dxf_graph filter){
 	return ok;
 }
 
-int ent_replace (dxf_node * ent, lua_State *L, char * search, char * repl, int str_idx, int attr_idx){
+int ent_replace (dxf_node * ent, lua_State *L, char * search, char * repl, int str_idx, int attr_idx, int entire_el){
 	
 	/* verify structures */
 	if (!ent) return 0;
@@ -304,7 +343,9 @@ int ent_replace (dxf_node * ent, lua_State *L, char * search, char * repl, int s
 		(strcmp(ent->obj.name, "MTEXT") == 0) )
 	{
 		/* get edited text */
-		char *text = txt_ent_repl(ent, L, search, repl);
+		char *text = NULL;
+		if (entire_el) text = txt_ent_repl(ent, L, search, repl);
+		else text = txt_ent_repl_i(ent, L, search, repl, str_idx);
 		if (text){
 			
 			/* replace the text */
@@ -324,7 +365,9 @@ int ent_replace (dxf_node * ent, lua_State *L, char * search, char * repl, int s
 		num_attr = 0;
 		while (attr = dxf_find_obj_nxt(ent, &nxt_attr, "ATTRIB")){
 			if (attr_idx == num_attr){
-				char *text = txt_ent_repl(attr, L, search, repl);
+				char *text = NULL;
+				if (entire_el) text = txt_ent_repl(ent, L, search, repl);
+				else text = txt_ent_repl_i(ent, L, search, repl, str_idx);
 				if (text) dxf_attr_change(attr, 1, text);
 				return 1;
 			}
@@ -548,12 +591,27 @@ int gui_find_info (gui_obj *gui){
 	
 	double rect[4]; /* to draw a rectangle on found text */
 	
+	static int entire_el = 1, f_text = 1, f_mtext = 1, f_tag = 1;
+	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, "Find/Replace text", NK_TEXT_LEFT);
 	
 	nk_label(gui->ctx, "Search:", NK_TEXT_LEFT);
 	nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, search, DXF_MAX_CHARS, nk_filter_default);
-
+	
+	nk_layout_row_dynamic(gui->ctx, 20, 3);
+	nk_checkbox_label(gui->ctx, "Text", &f_text);
+	nk_checkbox_label(gui->ctx, "MText", &f_mtext);
+	nk_checkbox_label(gui->ctx, "Tag", &f_tag);
+	
+	if(f_text) filter |= DXF_TEXT;
+	else filter &= ~DXF_TEXT;
+	if(f_mtext) filter |= DXF_MTEXT;
+	else filter &= ~DXF_MTEXT;
+	if(f_tag) filter |= DXF_ATTRIB;
+	else filter &= ~DXF_ATTRIB;
+	
+	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	if (nk_button_label(gui->ctx, "Find Next") && strlen(search) > 0 ){
 		log[0] = 0;
 		
@@ -583,14 +641,15 @@ int gui_find_info (gui_obj *gui){
 	
 	nk_label(gui->ctx, "Replace:", NK_TEXT_LEFT);
 	nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, repl, DXF_MAX_CHARS, nk_filter_default);
-	nk_layout_row_dynamic(gui->ctx, 20, 2);
+	
+	nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.45f, 0.55f});
 	if (nk_button_label(gui->ctx, "Current") && strlen(search) > 0 ){
 		log[0] = 0;
 		dxf_node *new_ent = NULL;
 		if (found.ent) new_ent = dxf_ent_copy(found.ent, DWG_LIFE); /* copy original entity */
 		if (new_ent){
 			
-			if(ent_replace (new_ent, L, search, repl, found.str_idx, found.attr_idx)){
+			if(ent_replace (new_ent, L, search, repl, found.str_idx, found.attr_idx, entire_el)){
 				
 				new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0, DWG_LIFE);
 				dxf_obj_subst(found.ent, new_ent);
@@ -628,6 +687,10 @@ int gui_find_info (gui_obj *gui){
 		}
 		
 	}
+	
+	nk_checkbox_label(gui->ctx, "Entire element", &entire_el);
+	
+	nk_layout_row_dynamic(gui->ctx, 20, 2);
 	
 	if (nk_button_label(gui->ctx, "Selection") && strlen(search) > 0 ){
 		log[0] = 0;

@@ -196,7 +196,7 @@ int txt_ent_find_rect(dxf_node *ent, lua_State *L, char* pat, double rect[4], in
 }
 
 int dwg_find (dxf_drawing *drawing, lua_State *L, char* pat, double rect[4], enum dxf_graph filter, struct find_el *found, struct find_el *next){
-	dxf_node *current = NULL, *first;
+	dxf_node *current = NULL, *first, *tmp = NULL;
 	found->ent = NULL;
 	int str_idx;
 	
@@ -268,6 +268,16 @@ int dwg_find (dxf_drawing *drawing, lua_State *L, char* pat, double rect[4], enu
 							next->ent = current;
 							return 1;
 						}
+						
+						/* verify if it is a hidden attribute */
+						if(tmp = dxf_find_attr2(attr, 70)){
+							if(tmp->value.i_data & 1){
+								if (nxt_attr) continue;
+								else break;
+							}
+						}
+						
+						
 						if (num_attr > next->attr_idx){
 							str_idx = next->str_idx;
 							if (txt_ent_find_rect(attr, L, pat, rect, &str_idx)){
@@ -306,6 +316,7 @@ int ent_find (dxf_node *ent, lua_State *L, char* pat, enum dxf_graph filter){
 	if (!ent) return 0;
 	if (ent->type != DXF_ENT) return 0;
 	int start = 0, end = 0, next = 1, ok = 0;
+	dxf_node *tmp = NULL;
 	
 	/* and if  is a compatible entity */
 	if ( ( (strcmp(ent->obj.name, "TEXT") == 0) && (filter & DXF_TEXT) ) ||
@@ -323,6 +334,14 @@ int ent_find (dxf_node *ent, lua_State *L, char* pat, enum dxf_graph filter){
 		while (attr = dxf_find_obj_nxt(ent, &nxt_attr, "ATTRIB")){
 			num_attr++;
 			next = 1;
+			
+			/* verify if it is a hidden attribute */
+			if(tmp = dxf_find_attr2(attr, 70)){
+				if(tmp->value.i_data & 1){
+					if (nxt_attr) continue;
+					else break;
+				}
+			}
 			/* try to find text pattern */
 			if (txt_ent_find_i(attr, L, pat, &start, &end, &next)) ok = 1;
 			
@@ -366,8 +385,8 @@ int ent_replace (dxf_node * ent, lua_State *L, char * search, char * repl, int s
 		while (attr = dxf_find_obj_nxt(ent, &nxt_attr, "ATTRIB")){
 			if (attr_idx == num_attr){
 				char *text = NULL;
-				if (entire_el) text = txt_ent_repl(ent, L, search, repl);
-				else text = txt_ent_repl_i(ent, L, search, repl, str_idx);
+				if (entire_el) text = txt_ent_repl(attr, L, search, repl);
+				else text = txt_ent_repl_i(attr, L, search, repl, str_idx);
 				if (text) dxf_attr_change(attr, 1, text);
 				return 1;
 			}
@@ -409,9 +428,17 @@ int ent_replace_all (dxf_node * ent, lua_State *L, char * search, char * repl, e
 		}
 	}
 	else if ( (strcmp(ent->obj.name, "INSERT") == 0) && (filter & DXF_ATTRIB) ){
-		dxf_node *attr = NULL, *nxt_attr = NULL;
+		dxf_node *attr = NULL, *nxt_attr = NULL, *tmp = NULL;
 		
 		while (attr = dxf_find_obj_nxt(ent, &nxt_attr, "ATTRIB")){
+			/* verify if it is a hidden attribute */
+			if(tmp = dxf_find_attr2(attr, 70)){
+				if(tmp->value.i_data & 1){
+					if (nxt_attr) continue;
+					else break;
+				}
+			}
+			
 			char *text = txt_ent_repl(attr, L, search, repl);
 			if (text) {
 				dxf_attr_change(attr, 1, text);
@@ -658,7 +685,10 @@ int gui_find_info (gui_obj *gui){
 				do_add_entry(&gui->list_do, "REPLACE");
 				do_add_item(gui->list_do.current, found.ent, new_ent);
 				
-				if (next.ent == found.ent) next.ent = new_ent;
+				if (next.ent == found.ent) {
+					if (next.str_idx > 1) next.str_idx--;
+					next.ent = new_ent;
+				}
 				found.ent = new_ent;
 
 			}

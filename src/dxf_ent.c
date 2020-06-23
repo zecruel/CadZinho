@@ -385,3 +385,56 @@ double *pt1_x, double *pt1_y, double *pt1_z, double *bulge){
 	
 	return ok;
 }
+
+list_node *  gui_dwg_sel_filter(dxf_drawing *drawing, enum dxf_graph filter, int pool_idx){
+	/* scan the drawing and return a list of entities according selection filter, only visible ents */
+	dxf_node *current = NULL;
+	list_node *list = NULL;
+	
+	/* verify structures */
+	if (!drawing || (drawing->ents == NULL) || (drawing->main_struct == NULL)){
+		/* fail */
+		return NULL;
+	}
+	
+	/* init the serch */
+	current = drawing->ents->obj.content->next; /* or from begin */
+	
+	/* sweep entities section */
+	while (current != NULL){
+		if (current->type == DXF_ENT){ /* look for DXF entity */
+			enum dxf_graph ent_type = dxf_ident_ent_type (current);
+			
+			/*verify if entity layer is on and thaw */
+			if ((!drawing->layers[current->obj.layer].off) && 
+				(!drawing->layers[current->obj.layer].frozen) ){
+				/* and if  is a compatible entity */
+				if (ent_type & filter){
+					if (!list) list = list_new(NULL, pool_idx);
+					/* append to list*/
+					list_node * new_node = list_new(current, pool_idx);
+					list_push(list, new_node);
+				}
+				else if (ent_type == DXF_INSERT && (filter & DXF_ATTRIB) ){
+					int num_attr = 0;
+					dxf_node *attr = NULL;
+					
+					num_attr = 0;
+					while (attr = dxf_find_obj_i(current, "ATTRIB", num_attr)){
+						/* add attribute entity to list */
+						if (!list) list = list_new(NULL, pool_idx);
+						/* append to list*/
+						list_node * new_node = list_new(attr, pool_idx);
+						list_push(list, new_node);
+						
+						num_attr++;
+					}
+				}
+				
+			}
+		}
+		current = current->next;
+	}
+	
+	return list;
+}

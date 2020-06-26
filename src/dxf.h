@@ -272,8 +272,6 @@ int dxf_ltype_idx (dxf_drawing *drawing, char *name);
 
 int dxf_tstyle_idx (dxf_drawing *drawing, char *name);
 
-int dxf_layer_get(dxf_drawing *drawing, dxf_node * obj);
-
 int dxf_save (char *path, dxf_drawing *drawing);
 
 char * dxf_load_file(char *path, long *fsize);

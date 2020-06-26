@@ -33,7 +33,8 @@ int gui_tools_win (gui_obj *gui){
 			gui->step = 0;
 		}
 		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_STYLE]))){
-			
+			gui->modal = PROP;
+			gui->step = 0;
 		}
 		
 		nk_layout_row_dynamic(gui->ctx, 10, 1); /*space*/
@@ -205,6 +206,7 @@ int gui_tools_win (gui_obj *gui){
 			gui_expl_info (gui);
 			gui_measure_info (gui);
 			gui_find_info (gui);
+			gui_prop_info (gui);
 			
 			if (gui->modal == SCRIPT) {
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
@@ -480,6 +482,7 @@ int gui_main_win(gui_obj *gui){
 						gui->color_idx = i;
 						gui->action = COLOR_CHANGE;
 						nk_combo_close(gui->ctx);
+						break;
 					}
 				}
 				

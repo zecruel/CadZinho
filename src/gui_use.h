@@ -119,4 +119,8 @@ int gui_find_interactive(gui_obj *gui);
 
 int gui_find_info (gui_obj *gui);
 
+int gui_prop_interactive(gui_obj *gui);
+
+int gui_prop_info (gui_obj *gui);
+
 #endif

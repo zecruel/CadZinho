@@ -11,4 +11,6 @@ double *pt1_x, double *pt1_y, double *pt1_z, double *bulge);
 int dxf_pline_get_pt(dxf_node * obj, dxf_node ** next,
 double *pt1_x, double *pt1_y, double *pt1_z, double *bulge);
 
+int dxf_layer_get(dxf_drawing *drawing, dxf_node * ent);
+
 #endif

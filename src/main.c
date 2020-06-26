@@ -1387,6 +1387,7 @@ int main(int argc, char** argv){
 		gui_expl_interactive(gui);
 		gui_measure_interactive(gui);
 		gui_find_interactive(gui);
+		gui_prop_interactive(gui);
 		
 		if (gui_check_draw(gui) != 0){
 			gui->draw = 1;

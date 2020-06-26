@@ -95,7 +95,8 @@ enum Modal {
 	ADD_XDATA,
 	EXPLODE,
 	MEASURE,
-	FIND
+	FIND,
+	PROP
 };
 
 enum Gui_ev {

@@ -625,6 +625,7 @@ int lay_mng (gui_obj *gui){
 						dxf_attr_change(layers[sel_lay].obj, 62, &j);
 						nk_popup_close(gui->ctx);
 						show_color_pick = 0;
+						break;
 					}
 				}
 				nk_popup_end(gui->ctx);

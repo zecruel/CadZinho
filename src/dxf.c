@@ -1361,33 +1361,6 @@ int dxf_lay_idx (dxf_drawing *drawing, char *name){
 	return 0; /*if search fails, return the standard layer */
 }
 
-int dxf_layer_get(dxf_drawing *drawing, dxf_node * obj){
-	/* Return the layer index of drawing's layer vector */
-	int ok = 0; /*if search fails, return the standard layer */
-	
-	if ((obj) && (drawing)){
-		dxf_node *current = NULL;
-		char layer[DXF_MAX_CHARS];
-		layer[0] = 0;
-		
-		if (obj->type == DXF_ENT){
-			if (obj->obj.content){
-				current = obj->obj.content->next;
-			}
-		}
-		while (current){
-			if (current->type == DXF_ATTR){ /* DXF attibute */
-				if (current->value.group == 8){
-					strcpy(layer, current->value.s_data);
-					break;
-				}
-			}
-			current = current->next; /* go to the next in the list */
-		}
-		if (strlen(layer) > 0) ok = dxf_lay_idx (drawing, layer);
-	}
-	return ok;
-}
 
 int dxf_ltype_idx (dxf_drawing *drawing, char *name){
 	int i;

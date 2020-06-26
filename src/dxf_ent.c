@@ -438,3 +438,24 @@ list_node *  gui_dwg_sel_filter(dxf_drawing *drawing, enum dxf_graph filter, int
 	
 	return list;
 }
+
+int dxf_layer_get(dxf_drawing *drawing, dxf_node * ent){
+	/* Return the layer index of drawing's layer vector */
+	/*if search fails, return -1 */
+	
+	/* verify structures */
+	if (!drawing || (drawing->ents == NULL) || (drawing->main_struct == NULL)) 
+		return -1;
+	if (!ent) return -1;
+	
+	int ok = -1;
+	char layer[DXF_MAX_CHARS + 1] = "0"; /* default layer is "0" */
+	dxf_node *tmp = NULL;
+	/* try to find entity's layer information */
+	if(tmp = dxf_find_attr2(ent, 8))
+		strncpy (layer, tmp->value.s_data, DXF_MAX_CHARS);
+	/* try to find layer index */
+	if (strlen(layer) > 0) ok = dxf_lay_idx (drawing, layer);
+	
+	return ok;
+}

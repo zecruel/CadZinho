@@ -456,6 +456,7 @@ int dxf_layer_get(dxf_drawing *drawing, dxf_node * ent){
 		strncpy (layer, tmp->value.s_data, DXF_MAX_CHARS);
 	/* try to find layer index */
 	if (strlen(layer) > 0) ok = dxf_lay_idx (drawing, layer);
+	else ok = dxf_lay_idx (drawing, "0");
 	
 	return ok;
 }

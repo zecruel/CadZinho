@@ -26,13 +26,20 @@ int gui_prop_interactive(gui_obj *gui){
 		gui->en_distance = 0;
 		gui->sel_ent_filter = ~DXF_NONE;
 		gui_simple_select(gui);
-	}
-	else if (gui->step >= 1){
 		
 		/* user cancel operation */
 		if (gui->ev & EV_CANCEL){
 			gui->element = NULL;
 			gui_default_modal(gui);
+		}
+	}
+	else if (gui->step >= 1){
+		
+		/* user cancel operation */
+		if (gui->ev & EV_CANCEL){
+			sel_list_clear (gui);
+			gui_first_step(gui);
+			gui->step = 0;
 		}
 	}
 	return 1;
@@ -42,6 +49,7 @@ int gui_prop_info (gui_obj *gui){
 	if (gui->modal != PROP) return 0;
 	static int init = 0;
 	static dxf_node *new_ent = NULL;
+	static int show_color_pick = 0, sel_color = -1;
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, "Edit Properties", NK_TEXT_LEFT);
@@ -53,6 +61,7 @@ int gui_prop_info (gui_obj *gui){
 		init = 0;
 		new_ent = NULL;
 		gui->step = 2;
+		show_color_pick = 0;
 	}
 	else { /* all inited */
 		nk_label(gui->ctx, "Edit data", NK_TEXT_LEFT);
@@ -60,12 +69,11 @@ int gui_prop_info (gui_obj *gui){
 		static dxf_node *ent = NULL;
 		static char layer[DXF_MAX_CHARS+1];
 		static char ltype[DXF_MAX_CHARS+1];
-		static int color;
+		static int color, lay_i, ltyp_i, lw, lw_i;
 		dxf_node *tmp;
 		
-		
+		char tmp_str[DXF_MAX_CHARS+1];
 		int i, j, h;
-		static int show_color_pick = 0, sel_color = -1;
 		
 		/* init the interface */
 		if (!init){
@@ -73,21 +81,33 @@ int gui_prop_info (gui_obj *gui){
 			
 			layer[0] = 0;
 			ltype[0] = 0;
-			color = 256;
+			color = 256; /* color by layer */
+			lw = -1; /* line weight by layer */
 			
 			if(tmp = dxf_find_attr2(ent, 8))
 				strncpy (layer, tmp->value.s_data, DXF_MAX_CHARS);
 			if(tmp = dxf_find_attr2(ent, 6))
 				strncpy (ltype, tmp->value.s_data, DXF_MAX_CHARS);
 			if(tmp = dxf_find_attr2(ent, 62))
-				color = tmp->value.i_data;
+				color = abs(tmp->value.i_data);
+			if(tmp = dxf_find_attr2(ent, 370))
+				lw = tmp->value.i_data;
 			
-				
+			lay_i = dxf_layer_get(gui->drawing, ent);
+			
+			/* look for lw index */
+			lw_i = 0;
+			for (j = 0; j < DXF_LW_LEN + 2; j++){
+				if (dxf_lw[j] == lw){
+					lw_i = j;
+					break;
+				}
+			}
 			init = 1; /* init success */
 			
 		}
 		else{
-			nk_layout_row_dynamic(gui->ctx, 20, 2);
+			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){50, 120});
 			nk_label(gui->ctx, "Layer:", NK_TEXT_LEFT);
 			
 			int sel_layer = -1;
@@ -100,7 +120,7 @@ int gui_prop_info (gui_obj *gui){
 			if (nk_combo_begin_label(gui->ctx, layer, nk_vec2(200, h))){
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				
-				/* show available line patterns */
+				/* show available layers*/
 				for (j = 0; j < num_layers; j++){
 					
 					/* skip unauthorized layers */
@@ -144,12 +164,14 @@ int gui_prop_info (gui_obj *gui){
 				}
 				nk_combo_end(gui->ctx);
 			}
+			nk_layout_row(gui->ctx, NK_STATIC, 20, 3, (float[]){50, 20, 80});
 			
 			nk_label(gui->ctx, "Color:", NK_TEXT_LEFT);
 			
 			int curr_color = abs(color);
 			
-			if (curr_color > 256) curr_color = 0;
+			if (curr_color > 255) curr_color = layers[lay_i].color;
+			if (curr_color > 255) curr_color = 7;
 			
 			struct nk_color b_color = {
 				.r = dxf_colors[curr_color].r,
@@ -157,11 +179,24 @@ int gui_prop_info (gui_obj *gui){
 				.b = dxf_colors[curr_color].b,
 				.a = dxf_colors[curr_color].a
 			};
+			
 			if(nk_button_color(gui->ctx, b_color)){
 				/* to change color, open a popup */
 				show_color_pick = 1;
 				
 			}
+			
+			if ( abs(color) > 255 ) snprintf(tmp_str, DXF_MAX_CHARS, "By Layer");
+			else if ( abs(color) == 0 ) snprintf(tmp_str, DXF_MAX_CHARS, "By Block");
+			else snprintf(tmp_str, DXF_MAX_CHARS, "%d", abs(color));
+			nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
+			
+			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){50, 120});
+			nk_label(gui->ctx, "LW:", NK_TEXT_LEFT);
+			/* show line width description */
+			
+			lw_i = nk_combo(gui->ctx, dxf_lw_descr, DXF_LW_LEN + 2, lw_i, 15, nk_vec2(100,205));
+			
 			
 		}
 		

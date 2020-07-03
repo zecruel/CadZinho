@@ -508,6 +508,7 @@ int gui_main_win(gui_obj *gui){
 						gui->ltypes_idx = i;
 						gui->action = LTYPE_CHANGE;
 						nk_combo_close(gui->ctx);
+						break;
 					}
 					nk_label(gui->ctx, gui->drawing->ltypes[i].descr, NK_TEXT_LEFT);
 				}
@@ -550,6 +551,7 @@ int gui_main_win(gui_obj *gui){
 						gui->lw_idx = i;
 						gui->action = LW_CHANGE;
 						nk_combo_close(gui->ctx);
+						break;
 					}
 				}
 				

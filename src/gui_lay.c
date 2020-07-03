@@ -529,6 +529,7 @@ int lay_mng (gui_obj *gui){
 						if (nk_button_label(gui->ctx, ltypes[j].name)){ /* change line type*/
 							sel_ltype = j;
 							nk_combo_close(gui->ctx);
+							break;
 						}
 						/* show line type short description */
 						nk_label(gui->ctx, ltypes[j].descr, NK_TEXT_LEFT);
@@ -877,6 +878,7 @@ int layer_prop(gui_obj *gui){
 				gui->layer_idx = i;
 				gui->action = LAYER_CHANGE;
 				nk_combo_close(gui->ctx);
+				break;
 			}
 			
 			/* layer color */

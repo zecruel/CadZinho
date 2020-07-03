@@ -460,3 +460,25 @@ int dxf_layer_get(dxf_drawing *drawing, dxf_node * ent){
 	
 	return ok;
 }
+
+int dxf_ltype_get(dxf_drawing *drawing, dxf_node * ent){
+	/* Return the line type index of drawing's ltype vector */
+	/*if search fails, return -1 */
+	
+	/* verify structures */
+	if (!drawing || (drawing->ents == NULL) || (drawing->main_struct == NULL)) 
+		return -1;
+	if (!ent) return -1;
+	
+	int ok = -1;
+	char ltyp[DXF_MAX_CHARS + 1] = "ByLayer"; /* default line type is "ByLayer" */
+	dxf_node *tmp = NULL;
+	/* try to find entity's line type information */
+	if(tmp = dxf_find_attr2(ent, 6))
+		strncpy (ltyp, tmp->value.s_data, DXF_MAX_CHARS);
+	/* try to find line type index */
+	if (strlen(ltyp) > 0) ok = dxf_ltype_idx (drawing, ltyp);
+	else ok = dxf_ltype_idx  (drawing, "ByLayer");
+	
+	return ok;
+}

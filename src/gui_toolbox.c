@@ -158,6 +158,11 @@ int gui_tools_win (gui_obj *gui){
 				gui->step = 0;
 				sel_list_clear (gui);
 			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT_STY]))){
+				//gui->modal = ED_TEXT;
+				//gui->step = 0;
+				//sel_list_clear (gui);
+			}
 			
 			
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EDIT]))){

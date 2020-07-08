@@ -77,6 +77,7 @@ enum {
     SVG_TAG_E,
     SVG_TEXT,
     SVG_TEXT_E,
+    SVG_TEXT_STY,
     SVG_TOOL,
     SVG_TRASH,
     SVG_UNDER_L,

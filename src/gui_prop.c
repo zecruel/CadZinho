@@ -48,6 +48,7 @@ int gui_prop_info (gui_obj *gui){
 	static char layer[DXF_MAX_CHARS+1];
 	static char ltype[DXF_MAX_CHARS+1];
 	static char blk_name[DXF_MAX_CHARS+1];
+	static double blk_ang, blk_sx, blk_sy, blk_sz;
 	static int color, lay_i, ltyp_i, lw, lw_i;
 	static int en_lay = 0, en_ltyp = 0, en_color = 0, en_lw = 0;
 	dxf_node *tmp;
@@ -68,9 +69,13 @@ int gui_prop_info (gui_obj *gui){
 		/* clear variables */
 		layer[0] = 0;
 		ltype[0] = 0;
-		blk_name[0] = 0;
 		color = 256; /* color by layer */
 		lw = -1; /* line weight by layer */
+		blk_name[0] = 0;
+		blk_ang = 0.0;
+		blk_sx = 1.0;
+		blk_sy = 1.0;
+		blk_sz = 1.0;
 		
 		/* get raw parameters directly from entity */
 		if(tmp = dxf_find_attr2(ent, 8))
@@ -105,6 +110,15 @@ int gui_prop_info (gui_obj *gui){
 			/* get block name */
 			if(tmp = dxf_find_attr2(ent, 2))
 				strncpy (blk_name, tmp->value.s_data, DXF_MAX_CHARS);
+			/* get block angle and scales */
+			if(tmp = dxf_find_attr2(ent, 50))
+				blk_ang = tmp->value.d_data;
+			if(tmp = dxf_find_attr2(ent, 41))
+				blk_sx = tmp->value.d_data;
+			if(tmp = dxf_find_attr2(ent, 42))
+				blk_sy = tmp->value.d_data;
+			if(tmp = dxf_find_attr2(ent, 43))
+				blk_sz = tmp->value.d_data;
 		}
 		
 		gui->step = 2;
@@ -143,7 +157,7 @@ int gui_prop_info (gui_obj *gui){
 			}
 		}
 		else { /* only show information */
-			nk_label(gui->ctx, layer, NK_TEXT_LEFT);
+			nk_label_colored(gui->ctx, layer, NK_TEXT_LEFT, nk_rgb(255,255,0));
 		}
 		
 		/* ----------- line type ------------ */
@@ -173,7 +187,7 @@ int gui_prop_info (gui_obj *gui){
 			}
 		}
 		else { /* only show information */
-			nk_label(gui->ctx, ltype, NK_TEXT_LEFT);
+			nk_label_colored(gui->ctx, ltype, NK_TEXT_LEFT, nk_rgb(255,255,0));
 		}
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 3, (float[]){60, 20, 80});
 		
@@ -199,7 +213,7 @@ int gui_prop_info (gui_obj *gui){
 		if ( abs(color) > 255 ) snprintf(tmp_str, DXF_MAX_CHARS, "By Layer");
 		else if ( abs(color) == 0 ) snprintf(tmp_str, DXF_MAX_CHARS, "By Block");
 		else snprintf(tmp_str, DXF_MAX_CHARS, "%d", abs(color));
-		nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
+		nk_label_colored(gui->ctx, tmp_str, NK_TEXT_LEFT, nk_rgb(255,255,0));
 		
 		
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 110});
@@ -210,7 +224,7 @@ int gui_prop_info (gui_obj *gui){
 			lw_i = nk_combo(gui->ctx, dxf_lw_descr, DXF_LW_LEN + 2, lw_i, 15, nk_vec2(100,205));
 		}
 		else{ /* only show line width description */
-			nk_label(gui->ctx, dxf_lw_descr[lw_i], NK_TEXT_LEFT);
+			nk_label_colored(gui->ctx, dxf_lw_descr[lw_i], NK_TEXT_LEFT, nk_rgb(255,255,0));
 		}
 		
 		/* ---------------------*/
@@ -257,10 +271,21 @@ int gui_prop_info (gui_obj *gui){
 		}
 		
 		if (ins){ /* show insert information */
-			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 110});
+			nk_layout_row(gui->ctx, NK_STATIC, 14, 2, (float[]){60, 110});
 			nk_label(gui->ctx, "Block:", NK_TEXT_RIGHT);
 			nk_label_colored(gui->ctx, blk_name, NK_TEXT_LEFT, nk_rgb(255,255,0));
-			
+			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", blk_ang);
+			nk_label(gui->ctx, "Angle:", NK_TEXT_RIGHT);
+			nk_label_colored(gui->ctx, tmp_str, NK_TEXT_LEFT, nk_rgb(255,255,0));
+			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", blk_sx);
+			nk_label(gui->ctx, "Scale X:", NK_TEXT_RIGHT);
+			nk_label_colored(gui->ctx, tmp_str, NK_TEXT_LEFT, nk_rgb(255,255,0));
+			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", blk_sy);
+			nk_label(gui->ctx, "Scale Y:", NK_TEXT_RIGHT);
+			nk_label_colored(gui->ctx, tmp_str, NK_TEXT_LEFT, nk_rgb(255,255,0));
+			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", blk_sz);
+			nk_label(gui->ctx, "Scale Z:", NK_TEXT_RIGHT);
+			nk_label_colored(gui->ctx, tmp_str, NK_TEXT_LEFT, nk_rgb(255,255,0));
 		}
 		
 		/* popup to pick color */

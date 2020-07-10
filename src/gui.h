@@ -96,7 +96,8 @@ enum Modal {
 	EXPLODE,
 	MEASURE,
 	FIND,
-	PROP
+	PROP,
+	TXT_PROP
 };
 
 enum Gui_ev {

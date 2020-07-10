@@ -159,8 +159,8 @@ int gui_tools_win (gui_obj *gui){
 				sel_list_clear (gui);
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT_STY]))){
-				//gui->modal = ED_TEXT;
-				//gui->step = 0;
+				gui->modal = TXT_PROP;
+				gui->step = 0;
 				//sel_list_clear (gui);
 			}
 			
@@ -212,6 +212,7 @@ int gui_tools_win (gui_obj *gui){
 			gui_measure_info (gui);
 			gui_find_info (gui);
 			gui_prop_info (gui);
+			gui_txt_prop_info (gui);
 			
 			if (gui->modal == SCRIPT) {
 				nk_layout_row_dynamic(gui->ctx, 20, 1);

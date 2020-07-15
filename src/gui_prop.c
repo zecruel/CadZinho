@@ -58,7 +58,7 @@ int gui_prop_info (gui_obj *gui){
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, "Edit Properties", NK_TEXT_LEFT);
-	if (gui->step == 0){ /* get insert element to edit */
+	if (gui->step == 0){ /* get elements to edit */
 		nk_label(gui->ctx, "Select a element", NK_TEXT_LEFT);
 		show_color_pick = 0;
 	}

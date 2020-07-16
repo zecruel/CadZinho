@@ -1,4 +1,5 @@
 #include "gui_use.h"
+#define ORD_MAG(x) pow(10.0, floor(log10(fabs(x) + 1.0e-8)) - 1.0)
 
 int gui_txt_prop_interactive(gui_obj *gui){
 	if (gui->modal != TXT_PROP) return 0;
@@ -25,6 +26,7 @@ int gui_txt_prop_interactive(gui_obj *gui){
 		if (gui->ev & EV_CANCEL){
 			gui->element = NULL;
 			gui_default_modal(gui);
+			gui->step = 0;
 		}
 	}
 	else if (gui->step >= 1){
@@ -74,6 +76,10 @@ int gui_txt_prop_info (gui_obj *gui){
 		ang = 0.0;
 		at_pt_i = 6;
 		rec_w = 0.0;
+		
+		/* try to look parameters indexes from drawing lists */
+		sty_i = dxf_tstyle_get(gui->drawing, ent);
+		if (sty_i < 0) sty_i = 0; /* error on look for style */
 		
 		if(strcmp(ent->obj.name, "TEXT") == 0 ||
 			strcmp(ent->obj.name, "MTEXT") == 0){
@@ -181,7 +187,7 @@ int gui_txt_prop_info (gui_obj *gui){
 		/* ----------- text height ------------ */
 		nk_checkbox_label(gui->ctx, "Height:", &en_h);
 		if (en_h){
-			txt_h = nk_propertyd(gui->ctx, "#", 1.0e-9, txt_h, 1.0e9, 0.1d, 0.1d);
+			txt_h = nk_propertyd(gui->ctx, "#", 1.0e-9, txt_h, 1.0e9, ORD_MAG(txt_h), ORD_MAG(txt_h));
 		}
 		else {/* only show information */
 			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", txt_h);
@@ -191,7 +197,7 @@ int gui_txt_prop_info (gui_obj *gui){
 		/* ----------- angle ------------ */
 		nk_checkbox_label(gui->ctx, "Angle:", &en_ang);
 		if (en_ang){
-			ang = nk_propertyd(gui->ctx, "#", 0.0d, ang, 360.0d, 0.1d, 0.1d);
+			ang = nk_propertyd(gui->ctx, "#", 0.0d, ang, 360.0d, 0.01d, 0.01d);
 		}
 		else {/* only show information */
 			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", ang);
@@ -201,7 +207,7 @@ int gui_txt_prop_info (gui_obj *gui){
 		/* ----------- rectangle width (MTEXT only) ------------ */
 		nk_checkbox_label(gui->ctx, "Rec W:", &en_rec);
 		if (en_rec){
-			ang = nk_propertyd(gui->ctx, "#", 0.0d, rec_w, 1.0e9, 0.1d, 0.1d);
+			rec_w = nk_propertyd(gui->ctx, "#", 0.0d, rec_w, 1.0e9, ORD_MAG(rec_w), ORD_MAG(rec_w));
 		}
 		else {/* only show information */
 			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", rec_w);
@@ -211,7 +217,7 @@ int gui_txt_prop_info (gui_obj *gui){
 		/* ---------------------*/
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
-		if (nk_button_label(gui->ctx, "Modify") && ( en_sty || en_al_v || en_al_h || en_h || en_ang)){
+		if (nk_button_label(gui->ctx, "Modify") && ( en_sty || en_al_v || en_al_h || en_h || en_ang || en_rec)){
 			/* change selection properties according selected parameters */
 			if (gui->sel_list != NULL){
 				int ini_do = 0;
@@ -221,6 +227,7 @@ int gui_txt_prop_info (gui_obj *gui){
 				dxf_node *new_ent = NULL;
 				while (current != NULL){
 					if (current->data){
+						/* check type of current entity */
 						if(strcmp(((dxf_node *)current->data)->obj.name, "TEXT") == 0 ||
 							strcmp(((dxf_node *)current->data)->obj.name, "MTEXT") == 0){
 							/* copy current entity to preserve information to undo */
@@ -242,15 +249,15 @@ int gui_txt_prop_info (gui_obj *gui){
 									dxf_attr_change(new_ent, 71, &attch_pt);
 								}
 								if (en_ang){
+									/* angle to vector */
 									double x = cos(ang * M_PI / 180.0);
 									double y = sin(ang * M_PI / 180.0);
 									dxf_attr_change(new_ent, 11, &x);
 									dxf_attr_change(new_ent, 21, &y);
 								}
-								
+								/* rectangle width */
 								if (en_rec) dxf_attr_change(new_ent, 40, &rec_w);
 							}
-							//if (en_lw) dxf_attr_change(new_ent, 370, &dxf_lw[lw_i]);
 							/* update in drawing */
 							new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
 							dxf_obj_subst((dxf_node *)current->data, new_ent);
@@ -270,8 +277,13 @@ int gui_txt_prop_info (gui_obj *gui){
 			gui->draw = 1;
 		}
 		if (nk_button_label(gui->ctx, "Pick")){
-			/* get selected entity properties to match main tools*/
-			//if (en_sty) gui->layer_idx = lay_i;
+			/* get selected entity properties to match main tools (place text tools) */
+			if (en_sty) gui->t_sty_idx = sty_i;
+			if (en_h) gui->txt_h = txt_h;
+			if (en_al_v) gui->t_al_v = t_al_v;
+			if (en_al_h) gui->t_al_h = t_al_h;
+			if (en_ang) gui->angle = ang;
+			if (en_rec) gui->rect_w = rec_w;
 		}
 		
 		

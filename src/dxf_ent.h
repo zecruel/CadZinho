@@ -15,6 +15,6 @@ int dxf_layer_get(dxf_drawing *drawing, dxf_node * ent);
 
 int dxf_ltype_get(dxf_drawing *drawing, dxf_node * ent);
 
-
+int dxf_tstyle_get(dxf_drawing *drawing, dxf_node * ent);
 
 #endif

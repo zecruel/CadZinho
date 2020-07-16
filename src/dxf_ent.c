@@ -482,3 +482,25 @@ int dxf_ltype_get(dxf_drawing *drawing, dxf_node * ent){
 	
 	return ok;
 }
+
+int dxf_tstyle_get(dxf_drawing *drawing, dxf_node * ent){
+	/* Return the text style index of drawing's vector */
+	/*if search fails, return -1 */
+	
+	/* verify structures */
+	if (!drawing || (drawing->ents == NULL) || (drawing->main_struct == NULL)) 
+		return -1;
+	if (!ent) return -1;
+	
+	int ok = -1;
+	char tsty[DXF_MAX_CHARS + 1] = "Standard"; /* default style is "Standard" */
+	dxf_node *tmp = NULL;
+	/* try to find entity's style information */
+	if(tmp = dxf_find_attr2(ent, 7))
+		strncpy (tsty, tmp->value.s_data, DXF_MAX_CHARS);
+	/* try to find style index */
+	if (strlen(tsty) > 0) ok = dxf_tstyle_idx (drawing, tsty);
+	else ok = dxf_tstyle_idx (drawing, "Standard");
+	
+	return ok;
+}

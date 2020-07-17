@@ -1,5 +1,4 @@
 #include "gui_use.h"
-#define ORD_MAG(x) pow(10.0, floor(log10(fabs(x) + 1.0e-8)) - 1.0)
 
 int gui_txt_prop_interactive(gui_obj *gui){
 	if (gui->modal != TXT_PROP) return 0;
@@ -187,7 +186,7 @@ int gui_txt_prop_info (gui_obj *gui){
 		/* ----------- text height ------------ */
 		nk_checkbox_label(gui->ctx, "Height:", &en_h);
 		if (en_h){
-			txt_h = nk_propertyd(gui->ctx, "#", 1.0e-9, txt_h, 1.0e9, ORD_MAG(txt_h), ORD_MAG(txt_h));
+			txt_h = nk_propertyd(gui->ctx, "#", 1.0e-9, txt_h, 1.0e9, SMART_STEP(txt_h), SMART_STEP(txt_h));
 		}
 		else {/* only show information */
 			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", txt_h);
@@ -197,7 +196,7 @@ int gui_txt_prop_info (gui_obj *gui){
 		/* ----------- angle ------------ */
 		nk_checkbox_label(gui->ctx, "Angle:", &en_ang);
 		if (en_ang){
-			ang = nk_propertyd(gui->ctx, "#", 0.0d, ang, 360.0d, 0.01d, 0.01d);
+			ang = nk_propertyd(gui->ctx, "#", 0.0d, ang, 360.0d, 0.1d, 0.1d);
 		}
 		else {/* only show information */
 			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", ang);
@@ -207,7 +206,7 @@ int gui_txt_prop_info (gui_obj *gui){
 		/* ----------- rectangle width (MTEXT only) ------------ */
 		nk_checkbox_label(gui->ctx, "Rec W:", &en_rec);
 		if (en_rec){
-			rec_w = nk_propertyd(gui->ctx, "#", 0.0d, rec_w, 1.0e9, ORD_MAG(rec_w), ORD_MAG(rec_w));
+			rec_w = nk_propertyd(gui->ctx, "#", 0.0d, rec_w, 1.0e9, SMART_STEP(rec_w), SMART_STEP(rec_w));
 		}
 		else {/* only show information */
 			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", rec_w);

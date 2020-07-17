@@ -234,8 +234,8 @@ int gui_hatch_info (gui_obj *gui){
 			if (gui->h_type == HATCH_USER){/*User definied simple hatch*/
 				/* the user can select only angle and spacing of continuous lines*/
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				gui->user_patt.ang = nk_propertyd(gui->ctx, "Angle", 0.0d, gui->user_patt.ang, 360.0d, 0.5d, 0.5d);
-				gui->user_patt.dy = nk_propertyd(gui->ctx, "Spacing", 0.0d, gui->user_patt.dy, DBL_MAX, 0.1d, 0.1d);
+				gui->user_patt.ang = nk_propertyd(gui->ctx, "Angle", 0.0d, gui->user_patt.ang, 360.0d, 0.1d, 0.1d);
+				gui->user_patt.dy = nk_propertyd(gui->ctx, "Spacing", 0.0d, gui->user_patt.dy, 1e9, SMART_STEP(gui->user_patt.dy), SMART_STEP(gui->user_patt.dy));
 			}
 			else if (gui->h_type == HATCH_PREDEF){ /*Hatch pattern from a library */
 				/*the library or family of pattern hatchs is a .pat file, according the
@@ -320,8 +320,8 @@ int gui_hatch_info (gui_obj *gui){
 				
 				/* optional rotation and scale */
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				gui->patt_scale = nk_propertyd(gui->ctx, "#Scale", 0.0d, gui->patt_scale, DBL_MAX, 0.1d, 0.1d);
-				gui->patt_ang = nk_propertyd(gui->ctx, "Angle", 0.0d, gui->patt_ang, 360.0d, 0.5d, 0.5d);
+				gui->patt_scale = nk_propertyd(gui->ctx, "#Scale", 1e-9, gui->patt_scale, 1e9, SMART_STEP(gui->patt_scale), SMART_STEP(gui->patt_scale));
+				gui->patt_ang = nk_propertyd(gui->ctx, "Angle", 0.0d, gui->patt_ang, 360.0d, 0.1d, 0.1d);
 			}
 			nk_group_end(gui->ctx);
 		}
@@ -534,7 +534,7 @@ int gui_hatch_info (gui_obj *gui){
 					nk_layout_row_dynamic(gui->ctx, 20, 1);
 					nk_label(gui->ctx, "Ref: 10 x 10 units", NK_TEXT_CENTERED);
 					/* optional parameters -> change the preview */
-					patt_scale = nk_propertyd(gui->ctx, "#Scale", 0.001, patt_scale, DBL_MAX, 0.001, 0.001);
+					patt_scale = nk_propertyd(gui->ctx, "#Scale", 1e-9, patt_scale, 1e9, SMART_STEP(patt_scale), SMART_STEP(patt_scale));
 					patt_rot = nk_propertyd(gui->ctx, "#Rotation", 0.00, patt_rot, 360.0, 0.1, 0.1);
 					
 					if (nk_button_label(gui->ctx, "Select")){ /*done the selection*/

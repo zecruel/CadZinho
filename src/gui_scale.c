@@ -304,12 +304,12 @@ int gui_scale_info (gui_obj *gui){
 		if (gui->scale_mode != SCALE_3POINTS){
 			
 			if (gui->proportional){
-				gui->scale_x = nk_propertyd(gui->ctx, "Factor", 0.0d, gui->scale_x, 1.0e9, 0.1d, 0.1d);
+				gui->scale_x = nk_propertyd(gui->ctx, "Factor", 1e-9, gui->scale_x, 1.0e9, SMART_STEP(gui->scale_x), SMART_STEP(gui->scale_x));
 				gui->scale_y = gui->scale_x;
 			}
 			else {
-				gui->scale_x = nk_propertyd(gui->ctx, "X factor", 0.0d, gui->scale_x, 1.0e9, 0.1d, 0.1d);
-				gui->scale_y = nk_propertyd(gui->ctx, "Y factor", 0.0d, gui->scale_y, 1.0e9, 0.1d, 0.1d);
+				gui->scale_x = nk_propertyd(gui->ctx, "X factor", 1e-9, gui->scale_x, 1.0e9, SMART_STEP(gui->scale_x), SMART_STEP(gui->scale_x));
+				gui->scale_y = nk_propertyd(gui->ctx, "Y factor", 1e-9, gui->scale_y, 1.0e9, SMART_STEP(gui->scale_y), SMART_STEP(gui->scale_y));
 			}
 		}
 		

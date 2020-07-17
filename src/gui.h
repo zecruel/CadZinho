@@ -41,6 +41,8 @@
 
 #define ICON_SIZE 24
 
+#define SMART_STEP(x) pow(10.0, floor(log10(fabs(x) + 1.0e-8)) - 1.0)
+
 enum Action {
 	NONE,
 	FILE_OPEN,

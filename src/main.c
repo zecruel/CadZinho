@@ -1389,6 +1389,7 @@ int main(int argc, char** argv){
 		gui_find_interactive(gui);
 		gui_prop_interactive(gui);
 		gui_txt_prop_interactive(gui);
+		gui_vertex_interactive(gui);
 		
 		if (gui_check_draw(gui) != 0){
 			gui->draw = 1;
@@ -1444,6 +1445,8 @@ int main(int argc, char** argv){
 				gui->element->obj.graphics = dxf_graph_parse(gui->drawing, gui->element, 0 , 1);
 			}
 			
+			
+			
 			d_param.subst = hilite;
 			d_param.len_subst = 1;
 			d_param.inc_thick = 3;
@@ -1459,6 +1462,10 @@ int main(int argc, char** argv){
 			if (gui->sel_list->next) /* verify if  has elements in list */
 				dxf_list_draw(gui->sel_list, img, d_param);
 			
+			
+			if ((gui->draw_vert) && (gui->sel_list->next)){ /* verify if  has elements in list */
+				gui_draw_vert(gui, img, (dxf_node *)gui->sel_list->next->data);
+			}
 			
 			/* set image visible window*/
 			img->clip_x = 0; img->clip_y = 0;

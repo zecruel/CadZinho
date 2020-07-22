@@ -99,7 +99,8 @@ enum Modal {
 	MEASURE,
 	FIND,
 	PROP,
-	TXT_PROP
+	TXT_PROP,
+	VERTEX
 };
 
 enum Gui_ev {
@@ -230,7 +231,7 @@ struct Gui_obj {
 	
 	int step, user_flag_x, user_flag_y, lock_ax_x, lock_ax_y, user_number;
 	int keyEnter;
-	int draw, draw_tmp, draw_phanton;
+	int draw, draw_tmp, draw_phanton, draw_vert;
 	int near_attr;
 	
 	int text2tag, hide_tag;
@@ -417,6 +418,8 @@ int gui_first_step(gui_obj *gui);
 int gui_next_step(gui_obj *gui);
 
 void gui_simple_select(gui_obj *gui);
+
+void gui_draw_vert(gui_obj *gui, bmp_img *img, dxf_node *obj);
 
 extern int dxf_lw[];
 extern const char *dxf_lw_descr[];

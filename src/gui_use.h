@@ -127,4 +127,8 @@ int gui_txt_prop_interactive(gui_obj *gui);
 
 int gui_txt_prop_info (gui_obj *gui);
 
+int gui_vertex_interactive(gui_obj *gui);
+
+int gui_vertex_info (gui_obj *gui);
+
 #endif

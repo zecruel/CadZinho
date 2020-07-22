@@ -251,6 +251,7 @@ int gui_first_step(gui_obj *gui){
 	gui->draw = 1;
 	gui->step = 0;
 	gui->draw_phanton = 0;
+	gui->draw_vert = 0;
 	return gui_next_step(gui);
 }
 int gui_next_step(gui_obj *gui){
@@ -1170,6 +1171,7 @@ int gui_start(gui_obj *gui){
 	gui->draw = 0;
 	gui->draw_tmp = 0;
 	gui->draw_phanton = 0;
+	gui->draw_vert = 0;
 	gui->near_attr = 0;
 	gui->text2tag = 0;
 	gui->hide_tag = 0;
@@ -1511,6 +1513,233 @@ void gui_simple_select(gui_obj *gui){
 			}
 		}
 		gui->draw = 1;
+	}
+}
+
+void gui_draw_vert_rect(gui_obj *gui, bmp_img *img, double x, double y){
+	bmp_color blue = {.r = 0, .g = 0, .b =255, .a = 255};
+	/* set the color */
+	img->frg = blue;
+	/* convert entities coordinates to screen coordinates */
+	int x1 = (int) round((x - gui->ofs_x) * gui->zoom);
+	int y1 = (int) round((y - gui->ofs_y) * gui->zoom);
+	
+	int vert_x[2], vert_y[2];
+	
+	vert_x[0] = x1 - 7;
+	vert_x[1] = x1 + 7;
+	vert_y[0] = y1 - 7;
+	vert_y[1] = y1 + 7;
+	
+	bmp_simple_rect_fill(img, vert_x, vert_y);
+}
+
+void gui_draw_vert(gui_obj *gui, bmp_img *img, dxf_node *obj){
+	dxf_node *current = NULL;
+	dxf_node *prev = NULL, *stop = NULL;
+	int pt = 0;
+	enum dxf_graph ent_type = DXF_NONE;
+	double x = 0.0, y = 0.0, z = 0.0;
+	double point[3];
+	
+	int ellip = 0;
+	
+	if (!obj) return;
+	if (obj->type != DXF_ENT) return;
+	
+	/*
+	point[0] = of_x;
+	point[1] = of_y;
+	point[2] = of_z;
+	
+	dxf_get_extru(obj, point);
+	
+	ofs_x = point[0];
+	ofs_y = point[1];
+	ofs_z = point[2];
+	*/
+	
+	stop = obj;
+	ent_type =  dxf_ident_ent_type (obj);
+	
+	if ((ent_type != DXF_HATCH) && (obj->obj.content)){
+		current = obj->obj.content->next;
+		prev = current;
+	}
+	else if ((ent_type == DXF_HATCH) && (obj->obj.content)){
+		current = dxf_find_attr_i(obj, 91, 0);
+		if (current){
+			current = current->next;
+			prev = current;
+		}
+		dxf_node *end_bond = dxf_find_attr_i(obj, 75, 0);
+		if (end_bond) stop = end_bond;
+	}
+	
+	while (current){
+		prev = current;
+		if (current->type == DXF_ENT){
+			/*
+			point[0] = of_x;
+			point[1] = of_y;
+			point[2] = of_z;
+			
+			dxf_get_extru(obj, point);
+			
+			ofs_x = point[0];
+			ofs_y = point[1];
+			ofs_z = point[2];
+			*/
+			if (current->obj.content){
+				ent_type =  dxf_ident_ent_type (current);
+				/* starts the content sweep */
+				current = current->obj.content->next;
+				
+				continue;
+			}
+		}
+		else {
+			if (ent_type != DXF_POLYLINE){
+				if (current->value.group == 10){ 
+					x = current->value.d_data;
+				}
+				if (current->value.group == 20){ 
+					y = current->value.d_data;
+					pt = 1;
+				}
+				if (current->value.group == 30){ 
+					z = current->value.d_data;
+				}
+			}
+			if (ent_type == DXF_HATCH){
+				/* hatch bondary path type */
+				if (current->value.group == 72){ 
+					if (current->value.i_data == 3)
+						ellip = 1; /* ellipse */
+				}
+			}
+			if (ent_type == DXF_LINE || ent_type == DXF_TEXT ||
+			ent_type == DXF_HATCH || ent_type == DXF_ATTRIB){
+				if (current->value.group == 11){ 
+					if (!ellip) x = current->value.d_data;
+				}
+				if (current->value.group == 21){ 
+					if (!ellip) y = current->value.d_data;
+					ellip = 0;
+					pt = 1;
+				}
+				if (current->value.group == 31){ 
+					z = current->value.d_data;
+				}
+			}
+			else if (ent_type == DXF_TRACE || ent_type == DXF_SOLID){
+				if (current->value.group == 11){ 
+					x = current->value.d_data;
+				}
+				if (current->value.group == 21){ 
+					y = current->value.d_data;
+					pt = 1;
+				}
+				if (current->value.group == 31){ 
+					z = current->value.d_data;
+				}
+				
+				
+				
+				if (current->value.group == 12){ 
+					x = current->value.d_data;
+				}
+				if (current->value.group == 22){ 
+					y = current->value.d_data;
+					pt = 1;
+				}
+				if (current->value.group == 32){ 
+					z = current->value.d_data;
+				}
+				
+				
+				if (current->value.group == 13){ 
+					x = current->value.d_data;
+				}
+				if (current->value.group == 23){ 
+					y = current->value.d_data;
+					pt = 1;
+				}
+				if (current->value.group == 33){ 
+					z = current->value.d_data;
+				}
+			}
+			else if (ent_type == DXF_DIMENSION){
+				if (current->value.group == 13){ 
+					x = current->value.d_data;
+				}
+				if (current->value.group == 23){ 
+					y = current->value.d_data;
+					pt = 1;
+				}
+				if (current->value.group == 33){ 
+					z = current->value.d_data;
+				}
+				
+				
+				if (current->value.group == 14){ 
+					x = current->value.d_data;
+				}
+				if (current->value.group == 24){ 
+					y = current->value.d_data;
+					pt = 1;
+				}
+				if (current->value.group == 34){ 
+					z = current->value.d_data;
+				}
+				
+				
+				if (current->value.group == 15){ 
+					x = current->value.d_data;
+				}
+				if (current->value.group == 25){ 
+					y = current->value.d_data;
+					pt = 1;
+				}
+				if (current->value.group == 35){ 
+					z = current->value.d_data;
+				}
+			}
+		}
+		if (pt){
+			pt = 0;
+			gui_draw_vert_rect(gui, img, x, y);
+		}
+		
+		if ((prev == NULL) || (prev == stop)){ /* stop the search if back on initial entity */
+			current = NULL;
+			break;
+		}
+		current = current->next; /* go to the next in the list */
+		/* ============================================================= */
+		while (current == NULL){
+			/* end of list sweeping */
+			if ((prev == NULL) || (prev == stop)){ /* stop the search if back on initial entity */
+				//printf("para\n");
+				current = NULL;
+				break;
+			}
+			/* try to back in structure hierarchy */
+			prev = prev->master;
+			if (prev){ /* up in structure */
+				/* try to continue on previous point in structure */
+				current = prev->next;
+				if(prev == stop){
+					current = NULL;
+					break;
+				}
+				
+			}
+			else{ /* stop the search if structure ends */
+				current = NULL;
+				break;
+			}
+		}
 	}
 }
 

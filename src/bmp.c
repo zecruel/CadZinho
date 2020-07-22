@@ -1253,6 +1253,52 @@ void bmp_put(bmp_img *src, bmp_img *dst, int x, int y, double u[3], double v[3])
 		
 	}
 }
+
+void bmp_simple_rect_fill(bmp_img *img, int vert_x[2], int vert_y[2]){
+	/* Draw a simple unrotaded rectancle in bitmap image */
+	//int i, w = img->width, h = img->height;
+	int x0, y0, x1, y1;
+	int min_x, max_x, min_y, max_y;
+	
+	/* find min and max in coordinates */
+	if (vert_x[0] < vert_x[1]){
+		min_x = vert_x[0];
+		max_x = vert_x[1];
+	}
+	else {
+		min_x = vert_x[1];
+		max_x = vert_x[0];
+	}
+	if (vert_y[0] < vert_y[1]){
+		min_y = vert_y[0];
+		max_y = vert_y[1];
+	}
+	else {
+		min_y = vert_y[1];
+		max_y = vert_y[0];
+	}
+	
+	/* find min and max according image boundaries */
+	x0 = img->clip_x;
+	x1 = img->clip_x + img->clip_w;
+	y0 = img->clip_y;
+	y1 = img->clip_y + img->clip_h;
+	
+	min_x = (min_x > x0) ? min_x : x0;
+	max_x = (max_x < x1) ? max_x : x1;
+	min_y = (min_y > y0) ? min_y : y0;
+	max_y = (max_y < y1) ? max_y : y1;
+	
+	//if((min_x < w) && (max_x > 0) && (min_y < h) && (max_y > 0 )){
+	
+	/* draw final rectangle */	
+	for (y0 = min_y; y0 < max_y; y0++){ /* sweep line in y coordinate */
+		for (x0 = min_x; x0 < max_x; x0++){ /* sweep line in x coordinate */
+			bmp_point_raw(img, x0, y0);
+		}
+	}
+	//}
+}
 	
 /*If you scan along octants as explained for the Midpoint circle algorithm, your major coordinate y will always increase by one. You can then draw two circles at once, because their major coordinates are in sync.
 

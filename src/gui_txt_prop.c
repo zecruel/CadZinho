@@ -29,6 +29,7 @@ int gui_txt_prop_interactive(gui_obj *gui){
 		}
 	}
 	else if (gui->step >= 1){
+		gui->element = NULL;
 		
 		/* user cancel operation */
 		if (gui->ev & EV_CANCEL){

@@ -1463,8 +1463,8 @@ int main(int argc, char** argv){
 				dxf_list_draw(gui->sel_list, img, d_param);
 			
 			
-			if ((gui->draw_vert) && (gui->sel_list->next)){ /* verify if  has elements in list */
-				gui_draw_vert(gui, img, (dxf_node *)gui->sel_list->next->data);
+			if ((gui->draw_vert) && (gui->element)){ /* verify if  has elements in list */
+				gui_draw_vert(gui, img, gui->element);
 			}
 			
 			/* set image visible window*/

@@ -259,7 +259,7 @@ int gui_txt_prop_info (gui_obj *gui){
 								if (en_rec) dxf_attr_change(new_ent, 40, &rec_w);
 							}
 							/* update in drawing */
-							new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
+							new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , DWG_LIFE);
 							dxf_obj_subst((dxf_node *)current->data, new_ent);
 							/* update undo/redo list */
 							if (!ini_do){

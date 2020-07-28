@@ -54,7 +54,8 @@ enum dxf_graph {
 	DXF_HATCH 		= 0x100000,
 	DXF_DIMSTYLE 	= 0x200000,
 	DXF_IMAGE 		= 0x400000,
-	DXF_IMAGE_DEF 	= 0x800000
+	DXF_IMAGE_DEF 	= 0x800000,
+	DXF_SPLINE 		= 0x1000000,
 };
 
 enum dxf_pool_action{

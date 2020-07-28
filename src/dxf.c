@@ -657,6 +657,9 @@ int dxf_ident_ent_type (dxf_node *obj){
 			else if (strcmp(obj->obj.name, "IMAGE") == 0){
 				ent_type = DXF_IMAGE;
 			}
+			else if (strcmp(obj->obj.name, "SPLINE") == 0){
+				ent_type = DXF_SPLINE;
+			}
 		}
 	}
 	return ent_type;

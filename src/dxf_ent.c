@@ -829,12 +829,12 @@ int dxf_get_near_vert(dxf_node *obj, double pt_x, double pt_y, double clearance)
 	return -1;
 }
 
-int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** vert_y, dxf_node ** vert_z){
+int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** vert_y, dxf_node ** vert_z, dxf_node ** vert_b){
 	dxf_node *current = NULL;
 	dxf_node *prev = NULL, *stop = NULL;
 	int pt = 0;
 	enum dxf_graph ent_type = DXF_NONE;
-	dxf_node *x = NULL, *y = NULL, *z = NULL;
+	dxf_node *x = NULL, *y = NULL, *z = NULL, *bulge = NULL;
 	double point[3];
 	
 	int ellip = 0;
@@ -849,6 +849,7 @@ int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** ver
 	*vert_x = NULL;
 	*vert_y = NULL;
 	*vert_z = NULL;
+	*vert_b = NULL;
 	
 	//bmp_color blue = {.r = 0, .g = 0, .b =255, .a = 255};
 	
@@ -925,6 +926,16 @@ int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** ver
 						{
 							current = current->next; /* update position in list */
 							z = current;
+						}
+						
+						/* get bulge - optional */
+						bulge = NULL;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 42))
+						{
+							current = current->next; /* update position in list */
+							bulge = current;
 						}
 					}
 				}
@@ -1121,6 +1132,7 @@ int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** ver
 				*vert_x = x;
 				*vert_y = y;
 				*vert_z = z;
+				*vert_b = bulge;
 				
 				return 1;
 			}

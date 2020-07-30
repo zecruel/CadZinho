@@ -1434,12 +1434,7 @@ int main(int argc, char** argv){
 			
 			draw_cursor(img, gui->mouse_x, gui->mouse_y, cursor);
 			
-			if (gui->near_attr){ /* check if needs to draw an attractor mark */
-				/* convert entities coordinates to screen coordinates */
-				int attr_x = (int) round((gui->near_x - gui->ofs_x) * gui->zoom);
-				int attr_y = (int) round((gui->near_y - gui->ofs_y) * gui->zoom);
-				draw_attractor(img, gui->near_attr, attr_x, attr_y, yellow);
-			}
+			
 			/*hilite test */
 			if((gui->draw_tmp)&&(gui->element != NULL)){
 				gui->element->obj.graphics = dxf_graph_parse(gui->drawing, gui->element, 0 , 1);
@@ -1463,8 +1458,16 @@ int main(int argc, char** argv){
 				dxf_list_draw(gui->sel_list, img, d_param);
 			
 			
-			if ((gui->draw_vert) && (gui->element)){ /* verify if  has elements in list */
+			if ((gui->draw_vert) && (gui->element)){
+				/* draw vertices */
 				gui_draw_vert(gui, img, gui->element);
+			}
+			
+			if (gui->near_attr){ /* check if needs to draw an attractor mark */
+				/* convert entities coordinates to screen coordinates */
+				int attr_x = (int) round((gui->near_x - gui->ofs_x) * gui->zoom);
+				int attr_y = (int) round((gui->near_y - gui->ofs_y) * gui->zoom);
+				draw_attractor(img, gui->near_attr, attr_x, attr_y, yellow);
 			}
 			
 			/* set image visible window*/

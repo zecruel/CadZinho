@@ -388,7 +388,7 @@ void set_style(struct nk_context *ctx, enum theme theme){
         table[NK_COLOR_SCROLLBAR_CURSOR_ACTIVE] = nk_rgba(58, 93, 121, 255);
         table[NK_COLOR_TAB_HEADER] = nk_rgba(48, 83, 111, 255);
         nk_style_from_table(ctx, table);
-    } else if (theme == THEME_ZE) {
+    } else if (theme == THEME_GREEN) {
         table[NK_COLOR_TEXT] = nk_rgba(210, 210, 210, 255);
         table[NK_COLOR_WINDOW] = nk_rgba(57, 71, 58, 215);
         table[NK_COLOR_HEADER] = nk_rgba(52, 57, 52, 220);
@@ -397,7 +397,7 @@ void set_style(struct nk_context *ctx, enum theme theme){
         table[NK_COLOR_BUTTON_HOVER] = nk_rgba(71, 161, 80, 255);
         table[NK_COLOR_BUTTON_ACTIVE] = nk_rgba(89, 201, 100, 255);
         table[NK_COLOR_TOGGLE] = nk_rgba(50, 61, 50, 255);
-        table[NK_COLOR_TOGGLE_HOVER] = nk_rgba(46, 57, 46, 255);
+        table[NK_COLOR_TOGGLE_HOVER] = nk_rgba(73, 84, 72, 255);
         table[NK_COLOR_TOGGLE_CURSOR] = nk_rgba(48, 112, 54, 255);
         table[NK_COLOR_SELECT] = nk_rgba(58, 67, 57, 255);
         table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(48, 112, 54, 255);
@@ -1308,90 +1308,35 @@ int gui_start(gui_obj *gui){
 	
 	gui->image_path[0] = 0;
 	
-	#if(0)
-	#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-	strncpy(gui->dflt_fonts_path, "C:\\Windows\\Fonts\\", 5 * DXF_MAX_CHARS);
-	#else
-	strncpy(gui->dflt_fonts_path, "/usr/share/fonts/", 5 * DXF_MAX_CHARS);
-	#endif
-	#endif
-	
+	/* ----------- init font list ------------------- */
 	gui->font_list = list_new(NULL, PRG_LIFE);
-	//if(add_font_list(gui->font_list, "romans.shx", gui->dflt_fonts_path)){
-	//struct tfont * add_shp_font_list(list_node *list, char *name, char *buf);
-	
+	/* load internal shape font "romans" */
 	if(add_shp_font_list(gui->font_list, "romans.shx", (char *)shp_font_romans)){
 		struct tfont *font = get_font_list(gui->font_list, "romans.shx");
-		if (font){
-			gui->dflt_font = font;
-			//printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
-			//shp_font_print(font->data);
+		if (font){ /* verify if loaded */
+			gui->dflt_font = font; /* set it as default font (substitute other missing fonts) */
 		}
 	}
-	if(add_shp_font_list(gui->font_list, "txt.shx", (char *)shp_font_txt)){
-		/*
-		struct tfont *font = get_font_list(gui->font_list, "txt.shx");
-		if (font){
-			//gui->dflt_font = font;
-			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
-			//shp_font_print(font->data);
-		}
-		*/
-	}
-	/*if(add_font_list(gui->font_list, "romans.shx", gui->dflt_fonts_path)){
-		struct tfont *font = get_font_list(gui->font_list, "romans.shx");
-		if (font){
-			gui->dflt_font = font;
-			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
-			shp_font_print(font->data);
-		}
-	}*/
-	//if(add_font_list(gui->font_list, "OpenSans-Regular.ttf", gui->dflt_fonts_path)){
-		/*
-		struct tfont *font = get_font_list(gui->font_list, "OpenSans-Regular.ttf");
-		if (font){
-			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
-			//gui->dflt_font = font;
-		}
-		*/
-	//}
+	/* load internal shape font "txt", classic CAD font */
+	add_shp_font_list(gui->font_list, "txt.shx", (char *)shp_font_txt);
 	
 	
-	//if(add_font_list(gui->font_list, "NotoSans-Regular.ttf", gui->dflt_fonts_path)){
-		/*struct tfont *font = get_font_list(gui->font_list, "Lato-Hairline.ttf");
-		if (font){
-			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
-			//gui->ui_font = font;
-		}*/
-	//}
-	/*
-	if(add_font_list(gui->font_list, "arialbd.ttf", gui->dflt_fonts_path)){
-		struct tfont *font = get_font_list(gui->font_list, "arialbd.ttf");
-		if (font){
-			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
+	/* ----------- init base directory path ------------------- */
+	{
+		//strncpy (gui->base_dir, get_dir(argv[0]), DXF_MAX_CHARS);
+		char path[DXF_MAX_CHARS + 1] = "";
+		int length, dirname_length;
+		/* get main path */
+		length = wai_getExecutablePath(path, DXF_MAX_CHARS, &dirname_length);
+		if (length > 0){
+			path[dirname_length] = '\0';
+			/* initialize base directory (executable dir) */
+			strncpy (gui->base_dir, path, DXF_MAX_CHARS);
+			strncat (gui->base_dir, (char []){DIR_SEPARATOR, 0}, DXF_MAX_CHARS);
 		}
 	}
-	if(add_font_list(gui->font_list, "Lato-Light.ttf", gui->dflt_fonts_path)){
-		struct tfont *font = get_font_list(gui->font_list, "Lato-Light.ttf");
-		if (font){
-			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
-		}
-	}
-	if(add_font_list(gui->font_list, "ProggyClean.ttf", gui->dflt_fonts_path)){
-		struct tfont *font = get_font_list(gui->font_list, "ProggyClean.ttf");
-		if (font){
-			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
-		}
-	}
-	if(add_font_list(gui->font_list, "Roboto-LightItalic.ttf", "C:\\Windows\\Fonts\\;E:\\documentos\\cadzinho\\res\\fonts\\tt\\Roboto")){
-		struct tfont *font = get_font_list(gui->font_list, "Roboto-LightItalic.ttf");
-		if (font){
-			printf("\n------------------------------------------\n         FONT INIT OK - type = %d\n---------------------------------\n", font->type);
-			
-		}
-	}
-	*/
 	
+	/* ----------- init history ------------------- */
 	for (i = 0; i < DRWG_HIST_MAX; i++)
 		gui->drwg_hist[i][0] = 0;
 	gui->drwg_hist_size = 0;

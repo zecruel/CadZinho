@@ -58,7 +58,7 @@
 #define OS_WIN
 #endif
 
-#include <whereami.h>
+
 
 /* ---------------------------------------------------------*/
 /* ------------------   GLOBALS  ----------------------- */
@@ -245,27 +245,8 @@ int main(int argc, char** argv){
 	
 	gui_obj *gui = malloc(sizeof(gui_obj));
 	gui_start(gui);
-	{ /* get base path */
-		char* path = NULL;
-		int length, dirname_length;
-		length = wai_getExecutablePath(NULL, 0, &dirname_length);
-		if (length > 0){
-			path = (char*)malloc(length + 1);
-			wai_getExecutablePath(path, length, &dirname_length);
-			path[length] = '\0';
-			//printf("executable path: %s\n", path);
-			path[dirname_length] = '\0';
-			//printf("  dirname: %s\n", path);
-			//printf("  basename: %s\n", path + dirname_length + 1);
-			/* initialize base directory (executable dir) */
-			strncpy (gui->base_dir, path, DXF_MAX_CHARS);
-			strncat (gui->base_dir, (char []){DIR_SEPARATOR, 0}, DXF_MAX_CHARS);
-			free(path);
-		}
-	}
 	
-	/* initialize base directory (executable dir) */
-	//strncpy (gui->base_dir, get_dir(argv[0]), DXF_MAX_CHARS);
+	
 	
 	/* full path of clipboard file */
 	char clip_path[DXF_MAX_CHARS + 1];
@@ -335,27 +316,6 @@ int main(int argc, char** argv){
 	printf ("%s\n", get_dir(argv[0]));
 	printf ("%s\n", gui->dflt_fonts_path);
 	
-	
-	#if(0)
-	char fonts_path[DXF_MAX_CHARS];
-	fonts_path[0] = 0;
-	
-	char *base_path = SDL_GetBasePath();
-	
-	strncpy(fonts_path, base_path, DXF_MAX_CHARS);
-	strncat(fonts_path, "fonts/", DXF_MAX_CHARS - strlen(fonts_path));
-	
-	#ifdef OS_WIN
-	char *sys_fonts_path = "C:\\Windows\\Fonts\\";
-	#elif defined(OS_LINUX)
-	char *sys_fonts_path = "/usr/share/fonts/";
-	#else
-	char *sys_fonts_path = NULL;
-	#endif
-	
-	printf(fonts_path);
-	printf(sys_fonts_path);
-	#endif
 	
 	double pos_x, pos_y;
 
@@ -455,7 +415,13 @@ int main(int argc, char** argv){
 	
 	nk_sdl_init(gui);
 	
-	set_style(gui->ctx, THEME_ZE);
+	//enum theme {THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK, THEME_GREEN};
+	//~ set_style(gui->ctx, THEME_BLACK);
+	//~ set_style(gui->ctx, THEME_WHITE);
+	//~ set_style(gui->ctx, THEME_RED);
+	//~ set_style(gui->ctx, THEME_BLUE);
+	//~ set_style(gui->ctx, THEME_DARK);
+	set_style(gui->ctx, THEME_GREEN);
 	
 	gui->ctx->style.edit.padding = nk_vec2(4, -6);
 	
@@ -499,8 +465,11 @@ int main(int argc, char** argv){
 		gui->b_icon_sel = gui->ctx->style.button;
 		gui->b_icon_unsel = gui->ctx->style.button;
 	}
-	gui->b_icon_unsel.normal = nk_style_item_color(nk_rgba(58, 67, 57, 255));
-	gui->b_icon_unsel.hover = nk_style_item_color(nk_rgba(73, 84, 72, 255));
+	//gui->b_icon_unsel.normal = nk_style_item_color(nk_rgba(58, 67, 57, 255));
+	gui->b_icon_unsel.normal = gui->ctx->style.checkbox.normal;
+	//gui->b_icon_unsel.hover = nk_style_item_color(nk_rgba(73, 84, 72, 255));
+	gui->b_icon_unsel.hover =  gui->ctx->style.checkbox.hover;
+	
 	//gui->b_icon_unsel.active = nk_style_item_color(nk_rgba(81, 92, 80, 255));
 	gui->b_icon_sel.image_padding.x = -4;
 	gui->b_icon_sel.image_padding.y = -4;

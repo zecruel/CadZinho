@@ -32,6 +32,8 @@
 #include "nanosvg.h"
 #include "nanosvgrast.h"
 
+#include <whereami.h>
+
 #define FONT_SCALE 1.4
 #define FIXED_MEM 128*1024
 
@@ -332,9 +334,9 @@ struct Gui_obj {
 	
 	
 	char curr_path[MAX_PATH_LEN];
-	char base_dir[DXF_MAX_CHARS];
-	char dwg_file[DXF_MAX_CHARS];
-	char dwg_dir[DXF_MAX_CHARS];
+	char base_dir[DXF_MAX_CHARS + 1];
+	char dwg_file[DXF_MAX_CHARS + 1];
+	char dwg_dir[DXF_MAX_CHARS + 1];
 	
 	char drwg_hist[DRWG_HIST_MAX][DXF_MAX_CHARS];
 	int drwg_hist_size;
@@ -368,7 +370,7 @@ struct Gui_obj {
 };
 typedef struct Gui_obj gui_obj;
 
-enum theme {THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK, THEME_ZE};
+enum theme {THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK, THEME_GREEN};
 
 
 

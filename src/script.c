@@ -91,6 +91,46 @@ int set_timeout (lua_State *L) {
 	return 1;
 }
 
+/* get selected entities in drawing */
+/* given parameters:
+	- none
+returns:
+	- a table (array) with selected entities
+*/
+int script_get_sel (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	int i = 1;
+	lua_newtable(L);
+	
+	/* sweep the selection list */
+	list_node *current = gui->sel_list->next;
+	while (current != NULL){
+		if (current->data){
+			if (((dxf_node *)current->data)->type == DXF_ENT){ /* DXF entity */
+				lua_pushlightuserdata(L, current->data);  /* value */
+				lua_rawseti(L, -2, i);  /* set table at key `i' */
+				i++;
+			}
+		}
+		current = current->next;
+	}
+	
+	//lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+
+/* ========= entity creation functions =========== */
+
 /* append a DXF entity to current drawing */
 /* given parameters:
 	- DXF entity, as userdata
@@ -131,7 +171,7 @@ int script_ent_append (lua_State *L) {
 	}
 	
 	/* parse entity to graphics */
-	new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
+	new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 ,DWG_LIFE);
 	/*append to drawing */
 	drawing_ent_append(gui->drawing, new_ent);
 	/* add to undo/redo list*/
@@ -687,8 +727,8 @@ int script_new_block (lua_State *L) {
 		/* uses 'key' (at index -2) and 'value' (at index -1) */
 		if (lua_isuserdata(L, -1)){
 			obj = (dxf_node *) lua_touserdata (L, -1);
-			obj->obj.graphics = dxf_graph_parse(gui->drawing, obj, 0, FRAME_LIFE);
-			graph_list_ext(obj->obj.graphics, &init_ext, &min_x, &min_y, &max_x, &max_y);
+			list_node *graphics = dxf_graph_parse(gui->drawing, obj, 0, FRAME_LIFE);
+			graph_list_ext(graphics, &init_ext, &min_x, &min_y, &max_x, &max_y);
 		}
 		/* removes 'value'; keeps 'key' for next iteration */
 		lua_pop(L, 1);
@@ -730,6 +770,9 @@ int script_new_block (lua_State *L) {
 	else lua_pushnil(L); /* return fail */
 	return 1;
 }
+
+
+/* ========= set drawing's global parameters =========== */
 
 int script_set_layer (lua_State *L) {
 	/* get gui object from Lua instance */
@@ -977,6 +1020,9 @@ int script_set_lw (lua_State *L) {
 	return 1;
 }
 
+
+/* ========= dynamic mode functions =========== */
+
 int script_start_dynamic (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -1073,6 +1119,8 @@ int script_ent_draw (lua_State *L) {
 	lua_pushboolean(L, 0); /* return fail */
 	return 1;
 }
+
+/* ========= gui functions =========== */
 
 int script_win_show (lua_State *L) {
 	/* get gui object from Lua instance */

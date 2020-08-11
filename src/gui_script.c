@@ -226,6 +226,7 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	static const luaL_Reg cz_lib[] = {
 		{"db_print",   debug_print},
 		{"set_timeout", set_timeout},
+		{"get_sel", script_get_sel},
 		{"ent_append", script_ent_append},
 		{"new_pline", script_new_pline},
 		{"pline_append", script_pline_append},
@@ -360,8 +361,45 @@ int script_win (gui_obj *gui){
 		if (nk_group_begin(gui->ctx, "Script_controls", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 			/* run script tab*/
 			if (script_tab == EXECUTE){
-				nk_layout_row_dynamic(gui->ctx, 20, 1);
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				nk_label(gui->ctx, "Script file:", NK_TEXT_LEFT);
+				
+				static int show_app_file = 0;
+
+				/* supported image formats */
+				static const char *ext_type[] = {
+					"LUA",
+					"*"
+				};
+				static const char *ext_descr[] = {
+					"Lua Script (.lua)",
+					"All files (*)"
+				};
+				#define FILTER_COUNT 2
+				
+				if (nk_button_label(gui->ctx, "Browse")){/* call file browser */
+					show_app_file = 1;
+					/* set filter for suported output formats */
+					for (i = 0; i < FILTER_COUNT; i++){
+						gui->file_filter_types[i] = ext_type[i];
+						gui->file_filter_descr[i] = ext_descr[i];
+					}
+					gui->file_filter_count = FILTER_COUNT;
+					gui->filter_idx = 0;
+					
+					gui->show_file_br = 1;
+					gui->curr_path[0] = 0;
+				}
+				if (show_app_file){ /* running file browser */
+					if (gui->show_file_br == 2){ /* return file OK */
+						/* close browser window*/
+						gui->show_file_br = 0;
+						show_app_file = 0;
+						/* update output path */
+						strncpy(gui->curr_script, gui->curr_path, MAX_PATH_LEN - 1);
+					}
+				}
+				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				
 				/* user can type the file name/path, or paste text, or drop from system navigator */
 				//nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);

@@ -6,7 +6,7 @@ cadzinho.set_style("Standard")
 for i = 1, 9 do
 	cadzinho.set_color(7)
 	text = cadzinho.new_text(i * 15 + 5, 92, i, 2.5, "center", "bottom")
-	cadzinho.ent_append(text)
+	text:write()
 
 	cadzinho.set_color(i)
 	bounds = {
@@ -17,23 +17,23 @@ for i = 1, 9 do
 	}
 
 	hatch = cadzinho.new_hatch(bounds, "solid")
-	cadzinho.ent_append(hatch)
+	hatch:write()
 end
 
 cadzinho.set_color(7)
 for i = 10, 240, 10 do
 	text = cadzinho.new_text(i + 5, 62, i, 2.5, "center", "bottom")
-	cadzinho.ent_append(text)
+	text:write()
 end
 
 for i = 0, 8, 2 do
 	text = cadzinho.new_text(5, -5*i+5, i, 2.5, "right", "middle")
-	cadzinho.ent_append(text)
+	text:write()
 end
 
 for i = 1, 9, 2 do
 	text = cadzinho.new_text(5, 5*i+10, i, 2.5, "right", "middle")
-	cadzinho.ent_append(text)
+	text:write()
 end
 
 for j = 0, 8, 2 do
@@ -47,7 +47,7 @@ for j = 0, 8, 2 do
 		}
 
 		hatch = cadzinho.new_hatch(bounds, "solid")
-		cadzinho.ent_append(hatch)
+		hatch:write()
 	end
 end
 
@@ -62,14 +62,14 @@ for j = 1, 9, 2 do
 		}
 
 		hatch = cadzinho.new_hatch(bounds, "solid")
-		cadzinho.ent_append(hatch)
+		hatch:write()
 	end
 end
 
 for i = 250, 255 do
 	cadzinho.set_color(7)
 	text = cadzinho.new_text((i-249)*15 + 5, -58, i, 2.5, "center", "bottom")
-	cadzinho.ent_append(text)
+	text:write()
 
 	cadzinho.set_color(i)
 	bounds = {
@@ -80,7 +80,7 @@ for i = 250, 255 do
 	}
 
 	hatch = cadzinho.new_hatch(bounds, "solid")
-	cadzinho.ent_append(hatch)
+	hatch:write()
 end
 
 cadzinho.set_color("by layer")

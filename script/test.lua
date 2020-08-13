@@ -62,7 +62,7 @@ for i = 2, 100 do
 	cadzinho.pline_append(pline, x, y,0)
 end
 
-cadzinho.ent_append(pline)
+pline:write()
 
 cadzinho.set_color("by layer")
 cx = 5
@@ -82,17 +82,17 @@ for i = 2, n - 1 do
 end
 
 cadzinho.pline_close(pline, true)
-cadzinho.ent_append(pline)
+pline:write()
 
 circle = cadzinho.new_circle(cx,cy,r)
-cadzinho.ent_append(circle)
+circle:write()
 
 a = r * math.cos(math.pi/n)
 
 cadzinho.set_lw(14)
 
 circle = cadzinho.new_circle(cx,cy,a)
-cadzinho.ent_append(circle)
+circle:write()
 
 
 while(true)

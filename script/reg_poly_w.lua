@@ -15,7 +15,7 @@ function polyg_win()
 	cadzinho.nk_edit(n)
 	cadzinho.nk_layout(20, 1)
 	if cadzinho.nk_button("Generate") then
-		assert(loadfile(".\\lua\\reg_poly.lua"))(tonumber(cx.value), tonumber(cy.value), tonumber(r.value), tonumber(n.value))
+		assert(loadfile("reg_poly.lua"))(tonumber(cx.value), tonumber(cy.value), tonumber(r.value), tonumber(n.value))
 	end
 end
 

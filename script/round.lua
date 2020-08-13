@@ -59,7 +59,7 @@ function round_dyn(event)
 				cadzinho.pline_append(pline, x1,y1,0)
 				cadzinho.pline_append(pline, x0,y1,0)
 				cadzinho.pline_close(pline, true)
-				cadzinho.ent_append(pline)
+				pline:write()
 			else
 				if x0 > x1 then
 					xx1 = x0
@@ -85,7 +85,7 @@ function round_dyn(event)
 				cadzinho.pline_append(pline, xx0+r,yy1,0)
 				cadzinho.pline_append(pline, xx0,yy1-r,0.414214)
 				cadzinho.pline_close(pline, true)
-				cadzinho.ent_append(pline)
+				pline:write()
 			end
 			
 			

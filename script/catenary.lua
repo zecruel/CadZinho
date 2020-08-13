@@ -84,5 +84,5 @@ if s^2 > h^2 + v^2 then -- verify if exists a valid result
 		y2 = cat_curve[i].y
 		cadzinho.pline_append(pline, x2, y2, cat_curve[i].b)
 	end
-	cadzinho.ent_append(pline)
+	pline:write()
 end

@@ -52,23 +52,23 @@ cadzinho.db_print("Crest width = "..crest_w)
 cadzinho.db_print("u max = "..umax)
 
 circle = cadzinho.new_circle(0, 0, ref_diam/2)
-cadzinho.ent_append(circle)
+circle:write()
 
 circle = cadzinho.new_circle(0, 0, tip_r)
-cadzinho.ent_append(circle)
+circle:write()
 
 circle = cadzinho.new_circle(0, 0, base_r)
-cadzinho.ent_append(circle)
+circle:write()
 
 circle = cadzinho.new_circle(0, 0, valey_r)
-cadzinho.ent_append(circle)
+circle:write()
 
 
 -- draw tooth reflection line
 x = tip_r * (math.cos(base_tooth_thick/2 * math.pi/180))
 y = tip_r * (math.sin(base_tooth_thick/2 * math.pi/180))
 pline = cadzinho.new_pline(0, 0, 0, x,y,0)
-cadzinho.ent_append(pline)
+pline:write()
 
 
 --[[ ************************************************************
@@ -141,7 +141,7 @@ for j = 1, teeth do
 		y2 = tooth_curve[i].x * sine + tooth_curve[i].y * cosine;
 		cadzinho.pline_append(pline, x2, y2, tooth_curve[i].b)
 	end
-	cadzinho.ent_append(pline)
+	pline:write()
 	
 	-- draw tooth jointer
 	cosine = math.cos((j) * 2 * math.pi / teeth)
@@ -155,5 +155,5 @@ for j = 1, teeth do
 		bulge = -1.3
 	end
 	pline = cadzinho.new_pline(x2, y2, 0, x1, y1, bulge)
-	cadzinho.ent_append(pline)
+	pline:write()
 end

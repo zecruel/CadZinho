@@ -50,7 +50,7 @@ function test_script_dyn(event)
 			
 			pline = reg_poly(cx, cy, n, r, ang)
 			
-			cadzinho.ent_append(pline)
+			pline:write()
 		
 			count = 0
 			cadzinho.db_print('enter center')

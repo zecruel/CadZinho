@@ -6,4 +6,4 @@ bounds = {
 }
 
 hatch = cadzinho.new_hatch(bounds, "solid")
-cadzinho.ent_append(hatch)
+hatch:write()

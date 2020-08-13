@@ -112,12 +112,20 @@ int script_get_sel (lua_State *L) {
 	int i = 1;
 	lua_newtable(L);
 	
+	struct ent_lua *ent = NULL;
 	/* sweep the selection list */
 	list_node *current = gui->sel_list->next;
 	while (current != NULL){
 		if (current->data){
 			if (((dxf_node *)current->data)->type == DXF_ENT){ /* DXF entity */
-				lua_pushlightuserdata(L, current->data);  /* value */
+				ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+				ent->curr_ent = NULL;
+				ent->orig_ent = (dxf_node *) current->data;
+				ent->sel = 1;
+				luaL_getmetatable(L, "cz_ent_obj");
+				lua_setmetatable(L, -2);
+				
+				//lua_pushlightuserdata(L, current->data);  /* value */
 				lua_rawseti(L, -2, i);  /* set table at key `i' */
 				i++;
 			}
@@ -129,8 +137,228 @@ int script_get_sel (lua_State *L) {
 	return 1;
 }
 
+/* modify a DXF entity in current drawing */
+/* given parameters:
+	- DXF entity, as userdata
+returns:
+	- success, as boolean
+*/
+int script_ent_write (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	struct ent_lua *ent_obj;
+	
+	/* verify passed arguments */
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "write: incorrect argument type");
+		lua_error(L);
+	}
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	//if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	/* copy the entity to drawing's compatible memory pool*/
+	dxf_node *new_ent = dxf_ent_copy(ent, DWG_LIFE);
+	
+	if (!new_ent) {
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	/* parse entity to graphics */
+	new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 ,DWG_LIFE);
+	/*append to drawing */
+	if (ent_obj->orig_ent) dxf_obj_subst(ent_obj->orig_ent, new_ent);
+	else drawing_ent_append(gui->drawing, new_ent);
+	/* add to undo/redo list*/
+	do_add_item(gui->list_do.current, ent_obj->orig_ent, new_ent);
+	
+	if(ent_obj->sel){
+		list_node * list_el = NULL;
+		if (ent_obj->orig_ent) {
+			if (list_el = list_find_data(gui->sel_list, ent_obj->orig_ent)){ /* if data is present in list */
+				list_el->data = new_ent;
+			}
+		}
+		else {
+			/* add to list */
+			list_el = list_new(new_ent, SEL_LIFE);
+			if (list_el){
+				list_push(gui->sel_list, list_el);
+			}
+		}
+	}
+	ent_obj->curr_ent = NULL;
+	ent_obj->orig_ent = new_ent;
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+
+/* ========= fuctions to get informations from entities =========== */
+
+/* get the number  of  ATTRIB in a INSERT entity */
+/* given parameters:
+	- DXF INSERT entity, as userdata
+returns:
+	- success, number of ATTRIB
+	- nil if not a INSERT
+*/
+int script_count_attrib (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	struct ent_lua *ent_obj;
+	
+	/* verify passed arguments */
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "count_attrib: incorrect argument type");
+		lua_error(L);
+	}
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	/* verify if it is a INSERT ent */
+	if (strcmp(ent->obj.name, "INSERT") != 0) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	/* count ATTRIB DXF entities inside INSERTs*/
+	int num_attr = 0;
+	dxf_node *attr = NULL, *nxt_attr = NULL;
+	
+	/* sweep INSERT looking for ATTRIBs */
+	num_attr = 0;
+	while (attr = dxf_find_obj_nxt(ent, &nxt_attr, "ATTRIB")){
+		num_attr++; /* current index */
+		
+		if (!nxt_attr) break; /* end of ATTRIBs in INSERT*/
+	}
+	
+	lua_pushinteger(L, num_attr);
+	return 1;
+}
+
+/* get data (tag and value)  of  a ATTRIB in a INSERT entity */
+/* given parameters:
+	- DXF INSERT entity, as userdata
+	- ATTRIB index, as number (integer)
+returns:
+	- success, tag and value as strings, hidden flag as boolean
+	- nil if not a INSERT or a invalid index
+*/
+int script_get_attrib_i (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "get_attrib_i: invalid number of arguments");
+		lua_error(L);
+	}
+	struct ent_lua *ent_obj;
+	
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "get_attrib_i: incorrect argument type");
+		lua_error(L);
+	}
+	
+	if (!lua_isnumber(L, 2)) {
+		lua_pushliteral(L, "get_attrib_i : incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	/* verify if it is a INSERT ent */
+	if (strcmp(ent->obj.name, "INSERT") != 0) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	int idx = lua_tointeger(L, 2);
+	
+	/* count ATTRIB DXF entities inside INSERTs*/
+	int num_attr = 0;
+	dxf_node *attr = NULL, *nxt_attr = NULL;
+	
+	/* sweep INSERT looking for ATTRIBs */
+	num_attr = 0;
+	while (attr = dxf_find_obj_nxt(ent, &nxt_attr, "ATTRIB")){
+		num_attr++; /* current index */
+		
+		if (num_attr == idx){
+			dxf_node *tmp = NULL;
+			int hidden = 0;
+			char tag[DXF_MAX_CHARS+1] = "";
+			char value[DXF_MAX_CHARS+1] = "";
+			/* verify if it is a hidden attribute */
+			if(tmp = dxf_find_attr2(attr, 70))
+				hidden = tmp->value.i_data & 1;
+			if(tmp = dxf_find_attr2(attr, 2))
+				strncpy(tag, tmp->value.s_data, DXF_MAX_CHARS);
+			if(tmp = dxf_find_attr2(attr, 1))
+				strncpy(value, tmp->value.s_data, DXF_MAX_CHARS);
+			
+			lua_pushstring (L, tag);
+			lua_pushstring (L, value);
+			lua_pushboolean(L, hidden); 
+			return 3; /* number of returned parrameters */
+		}
+		
+		if (!nxt_attr) break; /* end of ATTRIBs in INSERT*/
+	}
+	
+	lua_pushnil(L); /* return fail */
+	return 1;
+}
+
 /* ========= entity creation functions =========== */
 
+#if(0)
 /* append a DXF entity to current drawing */
 /* given parameters:
 	- DXF entity, as userdata
@@ -178,6 +406,67 @@ int script_ent_append (lua_State *L) {
 	do_add_item(gui->list_do.current, NULL, new_ent);
 	
 	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+#endif
+
+/* create a LINE DXF entity */
+/* given parameters:
+	- first vertex x, y and z, as numbers
+	- second vertex x, y and z, as numbers
+returns:
+	- DXF entity, as userdata
+Notes:
+	- The returned data is for one shot use in Lua script, because
+	the alocated memory is valid in single iteration of main loop.
+	It is assumed that soon afterwards it will be appended or drawn.
+*/
+int script_new_line (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 6){
+		lua_pushliteral(L, "new_line: invalid number of arguments");
+		lua_error(L);
+	}
+	int i;
+	for (i = 1; i <= 6; i++) { /* arguments types */
+		if (!lua_isnumber(L, i)) {
+			lua_pushliteral(L, "new_line: incorrect argument type");
+			lua_error(L);
+		}
+	}
+	
+	/* new LINE entity */
+	dxf_node * new_el = (dxf_node *) dxf_new_line (
+		lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), /* first point */
+		lua_tonumber(L, 4), lua_tonumber(L, 5), lua_tonumber(L, 6), /* end point */
+		gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+		0, FRAME_LIFE); /* paper space */
+	
+	if (!new_el) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	/* return success */
+	struct ent_lua *ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+	ent->curr_ent = new_el;
+	ent->orig_ent = NULL;
+	ent->sel = 0;
+	luaL_getmetatable(L, "cz_ent_obj");
+	lua_setmetatable(L, -2);
 	return 1;
 }
 
@@ -229,8 +518,17 @@ int script_new_pline (lua_State *L) {
 	/* append second vertex to ensure entity's validity */
 	dxf_lwpoly_append (new_el, lua_tonumber(L, 4), lua_tonumber(L, 5), 0.0, lua_tonumber(L, 6), FRAME_LIFE);
 	
-	if (!new_el) lua_pushnil(L); /* return fail */
-	else lua_pushlightuserdata(L, (void *) new_el); /* return success */
+	if (!new_el) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	/* return success */
+	struct ent_lua *ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+	ent->curr_ent = new_el;
+	ent->orig_ent = NULL;
+	ent->sel = 0;
+	luaL_getmetatable(L, "cz_ent_obj");
+	lua_setmetatable(L, -2);
 	return 1;
 }
 
@@ -259,7 +557,9 @@ int script_pline_append (lua_State *L) {
 		lua_pushliteral(L, "pline_append: invalid number of arguments");
 		lua_error(L);
 	}
-	if (!lua_isuserdata(L, 1)) { /* arguments types */
+	struct ent_lua *ent_obj;
+	
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
 		lua_pushliteral(L, "pline_append: incorrect argument type");
 		lua_error(L);
 	}
@@ -272,7 +572,12 @@ int script_pline_append (lua_State *L) {
 	}
 	
 	/* get polyline */
-	dxf_node *new_el = (dxf_node *) lua_touserdata (L, 1);
+	if(!ent_obj->curr_ent && ent_obj->orig_ent){
+		/* copy the original entity to temporary memory pool*/
+		ent_obj->curr_ent = dxf_ent_copy(ent_obj->orig_ent, FRAME_LIFE);
+	}
+	dxf_node *new_el = ent_obj->curr_ent;  /*try to get current entity */
+	
 	if (new_el) {
 		/* append vertex */
 		dxf_lwpoly_append (new_el, lua_tonumber(L, 2), lua_tonumber(L, 3), 0.0, lua_tonumber(L, 4), FRAME_LIFE);
@@ -306,7 +611,9 @@ int script_pline_close (lua_State *L) {
 		lua_pushliteral(L, "pline_close: invalid number of arguments");
 		lua_error(L);
 	}
-	if (!lua_isuserdata(L, 1)) { /* arguments types */
+	struct ent_lua *ent_obj;
+	
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
 		lua_pushliteral(L, "pline_close: incorrect argument type");
 		lua_error(L);
 	}
@@ -315,7 +622,11 @@ int script_pline_close (lua_State *L) {
 		lua_error(L);
 	}
 	/* get polyline */
-	dxf_node *new_el = (dxf_node *) lua_touserdata (L, 1);
+	if(!ent_obj->curr_ent && ent_obj->orig_ent){
+		/* copy the original entity to temporary memory pool*/
+		ent_obj->curr_ent = dxf_ent_copy(ent_obj->orig_ent, FRAME_LIFE);
+	}
+	dxf_node *new_el = ent_obj->curr_ent;  /*try to get current entity */
 	if (new_el) {
 		/* change flag */
 		int closed = lua_toboolean(L, 2);
@@ -369,8 +680,17 @@ int script_new_circle (lua_State *L) {
 		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 		0, FRAME_LIFE); /* paper space */
 	
-	if (!new_el) lua_pushnil(L); /* return fail */
-	else lua_pushlightuserdata(L, (void *) new_el); /* return success */
+	if (!new_el) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	/* return success */
+	struct ent_lua *ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+	ent->curr_ent = new_el;
+	ent->orig_ent = NULL;
+	ent->sel = 0;
+	luaL_getmetatable(L, "cz_ent_obj");
+	lua_setmetatable(L, -2);
 	return 1;
 }
 
@@ -378,7 +698,7 @@ int script_new_circle (lua_State *L) {
 /* given parameters:
 	- boundary vertexes, as table (elements in table are tables too,
 		with "x" and "y" labeled numbers elements)
-	- hatch type, as string ( aceptable values = USER, SOLID, PREDEF)
+	- hatch type, as string ( acceptable values = USER, SOLID, PREDEF)
 returns:
 	- DXF entity, as userdata
 Notes:
@@ -521,8 +841,17 @@ int script_new_hatch (lua_State *L) {
 	gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 	0, FRAME_LIFE); /* paper space */
 	
-	if (!new_el) lua_pushnil(L); /* return fail */
-	else lua_pushlightuserdata(L, (void *) new_el); /* return success */
+	if (!new_el) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	/* return success */
+	struct ent_lua *ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+	ent->curr_ent = new_el;
+	ent->orig_ent = NULL;
+	ent->sel = 0;
+	luaL_getmetatable(L, "cz_ent_obj");
+	lua_setmetatable(L, -2);
 	return 1;
 }
 
@@ -625,8 +954,17 @@ int script_new_text (lua_State *L) {
 	dxf_attr_change_i(new_el, 73, &t_al_v, -1);
 	dxf_attr_change(new_el, 7, gui->drawing->text_styles[gui->t_sty_idx].name);
 	
-	if (!new_el) lua_pushnil(L); /* return fail */
-	else lua_pushlightuserdata(L, (void *) new_el); /* return success */
+	if (!new_el) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	/* return success */
+	struct ent_lua *ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+	ent->curr_ent = new_el;
+	ent->orig_ent = NULL;
+	ent->sel = 0;
+	luaL_getmetatable(L, "cz_ent_obj");
+	lua_setmetatable(L, -2);
 	return 1;
 }
 
@@ -720,13 +1058,18 @@ int script_new_block (lua_State *L) {
 		return 1;
 	}
 	
+	struct ent_lua *ent_obj;
+	
 	/* first get the list coordinates extention */
 	/* iterate over table */
 	lua_pushnil(L);  /* first key */
 	while (lua_next(L, 1) != 0) { /* table index are shifted*/
 		/* uses 'key' (at index -2) and 'value' (at index -1) */
-		if (lua_isuserdata(L, -1)){
-			obj = (dxf_node *) lua_touserdata (L, -1);
+		if ( ent_obj =  luaL_checkudata(L, -1, "cz_ent_obj") ){
+			/* get entity */
+			obj = ent_obj->curr_ent;  /*try to get current entity */
+			if (!obj) obj = ent_obj->orig_ent; /* if not current, try original entity */
+			
 			list_node *graphics = dxf_graph_parse(gui->drawing, obj, 0, FRAME_LIFE);
 			graph_list_ext(graphics, &init_ext, &min_x, &min_y, &max_x, &max_y);
 		}
@@ -739,8 +1082,10 @@ int script_new_block (lua_State *L) {
 	lua_pushnil(L);  /* first key */
 	while (lua_next(L, 1) != 0) { /* table index are shifted*/
 		/* uses 'key' (at index -2) and 'value' (at index -1) */
-		if (lua_isuserdata(L, -1)){
-			obj = (dxf_node *) lua_touserdata (L, -1);
+		if ( ent_obj =  luaL_checkudata(L, -1, "cz_ent_obj") ){
+			/* get entity */
+			obj = ent_obj->curr_ent;  /*try to get current entity */
+			if (!obj) obj = ent_obj->orig_ent; /* if not current, try original entity */
 			if (obj->type == DXF_ENT){ /* DXF entity  */
 				
 				new_ent = dxf_ent_copy(obj, DWG_LIFE);
@@ -1094,29 +1439,32 @@ int script_ent_draw (lua_State *L) {
 		lua_error(L);
 	}
 	
-	if (!lua_isuserdata(L, 1)) {
+	struct ent_lua *ent_obj;
+	
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
 		lua_pushliteral(L, "ent_draw: incorrect argument type");
 		lua_error(L);
 	}
 	
-	dxf_node *ent = (dxf_node *) lua_touserdata (L, 1);
-	if (ent) {
-		list_node *vec_graph = dxf_graph_parse(gui->drawing, ent, 0, FRAME_LIFE);
-		if (!vec_graph){
-			lua_pushboolean(L, 0); /* return fail */
-			return 1;
-		}
-		
-		if (!gui->phanton)
-			gui->phanton = vec_graph;
-		else
-			list_merge(gui->phanton, vec_graph);
-		
-		lua_pushboolean(L, 1); /* return success */
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	list_node *vec_graph = dxf_graph_parse(gui->drawing, ent, 0, FRAME_LIFE);
+	if (!vec_graph){
+		lua_pushboolean(L, 0); /* return fail */
 		return 1;
 	}
 	
-	lua_pushboolean(L, 0); /* return fail */
+	if (!gui->phanton)
+		gui->phanton = vec_graph;
+	else
+		list_merge(gui->phanton, vec_graph);
+	
+	lua_pushboolean(L, 1); /* return success */
 	return 1;
 }
 

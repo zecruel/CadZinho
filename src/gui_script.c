@@ -227,7 +227,11 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 		{"db_print",   debug_print},
 		{"set_timeout", set_timeout},
 		{"get_sel", script_get_sel},
-		{"ent_append", script_ent_append},
+		{"count_attrib", script_count_attrib},
+		{"get_attrib_i", script_get_attrib_i},
+		//{"ent_append", script_ent_append},
+		
+		{"new_line", script_new_line},
 		{"new_pline", script_new_pline},
 		{"pline_append", script_pline_append},
 		{"pline_close", script_pline_close},
@@ -253,6 +257,17 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	};
 	luaL_newlib(T, cz_lib);
 	lua_setglobal(T, "cadzinho");
+	
+	
+	/* create a new type of lua userdata to represent a DXF entity */
+	static const struct luaL_Reg methods [] = {
+		{"write", script_ent_write},
+		{NULL, NULL}
+	};
+	luaL_newmetatable(T, "cz_ent_obj");
+	lua_pushvalue(T, -1); /*  */
+	lua_setfield(T, -2, "__index");
+	luaL_setfuncs(T, methods, 0);
 	
 	#if(0)
 	/* adjust package path for "require" in script file*/

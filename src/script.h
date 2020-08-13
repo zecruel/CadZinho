@@ -16,12 +16,23 @@ struct script_obj{
 	char path[DXF_MAX_CHARS];
 };
 
+struct ent_lua { /* DXF entity object, in Lua userdata */
+	dxf_node *curr_ent;
+	dxf_node *orig_ent;
+	int sel;
+};
+
 #include "gui.h"
 
 int set_timeout (lua_State *L);
 int script_get_sel (lua_State *L);
+int script_ent_write (lua_State *L);
 
-int script_ent_append (lua_State *L);
+int script_count_attrib (lua_State *L);
+int script_get_attrib_i (lua_State *L) ;
+
+//int script_ent_append (lua_State *L);
+int script_new_line (lua_State *L);
 int script_new_pline (lua_State *L);
 int script_pline_append (lua_State *L);
 int script_pline_close (lua_State *L);

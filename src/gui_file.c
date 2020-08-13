@@ -1,6 +1,6 @@
 /* ATTENTION: this source code file is not fully portable.
 It use POSIX libraries that are not part of the C standard.
-Therefore, not all compilers and platafforms can make this file.
+Therefore, not all compilers and platafforms can make this file._
 Please, check the compatibility first. */
 
 

@@ -227,8 +227,11 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 		{"db_print",   debug_print},
 		{"set_timeout", set_timeout},
 		{"get_sel", script_get_sel},
+		{"get_ent_typ", script_get_ent_typ},
 		{"count_attrib", script_count_attrib},
 		{"get_attrib_i", script_get_attrib_i},
+		
+		{"edit_attr", script_edit_attr},
 		//{"ent_append", script_ent_append},
 		
 		{"new_line", script_new_line},

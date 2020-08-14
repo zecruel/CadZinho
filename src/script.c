@@ -211,6 +211,49 @@ int script_ent_write (lua_State *L) {
 
 /* ========= fuctions to get informations from entities =========== */
 
+/* get type of an entity */
+/* given parameters:
+	- DXF entity, as userdata
+returns:
+	- success, DXF entity type as string (upper case)
+	- nil if not a entity
+*/
+int script_get_ent_typ (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	struct ent_lua *ent_obj;
+	
+	/* verify passed arguments */
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "get_ent_typ: incorrect argument type");
+		lua_error(L);
+	}
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	if (ent->type != DXF_ENT){ /* not a DXF entity */
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	/* success - return type of entity */
+	lua_pushstring (L, ent->obj.name);
+	return 1;
+}
+
 /* get the number  of  ATTRIB in a INSERT entity */
 /* given parameters:
 	- DXF INSERT entity, as userdata
@@ -267,7 +310,7 @@ int script_count_attrib (lua_State *L) {
 	return 1;
 }
 
-/* get data (tag and value)  of  a ATTRIB in a INSERT entity */
+/* get data (tag, value and hidden flag)  of  a ATTRIB in a INSERT entity */
 /* given parameters:
 	- DXF INSERT entity, as userdata
 	- ATTRIB index, as number (integer)
@@ -302,7 +345,7 @@ int script_get_attrib_i (lua_State *L) {
 	}
 	
 	if (!lua_isnumber(L, 2)) {
-		lua_pushliteral(L, "get_attrib_i : incorrect argument type");
+		lua_pushliteral(L, "get_attrib_i: incorrect argument type");
 		lua_error(L);
 	}
 	
@@ -355,6 +398,124 @@ int script_get_attrib_i (lua_State *L) {
 	lua_pushnil(L); /* return fail */
 	return 1;
 }
+
+/* ========= entity modification functions =========== */
+
+/* edit data (tag, value and hidden flag)  of  a ATTRIB in a INSERT entity */
+/* given parameters:
+	- DXF INSERT entity, as userdata
+	- ATTRIB index, as number (integer)
+	- Tag and value as strings
+	- hidden as boolean
+returns:
+	- success, as boolean
+*/
+int script_edit_attr (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 5){
+		lua_pushliteral(L, "edit_attr: invalid number of arguments");
+		lua_error(L);
+	}
+	struct ent_lua *ent_obj;
+	
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "edit_attr: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isnumber(L, 2)) {
+		lua_pushliteral(L, "edit_attr: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 3)) {
+		lua_pushliteral(L, "edit_attr: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 4)) {
+		lua_pushliteral(L, "edit_attr: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isboolean(L, 5)) {
+		lua_pushliteral(L, "edit_attr: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushboolean(L, 0);  /* return fail */
+		return 1;
+	}
+	/* verify if it is a INSERT ent */
+	if (strcmp(ent->obj.name, "INSERT") != 0) {
+		lua_pushboolean(L, 0);  /* return fail */
+		return 1;
+	}
+	
+	int idx = lua_tointeger(L, 2) - 1;
+	if (idx < 0){
+		lua_pushliteral(L, "edit_attr: index is out of range");
+		lua_error(L);
+	}
+	
+	/* verify if INSERT ent has idx ATTRIB*/
+	dxf_node *attr = dxf_find_obj_i(ent, "ATTRIB", idx);
+	if (!attr){ 
+		lua_pushboolean(L, 0);  /* return fail */
+		return 1;
+	}
+	
+	int hidden = lua_toboolean(L, 5);
+	char tag[DXF_MAX_CHARS+1] = "";
+	strncpy(tag, lua_tostring(L, 3), DXF_MAX_CHARS);
+	char value[DXF_MAX_CHARS+1] = "";
+	strncpy(value, lua_tostring(L, 4), DXF_MAX_CHARS);
+	
+	char *new_str;
+	new_str = trimwhitespace(tag);
+	/* verify if tags contain spaces */
+	if (strchr(new_str, ' ')){
+		lua_pushliteral(L, "edit_attr: No spaces allowed in tags");
+		lua_error(L);
+	}
+	
+	if(!ent_obj->curr_ent && ent_obj->orig_ent){
+		/* copy the original entity to temporary memory pool*/
+		ent_obj->curr_ent = dxf_ent_copy(ent_obj->orig_ent, FRAME_LIFE);
+		/* update other variables */
+		ent = ent_obj->curr_ent; 
+		attr = dxf_find_obj_i(ent, "ATTRIB", idx);
+		if (!attr){ 
+			lua_pushboolean(L, 0);  /* return fail */
+			return 1;
+		}
+	}
+	
+	/* update tag */
+	dxf_attr_change(attr, 2, new_str);
+	/* update value */
+	new_str = trimwhitespace(value);
+	dxf_attr_change(attr, 1, new_str);
+	/* update hide flag */
+	dxf_attr_change(attr, 70, &hidden);
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1; /* number of returned parrameters */
+}
+
 
 /* ========= entity creation functions =========== */
 

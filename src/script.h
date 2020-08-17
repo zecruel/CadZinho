@@ -31,6 +31,8 @@ int script_ent_write (lua_State *L);
 int script_get_ent_typ (lua_State *L);
 int script_count_attrib (lua_State *L);
 int script_get_attrib_i (lua_State *L);
+int script_get_points (lua_State *L);
+int script_get_ext (lua_State *L);
 
 int script_edit_attr (lua_State *L);
 
@@ -43,6 +45,8 @@ int script_new_circle (lua_State *L);
 int script_new_hatch (lua_State *L);
 int script_new_text (lua_State *L);
 int script_new_block (lua_State *L);
+
+int script_get_dwg_appids (lua_State *L);
 
 int script_set_layer (lua_State *L);
 int script_set_color (lua_State *L);

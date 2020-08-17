@@ -399,6 +399,467 @@ int script_get_attrib_i (lua_State *L) {
 	return 1;
 }
 
+/* get points of an entity */
+/* given parameters:
+	- DXF INSERT entity, as userdata
+returns:
+	- success, table with coordinates
+	- nil if not a entity
+*/
+int script_get_points (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	struct ent_lua *ent_obj;
+	
+	/* verify passed arguments */
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "count_attrib: incorrect argument type");
+		lua_error(L);
+	}
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	if (ent->type != DXF_ENT){ /* not a DXF entity */
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	lua_newtable(L); /*main returned table */
+	
+	dxf_node *current = NULL;
+	dxf_node *prev = NULL, *stop = NULL;
+	int pt = 0;
+	enum dxf_graph ent_type = DXF_NONE;
+	double x = 0.0, y = 0.0, z = 0.0;
+	double point[3];
+	
+	int ellip = 0;
+	
+	int vert_count = 0;
+	
+	stop = ent;
+	ent_type =  dxf_ident_ent_type (ent);
+	
+	if ((ent_type != DXF_HATCH) && (ent->obj.content)){
+		current = ent->obj.content->next;
+		prev = current;
+	}
+	else if ((ent_type == DXF_HATCH) && (ent->obj.content)){
+		current = dxf_find_attr_i(ent, 91, 0);
+		if (current){
+			current = current->next;
+			prev = current;
+		}
+		dxf_node *end_bond = dxf_find_attr_i(ent, 75, 0);
+		if (end_bond) stop = end_bond;
+	}
+	
+	while (current){
+		prev = current;
+		if (current->type == DXF_ENT){
+			/*
+			point[0] = of_x;
+			point[1] = of_y;
+			point[2] = of_z;
+			
+			dxf_get_extru(ent, point);
+			
+			ofs_x = point[0];
+			ofs_y = point[1];
+			ofs_z = point[2];
+			*/
+			if (current->obj.content){
+				ent_type =  dxf_ident_ent_type (current);
+				/* starts the content sweep */
+				current = current->obj.content->next;
+				
+				continue;
+			}
+		}
+		else {
+			if (ent_type != DXF_POLYLINE){
+				/* get the vertex coordinate set */
+				if (current->value.group == 10){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 20))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 30))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+			}
+			if (ent_type == DXF_HATCH){
+				/* hatch bondary path type */
+				if (current->value.group == 72){ 
+					if (current->value.i_data == 3)
+						ellip = 1; /* ellipse */
+				}
+			}
+			if (ent_type == DXF_LINE || ent_type == DXF_TEXT ||
+			ent_type == DXF_HATCH || ent_type == DXF_ATTRIB){
+				/* get the vertex coordinate set */
+				if (current->value.group == 11){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 21))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 31))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+			}
+			else if (ent_type == DXF_TRACE || ent_type == DXF_SOLID){
+				/* get the vertex coordinate set */
+				if (current->value.group == 11){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 21))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 31))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+				
+				
+				
+				/* get the vertex coordinate set */
+				if (current->value.group == 12){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 22))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 32))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+				
+				
+				/* get the vertex coordinate set */
+				if (current->value.group == 13){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 23))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 33))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+			}
+			else if (ent_type == DXF_DIMENSION){
+				/* get the vertex coordinate set */
+				if (current->value.group == 13){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 23))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 33))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+				
+				
+				/* get the vertex coordinate set */
+				if (current->value.group == 14){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 24))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 34))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+				
+				
+				/* get the vertex coordinate set */
+				if (current->value.group == 15){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 25))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 35))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+			}
+		}
+		if (pt){
+			pt = 0;
+			/*
+			if(vert_count == gui->vert_idx) 
+				gui_draw_vert_rect(gui, img, x, y, dxf_colors[225]);
+			else gui_draw_vert_rect(gui, img, x, y, dxf_colors[224]);
+			*/
+			vert_count++;
+			
+			lua_newtable(L); /* table to store point coordinates */
+			lua_pushstring(L, "x");
+			lua_pushnumber(L, x);
+			lua_rawset(L, -3);
+			
+			lua_pushstring(L, "y");
+			lua_pushnumber(L, y);
+			lua_rawset(L, -3);
+			
+			lua_pushstring(L, "z");
+			lua_pushnumber(L, z);
+			lua_rawset(L, -3);
+			
+			lua_rawseti(L, -2, vert_count);  /* set table at key `vert_count' */
+		}
+		
+		if ((prev == NULL) || (prev == stop)){ /* stop the search if back on initial entity */
+			current = NULL;
+			break;
+		}
+		current = current->next; /* go to the next in the list */
+		/* ============================================================= */
+		while (current == NULL){
+			/* end of list sweeping */
+			if ((prev == NULL) || (prev == stop)){ /* stop the search if back on initial entity */
+				//printf("para\n");
+				current = NULL;
+				break;
+			}
+			/* try to back in structure hierarchy */
+			prev = prev->master;
+			if (prev){ /* up in structure */
+				/* try to continue on previous point in structure */
+				current = prev->next;
+				if(prev == stop){
+					current = NULL;
+					break;
+				}
+				
+			}
+			else{ /* stop the search if structure ends */
+				current = NULL;
+				break;
+			}
+		}
+	}
+	return 1;
+}
+
+/* get extended data of an entity */
+/* given parameters:
+	- DXF entity, as userdata
+	- APPID, as string
+returns:
+	- table with extended data
+*/
+int script_get_ext (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	struct ent_lua *ent_obj;
+	
+	/* verify passed arguments */
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "get_ext: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "get_ext: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 2)) {
+		lua_pushliteral(L, "get_ext: incorrect argument type");
+		lua_error(L);
+	}
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	char appid [DXF_MAX_CHARS + 1];
+	char name [DXF_MAX_CHARS + 1];
+	
+	strncpy(appid, lua_tostring(L, 2), DXF_MAX_CHARS); /* preserve original string */
+	str_upp(appid); /*upper case */
+	
+	
+	lua_newtable(L); /* table to store data */
+	
+	int found = 0, type, num_data = 0;
+	dxf_node *current = ent->obj.content->next;
+	while (current){
+		/* try to find the first entry, by matching the APPID */
+		if (!found){
+			if (current->type == DXF_ATTR){
+				if(current->value.group == 1001){
+					strncpy(name, current->value.s_data, DXF_MAX_CHARS); /* preserve original string */
+					str_upp(name); /*upper case */
+					if(strcmp(name, appid) == 0){
+						found = 1; /* appid found */
+					}
+				}
+			}
+		}
+		else{
+			/* after the first entry, look by end */
+			if (current->type == DXF_ATTR){
+				/* breaks if is found a new APPID entry */
+				if(current->value.group == 1001){
+					break;
+				}
+				/* update the end mark */
+				num_data++;
+				/* identify the type of attrib, according DXF group specification */
+				type = dxf_ident_attr_type(current->value.group);
+				switch(type) {
+					/* change the data */
+					case DXF_FLOAT :
+						lua_pushnumber(L, current->value.d_data);
+						break;
+					case DXF_INT :
+						lua_pushinteger(L, current->value.i_data);
+						break;
+					case DXF_STR :
+						lua_pushstring(L, current->value.s_data);
+				}
+				lua_rawseti(L, -2, num_data);  /* set table at key `i' */
+			}
+			/* breaks if is found a entity */
+			else break;
+		}
+		current = current->next;
+	}
+	return 1;
+}
+
 /* ========= entity modification functions =========== */
 
 /* edit data (tag, value and hidden flag)  of  a ATTRIB in a INSERT entity */
@@ -1277,6 +1738,47 @@ int script_new_block (lua_State *L) {
 	return 1;
 }
 
+/* ========= get drawing's global parameters =========== */
+
+/* get the APPIDs in drawing */
+/* given parameters:
+	- none
+returns:
+	- table with APPIDs (key as APPID's name, value as light user data)
+*/
+int script_get_dwg_appids (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	dxf_node *appid = NULL, *nxt_appid = NULL, *name_obj;
+	char name[DXF_MAX_CHARS+1];
+	
+	lua_newtable(L); /* table to store APPIDs */
+	
+	while (appid = dxf_find_obj_nxt(gui->drawing->t_appid, &nxt_appid, "APPID")){
+		name_obj = dxf_find_attr2(appid, 2);
+		if (name_obj){
+			strncpy(name, name_obj->value.s_data, DXF_MAX_CHARS); /* preserve original string */
+			str_upp(name); /*upper case */
+			
+			lua_pushstring(L, name);
+			lua_pushlightuserdata(L, appid);
+			lua_rawset(L, -3);
+		}
+		if (!nxt_appid) break; /* end of APPIDs*/
+	}
+	
+	return 1;
+}
 
 /* ========= set drawing's global parameters =========== */
 

@@ -230,9 +230,10 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 		{"get_ent_typ", script_get_ent_typ},
 		{"count_attrib", script_count_attrib},
 		{"get_attrib_i", script_get_attrib_i},
+		{"get_points", script_get_points},
+		{"get_ext", script_get_ext},
 		
 		{"edit_attr", script_edit_attr},
-		//{"ent_append", script_ent_append},
 		
 		{"new_line", script_new_line},
 		{"new_pline", script_new_pline},
@@ -242,6 +243,9 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 		{"new_hatch", script_new_hatch},
 		{"new_text", script_new_text},
 		{"new_block", script_new_block},
+		
+		{"get_dwg_appids", script_get_dwg_appids},
+		
 		{"set_layer", script_set_layer},
 		{"set_color", script_set_color},
 		{"set_ltype", script_set_ltype},

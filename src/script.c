@@ -850,7 +850,7 @@ int script_get_ext (lua_State *L) {
 					case DXF_STR :
 						lua_pushstring(L, current->value.s_data);
 				}
-				lua_rawseti(L, -2, num_data);  /* set table at key `i' */
+				lua_rawseti(L, -2, num_data);  /* set table at key `num_data' */
 			}
 			/* breaks if is found a entity */
 			else break;
@@ -977,6 +977,149 @@ int script_edit_attr (lua_State *L) {
 	return 1; /* number of returned parrameters */
 }
 
+
+/* add extended data of an entity */
+/* given parameters:
+	- DXF entity, as userdata
+	- APPID, as string
+	- table with extended data
+returns:
+	- success as boolean
+*/
+int script_add_ext (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	struct ent_lua *ent_obj;
+	
+	/* verify passed arguments */
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 3){
+		lua_pushliteral(L, "add_ext: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "add_ext: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 2)) {
+		lua_pushliteral(L, "add_ext: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_istable(L, 3)) {
+		lua_pushliteral(L, "add_ext: incorrect argument type");
+		lua_error(L);
+	}
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	char appid [DXF_MAX_CHARS + 1];
+	char name [DXF_MAX_CHARS + 1];
+	
+	strncpy(appid, lua_tostring(L, 2), DXF_MAX_CHARS); /* preserve original string */
+	str_upp(appid); /*upper case */
+	
+	char *new_str;
+	new_str = trimwhitespace(appid);
+	/* verify if  appid name contain spaces */
+	if (strchr(new_str, ' ')){
+		lua_pushliteral(L, "add_ext: No spaces allowed in APPID");
+		lua_error(L);
+	}
+	/* verify if  appid is registred in drawing */
+	if(!dxf_find_obj_descr2(gui->drawing->t_appid, "APPID", new_str)){
+		lua_pushliteral(L, "add_ext: APPID not registred");
+		lua_error(L);
+	}
+	
+	if(!ent_obj->curr_ent && ent_obj->orig_ent){
+		/* copy the original entity to temporary memory pool*/
+		ent_obj->curr_ent = dxf_ent_copy(ent_obj->orig_ent, FRAME_LIFE);
+		/* update other variables */
+		ent = ent_obj->curr_ent; 
+	}
+	
+	int found = 0, type, num_data = 0;
+	dxf_node *current = ent->obj.content->next;
+	dxf_node *last = ent->obj.content;
+	while (current){
+		if (current->type == DXF_ATTR){
+			/* try to find the first entry, by matching the APPID */
+			if (!found){
+				if(current->value.group == 1001){
+					strncpy(name, current->value.s_data, DXF_MAX_CHARS); /* preserve original string */
+					str_upp(name); /*upper case */
+					if(strcmp(name, appid) == 0){
+						found = 1; /* appid found */
+					}
+				}
+			}
+			else{
+				/* after the first entry, look by end */
+				/* breaks if is found a new APPID entry */
+				if(current->value.group == 1001){
+					break;
+				}
+				/* update the end mark */
+				num_data++;
+			}
+			
+			last = current;
+		}
+		/* breaks if is found a entity */
+		else break;
+		
+		current = current->next;
+	}
+	dxf_node *tmp;
+	double num;
+	if (!found){
+		strncpy(appid, lua_tostring(L, 2), DXF_MAX_CHARS); /* preserve original string */
+		new_str = trimwhitespace(appid);
+		
+		if (tmp = dxf_attr_insert_after(last, 1001, new_str, FRAME_LIFE))
+			last = tmp;
+	}
+	
+	/* iterate over table */
+	lua_pushnil(L);  /* first key */
+	while (lua_next(L, 3) != 0) { /* table index are shifted*/
+		/* uses 'key' (at index -2) and 'value' (at index -1) */
+		
+		int type = lua_type(L, -1); /*get  Lua type*/
+		if (type == LUA_TSTRING){
+			new_str = (char*)lua_tostring(L, -1);
+			if (tmp = dxf_attr_insert_after(last, 1000, new_str, FRAME_LIFE))
+				last = tmp;
+		}
+		else if (type == LUA_TNUMBER){
+			num = lua_tonumber(L, -1);
+			if (tmp = dxf_attr_insert_after(last, 1040, &num, FRAME_LIFE))
+				last = tmp;
+		}
+			
+		/* removes 'value'; keeps 'key' for next iteration */
+		lua_pop(L, 1);
+	}
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
 
 /* ========= entity creation functions =========== */
 
@@ -2025,6 +2168,92 @@ int script_set_lw (lua_State *L) {
 	}
 	
 	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+
+
+/* new APPID to the drawing */
+/* given parameters:
+	- APPID, as string
+returns:
+	- success, as boolean
+*/
+int script_new_appid (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* verify passed arguments */
+	if (!lua_isstring(L, 1)) {
+		lua_pushliteral(L, "new_appid: incorrect argument type");
+		lua_error(L);
+	}
+	
+	char appid [DXF_MAX_CHARS + 1];
+	char name [DXF_MAX_CHARS + 1];
+	
+	strncpy(appid, lua_tostring(L, 1), DXF_MAX_CHARS); /* preserve original string */
+	str_upp(appid); /*upper case */
+	
+	char *new_str;
+	new_str = trimwhitespace(appid);
+	/* verify if  appid name contain spaces */
+	if (strchr(new_str, ' ')){
+		lua_pushliteral(L, "new_appid: No spaces allowed in APPID");
+		lua_error(L);
+	}
+	
+	dxf_node *appid_obj = NULL, *nxt_appid_obj = NULL, *name_obj;
+	
+	/* check if exists an APPID with same name */
+	
+	while (appid_obj = dxf_find_obj_nxt(gui->drawing->t_appid, &nxt_appid_obj, "APPID")){
+		name_obj = dxf_find_attr2(appid_obj, 2);
+		if (name_obj){
+			strncpy(name, name_obj->value.s_data, DXF_MAX_CHARS); /* preserve original string */
+			str_upp(name); /*upper case */
+			
+			if (strcmp(name, new_str) == 0){
+				lua_pushboolean(L, 0); /* return fail */
+				return 1;
+			}
+		}
+		if (!nxt_appid_obj) break; /* end of APPIDs*/
+	}
+	
+	/* get APPID name*/
+	strncpy(appid, lua_tostring(L, 1), DXF_MAX_CHARS); /* preserve original string */
+	new_str = trimwhitespace(appid);
+	
+	/* create a new APPID object */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbSymbolTableRecord";
+	const char *dxf_subclass = "AcDbRegAppTableRecord";
+	int ok = 1;
+	dxf_node * new_appid = dxf_obj_new ("APPID", DWG_LIFE);
+	ok &= dxf_attr_append(new_appid, 5, (void *) handle, DWG_LIFE);
+	ok &= dxf_attr_append(new_appid, 100, (void *) dxf_class, DWG_LIFE);
+	ok &= dxf_attr_append(new_appid, 100, (void *) dxf_subclass, DWG_LIFE);
+	ok &= dxf_attr_append(new_appid, 2, (void *) new_str, DWG_LIFE);
+	ok &= dxf_attr_append(new_appid, 70, (int[]){0}, DWG_LIFE);
+	/* register and append on drawing */
+	if (ok) ok &= ent_handle(gui->drawing, new_appid);
+	
+	if (ok){
+		dxf_append(gui->drawing->t_appid, new_appid);
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	
+	lua_pushboolean(L, 0); /* return fail */
 	return 1;
 }
 

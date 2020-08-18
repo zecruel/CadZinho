@@ -35,6 +35,7 @@ int script_get_points (lua_State *L);
 int script_get_ext (lua_State *L);
 
 int script_edit_attr (lua_State *L);
+int script_add_ext (lua_State *L);
 
 //int script_ent_append (lua_State *L);
 int script_new_line (lua_State *L);
@@ -53,6 +54,7 @@ int script_set_color (lua_State *L);
 int script_set_ltype (lua_State *L);
 int script_set_style (lua_State *L);
 int script_set_lw (lua_State *L);
+int script_new_appid (lua_State *L);
 
 int script_start_dynamic (lua_State *L);
 int script_stop_dynamic (lua_State *L);

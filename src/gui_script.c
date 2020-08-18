@@ -234,6 +234,7 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 		{"get_ext", script_get_ext},
 		
 		{"edit_attr", script_edit_attr},
+		{"add_ext", script_add_ext},
 		
 		{"new_line", script_new_line},
 		{"new_pline", script_new_pline},
@@ -251,6 +252,8 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 		{"set_ltype", script_set_ltype},
 		{"set_style", script_set_style},
 		{"set_lw", script_set_lw},
+		{"new_appid", script_new_appid},
+		
 		{"win_show", script_win_show},
 		{"win_close", script_win_close},
 		{"nk_layout", script_nk_layout},

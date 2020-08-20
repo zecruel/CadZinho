@@ -254,6 +254,53 @@ int script_get_ent_typ (lua_State *L) {
 	return 1;
 }
 
+/* get the block name in a INSERT entity */
+/* given parameters:
+	- DXF INSERT entity, as userdata
+returns:
+	- success, block name
+	- nil if not a INSERT
+*/
+int script_get_blk (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	struct ent_lua *ent_obj;
+	
+	/* verify passed arguments */
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "get_blk: incorrect argument type");
+		lua_error(L);
+	}
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	/* verify if it is a INSERT ent */
+	if (!( (strcmp(ent->obj.name, "INSERT") == 0) || (strcmp(ent->obj.name, "DIMENSION") == 0) )) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	dxf_node *tmp = NULL;
+	if(tmp = dxf_find_attr2(ent, 2)) /* look for block name */
+		lua_pushstring (L, tmp->value.s_data);
+	else lua_pushnil(L); /* return fail */
+	return 1;
+}
+
 /* get the number  of  ATTRIB in a INSERT entity */
 /* given parameters:
 	- DXF INSERT entity, as userdata
@@ -396,6 +443,94 @@ int script_get_attrib_i (lua_State *L) {
 	}
 	
 	lua_pushnil(L); /* return fail */
+	return 1;
+}
+
+/* get data (tag, value and hidden flag)  of  all ATTRIBs in a INSERT entity */
+/* given parameters:
+	- DXF INSERT entity, as userdata
+returns:
+	- a table, where each element has tag and value as strings, hidden flag as boolean
+*/
+int script_get_attribs (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "get_attribs: invalid number of arguments");
+		lua_error(L);
+	}
+	struct ent_lua *ent_obj;
+	
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "get_attribs: incorrect argument type");
+		lua_error(L);
+	}
+	
+	lua_newtable(L); /* main returned table */
+	
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		return 1;
+	}
+	
+	/* verify if it is a INSERT ent */
+	if (strcmp(ent->obj.name, "INSERT") != 0) {
+		return 1;
+	}
+	
+	/* count ATTRIB DXF entities inside INSERTs*/
+	int num_attr = 0;
+	dxf_node *attr = NULL, *nxt_attr = NULL;
+	
+	/* sweep INSERT looking for ATTRIBs */
+	num_attr = 0;
+	while (attr = dxf_find_obj_nxt(ent, &nxt_attr, "ATTRIB")){
+		num_attr++; /* current index */
+		
+		dxf_node *tmp = NULL;
+		int hidden = 0;
+		char tag[DXF_MAX_CHARS+1] = "";
+		char value[DXF_MAX_CHARS+1] = "";
+		/* verify if it is a hidden attribute */
+		if(tmp = dxf_find_attr2(attr, 70))
+			hidden = tmp->value.i_data & 1;
+		if(tmp = dxf_find_attr2(attr, 2))
+			strncpy(tag, tmp->value.s_data, DXF_MAX_CHARS);
+		if(tmp = dxf_find_attr2(attr, 1))
+			strncpy(value, tmp->value.s_data, DXF_MAX_CHARS);
+		
+		lua_newtable(L); /* table to store attr data */
+		lua_pushstring(L, "tag");
+		lua_pushstring (L, tag);
+		lua_rawset(L, -3);
+		
+		lua_pushstring(L, "value");
+		lua_pushstring (L, value);
+		lua_rawset(L, -3);
+		
+		lua_pushstring(L, "hidden");
+		lua_pushboolean(L, hidden); 
+		lua_rawset(L, -3);
+		
+		lua_rawseti(L, -2, num_attr);  /* set table at key `num_attr' */
+		
+		if (!nxt_attr) break; /* end of ATTRIBs in INSERT*/
+	}
+	
 	return 1;
 }
 
@@ -1054,7 +1189,7 @@ int script_add_ext (lua_State *L) {
 		ent = ent_obj->curr_ent; 
 	}
 	
-	int found = 0, type, num_data = 0;
+	int found = 0, type;
 	dxf_node *current = ent->obj.content->next;
 	dxf_node *last = ent->obj.content;
 	while (current){
@@ -1075,10 +1210,8 @@ int script_add_ext (lua_State *L) {
 				if(current->value.group == 1001){
 					break;
 				}
-				/* update the end mark */
-				num_data++;
 			}
-			
+			/* update the end mark */
 			last = current;
 		}
 		/* breaks if is found a entity */
@@ -1120,6 +1253,347 @@ int script_add_ext (lua_State *L) {
 	lua_pushboolean(L, 1); /* return success */
 	return 1;
 }
+
+/* edit an extended data of an entity */
+/* given parameters:
+	- DXF entity, as userdata
+	- APPID, as string
+	- index, as number (integer)
+	- extended data
+returns:
+	- success as boolean
+*/
+int script_edit_ext_i (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	struct ent_lua *ent_obj;
+	
+	/* verify passed arguments */
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 4){
+		lua_pushliteral(L, "edit_ext_i: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "edit_ext_i: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 2)) {
+		lua_pushliteral(L, "edit_ext_i: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isnumber(L, 3)) {
+		lua_pushliteral(L, "edit_ext_i: incorrect argument type");
+		lua_error(L);
+	}
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	char appid [DXF_MAX_CHARS + 1];
+	char name [DXF_MAX_CHARS + 1];
+	
+	strncpy(appid, lua_tostring(L, 2), DXF_MAX_CHARS); /* preserve original string */
+	str_upp(appid); /*upper case */
+	
+	char *new_str;
+	new_str = trimwhitespace(appid);
+	
+	int idx = lua_tointeger(L, 3) - 1;
+	if (idx < 0){
+		lua_pushliteral(L, "edit_ext_i: index is out of range");
+		lua_error(L);
+	}
+	
+	if(!ent_obj->curr_ent && ent_obj->orig_ent){
+		/* copy the original entity to temporary memory pool*/
+		ent_obj->curr_ent = dxf_ent_copy(ent_obj->orig_ent, FRAME_LIFE);
+		/* update other variables */
+		ent = ent_obj->curr_ent; 
+	}
+	
+	int found = 0, type, num_data = 0;
+	dxf_node *current = ent->obj.content->next;
+	
+	while (current){
+		if (current->type == DXF_ATTR){
+			/* try to find the first entry, by matching the APPID */
+			if (!found){
+				if(current->value.group == 1001){
+					strncpy(name, current->value.s_data, DXF_MAX_CHARS); /* preserve original string */
+					str_upp(name); /*upper case */
+					if(strcmp(name, appid) == 0){
+						found = 1; /* appid found */
+					}
+				}
+			}
+			else{
+				/* breaks if is found a new APPID entry */
+				if(current->value.group == 1001){
+					break;
+				}
+				/* after the first entry, look by index */
+				if (idx == num_data) {
+					dxf_node *new_ext;
+					double num;
+					int type = lua_type(L, 4); /*get  Lua type*/
+					if (type == LUA_TSTRING){
+						new_str = (char*)lua_tostring(L, 4);
+						if (new_ext = dxf_attr_new (1000, DXF_STR, new_str, FRAME_LIFE)){
+							dxf_obj_subst(current, new_ext);
+							lua_pushboolean(L, 1); /* return success */
+							return 1;
+						}
+					}
+					else if (type == LUA_TNUMBER){
+						num = lua_tonumber(L, 4);
+						if (new_ext = dxf_attr_new (1040, DXF_FLOAT, &num, FRAME_LIFE)){
+							dxf_obj_subst(current, new_ext);
+							lua_pushboolean(L, 1); /* return success */
+							return 1;
+						}
+					}
+					lua_pushboolean(L, 0); /* return fail */
+					return 1;
+				}
+				/* next index */
+				num_data++;
+			}
+		}
+		/* breaks if is found a entity */
+		else break;
+		
+		current = current->next;
+	}
+	
+	lua_pushboolean(L, 0); /* return fail */
+	return 1;
+}
+
+/* delete an extended data of an entity */
+/* given parameters:
+	- DXF entity, as userdata
+	- APPID, as string
+	- index, as number (integer)
+returns:
+	- success as boolean
+*/
+int script_del_ext_i (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	struct ent_lua *ent_obj;
+	
+	/* verify passed arguments */
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 3){
+		lua_pushliteral(L, "del_ext_i: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "del_ext_i: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 2)) {
+		lua_pushliteral(L, "del_ext_i: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isnumber(L, 3)) {
+		lua_pushliteral(L, "del_ext_i: incorrect argument type");
+		lua_error(L);
+	}
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	char appid [DXF_MAX_CHARS + 1];
+	char name [DXF_MAX_CHARS + 1];
+	
+	strncpy(appid, lua_tostring(L, 2), DXF_MAX_CHARS); /* preserve original string */
+	str_upp(appid); /*upper case */
+	
+	char *new_str;
+	new_str = trimwhitespace(appid);
+	
+	int idx = lua_tointeger(L, 3) - 1;
+	if (idx < 0){
+		lua_pushliteral(L, "del_ext_i: index is out of range");
+		lua_error(L);
+	}
+	
+	if(!ent_obj->curr_ent && ent_obj->orig_ent){
+		/* copy the original entity to temporary memory pool*/
+		ent_obj->curr_ent = dxf_ent_copy(ent_obj->orig_ent, FRAME_LIFE);
+		/* update other variables */
+		ent = ent_obj->curr_ent; 
+	}
+	
+	int found = 0, num_data = 0;
+	dxf_node *current = ent->obj.content->next;
+	
+	while (current){
+		if (current->type == DXF_ATTR){
+			/* try to find the first entry, by matching the APPID */
+			if (!found){
+				if(current->value.group == 1001){
+					strncpy(name, current->value.s_data, DXF_MAX_CHARS); /* preserve original string */
+					str_upp(name); /*upper case */
+					if(strcmp(name, appid) == 0){
+						found = 1; /* appid found */
+					}
+				}
+			}
+			else{
+				/* breaks if is found a new APPID entry */
+				if(current->value.group == 1001){
+					break;
+				}
+				/* after the first entry, look by index */
+				if (idx == num_data) {
+					dxf_obj_subst(current, NULL); /* remove extended data*/
+					lua_pushboolean(L, 1); /* return success */
+					return 1;
+				}
+				
+				/* next index */
+				num_data++;
+			}
+		}
+		/* breaks if is found a entity */
+		else break;
+		
+		current = current->next;
+	}
+	
+	lua_pushboolean(L, 0); /* return fail */
+	return 1;
+}
+
+/* delete all extended data of an entity */
+/* given parameters:
+	- DXF entity, as userdata
+	- APPID, as string
+returns:
+	- success as boolean
+*/
+int script_del_ext_all (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	struct ent_lua *ent_obj;
+	
+	/* verify passed arguments */
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "edit_ext_all: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "del_ext_all: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 2)) {
+		lua_pushliteral(L, "del_ext_all: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	char appid [DXF_MAX_CHARS + 1];
+	char name [DXF_MAX_CHARS + 1];
+	
+	strncpy(appid, lua_tostring(L, 2), DXF_MAX_CHARS); /* preserve original string */
+	str_upp(appid); /*upper case */
+	
+	char *new_str;
+	new_str = trimwhitespace(appid);
+	
+	if(!ent_obj->curr_ent && ent_obj->orig_ent){
+		/* copy the original entity to temporary memory pool*/
+		ent_obj->curr_ent = dxf_ent_copy(ent_obj->orig_ent, FRAME_LIFE);
+		/* update other variables */
+		ent = ent_obj->curr_ent; 
+	}
+	
+	int found = 0;
+	dxf_node *current = ent->obj.content->next;
+	
+	while (current){
+		if (current->type == DXF_ATTR){
+			/* try to find the first entry, by matching the APPID */
+			if (!found){
+				if(current->value.group == 1001){
+					strncpy(name, current->value.s_data, DXF_MAX_CHARS); /* preserve original string */
+					str_upp(name); /*upper case */
+					if(strcmp(name, appid) == 0){
+						found = 1; /* appid found */
+						dxf_obj_subst(current, NULL); /* remove head of extended data*/
+					}
+				}
+			}
+			else{
+				/* breaks if is found a new APPID entry */
+				if(current->value.group == 1001){
+					break;
+				}
+				dxf_obj_subst(current, NULL); /* remove extended data*/
+			}
+		}
+		/* breaks if is found a entity */
+		else break;
+		
+		current = current->next;
+	}
+	if (found) lua_pushboolean(L, 1); /* return success */
+	else lua_pushboolean(L, 0); /* return fail */
+	return 1;
+}
+
 
 /* ========= entity creation functions =========== */
 

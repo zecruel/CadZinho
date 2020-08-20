@@ -169,7 +169,7 @@ static int debug_print (lua_State *L) {
 				break;
 			}
 			case LUA_TBOOLEAN: {
-				snprintf(msg, DXF_MAX_CHARS - 1, "%d", lua_toboolean(L, i) ? 1 : 0);
+				snprintf(msg, DXF_MAX_CHARS - 1, "%s", lua_toboolean(L, i) ? "true" : "false");
 				break;
 			}
 			case LUA_TTHREAD: {
@@ -228,13 +228,18 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 		{"set_timeout", set_timeout},
 		{"get_sel", script_get_sel},
 		{"get_ent_typ", script_get_ent_typ},
+		{"get_blk", script_get_blk},
 		{"count_attrib", script_count_attrib},
 		{"get_attrib_i", script_get_attrib_i},
+		{"get_attribs", script_get_attribs},
 		{"get_points", script_get_points},
 		{"get_ext", script_get_ext},
 		
 		{"edit_attr", script_edit_attr},
 		{"add_ext", script_add_ext},
+		{"edit_ext_i", script_edit_ext_i},
+		{"del_ext_i", script_del_ext_i},
+		{"del_ext_all", script_del_ext_all},
 		
 		{"new_line", script_new_line},
 		{"new_pline", script_new_pline},

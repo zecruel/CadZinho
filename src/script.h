@@ -29,13 +29,18 @@ int script_get_sel (lua_State *L);
 int script_ent_write (lua_State *L);
 
 int script_get_ent_typ (lua_State *L);
+int script_get_blk (lua_State *L);
 int script_count_attrib (lua_State *L);
 int script_get_attrib_i (lua_State *L);
+int script_get_attribs (lua_State *L);
 int script_get_points (lua_State *L);
 int script_get_ext (lua_State *L);
 
 int script_edit_attr (lua_State *L);
 int script_add_ext (lua_State *L);
+int script_edit_ext_i (lua_State *L);
+int script_del_ext_i (lua_State *L);
+int script_del_ext_all (lua_State *L);
 
 //int script_ent_append (lua_State *L);
 int script_new_line (lua_State *L);

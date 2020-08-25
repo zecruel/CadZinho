@@ -121,6 +121,9 @@ int script_get_sel (lua_State *L) {
 				ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
 				ent->curr_ent = NULL;
 				ent->orig_ent = (dxf_node *) current->data;
+				
+				ent->drawing = gui->drawing;
+				
 				ent->sel = 1;
 				luaL_getmetatable(L, "cz_ent_obj");
 				lua_setmetatable(L, -2);
@@ -180,10 +183,10 @@ int script_ent_write (lua_State *L) {
 	}
 	
 	/* parse entity to graphics */
-	new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 ,DWG_LIFE);
+	new_ent->obj.graphics = dxf_graph_parse(ent_obj->drawing, new_ent, 0 ,DWG_LIFE);
 	/*append to drawing */
 	if (ent_obj->orig_ent) dxf_obj_subst(ent_obj->orig_ent, new_ent);
-	else drawing_ent_append(gui->drawing, new_ent);
+	else drawing_ent_append(ent_obj->drawing, new_ent);
 	/* add to undo/redo list*/
 	do_add_item(gui->list_do.current, ent_obj->orig_ent, new_ent);
 	
@@ -261,7 +264,7 @@ returns:
 	- success, block name
 	- nil if not a INSERT
 */
-int script_get_blk (lua_State *L) {
+int script_get_blk_name (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
 	lua_gettable(L, LUA_REGISTRYINDEX); 
@@ -278,7 +281,7 @@ int script_get_blk (lua_State *L) {
 	
 	/* verify passed arguments */
 	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
-		lua_pushliteral(L, "get_blk: incorrect argument type");
+		lua_pushliteral(L, "get_blk_name: incorrect argument type");
 		lua_error(L);
 	}
 	/* get entity */
@@ -917,7 +920,6 @@ int script_get_ext (lua_State *L) {
 	struct ent_lua *ent_obj;
 	
 	/* verify passed arguments */
-	/* verify passed arguments */
 	int n = lua_gettop(L);    /* number of arguments */
 	if (n < 2){
 		lua_pushliteral(L, "get_ext: invalid number of arguments");
@@ -992,6 +994,141 @@ int script_get_ext (lua_State *L) {
 		}
 		current = current->next;
 	}
+	return 1;
+}
+
+/* get entities in BLOCK */
+/* given parameters:
+	- block name, as string
+returns:
+	- a table (array) with entities
+*/
+int script_get_blk_ents (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "get_blk_ents: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 1)) {
+		lua_pushliteral(L, "get_blk_ents: incorrect argument type");
+		lua_error(L);
+	}
+	
+	char blk_name[DXF_MAX_CHARS + 1] = "";
+	strncpy(blk_name, lua_tostring(L, 1), DXF_MAX_CHARS); /* preserve original string */
+	str_upp(blk_name); /*upper case */
+	char *new_str;
+	new_str = trimwhitespace(blk_name);
+	
+	lua_newtable(L); /* main returned table */
+	
+	dxf_node *block = dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", new_str);
+	dxf_node *current;
+	if(block) { 
+		current = block->obj.content;
+	}
+	int i = 1;
+	struct ent_lua *ent = NULL;
+	while (current){ /* sweep elements in block */
+		if (current->type == DXF_ENT){ /* DXF entity */
+			if (strcmp(current->obj.name, "ENDBLK") != 0){ /* skip ENDBLK elements */
+				ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+				ent->curr_ent = NULL;
+				ent->orig_ent = (dxf_node *) current;
+				
+				ent->drawing = gui->drawing;
+				
+				ent->sel = 0;
+				
+				luaL_getmetatable(L, "cz_ent_obj");
+				lua_setmetatable(L, -2);
+				lua_rawseti(L, -2, i);  /* set table at key `i' */
+				i++;
+			}
+		}
+		
+		current = current->next;
+	}
+	return 1;
+}
+
+/* get all entities in drawing */
+/* given parameters:
+	- only visible, as boolean (optional)
+returns:
+	- a table (array) with entities
+*/
+int script_get_all (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int visible = 0;
+	
+	/* verify if has passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n > 0){
+		if (!lua_isboolean(L, 1)) {
+			lua_pushliteral(L, "get_all: incorrect argument type");
+			lua_error(L);
+		}
+		visible = lua_toboolean(L, 1);
+	}
+	
+	int i = 1;
+	lua_newtable(L); /* main returned table */
+	
+	struct ent_lua *ent = NULL;
+	
+	dxf_drawing *drawing = gui->drawing;
+	
+	/* sweep the drawing content */
+	dxf_node *current = drawing->ents->obj.content->next;
+	while (current != NULL){
+		if (current->type == DXF_ENT){ /* found a DXF entity  */
+			/*verify if entity layer is on and thaw */
+			if (  ((!drawing->layers[current->obj.layer].off) &&
+				(!drawing->layers[current->obj.layer].frozen) && visible) ||
+				!visible )
+			{
+				ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+				ent->curr_ent = NULL;
+				ent->orig_ent = current;
+				
+				ent->drawing = drawing;
+				
+				ent->sel = 0;
+				luaL_getmetatable(L, "cz_ent_obj");
+				lua_setmetatable(L, -2);
+				
+				lua_rawseti(L, -2, i);  /* set table at key `i' */
+				i++;
+			}
+		}
+		current = current->next;
+	}
+	
 	return 1;
 }
 
@@ -1177,7 +1314,7 @@ int script_add_ext (lua_State *L) {
 		lua_error(L);
 	}
 	/* verify if  appid is registred in drawing */
-	if(!dxf_find_obj_descr2(gui->drawing->t_appid, "APPID", new_str)){
+	if(!dxf_find_obj_descr2(ent_obj->drawing->t_appid, "APPID", new_str)){
 		lua_pushliteral(L, "add_ext: APPID not registred");
 		lua_error(L);
 	}
@@ -1703,6 +1840,9 @@ int script_new_line (lua_State *L) {
 	struct ent_lua *ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
 	ent->curr_ent = new_el;
 	ent->orig_ent = NULL;
+	
+	ent->drawing = gui->drawing;
+	
 	ent->sel = 0;
 	luaL_getmetatable(L, "cz_ent_obj");
 	lua_setmetatable(L, -2);
@@ -1766,6 +1906,9 @@ int script_new_pline (lua_State *L) {
 	ent->curr_ent = new_el;
 	ent->orig_ent = NULL;
 	ent->sel = 0;
+	
+	ent->drawing = gui->drawing;
+	
 	luaL_getmetatable(L, "cz_ent_obj");
 	lua_setmetatable(L, -2);
 	return 1;
@@ -1928,6 +2071,9 @@ int script_new_circle (lua_State *L) {
 	ent->curr_ent = new_el;
 	ent->orig_ent = NULL;
 	ent->sel = 0;
+	
+	ent->drawing = gui->drawing;
+	
 	luaL_getmetatable(L, "cz_ent_obj");
 	lua_setmetatable(L, -2);
 	return 1;
@@ -2089,6 +2235,9 @@ int script_new_hatch (lua_State *L) {
 	ent->curr_ent = new_el;
 	ent->orig_ent = NULL;
 	ent->sel = 0;
+	
+	ent->drawing = gui->drawing;
+	
 	luaL_getmetatable(L, "cz_ent_obj");
 	lua_setmetatable(L, -2);
 	return 1;
@@ -2202,6 +2351,9 @@ int script_new_text (lua_State *L) {
 	ent->curr_ent = new_el;
 	ent->orig_ent = NULL;
 	ent->sel = 0;
+	
+	ent->drawing = gui->drawing;
+	
 	luaL_getmetatable(L, "cz_ent_obj");
 	lua_setmetatable(L, -2);
 	return 1;

@@ -20,6 +20,7 @@ struct ent_lua { /* DXF entity object, in Lua userdata */
 	dxf_node *curr_ent;
 	dxf_node *orig_ent;
 	int sel;
+	dxf_drawing *drawing;
 };
 
 #include "gui.h"
@@ -29,12 +30,14 @@ int script_get_sel (lua_State *L);
 int script_ent_write (lua_State *L);
 
 int script_get_ent_typ (lua_State *L);
-int script_get_blk (lua_State *L);
+int script_get_blk_name (lua_State *L);
 int script_count_attrib (lua_State *L);
 int script_get_attrib_i (lua_State *L);
 int script_get_attribs (lua_State *L);
 int script_get_points (lua_State *L);
 int script_get_ext (lua_State *L);
+int script_get_blk_ents (lua_State *L);
+int script_get_all (lua_State *L);
 
 int script_edit_attr (lua_State *L);
 int script_add_ext (lua_State *L);

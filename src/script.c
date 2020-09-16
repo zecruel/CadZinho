@@ -1,4 +1,6 @@
 #include "script.h"
+#include "miniz.h"
+#include "yxml.h"
 
 /* for debug purposes - print a Lua variable in given buffer string (idx is its position on Lua stack)*/
 static int print_lua_var(char * value, lua_State * L, int idx){
@@ -3193,4 +3195,311 @@ int script_nk_edit (lua_State *L) {
 	lua_pop(L, 1);
 	
 	return 0;
+}
+
+
+/* ========= MINIZ ===============================================*/
+
+
+struct script_miniz_arch {
+	mz_zip_archive *archive;
+};
+
+int script_miniz_open (lua_State *L) {
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "open: invalid number of arguments");
+		lua_error(L);
+	}
+	luaL_argcheck(L, lua_isstring(L, 1), 1, "string expected");
+	
+	struct script_miniz_arch * zip;
+	
+	/* create a userdata object */
+	zip = (struct script_miniz_arch *) lua_newuserdata(L, sizeof(struct script_miniz_arch *)); 
+	luaL_getmetatable(L, "Zip");
+	lua_setmetatable(L, -2);
+	
+	/* init the structure */
+	zip->archive = malloc(sizeof(mz_zip_archive));
+	if(!zip->archive){
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	memset(zip->archive, 0, sizeof(mz_zip_archive));
+	
+	/* try to open the archive. */
+	if (!mz_zip_reader_init_file(zip->archive, lua_tostring(L, 1), 0) )  {
+		free(zip->archive);
+		lua_pop(L, 1);
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	return 1;
+}
+
+int script_miniz_close (lua_State *L) {
+	
+	struct script_miniz_arch * zip;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "close: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( zip =  luaL_checkudata(L, 1, "Zip") )) { /* the archive is a Lua userdata type*/
+		lua_pushliteral(L, "close: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* check if it is not closed */
+	luaL_argcheck(L, zip->archive != NULL, 1, "archive is closed");
+	
+	/* Close the archive, freeing any resources it was using */
+	mz_zip_reader_end(zip->archive);
+	//free(zip->archive);
+	zip->archive = NULL;
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+
+int script_miniz_read (lua_State *L) {
+	
+	struct script_miniz_arch * zip;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "read: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( zip =  luaL_checkudata(L, 1, "Zip") )) { /* the archive is a Lua userdata type*/
+		lua_pushliteral(L, "read: incorrect argument type");
+		lua_error(L);
+	}
+	/* check if it is not closed */
+	luaL_argcheck(L, zip->archive != NULL, 1, "archive is closed");
+	
+	luaL_argcheck(L, lua_isstring(L, 2), 2, "string expected");
+	
+	/* Try to extract one files to the heap. */
+	size_t size;
+	char *p = mz_zip_reader_extract_file_to_heap(zip->archive, lua_tostring(L, 2), &size, 0);
+	if (!p){
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	luaL_Buffer b;
+	char *buff = luaL_buffinitsize (L, &b, size);
+	memcpy(buff, p, size);
+	luaL_pushresultsize (&b, size);
+	
+	/* free resources */
+	mz_free(p);
+	
+	/* return success */
+	return 1;
+}
+
+
+/* ==================== YXML ===========================*/
+
+#define BUFSIZE 4096
+
+struct script_yxml_state {
+	yxml_t *x;
+};
+
+int script_yxml_new (lua_State *L) {
+	
+	struct script_yxml_state * state;
+	
+	/* create a userdata object */
+	state = (struct script_yxml_state *) lua_newuserdata(L, sizeof(struct script_yxml_state *)); 
+	luaL_getmetatable(L, "Yxml");
+	lua_setmetatable(L, -2);
+	
+	/* memory allocation */
+	state->x = malloc(sizeof(yxml_t) + BUFSIZE);
+	
+	if(!state->x){
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	/* init the parser */
+	yxml_init(state->x, state->x+1, BUFSIZE);
+	
+	return 1;
+}
+
+int script_yxml_close (lua_State *L) {
+	
+	struct script_yxml_state * state;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "close: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( state =  luaL_checkudata(L, 1, "Yxml") )) { /* the archive is a Lua userdata type*/
+		lua_pushliteral(L, "close: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* check if it is not closed */
+	luaL_argcheck(L, state->x != NULL, 1, "parser is closed");
+	
+	/* free any resources it was using */
+	free(state->x);
+	state->x = NULL;
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+
+int script_yxml_read (lua_State *L) {
+	
+	struct script_yxml_state * state;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "read: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( state =  luaL_checkudata(L, 1, "Yxml") )) { /* the parser is a Lua userdata type*/
+		lua_pushliteral(L, "read: incorrect argument type");
+		lua_error(L);
+	}
+	/* check if it is not closed */
+	luaL_argcheck(L, state->x != NULL, 1, "parser is closed");
+	
+	luaL_argcheck(L, lua_isstring(L, 2), 2, "string expected");
+	
+	luaL_Buffer b;  /* to store parcial strings */
+	int content = 0, attr = 0, attrval = 0;
+	
+	char *doc = (char*) lua_tostring(L, 2);  /*get document to parse */
+	for(; *doc; doc++) { /* sweep document, analysing each character */
+		yxml_ret_t r = yxml_parse(state->x, *doc);
+		if(r < 0){ /* parsing error */
+			lua_pushliteral(L, "parse error");
+			lua_error(L);
+		}
+		
+		/* Handle any tokens we are interested in */
+		switch(r) {
+			case YXML_ELEMSTART: /* start a element */
+				/*previous attr table not stored yet*/
+				if (attr){
+					attr = 0;
+					if (lua_istable(L, -1) && lua_istable(L, -2)){
+						/* store table with key "attr" in owner table */
+						lua_pushstring(L, "attr");
+						lua_pushvalue (L, -2);
+						lua_remove (L, -3);
+						lua_rawset(L, -3);
+					}
+				}
+				/* element main table */
+				lua_newtable(L);
+				/* store element name with key "id" */
+				lua_pushstring(L, "id");
+				lua_pushstring(L, state->x->elem);
+				lua_rawset(L, -3);
+				/*reset flags */
+				content = 0;
+				attr = 0;
+				attrval = 0;
+				break;
+			case YXML_ELEMEND:
+				/* element attr table not stored yet*/
+				if (attr){
+					attr = 0;
+					if (lua_istable(L, -1) && lua_istable(L, -2)){
+						/* store table with key "attr" in owner table */
+						lua_pushstring(L, "attr");
+						lua_pushvalue (L, -2);
+						lua_remove (L, -3);
+						lua_rawset(L, -3);
+					}
+				}
+				/* store content string with key "cont" in element owner table */
+				if (content && lua_istable(L, -1)){
+					lua_pushstring(L, "cont");
+					luaL_pushresult(&b); /* finalize string and put on Lua stack */
+					lua_rawset(L, -3);
+				}
+				/* store element in its owner table, if exists */
+				if (lua_istable(L, -1) && lua_istable(L, -2)){
+					int index = lua_rawlen (L, -2) + 1;
+					lua_rawseti(L, -2, index);  /* set table at key `index' */
+				}
+				/*reset flags */
+				content = 0;
+				attr = 0;
+				attrval = 0;
+				break;
+			case YXML_CONTENT:
+				if (!content){ /*init content */
+					content = 1;
+					luaL_buffinit(L, &b); /* init the Lua buffer */
+					/* store attr table in its owner */
+					if (attr){
+						attr = 0;
+						if (lua_istable(L, -1) && lua_istable(L, -2)){
+							/* store table with key "attr" in owner table */
+							lua_pushstring(L, "attr");
+							lua_pushvalue (L, -2);
+							lua_remove (L, -3);
+							lua_rawset(L, -3);
+						}
+					}
+				}
+				/* store parcial string */
+				luaL_addstring(&b, state->x->data);
+				break;
+			case YXML_ATTRSTART:
+				if (!attr){ /* init attributes */
+					attr = 1;
+					lua_newtable(L); /* element attr table */
+				}
+				break;
+			case YXML_ATTRVAL:
+				if (!attrval){ /*init attribute value */
+					attrval = 1;
+					luaL_buffinit(L, &b); /* init the Lua buffer */
+				}
+				/* store parcial string */
+				luaL_addstring(&b, state->x->data);
+				break;
+			case YXML_ATTREND:
+				/* Now we have a full attribute. Its name is in x->attr, 
+				and its value is in Lua buffer "b". */
+				if (attrval){
+					attrval = 0;
+					if (lua_istable(L, -1)){
+						/* store in its owner table, where its name is the key */
+						lua_pushstring(L, state->x->attr);
+						luaL_pushresult(&b); /* finalize string and put on Lua stack */
+						lua_rawset(L, -3);
+					}
+				}
+				break;
+		}
+	}
+	/* end parsing */
+	yxml_eof(state->x);
+	/* restart parser */
+	yxml_init(state->x, state->x+1, BUFSIZE);
+	
+	if (!lua_istable(L, -1)) lua_pushnil(L); /* return fail */
+	/* or return success */
+	return 1;
 }

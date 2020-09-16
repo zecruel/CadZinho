@@ -275,7 +275,6 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	luaL_newlib(T, cz_lib);
 	lua_setglobal(T, "cadzinho");
 	
-	
 	/* create a new type of lua userdata to represent a DXF entity */
 	static const struct luaL_Reg methods [] = {
 		{"write", script_ent_write},
@@ -285,6 +284,58 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	lua_pushvalue(T, -1); /*  */
 	lua_setfield(T, -2, "__index");
 	luaL_setfuncs(T, methods, 0);
+	
+	
+	
+	static const struct luaL_Reg miniz_meths[] = {
+		{"read", script_miniz_read},
+		{"close", script_miniz_close},
+		{"__gc", script_miniz_close},
+		{NULL, NULL}
+	};
+	static const struct luaL_Reg miniz_funcs[] = {
+		{"open", script_miniz_open},
+		{NULL, NULL}
+	};
+	luaL_newlib(T, miniz_funcs);
+	lua_setglobal(T, "miniz");
+	
+	/* create a new type of lua userdata to represent a ZIP archive */
+	/* create metatable */
+	luaL_newmetatable(T, "Zip");
+	/* metatable.__index = metatable */
+	lua_pushvalue(T, -1);
+	lua_setfield(T, -2, "__index");
+	/* register methods */
+	luaL_setfuncs(T, miniz_meths, 0);
+	
+	
+	
+	
+	static const struct luaL_Reg yxml_meths[] = {
+		{"read", script_yxml_read},
+		{"close", script_yxml_close},
+		{"__gc", script_yxml_close},
+		{NULL, NULL}
+	};
+	static const struct luaL_Reg yxml_funcs[] = {
+		{"new", script_yxml_new},
+		{NULL, NULL}
+	};
+	luaL_newlib(T, yxml_funcs);
+	lua_setglobal(T, "yxml");
+	
+	/* create a new type of lua userdata to represent a XML parser */
+	/* create metatable */
+	luaL_newmetatable(T, "Yxml");
+	/* metatable.__index = metatable */
+	lua_pushvalue(T, -1);
+	lua_setfield(T, -2, "__index");
+	/* register methods */
+	luaL_setfuncs(T, yxml_meths, 0);
+	
+	
+	
 	
 	#if(0)
 	/* adjust package path for "require" in script file*/

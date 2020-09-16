@@ -75,4 +75,12 @@ int script_nk_button (lua_State *L);
 int script_nk_label (lua_State *L);
 int script_nk_edit (lua_State *L);
 
+int script_miniz_open (lua_State *L);
+int script_miniz_close (lua_State *L);
+int script_miniz_read (lua_State *L);
+
+int script_yxml_new (lua_State *L);
+int script_yxml_close (lua_State *L);
+int script_yxml_read (lua_State *L);
+
 #endif

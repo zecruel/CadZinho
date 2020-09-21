@@ -3260,7 +3260,7 @@ int script_miniz_close (lua_State *L) {
 	
 	/* Close the archive, freeing any resources it was using */
 	mz_zip_reader_end(zip->archive);
-	//free(zip->archive);
+	free(zip->archive);
 	zip->archive = NULL;
 	
 	lua_pushboolean(L, 1); /* return success */

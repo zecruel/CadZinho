@@ -118,7 +118,7 @@ shp_typ *shp_font_open(char *path){
 	
 	int num; /* shape number */
 	char str_tmp[255];
-	unsigned char buffer[10000];
+	unsigned char buffer[100000];
 	unsigned int buf_size = 0;
 	
 	int first_cp, last_cp, num_cp = 0, cp_idx = 0;
@@ -175,7 +175,7 @@ shp_typ *shp_font_open(char *path){
 			shp_font->unicode = 0;
 			if (!file_head){
 				/* header for shapes files */
-				if (buf_size < 10000){
+				if (buf_size < 100000){
 					buffer[buf_size] = curr;
 					buf_size++;
 				}
@@ -201,13 +201,13 @@ shp_typ *shp_font_open(char *path){
 				if (cp_idx < num_cp){
 					/* read list of code point id */
 					if (index != next_index){
-						if (buf_size < 10000){
+						if (buf_size < 100000){
 							buffer[buf_size] = curr;
 							buf_size++;
 						}
 					}
 					else {
-						if (buf_size < 10000){
+						if (buf_size < 100000){
 							buffer[buf_size] = curr;
 							buf_size++;
 						}
@@ -242,7 +242,7 @@ shp_typ *shp_font_open(char *path){
 				if (index != next_index){
 					if (!name){ /* get name and comments of glyph */
 						if (curr != 0){ /* until string end (0x00) */
-							if (buf_size < 10000){
+							if (buf_size < 100000){
 								str_tmp[buf_size] = curr;
 								buf_size++;
 							}
@@ -256,7 +256,7 @@ shp_typ *shp_font_open(char *path){
 						}
 					}
 					else{ /* shape commands */
-						if (buf_size < 10000){
+						if (buf_size < 100000){
 							buffer[buf_size] = curr;
 							buf_size++;
 						}
@@ -298,11 +298,9 @@ shp_typ *shp_font_open(char *path){
 					buffer[buf_size] = curr;
 					buf_size++;
 				}
-				else{ /* ends at 4 bytes for regular shape and 6 bytes for font descriptor */
-					if (curr != 0) break;  /* error */
-					
-					/* last byte indicates the data length for next step */
-					next_index = index + buffer[buf_size - 1];
+				else{ /* ends at 4 bytes for regular shape or 6 bytes for font descriptor */
+					/* get the data length for next step */
+					next_index = index + buffer[buf_size - 1] + ((curr&255) << 8);
 					
 					/* get the code point for current shape */
 					num = ((buffer[buf_size - 2]&255) << 8)|(buffer[buf_size - 3]&255);
@@ -359,7 +357,7 @@ shp_typ *shp_font_load(char *buf){
 	char *curr_line, *next_line, str_tmp[255];
 	char *curr_mark, *next_mark, *ignore;
 	int str_size, cp, cmd_size, cmd_pos;
-	char cmds[10000];
+	char cmds[100000];
 	
 	/* create list of shapes*/
 	shp_font = (shp_typ *) malloc(sizeof(shp_typ));
@@ -452,7 +450,7 @@ shp_typ *shp_font_load(char *buf){
 		}
 		/* get commands of current shape */
 		cmd_pos = 0;
-		while ((curr_mark != NULL) && (cmd_pos < cmd_size) && (cmd_pos < 10000)){
+		while ((curr_mark != NULL) && (cmd_pos < cmd_size) && (cmd_pos < 100000)){
 			
 			next_mark = strchr(curr_mark, ',');
 			if (next_mark){

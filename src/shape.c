@@ -703,7 +703,51 @@ graph_obj *shp_parse_cp(shp_typ *shp_font, int pool_idx, int cp, double *w){
 			/* fractionary octant arc */
 			if(bypass) bypass = 0;
 			else{
-				/*TODO*/
+				
+				double start_ofs, end_ofs;
+				
+				start_ofs = ((double)shp->cmds[index + 1] /256.0);
+				end_ofs = ((double)shp->cmds[index + 2] /256.0);
+				
+				/* get radius combining two bytes */
+				radius = (double)(((shp->cmds[index + 3]&255) << 8)|(shp->cmds[index + 4]&255) ) * scale;
+				
+				/* get first octant and direction from high nibble*/
+				octant = (shp->cmds[index + 5] & 112)/16;
+				direction = (shp->cmds[index + 5] & 128)/16;
+				if(direction) direction = -1;
+				else direction =1;
+				
+				/* get octant number from low nibble*/
+				num_oct = shp->cmds[index + 5] & 15;
+				if(num_oct == 0) num_oct = 8; /* full circle */
+				
+				ang_ini = ((double)octant + start_ofs) * M_PI/4;
+				double ang_end = ((double)octant + num_oct - end_ofs) * M_PI/4;
+				
+				/* sample arc in 64 points for full circle */
+				int steps = 64.0 * (ang_end - ang_ini)/(2 * M_PI);
+				
+				center_x = pre_x - radius * cos(ang_ini);
+				center_y = pre_y - radius * sin(ang_ini);
+				
+				/* do arc */
+				for(i=1; i < steps; i++){
+					px = center_x + radius * cos(2 * M_PI * i * direction/ 64.0 + ang_ini);
+					py = center_y + radius * sin(2 * M_PI * i * direction/ 64.0 + ang_ini);
+					if(pen) line_add(line_list, pre_x, pre_y, 0.0, px, py, 0.0);
+					pre_x=px;
+					pre_y=py;
+				}
+				
+				/* last point */
+				px = center_x + radius * cos(ang_end);
+				py = center_y + radius * sin(ang_end);
+				if(pen) line_add(line_list, pre_x, pre_y, 0.0, px, py, 0.0);
+				pre_x=px;
+				pre_y=py;
+				
+				
 			}
 			index += 6;
 		}

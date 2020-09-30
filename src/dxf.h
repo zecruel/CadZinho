@@ -93,7 +93,7 @@ struct Dxf_node{
 	union{
 		struct {
 			/* == entity dxf especific */
-			char name[DXF_MAX_CHARS]; /* standardized DXF name of entity */
+			char name[DXF_MAX_CHARS+1]; /* standardized DXF name of entity */
 			int layer;
 			int pool;
 			void * graphics; /* graphics information */
@@ -109,7 +109,7 @@ struct Dxf_node{
 			union {
 				double d_data; /* a float number, */
 				int i_data; /* a integer number, */
-				char s_data[DXF_MAX_CHARS]; /* or a string. */
+				char s_data[DXF_MAX_CHARS+1]; /* or a string. */
 			};
 		} value;
 	};
@@ -117,9 +117,9 @@ struct Dxf_node{
 typedef struct Dxf_node dxf_node;
 
 struct Dxf_layer{
-	char name[DXF_MAX_CHARS];
+	char name[DXF_MAX_CHARS+1];
 	int color;
-	char ltype[DXF_MAX_CHARS];
+	char ltype[DXF_MAX_CHARS+1];
 	int line_w;
 	int frozen;
 	int lock;
@@ -130,8 +130,8 @@ struct Dxf_layer{
 typedef struct Dxf_layer dxf_layer;
 
 struct Dxf_ltype{
-	char name[DXF_MAX_CHARS];
-	char descr[DXF_MAX_CHARS];
+	char name[DXF_MAX_CHARS+1];
+	char descr[DXF_MAX_CHARS+1];
 	int size;
 	double pat[DXF_MAX_PAT];
 	double length;
@@ -141,10 +141,10 @@ struct Dxf_ltype{
 typedef struct Dxf_ltype dxf_ltype;
 
 struct Dxf_tstyle{
-	char name[DXF_MAX_CHARS];
-	char file[DXF_MAX_CHARS];
-	char big_file[DXF_MAX_CHARS];
-	char subst_file[DXF_MAX_CHARS];
+	char name[DXF_MAX_CHARS+1];
+	char file[DXF_MAX_CHARS+1];
+	char big_file[DXF_MAX_CHARS+1];
+	char subst_file[DXF_MAX_CHARS+1];
 	
 	int flags1;
 	int flags2;

@@ -17,6 +17,7 @@
 
 #include "gui.h"
 #include "gui_lay.h"
+#include "gui_ltype.h"
 #include "gui_tstyle.h"
 #include "gui_info.h"
 #include "gui_xy.h"
@@ -818,7 +819,9 @@ int main(int argc, char** argv){
 /* ==============================================================
 ======    END LAYER MANAGER   ======================================
 ================================================================*/
-
+		if (gui->show_ltyp_mng){
+			gui->show_ltyp_mng = ltyp_mng (gui);
+		}
 		
 		if (gui->show_info){
 			gui->show_info = info_win(gui);

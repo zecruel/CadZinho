@@ -1311,6 +1311,64 @@ int dxf_new_layer (dxf_drawing *drawing, char *name, int color, char *ltype){
 	return ok;
 }
 
+int dxf_new_ltype (dxf_drawing *drawing, dxf_ltype *line_type){
+	
+	if (!drawing) 
+		return 0; /* error -  not drawing */
+	
+	if ((drawing->t_ltype == NULL) || (drawing->main_struct == NULL)) 
+		return 0; /* error -  not main structure */
+	
+	char name_cpy[DXF_MAX_CHARS], *new_name;
+	strncpy(name_cpy, line_type->name, DXF_MAX_CHARS);
+	new_name = trimwhitespace(name_cpy);
+	
+	if (strlen(new_name) == 0) return 0; /* error -  no name */
+	
+	/* verify if not exists */
+	if (dxf_find_obj_descr2(drawing->t_ltype, "LTYPE", new_name) != NULL) 
+		return 0; /* error -  exists ltype with same name */
+	
+	
+	const char *handle = "0";
+	const char *dxf_class = "AcDbSymbolTableRecord";
+	const char *dxf_subclass = "AcDbLinetypeTableRecord";
+	int int_zero = 0, ok = 0, i;
+	
+	/* create a new LTYPE */
+	dxf_node * ltyp = dxf_obj_new ("LTYPE", drawing->pool);
+	
+	if (ltyp) {
+		ok = 1;
+		ok &= dxf_attr_append(ltyp, 5, (void *) handle, drawing->pool);
+		ok &= dxf_attr_append(ltyp, 100, (void *) dxf_class, drawing->pool);
+		ok &= dxf_attr_append(ltyp, 100, (void *) dxf_subclass, drawing->pool);
+		ok &= dxf_attr_append(ltyp, 2, (void *) new_name, drawing->pool);
+		ok &= dxf_attr_append(ltyp, 70, (void *) &int_zero, drawing->pool); /* TODO */
+		ok &= dxf_attr_append(ltyp, 3, (void *) line_type->descr, drawing->pool);
+		ok &= dxf_attr_append(ltyp, 72, (void *) (int[]){65}, drawing->pool);
+		
+		
+		ok &= dxf_attr_append(ltyp, 73, (void *) &line_type->size, drawing->pool);
+		ok &= dxf_attr_append(ltyp, 40, (void *) &line_type->length, drawing->pool);
+		for(i = 0; i < line_type->size; i++){
+			ok &= dxf_attr_append(ltyp, 49, (void *) &line_type->pat[i], drawing->pool);
+			ok &= dxf_attr_append(ltyp, 74, (void *) &int_zero, drawing->pool); /* TODO */
+		}
+		
+		/* get current handle and increment the handle seed*/
+		ok &= ent_handle(drawing, ltyp);
+		
+		/* append the ltype to correpondent table */
+		dxf_append(drawing->t_ltype, ltyp);
+		
+		/* update the ltypes in drawing  */
+		dxf_ltype_assemb (drawing);
+	}
+	
+	return ok;
+}
+
 int dxf_new_tstyle (dxf_drawing *drawing, char *name){
 	
 	if (!drawing) 

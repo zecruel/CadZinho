@@ -1,5 +1,6 @@
 #include "gui_use.h"
 #include "gui_lay.h"
+#include "gui_ltype.h"
 #include "gui_file.h"
 #include "gui_xy.h"
 
@@ -333,7 +334,8 @@ int gui_main_win(gui_obj *gui){
 				gui->show_tstyles_mng = 1;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LTYPE]))){
-				printf("Line types\n");
+				//printf("Line types\n");
+				gui->show_ltyp_mng = 1;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PUZZLE]))){
 				//printf("Blocks\n");
@@ -502,28 +504,7 @@ int gui_main_win(gui_obj *gui){
 			nk_layout_row_push(gui->ctx, 100);
 			nk_label(gui->ctx, "Line type: ", NK_TEXT_RIGHT);
 			nk_layout_row_push(gui->ctx, 200);
-			
-			int num_ltypes = gui->drawing->num_ltypes;
-
-			int h = num_ltypes * 25 + 5;
-			h = (h < 200)? h : 200;
-			
-			if (nk_combo_begin_label(gui->ctx, gui->drawing->ltypes[gui->ltypes_idx].name, nk_vec2(300, h))){
-				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				
-				for (i = 0; i < num_ltypes; i++){
-					
-					if (nk_button_label(gui->ctx, gui->drawing->ltypes[i].name)){
-						gui->ltypes_idx = i;
-						gui->action = LTYPE_CHANGE;
-						nk_combo_close(gui->ctx);
-						break;
-					}
-					nk_label(gui->ctx, gui->drawing->ltypes[i].descr, NK_TEXT_LEFT);
-				}
-				
-				nk_combo_end(gui->ctx);
-			}
+			ltype_prop(gui);
 			
 			/* thickness 
 			nk_layout_row_push(gui->ctx, 150);

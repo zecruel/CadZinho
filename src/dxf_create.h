@@ -117,6 +117,8 @@ int dxf_insert_append(dxf_drawing *drawing, dxf_node *ins, dxf_node *obj, int po
 
 int dxf_new_layer (dxf_drawing *drawing, char *name, int color, char *ltype);
 
+int dxf_new_ltype (dxf_drawing *drawing, dxf_ltype *line_type);
+
 int dxf_new_tstyle (dxf_drawing *drawing, char *name);
 
 dxf_node * dxf_new_hatch (struct h_pattern *pattern, graph_obj *bound,

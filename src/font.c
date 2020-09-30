@@ -5,7 +5,8 @@ struct tfont * get_font_list(list_node *list, char *name){
 	if (list == NULL) return NULL;
 	if (name == NULL) return NULL;
 	
-	char nam[DXF_MAX_CHARS];
+	char nam[DXF_MAX_CHARS+1];
+	char nam2[DXF_MAX_CHARS+1];
 	struct tfont * font;
 	
 	strncpy(nam, name, DXF_MAX_CHARS); /* preserve original string */
@@ -15,7 +16,9 @@ struct tfont * get_font_list(list_node *list, char *name){
 	while (current != NULL){ /* sweep the list */
 		if (current->data){
 			font = (struct tfont *)current->data;
-			if (strncmp(nam, font->name, DXF_MAX_CHARS) == 0)
+			strncpy(nam2, font->name, DXF_MAX_CHARS); /* preserve original string */
+			str_upp(nam2); /* change to upper case to compare*/
+			if (strncmp(nam, nam2, DXF_MAX_CHARS) == 0)
 				/* font found */
 				return font;
 			
@@ -75,7 +78,7 @@ struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 	}
 	
 	name = get_filename(full_path); /* font name is the filename*/
-	str_upp(name); /* upper case the name */
+	//str_upp(name); /* upper case the name */
 	
 	font = get_font_list(list, name); /* verify if font was previously loaded */
 	if (font) return font;

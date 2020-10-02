@@ -1845,6 +1845,25 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 			}
 		}
 		
+		
+		/* get line type scales */
+		drawing->ltscale = 1.0;
+		drawing->celtscale = 1.0;
+		
+		if(dxf_find_head_var(drawing->head, "$LTSCALE", &start, &end)){
+			part = dxf_find_attr_i2(start, end, 40, 0);
+			if (part != NULL){
+				drawing->ltscale = part->value.d_data;
+			}
+		}
+		
+		if(dxf_find_head_var(drawing->head, "$CELTSCALE", &start, &end)){
+			part = dxf_find_attr_i2(start, end, 40, 0);
+			if (part != NULL){
+				drawing->celtscale = part->value.d_data;
+			}
+		}
+		
 		//return drawing;
 		state = INIT;
 		*prog = 100;

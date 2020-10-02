@@ -930,9 +930,9 @@ int main(int argc, char** argv){
 		if((gui->action == FILE_OPEN) && (gui->path_ok)) {
 			gui->action = NONE; gui->path_ok = 0;
 			
-			dxf_mem_pool(ZERO_DXF, 0);
-			graph_mem_pool(ZERO_GRAPH, 0);
-			graph_mem_pool(ZERO_LINE, 0);
+			dxf_mem_pool(ZERO_DXF, DWG_LIFE);
+			graph_mem_pool(ZERO_GRAPH, DWG_LIFE);
+			graph_mem_pool(ZERO_LINE, DWG_LIFE);
 			
 			wait_open = 1;
 			gui->progress = 0;
@@ -1036,6 +1036,13 @@ int main(int argc, char** argv){
 		else if(gui->action == VIEW_PAN_R){
 			gui->action = NONE;
 			gui->ofs_x += (gui->win_w*0.1)/gui->zoom;
+			gui->draw = 1;
+		}
+		else if(gui->action == REDRAW){
+			gui->action = NONE;
+			
+			dxf_ents_parse(gui->drawing);
+			
 			gui->draw = 1;
 		}
 		else if((gui->action == YANK || gui->action == CUT) && strlen(clip_path) > 0) {

@@ -348,7 +348,7 @@ int gui_main_win(gui_obj *gui){
 		}
 		
 		/* zoom tools*/
-		nk_layout_row_push(gui->ctx, 4*(ICON_SIZE + 4 + 4) + 13);
+		nk_layout_row_push(gui->ctx, 5*(ICON_SIZE + 4 + 4) + 13);
 		if (nk_group_begin(gui->ctx, "zoom", NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_P]))){
@@ -362,6 +362,9 @@ int gui_main_win(gui_obj *gui){
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_A]))){
 				gui->action = VIEW_ZOOM_EXT;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BRUSH]))){
+				gui->action = REDRAW;
 			}
 			nk_group_end(gui->ctx);
 		}
@@ -408,7 +411,9 @@ int gui_main_win(gui_obj *gui){
 				
 				//gui->show_file_br = 1;
 				
-				gui->show_app_file = 1;
+				//gui->show_app_file = 1;
+				
+				gui->action = REDRAW;
 			}
 			nk_group_end(gui->ctx);
 		}

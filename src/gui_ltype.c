@@ -4,7 +4,7 @@
 /* compare by ltype name */
 int cmp_ltype_name(const void * a, const void * b) {
 	char *name1, *name2;
-	char copy1[DXF_MAX_CHARS], copy2[DXF_MAX_CHARS];
+	char copy1[DXF_MAX_CHARS+1], copy2[DXF_MAX_CHARS+1];
 	
 	dxf_ltype *ltyp1 = ((struct sort_by_idx *)a)->data;
 	dxf_ltype *ltyp2 = ((struct sort_by_idx *)b)->data;
@@ -27,7 +27,6 @@ int cmp_ltype_name_rev(const void * a, const void * b) {
 /* compare by ltype in use flag */
 int cmp_ltype_use(const void * a, const void * b) {
 	char *ltype1, *ltype2;
-	char copy1[DXF_MAX_CHARS], copy2[DXF_MAX_CHARS];
 	int ret;
 	
 	dxf_ltype *ltyp1 = ((struct sort_by_idx *)a)->data;
@@ -71,7 +70,7 @@ int ltyp_mng (gui_obj *gui){
 		int ltyp_exist = 0;
 		
 		dxf_ltype *ltypes = gui->drawing->ltypes;
-		int num_ltypes = gui->drawing->num_ltypes;
+		int num_ltypes = 0;
 		
 		static int sorted = 0;
 		enum sort {
@@ -88,13 +87,20 @@ int ltyp_mng (gui_obj *gui){
 		static int sort_reverse = 0;
 		
 		static struct sort_by_idx sort_ltyp[DXF_MAX_LTYPES];
+		char str_copy[DXF_MAX_CHARS+1]; /* for case insensitive string comparission */
 		
 		ltype_use(gui->drawing); /* update ltypes in use*/
 		
 		/* construct list for sorting */
-		for (i = 0; i < num_ltypes; i++){
-			sort_ltyp[i].idx = i;
-			sort_ltyp[i].data = &(ltypes[i]);
+		num_ltypes = 0;
+		for (i = 0; i < gui->drawing->num_ltypes; i++){
+			strncpy(str_copy, ltypes[i].name, DXF_MAX_CHARS);
+			str_upp(str_copy);
+			if (!(strcmp(str_copy, "BYLAYER") == 0 || strcmp(str_copy, "BYBLOCK") == 0)){ /* skip bylayer and byblock line descriptions */
+				sort_ltyp[num_ltypes].idx = i;
+				sort_ltyp[num_ltypes].data = &(ltypes[i]);
+				num_ltypes++;
+			}
 		}
 		
 		/* execute sort, according sorting criteria */
@@ -398,12 +404,13 @@ int ltype_rename(dxf_drawing *drawing, int idx, char *name){
 int ltype_use(dxf_drawing *drawing){
 	/* count drawing elements related to ltype */
 	int ok = 0, i, idx;
-	dxf_node *current, *prev, *obj = NULL, *list[2], *ltyp_obj;
+	dxf_node *current, *prev, *obj = NULL, *list[3], *ltyp_obj;
 	
-	list[0] = NULL; list[1] = NULL;
+	list[0] = NULL; list[1] = NULL; list[2] = NULL;
 	if (drawing){
 		list[0] = drawing->ents;
 		list[1] = drawing->blks;
+		list[2] = drawing->t_layer;
 	}
 	else return 0;
 	
@@ -411,7 +418,7 @@ int ltype_use(dxf_drawing *drawing){
 		drawing->ltypes[i].num_el = 0;
 	}
 	
-	for (i = 0; i< 2; i++){ /* look in BLOCKS and ENTITIES sections */
+	for (i = 0; i< 3; i++){ /* look in BLOCKS and ENTITIES sections, and in LAYERS table too */
 		obj = list[i];
 		current = obj;
 		while (current){ /* sweep elements in section */

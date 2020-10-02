@@ -91,13 +91,13 @@ int dxf_ent_get_ltype(dxf_drawing *drawing, dxf_node * ent, int ins_ltype){
 	return ltype;
 }
 
-int change_ltype (dxf_drawing *drawing, graph_obj * graph, int ltype_idx){
+int change_ltype (dxf_drawing *drawing, graph_obj * graph, int ltype_idx, double scale){
 	/* change the graph line pattern */
 	if((graph) && (drawing)){
 		int i;
 		graph->patt_size = drawing->ltypes[ltype_idx].size;
 		for (i = 0; i < drawing->ltypes[ltype_idx].size; i++){
-			graph->pattern[i] = drawing->ltypes[ltype_idx].pat[i];
+			graph->pattern[i] = drawing->ltypes[ltype_idx].pat[i] * drawing->ltscale * scale;
 		}
 		return 1;
 	}
@@ -2876,7 +2876,7 @@ int proc_obj_graph(dxf_drawing *drawing, dxf_node * ent, graph_obj * graph, stru
 		graph->color = dxf_colors[dxf_ent_get_color(drawing, ent, ins.color)];
 		
 		int ltype = dxf_ent_get_ltype(drawing, ent, ins.ltype);
-		change_ltype (drawing, graph, ltype);
+		change_ltype (drawing, graph, ltype, 1.0);
 		
 		/*change tickness */
 		int lw = dxf_ent_get_lw(drawing, ent, ins.lw);

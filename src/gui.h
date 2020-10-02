@@ -58,6 +58,7 @@ enum Action {
 	VIEW_PAN_D,
 	VIEW_PAN_L,
 	VIEW_PAN_R,
+	REDRAW,
 	DELETE,
 	UNDO,
 	REDO,

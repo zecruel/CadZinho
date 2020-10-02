@@ -192,6 +192,8 @@ struct Dxf_drawing{
 	
 	dxf_ltype ltypes[DXF_MAX_LTYPES];
 	int num_ltypes;
+	double ltscale;
+	double celtscale;
 	
 	dxf_tstyle text_styles[DXF_MAX_FONTS];
 	int num_tstyles;

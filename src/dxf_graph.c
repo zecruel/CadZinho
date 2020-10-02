@@ -2863,7 +2863,9 @@ graph_obj * dxf_solid_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 
 int proc_obj_graph(dxf_drawing *drawing, dxf_node * ent, graph_obj * graph, struct ins_save ins){
 	if ((drawing) && (ent) && (graph)){
-		dxf_node *layer_obj;
+		dxf_node *layer_obj, *ltscale_obj;
+		double ltscale = 1.0;
+		
 		if (layer_obj = dxf_find_attr2(ent, 8)){
 			char layer[DXF_MAX_CHARS];
 			strncpy(layer, layer_obj->value.s_data, DXF_MAX_CHARS);
@@ -2875,8 +2877,10 @@ int proc_obj_graph(dxf_drawing *drawing, dxf_node * ent, graph_obj * graph, stru
 		
 		graph->color = dxf_colors[dxf_ent_get_color(drawing, ent, ins.color)];
 		
+		if (ltscale_obj = dxf_find_attr2(ent, 48)) ltscale = ltscale_obj->value.d_data;
+		
 		int ltype = dxf_ent_get_ltype(drawing, ent, ins.ltype);
-		change_ltype (drawing, graph, ltype, 1.0);
+		change_ltype (drawing, graph, ltype, ltscale);
 		
 		/*change tickness */
 		int lw = dxf_ent_get_lw(drawing, ent, ins.lw);

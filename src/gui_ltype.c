@@ -52,8 +52,8 @@ int ltyp_mng (gui_obj *gui){
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
-	gui->next_win_w = 670;
-	gui->next_win_h = 310;
+	gui->next_win_w = 600;
+	gui->next_win_h = 370;
 	
 	enum ltyp_op {
 		LTYP_OP_NONE,
@@ -68,6 +68,9 @@ int ltyp_mng (gui_obj *gui){
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		static char ltyp_name[DXF_MAX_CHARS] = "";
 		int ltyp_exist = 0;
+		nk_flags res;
+		static char ltscale_str[64] = "1.0";
+		static char celtscale_str[64] = "1.0";
 		
 		dxf_ltype *ltypes = gui->drawing->ltypes;
 		int num_ltypes = 0;
@@ -242,6 +245,51 @@ int ltyp_mng (gui_obj *gui){
 				/* update the drawing */
 				dxf_ltype_assemb (gui->drawing);
 			}
+		}
+		
+		nk_layout_row(gui->ctx, NK_STATIC, 20, 4, (float[]){140, 100, 160,100});
+		nk_label(gui->ctx, "Global Scale Factor:", NK_TEXT_RIGHT);
+		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, ltscale_str, 63, nk_filter_float);
+		if (!(res & NK_EDIT_ACTIVE)){
+			snprintf(ltscale_str, 63, "%.9g", gui->drawing->ltscale);
+		}
+		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
+			nk_edit_unfocus(gui->ctx);
+			if (strlen(ltscale_str)) /* update parameter value */
+				gui->drawing->ltscale = atof(ltscale_str);
+			snprintf(ltscale_str, 63, "%.9g", gui->drawing->ltscale);
+			
+			/* change in DXF main struct */
+			dxf_node *start = NULL, *end = NULL, *part = NULL;
+			if(dxf_find_head_var(gui->drawing->head, "$LTSCALE", &start, &end)){
+				/* variable exists */
+				part = dxf_find_attr_i2(start, end, 40, 0);
+				if (part != NULL){
+					part->value.d_data = gui->drawing->ltscale;
+				}
+			}
+			else{
+				dxf_attr_append(gui->drawing->head, 9, "$LTSCALE", DWG_LIFE);
+				dxf_attr_append(gui->drawing->head, 40, &gui->drawing->ltscale, DWG_LIFE);
+			}
+			
+			
+			dxf_ents_parse(gui->drawing); /* redraw */
+			
+			
+			gui->draw = 1;
+		}
+		
+		nk_label(gui->ctx, "Current Object Scale:", NK_TEXT_RIGHT);
+		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, celtscale_str, 63, nk_filter_float);
+		if (!(res & NK_EDIT_ACTIVE)){
+			snprintf(celtscale_str, 63, "%.9g", gui->drawing->celtscale);
+		}
+		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
+			nk_edit_unfocus(gui->ctx);
+			if (strlen(celtscale_str)) /* update parameter value */
+				gui->drawing->celtscale = atof(celtscale_str);
+			snprintf(celtscale_str, 63, "%.9g", gui->drawing->celtscale);
 		}
 		
 		/* popup to entering ltype name (new and rename) */

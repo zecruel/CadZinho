@@ -1,5 +1,78 @@
 #include "gui_ltype.h"
 
+/* == TEST  == TEST  == TEST  == TEST  == TEST  == TEST  == TEST  == TEST  ==*/
+ int preview_ltype(struct nk_context *ctx, struct nk_style_button *style, dxf_ltype line_type, double length) {
+	struct nk_command_buffer *canvas;
+	canvas = nk_window_get_canvas(ctx);
+	struct nk_input *input = &ctx->input;
+	int ret  = 0;
+
+	struct nk_rect space;
+	enum nk_widget_layout_states state;
+	state = nk_widget(&space, ctx);
+	if (!state) return 0;
+	 
+	 struct nk_color color;
+	const struct nk_style_item *background;
+	 
+	background = &style->normal;
+	color = style->text_normal;
+	if (state != NK_WIDGET_ROM){
+		if (nk_input_is_mouse_hovering_rect(input, space)) {
+			background = &style->hover;
+			color = style->text_hover;
+			if (nk_input_is_mouse_down(input, NK_BUTTON_LEFT)){
+				background = &style->active;
+				color = style->text_active;
+				ret = 1;
+			}
+		}
+	}
+
+	if (background->type == NK_STYLE_ITEM_IMAGE) {
+		nk_draw_image(canvas, space, &background->data.image, nk_rgb(255,255,255));
+	} else {
+		nk_fill_rect(canvas, space, style->rounding, background->data.color);
+		nk_stroke_rect(canvas, space, style->rounding, style->border, style->border_color);
+	}
+	
+	struct nk_rect content;
+	content.x = space.x + style->padding.x + style->border + style->rounding;
+	content.y = space.y + style->padding.y + style->border + style->rounding;
+	content.w = space.w - (2 * style->padding.x + style->border + style->rounding*2);
+	content.h = space.h - (2 * style->padding.y + style->border + style->rounding*2);
+	
+	double scale = 1.0;
+	if (length > 0.0) scale = content.w / length;
+	else scale = content.w / (line_type.length * 7.0); /* auto scale by current  line type */
+	double x = content.x;
+	double y = content.y + content.h / 2.0;
+	int i = 0, idx = 0;
+	int steps = 0;
+	
+	if (line_type.length > 0.0) steps = (double)line_type.size * content.w / (line_type.length * scale);
+	
+	if (steps == 0 || steps > 1.8*content.w) {
+		/* continuous line case */
+		nk_stroke_line(canvas, x, y, x+content.w, y, 2.1, color);
+	}
+	else{
+		while (i < steps){
+			
+			double x1 = x + fabs(line_type.pat[idx]) * scale;
+			if (x1 > content.x + content.w) x1 = content.x + content.w;
+			if (line_type.pat[idx] >= 0.0) nk_stroke_line(canvas, x, y, x1, y, 2.1, color);
+			x = x1;
+			
+			idx++;
+			if (idx >= line_type.size) idx = 0;
+			i++;
+		}
+	}
+	
+	return ret;
+}
+
 /* ---------------------  auxiliary functions for sorting files (qsort) ------------ */
 /* compare by ltype name */
 int cmp_ltype_name(const void * a, const void * b) {
@@ -52,12 +125,12 @@ int ltyp_mng (gui_obj *gui){
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
-	gui->next_win_w = 600;
+	gui->next_win_w = 900;
 	gui->next_win_h = 370;
 	
 	enum ltyp_op {
 		LTYP_OP_NONE,
-		LTYP_OP_CREATE,
+		LTYP_OP_ADD,
 		LTYP_OP_RENAME,
 		LTYP_OP_UPDATE
 	};
@@ -74,6 +147,8 @@ int ltyp_mng (gui_obj *gui){
 		
 		dxf_ltype *ltypes = gui->drawing->ltypes;
 		int num_ltypes = 0;
+		
+		double max_len = 0.0;
 		
 		static int sorted = 0;
 		enum sort {
@@ -100,6 +175,8 @@ int ltyp_mng (gui_obj *gui){
 			strncpy(str_copy, ltypes[i].name, DXF_MAX_CHARS);
 			str_upp(str_copy);
 			if (!(strcmp(str_copy, "BYLAYER") == 0 || strcmp(str_copy, "BYBLOCK") == 0)){ /* skip bylayer and byblock line descriptions */
+				if (ltypes[i].length > max_len) max_len = ltypes[i].length;
+				
 				sort_ltyp[num_ltypes].idx = i;
 				sort_ltyp[num_ltypes].data = &(ltypes[i]);
 				num_ltypes++;
@@ -132,7 +209,7 @@ int ltyp_mng (gui_obj *gui){
 		if (nk_group_begin(gui->ctx, "Ltyp_head", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 			/* buttons to change sorting criteria */
 			
-			nk_layout_row(gui->ctx, NK_STATIC, 22, 3, (float[]){175, 300, 50});
+			nk_layout_row(gui->ctx, NK_STATIC, 22, 4, (float[]){175, 300, 300, 50});
 			/* sort by ltype name */
 			if (sorted == BY_NAME){
 				if (sort_reverse){
@@ -151,6 +228,7 @@ int ltyp_mng (gui_obj *gui){
 			}
 			
 			nk_button_label(gui->ctx, "Description");
+			nk_button_label(gui->ctx, "Preview");
 			
 			/* sort by use */
 			if (sorted == BY_USE){
@@ -175,7 +253,7 @@ int ltyp_mng (gui_obj *gui){
 		/* body of list */
 		nk_layout_row_dynamic(gui->ctx, 200, 1);
 		if (nk_group_begin(gui->ctx, "Ltyp_view", NK_WINDOW_BORDER)) {
-			nk_layout_row(gui->ctx, NK_STATIC, 20, 3, (float[]){175, 300, 50});
+			nk_layout_row(gui->ctx, NK_STATIC, 20, 4, (float[]){175, 300, 300, 50});
 			for (i = 0; i < num_ltypes; i++){ /* sweep list of ltypes */
 				/* show and change current ltype parameters */
 				ltyp_idx = sort_ltyp[i].idx; /* current ltype */
@@ -191,6 +269,9 @@ int ltyp_mng (gui_obj *gui){
 					}
 				}
 				
+				double scale = 20.0;
+				if (max_len > 0.0) scale = 2*max_len;
+				
 				if (sel_ltyp == ltyp_idx){
 					if (nk_button_label_styled(gui->ctx, &gui->b_icon_sel, ltypes[ltyp_idx].descr)){
 						sel_ltyp = -1;
@@ -198,6 +279,17 @@ int ltyp_mng (gui_obj *gui){
 				}
 				else {
 					if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel, ltypes[ltyp_idx].descr)){
+						sel_ltyp = ltyp_idx;
+					}
+				}
+				
+				if (sel_ltyp == ltyp_idx){
+					if(preview_ltype(gui->ctx ,&gui->b_icon_sel, ltypes[ltyp_idx], scale)){
+						sel_ltyp = -1;
+					}
+				}
+				else {
+					if(preview_ltype(gui->ctx ,&gui->b_icon_unsel, ltypes[ltyp_idx], scale)){
 						sel_ltyp = ltyp_idx;
 					}
 				}
@@ -213,12 +305,12 @@ int ltyp_mng (gui_obj *gui){
 
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 3);
-		/* create a new ltype */
-		if (nk_button_label(gui->ctx, "Create")){
+		/* add a new ltype */
+		if (nk_button_label(gui->ctx, "Add")){
 			/* open a popup for entering the ltype name */
 			show_ltyp_name = 1;
 			ltyp_name[0] = 0;
-			ltyp_change = LTYP_OP_CREATE;
+			ltyp_change = LTYP_OP_ADD;
 		}
 		/* rename selected ltype */
 		if ((nk_button_label(gui->ctx, "Rename")) && (sel_ltyp >= 0)){
@@ -304,7 +396,7 @@ int ltyp_mng (gui_obj *gui){
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				if (nk_button_label(gui->ctx, "OK")){
 					/* try to create a new ltype */
-					if (ltyp_change == LTYP_OP_CREATE){
+					if (ltyp_change == LTYP_OP_ADD){
 						dxf_ltype line_type;
 						strncpy (line_type.name, ltyp_name, DXF_MAX_CHARS);
 						
@@ -375,18 +467,19 @@ int ltyp_mng (gui_obj *gui){
 int ltype_rename(dxf_drawing *drawing, int idx, char *name){
 	/* rename existing ltype -  update all related elements in drawing */
 	int ok = 0, i;
-	dxf_node *current, *prev, *obj = NULL, *list[2], *ltyp_obj;
+	dxf_node *current, *prev, *obj = NULL, *list[3], *ltyp_obj;
 	char *new_name = trimwhitespace(name);
 	
-	list[0] = NULL; list[1] = NULL;
+	list[0] = NULL; list[1] = NULL; list[2] = NULL;
 	if (drawing){
 		list[0] = drawing->ents;
 		list[1] = drawing->blks;
+		list[2] = drawing->t_layer;
 	}
 	else return 0;
 	
 	/* first, update all related elements in drawing */
-	for (i = 0; i< 2; i++){ /* look in BLOCKS and ENTITIES sections */
+	for (i = 0; i< 3; i++){ /* look in BLOCKS and ENTITIES sections, and in LAYERS table too */
 		obj = list[i];
 		current = obj;
 		while (current){ /* sweep elements in section*/

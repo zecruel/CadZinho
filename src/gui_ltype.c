@@ -1,34 +1,41 @@
 #include "gui_ltype.h"
 
-/* == TEST  == TEST  == TEST  == TEST  == TEST  == TEST  == TEST  == TEST  ==*/
+/* Custom nuklear widget to show line patern preview.  Derived frow styled button.*/
  int preview_ltype(struct nk_context *ctx, struct nk_style_button *style, dxf_ltype line_type, double length) {
+	/* get canvas to draw widget */
 	struct nk_command_buffer *canvas;
 	canvas = nk_window_get_canvas(ctx);
-	struct nk_input *input = &ctx->input;
-	int ret  = 0;
-
+	
+	/* get state of widget */
 	struct nk_rect space;
 	enum nk_widget_layout_states state;
 	state = nk_widget(&space, ctx);
-	if (!state) return 0;
+	if (!state) return 0; /* no need to do anything - widget out of drawing window */
 	 
-	 struct nk_color color;
+	 struct nk_input *input = &ctx->input;
+	int ret  = 0;
+	struct nk_color color;
 	const struct nk_style_item *background;
-	 
+	
+	/* get parameters from style - normal is the default */
 	background = &style->normal;
 	color = style->text_normal;
 	if (state != NK_WIDGET_ROM){
+		/* widget need attention */
 		if (nk_input_is_mouse_hovering_rect(input, space)) {
+			/* hovering */
 			background = &style->hover;
 			color = style->text_hover;
 			if (nk_input_is_mouse_down(input, NK_BUTTON_LEFT)){
+				/* click */
 				background = &style->active;
 				color = style->text_active;
 				ret = 1;
 			}
 		}
 	}
-
+	
+	/* draw background, according style */
 	if (background->type == NK_STYLE_ITEM_IMAGE) {
 		nk_draw_image(canvas, space, &background->data.image, nk_rgb(255,255,255));
 	} else {
@@ -36,6 +43,7 @@
 		nk_stroke_rect(canvas, space, style->rounding, style->border, style->border_color);
 	}
 	
+	/* calcule content area */
 	struct nk_rect content;
 	content.x = space.x + style->padding.x + style->border + style->rounding;
 	content.y = space.y + style->padding.y + style->border + style->rounding;
@@ -43,29 +51,31 @@
 	content.h = space.h - (2 * style->padding.y + style->border + style->rounding*2);
 	
 	double scale = 1.0;
-	if (length > 0.0) scale = content.w / length;
+	if (length > 0.0) scale = content.w / length; /* scale pattern by maximum length, or */
 	else scale = content.w / (line_type.length * 7.0); /* auto scale by current  line type */
+	/* initial coordinates to draw pattern */
 	double x = content.x;
 	double y = content.y + content.h / 2.0;
 	int i = 0, idx = 0;
 	int steps = 0;
 	
+	/* calcule iterations needed to draw pattern */
 	if (line_type.length > 0.0) steps = (double)line_type.size * content.w / (line_type.length * scale);
 	
-	if (steps == 0 || steps > 1.8*content.w) {
+	if (steps == 0 || steps > content.w) {
 		/* continuous line case */
 		nk_stroke_line(canvas, x, y, x+content.w, y, 2.1, color);
 	}
 	else{
 		while (i < steps){
-			
+			/* draw pattern */
 			double x1 = x + fabs(line_type.pat[idx]) * scale;
 			if (x1 > content.x + content.w) x1 = content.x + content.w;
 			if (line_type.pat[idx] >= 0.0) nk_stroke_line(canvas, x, y, x1, y, 2.1, color);
 			x = x1;
 			
-			idx++;
-			if (idx >= line_type.size) idx = 0;
+			idx++; /* index to current stroke in pattern*/
+			if (idx >= line_type.size) idx = 0; /* restart pattern */
 			i++;
 		}
 	}
@@ -121,7 +131,7 @@ int cmp_ltype_use_rev(const void * a, const void * b) {
 /* ltype manager window */
 int ltyp_mng (gui_obj *gui){
 	int i, show_ltyp_mng = 1;
-	static int show_color_pick = 0, show_ltyp_name = 0;
+	static int show_add = 0, show_ltyp_name = 0;
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
@@ -136,6 +146,58 @@ int ltyp_mng (gui_obj *gui){
 	};
 	static int ltyp_change = LTYP_OP_NONE;
 	
+	dxf_ltype *ltypes = gui->drawing->ltypes;
+	int num_ltypes = 0;
+	
+	double max_len = 0.0;
+	
+	static int sorted = 0;
+	enum sort {
+		UNSORTED,
+		BY_NAME,
+		BY_LTYPE,
+		BY_COLOR,
+		BY_LW,
+		BY_USE,
+		BY_OFF,
+		BY_FREEZE,
+		BY_LOCK
+	};
+	static int sort_reverse = 0;
+	
+	static struct sort_by_idx sort_ltyp[DXF_MAX_LTYPES];
+	char str_copy[DXF_MAX_CHARS+1]; /* for case insensitive string comparission */
+	
+	ltype_use(gui->drawing); /* update ltypes in use*/
+	
+	/* construct list for sorting */
+	num_ltypes = 0;
+	for (i = 0; i < gui->drawing->num_ltypes; i++){
+		strncpy(str_copy, ltypes[i].name, DXF_MAX_CHARS);
+		str_upp(str_copy);
+		if (!(strcmp(str_copy, "BYLAYER") == 0 || strcmp(str_copy, "BYBLOCK") == 0)){ /* skip bylayer and byblock line descriptions */
+			if (ltypes[i].length > max_len) max_len = ltypes[i].length;
+			
+			sort_ltyp[num_ltypes].idx = i;
+			sort_ltyp[num_ltypes].data = &(ltypes[i]);
+			num_ltypes++;
+		}
+	}
+	
+	/* execute sort, according sorting criteria */
+	if (sorted == BY_NAME){
+		if(!sort_reverse)
+			qsort(sort_ltyp, num_ltypes, sizeof(struct sort_by_idx), cmp_ltype_name);
+		else
+			qsort(sort_ltyp, num_ltypes, sizeof(struct sort_by_idx), cmp_ltype_name_rev);
+	}
+	else if (sorted == BY_USE){
+		if(!sort_reverse)
+			qsort(sort_ltyp, num_ltypes, sizeof(struct sort_by_idx), cmp_ltype_use);
+		else
+			qsort(sort_ltyp, num_ltypes, sizeof(struct sort_by_idx), cmp_ltype_use_rev);
+	}
+	
 	if (nk_begin(gui->ctx, "Line Types Manager", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
@@ -145,57 +207,7 @@ int ltyp_mng (gui_obj *gui){
 		static char ltscale_str[64] = "1.0";
 		static char celtscale_str[64] = "1.0";
 		
-		dxf_ltype *ltypes = gui->drawing->ltypes;
-		int num_ltypes = 0;
 		
-		double max_len = 0.0;
-		
-		static int sorted = 0;
-		enum sort {
-			UNSORTED,
-			BY_NAME,
-			BY_LTYPE,
-			BY_COLOR,
-			BY_LW,
-			BY_USE,
-			BY_OFF,
-			BY_FREEZE,
-			BY_LOCK
-		};
-		static int sort_reverse = 0;
-		
-		static struct sort_by_idx sort_ltyp[DXF_MAX_LTYPES];
-		char str_copy[DXF_MAX_CHARS+1]; /* for case insensitive string comparission */
-		
-		ltype_use(gui->drawing); /* update ltypes in use*/
-		
-		/* construct list for sorting */
-		num_ltypes = 0;
-		for (i = 0; i < gui->drawing->num_ltypes; i++){
-			strncpy(str_copy, ltypes[i].name, DXF_MAX_CHARS);
-			str_upp(str_copy);
-			if (!(strcmp(str_copy, "BYLAYER") == 0 || strcmp(str_copy, "BYBLOCK") == 0)){ /* skip bylayer and byblock line descriptions */
-				if (ltypes[i].length > max_len) max_len = ltypes[i].length;
-				
-				sort_ltyp[num_ltypes].idx = i;
-				sort_ltyp[num_ltypes].data = &(ltypes[i]);
-				num_ltypes++;
-			}
-		}
-		
-		/* execute sort, according sorting criteria */
-		if (sorted == BY_NAME){
-			if(!sort_reverse)
-				qsort(sort_ltyp, num_ltypes, sizeof(struct sort_by_idx), cmp_ltype_name);
-			else
-				qsort(sort_ltyp, num_ltypes, sizeof(struct sort_by_idx), cmp_ltype_name_rev);
-		}
-		else if (sorted == BY_USE){
-			if(!sort_reverse)
-				qsort(sort_ltyp, num_ltypes, sizeof(struct sort_by_idx), cmp_ltype_use);
-			else
-				qsort(sort_ltyp, num_ltypes, sizeof(struct sort_by_idx), cmp_ltype_use_rev);
-		}
 		
 		static int sel_ltyp = -1;
 		int lw_i, j, sel_ltype, ltyp_idx;
@@ -308,9 +320,10 @@ int ltyp_mng (gui_obj *gui){
 		/* add a new ltype */
 		if (nk_button_label(gui->ctx, "Add")){
 			/* open a popup for entering the ltype name */
-			show_ltyp_name = 1;
-			ltyp_name[0] = 0;
-			ltyp_change = LTYP_OP_ADD;
+			//show_ltyp_name = 1;
+			//ltyp_name[0] = 0;
+			//ltyp_change = LTYP_OP_ADD;
+			show_add = 1;
 		}
 		/* rename selected ltype */
 		if ((nk_button_label(gui->ctx, "Rename")) && (sel_ltyp >= 0)){
@@ -460,6 +473,46 @@ int ltyp_mng (gui_obj *gui){
 		ltyp_change = LTYP_OP_UPDATE;
 	}
 	nk_end(gui->ctx);
+	
+	if ((show_add)){
+		/* edit window - allow modifications on parameters of selected text style */
+		if (nk_begin(gui->ctx, "Add Line Type", nk_rect(gui->next_win_x + 150, gui->next_win_y + 100, 330, 220), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
+			nk_layout_row_dynamic(gui->ctx, 20, 2);
+			int h = num_ltypes * 25 + 5;
+			h = (h < 200)? h : 200;
+			
+			static int idx = 0;
+
+			if (nk_combo_begin_label(gui->ctx, ltypes[idx].name, nk_vec2(300, h))){
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				
+				for (i = 0; i < num_ltypes; i++){
+					int ltyp_idx = sort_ltyp[i].idx; /* current ltype */
+					if (nk_button_label(gui->ctx, ltypes[ltyp_idx].name)){
+						idx = ltyp_idx;
+						
+						nk_combo_close(gui->ctx);
+						break;
+					}
+					nk_label(gui->ctx, ltypes[ltyp_idx].descr, NK_TEXT_LEFT);
+				}
+				
+				nk_combo_end(gui->ctx);
+			}
+			
+			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 100});
+			if (nk_button_label(gui->ctx, "OK")){
+				
+			}
+			if (nk_button_label(gui->ctx, "Cancel")){
+				show_add = 0;
+			}
+			
+		} else {
+			show_add = 0;
+		}
+		nk_end(gui->ctx);
+	}
 	
 	return show_ltyp_mng;
 }

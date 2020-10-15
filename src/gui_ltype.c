@@ -475,41 +475,139 @@ int ltyp_mng (gui_obj *gui){
 	nk_end(gui->ctx);
 	
 	if ((show_add)){
+		static int add_init = 0;
 		/* edit window - allow modifications on parameters of selected text style */
-		if (nk_begin(gui->ctx, "Add Line Type", nk_rect(gui->next_win_x + 150, gui->next_win_y + 100, 330, 220), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
-			nk_layout_row_dynamic(gui->ctx, 20, 2);
-			int h = num_ltypes * 25 + 5;
-			h = (h < 200)? h : 200;
+		if (nk_begin(gui->ctx, "Add Line Type", nk_rect(gui->next_win_x + 150, gui->next_win_y + 70, 330, 400), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
 			
-			static int idx = 0;
-
-			if (nk_combo_begin_label(gui->ctx, ltypes[idx].name, nk_vec2(300, h))){
-				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				
-				for (i = 0; i < num_ltypes; i++){
-					int ltyp_idx = sort_ltyp[i].idx; /* current ltype */
-					if (nk_button_label(gui->ctx, ltypes[ltyp_idx].name)){
-						idx = ltyp_idx;
-						
-						nk_combo_close(gui->ctx);
-						break;
-					}
-					nk_label(gui->ctx, ltypes[ltyp_idx].descr, NK_TEXT_LEFT);
-				}
-				
-				nk_combo_end(gui->ctx);
+			static char name[DXF_MAX_CHARS+1] = "", descr[DXF_MAX_CHARS+1] = "";
+			static char cpy_from[DXF_MAX_CHARS+1] = "", scale_str[64] = "1.0";
+			static enum Mode {LT_ADD_CPY, LT_ADD_LIB} mode = LT_ADD_CPY;
+			static int idx = -1;
+			static double scale = 1.0;
+			
+			if (!add_init){
+				add_init = 1;
+				name[0] = 0;
+				descr[0] = 0;
+				cpy_from[0] = 0;
+				idx = -1;
 			}
+			
+			dxf_ltype line_type;
+			
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			nk_label(gui->ctx, "Name:", NK_TEXT_LEFT);
+			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, name, DXF_MAX_CHARS, nk_filter_default);
+			nk_label(gui->ctx, "Description:", NK_TEXT_LEFT);
+			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, descr, DXF_MAX_CHARS, nk_filter_default);
+			nk_label(gui->ctx, "From:", NK_TEXT_LEFT);
+			/* Selection mode option - toggle, add or remove */
+			nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
+			nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
+			if (gui_tab (gui, "Copy", mode == LT_ADD_CPY)) mode = LT_ADD_CPY;
+			if (gui_tab (gui, "Library", mode == LT_ADD_LIB)) mode = LT_ADD_LIB;
+			nk_style_pop_vec2(gui->ctx);
+			nk_layout_row_end(gui->ctx);
+			
+			nk_layout_row_dynamic(gui->ctx, 125, 1);
+			if (nk_group_begin(gui->ctx, "lt_add_controls", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+			
+			
+				if (mode == LT_ADD_CPY){
+					nk_layout_row(gui->ctx, NK_STATIC, 22, 2, (float[]){60, 200});
+					nk_label(gui->ctx, "Source:", NK_TEXT_LEFT);
+					
+					int h = num_ltypes * 25 + 5;
+					h = (h < 200)? h : 200;
+
+					if (nk_combo_begin_label(gui->ctx, cpy_from, nk_vec2(300, h))){
+						nk_layout_row_dynamic(gui->ctx, 20, 2);
+						
+						for (i = 0; i < num_ltypes; i++){
+							int ltyp_idx = sort_ltyp[i].idx; /* current ltype */
+							if (nk_button_label(gui->ctx, ltypes[ltyp_idx].name)){
+								idx = ltyp_idx;
+								strncpy (cpy_from, ltypes[ltyp_idx].name, DXF_MAX_CHARS);
+								strncpy (descr, ltypes[ltyp_idx].descr, DXF_MAX_CHARS);
+								nk_combo_close(gui->ctx);
+								break;
+							}
+							nk_label(gui->ctx, ltypes[ltyp_idx].descr, NK_TEXT_LEFT);
+						}
+						
+						nk_combo_end(gui->ctx);
+					}
+					nk_layout_row(gui->ctx, NK_STATIC, 22, 2, (float[]){200, 60});
+					nk_label(gui->ctx, "Apply Scale Factor:", NK_TEXT_RIGHT);
+					nk_flags res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, scale_str, 63, nk_filter_float);
+					if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
+						nk_edit_unfocus(gui->ctx);
+						if (strlen(scale_str)) /* update parameter value */
+							scale = atof(scale_str);
+						snprintf(scale_str, 63, "%.9g", scale);
+					}
+					
+				}
+			}
+			nk_group_end(gui->ctx);
 			
 			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 100});
 			if (nk_button_label(gui->ctx, "OK")){
 				
+				strncpy (line_type.name, name, DXF_MAX_CHARS);
+				strncpy (line_type.descr, descr, DXF_MAX_CHARS);
+				line_type.obj = NULL;
+				
+				if (mode == LT_ADD_CPY){
+					if (idx > -1){
+						line_type.size = ltypes[idx].size;
+						for (i = 0; i < line_type.size; i++){
+							line_type.pat[i] = ltypes[idx].pat[i] * scale;
+						}
+						line_type.length = ltypes[idx].length * scale;
+						line_type.num_el = 0;
+						
+						if (!dxf_new_ltype (gui->drawing, &line_type)){
+							/* fail to  create, commonly name already exists */
+							snprintf(gui->log_msg, 63, "Error: Line Type already exists");
+						}
+						else {
+							/* ltype created and attached in drawing main structure */
+							show_add = 0;
+							add_init = 1;
+						}
+					}
+					else{
+						snprintf(gui->log_msg, 63, "Error: Select Source Line Type");
+					}
+				}
+				else{
+					/*TODO*/
+					//line_type.descr[0] = 0;
+					line_type.size = 0;
+					line_type.pat[0] = 0;
+					line_type.length = 0.0;
+					line_type.num_el = 0;
+					
+					if (!dxf_new_ltype (gui->drawing, &line_type)){
+						/* fail to  create, commonly name already exists */
+						snprintf(gui->log_msg, 63, "Error: Line Type already exists");
+					}
+					else {
+						/* ltype created and attached in drawing main structure */
+						show_add = 0;
+						add_init = 1;
+					}
+				}
 			}
 			if (nk_button_label(gui->ctx, "Cancel")){
 				show_add = 0;
+				add_init = 1;
 			}
 			
 		} else {
 			show_add = 0;
+			add_init = 1;
 		}
 		nk_end(gui->ctx);
 	}

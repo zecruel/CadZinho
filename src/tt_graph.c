@@ -67,7 +67,7 @@ int tt_load_font (char *path, stbtt_fontinfo *font, double *scale, double *asc, 
 	char *ttf_buffer = NULL;
 	long fsize;
 	
-	ttf_buffer = dxf_load_file(path, &fsize); /* load file in buffer */
+	ttf_buffer = load_file(path, &fsize); /* load file in buffer */
 	if (ttf_buffer){
 		/* init font */
 		ok = stbtt_InitFont(font, ttf_buffer, stbtt_GetFontOffsetForIndex(ttf_buffer,0));

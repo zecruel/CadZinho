@@ -195,10 +195,11 @@ struct h_family * dxf_hatch_family_file(char *name, char *path){
 	
 	if (path == NULL) return NULL; /* error: no path*/
 	/* load file */
-	char *buf = dxf_load_file(path, &fsize);
+	struct Mem_buffer * buf = load_file_reuse(path, &fsize);
 	
-	ret = dxf_hatch_family(name, path, buf);
-	free(buf);
+	ret = dxf_hatch_family(name, path, buf->buffer);
+	//free(buf);
+	manage_buffer(0, BUF_RELEASE);
 	
 	return ret;
 }

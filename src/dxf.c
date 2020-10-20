@@ -1241,32 +1241,6 @@ int dxf_save (char *path, dxf_drawing *drawing){
 	return ret_success;
 }
 
-char * dxf_load_file(char *path, long *fsize){
-	FILE *file;
-	
-	*fsize = 0;
-	file = fopen(path, "rb");
-	if(file == NULL){
-		return NULL;
-	}
-	
-	fseek(file, 0, SEEK_END);
-	*fsize = ftell(file); /* size of file*/
-	fseek(file, 0, SEEK_SET);  //same as rewind(f);
-	//printf("file size = %d\n", fsize);
-	
-	char *buf = malloc(*fsize + 1);
-	if (!buf){
-		*fsize = 0;
-		fclose(file);
-		return NULL;
-	}
-	fread(buf, *fsize, 1, file);
-	fclose(file);
-	buf[*fsize] = 0;
-	return buf;
-}
-
 int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 	static enum {NONE, INIT, READ, FINISH} state = INIT;
 	static char *line, *cur_line, *next_line, line_buf[DXF_MAX_CHARS], line_cpy[DXF_MAX_CHARS];

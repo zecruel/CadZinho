@@ -50,4 +50,8 @@ int str_utf2cp(char *str, int *cp, int max);
 
 struct Mem_buffer * manage_buffer (long size, enum buffer_action action);
 
+struct Mem_buffer *  load_file_reuse(char *path, long *fsize);
+
+char * load_file(char *path, long *fsize);
+
 #endif

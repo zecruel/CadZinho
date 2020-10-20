@@ -301,7 +301,7 @@ struct Mem_buffer * manage_buffer (long size, enum buffer_action action){
 	return &buf;
 }
 
-struct Mem_buffer *  load_file(char *path, long *fsize){
+struct Mem_buffer *  load_file_reuse(char *path, long *fsize){
 	FILE *file;
 	
 	*fsize = 0;
@@ -325,5 +325,31 @@ struct Mem_buffer *  load_file(char *path, long *fsize){
 	fread(buf->buffer, *fsize, 1, file);
 	fclose(file);
 	buf->buffer[*fsize] = 0;
+	return buf;
+}
+
+char * load_file(char *path, long *fsize){
+	FILE *file;
+	
+	*fsize = 0;
+	file = fopen(path, "rb");
+	if(file == NULL){
+		return NULL;
+	}
+	
+	fseek(file, 0, SEEK_END);
+	*fsize = ftell(file); /* size of file*/
+	fseek(file, 0, SEEK_SET);  //same as rewind(f);
+	//printf("file size = %d\n", fsize);
+	
+	char *buf = malloc(*fsize + 1);
+	if (!buf){
+		*fsize = 0;
+		fclose(file);
+		return NULL;
+	}
+	fread(buf, *fsize, 1, file);
+	fclose(file);
+	buf[*fsize] = 0;
 	return buf;
 }

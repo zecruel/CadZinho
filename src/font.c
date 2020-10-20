@@ -163,9 +163,10 @@ struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 	}
 	else if (strncmp(ext, "shp", DXF_MAX_CHARS) == 0){ /* Shape font - text format */
 		long fsize = 0;
-		char *buf = dxf_load_file(full_path, &fsize);
-		shp_typ * shp_tfont = shp_font_load(buf);
-		if (buf) free(buf);
+		struct Mem_buffer *buf = load_file_reuse(full_path, &fsize);
+		shp_typ * shp_tfont = shp_font_load(buf->buffer);
+		//if (buf) free(buf);
+		manage_buffer(0, BUF_RELEASE);
 		if (shp_tfont){
 			/* alloc the structures */
 			font = malloc(sizeof(struct tfont));

@@ -363,7 +363,7 @@ int main(int argc, char** argv){
 	char *url = NULL;
 	//char const * lFilterPatterns[2] = { "*.dxf", "*.txt" };
 	
-	char *file_buf = NULL;
+	struct Mem_buffer *file_buf = NULL;
 	long file_size = 0;
 	
 	char* dropped_filedir;                  /* Pointer for directory of dropped file */
@@ -896,10 +896,11 @@ int main(int argc, char** argv){
 			low_proc = 0;
 			gui->draw = 1;
 			
-			open_prg = dxf_read(gui->drawing, file_buf, file_size, &gui->progress);
+			open_prg = dxf_read(gui->drawing, file_buf->buffer, file_size, &gui->progress);
 			
 			if(open_prg <= 0){
-				free(file_buf);
+				//free(file_buf);
+				manage_buffer(0, BUF_RELEASE);
 				file_buf = NULL;
 				file_size = 0;
 				low_proc = 1;
@@ -937,8 +938,8 @@ int main(int argc, char** argv){
 			wait_open = 1;
 			gui->progress = 0;
 			
-			file_buf = dxf_load_file(gui->curr_path, &file_size);
-			open_prg = dxf_read(gui->drawing, file_buf, file_size, &gui->progress);
+			file_buf = load_file_reuse(gui->curr_path, &file_size);
+			open_prg = dxf_read(gui->drawing, file_buf->buffer, file_size, &gui->progress);
 			
 			low_proc = 0;
 			progr_win = 1;
@@ -1105,15 +1106,16 @@ int main(int argc, char** argv){
 			dxf_drawing_clear(gui->clip_drwg);
 			/* load the clipboard file */
 			file_size = 0;
-			file_buf = dxf_load_file(clip_path, &file_size);
-			while (dxf_read (gui->clip_drwg, file_buf, file_size, &gui->progress) > 0){
+			file_buf = load_file_reuse(clip_path, &file_size);
+			while (dxf_read (gui->clip_drwg, file_buf->buffer, file_size, &gui->progress) > 0){
 				
 			}
 			/* load and apply the fonts required for clipboard drawing */
 			gui_tstyle2(gui, gui->clip_drwg);
 			
 			/* clear the file buffer */
-			free(file_buf);
+			//free(file_buf);
+			manage_buffer(0, BUF_RELEASE);
 			file_buf = NULL;
 			file_size = 0;
 			
@@ -1549,6 +1551,7 @@ int main(int argc, char** argv){
 	free(gui->drawing);
 	free(aux_mtx1);
 	nk_sdl_shutdown(gui);
+	manage_buffer(0, BUF_FREE);
 	
 	return 0;
 	

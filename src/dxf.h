@@ -7,6 +7,7 @@
 #include <ctype.h>
 
 #include "list.h"
+#include "util.h"
 
 #define DXF_MAX_LAYERS 1000
 #define DXF_MAX_LTYPES 1000
@@ -14,14 +15,6 @@
 #define DXF_MAX_CHARS 250
 #define DXF_MAX_PAT 10
 #define DXF_POOL_PAGES 1000
-
-#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-#define PATH_SEPARATOR ';'
-#define DIR_SEPARATOR '\\'
-#else
-#define PATH_SEPARATOR ':'
-#define DIR_SEPARATOR '/'
-#endif
 
 struct sort_by_idx{
 	long int idx;
@@ -209,25 +202,6 @@ struct Dxf_drawing{
 typedef struct Dxf_drawing dxf_drawing;
 
 /* functions*/
-void str_upp(char *str);
-
-char * trimwhitespace(char *str);
-
-char *get_filename(char *path);
-
-char *get_dir(char *path);
-
-char *get_ext(char *path);
-
-void strip_ext(char *filename);
-
-int file_exists(char *fname);
-
-int utf8_to_codepoint(char *utf8_s, int *uni_c);
-
-int codepoint_to_utf8(int uni_c, char utf8_s[5]);
-
-int str_utf2cp(char *str, int *cp, int max);
 
 void dxf_ent_print2 (dxf_node *ent);
 

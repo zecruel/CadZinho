@@ -1,5 +1,136 @@
 #include "gui_ltype.h"
 
+dxf_ltype * load_lin_file(char *path, int *n){
+	
+	long fsize;
+	*n = 0;
+	struct Mem_buffer *buf  = load_file_reuse(path, &fsize);
+	
+	if (buf == NULL) return NULL;
+	
+	static dxf_ltype ret_vec[DXF_MAX_LTYPES];
+	char field[81];
+	int idx = 0;
+	enum State {
+		NONE,
+		NAME,
+		DESCR,
+		ALIGN,
+		STROKE,
+		CMPLX
+	} state = NONE;
+	
+	enum Cmplx_state {
+		SHAPE,
+		FONT,
+		STRING,
+		STYLE,
+		PARAM
+	} cmplx_state = SHAPE;
+	
+	int new_line = 1, end_field = 0, end_cmplx = 0, end_str = 0;
+	double stroke = 0.0;
+	
+	char *doc = buf->buffer;  /*get document to parse */
+	for(; *doc; doc++) { /* sweep document, analysing each character */
+		if (*doc == '\r' || *doc == '\n') {
+			new_line = 1;
+			if (state != NONE) end_field = 1;
+			idx = 0;
+		}
+		else if (*doc == ' ' || *doc == '\t') continue; /* ignore spaces */
+		else if (*doc == '*' && new_line){
+			state = NAME;
+			new_line = 0;
+		}
+		else if (*doc == ';' && new_line){
+			state = NONE;
+			new_line = 0;
+		}
+		else if (*doc == ',' ){
+			end_field = 1;
+			idx = 0;
+		}
+		else if (*doc == '[' ) {
+			if (state != STROKE) state = NONE; /* ERROR */
+			else {
+				state = CMPLX;
+				end_cmplx = 0;
+				end_str = 0;
+			}
+		}
+		else if (*doc == ']' ) {
+			if (state != CMPLX) state = NONE; /* ERROR */
+			else end_cmplx = 1;
+		}
+		else if (*doc == '"' ){
+			if (state != CMPLX) state = NONE; /* ERROR */
+			else{
+				if (cmplx_state != STRING ) cmplx_state = STRING;
+				else end_str = 1;
+			}
+		}
+		else if (state != NONE){
+			if (new_line) new_line = 0;
+			field[idx] = *doc;
+			if (idx < 79) idx++;
+			field[idx] = 0; /* terminate string */
+		}
+		
+		if (end_field){
+			end_field = 0;
+			if (state == NAME){
+				strncpy(ret_vec[*n].name, field, 80);
+				/* init line type */
+				ret_vec[*n].descr[0] = 0;
+				ret_vec[*n]. size = 0;
+				ret_vec[*n].length = 0.0;
+				ret_vec[*n].pat[0] = 0;
+				
+				if (new_line) state = ALIGN;
+				else state = DESCR;
+			}
+			else if (state == DESCR){
+				strncpy(ret_vec[*n].descr, field, 80);
+				if (new_line) state = ALIGN;
+				else state = NONE; /* ERROR */
+			}
+			else if (state == ALIGN){
+				if (strcmp(field, "A") != 0) state = NONE; /* ERROR */
+				if (!new_line) state = STROKE;
+				else state = NONE; /* ERROR */
+			}
+			else if (state == STROKE){
+				stroke = atof(field);
+				ret_vec[*n].pat[ret_vec[*n]. size] = stroke;
+				ret_vec[*n].length += fabs(stroke);
+				ret_vec[*n]. size++;
+				if (new_line) {
+					/* complete line type */
+					if (*n < DXF_MAX_LTYPES - 2) *n = *n + 1;
+					state = NONE;
+				}
+			}
+			else if (state == CMPLX){
+				if (end_cmplx){
+					end_cmplx = 0;
+					state = STROKE;
+					if (new_line) {
+						/* complete line type */
+						if (*n < DXF_MAX_LTYPES - 2) *n = *n + 1;
+						state = NONE;
+					}
+				} else{
+					if (new_line) state = NONE; /* ERROR */
+				}
+			}
+		}
+	}
+	
+	manage_buffer(0, BUF_RELEASE);
+	return ret_vec;
+}
+
 /* Custom nuklear widget to show line patern preview.  Derived frow styled button.*/
  int preview_ltype(struct nk_context *ctx, struct nk_style_button *style, dxf_ltype line_type, double length) {
 	/* get canvas to draw widget */
@@ -477,13 +608,14 @@ int ltyp_mng (gui_obj *gui){
 	if ((show_add)){
 		static int add_init = 0;
 		/* edit window - allow modifications on parameters of selected text style */
-		if (nk_begin(gui->ctx, "Add Line Type", nk_rect(gui->next_win_x + 150, gui->next_win_y + 70, 330, 400), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
+		if (nk_begin(gui->ctx, "Add Line Type", nk_rect(gui->next_win_x + 150, gui->next_win_y + 70, 900, 500), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
 			
 			static char name[DXF_MAX_CHARS+1] = "", descr[DXF_MAX_CHARS+1] = "";
 			static char cpy_from[DXF_MAX_CHARS+1] = "", scale_str[64] = "1.0";
 			static enum Mode {LT_ADD_CPY, LT_ADD_LIB} mode = LT_ADD_CPY;
-			static int idx = -1;
+			static int idx = -1, sel_ltyp = -1, n_lib = 0;
 			static double scale = 1.0;
+			static dxf_ltype * lib = NULL;
 			
 			if (!add_init){
 				add_init = 1;
@@ -509,7 +641,7 @@ int ltyp_mng (gui_obj *gui){
 			nk_style_pop_vec2(gui->ctx);
 			nk_layout_row_end(gui->ctx);
 			
-			nk_layout_row_dynamic(gui->ctx, 125, 1);
+			nk_layout_row_dynamic(gui->ctx, 280, 1);
 			if (nk_group_begin(gui->ctx, "lt_add_controls", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 			
 			
@@ -546,6 +678,143 @@ int ltyp_mng (gui_obj *gui){
 							scale = atof(scale_str);
 						snprintf(scale_str, 63, "%.9g", scale);
 					}
+					
+				}
+				if (mode == LT_ADD_LIB) {
+					static char path[DXF_MAX_CHARS] = "";
+					static int show_app_file = 0;
+					int i;
+
+					/* supported image formats */
+					static const char *ext_type[] = {
+						"LIN",
+						"*"
+					};
+					static const char *ext_descr[] = {
+						"Line Type Library (.lin)",
+						"All files (*)"
+					};
+					#define FILTER_COUNT 2
+					
+					nk_layout_row_dynamic(gui->ctx, 20, 1);
+					nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, path, DXF_MAX_CHARS - 1, nk_filter_default);
+					
+					nk_layout_row_dynamic(gui->ctx, 20, 2);
+					if (nk_button_label(gui->ctx, "Browse")){/* call file browser */
+						show_app_file = 1;
+						/* set filter for suported output formats */
+						for (i = 0; i < FILTER_COUNT; i++){
+							gui->file_filter_types[i] = ext_type[i];
+							gui->file_filter_descr[i] = ext_descr[i];
+						}
+						gui->file_filter_count = FILTER_COUNT;
+						gui->filter_idx = 0;
+						
+						gui->show_file_br = 1;
+						gui->curr_path[0] = 0;
+					}
+					if (show_app_file){ /* running file browser */
+						if (gui->show_file_br == 2){ /* return file OK */
+							/* close browser window*/
+							gui->show_file_br = 0;
+							show_app_file = 0;
+							/* update output path */
+							strncpy(path, gui->curr_path, DXF_MAX_CHARS - 1);
+						}
+					} /* manual entry to output path */
+					
+					
+					
+					if (nk_button_label(gui->ctx, "Attach")){
+						n_lib = 0;
+						lib = load_lin_file(path, &n_lib);
+					}
+					
+					//nk_layout_row_dynamic(gui->ctx, 20, 3);
+					if( n_lib > 0 && lib != NULL ){
+						/* list header */
+						nk_layout_row_dynamic(gui->ctx, 32, 1);
+						if (nk_group_begin(gui->ctx, "LibLtyp_head", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+							/* buttons to change sorting criteria */
+							
+							nk_layout_row(gui->ctx, NK_STATIC, 22, 3, (float[]){175, 300, 300});
+							/* sort by ltype name 
+							if (sorted == BY_NAME){
+								if (sort_reverse){
+									if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Name", NK_TEXT_CENTERED)){
+										sorted = UNSORTED;
+										sort_reverse = 0;
+									}
+								} else {
+									if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Name", NK_TEXT_CENTERED)){
+										sort_reverse = 1;
+									}
+								}
+							}else if (nk_button_label(gui->ctx, "Name")){
+								sorted = BY_NAME;
+								sort_reverse = 0;
+							}*/
+							nk_button_label(gui->ctx, "Name");
+							
+							nk_button_label(gui->ctx, "Description");
+							nk_button_label(gui->ctx, "Preview");
+							
+							nk_group_end(gui->ctx);
+						}
+						
+						/* body of list */
+						nk_layout_row_dynamic(gui->ctx, 150, 1);
+						if (nk_group_begin(gui->ctx, "LibLtyp_view", NK_WINDOW_BORDER)) {
+							nk_layout_row(gui->ctx, NK_STATIC, 20, 3, (float[]){175, 300, 300});
+						
+						
+						
+							for (i = 0; i < n_lib; i++){
+								//printf ("%s\n", lib[i].name);
+								//ltyp_idx = sort_ltyp[i].idx; /* current ltype */
+								/* select/deselect ltype */
+								if (sel_ltyp == i){
+									if (nk_button_label_styled(gui->ctx, &gui->b_icon_sel, lib[i].name)){
+										sel_ltyp = -1;
+									}
+								}
+								else {
+									if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel, lib[i].name)){
+										sel_ltyp = i;
+									}
+								}
+								
+								//double scale_lib = 20.0;
+								double scale_lib = -1.0;
+								//if (max_len > 0.0) scale_lib = 2*max_len;
+								
+								if (sel_ltyp == i){
+									if (nk_button_label_styled(gui->ctx, &gui->b_icon_sel, lib[i].descr)){
+										sel_ltyp = -1;
+									}
+								}
+								else {
+									if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel, lib[i].descr)){
+										sel_ltyp = i;
+									}
+								}
+								
+								if (sel_ltyp == i){
+									if(preview_ltype(gui->ctx ,&gui->b_icon_sel, lib[i], scale_lib)){
+										sel_ltyp = -1;
+									}
+								}
+								else {
+									if(preview_ltype(gui->ctx ,&gui->b_icon_unsel, lib[i], scale_lib)){
+										sel_ltyp = i;
+									}
+								}
+							}
+							nk_group_end(gui->ctx);
+						}
+					}
+					
+					
 					
 				}
 			}

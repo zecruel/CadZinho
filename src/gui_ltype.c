@@ -85,7 +85,16 @@ dxf_ltype * load_lin_file(char *path, int *n){
 				ret_vec[*n].descr[0] = 0;
 				ret_vec[*n]. size = 0;
 				ret_vec[*n].length = 0.0;
-				ret_vec[*n].pat[0] = 0;
+				//ret_vec[*n].pat[0] = 0;
+				ret_vec[*n].dashes[0].dash = 0;
+				ret_vec[*n].dashes[0].type = LTYP_SIMPLE;
+				ret_vec[*n].dashes[0].str[0] = 0;
+				ret_vec[*n].dashes[0].sty[0] = 0;
+				ret_vec[*n].dashes[0].abs_rot = 0;
+				ret_vec[*n].dashes[0].rot = 0.0;
+				ret_vec[*n].dashes[0].scale = 0.0;
+				ret_vec[*n].dashes[0].ofs_x = 0.0;
+				ret_vec[*n].dashes[0].ofs_y = 0.0;
 				
 				if (new_line) state = ALIGN;
 				else state = DESCR;
@@ -102,7 +111,7 @@ dxf_ltype * load_lin_file(char *path, int *n){
 			}
 			else if (state == STROKE){
 				stroke = atof(field);
-				ret_vec[*n].pat[ret_vec[*n]. size] = stroke;
+				ret_vec[*n].dashes[ret_vec[*n]. size].dash = stroke;
 				ret_vec[*n].length += fabs(stroke);
 				ret_vec[*n]. size++;
 				if (new_line) {
@@ -200,9 +209,9 @@ dxf_ltype * load_lin_file(char *path, int *n){
 	else{
 		while (i < steps){
 			/* draw pattern */
-			double x1 = x + fabs(line_type.pat[idx]) * scale;
+			double x1 = x + fabs(line_type.dashes[idx].dash) * scale;
 			if (x1 > content.x + content.w) x1 = content.x + content.w;
-			if (line_type.pat[idx] >= 0.0) nk_stroke_line(canvas, x, y, x1, y, 2.1, color);
+			if (line_type.dashes[idx].dash >= 0.0) nk_stroke_line(canvas, x, y, x1, y, 2.1, color);
 			x = x1;
 			
 			idx++; /* index to current stroke in pattern*/
@@ -547,7 +556,17 @@ int ltyp_mng (gui_obj *gui){
 						/*TODO*/
 						line_type.descr[0] = 0;
 						line_type.size = 0;
-						line_type.pat[0] = 0;
+						//line_type.pat[0] = 0;
+						line_type.dashes[0].dash = 0;
+						line_type.dashes[0].type = LTYP_SIMPLE;
+						line_type.dashes[0].str[0] = 0;
+						line_type.dashes[0].sty[0] = 0;
+						line_type.dashes[0].abs_rot = 0;
+						line_type.dashes[0].rot = 0.0;
+						line_type.dashes[0].scale = 0.0;
+						line_type.dashes[0].ofs_x = 0.0;
+						line_type.dashes[0].ofs_y = 0.0;
+						
 						line_type.length = 0.0;
 						line_type.num_el = 0;
 						line_type.obj = NULL;
@@ -831,7 +850,7 @@ int ltyp_mng (gui_obj *gui){
 					if (idx > -1){
 						line_type.size = ltypes[idx].size;
 						for (i = 0; i < line_type.size; i++){
-							line_type.pat[i] = ltypes[idx].pat[i] * scale;
+							line_type.dashes[i].dash = ltypes[idx].dashes[i].dash* scale;
 						}
 						line_type.length = ltypes[idx].length * scale;
 						line_type.num_el = 0;
@@ -854,7 +873,17 @@ int ltyp_mng (gui_obj *gui){
 					/*TODO*/
 					//line_type.descr[0] = 0;
 					line_type.size = 0;
-					line_type.pat[0] = 0;
+					//line_type.pat[0] = 0;
+					line_type.dashes[0].dash = 0;
+					line_type.dashes[0].type = LTYP_SIMPLE;
+					line_type.dashes[0].str[0] = 0;
+					line_type.dashes[0].sty[0] = 0;
+					line_type.dashes[0].abs_rot = 0;
+					line_type.dashes[0].rot = 0.0;
+					line_type.dashes[0].scale = 0.0;
+					line_type.dashes[0].ofs_x = 0.0;
+					line_type.dashes[0].ofs_y = 0.0;
+					
 					line_type.length = 0.0;
 					line_type.num_el = 0;
 					

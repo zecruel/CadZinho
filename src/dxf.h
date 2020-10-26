@@ -13,7 +13,7 @@
 #define DXF_MAX_LTYPES 1000
 #define DXF_MAX_FONTS 1000
 #define DXF_MAX_CHARS 250
-#define DXF_MAX_PAT 10
+#define DXF_MAX_PAT 12
 #define DXF_POOL_PAGES 1000
 
 struct sort_by_idx{
@@ -63,6 +63,12 @@ enum dxf_pool_life{
 	ONE_TIME = 2,
 	PRG_LIFE = 3,
 	SEL_LIFE = 4
+};
+
+enum dxf_ltyp_typ {
+	LTYP_SIMPLE,
+	LTYP_SHAPE,
+	LTYP_STRING
 };
 
 struct Dxf_pool_slot{
@@ -122,11 +128,26 @@ struct Dxf_layer{
 };
 typedef struct Dxf_layer dxf_layer;
 
+
+struct Dxf_ltyp_pat {
+	double dash;
+	enum dxf_ltyp_typ type;
+	char str[30];
+	char sty[30];
+	int abs_rot;
+	double rot;
+	double scale;
+	double ofs_x;
+	double ofs_y;
+};
+typedef struct Dxf_ltyp_pat dxf_ltyp_pat;
+
 struct Dxf_ltype{
 	char name[DXF_MAX_CHARS+1];
 	char descr[DXF_MAX_CHARS+1];
 	int size;
-	double pat[DXF_MAX_PAT];
+	//double pat[DXF_MAX_PAT];
+	dxf_ltyp_pat dashes[DXF_MAX_PAT];
 	double length;
 	int num_el;
 	dxf_node *obj;

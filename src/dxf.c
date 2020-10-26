@@ -6,6 +6,7 @@
 #include "font.h"
 #include "dxf_image.h"
 
+
 void * dxf_mem_pool(enum dxf_pool_action action, int idx){
 	
 	static dxf_pool_slot mem_pool[DXF_NUM_POOL];
@@ -884,7 +885,7 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 	
 	char name[DXF_MAX_CHARS], descr[DXF_MAX_CHARS];
 	int size;
-	double pat[DXF_MAX_PAT];
+	dxf_ltyp_pat dashes[DXF_MAX_PAT];
 	double length, max;
 	
 	/* always set the index 0 as the default ltype*/
@@ -892,7 +893,8 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 	drawing->ltypes[0].name[0] = 0;
 	drawing->ltypes[0].descr[0] = 0;
 	drawing->ltypes[0].size = 1;
-	drawing->ltypes[0].pat[0] = 0;
+	drawing->ltypes[0].dashes[0].dash = 0.0;
+	drawing->ltypes[0].dashes[0].type = LTYP_SIMPLE;
 	drawing->ltypes[0].length = 0;
 	drawing->ltypes[0].num_el = 0;
 	drawing->ltypes[0].obj = NULL;
@@ -903,7 +905,17 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 		name[0] = 0;
 		descr[0] = 0;
 		size = 0;
-		pat[0] = 0;
+		//pat[0] = 0;
+		dashes[0].dash = 0;
+		dashes[0].type = LTYP_SIMPLE;
+		dashes[0].str[0] = 0;
+		dashes[0].sty[0] = 0;
+		dashes[0].abs_rot = 0;
+		dashes[0].rot = 0.0;
+		dashes[0].scale = 0.0;
+		dashes[0].ofs_x = 0.0;
+		dashes[0].ofs_y = 0.0;
+		
 		pat_idx = 0;
 		length = 0;
 		
@@ -923,7 +935,17 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 						break;
 					case 49: /* pattern element */
 						if (pat_idx < DXF_MAX_PAT) {
-							pat[pat_idx] = current->value.d_data;
+							//pat[pat_idx] = current->value.d_data;
+							dashes[pat_idx].dash = current->value.d_data;
+							dashes[pat_idx].type = LTYP_SIMPLE;
+							dashes[pat_idx].str[0] = 0;
+							dashes[pat_idx].sty[0] = 0;
+							dashes[pat_idx].abs_rot = 0;
+							dashes[pat_idx].rot = 0.0;
+							dashes[pat_idx].scale = 0.0;
+							dashes[pat_idx].ofs_x = 0.0;
+							dashes[pat_idx].ofs_y = 0.0;
+							
 							pat_idx++;
 						}
 						break;
@@ -955,7 +977,7 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 		if (i < DXF_MAX_LTYPES){
 			strcpy(drawing->ltypes[i].name, name);
 			strcpy(drawing->ltypes[i].descr, descr);
-			memcpy(drawing->ltypes[i].pat, pat, size * sizeof(double));
+			memcpy(drawing->ltypes[i].dashes, dashes, size * sizeof(dxf_ltyp_pat));
 			drawing->ltypes[i].size = size;
 			drawing->ltypes[i].length = length;
 			drawing->ltypes[i].num_el = 0;

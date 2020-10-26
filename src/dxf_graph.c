@@ -97,7 +97,7 @@ int change_ltype (dxf_drawing *drawing, graph_obj * graph, int ltype_idx, double
 		int i;
 		graph->patt_size = drawing->ltypes[ltype_idx].size;
 		for (i = 0; i < drawing->ltypes[ltype_idx].size; i++){
-			graph->pattern[i] = drawing->ltypes[ltype_idx].pat[i] * drawing->ltscale * scale;
+			graph->pattern[i] = drawing->ltypes[ltype_idx].dashes[i].dash * drawing->ltscale * scale;
 		}
 		return 1;
 	}

@@ -1352,7 +1352,7 @@ int dxf_new_ltype (dxf_drawing *drawing, dxf_ltype *line_type){
 		ok &= dxf_attr_append(ltyp, 73, (void *) &line_type->size, drawing->pool);
 		ok &= dxf_attr_append(ltyp, 40, (void *) &line_type->length, drawing->pool);
 		for(i = 0; i < line_type->size; i++){
-			ok &= dxf_attr_append(ltyp, 49, (void *) &line_type->pat[i], drawing->pool);
+			ok &= dxf_attr_append(ltyp, 49, (void *) &line_type->dashes[i].dash, drawing->pool);
 			ok &= dxf_attr_append(ltyp, 74, (void *) &int_zero, drawing->pool); /* TODO */
 		}
 		

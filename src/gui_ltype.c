@@ -38,7 +38,7 @@ dxf_ltype * load_lin_file(char *path, int *n){
 			if (state != NONE) end_field = 1;
 			idx = 0;
 		}
-		else if (*doc == ' ' || *doc == '\t') continue; /* ignore spaces */
+		//else if (*doc == ' ' || *doc == '\t') continue; /* ignore spaces */
 		else if (*doc == '*' && new_line){
 			state = NAME;
 			new_line = 0;
@@ -51,19 +51,20 @@ dxf_ltype * load_lin_file(char *path, int *n){
 			end_field = 1;
 			idx = 0;
 		}
-		else if (*doc == '[' ) {
+		else if (*doc == '[' && state != DESCR) {
 			if (state != STROKE) state = NONE; /* ERROR */
 			else {
 				state = CMPLX;
+				cmplx_state = SHAPE;
 				end_cmplx = 0;
 				end_str = 0;
 			}
 		}
-		else if (*doc == ']' ) {
+		else if (*doc == ']' && state != DESCR) {
 			if (state != CMPLX) state = NONE; /* ERROR */
 			else end_cmplx = 1;
 		}
-		else if (*doc == '"' ){
+		else if (*doc == '"' && state != DESCR){
 			if (state != CMPLX) state = NONE; /* ERROR */
 			else{
 				if (cmplx_state != STRING ) cmplx_state = STRING;
@@ -85,14 +86,13 @@ dxf_ltype * load_lin_file(char *path, int *n){
 				ret_vec[*n].descr[0] = 0;
 				ret_vec[*n]. size = 0;
 				ret_vec[*n].length = 0.0;
-				//ret_vec[*n].pat[0] = 0;
 				ret_vec[*n].dashes[0].dash = 0;
 				ret_vec[*n].dashes[0].type = LTYP_SIMPLE;
 				ret_vec[*n].dashes[0].str[0] = 0;
 				ret_vec[*n].dashes[0].sty[0] = 0;
 				ret_vec[*n].dashes[0].abs_rot = 0;
 				ret_vec[*n].dashes[0].rot = 0.0;
-				ret_vec[*n].dashes[0].scale = 0.0;
+				ret_vec[*n].dashes[0].scale = 1.0;
 				ret_vec[*n].dashes[0].ofs_x = 0.0;
 				ret_vec[*n].dashes[0].ofs_y = 0.0;
 				
@@ -112,6 +112,17 @@ dxf_ltype * load_lin_file(char *path, int *n){
 			else if (state == STROKE){
 				stroke = atof(field);
 				ret_vec[*n].dashes[ret_vec[*n]. size].dash = stroke;
+				/* init current dash*/
+				ret_vec[*n].dashes[ret_vec[*n]. size].type = LTYP_SIMPLE;
+				ret_vec[*n].dashes[ret_vec[*n]. size].str[0] = 0;
+				ret_vec[*n].dashes[ret_vec[*n]. size].sty[0] = 0;
+				ret_vec[*n].dashes[ret_vec[*n]. size].abs_rot = 0;
+				ret_vec[*n].dashes[ret_vec[*n]. size].rot = 0.0;
+				ret_vec[*n].dashes[ret_vec[*n]. size].scale = 1.0;
+				ret_vec[*n].dashes[ret_vec[*n]. size].ofs_x = 0.0;
+				ret_vec[*n].dashes[ret_vec[*n]. size].ofs_y = 0.0;
+				
+				/* update line type parameters */
 				ret_vec[*n].length += fabs(stroke);
 				ret_vec[*n]. size++;
 				if (new_line) {
@@ -121,6 +132,114 @@ dxf_ltype * load_lin_file(char *path, int *n){
 				}
 			}
 			else if (state == CMPLX){
+				/* store in previous dash index */
+				int idx = 0;
+				if (ret_vec[*n]. size > 0) idx = ret_vec[*n]. size - 1;
+				
+				if (new_line) state = NONE; /* ERROR */
+				
+				if (cmplx_state == SHAPE){
+					ret_vec[*n].dashes[idx].type = LTYP_SHAPE;
+					strncpy(ret_vec[*n].dashes[idx].str, field, 29);
+					cmplx_state = FONT;
+				}
+				else if (cmplx_state == STRING){
+					ret_vec[*n].dashes[idx].type = LTYP_STRING;
+					strncpy(ret_vec[*n].dashes[idx].str, field, 29);
+					cmplx_state = STYLE;
+				}
+				else if (cmplx_state == FONT){
+					strncpy(ret_vec[*n].dashes[idx].sty, field, 29);
+					cmplx_state = PARAM;
+				}
+				else if (cmplx_state == STYLE){
+					strncpy(ret_vec[*n].dashes[idx].sty, field, 29);
+					cmplx_state = PARAM;
+				}
+				else if (cmplx_state == PARAM){
+					//char *token = strchr(field, '=');
+					const char s[2] = "=";
+					char *sufix = NULL, *value = NULL;
+					
+					/* get the parameter id */
+					char *id = strtok(field, s);
+					if (id) value = strtok(NULL, s);
+					if(id && value){
+						if(strpbrk(id, "Ss")){
+							ret_vec[*n].dashes[idx].scale = atof(value);
+						}
+						if(strpbrk(id, "Xx")){
+							ret_vec[*n].dashes[idx].ofs_x = atof(value);
+						}
+						if(strpbrk(id, "Yy")){
+							ret_vec[*n].dashes[idx].ofs_y = atof(value);
+						}
+						if(strpbrk(id, "Rr")){
+							ret_vec[*n].dashes[idx].abs_rot = 0;
+							ret_vec[*n].dashes[idx].rot = strtod(value, &sufix);
+							if (sufix){
+								if(sufix[0] == 'D' || sufix[0] == 'd'){
+									/* angle in degrees */
+									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
+								}
+								if(sufix[0] == 'R' || sufix[0] == 'r'){
+									/* angle in radians - no conversion needed */
+								}
+								if(sufix[0] == 'G' || sufix[0] == 'g'){
+									/* angle in grads */
+									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/200.0;
+								}
+							}
+							else {
+								/* default - angle in degrees */
+								ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
+							}
+						}
+						if(strpbrk(id, "Aa")){
+							ret_vec[*n].dashes[idx].abs_rot = 1;
+							ret_vec[*n].dashes[idx].rot = strtod(value, &sufix);
+							if (sufix){
+								if(sufix[0] == 'D' || sufix[0] == 'd'){
+									/* angle in degrees */
+									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
+								}
+								if(sufix[0] == 'R' || sufix[0] == 'r'){
+									/* angle in radians - no conversion needed */
+								}
+								if(sufix[0] == 'G' || sufix[0] == 'g'){
+									/* angle in grads */
+									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/200.0;
+								}
+							}
+							else {
+								/* default - angle in degrees */
+								ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
+							}
+							
+						}
+						if(strpbrk(id, "Uu")){
+							ret_vec[*n].dashes[idx].abs_rot = 0;
+							ret_vec[*n].dashes[idx].rot = strtod(value, &sufix);
+							if (sufix){
+								if(sufix[0] == 'D' || sufix[0] == 'd'){
+									/* angle in degrees */
+									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
+								}
+								if(sufix[0] == 'R' || sufix[0] == 'r'){
+									/* angle in radians - no conversion needed */
+								}
+								if(sufix[0] == 'G' || sufix[0] == 'g'){
+									/* angle in grads */
+									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/200.0;
+								}
+							}
+							else {
+								/* default - angle in degrees */
+								ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
+							}
+						}
+					}
+				}
 				if (end_cmplx){
 					end_cmplx = 0;
 					state = STROKE;
@@ -129,9 +248,7 @@ dxf_ltype * load_lin_file(char *path, int *n){
 						if (*n < DXF_MAX_LTYPES - 2) *n = *n + 1;
 						state = NONE;
 					}
-				} else{
-					if (new_line) state = NONE; /* ERROR */
-				}
+				} 
 			}
 		}
 	}
@@ -747,6 +864,18 @@ int ltyp_mng (gui_obj *gui){
 					if (nk_button_label(gui->ctx, "Attach")){
 						n_lib = 0;
 						lib = load_lin_file(path, &n_lib);
+						
+						/* === TEST === TEST === TEST === TEST */
+						int j;
+						for (i = 0; i < n_lib; i++){
+								//printf ("%s\n", lib[i].name);
+							for (j = 0; j < lib[i].size; j++){
+								if (lib[i].dashes[j].type != LTYP_SIMPLE){
+									printf ("%s,%s,%.9g\n", lib[i].dashes[j].str, lib[i].dashes[j].sty, lib[i].dashes[j].scale);
+								}
+							}
+						}
+						/* === TEST === TEST === TEST === TEST */
 					}
 					
 					//nk_layout_row_dynamic(gui->ctx, 20, 3);

@@ -101,6 +101,41 @@ shp_typ *shp_idx(shp_typ *list, int idx){
 	return(NULL); /* fail */
 }
 
+shp_typ *shp_name(shp_typ *list, char *name){
+/* get shape by its name in list */
+	if (list){ /* verify if is a valid list */
+		if(list->next){
+			char name1_cpy[DXF_MAX_CHARS], *new_name1;
+			char name2_cpy[DXF_MAX_CHARS], *new_name2;
+			
+			/* copy strings for secure manipulation */
+			strncpy(name1_cpy, name, DXF_MAX_CHARS);
+			/* remove trailing spaces */
+			new_name1 = trimwhitespace(name1_cpy);
+			/* change to upper case */
+			str_upp(new_name1);
+			
+			shp_typ *current;
+			/* sweep the list */
+			current = list->next;
+			while(current){
+				/* copy strings for secure manipulation */
+				strncpy(name2_cpy, current->name, DXF_MAX_CHARS);
+				/* remove trailing spaces */
+				new_name2 = trimwhitespace(name2_cpy);
+				/* change to upper case */
+				str_upp(new_name2);
+				
+				if(strcmp(new_name1, new_name2) == 0){ /* match */
+					return(current);
+				}
+				current = current->next;
+			}
+		}
+	}
+	return(NULL); /* fail */
+}
+
 shp_typ *shp_font_open(char *path){
 	FILE *file;
 	shp_typ *shp_font;
@@ -399,7 +434,7 @@ shp_typ *shp_font_load(char *buf){
 		next_line = strchr(curr_line, '*');
 		
 		/* get code point of current shape */
-		curr_mark = strpbrk(curr_line, ",\n");
+		curr_mark = strpbrk(curr_line, ",\r\n");
 		if (curr_mark){
 			str_size = curr_mark - curr_line;
 			curr_mark++;
@@ -415,7 +450,7 @@ shp_typ *shp_font_load(char *buf){
 		
 		/* get commands size of current shape */
 		if (curr_mark != NULL){// && (next_line - curr_mark) > 1){
-			next_mark = strpbrk(curr_mark, ",\n");
+			next_mark = strpbrk(curr_mark, ",\r\n");
 			if (next_mark){
 				str_size = next_mark - curr_mark;
 				next_mark++;
@@ -432,7 +467,7 @@ shp_typ *shp_font_load(char *buf){
 			/* get name and comments of current shape */
 			curr_mark = next_mark;
 			if (curr_mark != NULL){// && (next_line - curr_mark) > 1){
-				next_mark = strchr(curr_mark, '\n');
+				next_mark = strpbrk(curr_mark, "\r\n");
 				if (next_mark){
 					str_size = next_mark - curr_mark;
 					next_mark++;

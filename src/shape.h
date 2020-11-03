@@ -32,6 +32,8 @@ void shp_font_free(shp_typ *shx_font);
 
 shp_typ *shp_font_find(shp_typ *shx_font, long num);
 
+shp_typ *shp_name(shp_typ *list, char *name);
+
 shp_typ *shp_font_open(char *path);
 
 shp_typ *shp_font_load(char *buf);

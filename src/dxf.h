@@ -132,13 +132,16 @@ typedef struct Dxf_layer dxf_layer;
 struct Dxf_ltyp_pat {
 	double dash;
 	enum dxf_ltyp_typ type;
-	char str[30];
 	char sty[30];
 	int abs_rot;
 	double rot;
 	double scale;
 	double ofs_x;
 	double ofs_y;
+	union {
+		long num;
+		char str[30];
+	};
 };
 typedef struct Dxf_ltyp_pat dxf_ltyp_pat;
 

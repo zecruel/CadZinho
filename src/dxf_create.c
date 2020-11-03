@@ -1333,7 +1333,7 @@ int dxf_new_ltype (dxf_drawing *drawing, dxf_ltype *line_type){
 	const char *handle = "0";
 	const char *dxf_class = "AcDbSymbolTableRecord";
 	const char *dxf_subclass = "AcDbLinetypeTableRecord";
-	int int_zero = 0, ok = 0, i;
+	int int_zero = 0, ok = 0, i, flags = 0;
 	
 	/* create a new LTYPE */
 	dxf_node * ltyp = dxf_obj_new ("LTYPE", drawing->pool);
@@ -1344,7 +1344,7 @@ int dxf_new_ltype (dxf_drawing *drawing, dxf_ltype *line_type){
 		ok &= dxf_attr_append(ltyp, 100, (void *) dxf_class, drawing->pool);
 		ok &= dxf_attr_append(ltyp, 100, (void *) dxf_subclass, drawing->pool);
 		ok &= dxf_attr_append(ltyp, 2, (void *) new_name, drawing->pool);
-		ok &= dxf_attr_append(ltyp, 70, (void *) &int_zero, drawing->pool); /* TODO */
+		ok &= dxf_attr_append(ltyp, 70, (void *) &int_zero, drawing->pool);
 		ok &= dxf_attr_append(ltyp, 3, (void *) line_type->descr, drawing->pool);
 		ok &= dxf_attr_append(ltyp, 72, (void *) (int[]){65}, drawing->pool);
 		
@@ -1353,7 +1353,33 @@ int dxf_new_ltype (dxf_drawing *drawing, dxf_ltype *line_type){
 		ok &= dxf_attr_append(ltyp, 40, (void *) &line_type->length, drawing->pool);
 		for(i = 0; i < line_type->size; i++){
 			ok &= dxf_attr_append(ltyp, 49, (void *) &line_type->dashes[i].dash, drawing->pool);
-			ok &= dxf_attr_append(ltyp, 74, (void *) &int_zero, drawing->pool); /* TODO */
+			
+			flags = 0;
+			if (line_type->dashes[i].type == LTYP_SIMPLE)
+				ok &= dxf_attr_append(ltyp, 74, (void *) &flags, drawing->pool);
+			else {
+				if (line_type->dashes[i].abs_rot) flags |= 1;
+				if (line_type->dashes[i].type == LTYP_STRING) flags |= 2;
+				if (line_type->dashes[i].type == LTYP_SHAPE) flags |= 4;
+				ok &= dxf_attr_append(ltyp, 74, (void *) &flags, drawing->pool);
+				
+				if (line_type->dashes[i].type == LTYP_SHAPE){
+					int shp_num = 130; /* TODO */
+					ok &= dxf_attr_append(ltyp, 75, (void *) &flags, drawing->pool);
+					char sty[DXF_MAX_CHARS] = "24"; /* TODO */
+					ok &= dxf_attr_append(ltyp, 340, (void *) sty, drawing->pool);
+				}
+				if (line_type->dashes[i].type == LTYP_STRING){
+					char sty[DXF_MAX_CHARS] = "13"; /* TODO */
+					ok &= dxf_attr_append(ltyp, 340, (void *) sty, drawing->pool);
+				}
+				ok &= dxf_attr_append(ltyp, 50, (void *) &line_type->dashes[i].rot, drawing->pool);
+				ok &= dxf_attr_append(ltyp, 44, (void *) &line_type->dashes[i].ofs_x, drawing->pool);
+				ok &= dxf_attr_append(ltyp, 45, (void *) &line_type->dashes[i].ofs_y, drawing->pool);
+				if (line_type->dashes[i].type == LTYP_STRING){
+					ok &= dxf_attr_append(ltyp, 9, (void *) line_type->dashes[i].str, drawing->pool);
+				}
+			}
 		}
 		
 		/* get current handle and increment the handle seed*/

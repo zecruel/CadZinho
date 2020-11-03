@@ -257,6 +257,24 @@ dxf_ltype * load_lin_file(char *path, int *n){
 	return ret_vec;
 }
 
+int font_tstyle_idx (dxf_drawing *drawing, char *name){
+	int i;
+	char name1[DXF_MAX_CHARS], name2[DXF_MAX_CHARS];
+	strncpy(name1, name, DXF_MAX_CHARS); /* preserve original string */
+	str_upp(name1); /*upper case */
+	if (drawing){
+		for (i=0; i < drawing->num_tstyles; i++){
+			strncpy(name2, drawing->text_styles[i].file, DXF_MAX_CHARS); /* preserve original string */
+			str_upp(name2); /*upper case */
+			if (strcmp(name1, name2) == 0){
+				return i;
+			}
+		}
+	}
+	
+	return -1; /*search fails */
+}
+
 /* Custom nuklear widget to show line patern preview.  Derived frow styled button.*/
  int preview_ltype(struct nk_context *ctx, struct nk_style_button *style, dxf_ltype line_type, double length) {
 	/* get canvas to draw widget */
@@ -870,7 +888,24 @@ int ltyp_mng (gui_obj *gui){
 						for (i = 0; i < n_lib; i++){
 								//printf ("%s\n", lib[i].name);
 							for (j = 0; j < lib[i].size; j++){
+								if (lib[i].dashes[j].type == LTYP_SHAPE){
+									int sty_idx = font_tstyle_idx(gui->drawing, lib[i].dashes[j].sty);
+									if (sty_idx >= 0){
+										printf ("Style: %s\n",gui->drawing->text_styles[sty_idx].name);
+									}
+									
+									struct tfont *font = add_font_list(gui->font_list, lib[i].dashes[j].sty, gui->dflt_fonts_path);
+									if (font && font->type == FONT_SHP){
+										shp_typ *shape = shp_name((shp_typ *)font->data, lib[i].dashes[j].str);
+										if (shape){
+											printf ("Shape num: %d\n", shape->num);
+										}
+									}
+								}
+								
+								
 								if (lib[i].dashes[j].type != LTYP_SIMPLE){
+									
 									printf ("%s,%s,%.9g\n", lib[i].dashes[j].str, lib[i].dashes[j].sty, lib[i].dashes[j].scale);
 								}
 							}

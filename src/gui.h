@@ -433,7 +433,7 @@ extern const char *text_al_v[];
 extern const char *std_h_pat;
 extern const char *shp_font_romans;
 extern const char *shp_font_txt;
-
+extern const char *shp_ltypeshp;
 
 
 #ifndef DXF_LW_LEN

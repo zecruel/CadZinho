@@ -133,6 +133,7 @@ struct Dxf_ltyp_pat {
 	double dash;
 	enum dxf_ltyp_typ type;
 	char sty[30];
+	int sty_i;
 	int abs_rot;
 	double rot;
 	double scale;

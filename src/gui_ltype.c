@@ -90,6 +90,7 @@ dxf_ltype * load_lin_file(char *path, int *n){
 				ret_vec[*n].dashes[0].type = LTYP_SIMPLE;
 				ret_vec[*n].dashes[0].str[0] = 0;
 				ret_vec[*n].dashes[0].sty[0] = 0;
+				ret_vec[*n].dashes[0].sty_i = -1;
 				ret_vec[*n].dashes[0].abs_rot = 0;
 				ret_vec[*n].dashes[0].rot = 0.0;
 				ret_vec[*n].dashes[0].scale = 1.0;
@@ -116,6 +117,7 @@ dxf_ltype * load_lin_file(char *path, int *n){
 				ret_vec[*n].dashes[ret_vec[*n]. size].type = LTYP_SIMPLE;
 				ret_vec[*n].dashes[ret_vec[*n]. size].str[0] = 0;
 				ret_vec[*n].dashes[ret_vec[*n]. size].sty[0] = 0;
+				ret_vec[*n].dashes[ret_vec[*n]. size].sty_i = -1;
 				ret_vec[*n].dashes[ret_vec[*n]. size].abs_rot = 0;
 				ret_vec[*n].dashes[ret_vec[*n]. size].rot = 0.0;
 				ret_vec[*n].dashes[ret_vec[*n]. size].scale = 1.0;
@@ -182,12 +184,16 @@ dxf_ltype * load_lin_file(char *path, int *n){
 									/* angle in degrees */
 									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
 								}
-								if(sufix[0] == 'R' || sufix[0] == 'r'){
+								else if(sufix[0] == 'R' || sufix[0] == 'r'){
 									/* angle in radians - no conversion needed */
 								}
-								if(sufix[0] == 'G' || sufix[0] == 'g'){
+								else if(sufix[0] == 'G' || sufix[0] == 'g'){
 									/* angle in grads */
 									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/200.0;
+								}
+								else {
+									/* default - angle in degrees */
+									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
 								}
 							}
 							else {
@@ -203,12 +209,16 @@ dxf_ltype * load_lin_file(char *path, int *n){
 									/* angle in degrees */
 									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
 								}
-								if(sufix[0] == 'R' || sufix[0] == 'r'){
+								else if(sufix[0] == 'R' || sufix[0] == 'r'){
 									/* angle in radians - no conversion needed */
 								}
-								if(sufix[0] == 'G' || sufix[0] == 'g'){
+								else if(sufix[0] == 'G' || sufix[0] == 'g'){
 									/* angle in grads */
 									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/200.0;
+								}
+								else {
+									/* default - angle in degrees */
+									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
 								}
 							}
 							else {
@@ -225,12 +235,16 @@ dxf_ltype * load_lin_file(char *path, int *n){
 									/* angle in degrees */
 									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
 								}
-								if(sufix[0] == 'R' || sufix[0] == 'r'){
+								else if(sufix[0] == 'R' || sufix[0] == 'r'){
 									/* angle in radians - no conversion needed */
 								}
-								if(sufix[0] == 'G' || sufix[0] == 'g'){
+								else if(sufix[0] == 'G' || sufix[0] == 'g'){
 									/* angle in grads */
 									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/200.0;
+								}
+								else {
+									/* default - angle in degrees */
+									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
 								}
 							}
 							else {
@@ -696,6 +710,7 @@ int ltyp_mng (gui_obj *gui){
 						line_type.dashes[0].type = LTYP_SIMPLE;
 						line_type.dashes[0].str[0] = 0;
 						line_type.dashes[0].sty[0] = 0;
+						line_type.dashes[0].sty_i = -1;
 						line_type.dashes[0].abs_rot = 0;
 						line_type.dashes[0].rot = 0.0;
 						line_type.dashes[0].scale = 0.0;
@@ -889,25 +904,44 @@ int ltyp_mng (gui_obj *gui){
 								//printf ("%s\n", lib[i].name);
 							for (j = 0; j < lib[i].size; j++){
 								if (lib[i].dashes[j].type == LTYP_SHAPE){
-									int sty_idx = font_tstyle_idx(gui->drawing, lib[i].dashes[j].sty);
-									if (sty_idx >= 0){
-										printf ("Style: %s\n",gui->drawing->text_styles[sty_idx].name);
+									gui->drawing, lib[i].dashes[j].sty_i = font_tstyle_idx(gui->drawing, lib[i].dashes[j].sty);
+									
+									if (gui->drawing, lib[i].dashes[j].sty_i >= 0){
+										printf ("Style: %s, ",gui->drawing->text_styles[gui->drawing, lib[i].dashes[j].sty_i].name);
+										
+										struct tfont *font = gui->drawing->text_styles[gui->drawing, lib[i].dashes[j].sty_i].font;
+										if (font && font->type == FONT_SHP){
+											shp_typ *shape = shp_name((shp_typ *)font->data, lib[i].dashes[j].str);
+											if (shape){
+												lib[i].dashes[j].num = shape->num;
+												
+												printf ("Shape: %d,s=%.9g,r=%.9g,x=%.9g,y=%.9g", lib[i].dashes[j].num, lib[i].dashes[j].scale, lib[i].dashes[j].rot , lib[i].dashes[j].ofs_x, lib[i].dashes[j].ofs_y);
+											}
+										}
+										
+										printf("\n");
+									}
+								}
+								else if (lib[i].dashes[j].type == LTYP_STRING){
+									gui->drawing, lib[i].dashes[j].sty_i = dxf_tstyle_idx(gui->drawing, lib[i].dashes[j].sty);
+									
+									if (gui->drawing, lib[i].dashes[j].sty_i >= 0){
+										printf ("Style: %s, ",gui->drawing->text_styles[gui->drawing, lib[i].dashes[j].sty_i].name);
+										
+										
+										printf ("%s,s=%.9g,r=%.9g,x=%.9g,y=%.9g\n", lib[i].dashes[j].str, lib[i].dashes[j].scale, lib[i].dashes[j].rot , lib[i].dashes[j].ofs_x, lib[i].dashes[j].ofs_y);
 									}
 									
-									struct tfont *font = add_font_list(gui->font_list, lib[i].dashes[j].sty, gui->dflt_fonts_path);
-									if (font && font->type == FONT_SHP){
-										shp_typ *shape = shp_name((shp_typ *)font->data, lib[i].dashes[j].str);
-										if (shape){
-											printf ("Shape num: %d\n", shape->num);
-										}
-									}
+									
+									
+									
 								}
 								
 								
-								if (lib[i].dashes[j].type != LTYP_SIMPLE){
+								/*if (lib[i].dashes[j].type != LTYP_SIMPLE){
 									
 									printf ("%s,%s,%.9g\n", lib[i].dashes[j].str, lib[i].dashes[j].sty, lib[i].dashes[j].scale);
-								}
+								}*/
 							}
 						}
 						/* === TEST === TEST === TEST === TEST */
@@ -1042,6 +1076,7 @@ int ltyp_mng (gui_obj *gui){
 					line_type.dashes[0].type = LTYP_SIMPLE;
 					line_type.dashes[0].str[0] = 0;
 					line_type.dashes[0].sty[0] = 0;
+					line_type.dashes[0].sty_i = -1;
 					line_type.dashes[0].abs_rot = 0;
 					line_type.dashes[0].rot = 0.0;
 					line_type.dashes[0].scale = 0.0;

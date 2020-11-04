@@ -1321,6 +1321,9 @@ int gui_start(gui_obj *gui){
 	/* load internal shape font "txt", classic CAD font */
 	add_shp_font_list(gui->font_list, "txt.shx", (char *)shp_font_txt);
 	
+	/* load internal shape library "ltypeshp", for use in complex linetypes*/
+	add_shp_font_list(gui->font_list, "ltypeshp.shx", (char *)shp_ltypeshp);
+	
 	
 	/* ----------- init base directory path ------------------- */
 	{

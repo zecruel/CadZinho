@@ -910,6 +910,7 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 		dashes[0].type = LTYP_SIMPLE;
 		dashes[0].str[0] = 0;
 		dashes[0].sty[0] = 0;
+		dashes[0].sty_i = -1;
 		dashes[0].abs_rot = 0;
 		dashes[0].rot = 0.0;
 		dashes[0].scale = 0.0;
@@ -940,6 +941,7 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 							dashes[pat_idx].type = LTYP_SIMPLE;
 							dashes[pat_idx].str[0] = 0;
 							dashes[pat_idx].sty[0] = 0;
+							dashes[pat_idx].sty_i = -1;
 							dashes[pat_idx].abs_rot = 0;
 							dashes[pat_idx].rot = 0.0;
 							dashes[pat_idx].scale = 0.0;

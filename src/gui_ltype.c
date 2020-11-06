@@ -1,15 +1,13 @@
 #include "gui_ltype.h"
 
-dxf_ltype * load_lin_file(char *path, int *n){
+dxf_ltype * parse_lin_def(char *doc, int *n){
+	/* parse Linetype Definition buffer */
 	
-	long fsize;
-	*n = 0;
-	struct Mem_buffer *buf  = load_file_reuse(path, &fsize);
+	*n = 0; /*number of line types returned in vector - init to zero*/
+	if (doc == NULL) return NULL; /* Error - invalid buffer */
 	
-	if (buf == NULL) return NULL;
-	
-	static dxf_ltype ret_vec[DXF_MAX_LTYPES];
-	char field[81];
+	static dxf_ltype ret_vec[DXF_MAX_LTYPES];  /* returned Lin type data vector */
+	char field[81]; /* field buffer */
 	int idx = 0;
 	enum State {
 		NONE,
@@ -31,27 +29,26 @@ dxf_ltype * load_lin_file(char *path, int *n){
 	int new_line = 1, end_field = 0, end_cmplx = 0, end_str = 0;
 	double stroke = 0.0;
 	
-	char *doc = buf->buffer;  /*get document to parse */
 	for(; *doc; doc++) { /* sweep document, analysing each character */
-		if (*doc == '\r' || *doc == '\n') {
+		if (*doc == '\r' || *doc == '\n') { /* new line */
 			new_line = 1;
 			if (state != NONE) end_field = 1;
 			idx = 0;
 		}
-		//else if (*doc == ' ' || *doc == '\t') continue; /* ignore spaces */
-		else if (*doc == '*' && new_line){
+		else if (*doc == '*' && new_line){ /* start a new line type definition */
+			/* proceed to get line type data, starting by name */
 			state = NAME;
 			new_line = 0;
 		}
-		else if (*doc == ';' && new_line){
+		else if (*doc == ';' && new_line){ /* comentary line - no action*/
 			state = NONE;
 			new_line = 0;
 		}
-		else if (*doc == ',' ){
+		else if (*doc == ',' ){ /* field terminator */
 			end_field = 1;
 			idx = 0;
 		}
-		else if (*doc == '[' && state != DESCR) {
+		else if (*doc == '[' && state != DESCR) { /* starts a complex element */
 			if (state != STROKE) state = NONE; /* ERROR */
 			else {
 				state = CMPLX;
@@ -60,11 +57,11 @@ dxf_ltype * load_lin_file(char *path, int *n){
 				end_str = 0;
 			}
 		}
-		else if (*doc == ']' && state != DESCR) {
+		else if (*doc == ']' && state != DESCR) { /* ends complex element definition */
 			if (state != CMPLX) state = NONE; /* ERROR */
 			else end_cmplx = 1;
 		}
-		else if (*doc == '"' && state != DESCR){
+		else if (*doc == '"' && state != DESCR){ /* starts or ends a string element */
 			if (state != CMPLX) state = NONE; /* ERROR */
 			else{
 				if (cmplx_state != STRING ) cmplx_state = STRING;
@@ -72,17 +69,19 @@ dxf_ltype * load_lin_file(char *path, int *n){
 			}
 		}
 		else if (state != NONE){
+			/* store current character in field's buffer */
 			if (new_line) new_line = 0;
 			field[idx] = *doc;
 			if (idx < 79) idx++;
 			field[idx] = 0; /* terminate string */
 		}
 		
-		if (end_field){
+		if (end_field){ /* Field buffer is completed - proceed to get data, according state */
 			end_field = 0;
-			if (state == NAME){
+			if (state == NAME){ /* init line type */
+				/* get line type name */
 				strncpy(ret_vec[*n].name, field, 80);
-				/* init line type */
+				/* init other parameters */
 				ret_vec[*n].descr[0] = 0;
 				ret_vec[*n]. size = 0;
 				ret_vec[*n].length = 0.0;
@@ -97,8 +96,9 @@ dxf_ltype * load_lin_file(char *path, int *n){
 				ret_vec[*n].dashes[0].ofs_x = 0.0;
 				ret_vec[*n].dashes[0].ofs_y = 0.0;
 				
+				/* go to the next state */
 				if (new_line) state = ALIGN;
-				else state = DESCR;
+				else state = DESCR; /* optional description */
 			}
 			else if (state == DESCR){
 				strncpy(ret_vec[*n].descr, field, 80);
@@ -111,9 +111,10 @@ dxf_ltype * load_lin_file(char *path, int *n){
 				else state = NONE; /* ERROR */
 			}
 			else if (state == STROKE){
+				/* dash length */
 				stroke = atof(field);
 				ret_vec[*n].dashes[ret_vec[*n]. size].dash = stroke;
-				/* init current dash*/
+				/* init current dash parameters*/
 				ret_vec[*n].dashes[ret_vec[*n]. size].type = LTYP_SIMPLE;
 				ret_vec[*n].dashes[ret_vec[*n]. size].str[0] = 0;
 				ret_vec[*n].dashes[ret_vec[*n]. size].sty[0] = 0;
@@ -124,7 +125,7 @@ dxf_ltype * load_lin_file(char *path, int *n){
 				ret_vec[*n].dashes[ret_vec[*n]. size].ofs_x = 0.0;
 				ret_vec[*n].dashes[ret_vec[*n]. size].ofs_y = 0.0;
 				
-				/* update line type parameters */
+				/* update line type global parameters */
 				ret_vec[*n].length += fabs(stroke);
 				ret_vec[*n]. size++;
 				if (new_line) {
@@ -134,6 +135,7 @@ dxf_ltype * load_lin_file(char *path, int *n){
 				}
 			}
 			else if (state == CMPLX){
+				/* complex elements */
 				/* store in previous dash index */
 				int idx = 0;
 				if (ret_vec[*n]. size > 0) idx = ret_vec[*n]. size - 1;
@@ -141,25 +143,29 @@ dxf_ltype * load_lin_file(char *path, int *n){
 				if (new_line) state = NONE; /* ERROR */
 				
 				if (cmplx_state == SHAPE){
+					/* get shape name */
 					ret_vec[*n].dashes[idx].type = LTYP_SHAPE;
 					strncpy(ret_vec[*n].dashes[idx].str, field, 29);
 					cmplx_state = FONT;
 				}
 				else if (cmplx_state == STRING){
+					/* get string in line type */
 					ret_vec[*n].dashes[idx].type = LTYP_STRING;
 					strncpy(ret_vec[*n].dashes[idx].str, field, 29);
 					cmplx_state = STYLE;
 				}
 				else if (cmplx_state == FONT){
+					/* get font name, for shape */
 					strncpy(ret_vec[*n].dashes[idx].sty, field, 29);
 					cmplx_state = PARAM;
 				}
 				else if (cmplx_state == STYLE){
+					/* get text style name, for string */
 					strncpy(ret_vec[*n].dashes[idx].sty, field, 29);
 					cmplx_state = PARAM;
 				}
 				else if (cmplx_state == PARAM){
-					//char *token = strchr(field, '=');
+					/* indexed parameters (scale, rotation and offsets) */
 					const char s[2] = "=";
 					char *sufix = NULL, *value = NULL;
 					
@@ -167,89 +173,64 @@ dxf_ltype * load_lin_file(char *path, int *n){
 					char *id = strtok(field, s);
 					if (id) value = strtok(NULL, s);
 					if(id && value){
-						if(strpbrk(id, "Ss")){
+						if(strpbrk(id, "Ss")){ /* scale */
 							ret_vec[*n].dashes[idx].scale = atof(value);
 						}
-						if(strpbrk(id, "Xx")){
+						if(strpbrk(id, "Xx")){ /* X offset */
 							ret_vec[*n].dashes[idx].ofs_x = atof(value);
 						}
-						if(strpbrk(id, "Yy")){
+						if(strpbrk(id, "Yy")){ /* Y offset */
 							ret_vec[*n].dashes[idx].ofs_y = atof(value);
 						}
-						if(strpbrk(id, "Rr")){
+						if(strpbrk(id, "Rr")){ /* Relative rotation angle */
 							ret_vec[*n].dashes[idx].abs_rot = 0;
 							ret_vec[*n].dashes[idx].rot = strtod(value, &sufix);
-							if (sufix){
+							if (sufix){ /* angle units */
 								if(sufix[0] == 'D' || sufix[0] == 'd'){
-									/* angle in degrees */
-									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
+									/* angle in degrees - no conversion needed */
 								}
 								else if(sufix[0] == 'R' || sufix[0] == 'r'){
-									/* angle in radians - no conversion needed */
+									/* angle in radians */
+									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * 180.0/M_PI;
 								}
 								else if(sufix[0] == 'G' || sufix[0] == 'g'){
 									/* angle in grads */
-									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/200.0;
+									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * 180.0/200.0;
 								}
-								else {
-									/* default - angle in degrees */
-									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
-								}
-							}
-							else {
-								/* default - angle in degrees */
-								ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
 							}
 						}
-						if(strpbrk(id, "Aa")){
+						if(strpbrk(id, "Aa")){ /* Absolute rotation angle */
 							ret_vec[*n].dashes[idx].abs_rot = 1;
 							ret_vec[*n].dashes[idx].rot = strtod(value, &sufix);
 							if (sufix){
 								if(sufix[0] == 'D' || sufix[0] == 'd'){
-									/* angle in degrees */
-									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
+									/* angle in degrees - no conversion needed */
 								}
 								else if(sufix[0] == 'R' || sufix[0] == 'r'){
-									/* angle in radians - no conversion needed */
+									/* angle in radians */
+									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * 180.0/M_PI;
 								}
 								else if(sufix[0] == 'G' || sufix[0] == 'g'){
 									/* angle in grads */
-									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/200.0;
-								}
-								else {
-									/* default - angle in degrees */
-									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
+									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * 180.0/200.0;
 								}
 							}
-							else {
-								/* default - angle in degrees */
-								ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
-							}
-							
 						}
-						if(strpbrk(id, "Uu")){
+						if(strpbrk(id, "Uu")){ /* "Easy to read" rotation - not fully implemented: equivalent to Relative rotation angle  */
 							ret_vec[*n].dashes[idx].abs_rot = 0;
 							ret_vec[*n].dashes[idx].rot = strtod(value, &sufix);
 							if (sufix){
 								if(sufix[0] == 'D' || sufix[0] == 'd'){
-									/* angle in degrees */
-									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
+									/* angle in degrees - no conversion needed */
 								}
 								else if(sufix[0] == 'R' || sufix[0] == 'r'){
-									/* angle in radians - no conversion needed */
+									/* angle in radians */
+									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * 180.0/M_PI;
 								}
 								else if(sufix[0] == 'G' || sufix[0] == 'g'){
 									/* angle in grads */
-									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/200.0;
+									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * 180.0/200.0;
 								}
-								else {
-									/* default - angle in degrees */
-									ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
-								}
-							}
-							else {
-								/* default - angle in degrees */
-								ret_vec[*n].dashes[idx].rot = ret_vec[*n].dashes[idx].rot * M_PI/180.0;
 							}
 						}
 					}
@@ -267,17 +248,34 @@ dxf_ltype * load_lin_file(char *path, int *n){
 		}
 	}
 	
-	manage_buffer(0, BUF_RELEASE);
+	return ret_vec;
+}
+
+dxf_ltype * load_lin_file(char *path, int *n){
+	/* parse Linetype Definition file */
+	long fsize;
+	*n = 0;
+	struct Mem_buffer *buf  = load_file_reuse(path, &fsize);
+	
+	if (buf == NULL) return NULL;
+	
+	char *doc = buf->buffer;  /*get document to parse */
+	
+	dxf_ltype * ret_vec = parse_lin_def(doc, n); /* parse document */
+	
+	manage_buffer(0, BUF_RELEASE); /* release buffer */
 	return ret_vec;
 }
 
 int font_tstyle_idx (dxf_drawing *drawing, char *name){
+	/* try to find a text style (return a index) looking for a font name */
 	int i;
 	char name1[DXF_MAX_CHARS], name2[DXF_MAX_CHARS];
 	strncpy(name1, name, DXF_MAX_CHARS); /* preserve original string */
 	str_upp(name1); /*upper case */
 	if (drawing){
 		for (i=0; i < drawing->num_tstyles; i++){
+			/* look font name (file path) */
 			strncpy(name2, drawing->text_styles[i].file, DXF_MAX_CHARS); /* preserve original string */
 			str_upp(name2); /*upper case */
 			if (strcmp(name1, name2) == 0){
@@ -907,9 +905,9 @@ int ltyp_mng (gui_obj *gui){
 									gui->drawing, lib[i].dashes[j].sty_i = font_tstyle_idx(gui->drawing, lib[i].dashes[j].sty);
 									
 									if (gui->drawing, lib[i].dashes[j].sty_i >= 0){
-										printf ("Style: %s, ",gui->drawing->text_styles[gui->drawing, lib[i].dashes[j].sty_i].name);
+										printf ("Style: %s, ",gui->drawing->text_styles[lib[i].dashes[j].sty_i].name);
 										
-										struct tfont *font = gui->drawing->text_styles[gui->drawing, lib[i].dashes[j].sty_i].font;
+										struct tfont *font = gui->drawing->text_styles[lib[i].dashes[j].sty_i].font;
 										if (font && font->type == FONT_SHP){
 											shp_typ *shape = shp_name((shp_typ *)font->data, lib[i].dashes[j].str);
 											if (shape){
@@ -926,7 +924,7 @@ int ltyp_mng (gui_obj *gui){
 									gui->drawing, lib[i].dashes[j].sty_i = dxf_tstyle_idx(gui->drawing, lib[i].dashes[j].sty);
 									
 									if (gui->drawing, lib[i].dashes[j].sty_i >= 0){
-										printf ("Style: %s, ",gui->drawing->text_styles[gui->drawing, lib[i].dashes[j].sty_i].name);
+										printf ("Style: %s, ",gui->drawing->text_styles[lib[i].dashes[j].sty_i].name);
 										
 										
 										printf ("%s,s=%.9g,r=%.9g,x=%.9g,y=%.9g\n", lib[i].dashes[j].str, lib[i].dashes[j].scale, lib[i].dashes[j].rot , lib[i].dashes[j].ofs_x, lib[i].dashes[j].ofs_y);
@@ -1068,32 +1066,17 @@ int ltyp_mng (gui_obj *gui){
 					}
 				}
 				else{
-					/*TODO*/
-					//line_type.descr[0] = 0;
-					line_type.size = 0;
-					//line_type.pat[0] = 0;
-					line_type.dashes[0].dash = 0;
-					line_type.dashes[0].type = LTYP_SIMPLE;
-					line_type.dashes[0].str[0] = 0;
-					line_type.dashes[0].sty[0] = 0;
-					line_type.dashes[0].sty_i = -1;
-					line_type.dashes[0].abs_rot = 0;
-					line_type.dashes[0].rot = 0.0;
-					line_type.dashes[0].scale = 0.0;
-					line_type.dashes[0].ofs_x = 0.0;
-					line_type.dashes[0].ofs_y = 0.0;
+					if (n_lib > 0 && sel_ltyp>= 0){
 					
-					line_type.length = 0.0;
-					line_type.num_el = 0;
-					
-					if (!dxf_new_ltype (gui->drawing, &line_type)){
-						/* fail to  create, commonly name already exists */
-						snprintf(gui->log_msg, 63, "Error: Line Type already exists");
-					}
-					else {
-						/* ltype created and attached in drawing main structure */
-						show_add = 0;
-						add_init = 1;
+						if (!dxf_new_ltype (gui->drawing, &lib[sel_ltyp])){
+							/* fail to  create, commonly name already exists */
+							snprintf(gui->log_msg, 63, "Error: Line Type already exists");
+						}
+						else {
+							/* ltype created and attached in drawing main structure */
+							show_add = 0;
+							add_init = 1;
+						}
 					}
 				}
 			}

@@ -1337,6 +1337,7 @@ int dxf_new_ltype (dxf_drawing *drawing, dxf_ltype *line_type){
 	
 	/* create a new LTYPE */
 	dxf_node * ltyp = dxf_obj_new ("LTYPE", drawing->pool);
+	dxf_node *sty_handle;
 	
 	if (ltyp) {
 		ok = 1;
@@ -1358,21 +1359,29 @@ int dxf_new_ltype (dxf_drawing *drawing, dxf_ltype *line_type){
 			if (line_type->dashes[i].type == LTYP_SIMPLE)
 				ok &= dxf_attr_append(ltyp, 74, (void *) &flags, drawing->pool);
 			else {
+				if (line_type->dashes[i].sty_i >= 0){
+					sty_handle = dxf_find_attr2(drawing->text_styles[line_type->dashes[i].sty_i].obj, 5);
+					if (!sty_handle){
+						continue;
+					}
+				}
+				else {
+					continue;
+				}
+				
 				if (line_type->dashes[i].abs_rot) flags |= 1;
 				if (line_type->dashes[i].type == LTYP_STRING) flags |= 2;
 				if (line_type->dashes[i].type == LTYP_SHAPE) flags |= 4;
 				ok &= dxf_attr_append(ltyp, 74, (void *) &flags, drawing->pool);
 				
 				if (line_type->dashes[i].type == LTYP_SHAPE){
-					int shp_num = 130; /* TODO */
-					ok &= dxf_attr_append(ltyp, 75, (void *) &flags, drawing->pool);
-					char sty[DXF_MAX_CHARS] = "24"; /* TODO */
-					ok &= dxf_attr_append(ltyp, 340, (void *) sty, drawing->pool);
+					ok &= dxf_attr_append(ltyp, 75, (void *) &line_type->dashes[i].num, drawing->pool);
 				}
 				if (line_type->dashes[i].type == LTYP_STRING){
-					char sty[DXF_MAX_CHARS] = "13"; /* TODO */
-					ok &= dxf_attr_append(ltyp, 340, (void *) sty, drawing->pool);
+					ok &= dxf_attr_append(ltyp, 75, (void *) (int[]){0}, drawing->pool);
 				}
+				ok &= dxf_attr_append(ltyp, 340, (void *) sty_handle->value.s_data, drawing->pool);
+				ok &= dxf_attr_append(ltyp, 46, (void *) &line_type->dashes[i].scale, drawing->pool);
 				ok &= dxf_attr_append(ltyp, 50, (void *) &line_type->dashes[i].rot, drawing->pool);
 				ok &= dxf_attr_append(ltyp, 44, (void *) &line_type->dashes[i].ofs_x, drawing->pool);
 				ok &= dxf_attr_append(ltyp, 45, (void *) &line_type->dashes[i].ofs_y, drawing->pool);
@@ -1381,6 +1390,8 @@ int dxf_new_ltype (dxf_drawing *drawing, dxf_ltype *line_type){
 				}
 			}
 		}
+		
+		if (!ok) return 0;
 		
 		/* get current handle and increment the handle seed*/
 		ok &= ent_handle(drawing, ltyp);

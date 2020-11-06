@@ -570,7 +570,7 @@ const char *dxf_seed_2007 =
 "100\n"
 "AcDbTextStyleTableRecord\n"
 "2\n"
-"Cmplx_Line_Type\n"
+"\n"
 "70\n"
 "1\n"
 "40\n"

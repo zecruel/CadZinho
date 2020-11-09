@@ -1,0 +1,36 @@
+;;
+;;  CadZinho Extra Linetype Definition file
+;;
+;;  Edit this file to quick load linetypes at 
+;;  Linetype manager, according your
+;;  preferences
+;;
+
+
+;;  Complex linetypes
+;;
+;;  These linetype definitions use LTYPESHP.SHX.
+;;
+*Fence_circle,----0-----0----0-----0----0-----0--
+A,.25,-.1,[CIRC1,ltypeshp.shx,x=-.1,s=.1],-.1,1
+
+*Fence_square,----[]-----[]----[]-----[]----[]---
+A,.25,-.1,[BOX,ltypeshp.shx,x=-.1,s=.1],-.1,1
+
+*Fence_X,----X-----X----X-----X----X-----X--
+A,.25,-.1,["X",STANDARD,S=.1,R=0.0,X=-0.4,Y=-.05],-.1,1
+
+*Tracks,-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-
+A,.15,[TRACK1,ltypeshp.shx,s=.25],.15
+
+*Batting,SSSSSSSSSSSSSSSSSSSSSS
+A,.0001,-.1,[BAT,ltypeshp.shx,x=-.1,s=.1],-.2,[BAT,ltypeshp.shx,r=180,x=.1,s=.1],-.1
+
+*Hot_water,---- HW ---- HW ---- HW ----
+A,.5,-.2,["HW",STANDARD,S=.1,R=0.0,X=-0.1,Y=-.05],-.2
+
+*Gas,----GAS----GAS----GAS----GAS--
+A,.5,-.2,["GAS",STANDARD,S=.1,R=0.0,X=-0.1,Y=-.05],-.25
+
+*Zigzag,/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+A,.0001,-.2,[ZIG,ltypeshp.shx,x=-.2,s=.2],-.4,[ZIG,ltypeshp.shx,r=180,x=.2,s=.2],-.2

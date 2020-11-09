@@ -434,6 +434,8 @@ extern const char *std_h_pat;
 extern const char *shp_font_romans;
 extern const char *shp_font_txt;
 extern const char *shp_ltypeshp;
+extern const char *dflt_ltype;
+extern const char *extra_ltype;
 
 
 #ifndef DXF_LW_LEN

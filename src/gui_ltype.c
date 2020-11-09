@@ -866,7 +866,7 @@ int ltyp_mng (gui_obj *gui){
 					nk_layout_row_dynamic(gui->ctx, 20, 1);
 					nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, path, DXF_MAX_CHARS - 1, nk_filter_default);
 					
-					nk_layout_row_dynamic(gui->ctx, 20, 2);
+					nk_layout_row_dynamic(gui->ctx, 20, 4);
 					if (nk_button_label(gui->ctx, "Browse")){/* call file browser */
 						show_app_file = 1;
 						/* set filter for suported output formats */
@@ -928,6 +928,111 @@ int ltyp_mng (gui_obj *gui){
 										
 										
 										printf ("%s,s=%.9g,r=%.9g,x=%.9g,y=%.9g\n", lib[i].dashes[j].str, lib[i].dashes[j].scale, lib[i].dashes[j].rot , lib[i].dashes[j].ofs_x, lib[i].dashes[j].ofs_y);
+									}
+									
+									
+									
+									
+								}
+								
+								
+								/*if (lib[i].dashes[j].type != LTYP_SIMPLE){
+									
+									printf ("%s,%s,%.9g\n", lib[i].dashes[j].str, lib[i].dashes[j].sty, lib[i].dashes[j].scale);
+								}*/
+							}
+						}
+						/* === TEST === TEST === TEST === TEST */
+					}
+					
+					if (nk_button_label(gui->ctx, "Default")){
+						n_lib = 0;
+						lib = parse_lin_def((char *)dflt_ltype, &n_lib);
+						
+						/* === TEST === TEST === TEST === TEST */
+						int j;
+						for (i = 0; i < n_lib; i++){
+								//printf ("%s\n", lib[i].name);
+							for (j = 0; j < lib[i].size; j++){
+								if (lib[i].dashes[j].type == LTYP_SHAPE){
+									gui->drawing, lib[i].dashes[j].sty_i = font_tstyle_idx(gui->drawing, lib[i].dashes[j].sty);
+									
+									if (gui->drawing, lib[i].dashes[j].sty_i >= 0){
+										//printf ("Style: %s, ",gui->drawing->text_styles[lib[i].dashes[j].sty_i].name);
+										
+										struct tfont *font = gui->drawing->text_styles[lib[i].dashes[j].sty_i].font;
+										if (font && font->type == FONT_SHP){
+											shp_typ *shape = shp_name((shp_typ *)font->data, lib[i].dashes[j].str);
+											if (shape){
+												lib[i].dashes[j].num = shape->num;
+												
+												//printf ("Shape: %d,s=%.9g,r=%.9g,x=%.9g,y=%.9g", lib[i].dashes[j].num, lib[i].dashes[j].scale, lib[i].dashes[j].rot , lib[i].dashes[j].ofs_x, lib[i].dashes[j].ofs_y);
+											}
+										}
+										
+										//printf("\n");
+									}
+								}
+								else if (lib[i].dashes[j].type == LTYP_STRING){
+									gui->drawing, lib[i].dashes[j].sty_i = dxf_tstyle_idx(gui->drawing, lib[i].dashes[j].sty);
+									
+									if (gui->drawing, lib[i].dashes[j].sty_i >= 0){
+										//printf ("Style: %s, ",gui->drawing->text_styles[lib[i].dashes[j].sty_i].name);
+										
+										
+										//printf ("%s,s=%.9g,r=%.9g,x=%.9g,y=%.9g\n", lib[i].dashes[j].str, lib[i].dashes[j].scale, lib[i].dashes[j].rot , lib[i].dashes[j].ofs_x, lib[i].dashes[j].ofs_y);
+									}
+									
+									
+									
+									
+								}
+								
+								
+								/*if (lib[i].dashes[j].type != LTYP_SIMPLE){
+									
+									printf ("%s,%s,%.9g\n", lib[i].dashes[j].str, lib[i].dashes[j].sty, lib[i].dashes[j].scale);
+								}*/
+							}
+						}
+						/* === TEST === TEST === TEST === TEST */
+					}
+					if (nk_button_label(gui->ctx, "Extra")){
+						n_lib = 0;
+						lib = parse_lin_def((char *)extra_ltype, &n_lib);
+						
+						/* === TEST === TEST === TEST === TEST */
+						int j;
+						for (i = 0; i < n_lib; i++){
+								//printf ("%s\n", lib[i].name);
+							for (j = 0; j < lib[i].size; j++){
+								if (lib[i].dashes[j].type == LTYP_SHAPE){
+									gui->drawing, lib[i].dashes[j].sty_i = font_tstyle_idx(gui->drawing, lib[i].dashes[j].sty);
+									
+									if (gui->drawing, lib[i].dashes[j].sty_i >= 0){
+										//printf ("Style: %s, ",gui->drawing->text_styles[lib[i].dashes[j].sty_i].name);
+										
+										struct tfont *font = gui->drawing->text_styles[lib[i].dashes[j].sty_i].font;
+										if (font && font->type == FONT_SHP){
+											shp_typ *shape = shp_name((shp_typ *)font->data, lib[i].dashes[j].str);
+											if (shape){
+												lib[i].dashes[j].num = shape->num;
+												
+												//printf ("Shape: %d,s=%.9g,r=%.9g,x=%.9g,y=%.9g", lib[i].dashes[j].num, lib[i].dashes[j].scale, lib[i].dashes[j].rot , lib[i].dashes[j].ofs_x, lib[i].dashes[j].ofs_y);
+											}
+										}
+										
+										//printf("\n");
+									}
+								}
+								else if (lib[i].dashes[j].type == LTYP_STRING){
+									gui->drawing, lib[i].dashes[j].sty_i = dxf_tstyle_idx(gui->drawing, lib[i].dashes[j].sty);
+									
+									if (gui->drawing, lib[i].dashes[j].sty_i >= 0){
+										//printf ("Style: %s, ",gui->drawing->text_styles[lib[i].dashes[j].sty_i].name);
+										
+										
+										//printf ("%s,s=%.9g,r=%.9g,x=%.9g,y=%.9g\n", lib[i].dashes[j].str, lib[i].dashes[j].scale, lib[i].dashes[j].rot , lib[i].dashes[j].ofs_x, lib[i].dashes[j].ofs_y);
 									}
 									
 									

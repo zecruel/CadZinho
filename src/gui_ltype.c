@@ -251,22 +251,6 @@ dxf_ltype * parse_lin_def(char *doc, int *n){
 	return ret_vec;
 }
 
-dxf_ltype * load_lin_file(char *path, int *n){
-	/* parse Linetype Definition file */
-	long fsize;
-	*n = 0;
-	struct Mem_buffer *buf  = load_file_reuse(path, &fsize);
-	
-	if (buf == NULL) return NULL;
-	
-	char *doc = buf->buffer;  /*get document to parse */
-	
-	dxf_ltype * ret_vec = parse_lin_def(doc, n); /* parse document */
-	
-	manage_buffer(0, BUF_RELEASE); /* release buffer */
-	return ret_vec;
-}
-
 int font_tstyle_idx (dxf_drawing *drawing, char *name){
 	/* try to find a text style (return a index) looking for a font name */
 	int i;
@@ -813,6 +797,7 @@ int ltyp_mng (gui_obj *gui){
 			static char name[DXF_MAX_CHARS+1] = "", descr[DXF_MAX_CHARS+1] = "";
 			static char cpy_from[DXF_MAX_CHARS+1] = "", scale_str[64] = "1.0";
 			static enum Mode {LT_ADD_CPY, LT_ADD_LIB} mode = LT_ADD_CPY;
+			static enum libMode {LT_LIB_NONE, LT_LIB_DFLT, LT_LIB_EXTRA, LT_LIB_FILE} lib_mode = LT_LIB_NONE;
 			static int idx = -1, sel_ltyp = -1, n_lib = 0;
 			static double scale = 1.0;
 			static dxf_ltype * lib = NULL;
@@ -827,13 +812,26 @@ int ltyp_mng (gui_obj *gui){
 			
 			dxf_ltype line_type;
 			
-			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			nk_layout_row_dynamic(gui->ctx, 20, 2);
 			nk_label(gui->ctx, "Name:", NK_TEXT_LEFT);
-			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, name, DXF_MAX_CHARS, nk_filter_default);
 			nk_label(gui->ctx, "Description:", NK_TEXT_LEFT);
+			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, name, DXF_MAX_CHARS, nk_filter_default);
 			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, descr, DXF_MAX_CHARS, nk_filter_default);
+			
+			nk_layout_row(gui->ctx, NK_STATIC, 22, 2, (float[]){150, 60});
+			nk_label(gui->ctx, "Apply Scale Factor:", NK_TEXT_RIGHT);
+			nk_flags res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, scale_str, 63, nk_filter_float);
+			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
+				nk_edit_unfocus(gui->ctx);
+				if (strlen(scale_str)) /* update parameter value */
+					scale = atof(scale_str);
+				snprintf(scale_str, 63, "%.9g", scale);
+			}
+			
+			
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			nk_label(gui->ctx, "From:", NK_TEXT_LEFT);
-			/* Selection mode option - toggle, add or remove */
+			/* Selection mode option - copy or library */
 			nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
 			nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
 			if (gui_tab (gui, "Copy", mode == LT_ADD_CPY)) mode = LT_ADD_CPY;
@@ -869,131 +867,137 @@ int ltyp_mng (gui_obj *gui){
 						
 						nk_combo_end(gui->ctx);
 					}
-					nk_layout_row(gui->ctx, NK_STATIC, 22, 2, (float[]){200, 60});
-					nk_label(gui->ctx, "Apply Scale Factor:", NK_TEXT_RIGHT);
-					nk_flags res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, scale_str, 63, nk_filter_float);
-					if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
-						nk_edit_unfocus(gui->ctx);
-						if (strlen(scale_str)) /* update parameter value */
-							scale = atof(scale_str);
-						snprintf(scale_str, 63, "%.9g", scale);
-					}
 					
 				}
 				if (mode == LT_ADD_LIB) {
-					static char path[DXF_MAX_CHARS] = "";
-					static int show_app_file = 0;
-					int i;
-
-					/* supported image formats */
-					static const char *ext_type[] = {
-						"LIN",
-						"*"
-					};
-					static const char *ext_descr[] = {
-						"Line Type Library (.lin)",
-						"All files (*)"
-					};
-					#define FILTER_COUNT 2
-					
-					nk_layout_row_dynamic(gui->ctx, 20, 1);
-					nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, path, DXF_MAX_CHARS - 1, nk_filter_default);
-					
-					nk_layout_row_dynamic(gui->ctx, 20, 4);
-					if (nk_button_label(gui->ctx, "Browse")){/* call file browser */
-						show_app_file = 1;
-						/* set filter for suported output formats */
-						for (i = 0; i < FILTER_COUNT; i++){
-							gui->file_filter_types[i] = ext_type[i];
-							gui->file_filter_descr[i] = ext_descr[i];
-						}
-						gui->file_filter_count = FILTER_COUNT;
-						gui->filter_idx = 0;
-						
-						gui->show_file_br = 1;
-						gui->curr_path[0] = 0;
-					}
-					if (show_app_file){ /* running file browser */
-						if (gui->show_file_br == 2){ /* return file OK */
-							/* close browser window*/
-							gui->show_file_br = 0;
-							show_app_file = 0;
-							/* update output path */
-							strncpy(path, gui->curr_path, DXF_MAX_CHARS - 1);
-						}
-					} /* manual entry to output path */
-					
-					
-					
-					if (nk_button_label(gui->ctx, "Attach")){
-						
-						long fsize;
-						struct Mem_buffer *buf  = load_file_reuse(path, &fsize);
-						
-						if (buf != NULL) lib = load_lin_buf(gui->drawing, (char *)buf->buffer, &n_lib);
-						
-						manage_buffer(0, BUF_RELEASE); /* release buffer */
-						
-						
-						
-						#if(0)
-						n_lib = 0;
-						lib = load_lin_file(path, &n_lib);
-						
-						/* === TEST === TEST === TEST === TEST */
-						int j;
-						for (i = 0; i < n_lib; i++){
-								//printf ("%s\n", lib[i].name);
-							for (j = 0; j < lib[i].size; j++){
-								if (lib[i].dashes[j].type == LTYP_SHAPE){
-									gui->drawing, lib[i].dashes[j].sty_i = font_tstyle_idx(gui->drawing, lib[i].dashes[j].sty);
-									
-									if (gui->drawing, lib[i].dashes[j].sty_i >= 0){
-										printf ("Style: %s, ",gui->drawing->text_styles[lib[i].dashes[j].sty_i].name);
-										
-										struct tfont *font = gui->drawing->text_styles[lib[i].dashes[j].sty_i].font;
-										if (font && font->type == FONT_SHP){
-											shp_typ *shape = shp_name((shp_typ *)font->data, lib[i].dashes[j].str);
-											if (shape){
-												lib[i].dashes[j].num = shape->num;
-												
-												printf ("Shape: %d,s=%.9g,r=%.9g,x=%.9g,y=%.9g", lib[i].dashes[j].num, lib[i].dashes[j].scale, lib[i].dashes[j].rot , lib[i].dashes[j].ofs_x, lib[i].dashes[j].ofs_y);
-											}
-										}
-										
-										printf("\n");
-									}
-								}
-								else if (lib[i].dashes[j].type == LTYP_STRING){
-									gui->drawing, lib[i].dashes[j].sty_i = dxf_tstyle_idx(gui->drawing, lib[i].dashes[j].sty);
-									
-									if (gui->drawing, lib[i].dashes[j].sty_i >= 0){
-										printf ("Style: %s, ",gui->drawing->text_styles[lib[i].dashes[j].sty_i].name);
-										
-										
-										printf ("%s,s=%.9g,r=%.9g,x=%.9g,y=%.9g\n", lib[i].dashes[j].str, lib[i].dashes[j].scale, lib[i].dashes[j].rot , lib[i].dashes[j].ofs_x, lib[i].dashes[j].ofs_y);
-									}
-									
-									
-									
-									
-								}
-								
-								
-								/*if (lib[i].dashes[j].type != LTYP_SIMPLE){
-									
-									printf ("%s,%s,%.9g\n", lib[i].dashes[j].str, lib[i].dashes[j].sty, lib[i].dashes[j].scale);
-								}*/
-							}
-						}/* === TEST === TEST === TEST === TEST */
-						#endif
-					}
-					
-					if (nk_button_label(gui->ctx, "Default")){
+					/* Selection mode option - toggle, add or remove */
+					nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
+					nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
+					if (gui_tab (gui, "Default", lib_mode == LT_LIB_DFLT)) {
+						lib_mode = LT_LIB_DFLT;
 						lib = load_lin_buf(gui->drawing, (char *)dflt_ltype, &n_lib);
 					}
-					if (nk_button_label(gui->ctx, "Extra")){
+					if (gui_tab (gui, "Extra", lib_mode == LT_LIB_EXTRA)) {
+						lib_mode = LT_LIB_EXTRA;
 						lib = load_lin_buf(gui->drawing, (char *)extra_ltype, &n_lib);
+					}
+					if (gui_tab (gui, "File", lib_mode == LT_LIB_FILE)) {
+						lib_mode = LT_LIB_FILE;
+						n_lib = 0;
+					}
+					nk_style_pop_vec2(gui->ctx);
+					nk_layout_row_end(gui->ctx);
+					
+					
+					if(lib_mode == LT_LIB_FILE){
+						nk_layout_row_dynamic(gui->ctx, 10, 1);
+						
+						static char path[DXF_MAX_CHARS] = "";
+						static int show_app_file = 0;
+						int i;
+
+						/* supported image formats */
+						static const char *ext_type[] = {
+							"LIN",
+							"*"
+						};
+						static const char *ext_descr[] = {
+							"Line Type Library (.lin)",
+							"All files (*)"
+						};
+						#define FILTER_COUNT 2
+						
+						nk_layout_row(gui->ctx, NK_STATIC, 22, 3, (float[]){60, 400, 60});
+						
+						if (nk_button_label(gui->ctx, "Browse")){/* call file browser */
+							show_app_file = 1;
+							/* set filter for suported output formats */
+							for (i = 0; i < FILTER_COUNT; i++){
+								gui->file_filter_types[i] = ext_type[i];
+								gui->file_filter_descr[i] = ext_descr[i];
+							}
+							gui->file_filter_count = FILTER_COUNT;
+							gui->filter_idx = 0;
+							
+							gui->show_file_br = 1;
+							gui->curr_path[0] = 0;
+						}
+						if (show_app_file){ /* running file browser */
+							if (gui->show_file_br == 2){ /* return file OK */
+								/* close browser window*/
+								gui->show_file_br = 0;
+								show_app_file = 0;
+								/* update output path */
+								strncpy(path, gui->curr_path, DXF_MAX_CHARS - 1);
+							}
+						} /* manual entry to output path */
+						
+						nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, path, DXF_MAX_CHARS - 1, nk_filter_default);
+						
+						if (nk_button_label(gui->ctx, "Load")){
+							
+							long fsize;
+							struct Mem_buffer *buf  = load_file_reuse(path, &fsize);
+							
+							if (buf != NULL) lib = load_lin_buf(gui->drawing, (char *)buf->buffer, &n_lib);
+							
+							manage_buffer(0, BUF_RELEASE); /* release buffer */
+							
+							
+							
+							#if(0)
+							n_lib = 0;
+							lib = load_lin_file(path, &n_lib);
+							
+							/* === TEST === TEST === TEST === TEST */
+							int j;
+							for (i = 0; i < n_lib; i++){
+									//printf ("%s\n", lib[i].name);
+								for (j = 0; j < lib[i].size; j++){
+									if (lib[i].dashes[j].type == LTYP_SHAPE){
+										gui->drawing, lib[i].dashes[j].sty_i = font_tstyle_idx(gui->drawing, lib[i].dashes[j].sty);
+										
+										if (gui->drawing, lib[i].dashes[j].sty_i >= 0){
+											printf ("Style: %s, ",gui->drawing->text_styles[lib[i].dashes[j].sty_i].name);
+											
+											struct tfont *font = gui->drawing->text_styles[lib[i].dashes[j].sty_i].font;
+											if (font && font->type == FONT_SHP){
+												shp_typ *shape = shp_name((shp_typ *)font->data, lib[i].dashes[j].str);
+												if (shape){
+													lib[i].dashes[j].num = shape->num;
+													
+													printf ("Shape: %d,s=%.9g,r=%.9g,x=%.9g,y=%.9g", lib[i].dashes[j].num, lib[i].dashes[j].scale, lib[i].dashes[j].rot , lib[i].dashes[j].ofs_x, lib[i].dashes[j].ofs_y);
+												}
+											}
+											
+											printf("\n");
+										}
+									}
+									else if (lib[i].dashes[j].type == LTYP_STRING){
+										gui->drawing, lib[i].dashes[j].sty_i = dxf_tstyle_idx(gui->drawing, lib[i].dashes[j].sty);
+										
+										if (gui->drawing, lib[i].dashes[j].sty_i >= 0){
+											printf ("Style: %s, ",gui->drawing->text_styles[lib[i].dashes[j].sty_i].name);
+											
+											
+											printf ("%s,s=%.9g,r=%.9g,x=%.9g,y=%.9g\n", lib[i].dashes[j].str, lib[i].dashes[j].scale, lib[i].dashes[j].rot , lib[i].dashes[j].ofs_x, lib[i].dashes[j].ofs_y);
+										}
+										
+										
+										
+										
+									}
+									
+									
+									/*if (lib[i].dashes[j].type != LTYP_SIMPLE){
+										
+										printf ("%s,%s,%.9g\n", lib[i].dashes[j].str, lib[i].dashes[j].sty, lib[i].dashes[j].scale);
+									}*/
+								}
+							}/* === TEST === TEST === TEST === TEST */
+							#endif
+						}
+					
 					}
 					
 					//nk_layout_row_dynamic(gui->ctx, 20, 3);
@@ -1047,6 +1051,8 @@ int ltyp_mng (gui_obj *gui){
 								else {
 									if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel, lib[i].name)){
 										sel_ltyp = i;
+										strncpy (name, lib[i].name, DXF_MAX_CHARS);
+										strncpy (descr, lib[i].descr, DXF_MAX_CHARS);
 									}
 								}
 								
@@ -1062,6 +1068,8 @@ int ltyp_mng (gui_obj *gui){
 								else {
 									if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel, lib[i].descr)){
 										sel_ltyp = i;
+										strncpy (name, lib[i].name, DXF_MAX_CHARS);
+										strncpy (descr, lib[i].descr, DXF_MAX_CHARS);
 									}
 								}
 								
@@ -1073,6 +1081,8 @@ int ltyp_mng (gui_obj *gui){
 								else {
 									if(preview_ltype(gui->ctx ,&gui->b_icon_unsel, lib[i], scale_lib)){
 										sel_ltyp = i;
+										strncpy (name, lib[i].name, DXF_MAX_CHARS);
+										strncpy (descr, lib[i].descr, DXF_MAX_CHARS);
 									}
 								}
 							}

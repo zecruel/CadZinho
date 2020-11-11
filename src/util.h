@@ -54,4 +54,6 @@ struct Mem_buffer *  load_file_reuse(char *path, long *fsize);
 
 char * load_file(char *path, long *fsize);
 
+char * try_load_dflt(char *path, char *dflt);
+
 #endif

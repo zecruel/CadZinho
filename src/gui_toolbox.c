@@ -244,9 +244,15 @@ int gui_main_win(gui_obj *gui){
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
 			
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEW]))){
-				while (dxf_read (gui->drawing, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &gui->progress) > 0){
+				char *seed = try_load_dflt("seed.dxf", (char *)dxf_seed_2007);
 	
+				while (dxf_read (gui->drawing, seed, strlen(seed), &gui->progress) > 0){
+					
 				}
+				
+				free(seed);
+				seed = NULL;
+				
 				gui->layer_idx = dxf_lay_idx (gui->drawing, "0");
 				gui->ltypes_idx = dxf_ltype_idx (gui->drawing, "BYLAYER");
 				gui->t_sty_idx = dxf_tstyle_idx (gui->drawing, "STANDARD");

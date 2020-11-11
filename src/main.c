@@ -508,9 +508,15 @@ int main(int argc, char** argv){
 	url = NULL; /* pass a null file only for initialize the drawing structure */
 	
 	/* **************** init the main drawing ************ */
-	while (dxf_read (gui->drawing, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &gui->progress) > 0){
+	char *seed = try_load_dflt("seed.dxf", (char *)dxf_seed_2007);
+	
+	while (dxf_read (gui->drawing, seed, strlen(seed), &gui->progress) > 0){
 		
 	}
+	
+	free(seed);
+	seed = NULL;
+	
 	gui->layer_idx = dxf_lay_idx (gui->drawing, "0");
 	gui->ltypes_idx = dxf_ltype_idx (gui->drawing, "BYLAYER");
 	gui->t_sty_idx = dxf_tstyle_idx (gui->drawing, "STANDARD");

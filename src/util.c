@@ -353,3 +353,17 @@ char * load_file(char *path, long *fsize){
 	buf[*fsize] = 0;
 	return buf;
 }
+
+char * try_load_dflt(char *path, char *dflt){
+	long fsize;
+	
+	char *buf = load_file(path, &fsize);
+	
+	if (buf == NULL && dflt != NULL) {
+		fsize = strlen(dflt) + 1;
+		buf = calloc(fsize, 1);
+		if (buf) memcpy (buf, dflt, fsize);
+	}
+	
+	return buf;
+}

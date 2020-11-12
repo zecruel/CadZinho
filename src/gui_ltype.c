@@ -1,4 +1,37 @@
 #include "gui_ltype.h"
+int ltype_cpy (dxf_ltype *dest, dxf_ltype *src, double scale){
+	if (dest == NULL || src == NULL) return 0;
+	
+	strncpy (dest->name, src->name, DXF_MAX_CHARS);
+	strncpy (dest->descr, src->descr, DXF_MAX_CHARS);
+	dest->size = src->size;
+	dest->length = src->length * scale;
+	dest->num_el = 0;
+	dest->obj = NULL;
+	
+	int i;
+	for(i = 0; i < dest->size; i++){
+		dest->dashes[i].dash = src->dashes[i].dash * scale;
+		dest->dashes[i].type  = src->dashes[i].type;
+		strncpy (dest->dashes[i].sty, src->dashes[i].sty, 29);
+		dest->dashes[i].sty_i  = src->dashes[i].sty_i;
+		dest->dashes[i].abs_rot  = src->dashes[i].abs_rot;
+		dest->dashes[i].rot  = src->dashes[i].rot;
+		dest->dashes[i].scale = src->dashes[i].scale * scale;
+		dest->dashes[i].ofs_x = src->dashes[i].ofs_x * scale;
+		dest->dashes[i].ofs_y = src->dashes[i].ofs_y * scale;
+		
+		dest->dashes[i].num = 0;
+		if (dest->dashes[i].type == LTYP_SHAPE){
+			dest->dashes[i].num  = src->dashes[i].num;
+		}
+		else if (dest->dashes[i].type == LTYP_STRING){
+			strncpy (dest->dashes[i].str, src->dashes[i].str, 29);
+		}
+	}
+	
+	return 1;
+}
 
 dxf_ltype * parse_lin_def(char *doc, int *n){
 	/* parse Linetype Definition buffer */
@@ -795,7 +828,7 @@ int ltyp_mng (gui_obj *gui){
 		if (nk_begin(gui->ctx, "Add Line Type", nk_rect(gui->next_win_x + 150, gui->next_win_y + 70, 900, 500), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
 			
 			static char name[DXF_MAX_CHARS+1] = "", descr[DXF_MAX_CHARS+1] = "";
-			static char cpy_from[DXF_MAX_CHARS+1] = "", scale_str[64] = "1.0";
+			static char cpy_from[DXF_MAX_CHARS+1] = "";
 			static enum Mode {LT_ADD_CPY, LT_ADD_LIB} mode = LT_ADD_CPY;
 			static enum libMode {LT_LIB_NONE, LT_LIB_DFLT, LT_LIB_EXTRA, LT_LIB_FILE} lib_mode = LT_LIB_NONE;
 			static int idx = -1, sel_ltyp = -1, n_lib = 0;
@@ -818,16 +851,10 @@ int ltyp_mng (gui_obj *gui){
 			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, name, DXF_MAX_CHARS, nk_filter_default);
 			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, descr, DXF_MAX_CHARS, nk_filter_default);
 			
-			nk_layout_row(gui->ctx, NK_STATIC, 22, 2, (float[]){150, 60});
-			nk_label(gui->ctx, "Apply Scale Factor:", NK_TEXT_RIGHT);
-			nk_flags res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, scale_str, 63, nk_filter_float);
-			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
-				nk_edit_unfocus(gui->ctx);
-				if (strlen(scale_str)) /* update parameter value */
-					scale = atof(scale_str);
-				snprintf(scale_str, 63, "%.9g", scale);
-			}
+			nk_layout_row(gui->ctx, NK_STATIC, 32, 2, (float[]){100, 200});
+			nk_label(gui->ctx, "Apply Scale:", NK_TEXT_RIGHT);
 			
+			scale = nk_propertyd(gui->ctx, "Factor", 1e-9, scale, 1.0e9, SMART_STEP(scale), SMART_STEP(scale));
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			nk_label(gui->ctx, "From:", NK_TEXT_LEFT);
@@ -858,6 +885,7 @@ int ltyp_mng (gui_obj *gui){
 							if (nk_button_label(gui->ctx, ltypes[ltyp_idx].name)){
 								idx = ltyp_idx;
 								strncpy (cpy_from, ltypes[ltyp_idx].name, DXF_MAX_CHARS);
+								strncpy (name, ltypes[ltyp_idx].name, DXF_MAX_CHARS);
 								strncpy (descr, ltypes[ltyp_idx].descr, DXF_MAX_CHARS);
 								nk_combo_close(gui->ctx);
 								break;
@@ -1098,19 +1126,11 @@ int ltyp_mng (gui_obj *gui){
 			
 			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 100});
 			if (nk_button_label(gui->ctx, "OK")){
-				
-				strncpy (line_type.name, name, DXF_MAX_CHARS);
-				strncpy (line_type.descr, descr, DXF_MAX_CHARS);
-				line_type.obj = NULL;
-				
 				if (mode == LT_ADD_CPY){
 					if (idx > -1){
-						line_type.size = ltypes[idx].size;
-						for (i = 0; i < line_type.size; i++){
-							line_type.dashes[i].dash = ltypes[idx].dashes[i].dash* scale;
-						}
-						line_type.length = ltypes[idx].length * scale;
-						line_type.num_el = 0;
+						ltype_cpy (&line_type, &ltypes[idx], scale);
+						strncpy (line_type.name, name, DXF_MAX_CHARS);
+						strncpy (line_type.descr, descr, DXF_MAX_CHARS);
 						
 						if (!dxf_new_ltype (gui->drawing, &line_type)){
 							/* fail to  create, commonly name already exists */
@@ -1128,8 +1148,11 @@ int ltyp_mng (gui_obj *gui){
 				}
 				else{
 					if (n_lib > 0 && sel_ltyp>= 0){
-					
-						if (!dxf_new_ltype (gui->drawing, &lib[sel_ltyp])){
+						ltype_cpy (&line_type, &lib[sel_ltyp], scale);
+						strncpy (line_type.name, name, DXF_MAX_CHARS);
+						strncpy (line_type.descr, descr, DXF_MAX_CHARS);
+						
+						if (!dxf_new_ltype (gui->drawing, &line_type)){
 							/* fail to  create, commonly name already exists */
 							snprintf(gui->log_msg, 63, "Error: Line Type already exists");
 						}

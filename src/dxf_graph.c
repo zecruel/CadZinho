@@ -99,6 +99,8 @@ int change_ltype (dxf_drawing *drawing, graph_obj * graph, int ltype_idx, double
 		for (i = 0; i < drawing->ltypes[ltype_idx].size; i++){
 			graph->pattern[i] = drawing->ltypes[ltype_idx].dashes[i].dash * drawing->ltscale * scale;
 			graph->cmplx_pat[i] = NULL;
+			
+			/* ---------- complex line types ------------------- */
 			struct tfont *font = NULL;
 			if ( drawing->ltypes[ltype_idx].dashes[i].type == LTYP_SHAPE){
 				font = drawing->text_styles[drawing->ltypes[ltype_idx].dashes[i].sty_i].font;
@@ -108,19 +110,12 @@ int change_ltype (dxf_drawing *drawing, graph_obj * graph, int ltype_idx, double
 					graph->cmplx_pat[i] = list_new (NULL, graph->pool_idx);
 					list_push(graph->cmplx_pat[i], list_new ((void *) cplx_g, graph->pool_idx));
 					
-					
-					graph_list_modify(graph->cmplx_pat[i],
-						0.0,//drawing->ltypes[ltype_idx].dashes[i].ofs_x,// * drawing->ltscale * scale,
-						0.0,//drawing->ltypes[ltype_idx].dashes[i].ofs_y,// * drawing->ltscale * scale,
-						drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
-						drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
-						0.0);//drawing->ltypes[ltype_idx].dashes[i].rot);
 					graph_list_modify(graph->cmplx_pat[i],
 						drawing->ltypes[ltype_idx].dashes[i].ofs_x * drawing->ltscale * scale,
 						drawing->ltypes[ltype_idx].dashes[i].ofs_y * drawing->ltscale * scale,
-						1.0,//drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
-						1.0,//drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
-						0.0);//drawing->ltypes[ltype_idx].dashes[i].rot);
+						drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
+						drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
+						drawing->ltypes[ltype_idx].dashes[i].rot);
 				}
 				
 			}
@@ -131,17 +126,11 @@ int change_ltype (dxf_drawing *drawing, graph_obj * graph, int ltype_idx, double
 				font_parse_str(font, graph->cmplx_pat[i], graph->pool_idx, drawing->ltypes[ltype_idx].dashes[i].str, &w, 0);
 				
 				graph_list_modify(graph->cmplx_pat[i],
-					0.0,//drawing->ltypes[ltype_idx].dashes[i].ofs_x,// * drawing->ltscale * scale,
-					0.0,//drawing->ltypes[ltype_idx].dashes[i].ofs_y,// * drawing->ltscale * scale,
-					drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
-					drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
-					0.0);//drawing->ltypes[ltype_idx].dashes[i].rot);
-				graph_list_modify(graph->cmplx_pat[i],
 					drawing->ltypes[ltype_idx].dashes[i].ofs_x * drawing->ltscale * scale,
 					drawing->ltypes[ltype_idx].dashes[i].ofs_y * drawing->ltscale * scale,
-					1.0,//drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
-					1.0,//drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
-					0.0);//drawing->ltypes[ltype_idx].dashes[i].rot);
+					drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
+					drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
+					drawing->ltypes[ltype_idx].dashes[i].rot);
 			}
 		}
 		return 1;

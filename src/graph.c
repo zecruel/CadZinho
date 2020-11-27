@@ -945,7 +945,16 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 				
 				/* draw pattern */
 				iter = (int) (patt_int * (master->patt_size)) + patt_a_i;
-				for (i = 0; i < iter; i++){
+				for (i = 0; i < iter; i++){					
+					draw = master->pattern[patt_i] >= 0.0;
+					p2x = fabs(master->pattern[patt_i]) * param.scale * cosine + p1x;
+					p2y = fabs(master->pattern[patt_i]) * param.scale * sine + p1y;
+					if (draw){
+						bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
+					}
+					p1x = p2x;
+					p1y = p2y;
+					
 					/*------------- complex line type ----------------*/
 					if (master->cmplx_pat[patt_i] != NULL){
 						list_node *cplx = master->cmplx_pat[patt_i]->next;
@@ -959,10 +968,10 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 								cplx_lin = cplx_gr->list->next;
 								/* draw the lines */
 								while(cplx_lin){ /*sweep the list content */
-									double xd0 = p1x + (cplx_lin->x0 * param.scale);
-									double yd0 = p1y + (cplx_lin->y0 * param.scale);
-									double xd1 = p1x + (cplx_lin->x1 * param.scale);
-									double yd1 = p1y + (cplx_lin->y1 * param.scale);
+									double xd0 = p1x + ((cplx_lin->x0 * cosine -  cplx_lin->y0 * sine) * param.scale);
+									double yd0 = p1y + ((cplx_lin->x0 * sine +  cplx_lin->y0 * cosine) * param.scale);
+									double xd1 = p1x + ((cplx_lin->x1 * cosine -  cplx_lin->y1 * sine) * param.scale);
+									double yd1 = p1y + ((cplx_lin->x1 * sine +  cplx_lin->y1 * cosine) * param.scale);
 									
 									bmp_line(img, xd0, yd0, xd1, yd1);
 									
@@ -973,16 +982,6 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 						}
 					}
 					/*------------------------------------------------------*/
-					
-					
-					draw = master->pattern[patt_i] >= 0.0;
-					p2x = fabs(master->pattern[patt_i]) * param.scale * cosine + p1x;
-					p2y = fabs(master->pattern[patt_i]) * param.scale * sine + p1y;
-					if (draw){
-						bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
-					}
-					p1x = p2x;
-					p1y = p2y;
 					
 					patt_i++;
 					if (patt_i >= master->patt_size) patt_i = 0;

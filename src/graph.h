@@ -45,6 +45,7 @@ struct Graph_obj{
 	int thick_const;
 	/* pattern information */
 	double pattern[20];
+	list_node * cmplx_pat[20];
 	int patt_size;
 	/* extent information */
 	double ext_min_x, ext_min_y;

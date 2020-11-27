@@ -98,6 +98,51 @@ int change_ltype (dxf_drawing *drawing, graph_obj * graph, int ltype_idx, double
 		graph->patt_size = drawing->ltypes[ltype_idx].size;
 		for (i = 0; i < drawing->ltypes[ltype_idx].size; i++){
 			graph->pattern[i] = drawing->ltypes[ltype_idx].dashes[i].dash * drawing->ltscale * scale;
+			graph->cmplx_pat[i] = NULL;
+			struct tfont *font = NULL;
+			if ( drawing->ltypes[ltype_idx].dashes[i].type == LTYP_SHAPE){
+				font = drawing->text_styles[drawing->ltypes[ltype_idx].dashes[i].sty_i].font;
+				double w;
+				graph_obj *cplx_g = font_parse_cp(font, drawing->ltypes[ltype_idx].dashes[i].num, 0, graph->pool_idx, &w);
+				if (cplx_g){
+					graph->cmplx_pat[i] = list_new (NULL, graph->pool_idx);
+					list_push(graph->cmplx_pat[i], list_new ((void *) cplx_g, graph->pool_idx));
+					
+					
+					graph_list_modify(graph->cmplx_pat[i],
+						0.0,//drawing->ltypes[ltype_idx].dashes[i].ofs_x,// * drawing->ltscale * scale,
+						0.0,//drawing->ltypes[ltype_idx].dashes[i].ofs_y,// * drawing->ltscale * scale,
+						drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
+						drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
+						0.0);//drawing->ltypes[ltype_idx].dashes[i].rot);
+					graph_list_modify(graph->cmplx_pat[i],
+						drawing->ltypes[ltype_idx].dashes[i].ofs_x * drawing->ltscale * scale,
+						drawing->ltypes[ltype_idx].dashes[i].ofs_y * drawing->ltscale * scale,
+						1.0,//drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
+						1.0,//drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
+						0.0);//drawing->ltypes[ltype_idx].dashes[i].rot);
+				}
+				
+			}
+			if ( drawing->ltypes[ltype_idx].dashes[i].type == LTYP_STRING){
+				font = drawing->text_styles[drawing->ltypes[ltype_idx].dashes[i].sty_i].font;
+				double w;
+				graph->cmplx_pat[i] = list_new (NULL, graph->pool_idx);
+				font_parse_str(font, graph->cmplx_pat[i], graph->pool_idx, drawing->ltypes[ltype_idx].dashes[i].str, &w, 0);
+				
+				graph_list_modify(graph->cmplx_pat[i],
+					0.0,//drawing->ltypes[ltype_idx].dashes[i].ofs_x,// * drawing->ltscale * scale,
+					0.0,//drawing->ltypes[ltype_idx].dashes[i].ofs_y,// * drawing->ltscale * scale,
+					drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
+					drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
+					0.0);//drawing->ltypes[ltype_idx].dashes[i].rot);
+				graph_list_modify(graph->cmplx_pat[i],
+					drawing->ltypes[ltype_idx].dashes[i].ofs_x * drawing->ltscale * scale,
+					drawing->ltypes[ltype_idx].dashes[i].ofs_y * drawing->ltscale * scale,
+					1.0,//drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
+					1.0,//drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
+					0.0);//drawing->ltypes[ltype_idx].dashes[i].rot);
+			}
 		}
 		return 1;
 	}
@@ -4469,6 +4514,7 @@ int dxf_hatch_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, i
 							if (!assoc){
 								curr_graph->patt_size = 1;
 								curr_graph->pattern[0] = -1.0;
+								curr_graph->cmplx_pat[0] = NULL;
 							}
 							list_push(list_ret, list_new((void *)curr_graph, pool_idx));
 						}

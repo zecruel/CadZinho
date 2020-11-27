@@ -1,5 +1,5 @@
 #include "gui_ltype.h"
-int ltype_cpy (dxf_ltype *dest, dxf_ltype *src, double scale){
+static int ltype_cpy (dxf_ltype *dest, dxf_ltype *src, double scale){
 	if (dest == NULL || src == NULL) return 0;
 	
 	strncpy (dest->name, src->name, DXF_MAX_CHARS);
@@ -825,7 +825,7 @@ int ltyp_mng (gui_obj *gui){
 	if ((show_add)){
 		static int add_init = 0;
 		/* edit window - allow modifications on parameters of selected text style */
-		if (nk_begin(gui->ctx, "Add Line Type", nk_rect(gui->next_win_x + 150, gui->next_win_y + 70, 900, 500), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
+		if (nk_begin(gui->ctx, "Add Line Type", nk_rect(gui->next_win_x + 150, gui->next_win_y + 70, 560, 500), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
 			
 			static char name[DXF_MAX_CHARS+1] = "", descr[DXF_MAX_CHARS+1] = "";
 			static char cpy_from[DXF_MAX_CHARS+1] = "";
@@ -845,7 +845,8 @@ int ltyp_mng (gui_obj *gui){
 			
 			dxf_ltype line_type;
 			
-			nk_layout_row_dynamic(gui->ctx, 20, 2);
+			//nk_layout_row_dynamic(gui->ctx, 20, 2);
+			nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.4, 0.6});
 			nk_label(gui->ctx, "Name:", NK_TEXT_LEFT);
 			nk_label(gui->ctx, "Description:", NK_TEXT_LEFT);
 			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, name, DXF_MAX_CHARS, nk_filter_default);
@@ -934,8 +935,8 @@ int ltyp_mng (gui_obj *gui){
 							"All files (*)"
 						};
 						#define FILTER_COUNT 2
-						
-						nk_layout_row(gui->ctx, NK_STATIC, 22, 3, (float[]){60, 400, 60});
+						nk_layout_row(gui->ctx, NK_DYNAMIC, 22, 3, (float[]){0.15, 0.75, 0.1});
+						//nk_layout_row(gui->ctx, NK_STATIC, 22, 3, (float[]){60, 400, 60});
 						
 						if (nk_button_label(gui->ctx, "Browse")){/* call file browser */
 							show_app_file = 1;
@@ -1035,7 +1036,9 @@ int ltyp_mng (gui_obj *gui){
 						if (nk_group_begin(gui->ctx, "LibLtyp_head", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 							/* buttons to change sorting criteria */
 							
-							nk_layout_row(gui->ctx, NK_STATIC, 22, 3, (float[]){175, 300, 300});
+							nk_layout_row(gui->ctx, NK_STATIC, 22, 2, (float[]){175, 300});
+							//nk_layout_row(gui->ctx, NK_STATIC, 22, 3, (float[]){175, 300, 300});
+							
 							/* sort by ltype name 
 							if (sorted == BY_NAME){
 								if (sort_reverse){
@@ -1055,7 +1058,7 @@ int ltyp_mng (gui_obj *gui){
 							nk_button_label(gui->ctx, "Name");
 							
 							nk_button_label(gui->ctx, "Description");
-							nk_button_label(gui->ctx, "Preview");
+							//nk_button_label(gui->ctx, "Preview");
 							
 							nk_group_end(gui->ctx);
 						}
@@ -1063,7 +1066,8 @@ int ltyp_mng (gui_obj *gui){
 						/* body of list */
 						nk_layout_row_dynamic(gui->ctx, 150, 1);
 						if (nk_group_begin(gui->ctx, "LibLtyp_view", NK_WINDOW_BORDER)) {
-							nk_layout_row(gui->ctx, NK_STATIC, 20, 3, (float[]){175, 300, 300});
+							nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){175, 300});
+							//nk_layout_row(gui->ctx, NK_STATIC, 20, 3, (float[]){175, 300, 300});
 						
 						
 						
@@ -1100,7 +1104,7 @@ int ltyp_mng (gui_obj *gui){
 										strncpy (descr, lib[i].descr, DXF_MAX_CHARS);
 									}
 								}
-								
+								/*
 								if (sel_ltyp == i){
 									if(preview_ltype(gui->ctx ,&gui->b_icon_sel, lib[i], scale_lib)){
 										sel_ltyp = -1;
@@ -1113,6 +1117,7 @@ int ltyp_mng (gui_obj *gui){
 										strncpy (descr, lib[i].descr, DXF_MAX_CHARS);
 									}
 								}
+								*/
 							}
 							nk_group_end(gui->ctx);
 						}

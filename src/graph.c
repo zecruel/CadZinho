@@ -305,6 +305,11 @@ graph_obj * graph_new(int pool_idx){
 		new_obj->patt_size = 1;
 		new_obj->pattern[0] = 1.0;
 		
+		int i;
+		for (i = 0; i < 20; i++){
+			new_obj->cmplx_pat[i] = NULL;
+		}
+		
 		/* extent init */
 		new_obj->ext_ini = 0;
 		new_obj->ext_min_x = 0.0;
@@ -941,6 +946,35 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 				/* draw pattern */
 				iter = (int) (patt_int * (master->patt_size)) + patt_a_i;
 				for (i = 0; i < iter; i++){
+					/*------------- complex line type ----------------*/
+					if (master->cmplx_pat[patt_i] != NULL){
+						list_node *cplx = master->cmplx_pat[patt_i]->next;
+						graph_obj *cplx_gr = NULL;
+						line_node *cplx_lin = NULL;
+						
+						/* sweep the main list */
+						while (cplx != NULL){
+							if (cplx->data){
+								cplx_gr = (graph_obj *)cplx->data;
+								cplx_lin = cplx_gr->list->next;
+								/* draw the lines */
+								while(cplx_lin){ /*sweep the list content */
+									double xd0 = p1x + (cplx_lin->x0 * param.scale);
+									double yd0 = p1y + (cplx_lin->y0 * param.scale);
+									double xd1 = p1x + (cplx_lin->x1 * param.scale);
+									double yd1 = p1y + (cplx_lin->y1 * param.scale);
+									
+									bmp_line(img, xd0, yd0, xd1, yd1);
+									
+									cplx_lin = cplx_lin->next; /* go to next */
+								}
+							}
+							cplx = cplx->next;
+						}
+					}
+					/*------------------------------------------------------*/
+					
+					
 					draw = master->pattern[patt_i] >= 0.0;
 					p2x = fabs(master->pattern[patt_i]) * param.scale * cosine + p1x;
 					p2y = fabs(master->pattern[patt_i]) * param.scale * sine + p1y;
@@ -2882,7 +2916,7 @@ int graph_list_matrix(list_node *list, double matrix[3][3]){
 	}
 	return ok;
 }
-
+#if(0)
 int graph_change_patt (graph_obj * graph, double pattern[20], int size){
 	/* change the graph line pattern */
 	if(graph){
@@ -2890,6 +2924,9 @@ int graph_change_patt (graph_obj * graph, double pattern[20], int size){
 		graph->patt_size = size;
 		for (i = 0; i < size; i++){
 			graph->pattern[i] = pattern[i];
+			
+			/* TODO */
+			graph->cmplx_pat[i] = NULL;
 		}
 		return 1;
 	}
@@ -2916,3 +2953,4 @@ int graph_list_change_patt(list_node *list, double pattern[20], int size){
 	}
 	return ok;
 }
+#endif

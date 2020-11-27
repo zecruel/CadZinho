@@ -955,6 +955,62 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 						size = current->value.i_data;
 						if (size > DXF_MAX_PAT) {
 							size < DXF_MAX_PAT;}
+						break;
+					case 74: /* complex flag */
+						if (pat_idx > 0){
+							if (current->value.i_data & 2) dashes[pat_idx - 1].type = LTYP_STRING;
+							if (current->value.i_data & 4) dashes[pat_idx - 1].type = LTYP_SHAPE;
+						}
+						break;
+					case 75: /* complex - shape num */
+						if (pat_idx > 0){
+							if (dashes[pat_idx - 1].type == LTYP_SHAPE) {
+								dashes[pat_idx - 1].num =current->value.i_data;
+							}
+						}
+						break;
+					case 9: /* complex - string */
+						if (pat_idx > 0){
+							if (dashes[pat_idx - 1].type == LTYP_STRING) {
+								strncpy(dashes[pat_idx - 1].str, current->value.s_data, 29);
+							}
+						}
+						break;
+					case 44: /* complex - offset x */
+						if (pat_idx > 0){
+							dashes[pat_idx - 1].ofs_x = current->value.d_data;
+						}
+						break;
+					case 45: /* complex - offset y */
+						if (pat_idx > 0){
+							dashes[pat_idx - 1].ofs_y = current->value.d_data;
+						}
+						break;
+					case 46: /* complex - scale */
+						if (pat_idx > 0){
+							dashes[pat_idx - 1].scale = current->value.d_data;
+						}
+						break;
+					case 50: /* complex - rotation */
+						if (pat_idx > 0){
+							dashes[pat_idx - 1].rot = current->value.d_data;
+						}
+						break;
+					case 340: /* complex - rotation */
+						if (pat_idx > 0){
+							dashes[pat_idx - 1].sty_i = 0;
+							
+							long int id = strtol(current->value.s_data, NULL, 16);
+							dxf_node *t_obj = dxf_find_handle(drawing->t_style, id);
+							
+							for (j=0; j < drawing->num_tstyles; j++){
+								if (drawing->text_styles[j].obj == t_obj){
+									dashes[pat_idx - 1].sty_i = j;
+									break;
+								}
+							}
+						}
+						break;
 				}
 			}
 			current = current->next;
@@ -979,6 +1035,23 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 		if (i < DXF_MAX_LTYPES){
 			strcpy(drawing->ltypes[i].name, name);
 			strcpy(drawing->ltypes[i].descr, descr);
+			for (j = 0; j < size; j++){
+				drawing->ltypes[i].dashes[j].dash = dashes[j].dash;
+				drawing->ltypes[i].dashes[j].type = dashes[j].type;
+				drawing->ltypes[i].dashes[j].num = 0;
+				if (dashes[j].type == LTYP_SHAPE){
+					drawing->ltypes[i].dashes[j].num = dashes[j].num;
+				} else if (dashes[j].type == LTYP_STRING){
+					strncpy (drawing->ltypes[i].dashes[j].str, dashes[j].str,  29);
+				}
+				strncpy (drawing->ltypes[i].dashes[j].sty, dashes[j].sty, 29);
+				drawing->ltypes[i].dashes[j].sty_i = dashes[j].sty_i;
+				drawing->ltypes[i].dashes[j].abs_rot = dashes[j].abs_rot;
+				drawing->ltypes[i].dashes[j].rot = dashes[j].rot;
+				drawing->ltypes[i].dashes[j].scale = dashes[j].scale;
+				drawing->ltypes[i].dashes[j].ofs_x = dashes[j].ofs_x;
+				drawing->ltypes[i].dashes[j].ofs_y = dashes[j].ofs_y;
+			}
 			memcpy(drawing->ltypes[i].dashes, dashes, size * sizeof(dxf_ltyp_pat));
 			drawing->ltypes[i].size = size;
 			drawing->ltypes[i].length = length;
@@ -1565,11 +1638,11 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 		/* assemble the layers list */
 		dxf_layer_assemb (drawing);
 		
+		/* assemble the text style list */
+		dxf_tstyles_assemb(drawing);
+		
 		/* assemble the ltypes list */
 		dxf_ltype_assemb (drawing);
-		
-		/* assemble the fonts list */
-		dxf_tstyles_assemb(drawing);
 		
 		/*find the handle seed */
 		drawing->hand_seed = dxf_find_attr2(drawing->head, 5);

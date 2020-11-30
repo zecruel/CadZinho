@@ -3137,7 +3137,7 @@ const char *extra_ltype =
 "A,.25,-.1,[BOX,ltypeshp.shx,x=-.1,s=.1],-.1,1\n"
 "\n"
 "*Fence_X,----X-----X----X-----X----X-----X--\n"
-"A,.25,-.1,[\"X\",STANDARD,S=.1,R=0.0,X=-0.4,Y=-.05],-.1,1\n"
+"A,.25,-.1,[\"X\",STANDARD,S=.1,R=0.0,X=-0.04,Y=-.05],-.1,1\n"
 "\n"
 "*Tracks,-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-|-\n"
 "A,.15,[TRACK1,ltypeshp.shx,s=.25],.15\n"

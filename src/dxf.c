@@ -900,12 +900,13 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 	drawing->ltypes[0].obj = NULL;
 	
 	i = 0;
-	while (curr_ltype = dxf_find_obj_i(drawing->t_ltype, "LTYPE", i)){/* get the next layer */
-	
+	while (curr_ltype = dxf_find_obj_i(drawing->t_ltype, "LTYPE", i)){/* get the next ltype */
+		
+		/* init the line type */
 		name[0] = 0;
 		descr[0] = 0;
 		size = 0;
-		//pat[0] = 0;
+		/* init first dash */
 		dashes[0].dash = 0;
 		dashes[0].type = LTYP_SIMPLE;
 		dashes[0].str[0] = 0;
@@ -936,9 +937,9 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 						break;
 					case 49: /* pattern element */
 						if (pat_idx < DXF_MAX_PAT) {
-							//pat[pat_idx] = current->value.d_data;
-							dashes[pat_idx].dash = current->value.d_data;
-							dashes[pat_idx].type = LTYP_SIMPLE;
+							dashes[pat_idx].dash = current->value.d_data; /* current dash length */
+							dashes[pat_idx].type = LTYP_SIMPLE; /* presume simple regular dash */
+							/* init parameters for complex element */
 							dashes[pat_idx].str[0] = 0;
 							dashes[pat_idx].sty[0] = 0;
 							dashes[pat_idx].sty_i = -1;
@@ -996,16 +997,17 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 							dashes[pat_idx - 1].rot = current->value.d_data;
 						}
 						break;
-					case 340: /* complex - rotation */
+					case 340: /* complex - style handle */
 						if (pat_idx > 0){
-							dashes[pat_idx - 1].sty_i = 0;
-							
-							long int id = strtol(current->value.s_data, NULL, 16);
+							dashes[pat_idx - 1].sty_i = 0; /* init  style index */
+							long int id = strtol(current->value.s_data, NULL, 16); /* convert string handle to integer */
+							/* look for correspondent style object */
 							dxf_node *t_obj = dxf_find_handle(drawing->t_style, id);
 							
-							for (j=0; j < drawing->num_tstyles; j++){
-								if (drawing->text_styles[j].obj == t_obj){
-									dashes[pat_idx - 1].sty_i = j;
+							for (j=0; j < drawing->num_tstyles; j++){ /* sweep drawing's text styles */
+								if (drawing->text_styles[j].obj == t_obj){ /* verify if object matchs */
+									dashes[pat_idx - 1].sty_i = j; /* get index */
+									strncpy(dashes[pat_idx - 1].sty, drawing->text_styles[j].name, 29); /* and style name */
 									break;
 								}
 							}
@@ -1016,26 +1018,11 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 			current = current->next;
 		}
 		
-		/* adjust pattern to pixel units 
-		/* first, find the max patt length
-		max = 0.0;
-		for(j = 0; j < size; j++){
-			if (max < fabs(pat[j])){
-				max = fabs(pat[j]);
-			}
-		}
-		if (max == 0.0) max = 1.0;
-		/* then normalize each value in pattern 
-		for(j = 0; j < size; j++){
-			pat[j] = pat[j]/max;
-		}
-		*/
-		
 		/* set the variables on the current ltype in drawing structure */
 		if (i < DXF_MAX_LTYPES){
 			strcpy(drawing->ltypes[i].name, name);
 			strcpy(drawing->ltypes[i].descr, descr);
-			for (j = 0; j < size; j++){
+			for (j = 0; j < size; j++){ /* store dashes parameters */
 				drawing->ltypes[i].dashes[j].dash = dashes[j].dash;
 				drawing->ltypes[i].dashes[j].type = dashes[j].type;
 				drawing->ltypes[i].dashes[j].num = 0;
@@ -1052,7 +1039,6 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 				drawing->ltypes[i].dashes[j].ofs_x = dashes[j].ofs_x;
 				drawing->ltypes[i].dashes[j].ofs_y = dashes[j].ofs_y;
 			}
-			memcpy(drawing->ltypes[i].dashes, dashes, size * sizeof(dxf_ltyp_pat));
 			drawing->ltypes[i].size = size;
 			drawing->ltypes[i].length = length;
 			drawing->ltypes[i].num_el = 0;

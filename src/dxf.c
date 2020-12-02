@@ -820,7 +820,8 @@ void dxf_layer_assemb (dxf_drawing *drawing){
 	drawing->layers[0].obj = NULL;
 	
 	i = 0;
-	while (curr_layer = dxf_find_obj_i(drawing->t_layer, "LAYER", i)){/* get the next layer */
+	dxf_node *nxt_lay = NULL;
+	while (curr_layer = dxf_find_obj_nxt(drawing->t_layer, &nxt_lay, "LAYER")){ /* get the next layer */
 	
 		name[0] = 0;
 		color = 0;
@@ -873,10 +874,10 @@ void dxf_layer_assemb (dxf_drawing *drawing){
 		}
 		
 		i++;
+		if (!nxt_lay) break; /* end of LAYERs in table */
 	}
 	if (i< DXF_MAX_LAYERS) drawing->num_layers += i;
 	else drawing->num_layers = DXF_MAX_LAYERS;
-	//printf("Num Layers = %d\n", drawing->num_layers);
 }
 
 void dxf_ltype_assemb (dxf_drawing *drawing){
@@ -900,7 +901,8 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 	drawing->ltypes[0].obj = NULL;
 	
 	i = 0;
-	while (curr_ltype = dxf_find_obj_i(drawing->t_ltype, "LTYPE", i)){/* get the next ltype */
+	dxf_node *nxt_ltyp = NULL;
+	while (curr_ltype = dxf_find_obj_nxt(drawing->t_ltype, &nxt_ltyp, "LTYPE")){ /* get the next ltype */
 		
 		/* init the line type */
 		name[0] = 0;
@@ -959,6 +961,7 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 						break;
 					case 74: /* complex flag */
 						if (pat_idx > 0){
+							if (current->value.i_data & 1) dashes[pat_idx - 1].abs_rot = 1;
 							if (current->value.i_data & 2) dashes[pat_idx - 1].type = LTYP_STRING;
 							if (current->value.i_data & 4) dashes[pat_idx - 1].type = LTYP_SHAPE;
 						}
@@ -1046,6 +1049,7 @@ void dxf_ltype_assemb (dxf_drawing *drawing){
 		}
 		
 		i++;
+		if (!nxt_ltyp) break; /* end of LTYPEs in table */
 	}
 	if (i < DXF_MAX_LTYPES) drawing->num_ltypes += i;
 	else drawing->num_ltypes = DXF_MAX_LTYPES;
@@ -1093,7 +1097,8 @@ void dxf_tstyles_assemb (dxf_drawing *drawing){
 	//}
 	
 	i = 0;
-	while (curr_tstyle = dxf_find_obj_i(drawing->t_style, "STYLE", i)){/* get the next text style */
+	dxf_node *nxt_sty = NULL;
+	while (curr_tstyle = dxf_find_obj_nxt(drawing->t_style, &nxt_sty, "STYLE")){ /* get the next style */
 	
 		name[0] = 0;
 		file_name[0] = 0;
@@ -1158,6 +1163,7 @@ void dxf_tstyles_assemb (dxf_drawing *drawing){
 			strncpy(drawing->text_styles[i].subst_file, subst_file, DXF_MAX_CHARS);
 		}
 		i++;
+		if (!nxt_sty) break; /* end of STYLEs in table */
 	}
 	if (i < DXF_MAX_FONTS) drawing->num_tstyles += i;
 	else drawing->num_tstyles = DXF_MAX_FONTS;

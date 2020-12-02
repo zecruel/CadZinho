@@ -790,8 +790,6 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 	if (master->patt_size > 1) { /* if graph is dashed lines */
 		int patt_i = 0, patt_a_i = 0, patt_p_i = 0, draw;
 		double patt_len = 0.0, patt_int, patt_part, patt_rem = 0.0, patt_acc, patt_rem_n;
-		double patt_start_x = 0, patt_start_y = 0;
-		double patt_start = 0;
 		
 		double p1x, p1y, p2x, p2y;
 		double last;
@@ -820,59 +818,11 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 				cosine = dx/modulus;
 				sine = dy/modulus;
 			}
-			
-			/* find the start point of pattern, based in line - axis interceptions*/
-			patt_start_x = x0;
-			patt_start_y = y0;
-			patt_start = 0;
-			
-			if (fabs(dy) > TOLERANCE){
-				patt_start_x = (dy * x0 - dx * y0) / dy;
-				patt_start_x /= 2;
-			}else patt_start_x = 0;
-			
-			if (fabs(dx) > TOLERANCE){
-				patt_start_y = (dx * y0 - dy * x0) / dx;
-				patt_start_y /= 2;
-			}else patt_start_y = 0;
-			
-			/*find distance between pattern start and segment's first point */
-			if (fabs(cosine) > TOLERANCE){
-				patt_start = (patt_start_x - x0)/ cosine;
-			}
-			else if (fabs(sine) > TOLERANCE){
-				patt_start = (patt_start_y - y0)/ sine;
-			}
-			
-			/* find the pattern initial conditions for the first point*/
-			if (patt_start <= 0){ /* start of pattern outside segment */
-				patt_start = fabs(fmod(patt_start, patt_len));
-				patt_acc = fabs(master->pattern[0]);
-				for (i = 1; i < master->patt_size && i < 20; i++){
-					patt_i = i - 1;
-					if (patt_start <= patt_acc){
-						patt_rem = (patt_acc - patt_start);
-						break;
-					}
-					patt_acc += fabs(master->pattern[i]);
-				}
-			}
-			else { /* start of pattern on segment -> reverse the search */
-				patt_start = fabs(fmod(patt_start, patt_len));
-				patt_acc = fabs(master->pattern[master->patt_size - 1]);
-				for (i = 1; i < master->patt_size && i < 20; i++){
-					patt_i = master->patt_size - i;
-					if (patt_start <= patt_acc){
-						patt_rem = fabs(master->pattern[patt_i]) - (patt_acc - patt_start);
-						break;
-					}
-					patt_acc += fabs(master->pattern[patt_i - 1]);
-				}
-			}
 		}
 		
 		/* draw the lines */
 		while(current){ /*sweep the list content */
+			
 			x0 = current->x0;
 			y0 = current->y0;
 			x1 = current->x1;
@@ -931,6 +881,37 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 				p2y = patt_rem * param.scale * sine + p1y;
 				
 				if (patt_rem > 0) {
+					/*------------- complex line type ----------------*/
+					if (master->cmplx_pat[patt_i] != NULL){
+						list_node *cplx = master->cmplx_pat[patt_i]->next;
+						graph_obj *cplx_gr = NULL;
+						line_node *cplx_lin = NULL;
+						
+						/* sweep the main list */
+						while (cplx != NULL){
+							if (cplx->data){
+								cplx_gr = (graph_obj *)cplx->data;
+								cplx_lin = cplx_gr->list->next;
+								/* draw the lines */
+								while(cplx_lin){ /*sweep the list content */
+									//number |= 1UL << n; //set
+									//number &= ~(1UL << n);//clear
+									//bit = (number >> n) & 1U; //get
+									double xd0 = p2x + ((cplx_lin->x0 * cosine -  cplx_lin->y0 * sine) * param.scale);
+									double yd0 = p2y + ((cplx_lin->x0 * sine +  cplx_lin->y0 * cosine) * param.scale);
+									double xd1 = p2x + ((cplx_lin->x1 * cosine -  cplx_lin->y1 * sine) * param.scale);
+									double yd1 = p2y + ((cplx_lin->x1 * sine +  cplx_lin->y1 * cosine) * param.scale);
+									
+									bmp_line(img, xd0, yd0, xd1, yd1);
+									
+									cplx_lin = cplx_lin->next; /* go to next */
+								}
+							}
+							cplx = cplx->next;
+						}
+					}
+					/*------------------------------------------------------*/
+					
 					patt_i++;
 					if (patt_i >= master->patt_size) patt_i = 0;
 					
@@ -968,6 +949,9 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 								cplx_lin = cplx_gr->list->next;
 								/* draw the lines */
 								while(cplx_lin){ /*sweep the list content */
+									//number |= 1UL << n; //set
+									//number &= ~(1UL << n);//clear
+									//bit = (number >> n) & 1U; //get
 									double xd0 = p1x + ((cplx_lin->x0 * cosine -  cplx_lin->y0 * sine) * param.scale);
 									double yd0 = p1y + ((cplx_lin->x0 * sine +  cplx_lin->y0 * cosine) * param.scale);
 									double xd1 = p1x + ((cplx_lin->x1 * cosine -  cplx_lin->y1 * sine) * param.scale);

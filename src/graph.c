@@ -297,9 +297,10 @@ graph_obj * graph_new(int pool_idx){
 		new_obj->scale = 1;
 		new_obj->ofs_x = 0;
 		new_obj->ofs_y = 0;*/
-		new_obj->tick = 0;
-		new_obj->thick_const = 0;
-		new_obj->fill = 0;
+		new_obj->tick = 0.0;
+		//new_obj->thick_const = 0;
+		//new_obj->fill = 0;
+		new_obj->flags = 0;
 		
 		/* initialize with a solid line pattern */
 		new_obj->patt_size = 1;
@@ -311,7 +312,7 @@ graph_obj * graph_new(int pool_idx){
 		}
 		
 		/* extent init */
-		new_obj->ext_ini = 0;
+		//new_obj->ext_ini = 0;
 		new_obj->ext_min_x = 0.0;
 		new_obj->ext_min_y = 0.0;
 		new_obj->ext_max_x = 0.0;
@@ -378,8 +379,8 @@ void line_add(graph_obj * master, double x0, double y0, double z0, double x1, do
 			double min_y = (y0 <= y1) ? y0 : y1;
 			double max_x = (x0 > x1) ? x0 : x1;
 			double max_y = (y0 > y1) ? y0 : y1;
-			if (master->ext_ini == 0){
-				master->ext_ini = 1;
+			if (!(master->flags & EXT_INI)){
+				master->flags |= EXT_INI;
 				master->ext_min_x = min_x;
 				master->ext_min_y = min_y;
 				master->ext_max_x = max_x;
@@ -416,8 +417,8 @@ void graph_merge(graph_obj * master, graph_obj *tail){
 			}
 			/*update the extent of graph */
 			/* sort the coordinates of entire line*/
-			if (master->ext_ini == 0){
-				master->ext_ini = 1;
+			if (!(master->flags & EXT_INI)){
+				master->flags |= EXT_INI;
 				master->ext_min_x = tail->ext_min_x;
 				master->ext_min_y = tail->ext_min_y;
 				master->ext_max_x = tail->ext_max_x;
@@ -448,7 +449,7 @@ void graph_draw(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 			img->frg = master->color;
 			
 			/* set the tickness */
-			if (master->thick_const) img->tick = (int) round(master->tick);
+			if (master->flags & THICK_CONST) img->tick = (int) round(master->tick);
 			else img->tick = (int) round(master->tick * scale);
 			
 			/* draw the lines */
@@ -474,7 +475,7 @@ void graph_draw(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 					bmp_line(img, xd0, yd0, xd1, yd1);
 					//printf("%f %d %d %d %d\n", scale, x0, y0, x1, y1);
 					
-					if (master->fill && (corners < 10000)){ /* check if object is filled */
+					if ((master->flags & FILLED) && (corners < 10000)){ /* check if object is filled */
 						/*build the lists of corners */
 						if (((x0 != prev_x)||(y0 != prev_y))||(corners == 0)){
 							corner_x[corners] = x0;
@@ -494,7 +495,7 @@ void graph_draw(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 				current = current->next; /* go to next */
 			}
 			
-			if (master->fill && corners < 10000){ /* check if object is filled */
+			if ((master->flags & FILLED) && corners < 10000){ /* check if object is filled */
 				/* draw a filled polygon */
 				bmp_poly_fill(img, corners, corner_x, corner_y, stroke);
 			}
@@ -519,7 +520,7 @@ int graph_draw2(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 	img->frg = master->color;
 	
 	/* set the tickness */
-	if (master->thick_const) img->tick = (int) round(master->tick);
+	if (master->flags & THICK_CONST)  img->tick = (int) round(master->tick);
 	else img->tick = (int) round(master->tick * scale);
 	
 	if (master->patt_size > 1) { /* if graph is dashed lines */
@@ -741,7 +742,7 @@ int graph_draw2(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y, d
 			current = current->next; /* go to next */
 		}
 	}
-	if (master->fill){
+	if (master->flags & FILLED){
 		graph_fill(master, img, ofs_x, ofs_y, scale);
 	}
 }
@@ -784,7 +785,7 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 	img->frg = validate_color(master->color, param.list, param.subst, param.len_subst);
 	
 	/* set the tickness */
-	if (master->thick_const) img->tick = (int) round(master->tick) + param.inc_thick;
+	if (master->flags & THICK_CONST) img->tick = (int) round(master->tick) + param.inc_thick;
 	else img->tick = (int) round(master->tick * param.scale) + param.inc_thick;
 	
 	if (master->patt_size > 1) { /* if graph is dashed lines */
@@ -949,9 +950,7 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 								cplx_lin = cplx_gr->list->next;
 								/* draw the lines */
 								while(cplx_lin){ /*sweep the list content */
-									//number |= 1UL << n; //set
-									//number &= ~(1UL << n);//clear
-									//bit = (number >> n) & 1U; //get
+									
 									double xd0 = p1x + ((cplx_lin->x0 * cosine -  cplx_lin->y0 * sine) * param.scale);
 									double yd0 = p1y + ((cplx_lin->x0 * sine +  cplx_lin->y0 * cosine) * param.scale);
 									double xd1 = p1x + ((cplx_lin->x1 * cosine -  cplx_lin->y1 * sine) * param.scale);
@@ -1018,7 +1017,7 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 			current = current->next; /* go to next */
 		}
 	}
-	if (master->fill){
+	if (master->flags & FILLED){
 		graph_fill(master, img, param.ofs_x, param.ofs_y, param.scale);
 	}
 }
@@ -1073,7 +1072,7 @@ void graph_draw_fix(graph_obj * master, bmp_img * img, double ofs_x, double ofs_
 			/* set the color */
 			img->frg = color;
 			/* set the tickness */
-			if (master->thick_const) img->tick = (int) round(master->tick) + 3;
+			if (master->flags & THICK_CONST) img->tick = (int) round(master->tick) + 3;
 			else img->tick = (int) round(master->tick * scale) + 3;
 			
 			/* draw the lines */
@@ -1100,7 +1099,7 @@ void graph_draw_fix(graph_obj * master, bmp_img * img, double ofs_x, double ofs_
 					//bmp_line(img, x0, y0, x1, y1);
 					//printf("%f %d %d %d %d\n", scale, x0, y0, x1, y1);
 					
-					if (master->fill && (corners < 1000)){ /* check if object is filled */
+					if ((master->flags & FILLED) && (corners < 1000)){ /* check if object is filled */
 						/*build the lists of corners */
 						if (((x0 != prev_x)||(y0 != prev_y))||(corners == 0)){
 							corner_x[corners] = x0;
@@ -1120,7 +1119,7 @@ void graph_draw_fix(graph_obj * master, bmp_img * img, double ofs_x, double ofs_
 				current = current->next; /* go to next */
 			}
 			
-			if (master->fill && corners){ /* check if object is filled */
+			if ((master->flags & FILLED) && corners){ /* check if object is filled */
 				/* draw a filled polygon */
 				bmp_poly_fill(img, corners, corner_x, corner_y, stroke);
 			}
@@ -1327,7 +1326,7 @@ void graph_modify(graph_obj * master, double ofs_x, double ofs_y, double scale_x
 			double sine = 0, cosine = 1;
 			double min_x, min_y, max_x, max_y;
 			line_node *current = master->list->next;
-			master->ext_ini = 0;
+			master->flags &= ~(EXT_INI);
 			
 			/* rotation constants */
 			cosine = cos(rot*M_PI/180);
@@ -1358,8 +1357,8 @@ void graph_modify(graph_obj * master, double ofs_x, double ofs_y, double scale_x
 				min_y = (y0 < y1) ? y0 : y1;
 				max_x = (x0 > x1) ? x0 : x1;
 				max_y = (y0 > y1) ? y0 : y1;
-				if (master->ext_ini == 0){
-					master->ext_ini = 1;
+				if (!(master->flags & EXT_INI)){
+					master->flags |= EXT_INI;
 					master->ext_min_x = min_x;
 					master->ext_min_y = min_y;
 					master->ext_max_x = max_x;
@@ -1385,7 +1384,7 @@ void graph_rot(graph_obj * master, double base_x, double base_y, double rot){
 			double sine = 0, cosine = 1;
 			double min_x, min_y, max_x, max_y;
 			line_node *current = master->list->next;
-			master->ext_ini = 0;
+			master->flags &= ~(EXT_INI);
 			
 			/* rotation constants */
 			cosine = cos(rot*M_PI/180);
@@ -1411,8 +1410,8 @@ void graph_rot(graph_obj * master, double base_x, double base_y, double rot){
 				min_y = (y0 < y1) ? y0 : y1;
 				max_x = (x0 > x1) ? x0 : x1;
 				max_y = (y0 > y1) ? y0 : y1;
-				if (master->ext_ini == 0){
-					master->ext_ini = 1;
+				if (!(master->flags & EXT_INI)){
+					master->flags |= EXT_INI;
 					master->ext_min_x = min_x;
 					master->ext_min_y = min_y;
 					master->ext_max_x = max_x;
@@ -1705,7 +1704,7 @@ void graph_mod_axis(graph_obj * master, double normal[3] , double elev){
 			double min_x, min_y, max_x, max_y;
 			line_node *current = master->list->next;
 			
-			master->ext_ini = 0;
+			master->flags &= ~(EXT_INI);
 			
 			
 			if ((fabs(normal[0] < 0.015625)) && (fabs(normal[1] < 0.015625))){
@@ -1758,8 +1757,8 @@ void graph_mod_axis(graph_obj * master, double normal[3] , double elev){
 				min_y = (y0 < y1) ? y0 : y1;
 				max_x = (x0 > x1) ? x0 : x1;
 				max_y = (y0 > y1) ? y0 : y1;
-				if (master->ext_ini == 0){
-					master->ext_ini = 1;
+				if (!(master->flags & EXT_INI)){
+					master->flags |= EXT_INI;
 					master->ext_min_x = min_x;
 					master->ext_min_y = min_y;
 					master->ext_max_x = max_x;
@@ -2692,7 +2691,9 @@ void graph_draw_aa(graph_obj * master, bmp_img * img, double ofs_x, double ofs_y
 			img->frg = master->color;
 			
 			/* set the tickness */
-			if (master->thick_const) img->tick = (int) round(master->tick);
+			//if (master->thick_const)
+			if (master->flags & THICK_CONST)
+				img->tick = (int) round(master->tick);
 			else img->tick = (int) round(master->tick * scale);
 			
 			/* draw the lines */
@@ -2832,7 +2833,7 @@ void graph_matrix(graph_obj * master, double matrix[3][3]){
 			double sine = 0, cosine = 1;
 			double min_x, min_y, max_x, max_y;
 			line_node *current = master->list->next;
-			master->ext_ini = 0;
+			master->flags &= ~(EXT_INI);
 			
 			/* apply changes to each point */
 			while(current){ /*sweep the list content */
@@ -2859,8 +2860,8 @@ void graph_matrix(graph_obj * master, double matrix[3][3]){
 				min_y = (y0 < y1) ? y0 : y1;
 				max_x = (x0 > x1) ? x0 : x1;
 				max_y = (y0 > y1) ? y0 : y1;
-				if (master->ext_ini == 0){
-					master->ext_ini = 1;
+				if (!(master->flags & EXT_INI)){
+					master->flags |= EXT_INI;
 					master->ext_min_x = min_x;
 					master->ext_min_y = min_y;
 					master->ext_max_x = max_x;

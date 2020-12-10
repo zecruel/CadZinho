@@ -100,7 +100,7 @@ void print_graph_pdf(graph_obj * master, struct txt_buf *buf, struct print_param
 	if ((master->list->next) /* check if list is not empty */
 		&& (!(pos_p0 & pos_p1)) /* and in bounds of page */
 		/* and too if is drawable pattern */
-		&& (!(master->patt_size <= 1 && master->pattern[0] < 0.0 && !master->fill))
+		&& (!(master->patt_size <= 1 && master->pattern[0] < 0.0 && !(master->flags & FILLED) ))//!master->fill))
 		&& master->color.a > 0
 	){
 		int x0, y0, x1, y1, i;
@@ -141,7 +141,8 @@ void print_graph_pdf(graph_obj * master, struct txt_buf *buf, struct print_param
 					"] 0 d ");
 				
 				/* set the tickness */
-				if (master->thick_const) 
+				//if (master->thick_const) 
+				if (master->flags & THICK_CONST) 
 					tick = (int) round(master->tick * param.resolution);
 				else tick = (int) round(master->tick * param.scale * param.resolution);
 				buf->pos +=snprintf(buf->data + buf->pos,
@@ -156,7 +157,8 @@ void print_graph_pdf(graph_obj * master, struct txt_buf *buf, struct print_param
 						(float)color.r/255,
 						(float)color.g/255,
 						(float)color.b/255);
-					if (master->fill) /* check if object is filled */
+					//if (master->fill) /* check if object is filled */
+					if (master->flags & FILLED) /* check if object is filled */
 						buf->pos +=snprintf(buf->data + buf->pos,
 							PDF_BUF_SIZE - buf->pos,
 							"%.4g %.4g %.4g rg ",
@@ -189,7 +191,8 @@ void print_graph_pdf(graph_obj * master, struct txt_buf *buf, struct print_param
 			current = current->next; /* go to next line */
 		}
 		/* stroke the graph */
-		if (master->fill) /* check if object is filled */
+		//if (master->fill) /* check if object is filled */
+		if (master->flags & FILLED) /* check if object is filled */
 			buf->pos +=snprintf(buf->data + buf->pos,
 					PDF_BUF_SIZE - buf->pos,
 					"f*\r\n");
@@ -476,7 +479,7 @@ void print_graph_svg(graph_obj * master, FILE *file, struct print_param param){
 	if ((master->list->next) /* check if list is not empty */
 		&& (!(pos_p0 & pos_p1)) /* and in bounds of page */
 		/* and too if is drawable pattern */
-		&& (!(master->patt_size <= 1 && master->pattern[0] < 0.0 && !master->fill))
+		&& (!(master->patt_size <= 1 && master->pattern[0] < 0.0 && !(master->flags & FILLED) )) //!master->fill))
 		&& master->color.a > 0
 	){
 		double x0, y0, x1, y1;
@@ -525,14 +528,16 @@ void print_graph_svg(graph_obj * master, FILE *file, struct print_param param){
 				}
 				
 				/* set the tickness */
-				if (master->thick_const) tick = (master->tick);// * param.resolution);
+				//if (master->thick_const) 
+				if (master->flags & THICK_CONST) tick = (master->tick);// * param.resolution);
 				else tick = (master->tick * param.scale);// * param.resolution);
 				if (tick >= 1.0) fprintf(file, "stroke-width=\"%0.1f\" ", tick);
 				
 				/* set the color */
 				if (!param.mono){
 					
-					if (master->fill) /* check if object is filled */
+					//if (master->fill) /* check if object is filled */
+					if (master->flags & FILLED) /* check if object is filled */
 						fprintf(file, "fill=\"rgb(%d, %d, %d)\" stroke=\"none\" ",
 							color.r, color.g, color.b);
 					else
@@ -541,7 +546,8 @@ void print_graph_svg(graph_obj * master, FILE *file, struct print_param param){
 				}
 				else {
 					
-					if (master->fill) /* check if object is filled */
+					//if (master->fill) /* check if object is filled */
+					if (master->flags & FILLED) /* check if object is filled */
 						fprintf(file, "fill=\"black\" stroke=\"none\" ");
 					else
 						fprintf(file, "stroke=\"black\" fill=\"none\" ");
@@ -703,7 +709,7 @@ void print_graph_ps(graph_obj * master, FILE *file, struct print_param param){
 	if ((master->list->next) /* check if list is not empty */
 		&& (!(pos_p0 & pos_p1)) /* and in bounds of page */
 		/* and too if is drawable pattern */
-		&& (!(master->patt_size <= 1 && master->pattern[0] < 0.0 && !master->fill))
+		&& (!(master->patt_size <= 1 && master->pattern[0] < 0.0 && !(master->flags & FILLED) ))//!master->fill))
 	){
 		int x0, y0, x1, y1, i;
 		line_node *current = master->list->next;
@@ -737,7 +743,8 @@ void print_graph_ps(graph_obj * master, FILE *file, struct print_param param){
 				fprintf(file, "] 0 d ");
 				
 				/* set the tickness */
-				if (master->thick_const) 
+				//if (master->thick_const) 
+				if (master->flags & THICK_CONST)
 					tick = (int) round(master->tick * param.resolution);
 				else tick = (int) round(master->tick * param.scale * param.resolution);
 				fprintf(file, "%d lw ", tick); /*line width */
@@ -768,7 +775,8 @@ void print_graph_ps(graph_obj * master, FILE *file, struct print_param param){
 			current = current->next; /* go to next line */
 		}
 		/* stroke the graph */
-		if (master->fill) /* check if object is filled */
+		//if (master->fill) /* check if object is filled */
+		if (master->flags & FILLED) /* check if object is filled */
 			fprintf(file, "f\n");
 		
 		else fprintf(file, "s\n");

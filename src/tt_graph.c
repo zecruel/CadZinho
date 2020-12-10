@@ -27,7 +27,8 @@ graph_obj * tt_parse_v(stbtt_vertex *vertices, int num_verts, double scale, int 
 		double t, a, b, c;
 		
 		line_list = graph_new(pool_idx);
-		if(line_list) line_list->fill = 1;
+		if(line_list) //line_list->fill = 1;
+			line_list->flags |= FILLED;
 		for (i=0; i < num_verts; i++){ /*sweep the vertex list*/
 			px = (double) vertices[i].x * scale;
 			py = (double) vertices[i].y * scale;

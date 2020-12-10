@@ -21,6 +21,12 @@ enum graph_pool_action{
 	FREE_ALL
 };
 
+enum graph_flags{
+	EXT_INI = 1,
+	FILLED = 2,
+	THICK_CONST = 4
+};
+
 struct Graph_pool_slot{
 	void *pool[GRAPH_POOL_PAGES];
 	/* the pool is a vector of pages. The size of each page is out of this definition */
@@ -39,10 +45,12 @@ typedef struct Line_node line_node;
 struct Graph_obj{
 	int pool_idx;
 	dxf_node * owner;
+	int flags;
+	
 	bmp_color color;
 	//double rot, scale, ofs_x, ofs_y, ofs_z;
 	double tick;
-	int thick_const;
+	//int thick_const;
 	/* pattern information */
 	double pattern[20];
 	list_node * cmplx_pat[20];
@@ -50,9 +58,9 @@ struct Graph_obj{
 	/* extent information */
 	double ext_min_x, ext_min_y;
 	double ext_max_x, ext_max_y;
-	int ext_ini;
+	//int ext_ini;
 	/*fill flag*/
-	int fill;
+	//int fill;
 	
 	line_node * list;
 	bmp_img * img;

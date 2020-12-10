@@ -396,7 +396,8 @@ void dxf_ellipse_mod_axis(graph_obj * master, double x_axis[3], double z_axis[3]
 			double min_x, min_y, max_x, max_y;
 			line_node *current = master->list->next;
 			
-			master->ext_ini = 0;
+			//master->ext_ini = 0;
+			master->flags &= ~(EXT_INI);
 			
 			unit_vector(z_axis);
 			
@@ -442,8 +443,8 @@ void dxf_ellipse_mod_axis(graph_obj * master, double x_axis[3], double z_axis[3]
 				min_y = (y0 < y1) ? y0 : y1;
 				max_x = (x0 > x1) ? x0 : x1;
 				max_y = (y0 > y1) ? y0 : y1;
-				if (master->ext_ini == 0){
-					master->ext_ini = 1;
+				if (!(master->flags & EXT_INI)){
+					master->flags |= EXT_INI;
 					master->ext_min_x = min_x;
 					master->ext_min_y = min_y;
 					master->ext_max_x = max_x;
@@ -2074,7 +2075,8 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 												if (stack[stack_pos].font->type != FONT_TT){
 													if (lw > 0){
 														curr_graph->tick = (double)lw * 0.07109;
-														curr_graph->thick_const = 1;
+														//curr_graph->thick_const = 1;
+														curr_graph->flags |= THICK_CONST;
 													}
 												}
 												
@@ -2102,7 +2104,8 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 												if (stack[stack_pos].font->type != FONT_TT){
 													if (lw > 0){
 														curr_graph->tick = (double)lw * 0.07109;
-														curr_graph->thick_const = 1;
+														//curr_graph->thick_const = 1;
+														curr_graph->flags |= THICK_CONST;
 													}
 												}
 												
@@ -2312,7 +2315,8 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 							if (stack[stack_pos].font->type != FONT_TT){
 								if (lw > 0){
 									curr_graph->tick = (double)lw * 0.07109;
-									curr_graph->thick_const = 1;
+									//curr_graph->thick_const = 1;
+									curr_graph->flags |= THICK_CONST;
 								}
 							}
 							
@@ -2865,7 +2869,8 @@ graph_obj * dxf_solid_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			graph_obj *curr_graph = graph_new(pool_idx);
 			if (curr_graph){
 				/* mark as filled object */
-				curr_graph->fill = 1;
+				//curr_graph->fill = 1;
+				curr_graph->flags |= FILLED;
 				
 				/* add the graph */
 				//line_add(curr_graph, pt1_x, pt1_y, pt1_z, pt2_x, pt2_y, pt2_z);
@@ -2921,7 +2926,8 @@ int proc_obj_graph(dxf_drawing *drawing, dxf_node * ent, graph_obj * graph, stru
 		//graph->tick = 0;
 		if (lw > 0){
 			graph->tick = (double)lw * 0.07109;
-			graph->thick_const = 1;
+			//graph->thick_const = 1;
+			graph->flags |= THICK_CONST;
 		}
 		
 	}
@@ -4499,7 +4505,8 @@ int dxf_hatch_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, i
 						dxf_hatch_get_bound (&curr_graph, current, &next, pool_idx);
 						/* store the graph in the return vector */
 						if ((curr_graph != NULL) && (list_ret != NULL)){
-							if (solid) curr_graph->fill = 1;
+							//if (solid) curr_graph->fill = 1;
+							if (solid) curr_graph->flags |= FILLED;
 							if (!assoc){
 								curr_graph->patt_size = 1;
 								curr_graph->pattern[0] = -1.0;

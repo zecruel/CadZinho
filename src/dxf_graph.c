@@ -96,6 +96,7 @@ int change_ltype (dxf_drawing *drawing, graph_obj * graph, int ltype_idx, double
 	if((graph) && (drawing)){
 		int i;
 		graph->patt_size = drawing->ltypes[ltype_idx].size;
+		graph->flags &= ~(CMPLX_PAT);
 		for (i = 0; i < drawing->ltypes[ltype_idx].size; i++){
 			graph->pattern[i] = drawing->ltypes[ltype_idx].dashes[i].dash * drawing->ltscale * scale;
 			graph->cmplx_pat[i] = NULL;
@@ -103,6 +104,7 @@ int change_ltype (dxf_drawing *drawing, graph_obj * graph, int ltype_idx, double
 			/* ---------- complex line types ------------------- */
 			struct tfont *font = NULL;
 			if ( drawing->ltypes[ltype_idx].dashes[i].type == LTYP_SHAPE){
+				graph->flags |= CMPLX_PAT;
 				font = drawing->text_styles[drawing->ltypes[ltype_idx].dashes[i].sty_i].font;
 				double w;
 				graph_obj *cplx_g = font_parse_cp(font, drawing->ltypes[ltype_idx].dashes[i].num, 0, graph->pool_idx, &w);
@@ -120,6 +122,7 @@ int change_ltype (dxf_drawing *drawing, graph_obj * graph, int ltype_idx, double
 				
 			}
 			if ( drawing->ltypes[ltype_idx].dashes[i].type == LTYP_STRING){
+				graph->flags |= CMPLX_PAT;
 				font = drawing->text_styles[drawing->ltypes[ltype_idx].dashes[i].sty_i].font;
 				double w;
 				graph->cmplx_pat[i] = list_new (NULL, graph->pool_idx);

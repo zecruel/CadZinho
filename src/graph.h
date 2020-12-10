@@ -24,7 +24,8 @@ enum graph_pool_action{
 enum graph_flags{
 	EXT_INI = 1,
 	FILLED = 2,
-	THICK_CONST = 4
+	THICK_CONST = 4,
+	CMPLX_PAT = 8
 };
 
 struct Graph_pool_slot{

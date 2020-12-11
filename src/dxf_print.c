@@ -1428,6 +1428,307 @@ void print_graph_ps(graph_obj * master, FILE *file, struct print_param param){
 	}
 }
 
+int print_cmplx_graph_ps(graph_obj * master, FILE *file, struct print_param param){
+	/* for graphs with complex line type */
+	if (master == NULL) return 0;
+	/* check if list is not empty */
+	if (master->list == NULL) return 0;
+	if (master->list->next == NULL) return 0;
+	
+	/* verify if graph bounds are in visible page area */
+	double b_x0, b_y0, b_x1, b_y1;
+	b_x0 = (master->ext_min_x - param.ofs_x) * param.scale * param.resolution;
+	b_y0 = (master->ext_min_y - param.ofs_y) * param.scale * param.resolution;
+	b_x1 = (master->ext_max_x - param.ofs_x) * param.scale * param.resolution;
+	b_y1 = (master->ext_max_y - param.ofs_y) * param.scale * param.resolution;
+	
+	rect_pos pos_p0 = rect_find_pos(b_x0, b_y0, 0, 0, param.w * param.resolution, param.h * param.resolution);
+	rect_pos pos_p1 = rect_find_pos(b_x1, b_y1, 0, 0, param.w * param.resolution, param.h * param.resolution);
+	
+	if ((pos_p0 & pos_p1) || master->color.a == 0.0) return 0;
+	
+	double x0, y0, x1, y1;
+	double dx, dy, modulus, sine, cosine;
+	line_node *current = master->list->next;
+	int i, iter, prev_x, prev_y;
+	
+	/* verify if color is substituted  */
+	bmp_color color = validate_color(master->color, param.list, param.subst, param.len);
+	
+	/* set the tickness */
+	fprintf(file, "0 lw "); /*line width */
+				
+	/* set the color */
+	if (!param.mono){
+		fprintf(file, "%.4g %.4g %.4g rg ",
+			(float)color.r/255,
+			(float)color.g/255,
+			(float)color.b/255);
+	}
+	
+	int patt_i = 0, patt_a_i = 0, patt_p_i = 0, draw;
+	double patt_len = 0.0, patt_int, patt_part, patt_rem = 0.0, patt_acc, patt_rem_n;
+	
+	double p1x, p1y, p2x, p2y;
+	double last;
+	
+	/* get the pattern length */
+	for (i = 0; i < master->patt_size && i < 20; i++){
+		patt_len += fabs(master->pattern[i]);
+	}
+	//patt_len *= param.scale;
+	
+	/*first vertice*/
+	if (current){
+		x0 = current->x0;
+		y0 = current->y0;
+		x1 = current->x1;
+		y1 = current->y1;
+		
+		/* get polar parameters of line */
+		dx = x1 - x0;
+		dy = y1 - y0;
+		modulus = sqrt(pow(dx, 2) + pow(dy, 2));
+		cosine = 1.0;
+		sine = 0.0;
+		
+		if (modulus > TOLERANCE){
+			cosine = dx/modulus;
+			sine = dy/modulus;
+		}
+		
+		/* move to first point */
+		p1x = ((x0 - param.ofs_x) * param.scale * param.resolution);
+		p1y = ((y0 - param.ofs_y) * param.scale * param.resolution);
+		fprintf(file, "%d %d m ", (int)p1x, (int)p1y);
+		prev_x = p1x;
+		prev_y = p1y;
+	}
+	
+	/* draw the lines */
+	while(current){ /*sweep the list content */
+		
+		x0 = current->x0;
+		y0 = current->y0;
+		x1 = current->x1;
+		y1 = current->y1;
+		
+		/* get polar parameters of line */
+		dx = x1 - x0;
+		dy = y1 - y0;
+		modulus = sqrt(pow(dx, 2) + pow(dy, 2));
+		cosine = 1.0;
+		sine = 0.0;
+		
+		if (modulus > TOLERANCE){
+			cosine = dx/modulus;
+			sine = dy/modulus;
+		}
+		
+		/* initial point */
+		draw = master->pattern[patt_i] >= 0.0;
+		p1x = ((x0 - param.ofs_x) * param.scale * param.resolution);
+		p1y = ((y0 - param.ofs_y) * param.scale * param.resolution);
+		
+		if (patt_rem <= modulus){ /* current segment needs some iterations over pattern */
+		
+			/* find how many interations over whole pattern */ 
+			patt_part = modf((modulus - patt_rem)/patt_len, &patt_int);
+			patt_part *= patt_len; /* remainder for the next step*/
+			
+			/* find how many interations over partial pattern */
+			patt_a_i = 0;
+			patt_p_i = patt_i;
+			if (patt_rem > 0) patt_p_i++;
+			if (patt_p_i >= master->patt_size) patt_p_i = 0;
+			patt_acc = fabs(master->pattern[patt_p_i]);
+			
+			patt_rem_n = patt_part; /* remainder pattern for next segment continues */
+			if (patt_part < patt_acc) patt_rem_n = patt_acc - patt_part;
+			
+			last = modulus - patt_int*patt_len - patt_rem; /* the last stroke (pattern fractional part) of current segment*/
+			for (i = 0; i < master->patt_size && i < 20; i++){
+				patt_a_i = i;
+				if (patt_part < patt_acc) break;
+				
+				last -= fabs(master->pattern[patt_p_i]);
+				
+				patt_p_i++;
+				if (patt_p_i >= master->patt_size) patt_p_i = 0;
+				
+				patt_acc += fabs(master->pattern[patt_p_i]);
+				
+				patt_rem_n = patt_acc - patt_part;
+			}
+			
+			/* first stroke - remainder of past pattern*/
+			p2x = patt_rem * param.scale * param.resolution * cosine + p1x;
+			p2y = patt_rem * param.scale * param.resolution * sine + p1y;
+			
+			if (patt_rem > 0) {
+				/*------------- complex line type ----------------*/
+				if (master->cmplx_pat[patt_i] != NULL && /* complex element */
+					p2x >= 0 && p2x < param.w * param.resolution && /* inside bound parameters */
+					p2y >= 0 && p2y < param.h * param.resolution)
+				{
+					list_node *cplx = master->cmplx_pat[patt_i]->next;
+					graph_obj *cplx_gr = NULL;
+					line_node *cplx_lin = NULL;
+					
+					/* sweep the main list */
+					while (cplx != NULL){
+						if (cplx->data){
+							cplx_gr = (graph_obj *)cplx->data;
+							cplx_lin = cplx_gr->list->next;
+							/* draw the lines */
+							while(cplx_lin){ /*sweep the list content */
+								int xd0 = p2x + ((cplx_lin->x0 * cosine -  cplx_lin->y0 * sine) * param.scale * param.resolution);
+								int yd0 = p2y + ((cplx_lin->x0 * sine +  cplx_lin->y0 * cosine) * param.scale* param.resolution);
+								int xd1 = p2x + ((cplx_lin->x1 * cosine -  cplx_lin->y1 * sine) * param.scale * param.resolution);
+								int yd1 = p2y + ((cplx_lin->x1 * sine +  cplx_lin->y1 * cosine) * param.scale * param.resolution);
+								
+								if (((xd0 != prev_x)||(yd0 != prev_y)))
+									fprintf(file, "%d %d m ", xd0, yd0);
+
+								fprintf(file, "%d %d l ", xd1, yd1);
+							
+								prev_x = xd1;
+								prev_y = yd1;
+								
+								cplx_lin = cplx_lin->next; /* go to next */
+							}
+						}
+						cplx = cplx->next;
+					}
+				}
+				/*------------------------------------------------------*/
+				
+				patt_i++;
+				if (patt_i >= master->patt_size) patt_i = 0;
+				
+				if (draw && ( /* if draw and inside bound parameters */
+					(p1x >= 0.0 && p1x < param.w * param.resolution && p1y >= 0.0 && p1y < param.h * param.resolution) ||
+					(p2x >= 0.0 && p2x < param.w * param.resolution && p2y >= 0.0 && p2y < param.h * param.resolution)
+				) ){
+					if ((((int)p1x != prev_x)||((int)p1y != prev_y)))
+						fprintf(file, "%d %d m ", (int)p1x, (int)p1y);
+
+					fprintf(file, "%d %d l ", (int)p2x, (int)p2y);
+				
+					prev_x = p2x;
+					prev_y = p2y;
+				}
+			}
+			
+			patt_rem = patt_rem_n; /* for next segment */
+			p1x = p2x;
+			p1y = p2y;
+			
+			/* draw pattern */
+			iter = (int) (patt_int * (master->patt_size)) + patt_a_i;
+			for (i = 0; i < iter; i++){					
+				draw = master->pattern[patt_i] >= 0.0;
+				p2x = fabs(master->pattern[patt_i]) * param.scale * param.resolution * cosine + p1x;
+				p2y = fabs(master->pattern[patt_i]) * param.scale * param.resolution * sine + p1y;
+				if (draw && ( /* if draw and inside bound parameters */
+					(p1x >= 0.0 && p1x < param.w * param.resolution && p1y >= 0.0 && p1y < param.h * param.resolution) ||
+					(p2x >= 0.0 && p2x < param.w * param.resolution && p2y >= 0.0 && p2y < param.h * param.resolution)
+				) ){
+					if ((((int)p1x != prev_x)||((int)p1y != prev_y)))
+						fprintf(file, "%d %d m ", (int)p1x, (int)p1y);
+
+					fprintf(file, "%d %d l ", (int)p2x, (int)p2y);
+				
+					prev_x = p2x;
+					prev_y = p2y;
+				}
+				p1x = p2x;
+				p1y = p2y;
+				
+				/*------------- complex line type ----------------*/
+				if (master->cmplx_pat[patt_i] != NULL && /* complex element */
+					p1x >= 0 && p1x < param.w * param.resolution && /* inside bound parameters */
+					p1y >= 0 && p1y < param.h * param.resolution)
+				{
+					list_node *cplx = master->cmplx_pat[patt_i]->next;
+					graph_obj *cplx_gr = NULL;
+					line_node *cplx_lin = NULL;
+					
+					/* sweep the main list */
+					while (cplx != NULL){
+						if (cplx->data){
+							cplx_gr = (graph_obj *)cplx->data;
+							cplx_lin = cplx_gr->list->next;
+							/* draw the lines */
+							while(cplx_lin){ /*sweep the list content */
+								int xd0 = p1x + ((cplx_lin->x0 * cosine -  cplx_lin->y0 * sine) * param.scale * param.resolution);
+								int yd0 = p1y + ((cplx_lin->x0 * sine +  cplx_lin->y0 * cosine) * param.scale* param.resolution);
+								int xd1 = p1x + ((cplx_lin->x1 * cosine -  cplx_lin->y1 * sine) * param.scale * param.resolution);
+								int yd1 = p1y + ((cplx_lin->x1 * sine +  cplx_lin->y1 * cosine) * param.scale * param.resolution);
+								
+								if (((xd0 != prev_x)||(yd0 != prev_y)))
+									fprintf(file, "%d %d m ", xd0, yd0);
+
+								fprintf(file, "%d %d l ", xd1, yd1);
+							
+								prev_x = xd1;
+								prev_y = yd1;
+								
+								cplx_lin = cplx_lin->next; /* go to next */
+							}
+						}
+						cplx = cplx->next;
+					}
+				}
+				/*------------------------------------------------------*/
+				
+				patt_i++;
+				if (patt_i >= master->patt_size) patt_i = 0;
+			}
+			
+			p2x = last * param.scale * param.resolution * cosine + p1x;
+			p2y = last * param.scale * param.resolution * sine + p1y;
+			draw = master->pattern[patt_i] >= 0.0;
+			if (draw && ( /* if draw and inside bound parameters */
+				(p1x >= 0.0 && p1x < param.w * param.resolution && p1y >= 0.0 && p1y < param.h * param.resolution) ||
+				(p2x >= 0.0 && p2x < param.w * param.resolution && p2y >= 0.0 && p2y < param.h * param.resolution)
+			) ){
+				if ((((int)p1x != prev_x)||((int)p1y != prev_y)))
+					fprintf(file, "%d %d m ", (int)p1x, (int)p1y);
+
+				fprintf(file, "%d %d l ", (int)p2x, (int)p2y);
+			
+				prev_x = p2x;
+				prev_y = p2y;
+			}
+		}
+		else{ /* current segment is in same past iteration pattern */
+			p2x = modulus * param.scale * param.resolution * cosine + p1x;
+			p2y = modulus * param.scale * param.resolution * sine + p1y;
+			
+			patt_rem -= modulus;
+		
+			if (draw && ( /* if draw and inside bound parameters */
+				(p1x >= 0.0 && p1x < param.w * param.resolution && p1y >= 0.0 && p1y < param.h * param.resolution) ||
+				(p2x >= 0.0 && p2x < param.w * param.resolution && p2y >= 0.0 && p2y < param.h * param.resolution)
+			) ){
+				if ((((int)p1x != prev_x)||((int)p1y != prev_y)))
+					fprintf(file, "%d %d m ", (int)p1x, (int)p1y);
+
+				fprintf(file, "%d %d l ", (int)p2x, (int)p2y);
+			
+				prev_x = p2x;
+				prev_y = p2y;
+			}
+			p1x = p2x;
+			p1y = p2y;
+		}
+	
+		current = current->next; /* go to next */
+	}
+	/* stroke the graph */
+	fprintf(file, "s\n");
+}
 
 int print_list_ps(list_node *list, FILE *file, struct print_param param){
 	/* convert a list of graph objects to postscript commands */
@@ -1444,7 +1745,9 @@ int print_list_ps(list_node *list, FILE *file, struct print_param param){
 			/* proccess each element */
 			if (current->data){
 				curr_graph = (graph_obj *)current->data;
-				print_graph_ps(curr_graph, file, param);
+				if (curr_graph->flags & CMPLX_PAT)
+					print_cmplx_graph_ps(curr_graph, file, param);
+				else print_graph_ps(curr_graph, file, param);
 			}
 			current = current->next;
 		}

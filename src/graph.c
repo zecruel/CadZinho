@@ -883,7 +883,10 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 				
 				if (patt_rem > 0) {
 					/*------------- complex line type ----------------*/
-					if (master->cmplx_pat[patt_i] != NULL){
+					if (master->cmplx_pat[patt_i] != NULL &&  /* complex element */
+						p2x > img->clip_x && p2x < (img->clip_x + img->clip_w) && /* inside bound parameters */
+						p2y > img->clip_y && p2x < (img->clip_y + img->clip_h) )
+					{
 						list_node *cplx = master->cmplx_pat[patt_i]->next;
 						graph_obj *cplx_gr = NULL;
 						line_node *cplx_lin = NULL;
@@ -895,9 +898,6 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 								cplx_lin = cplx_gr->list->next;
 								/* draw the lines */
 								while(cplx_lin){ /*sweep the list content */
-									//number |= 1UL << n; //set
-									//number &= ~(1UL << n);//clear
-									//bit = (number >> n) & 1U; //get
 									double xd0 = p2x + ((cplx_lin->x0 * cosine -  cplx_lin->y0 * sine) * param.scale);
 									double yd0 = p2y + ((cplx_lin->x0 * sine +  cplx_lin->y0 * cosine) * param.scale);
 									double xd1 = p2x + ((cplx_lin->x1 * cosine -  cplx_lin->y1 * sine) * param.scale);
@@ -938,7 +938,10 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 					p1y = p2y;
 					
 					/*------------- complex line type ----------------*/
-					if (master->cmplx_pat[patt_i] != NULL){
+					if (master->cmplx_pat[patt_i] != NULL && /* complex element */
+						p1x > img->clip_x && p1x < (img->clip_x + img->clip_w) && /* inside bound parameters */
+						p1y > img->clip_y && p1x < (img->clip_y + img->clip_h) )
+					{
 						list_node *cplx = master->cmplx_pat[patt_i]->next;
 						graph_obj *cplx_gr = NULL;
 						line_node *cplx_lin = NULL;

@@ -718,8 +718,8 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	struct pdf_object *page = pdf_append_page(pdf);
 	
 	/* add the print objet to pdf page */
-	//pdf_add_stream(pdf, page, buf->data); /* non compressed stream */
-	pdf_add_stream_zip(pdf, page, pCmp, cmp_len); /* compressed stream */
+	pdf_add_stream(pdf, page, buf->data); /* non compressed stream */
+	//pdf_add_stream_zip(pdf, page, pCmp, cmp_len); /* compressed stream */
 	
 	/* save pdf file */ 
 	int e = pdf_save(pdf, dest);

@@ -843,12 +843,6 @@ int main(int argc, char** argv){
 			gui->show_blk_mng = gui_blk_mng (gui);
 		}
 		
-		if (gui->show_file_br == 1){			
-			gui->show_file_br = file_win(gui, gui->file_filter_types, gui->file_filter_descr, gui->file_filter_count, NULL);
-			strncpy(file_path, gui->curr_path, DXF_MAX_CHARS);
-			file_path_len = strlen(file_path);
-		}
-		
 		if (gui->show_tstyles_mng){
 			gui->show_tstyles_mng = tstyles_mng (gui);
 		}
@@ -1378,6 +1372,14 @@ int main(int argc, char** argv){
 		gui_prop_interactive(gui);
 		gui_txt_prop_interactive(gui);
 		gui_vertex_interactive(gui);
+		
+		
+		/* window file browser */
+		if (gui->show_file_br == 1){			
+			gui->show_file_br = file_win(gui, gui->file_filter_types, gui->file_filter_descr, gui->file_filter_count, NULL);
+			strncpy(file_path, gui->curr_path, DXF_MAX_CHARS);
+			file_path_len = strlen(file_path);
+		}
 		
 		if (gui_check_draw(gui) != 0){
 			gui->draw = 1;

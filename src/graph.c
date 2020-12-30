@@ -885,7 +885,7 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 					/*------------- complex line type ----------------*/
 					if (master->cmplx_pat[patt_i] != NULL &&  /* complex element */
 						p2x > img->clip_x && p2x < (img->clip_x + img->clip_w) && /* inside bound parameters */
-						p2y > img->clip_y && p2x < (img->clip_y + img->clip_h) )
+						p2y > img->clip_y && p2y < (img->clip_y + img->clip_h) )
 					{
 						list_node *cplx = master->cmplx_pat[patt_i]->next;
 						graph_obj *cplx_gr = NULL;
@@ -940,7 +940,7 @@ int graph_draw3(graph_obj * master, bmp_img * img, struct draw_param param){
 					/*------------- complex line type ----------------*/
 					if (master->cmplx_pat[patt_i] != NULL && /* complex element */
 						p1x > img->clip_x && p1x < (img->clip_x + img->clip_w) && /* inside bound parameters */
-						p1y > img->clip_y && p1x < (img->clip_y + img->clip_h) )
+						p1y > img->clip_y && p1y < (img->clip_y + img->clip_h) )
 					{
 						list_node *cplx = master->cmplx_pat[patt_i]->next;
 						graph_obj *cplx_gr = NULL;

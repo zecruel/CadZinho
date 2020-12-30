@@ -73,8 +73,8 @@ dxf_ltype * parse_lin_def(char *doc, int *n){
 			if (state != NONE) end_field = 1;
 			idx = 0;
 		}
-		else if (*doc == '\r' && *(doc + 1) == '\n') { /* new line */
-			doc++;
+		else if (*doc == '\r') { /* new line */
+			if (*(doc + 1) == '\n') doc++;
 			new_line = 1;
 			if (state != NONE) end_field = 1;
 			idx = 0;
@@ -485,7 +485,7 @@ int ltyp_mng (gui_obj *gui){
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
 	gui->next_win_w = 900;
-	gui->next_win_h = 370;
+	gui->next_win_h = 470;
 	
 	enum ltyp_op {
 		LTYP_OP_NONE,
@@ -500,7 +500,7 @@ int ltyp_mng (gui_obj *gui){
 	
 	static bmp_img ltyp_prev[DXF_MAX_LTYPES];
 	#define PREV_W 300
-	#define PREV_H 10
+	#define PREV_H 40
 	static unsigned char prev_buf[DXF_MAX_LTYPES][4 * PREV_W * PREV_H];
 	if (!init){
 		bmp_color transp = {.r = 255, .g = 255, .b = 255, .a = 0};
@@ -575,42 +575,51 @@ int ltyp_mng (gui_obj *gui){
 	
 	ltype_use(gui->drawing); /* update ltypes in use*/
 	
-	for (i = 0; i < gui->drawing->num_ltypes; i++){
-		graph_obj *graph = graph_new(FRAME_LIFE);
-		if (graph){
-			bmp_color color = {.r = 255, .g = 255, .b = 255, .a = 255};
-			graph->color = color;
-			if (ltypes[i].length <= 0.0) line_add(graph, 0, 0, 0, 0.8*PREV_W, 0, 0);
-			else line_add(graph, 0, 0, 0, 4 * ltypes[i].length, 0, 0);
-		}
-		struct draw_param d_param;
-		d_param.ofs_x = 0;
-		d_param.ofs_y = 0;
-		if (ltypes[i].length <= 0.0) d_param.scale = 1.0; 
-		else d_param.scale =  (double) 0.8*PREV_W /(4 * ltypes[i].length);
-		d_param.list = NULL;
-		d_param.subst = NULL;
-		d_param.len_subst = 0;
-		d_param.inc_thick = 3;
-		change_ltype (gui->drawing, graph, i, 1.0);
-		graph_draw3(graph, &(ltyp_prev[i]), d_param);
-		
-	}
-	
-	
-	
 	/* construct list for sorting */
 	num_ltypes = 0;
+	max_len = 0.0;
 	for (i = 0; i < gui->drawing->num_ltypes; i++){
 		strncpy(str_copy, ltypes[i].name, DXF_MAX_CHARS);
 		str_upp(str_copy);
 		if (!(strcmp(str_copy, "BYLAYER") == 0 || strcmp(str_copy, "BYBLOCK") == 0)){ /* skip bylayer and byblock line descriptions */
-			if (ltypes[i].length > max_len) max_len = ltypes[i].length;
+			if (ltypes[i].size > 1 && ltypes[i].length > max_len) max_len = ltypes[i].length;
 			
 			sort_ltyp[num_ltypes].idx = i;
 			sort_ltyp[num_ltypes].data = &(ltypes[i]);
 			num_ltypes++;
 		}
+	}
+	
+	/* generate image previews for linetypes */
+	if (max_len <= 0.0) max_len = 10.0;
+	for (i = 0; i < gui->drawing->num_ltypes; i++){
+		graph_obj *graph = graph_new(FRAME_LIFE);
+		if (graph){
+			change_ltype (gui->drawing, graph, i, 1.0 / gui->drawing->ltscale);
+			
+			/*get color of button widget text */
+			struct nk_color t_color = gui->ctx->style.button.text_normal;
+			bmp_color color = {.r = t_color.r, .g = t_color.g, .b = t_color.b, .a = t_color.a};
+			graph->color = color;
+			//if (ltypes[i].length <= 0.0) line_add(graph, 0, 0, 0, 0.8*PREV_W, 0, 0);
+			//else line_add(graph, 0, 0, 0, 4 * ltypes[i].length, 0, 0);
+			line_add(graph, 0, 2*max_len*PREV_H/PREV_W, 0, 4*max_len, 2*max_len*PREV_H/PREV_W, 0);
+			
+		}
+		struct draw_param d_param;
+		d_param.ofs_x = 0;
+		d_param.ofs_y = 0;
+		//if (ltypes[i].length <= 0.0) d_param.scale = 1.0; 
+		//else d_param.scale =  (double) 0.8*PREV_W /(4 * ltypes[i].length);
+		d_param.scale = (double) 0.95*PREV_W / (4*max_len);
+		d_param.list = NULL;
+		d_param.subst = NULL;
+		d_param.len_subst = 0;
+		d_param.inc_thick = 1;
+		//change_ltype (gui->drawing, graph, i, 1.0 / gui->drawing->ltscale);
+		bmp_fill (&(ltyp_prev[i]), ltyp_prev[i].bkg); /* clear the image with the background color */
+		graph_draw3(graph, &(ltyp_prev[i]), d_param);
+		
 	}
 	
 	/* execute sort, according sorting criteria */
@@ -692,9 +701,9 @@ int ltyp_mng (gui_obj *gui){
 		}
 		
 		/* body of list */
-		nk_layout_row_dynamic(gui->ctx, 200, 1);
+		nk_layout_row_dynamic(gui->ctx, 300, 1);
 		if (nk_group_begin(gui->ctx, "Ltyp_view", NK_WINDOW_BORDER)) {
-			nk_layout_row(gui->ctx, NK_STATIC, 20, 4, (float[]){175, 300, 300, 50});
+			nk_layout_row(gui->ctx, NK_STATIC, 40, 4, (float[]){175, 300, 300, 50});
 			for (i = 0; i < num_ltypes; i++){ /* sweep list of ltypes */
 				/* show and change current ltype parameters */
 				ltyp_idx = sort_ltyp[i].idx; /* current ltype */

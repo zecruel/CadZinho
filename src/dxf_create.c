@@ -1462,6 +1462,66 @@ int dxf_new_tstyle (dxf_drawing *drawing, char *name){
 	return ok;
 }
 
+int dxf_new_tstyle_shp (dxf_drawing *drawing, char *name){
+	/* text style used to generate complex line types with shapes */
+	if (!drawing) 
+		return 0; /* error -  not drawing */
+	
+	if ((drawing->t_style == NULL) || (drawing->main_struct == NULL)) 
+		return 0; /* error -  not main structure */
+	
+	char name_cpy[DXF_MAX_CHARS], *new_name;
+	strncpy(name_cpy, name, DXF_MAX_CHARS);
+	new_name = trimwhitespace(name_cpy);
+	if (strlen(new_name) == 0) return 0; /* error -  no name */
+	
+	str_upp(new_name); /* upper case the name */
+	
+	char *ext = get_ext(new_name); /* get file extension to determine type of font */
+	
+	if (strlen(ext) == 0){ /* if not have extension */
+		/* presume SHX font */
+		strncat(new_name, ".SHX", DXF_MAX_CHARS);
+	}
+	
+	const char *handle = "0";
+	const char *dxf_class = "AcDbSymbolTableRecord";
+	const char *dxf_subclass = "AcDbTextStyleTableRecord";
+	//const char *font = "TXT.SHX";
+	const char *blank = "";
+	int int_zero = 0, ok = 0;
+	double d_zero = 0.0, d_one = 1.0;
+	
+	/* create a new STYLE */
+	dxf_node * sty = dxf_obj_new ("STYLE", drawing->pool);
+	
+	if (sty) {
+		ok = 1;
+		ok &= dxf_attr_append(sty, 5, (void *) handle, drawing->pool);
+		ok &= dxf_attr_append(sty, 100, (void *) dxf_class, drawing->pool);
+		ok &= dxf_attr_append(sty, 100, (void *) dxf_subclass, drawing->pool);
+		ok &= dxf_attr_append(sty, 2, (void *) blank, drawing->pool);
+		ok &= dxf_attr_append(sty, 70, (void *) (int []){1}, drawing->pool);
+		ok &= dxf_attr_append(sty, 40, (void *) &d_zero, drawing->pool);
+		ok &= dxf_attr_append(sty, 41, (void *) &d_one, drawing->pool);
+		ok &= dxf_attr_append(sty, 50, (void *) &d_zero, drawing->pool);
+		ok &= dxf_attr_append(sty, 71, (void *) &int_zero, drawing->pool);
+		ok &= dxf_attr_append(sty, 42, (void *) &d_one, drawing->pool);
+		ok &= dxf_attr_append(sty, 3, (void *) new_name, drawing->pool);
+		ok &= dxf_attr_append(sty, 4, (void *) blank, drawing->pool);
+		
+		/* get current handle and increment the handle seed*/
+		ok &= ent_handle(drawing, sty);
+		
+		/* append the style to correpondent table */
+		dxf_append(drawing->t_style, sty);
+		
+		/* update the styles in drawing  */
+		dxf_tstyles_assemb (drawing);
+	}
+	return ok;
+}
+
 dxf_node * dxf_new_hatch (struct h_pattern *pattern, graph_obj *bound,
 int solid, int assoc,
 int style, /* 0 = normal odd, 1 = outer, 2 = ignore */

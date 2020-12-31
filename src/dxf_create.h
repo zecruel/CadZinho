@@ -121,6 +121,8 @@ int dxf_new_ltype (dxf_drawing *drawing, dxf_ltype *line_type);
 
 int dxf_new_tstyle (dxf_drawing *drawing, char *name);
 
+int dxf_new_tstyle_shp (dxf_drawing *drawing, char *name);
+
 dxf_node * dxf_new_hatch (struct h_pattern *pattern, graph_obj *bound,
 int solid, int assoc,
 int style, /* 0 = normal odd, 1 = outer, 2 = ignore */

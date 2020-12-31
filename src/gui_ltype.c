@@ -337,6 +337,11 @@ dxf_ltype * load_lin_buf(dxf_drawing *drawing, char *buf, int *n){
 						}
 					}
 				}
+				else if(dxf_new_tstyle_shp (drawing, lib[i].dashes[j].sty)){ /* try to add a new font and reload */
+					i = -1;
+					j = 0;
+					break;
+				}
 			}
 			else if (lib[i].dashes[j].type == LTYP_STRING){ /* dash have a string element */
 				/* get drawing's text style, by looking its name */
@@ -543,7 +548,7 @@ int ltyp_mng (gui_obj *gui){
 			ltyp_prev[i].b_i = 0;
 			ltyp_prev[i].a_i = 3;
 			
-			/* alloc the pix map buffer
+			/* "alloc" the pix map buffer
 			the image will have 4 chanels: R, G, B and alfa */
 			ltyp_prev[i].buf = prev_buf[i];
 			bmp_fill (&(ltyp_prev[i]), transp); /* fill the image with the background color */
@@ -594,31 +599,34 @@ int ltyp_mng (gui_obj *gui){
 	if (max_len <= 0.0) max_len = 10.0;
 	for (i = 0; i < gui->drawing->num_ltypes; i++){
 		graph_obj *graph = graph_new(FRAME_LIFE);
-		if (graph){
+		if (graph){ /* create a graph object to preview */
+			/* apply the line type */
 			change_ltype (gui->drawing, graph, i, 1.0 / gui->drawing->ltscale);
-			
 			/*get color of button widget text */
 			struct nk_color t_color = gui->ctx->style.button.text_normal;
 			bmp_color color = {.r = t_color.r, .g = t_color.g, .b = t_color.b, .a = t_color.a};
 			graph->color = color;
-			//if (ltypes[i].length <= 0.0) line_add(graph, 0, 0, 0, 0.8*PREV_W, 0, 0);
-			//else line_add(graph, 0, 0, 0, 4 * ltypes[i].length, 0, 0);
-			line_add(graph, 0, 2*max_len*PREV_H/PREV_W, 0, 4*max_len, 2*max_len*PREV_H/PREV_W, 0);
+			/* add a single line - try to scale its size to view and compare pattern*/
+			if (ltypes[i].length > 0.0 && max_len > 40.0 * ltypes[i].length) 
+				line_add(graph, 0, 2*ltypes[i].length*PREV_H/PREV_W, 0, 4 * ltypes[i].length, 2*ltypes[i].length*PREV_H/PREV_W, 0);
+			else line_add(graph, 0, 2*max_len*PREV_H/PREV_W, 0, 4*max_len, 2*max_len*PREV_H/PREV_W, 0);
 			
 		}
+		/* draw parameters */
 		struct draw_param d_param;
 		d_param.ofs_x = 0;
 		d_param.ofs_y = 0;
-		//if (ltypes[i].length <= 0.0) d_param.scale = 1.0; 
-		//else d_param.scale =  (double) 0.8*PREV_W /(4 * ltypes[i].length);
-		d_param.scale = (double) 0.95*PREV_W / (4*max_len);
+		/* try to scale its size to view and compare pattern*/
+		if (ltypes[i].length > 0.0 && max_len > 40.0 * ltypes[i].length) 
+			d_param.scale = (double) 0.95*PREV_W /(4 * ltypes[i].length);
+		else 
+			d_param.scale = (double) 0.95*PREV_W / (4*max_len);
 		d_param.list = NULL;
 		d_param.subst = NULL;
 		d_param.len_subst = 0;
 		d_param.inc_thick = 1;
-		//change_ltype (gui->drawing, graph, i, 1.0 / gui->drawing->ltscale);
 		bmp_fill (&(ltyp_prev[i]), ltyp_prev[i].bkg); /* clear the image with the background color */
-		graph_draw3(graph, &(ltyp_prev[i]), d_param);
+		graph_draw3(graph, &(ltyp_prev[i]), d_param); /* finally draw preview */
 		
 	}
 	
@@ -645,10 +653,8 @@ int ltyp_mng (gui_obj *gui){
 		static char ltscale_str[64] = "1.0";
 		static char celtscale_str[64] = "1.0";
 		
-		
-		
 		static int sel_ltyp = -1;
-		int lw_i, j, sel_ltype, ltyp_idx;
+		int lw_i, sel_ltype, ltyp_idx;
 		
 		char str_tmp[DXF_MAX_CHARS];
 		
@@ -719,9 +725,6 @@ int ltyp_mng (gui_obj *gui){
 					}
 				}
 				
-				double scale = 20.0;
-				if (max_len > 0.0) scale = 2*max_len;
-				
 				if (sel_ltyp == ltyp_idx){
 					if (nk_button_label_styled(gui->ctx, &gui->b_icon_sel, ltypes[ltyp_idx].descr)){
 						sel_ltyp = -1;
@@ -745,7 +748,6 @@ int ltyp_mng (gui_obj *gui){
 						sel_ltyp = ltyp_idx;
 					}
 				}
-				
 				
 				/* show if current ltype is in use */
 				if (ltypes[ltyp_idx].num_el)
@@ -831,7 +833,7 @@ int ltyp_mng (gui_obj *gui){
 			snprintf(celtscale_str, 63, "%.9g", gui->drawing->celtscale);
 		}
 		
-		/* popup to entering ltype name (new and rename) */
+		/* popup to entering ltype name in rename action */
 		if ((show_ltyp_name)){
 			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Line Type Name", NK_WINDOW_CLOSABLE, nk_rect(10, 20, 220, 100))){
 				
@@ -861,7 +863,7 @@ int ltyp_mng (gui_obj *gui){
 						}
 						else snprintf(gui->log_msg, 63, "Error: exists Line Type with same name");
 					}
-	/* ------------ cancel or close window ---------------- */
+				/* ------------ cancel or close window ---------------- */
 					else {
 						nk_popup_close(gui->ctx);
 						show_ltyp_name = 0;
@@ -887,7 +889,7 @@ int ltyp_mng (gui_obj *gui){
 	
 	if ((show_add)){
 		static int add_init = 0;
-		/* edit window - allow modifications on parameters of selected text style */
+		/* Window to add a line type definition to drawing */
 		if (nk_begin(gui->ctx, "Add Line Type", nk_rect(gui->next_win_x + 150, gui->next_win_y + 40, 560, 500), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
 			
 			static char name[DXF_MAX_CHARS+1] = "", descr[DXF_MAX_CHARS+1] = "";
@@ -1037,7 +1039,11 @@ int ltyp_mng (gui_obj *gui){
 							long fsize;
 							struct Mem_buffer *buf  = load_file_reuse(path, &fsize); /* load file in temp buffer */
 							/* parse line type library */
-							if (buf != NULL) lib = load_lin_buf(gui->drawing, (char *)buf->buffer, &n_lib);
+							if (buf != NULL) {
+								lib = load_lin_buf(gui->drawing, (char *)buf->buffer, &n_lib);
+								gui_tstyle(gui); /* try to update fonts */
+								lib = load_lin_buf(gui->drawing, (char *)buf->buffer, &n_lib);
+							}
 							
 							manage_buffer(0, BUF_RELEASE); /* release buffer */
 						}

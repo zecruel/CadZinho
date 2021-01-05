@@ -503,14 +503,14 @@ int ltyp_mng (gui_obj *gui){
 	dxf_ltype *ltypes = gui->drawing->ltypes;
 	int num_ltypes = 0;
 	
-	static bmp_img ltyp_prev[DXF_MAX_LTYPES];
+	static bmp_img ltyp_prev[DXF_MAX_LTYPES + 1];
 	#define PREV_W 300
 	#define PREV_H 40
-	static unsigned char prev_buf[DXF_MAX_LTYPES][4 * PREV_W * PREV_H];
+	static unsigned char prev_buf[DXF_MAX_LTYPES + 1][4 * PREV_W * PREV_H];
 	if (!init){
 		bmp_color transp = {.r = 255, .g = 255, .b = 255, .a = 0};
 		bmp_color black = {.r = 0, .g = 0, .b =0, .a = 255};
-		for (i = 0; i < DXF_MAX_LTYPES; i++){
+		for (i = 0; i <= DXF_MAX_LTYPES; i++){
 			/* initialize preview images */
 			/* dimensions */
 			ltyp_prev[i].width = PREV_W;
@@ -890,7 +890,7 @@ int ltyp_mng (gui_obj *gui){
 	if ((show_add)){
 		static int add_init = 0;
 		/* Window to add a line type definition to drawing */
-		if (nk_begin(gui->ctx, "Add Line Type", nk_rect(gui->next_win_x + 150, gui->next_win_y + 40, 560, 500), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
+		if (nk_begin(gui->ctx, "Add Line Type", nk_rect(gui->next_win_x + 150, gui->next_win_y + 20, 560, 520), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
 			
 			static char name[DXF_MAX_CHARS+1] = "", descr[DXF_MAX_CHARS+1] = "";
 			static char cpy_from[DXF_MAX_CHARS+1] = "";
@@ -932,7 +932,7 @@ int ltyp_mng (gui_obj *gui){
 			nk_style_pop_vec2(gui->ctx);
 			nk_layout_row_end(gui->ctx);
 			
-			nk_layout_row_dynamic(gui->ctx, 280, 1);
+			nk_layout_row_dynamic(gui->ctx, 315, 1);
 			if (nk_group_begin(gui->ctx, "lt_add_controls", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 				if (mode == LT_ADD_CPY){
 					/* copy from existing line type in drawing */
@@ -1093,23 +1093,48 @@ int ltyp_mng (gui_obj *gui){
 										strncpy (descr, lib[i].descr, DXF_MAX_CHARS);
 									}
 								}
-								/*
-								if (sel_ltyp == i){
-									if(preview_ltype(gui->ctx ,&gui->b_icon_sel, lib[i], scale_lib)){
-										sel_ltyp = -1;
-									}
-								}
-								else {
-									if(preview_ltype(gui->ctx ,&gui->b_icon_unsel, lib[i], scale_lib)){
-										sel_ltyp = i;
-										strncpy (name, lib[i].name, DXF_MAX_CHARS);
-										strncpy (descr, lib[i].descr, DXF_MAX_CHARS);
-									}
-								}
-								*/
 							}
 							nk_group_end(gui->ctx);
 						}
+					}
+					/* preview of selected line type in library */
+					if (n_lib > 0 && sel_ltyp>= 0){
+						static double prev_s = 1.0; /* preview scale */
+						graph_obj *graph = graph_new(FRAME_LIFE);
+						if (graph){ /* create a graph object to preview */
+							/* apply the line type */
+							change_ltype2 (gui->drawing, graph, lib[sel_ltyp], 1.0 / gui->drawing->ltscale);
+							/*get color of button widget text */
+							struct nk_color t_color = gui->ctx->style.button.text_normal;
+							bmp_color color = {.r = t_color.r, .g = t_color.g, .b = t_color.b, .a = t_color.a};
+							graph->color = color;
+							/* add a single line - try to scale its size to view and compare pattern*/
+							if (lib[sel_ltyp].length > 0.0) 
+								line_add(graph, 0, 2*prev_s * lib[sel_ltyp].length*PREV_H/PREV_W, 0, 4 * prev_s * lib[sel_ltyp].length, 2*prev_s * lib[sel_ltyp].length*PREV_H/PREV_W, 0);
+							else line_add(graph, 0, 0.5*PREV_H, 0, PREV_W, 0.5*PREV_H, 0); /* continuous line */
+							
+						}
+						/* draw parameters */
+						struct draw_param d_param;
+						d_param.ofs_x = 0;
+						d_param.ofs_y = 0;
+						/* try to scale its size to view and compare pattern*/
+						d_param.scale = 1.0;
+						if (lib[sel_ltyp].length > 0.0) 
+							d_param.scale = (double) 0.95*PREV_W /(4 * prev_s * lib[sel_ltyp].length);
+						d_param.list = NULL;
+						d_param.subst = NULL;
+						d_param.len_subst = 0;
+						d_param.inc_thick = 1;
+						bmp_fill (&(ltyp_prev[DXF_MAX_LTYPES]), ltyp_prev[DXF_MAX_LTYPES].bkg); /* clear the image with the background color */
+						graph_draw3(graph, &(ltyp_prev[DXF_MAX_LTYPES]), d_param); /* finally draw preview */
+						
+						nk_layout_row(gui->ctx, NK_STATIC, 52, 4, (float[]){70, 300, 120});
+						nk_label(gui->ctx, "Preview:", NK_TEXT_RIGHT);
+						/* show preview image as a button */
+						nk_button_image_styled(gui->ctx, &gui->b_icon_unsel, nk_image_ptr(&(ltyp_prev[DXF_MAX_LTYPES])));
+						/* edit preview scale */
+						prev_s = nk_propertyd(gui->ctx, "Scale", 1e-9, prev_s, 1.0e9, SMART_STEP(prev_s), SMART_STEP(prev_s));
 					}
 				}
 			}

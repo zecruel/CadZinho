@@ -141,6 +141,56 @@ int change_ltype (dxf_drawing *drawing, graph_obj * graph, int ltype_idx, double
 	return 0;
 }
 
+int change_ltype2 (dxf_drawing *drawing, graph_obj * graph, dxf_ltype ltype, double scale){
+	/* change the graph line pattern */
+	if((graph) && (drawing)){
+		int i;
+		graph->patt_size = ltype.size;
+		graph->flags &= ~(CMPLX_PAT);
+		for (i = 0; i < ltype.size; i++){
+			graph->pattern[i] = ltype.dashes[i].dash * drawing->ltscale * scale;
+			graph->cmplx_pat[i] = NULL;
+			
+			/* ---------- complex line types ------------------- */
+			struct tfont *font = NULL;
+			if ( ltype.dashes[i].type == LTYP_SHAPE){
+				graph->flags |= CMPLX_PAT;
+				font = drawing->text_styles[ltype.dashes[i].sty_i].font;
+				double w;
+				graph_obj *cplx_g = font_parse_cp(font, ltype.dashes[i].num, 0, graph->pool_idx, &w);
+				if (cplx_g){
+					graph->cmplx_pat[i] = list_new (NULL, graph->pool_idx);
+					list_push(graph->cmplx_pat[i], list_new ((void *) cplx_g, graph->pool_idx));
+					
+					graph_list_modify(graph->cmplx_pat[i],
+						ltype.dashes[i].ofs_x * drawing->ltscale * scale,
+						ltype.dashes[i].ofs_y * drawing->ltscale * scale,
+						ltype.dashes[i].scale * drawing->ltscale * scale,
+						ltype.dashes[i].scale * drawing->ltscale * scale,
+						ltype.dashes[i].rot);
+				}
+				
+			}
+			if ( ltype.dashes[i].type == LTYP_STRING){
+				graph->flags |= CMPLX_PAT;
+				font = drawing->text_styles[ltype.dashes[i].sty_i].font;
+				double w;
+				graph->cmplx_pat[i] = list_new (NULL, graph->pool_idx);
+				font_parse_str(font, graph->cmplx_pat[i], graph->pool_idx, ltype.dashes[i].str, &w, 0);
+				
+				graph_list_modify(graph->cmplx_pat[i],
+					ltype.dashes[i].ofs_x * drawing->ltscale * scale,
+					ltype.dashes[i].ofs_y * drawing->ltscale * scale,
+					ltype.dashes[i].scale * drawing->ltscale * scale,
+					ltype.dashes[i].scale * drawing->ltscale * scale,
+					ltype.dashes[i].rot);
+			}
+		}
+		return 1;
+	}
+	return 0;
+}
+
 int dxf_ent_get_lw(dxf_drawing *drawing, dxf_node * ent, int ins_lw){
 	int lw = 0, by_layer = 0;
 	if((ent) && (drawing)){

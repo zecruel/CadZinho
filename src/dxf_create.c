@@ -1475,7 +1475,7 @@ int dxf_new_tstyle_shp (dxf_drawing *drawing, char *name){
 	new_name = trimwhitespace(name_cpy);
 	if (strlen(new_name) == 0) return 0; /* error -  no name */
 	
-	str_upp(new_name); /* upper case the name */
+	//str_upp(new_name); /* upper case the name */
 	
 	char *ext = get_ext(new_name); /* get file extension to determine type of font */
 	

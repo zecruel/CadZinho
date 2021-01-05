@@ -43,4 +43,8 @@ graph_obj * dxf_lwpline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space,
 
 graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx);
 
+int change_ltype (dxf_drawing *drawing, graph_obj * graph, int ltype_idx, double scale);
+
+int change_ltype2 (dxf_drawing *drawing, graph_obj * graph, dxf_ltype ltype, double scale);
+
 #endif

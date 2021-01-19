@@ -120,7 +120,7 @@ int script_get_sel (lua_State *L) {
 	while (current != NULL){
 		if (current->data){
 			if (((dxf_node *)current->data)->type == DXF_ENT){ /* DXF entity */
-				ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+				ent = (struct ent_lua *) lua_newuserdatauv(L, sizeof(struct ent_lua), 0);  /* create a userdata object */
 				ent->curr_ent = NULL;
 				ent->orig_ent = (dxf_node *) current->data;
 				
@@ -1047,7 +1047,7 @@ int script_get_blk_ents (lua_State *L) {
 	while (current){ /* sweep elements in block */
 		if (current->type == DXF_ENT){ /* DXF entity */
 			if (strcmp(current->obj.name, "ENDBLK") != 0){ /* skip ENDBLK elements */
-				ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+				ent = (struct ent_lua *) lua_newuserdatauv(L, sizeof(struct ent_lua), 0);  /* create a userdata object */
 				ent->curr_ent = NULL;
 				ent->orig_ent = (dxf_node *) current;
 				
@@ -1114,7 +1114,7 @@ int script_get_all (lua_State *L) {
 				(!drawing->layers[current->obj.layer].frozen) && visible) ||
 				!visible )
 			{
-				ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+				ent = (struct ent_lua *) lua_newuserdatauv(L, sizeof(struct ent_lua), 0);  /* create a userdata object */
 				ent->curr_ent = NULL;
 				ent->orig_ent = current;
 				
@@ -1839,7 +1839,7 @@ int script_new_line (lua_State *L) {
 		return 1;
 	}
 	/* return success */
-	struct ent_lua *ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+	struct ent_lua *ent = (struct ent_lua *) lua_newuserdatauv(L, sizeof(struct ent_lua), 0);  /* create a userdata object */
 	ent->curr_ent = new_el;
 	ent->orig_ent = NULL;
 	
@@ -1904,7 +1904,7 @@ int script_new_pline (lua_State *L) {
 		return 1;
 	}
 	/* return success */
-	struct ent_lua *ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+	struct ent_lua *ent = (struct ent_lua *) lua_newuserdatauv(L, sizeof(struct ent_lua), 0);  /* create a userdata object */
 	ent->curr_ent = new_el;
 	ent->orig_ent = NULL;
 	ent->sel = 0;
@@ -2069,7 +2069,7 @@ int script_new_circle (lua_State *L) {
 		return 1;
 	}
 	/* return success */
-	struct ent_lua *ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+	struct ent_lua *ent = (struct ent_lua *) lua_newuserdatauv(L, sizeof(struct ent_lua), 0);  /* create a userdata object */
 	ent->curr_ent = new_el;
 	ent->orig_ent = NULL;
 	ent->sel = 0;
@@ -2233,7 +2233,7 @@ int script_new_hatch (lua_State *L) {
 		return 1;
 	}
 	/* return success */
-	struct ent_lua *ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+	struct ent_lua *ent = (struct ent_lua *) lua_newuserdatauv(L, sizeof(struct ent_lua), 0);  /* create a userdata object */
 	ent->curr_ent = new_el;
 	ent->orig_ent = NULL;
 	ent->sel = 0;
@@ -2349,7 +2349,7 @@ int script_new_text (lua_State *L) {
 		return 1;
 	}
 	/* return success */
-	struct ent_lua *ent = (struct ent_lua *) lua_newuserdata(L, sizeof(struct ent_lua));  /* create a userdata object */
+	struct ent_lua *ent = (struct ent_lua *) lua_newuserdatauv(L, sizeof(struct ent_lua), 0);  /* create a userdata object */
 	ent->curr_ent = new_el;
 	ent->orig_ent = NULL;
 	ent->sel = 0;
@@ -3217,7 +3217,7 @@ int script_miniz_open (lua_State *L) {
 	struct script_miniz_arch * zip;
 	
 	/* create a userdata object */
-	zip = (struct script_miniz_arch *) lua_newuserdata(L, sizeof(struct script_miniz_arch *)); 
+	zip = (struct script_miniz_arch *) lua_newuserdatauv(L, sizeof(struct script_miniz_arch *), 0); 
 	luaL_getmetatable(L, "Zip");
 	lua_setmetatable(L, -2);
 	
@@ -3319,7 +3319,7 @@ int script_yxml_new (lua_State *L) {
 	struct script_yxml_state * state;
 	
 	/* create a userdata object */
-	state = (struct script_yxml_state *) lua_newuserdata(L, sizeof(struct script_yxml_state *)); 
+	state = (struct script_yxml_state *) lua_newuserdatauv(L, sizeof(struct script_yxml_state *), 0); 
 	luaL_getmetatable(L, "Yxml");
 	lua_setmetatable(L, -2);
 	

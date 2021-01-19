@@ -373,7 +373,8 @@ int script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 		/* add main entry to do/redo list */
 		do_add_entry(&gui->list_do, "SCRIPT");
 		
-		script->status = lua_resume(T, NULL, 0); /* start thread */
+		int n_results = 0; /* for Lua 5.4*/
+		script->status = lua_resume(T, NULL, 0, &n_results); /* start thread */
 		if (script->status != LUA_OK && script->status != LUA_YIELD){
 			/* execution error */
 			snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(T, -1));
@@ -492,8 +493,8 @@ int script_win (gui_obj *gui){
 				if (nk_button_symbol(gui->ctx, NK_SYMBOL_TRIANGLE_RIGHT)){
 					if (gui->lua_script.status == LUA_YIELD){
 						gui->script_time = clock();
-						//lua_resume(gui->lua_script, NULL, 0);
-						gui->lua_script.status = lua_resume(gui->lua_script.T, NULL, 0);
+						int n_results = 0; /* for Lua 5.4*/
+						gui->lua_script.status = lua_resume(gui->lua_script.T, NULL, 0, &n_results);
 						if (gui->lua_script.status != LUA_YIELD && gui->lua_script.status != LUA_OK){
 							/* execution error */
 							char msg[DXF_MAX_CHARS];

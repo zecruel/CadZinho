@@ -275,6 +275,7 @@ int main(int argc, char** argv){
 	
 	//load (Lua1, "config.lua", &gui->win_w, &gui->win_h);
 	gui_load_conf ("config.lua", gui);
+	gui_load_ini("init.lua", gui);
 	
 	SDL_Rect win_r, display_r;
 	
@@ -283,8 +284,8 @@ int main(int argc, char** argv){
 	
 	SDL_Window * window = SDL_CreateWindow(
 		"CadZinho", /* title */
-		SDL_WINDOWPOS_UNDEFINED, /* x position */
-		SDL_WINDOWPOS_UNDEFINED, /* y position */
+		gui->win_x, /* x position */
+		gui->win_y, /* y position */
 		gui->win_w, /* width */
 		gui->win_h, /* height */
 		SDL_WINDOW_RESIZABLE); /* flags */
@@ -965,6 +966,16 @@ int main(int argc, char** argv){
 					gui->drwg_hist_size = gui->drwg_hist_wr; /* next write position */
 				}
 				gui->hist_new = 0;
+				
+				/* put file path in recent file list */
+				strncpy (gui->drwg_recent[gui->drwg_rcnt_pos], gui->curr_path , DXF_MAX_CHARS);
+				if (gui->drwg_rcnt_pos < DRWG_RECENT_MAX - 1)
+					gui->drwg_rcnt_pos++;
+				else gui->drwg_rcnt_pos = 0; /* circular buffer */
+				
+				if (gui->drwg_rcnt_size < DRWG_RECENT_MAX)
+					gui->drwg_rcnt_size++;
+				
 			}
 			
 			strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
@@ -1386,8 +1397,9 @@ int main(int argc, char** argv){
 		}
 		
 		if (gui->draw != 0){
-			/*get current window size */
+			/*get current window size and position*/
 			SDL_GetWindowSize(window, &gui->win_w, &gui->win_h);
+			SDL_GetWindowPosition (window, &gui->win_x, &gui->win_y);
 			if (gui->win_w > gui->main_w){ /* if window exceedes main image */
 				/* fit windo to main image size*/
 				gui->win_w = gui->main_w;

@@ -1123,8 +1123,10 @@ int gui_start(gui_obj *gui){
 	gui->main_w = 2048;
 	gui->main_h = 2048;
 	
-	gui->win_w = 1200;
-	gui->win_h = 710;
+	gui->win_x = SDL_WINDOWPOS_CENTERED;
+	gui->win_y = SDL_WINDOWPOS_CENTERED;
+	gui->win_w = 1120;
+	gui->win_h = 600;
 	
 	gui->next_win_x = 0;
 	gui->next_win_y = 0;
@@ -1347,6 +1349,12 @@ int gui_start(gui_obj *gui){
 	gui->drwg_hist_pos = 0;
 	gui->drwg_hist_wr = 0;
 	gui->drwg_hist_head = 0;
+	
+	/* ----------- init recent drawing files ------------------- */
+	for (i = 0; i < DRWG_RECENT_MAX; i++)
+		gui->drwg_recent[i][0] = 0;
+	gui->drwg_rcnt_size = 0;
+	gui->drwg_rcnt_pos = 0;
 	
 	gui->num_brk_pts = 0;
 	

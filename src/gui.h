@@ -40,6 +40,7 @@
 #define MAX_PATH_LEN 512
 #define DRWG_HIST_MAX 50
 #define BRK_PTS_MAX 50
+#define DRWG_RECENT_MAX 10
 
 #define ICON_SIZE 24
 
@@ -211,6 +212,8 @@ struct Gui_obj {
 	unsigned int main_h;
 	
 	/* Window dimension */
+	int win_x;
+	int win_y;
 	unsigned int win_w;
 	unsigned int win_h;
 	
@@ -345,6 +348,10 @@ struct Gui_obj {
 	int drwg_hist_pos;
 	int drwg_hist_wr;
 	int drwg_hist_head;
+	
+	char drwg_recent[DRWG_RECENT_MAX][DXF_MAX_CHARS+1];
+	int drwg_rcnt_size;
+	int drwg_rcnt_pos;
 	
 	struct nk_text_edit text_edit;
 	struct nk_text_edit debug_edit;

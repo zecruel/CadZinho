@@ -146,14 +146,16 @@ int gui_save_init (char *fname, gui_obj *gui){
 	file = fopen(fname, "w"); /* open the file */
 	if (!file) return 0;
 	
-	fprintf(file, "\nwin_width = %d\n", gui->win_w);
+	fprintf(file, "win_x = %d\n", gui->win_x);
+	fprintf(file, "win_y = %d\n", gui->win_y);
+	fprintf(file, "win_width = %d\n", gui->win_w);
 	fprintf(file, "win_height = %d\n", gui->win_h);
-	fprintf(file, "font_path = \"");
-	path_escape(gui->dflt_fonts_path, file);
-	fprintf(file, "\"\n");
+	//fprintf(file, "font_path = \"");
+	//path_escape(gui->dflt_fonts_path, file);
+	//fprintf(file, "\"\n");
 	
 	fprintf(file, "recent = {\n");
-	
+	#if(0)
 	for (i = gui->drwg_hist_size - 1; i >= 0; i--){
 		/* get position in array, considering as circular buffer */
 		int pos = (i + gui->drwg_hist_head) % DRWG_HIST_MAX;
@@ -162,6 +164,76 @@ int gui_save_init (char *fname, gui_obj *gui){
 		fprintf(file, "\",\n");
 	}
 	fprintf(file, "}\n");
+	#endif
+	
+	for (i = 1; i <= gui->drwg_rcnt_size; i++){
+		/* get position in array, considering as circular buffer */
+		int pos = (gui->drwg_rcnt_pos - i);
+		if (pos < 0) pos = DRWG_RECENT_MAX + pos;
+		fprintf(file, "\t\"");
+		path_escape(gui->drwg_recent[pos], file);
+		fprintf(file, "\",\n");
+	}
+	fprintf(file, "}\n");
 	
 	fclose(file);
+}
+
+int gui_load_ini(const char *fname, gui_obj *gui) {
+	lua_State *L = luaL_newstate(); /* opens Lua */
+	luaL_openlibs(L); /* opens the standard libraries */
+	
+	/* load ini as Lua script*/
+	if (luaL_loadfile(L, fname) || lua_pcall(L, 0, 0, 0)){
+		//printf("cannot run config. file: %s", lua_tostring(L, -1));
+	}
+	
+	lua_getglobal(L, "win_x");
+	if (lua_isnumber(L, -1)) gui->win_x = (int)lua_tonumber(L, -1);
+	lua_pop(L, 1);
+	
+	lua_getglobal(L, "win_y");
+	if (lua_isnumber(L, -1)) gui->win_y = (int)lua_tonumber(L, -1);
+	lua_pop(L, 1);
+	
+	/* -------------------- get screen width -------------------*/
+	lua_getglobal(L, "win_width");
+	if (lua_isnumber(L, -1)) gui->win_w = (int)lua_tonumber(L, -1);
+	else gui->win_w = 1120; /* default value, if not definied in file*/
+	lua_pop(L, 1);
+	
+	/* -------------------- get screen height -------------------*/
+	lua_getglobal(L, "win_height");
+	if (lua_isnumber(L, -1)) gui->win_h = (int)lua_tonumber(L, -1);
+	else gui->win_h = 600; /* default value, if not definied in file*/
+	lua_pop(L, 1);
+	
+	/* -------------------- load list of recent drawing files  -------------------*/
+	lua_getglobal(L, "recent");
+	if (lua_istable(L, -1)){
+		int len = lua_rawlen(L, -1);
+		int i;
+		
+		for (i = len; i > 0; i--){ /* iterate over table in reverse order */
+			lua_rawgeti(L, -1, i); 
+			if (lua_isstring(L, -1)){
+				/* put file path in recent file list */
+				strncpy (gui->drwg_recent[gui->drwg_rcnt_pos], lua_tostring(L, -1) , DXF_MAX_CHARS);
+				if (gui->drwg_rcnt_pos < DRWG_RECENT_MAX - 1)
+					gui->drwg_rcnt_pos++;
+				else gui->drwg_rcnt_pos = 0; /* circular buffer */
+				
+				if (gui->drwg_rcnt_size < DRWG_RECENT_MAX)
+					gui->drwg_rcnt_size++;
+				
+			}
+			
+			lua_pop(L, 1);
+		}
+	}
+	lua_pop(L, 1);
+	
+	lua_close(L);
+	
+	return 1;
 }

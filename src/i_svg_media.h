@@ -5,7 +5,7 @@
 #include "nanosvgrast.h"
 #include "bmp.h"
 
-enum {
+enum svg_list {
     SVG_ARC,
     SVG_BLOCK,
     SVG_BOOK,
@@ -90,7 +90,7 @@ enum {
     SVG_ZOOM_P,
     SVG_ZOOM_W,
     SVG_MEDIA_SIZE
-} svg_list;
+};
 
 NSVGimage ** i_svg_all_curves(void);
 

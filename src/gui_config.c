@@ -20,10 +20,15 @@ void load (lua_State *L, const char *fname, int *w, int *h) {
 int gui_load_conf (const char *fname, gui_obj *gui) {
 	lua_State *L = luaL_newstate(); /* opens Lua */
 	luaL_openlibs(L); /* opens the standard libraries */
+	int status;
 	
 	/* load configuration file as Lua script*/
-	if (luaL_loadfile(L, fname) || lua_pcall(L, 0, 0, 0))
+	if (status = luaL_loadfile(L, fname) != LUA_OK){
 		printf("cannot run config. file: %s", lua_tostring(L, -1));
+	} 
+	else if (status = lua_pcall(L, 0, LUA_MULTRET, 0) != LUA_OK){
+		printf("cannot run config. file: %s", lua_tostring(L, -1));
+	}
 	
 	
 	
@@ -185,7 +190,7 @@ int gui_load_ini(const char *fname, gui_obj *gui) {
 	
 	/* load ini as Lua script*/
 	if (luaL_loadfile(L, fname) || lua_pcall(L, 0, 0, 0)){
-		//printf("cannot run config. file: %s", lua_tostring(L, -1));
+		printf("cannot run config. file: %s", lua_tostring(L, -1));
 	}
 	
 	lua_getglobal(L, "win_x");

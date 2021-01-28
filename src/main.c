@@ -264,6 +264,12 @@ int main(int argc, char** argv){
 	strncpy(init_path, gui->base_dir, DXF_MAX_CHARS);
 	strncat(init_path, "init.lua", DXF_MAX_CHARS);
 	
+	/* full path of config file */
+	char config_path[DXF_MAX_CHARS + 1];
+	config_path[0] = 0;
+	strncpy(config_path, gui->base_dir, DXF_MAX_CHARS);
+	strncat(config_path, "config.lua", DXF_MAX_CHARS);
+	
 	/* initialize fonts paths with base directory  */
 	if (strlen(gui->base_dir)){
 		strncpy (gui->dflt_fonts_path, gui->base_dir, 5 * DXF_MAX_CHARS);
@@ -274,13 +280,15 @@ int main(int argc, char** argv){
 	int i, ok;
 	
 	//load (Lua1, "config.lua", &gui->win_w, &gui->win_h);
-	gui_load_conf ("config.lua", gui);
-	gui_load_ini("init.lua", gui);
+	gui_load_conf (config_path, gui);
+	gui_load_ini(init_path, gui);
 	
 	SDL_Rect win_r, display_r;
 	
 	/* init the SDL2 */
 	SDL_Init(SDL_INIT_VIDEO);
+	
+	char *pref_path = SDL_GetPrefPath("CadZinho", "CadZinho");
 	
 	SDL_Window * window = SDL_CreateWindow(
 		"CadZinho", /* title */
@@ -1529,6 +1537,8 @@ int main(int argc, char** argv){
 	SDL_DestroyTexture(canvas);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
+	
+	SDL_free(pref_path);
 	SDL_Quit();
 	
 	if(free_font_list(gui->font_list)){

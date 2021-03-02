@@ -230,6 +230,7 @@ graph_obj * dxf_line_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 		dxf_node *current = NULL;
 		double pt1_x = 0, pt1_y = 0, pt1_z = 0;
 		double pt2_x = 0, pt2_y = 0, pt2_z = 0;
+		char tmp_str[20];
 		
 		/*flags*/
 		int pt1 = 0, pt2 = 0, paper = 0;
@@ -269,6 +270,15 @@ graph_obj * dxf_line_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 						break;
 					case 67:
 						paper = current->value.i_data;
+						break;
+					case 101:
+						strcpy(tmp_str, current->value.s_data);
+						str_upp(tmp_str);
+						char *tmp = trimwhitespace(tmp_str);
+						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+							current = NULL;
+							continue;
+						}
 				}
 			}
 			current = current->next; /* go to the next in the list */
@@ -293,6 +303,7 @@ graph_obj * dxf_circle_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 		double radius;
 		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
 		double elev = 0.0;
+		char tmp_str[20];
 		
 		/*flags*/
 		int pt1 = 0, paper = 0;
@@ -336,6 +347,15 @@ graph_obj * dxf_circle_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 						break;
 					case 230:
 						extru_z = current->value.d_data;
+						break;
+					case 101:
+						strcpy(tmp_str, current->value.s_data);
+						str_upp(tmp_str);
+						char *tmp = trimwhitespace(tmp_str);
+						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+							current = NULL;
+							continue;
+						}
 				}
 			}
 			current = current->next; /* go to the next in the list */
@@ -367,6 +387,7 @@ graph_obj * dxf_arc_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int
 		double start_ang = 0.0, end_ang = 0.0;
 		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
 		double elev = 0.0;
+		char tmp_str[20];
 		
 		/*flags*/
 		int pt1 = 0, paper = 0;
@@ -416,6 +437,15 @@ graph_obj * dxf_arc_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int
 						break;
 					case 230:
 						extru_z = current->value.d_data;
+						break;
+					case 101:
+						strcpy(tmp_str, current->value.s_data);
+						str_upp(tmp_str);
+						char *tmp = trimwhitespace(tmp_str);
+						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+							current = NULL;
+							continue;
+						}
 				}
 			}
 			current = current->next; /* go to the next in the list */
@@ -525,6 +555,7 @@ graph_obj * dxf_ellipse_parse(dxf_drawing *drawing, dxf_node * ent, int p_space,
 		double minor_ax;
 		double start_ang = 0.0, end_ang = 0.0;
 		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
+		char tmp_str[20];
 		
 		/*flags*/
 		int pt1 = 0, pt2 = 0, paper = 0;
@@ -583,6 +614,15 @@ graph_obj * dxf_ellipse_parse(dxf_drawing *drawing, dxf_node * ent, int p_space,
 						break;
 					case 230:
 						extru_z = current->value.d_data;
+						break;
+					case 101:
+						strcpy(tmp_str, current->value.s_data);
+						str_upp(tmp_str);
+						char *tmp = trimwhitespace(tmp_str);
+						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+							current = NULL;
+							continue;
+						}
 				}
 			}
 			current = current->next; /* go to the next in the list */
@@ -623,6 +663,7 @@ graph_obj * dxf_pline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		double bulge = 0;
 		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
 		double elev = 0.0;
+		char tmp_str[20];
 		
 		int pline_flag = 0;
 		int first = 0, closed =0;
@@ -681,6 +722,15 @@ graph_obj * dxf_pline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						break;
 					case 230:
 						extru_z = current->value.d_data;
+						break;
+					case 101:
+						strcpy(tmp_str, current->value.s_data);
+						str_upp(tmp_str);
+						char *tmp = trimwhitespace(tmp_str);
+						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+							current = NULL;
+							continue;
+						}
 				}
 			}
 			else if (current->type == DXF_ENT){
@@ -796,6 +846,7 @@ graph_obj * dxf_lwpline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space,
 		double prev_x, prev_y, prev_z, last_x, last_y, last_z, curr_x;
 		double prev_bulge = 0;
 		double elev = 0.0;
+		char tmp_str[20];
 		
 		/*flags*/
 		int pt1 = 0, init = 0, paper = 0;
@@ -852,6 +903,15 @@ graph_obj * dxf_lwpline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space,
 						break;
 					case 230:
 						extru_z = current->value.d_data;
+						break;
+					case 101:
+						strcpy(tmp_str, current->value.s_data);
+						str_upp(tmp_str);
+						char *tmp = trimwhitespace(tmp_str);
+						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+							current = NULL;
+							continue;
+						}
 				}
 			}
 			if (pt1){
@@ -1302,6 +1362,15 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 						break;
 					case 230:
 						extru_z = current->value.d_data;
+						break;
+					case 101:
+						strcpy(tmp_str, current->value.s_data);
+						str_upp(tmp_str);
+						char *tmp = trimwhitespace(tmp_str);
+						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+							current = NULL;
+							continue;
+						}
 				}
 			}
 			current = current->next; /* go to the next in the list */
@@ -1696,6 +1765,15 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						break;
 					case 230:
 						extru_z = current->value.d_data;
+						break;
+					case 101:
+						strcpy(tmp_str, current->value.s_data);
+						str_upp(tmp_str);
+						char *tmp = trimwhitespace(tmp_str);
+						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+							current = NULL;
+							continue;
+						}
 				}
 			}
 			current = current->next; /* go to the next in the list */
@@ -2605,6 +2683,15 @@ list_node * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 						break;
 					case 230:
 						extru_z = current->value.d_data;
+						break;
+					case 101:
+						strcpy(tmp_str, current->value.s_data);
+						str_upp(tmp_str);
+						char *tmp = trimwhitespace(tmp_str);
+						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+							current = NULL;
+							continue;
+						}
 				}
 			}
 			current = current->next; /* go to the next in the list */
@@ -2836,6 +2923,7 @@ graph_obj * dxf_solid_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		double pt4_x = 0, pt4_y = 0, pt4_z = 0;
 		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
 		double elev = 0.0;
+		char tmp_str[20];
 		
 		int i, paper = 0;
 		
@@ -2914,6 +3002,15 @@ graph_obj * dxf_solid_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						break;
 					case 230:
 						extru_z = current->value.d_data;
+						break;
+					case 101:
+						strcpy(tmp_str, current->value.s_data);
+						str_upp(tmp_str);
+						char *tmp = trimwhitespace(tmp_str);
+						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+							current = NULL;
+							continue;
+						}
 				}
 			}
 			current = current->next; /* go to the next in the list */
@@ -4018,6 +4115,7 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 	int num_bound = 0;
 	*next = NULL;
 	*curr_graph = NULL;
+	char tmp_str[20];
 	
 	if(ent){
 		dxf_node *current = NULL;
@@ -4116,6 +4214,14 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 					case 96:
 						num_cpts = current->value.i_data;
 						break;
+					case 101:
+						strcpy(tmp_str, current->value.s_data);
+						str_upp(tmp_str);
+						char *tmp = trimwhitespace(tmp_str);
+						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+							current = NULL;
+							continue;
+						}
 				}
 				
 				
@@ -4390,6 +4496,7 @@ int dxf_hatch_get_def(list_node *list_ret, graph_obj *bound, dxf_node * ent, dxf
 		double prev_angle = 0.0;
 		double ofs_x = 0.0, ofs_y = 0.0;
 		double dash[DXF_MAX_PAT];
+		char tmp_str[20];
 		
 		dash[0] = 1;
 		int num_dash = 0;
@@ -4426,6 +4533,14 @@ int dxf_hatch_get_def(list_node *list_ret, graph_obj *bound, dxf_node * ent, dxf
 					case 98: /* end of definition lines */
 						curr_def++;
 						break;
+					case 101:
+						strcpy(tmp_str, current->value.s_data);
+						str_upp(tmp_str);
+						char *tmp = trimwhitespace(tmp_str);
+						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+							current = NULL;
+							continue;
+						}
 				}
 				
 				
@@ -4489,6 +4604,7 @@ int dxf_hatch_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, i
 		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
 		double elev = 0.0;
 		double p_angle = 0.0, p_scale =1.0;
+		char tmp_str[20];
 		
 		char name_patt[DXF_MAX_CHARS];
 		
@@ -4584,6 +4700,15 @@ int dxf_hatch_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, i
 						break;
 					case 230:
 						extru_z = current->value.d_data;
+						break;
+					case 101:
+						strcpy(tmp_str, current->value.s_data);
+						str_upp(tmp_str);
+						char *tmp = trimwhitespace(tmp_str);
+						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+							current = NULL;
+							continue;
+						}
 				}
 			}
 			current = current->next; /* go to the next in the list */

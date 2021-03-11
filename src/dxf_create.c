@@ -1279,6 +1279,7 @@ int dxf_new_layer (dxf_drawing *drawing, char *name, int color, char *ltype){
 	if ((abs(color) > 255) || (color == 0)) color = 7;
 	
 	const char *handle = "0";
+	const char *plotstylename = "2B"; /* -->TRICK  -  see the handle in seed file */
 	const char *dxf_class = "AcDbSymbolTableRecord";
 	const char *dxf_subclass = "AcDbLayerTableRecord";
 	int int_zero = 0, ok = 0;
@@ -1296,7 +1297,7 @@ int dxf_new_layer (dxf_drawing *drawing, char *name, int color, char *ltype){
 		ok &= dxf_attr_append(lay, 62, (void *) &color, drawing->pool);
 		ok &= dxf_attr_append(lay, 6, (void *) ltype, drawing->pool);
 		ok &= dxf_attr_append(lay, 370, (void *) &int_zero, drawing->pool);
-		ok &= dxf_attr_append(lay, 390, (void *) handle, drawing->pool);
+		ok &= dxf_attr_append(lay, 390, (void *) plotstylename, drawing->pool);
 		
 		/* get current handle and increment the handle seed*/
 		ok &= ent_handle(drawing, lay);

@@ -584,7 +584,7 @@ const char *dxf_seed_2007 =
 "370\n"
 "0\n"
 "390\n"
-"0\n"
+"2B\n"
 "0\n"
 "ENDTAB\n"
 "0\n"

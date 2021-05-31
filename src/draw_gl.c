@@ -37,18 +37,23 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[2], int p1[2], int thick){
 	if (!gl_ctx->verts) return 0;
 	if (!gl_ctx->elems) return 0;
 	
+	if (thick <= 0) thick = 1; /* one pixel as minimal thickness */
+	
 	/* get polar parameters of line */
 	float dx = p1[0] - p0[0];
 	float dy = p1[1] - p0[1];
 	float modulus = sqrt(pow(dx, 2) + pow(dy, 2));
-	float cosine = 1.0;
-	float sine = 0.0;
+	float cosine = 0.0;
+	float sine = 1.0;
 	if (modulus > TOLERANCE){
 		cosine = dx/modulus;
 		sine = dy/modulus;
 	}
-	
-	if (thick <= 0) thick = 1; /* one pixel as minimal thickness */
+	else {
+		thick = 2; /* two pixel as minimal thickness  - a dot*/
+		cosine = 1.0;
+		sine = 1.0;
+	}
 	
 	/* convert input coordinates, in pixles (int), to openGL units */
 	float tx = (float) thick / gl_ctx->win_w;
@@ -354,6 +359,99 @@ int draw_gl_image (struct ogl *gl_ctx, int x, int y, int w, int h, bmp_img *img)
 	return 1;
 }
 
+int draw_gl_image2(struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2], bmp_img *img){
+	/* emulate drawing a filled and convex quadrilateral, using triangles in openGL */
+	
+	/* verify struct and buffers */
+	if (!gl_ctx) return 0;
+	if (!gl_ctx->verts) return 0;
+	if (!gl_ctx->elems) return 0;
+	
+	/* orientation in drawing area */
+	float flip_y = (gl_ctx->flip_y) ? -1.0 : 1.0;
+	float scale_u = 1.0;
+	float scale_v = 1.0;
+	
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, gl_ctx->tex);
+	
+	if (img->width > gl_ctx->tex_w || img->height > gl_ctx->tex_h){
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img->width, img->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->buf);
+		scale_u = 1.0;
+		scale_v = 1.0;
+		gl_ctx->tex_w = img->width;
+		gl_ctx->tex_h = img->height;
+	}
+	else {
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, img->width, img->height, GL_RGBA, GL_UNSIGNED_BYTE, img->buf);
+		scale_u = (float) img->width / (float) gl_ctx->tex_w;
+		scale_v = (float) img->height / (float) gl_ctx->tex_h;
+	}
+	
+	/* convert input coordinates, in pixles (int), to openGL units and store vertices - 4 vertices */
+	/* 0 */
+	int j = gl_ctx->vert_count;
+	gl_ctx->verts[j].pos[0] = ((float) bl[0] / gl_ctx->win_w) * 2.0 - 1.0;
+	gl_ctx->verts[j].pos[1] = flip_y * (((float) bl[1] / gl_ctx->win_h) * 2.0 - 1.0);
+	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
+	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
+	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
+	gl_ctx->verts[j].col[3] = gl_ctx->fg[3];
+	gl_ctx->verts[j].uv[0] =  0.0;
+	gl_ctx->verts[j].uv[1] = (float)(1 - gl_ctx->flip_y) * scale_v;
+	gl_ctx->vert_count ++;
+	/* 1 */
+	j = gl_ctx->vert_count;
+	gl_ctx->verts[j].pos[0] = ((float) tl[0] / gl_ctx->win_w) * 2.0 - 1.0;
+	gl_ctx->verts[j].pos[1] = flip_y * (((float) tl[1] / gl_ctx->win_h) * 2.0 - 1.0);
+	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
+	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
+	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
+	gl_ctx->verts[j].col[3] = gl_ctx->fg[3];
+	gl_ctx->verts[j].uv[0] =  0.0;
+	gl_ctx->verts[j].uv[1] = (float)(gl_ctx->flip_y) * scale_v;
+	gl_ctx->vert_count ++;
+	/* 2 */
+	j = gl_ctx->vert_count;
+	gl_ctx->verts[j].pos[0] = ((float) br[0] / gl_ctx->win_w) * 2.0 - 1.0;
+	gl_ctx->verts[j].pos[1] = flip_y * (((float) br[1] / gl_ctx->win_h) * 2.0 - 1.0);
+	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
+	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
+	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
+	gl_ctx->verts[j].col[3] = gl_ctx->fg[3];
+	gl_ctx->verts[j].uv[0] =  scale_u;
+	gl_ctx->verts[j].uv[1] = (float)(1 - gl_ctx->flip_y) * scale_v;
+	gl_ctx->vert_count ++;
+	/* 3 */
+	j = gl_ctx->vert_count;
+	gl_ctx->verts[j].pos[0] = ((float) tr[0] / gl_ctx->win_w) * 2.0 - 1.0;
+	gl_ctx->verts[j].pos[1] = flip_y * (((float) tr[1] / gl_ctx->win_h) * 2.0 - 1.0);
+	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
+	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
+	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
+	gl_ctx->verts[j].col[3] = gl_ctx->fg[3];
+	gl_ctx->verts[j].uv[0] =  scale_u;
+	gl_ctx->verts[j].uv[1] = (float)(gl_ctx->flip_y) * scale_v;
+	gl_ctx->vert_count ++;
+	/* store vertex indexes in elements buffer - 2 triangles that share vertices  */
+	/* 0 */
+	j = gl_ctx->elem_count * 3;
+	gl_ctx->elems[j] = gl_ctx->vert_count - 4;
+	gl_ctx->elems[j+1] = gl_ctx->vert_count - 3;
+	gl_ctx->elems[j+2] = gl_ctx->vert_count - 2;
+	/* 1 */
+	gl_ctx->elems[j+3] = gl_ctx->vert_count - 3;
+	gl_ctx->elems[j+4] = gl_ctx->vert_count - 2;
+	gl_ctx->elems[j+5] = gl_ctx->vert_count - 1;
+	gl_ctx->elem_count+= 2;
+	
+	return 1;
+}
+
 int draw_gl_polygon (struct ogl *gl_ctx, int n, struct edge edges[]){
 	/* draw a arbitrary and filled polygon, in openGL - use a scanline like algorithm */
 	
@@ -458,26 +556,7 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 	line_node *current = master->list->next;
 	int i, iter, thick;
 	
-	/* if has a bitmap image associated */
-	if (master->img){
-		/* apply  offset an scale */
-		/* insertion point is first vertice */
-		current = master->list->next;
-		x0 = (current->x0 - param.ofs_x) * param.scale;
-		y0 =(current->y0 - param.ofs_y) * param.scale;
-		
-		double u[3], v[3];
-		u[0] = master->u[0] * param.scale;
-		u[1] = master->u[1] * param.scale;
-		u[2] = master->u[2] * param.scale;
-		
-		v[0] = master->v[0] * param.scale;
-		v[1] = master->v[1] * param.scale;
-		v[2] = master->v[2] * param.scale;
-		
-		/* draw bitmap image */
-		//bmp_put(master->img, img, x0, y0, u, v);
-	}
+	if (!current) return 0;
 	
 	/*extention corners */
 	xd0 = 0.5 + (master->ext_min_x - param.ofs_x) * param.scale;
@@ -485,32 +564,77 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 	xd1 = 0.5 + (master->ext_max_x - param.ofs_x) * param.scale;
 	yd1 = 0.5 + (master->ext_max_y - param.ofs_y) * param.scale;
 	
-	if (!((xd0 > 0 && xd1 <= gl_ctx->win_w) || (yd0 > 0 && yd1 <= gl_ctx->win_h))) return 0;
+	/* verify if current graph is inside window*/
+	if ( (xd0 < 0 && xd1 < 0) || 
+		(xd0 > gl_ctx->win_w && xd1 > gl_ctx->win_w) || 
+		(yd0 < 0 && yd1 < 0) || 
+		(yd0 > gl_ctx->win_h && yd1 > gl_ctx->win_h) ) return 0;
 	
+	/* define color */
 	gl_ctx->fg[0] = master->color.r;
 	gl_ctx->fg[1] = master->color.g;
 	gl_ctx->fg[2] = master->color.b;
 	gl_ctx->fg[3] = master->color.a;
 	
-	if (xd1 - xd0 < 5 && yd1 - yd0 < 5){
+	/* check if graph is legible (greater then 5 pixels) */
+	if (xd1 - xd0 < 5 && yd1 - yd0 < 5 && current->next != NULL){
+		/* draw a single triangle if not legible */
 		draw_gl_triang (gl_ctx, (int[]){xd0, yd0}, (int[]){xd0, yd1}, (int[]){xd1, yd0});
 		return 0;
 	}
 	
-	if (master->flags & FILLED){
-		//graph_fill(master, img, param.ofs_x, param.ofs_y, param.scale);
+	/* if has a bitmap image associated */
+	if (master->img){
+		int tl[2], bl[2], tr[2], br[2];
+		/* apply  offset an scale */
+		/* first vertice */
+		bl[0] = 0.5 + (current->x0 - param.ofs_x) * param.scale;
+		bl[1] = 0.5 + (current->y0 - param.ofs_y) * param.scale;
+		/* second vertice */
+		br[0] = 0.5 + (current->x1 - param.ofs_x) * param.scale;
+		br[1] = 0.5 + (current->y1 - param.ofs_y) * param.scale;
+		current = current->next;
+		if (!current) return 0;
+		/* 3# vertice */
+		tr[0] = 0.5 + (current->x1 - param.ofs_x) * param.scale;
+		tr[1] = 0.5 + (current->y1 - param.ofs_y) * param.scale;
+		current = current->next;
+		if (!current) return 0;
+		/* 4# vertice */
+		tl[0] = 0.5 + (current->x1 - param.ofs_x) * param.scale;
+		tl[1] = 0.5 + (current->y1 - param.ofs_y) * param.scale;
 		
+		/* draw bitmap image */
+		draw_gl (gl_ctx, 1); /* force draw previous commands and cleanup */
+		/* choose blank base color */
+		gl_ctx->fg[0] = 255;
+		gl_ctx->fg[1] = 255;
+		gl_ctx->fg[2] = 255;
+		gl_ctx->fg[3] = 255;
+		/* prepare for new opengl commands */
+		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+		glUniform1i(gl_ctx->tex_uni, 1); /* choose second texture */
+		/* finally draw image */
+		draw_gl_image2(gl_ctx, tl, bl, tr, br, master->img);
+		draw_gl (gl_ctx, 1); /* force draw and cleanup */
+		
+		return 1;
+	}
+	
+	if (master->flags & FILLED){
+		/* filled polyon */
 		i = 0;
 		struct edge edges[2 * MAX_SCAN_LINES];
 		
 		while(current){ /*sweep the list content */
 			/* apply the scale and offset */
-			
 			xd0 = 0.5 + (current->x0 - param.ofs_x) * param.scale;
 			yd0 = 0.5 + (current->y0 - param.ofs_y) * param.scale;
 			xd1 = 0.5 + (current->x1 - param.ofs_x) * param.scale;
 			yd1 = 0.5 + (current->y1 - param.ofs_y) * param.scale;
 			
+			/* build edges array */
 			edges[i] = (struct edge){xd0, yd0, xd1, yd1};
 			
 			current = current->next; /* go to next */
@@ -521,45 +645,24 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 		draw_gl_polygon (gl_ctx, i, edges);
 	}
 	else {
-		/* set the color */
-		//img->frg = validate_color(master->color, param.list, param.subst, param.len_subst);
-		
 		/* set the thickness */
 		if (master->flags & THICK_CONST) thick = (int) round(master->tick) + param.inc_thick;
 		else thick = (int) round(master->tick * param.scale) + param.inc_thick;
 		
-		if (master->patt_size > 1) { /* if graph is dashed lines */
+		double patt_len = 0.0;
+		/* get the pattern length */
+		for (i = 0; i < master->patt_size && i < 20; i++){
+			patt_len += fabs(master->pattern[i]);
+		}
+		
+		if (master->patt_size > 1 &&   /* if graph is dashed lines */
+			patt_len * param.scale > 3.0  /* and line pattern is legible (more then 3 pixels) */
+		) {
 			int patt_i = 0, patt_a_i = 0, patt_p_i = 0, draw;
-			double patt_len = 0.0, patt_int, patt_part, patt_rem = 0.0, patt_acc, patt_rem_n;
+			double patt_int, patt_part, patt_rem = 0.0, patt_acc, patt_rem_n;
 			
 			double p1x, p1y, p2x, p2y;
 			double last;
-			
-			/* get the pattern length */
-			for (i = 0; i < master->patt_size && i < 20; i++){
-				patt_len += fabs(master->pattern[i]);
-			}
-			//patt_len *= param.scale;
-			
-			/*first vertice*/
-			if (current){
-				x0 = current->x0;
-				y0 = current->y0;
-				x1 = current->x1;
-				y1 = current->y1;
-				
-				/* get polar parameters of line */
-				dx = x1 - x0;
-				dy = y1 - y0;
-				modulus = sqrt(pow(dx, 2) + pow(dy, 2));
-				cosine = 1.0;
-				sine = 0.0;
-				
-				if (modulus > TOLERANCE){
-					cosine = dx/modulus;
-					sine = dy/modulus;
-				}
-			}
 			
 			/* draw the lines */
 			while(current){ /*sweep the list content */

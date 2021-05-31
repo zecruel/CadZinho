@@ -7,6 +7,7 @@
 #include "dxf.h"
 #include "bmp.h"
 #include "graph.h"
+#include "draw_gl.h"
 #include "i_svg_media.h"
 #include "list.h"
 #include "dxf_create.h"
@@ -20,8 +21,6 @@
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
-
-#include <SDL.h>
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -206,6 +205,7 @@ struct Gui_obj {
 	int free_sel;
 	enum dxf_graph sel_ent_filter;
 	
+	struct ogl gl_ctx;
 	
 	/* background image dimension */
 	unsigned int main_w;

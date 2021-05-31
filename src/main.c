@@ -1,4 +1,4 @@
-#include <SDL.h>
+
 
 #include "dxf.h"
 #include "bmp.h"
@@ -10,6 +10,7 @@
 #include "dxf_attract.h"
 #include "dxf_print.h"
 
+#include "draw_gl.h"
 
 #include "dxf_seed.h"
 
@@ -288,6 +289,17 @@ int main(int argc, char** argv){
 	/* init the SDL2 */
 	SDL_Init(SDL_INIT_VIDEO);
 	
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+	/* enable ati-aliasing */
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
+	
 	char *pref_path = SDL_GetPrefPath("CadZinho", "CadZinho");
 	
 	SDL_Window * window = SDL_CreateWindow(
@@ -296,28 +308,166 @@ int main(int argc, char** argv){
 		gui->win_y, /* y position */
 		gui->win_w, /* width */
 		gui->win_h, /* height */
-		SDL_WINDOW_RESIZABLE); /* flags */
+		SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE); /* flags */
 		
-	SDL_Renderer * renderer = SDL_CreateRenderer(window, -1, 0);
+		
+	/* ------------------------------ opengl --------------------------------------*/
+	gui->gl_ctx.ctx = SDL_GL_CreateContext(window);
 	
-	SDL_RendererInfo rend_info;
+	/* buffer setup */
+        GLsizei vs = sizeof(struct Vertex);
+        size_t vp = offsetof(struct Vertex, pos);
+        size_t vt = offsetof(struct Vertex, uv);
+        size_t vc = offsetof(struct Vertex, col);
 	
-	SDL_GetRendererInfo(renderer, &rend_info);
+	/* Init GLEW */
+	glewExperimental = GL_TRUE;
+	if (glewInit() != GLEW_OK) {
+		fprintf(stderr, "Failed to initialize GLEW\n");
+		return -1;
+	}
+
+	/* Create Vertex Array Object */
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	/* Create a Vertex Buffer Object and copy the vertex data to it */
+	GLuint vbo;
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, MAX_TRIANG * 3 * vs, NULL, GL_STREAM_DRAW); //GL_STATIC_DRAW);
 	
-	gui->main_w = rend_info.max_texture_width;
-	gui->main_h = rend_info.max_texture_height;
+	/* Create a Element Buffer Object */
+	GLuint ebo;
+	glGenBuffers(1, &ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, MAX_TRIANG * 3 * sizeof(GLuint), NULL,  GL_STREAM_DRAW);//GL_STATIC_DRAW); //GL_STREAM_DRAW
+	
+	/* Create and compile the vertex shader */
+	const char* vertexSource = GLSL(
+		in vec3 position;
+		in vec2 uv;
+		in vec4 color;
+		out vec4 vertexColor;
+		out vec2 texcoord;
+	
+		void main() {
+			gl_Position = vec4(position, 1.0);
+			vertexColor = color;
+			texcoord = uv;
+		}
+	); /* =========== vertex shader */
+
+	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShader, 1, &vertexSource, NULL);
+	glCompileShader(vertexShader);
+
+	/* Create and compile the fragment shader */
+	const char* fragmentSource = GLSL(
+		in vec4 vertexColor;
+		in vec2 texcoord;
+		
+		out vec4 outColor;
+		
+		uniform sampler2D tex;
+
+		void main() {
+			outColor = texture(tex, texcoord) * vertexColor;
+		}
+	); /* ========== fragment shader */
+
+	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
+	glCompileShader(fragmentShader);
+
+	/* Link the vertex and fragment shader into a shader program */
+	GLuint shaderProgram = glCreateProgram();
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragmentShader);
+	glBindFragDataLocation(shaderProgram, 0, "outColor");
+	glLinkProgram(shaderProgram);
+	glUseProgram(shaderProgram);
+		
+	/*texture */
+	GLuint textures[2];
+	glGenTextures(2, textures);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textures[0]);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	
+	/* blank texture (default) */
+	GLubyte blank[] = {255, 255, 255, 255};
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, blank);
+	
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, textures[1]);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gui->gl_ctx.tex_w, gui->gl_ctx.tex_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	
+	gui->gl_ctx.tex = textures[1];
+	gui->gl_ctx.tex_uni = glGetUniformLocation(shaderProgram, "tex");
+	
+	glUniform1i(gui->gl_ctx.tex_uni, 0);
+
+	/* Specify the layout of the vertex data */
+	GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
+	GLint uvAttrib = glGetAttribLocation(shaderProgram, "uv");
+	GLint colorAttrib = glGetAttribLocation(shaderProgram, "color");
+	
+	glEnableVertexAttribArray(posAttrib);
+	glEnableVertexAttribArray(uvAttrib);
+	glEnableVertexAttribArray(colorAttrib);
+	
+	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, vs, (void*)vp);
+        glVertexAttribPointer(uvAttrib, 2, GL_FLOAT, GL_FALSE, vs, (void*)vt);
+        glVertexAttribPointer(colorAttrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, vs, (void*)vc);
+	
+	
+	glEnable(GL_BLEND); 
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	
+	/* load vertices/elements directly into vertex/element buffer */
+        gui->gl_ctx.verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+        gui->gl_ctx.elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	
+	//glScissor(200,200,100,100);
+	//glEnable(GL_SCISSOR_TEST);
+	//glDisable(GL_SCISSOR_TEST);
+	
+	/* ------------------------------------------------------------------------------- */
+		
+	//SDL_Renderer * renderer = SDL_CreateRenderer(window, -1, 0);
+	
+	//SDL_RendererInfo rend_info;
+	
+	//SDL_GetRendererInfo(renderer, &rend_info);
+	
+	//gui->main_w = rend_info.max_texture_width;
+	//gui->main_h = rend_info.max_texture_height;
 	
 	if ((gui->main_w <= 0) || (gui->main_h <= 0)){
 		gui->main_w = 2048;
 		gui->main_h = 2048;
 	}
 	
+	/*
 	SDL_Texture * canvas = SDL_CreateTexture(
 		renderer,
 		SDL_PIXELFORMAT_ARGB8888,
 		SDL_TEXTUREACCESS_STATIC, 
 		gui->main_w, /* width */
-		gui->main_h); /* height */
+		//gui->main_h); /* height */
 		
 	//SDL_SetTextureBlendMode(canvas, SDL_BLENDMODE_BLEND);
 	
@@ -354,7 +504,7 @@ int main(int argc, char** argv){
 	//int show_tstyles_mng = 0;
 	
 	int ev_type;
-	struct nk_color background;
+	//struct nk_color background;
 	
 	
 	int leftMouseButtonDown = 0;
@@ -402,7 +552,7 @@ int main(int argc, char** argv){
 	bmp_color magenta_l = {.r = 255, .g = 0, .b = 255, .a = 150};
 	bmp_color transp = {.r = 255, .g = 255, .b = 255, .a = 0};
 	bmp_color cursor = {.r = 255, .g = 255, .b = 255, .a = 100};
-	background = nk_rgb(28,48,62);
+	bmp_color background = {.r = 100, .g = 100, .b = 100, .a = 255};
 	
 	bmp_color hilite[] = {magenta_l, };
 	
@@ -652,7 +802,7 @@ int main(int argc, char** argv){
 			//printf("show\n");
 		}
 		else{
-			SDL_ShowCursor(SDL_DISABLE);
+			//SDL_ShowCursor(SDL_DISABLE);
 			
 			if (ev_type != 0){
 				double wheel = 1.0;
@@ -660,7 +810,7 @@ int main(int argc, char** argv){
 					case SDL_MOUSEBUTTONUP:
 						gui->mouse_x = event.button.x;
 						gui->mouse_y = event.button.y;
-						gui->mouse_y = gui->main_h - gui->mouse_y;
+						//gui->mouse_y = gui->main_h - gui->mouse_y;
 						if (event.button.button == SDL_BUTTON_LEFT){
 							leftMouseButtonDown = 0;
 						}
@@ -671,7 +821,7 @@ int main(int argc, char** argv){
 					case SDL_MOUSEBUTTONDOWN:
 						gui->mouse_x = event.button.x;
 						gui->mouse_y = event.button.y;
-						gui->mouse_y = gui->main_h - gui->mouse_y;
+						//gui->mouse_y = gui->main_h - gui->mouse_y;
 						if (event.button.button == SDL_BUTTON_LEFT){
 							leftMouseButtonDown = 1;
 							leftMouseButtonClick = 1;
@@ -685,7 +835,7 @@ int main(int argc, char** argv){
 						MouseMotion = 1;
 						gui->mouse_x = event.motion.x;
 						gui->mouse_y = event.motion.y;
-						gui->mouse_y = gui->main_h - gui->mouse_y;
+						//gui->mouse_y = gui->main_h - gui->mouse_y;
 						pos_x = (double) gui->mouse_x/gui->zoom + gui->ofs_x;
 						pos_y = (double) gui->mouse_y/gui->zoom + gui->ofs_y;
 						gui->draw = 1;
@@ -697,7 +847,7 @@ int main(int argc, char** argv){
 						gui->zoom = gui->zoom + wheel * 0.3 * gui->zoom;
 						
 						SDL_GetMouseState(&gui->mouse_x, &gui->mouse_y);
-						gui->mouse_y = gui->main_h - gui->mouse_y;
+						gui->mouse_y = gui->win_h - gui->mouse_y;
 						gui->ofs_x += ((double) gui->mouse_x)*(1/gui->prev_zoom - 1/gui->zoom);
 						gui->ofs_y += ((double) gui->mouse_y)*(1/gui->prev_zoom - 1/gui->zoom);
 						gui->draw = 1;
@@ -1018,7 +1168,7 @@ int main(int argc, char** argv){
 		}
 		else if(gui->action == VIEW_ZOOM_EXT){
 			gui->action = NONE;
-			zoom_ext2(gui->drawing, 0, gui->main_h - gui->win_h, gui->win_w, gui->win_h, &gui->zoom, &gui->ofs_x, &gui->ofs_y);
+			zoom_ext2(gui->drawing, 0, 0, gui->win_w, gui->win_h, &gui->zoom, &gui->ofs_x, &gui->ofs_y);
 			gui->draw = 1;
 		}
 		else if(gui->action == VIEW_ZOOM_P){
@@ -1408,6 +1558,14 @@ int main(int argc, char** argv){
 			/*get current window size and position*/
 			SDL_GetWindowSize(window, &gui->win_w, &gui->win_h);
 			SDL_GetWindowPosition (window, &gui->win_x, &gui->win_y);
+			
+			
+			glUniform1i(gui->gl_ctx.tex_uni, 0);
+			
+			SDL_GetWindowSize(window, &gui->gl_ctx.win_w, &gui->gl_ctx.win_h);
+			glViewport(0, 0, gui->gl_ctx.win_w, gui->gl_ctx.win_h);
+			
+			
 			if (gui->win_w > gui->main_w){ /* if window exceedes main image */
 				/* fit windo to main image size*/
 				gui->win_w = gui->main_w;
@@ -1431,10 +1589,17 @@ int main(int argc, char** argv){
 			d_param.subst = NULL;
 			d_param.len_subst = 0;
 			d_param.inc_thick = 0;
-		
-			bmp_fill_clip(img, img->bkg); /* clear bitmap */
+			
+			/* Clear the screen to black */
+			glClearColor((GLfloat) background.r/255, (GLfloat) background.g/255, 
+				(GLfloat) background.b/255, (GLfloat) background.a/255);
+			glClear(GL_COLOR_BUFFER_BIT);
+			
+			//bmp_fill_clip(img, img->bkg); /* clear bitmap */
 			//dxf_ents_draw(gui->drawing, img, gui->ofs_x, gui->ofs_y, gui->zoom); /* redraw */
-			dxf_ents_draw(gui->drawing, img, d_param);
+			//dxf_ents_draw(gui->drawing, img, d_param);
+			
+			dxf_ents_draw_gl(gui->drawing, &gui->gl_ctx, d_param);
 			
 			/*===================== teste ===============*/
 			//graph_list_draw(tt_test, img, gui->ofs_x, gui->ofs_y, gui->zoom);
@@ -1484,7 +1649,7 @@ int main(int argc, char** argv){
 			img->clip_x = 0; img->clip_y = 0;
 			
 			/*draw gui*/
-			nk_sdl_render(gui, img);
+			//nk_sdl_render(gui, img);
 			
 			
 			
@@ -1492,12 +1657,24 @@ int main(int argc, char** argv){
 			win_r.x = 0; win_r.y = 0;
 			win_r.w = gui->win_w; win_r.h = gui->win_h;
 			
-			SDL_UpdateTexture(canvas, &win_r, img->buf, gui->main_w * 4);
+			//SDL_UpdateTexture(canvas, &win_r, img->buf, gui->main_w * 4);
 			//SDL_RenderClear(renderer);
-			SDL_RenderCopy(renderer, canvas, &win_r, NULL);
-			SDL_RenderPresent(renderer);
+			//SDL_RenderCopy(renderer, canvas, &win_r, NULL);
+			//SDL_RenderPresent(renderer);
+			
+			
+			
+			
+			/*draw gui*/
+			nk_gl_render(gui);
 			
 			//SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
+			
+			gui->gl_ctx.vert_count = 0;
+			gui->gl_ctx.elem_count = 0;
+			
+			/* Swap buffers */
+			SDL_GL_SwapWindow(window);
 			
 			gui->draw = 0;
 			
@@ -1531,11 +1708,21 @@ int main(int argc, char** argv){
 	/* safe quit */
 	//SDL_free(base_path);
 	
+	/* Delete allocated resources */
+	glDeleteProgram(shaderProgram);
+	glDeleteShader(fragmentShader);
+	glDeleteShader(vertexShader);
+	glDeleteBuffers(1, &ebo);
+	glDeleteBuffers(1, &vbo);
+	glDeleteVertexArrays(1, &vao);
+	
+	SDL_GL_DeleteContext(gui->gl_ctx.ctx);
+	
 	dxf_drawing_clear(gui->drawing);
 	dxf_drawing_clear(gui->clip_drwg);
 	
-	SDL_DestroyTexture(canvas);
-	SDL_DestroyRenderer(renderer);
+	//SDL_DestroyTexture(canvas);
+	//SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	
 	SDL_free(pref_path);

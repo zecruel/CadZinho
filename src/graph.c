@@ -1912,6 +1912,7 @@ int graph_list_draw(list_node *list, bmp_img * img, struct draw_param param){
 	return ok;
 }
 
+
 #if(0)
 int graph_list_draw_fix(list_node *list, bmp_img * img, double ofs_x, double ofs_y, double scale, bmp_color color){
 	list_node *current = NULL;

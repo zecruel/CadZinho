@@ -14,13 +14,13 @@ int gui_scr_visible (gui_obj *gui, double x, double y){
 	int scr_x = 0, scr_y = 0;
 	gui_coord_scr (gui, x, y, &scr_x, &scr_y);
 	
-	return (scr_x > 0 && scr_x < gui->win_w && scr_y > (gui->main_h - gui->win_h) + 90&& scr_y < gui->main_h - 90);
+	return (scr_x > 0 && scr_x < gui->win_w && scr_y > 90 && scr_y < gui->win_h - 90);
 	
 }
 
 void gui_scr_centralize(gui_obj *gui, double x, double y){
 	double ofs_x = gui->win_w / 2 / gui->zoom;
-	double ofs_y = ((gui->main_h - gui->win_h) + gui->win_h / 2) / gui->zoom;
+	double ofs_y = gui->win_h / 2 / gui->zoom;
 	
 	gui->ofs_x = x - ofs_x;
 	gui->ofs_y = y - ofs_y;
@@ -449,6 +449,13 @@ bmp_color nk_to_bmp_color(struct nk_color color){
 	return ret_color;
 }
 
+void nk_to_gl_color(struct ogl *gl_ctx, struct nk_color color){
+	gl_ctx->fg[0] = color.r;
+	gl_ctx->fg[1] = color.g;
+	gl_ctx->fg[2] = color.b;
+	gl_ctx->fg[3] = color.a;
+}
+
 int gui_check_draw(gui_obj *gui){
 	int draw = 0;
 	
@@ -467,6 +474,193 @@ int gui_check_draw(gui_obj *gui){
 		}
 	}
 	return draw;
+}
+
+int nk_gl_render(gui_obj *gui) {
+	if (!gui) return 0;
+	
+	struct ogl *gl_ctx = &(gui->gl_ctx);
+	const struct nk_command *cmd = NULL;
+	
+	gl_ctx->flip_y = 1;
+	
+	nk_foreach(cmd, gui->ctx){
+		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->vert_count = 0;
+		gl_ctx->elem_count = 0;
+		glUniform1i(gl_ctx->tex_uni, 0);
+		
+		if (cmd->type == NK_COMMAND_LINE) {
+			const struct nk_command_line *l = (const struct nk_command_line *)cmd;
+			nk_to_gl_color(gl_ctx, l->color);
+			draw_gl_line (gl_ctx, (int []){l->begin.x, l->begin.y}, (int []){l->end.x,l->end.y}, l->line_thickness);
+		}
+		else if (cmd->type == NK_COMMAND_RECT) {
+			const struct nk_command_rect *r = (const struct nk_command_rect *)cmd;
+			
+			int x0, y0, x1, y1, i, cx, cy;
+			
+			nk_to_gl_color(gl_ctx, r->color);
+			
+			draw_gl_line (gl_ctx, (int []){r->x + r->rounding, r->y}, (int []){r->x + r->w -r->rounding, r->y}, r->line_thickness);
+			x0 =  r->x + r->w - r->rounding;
+			cx = x0;
+			y0 = r->y;
+			cy = r->y + r->rounding;
+			for (i=13; i <= 16; i++){
+				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
+				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+				draw_gl_line (gl_ctx, (int []){x0, y0}, (int []){x1, y1}, r->line_thickness);
+				x0 = x1;
+				y0 = y1;
+			}
+			draw_gl_line (gl_ctx, (int []){r->x + r->w, r->y + r->rounding}, (int []){ r->x + r->w, r->y + r->h - r->rounding}, r->line_thickness);
+			cx = r->x + r->w - r->rounding;
+			x0 = r->x + r->w;
+			y0 = r->y + r->h - r->rounding;
+			cy = y0;
+			for (i=1; i <= 4; i++){
+				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
+				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+				draw_gl_line (gl_ctx, (int []){x0, y0}, (int []){x1, y1}, r->line_thickness);
+				x0 = x1;
+				y0 = y1;
+			}
+			draw_gl_line (gl_ctx, (int []){r->x + r->w - r->rounding, r->y + r->h}, (int []){ r->x + r->rounding, r->y + r->h}, r->line_thickness);
+			x0 = r->x + r->rounding;
+			cx = x0;
+			y0 = r->y + r->h;
+			cy = r->y + r->h - r->rounding;
+			for (i=5; i <= 8; i++){
+				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
+				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+				draw_gl_line (gl_ctx, (int []){x0, y0}, (int []){ x1, y1}, r->line_thickness);
+				x0 = x1;
+				y0 = y1;
+			}
+			draw_gl_line (gl_ctx, (int []){r->x, r->y + r->h - r->rounding}, (int []){ r->x, r->y + r->rounding}, r->line_thickness);
+			cx = r->x + r->rounding;
+			x0 = r->x;
+			y0 = r->y + r->rounding;
+			cy = y0;
+			for (i=9; i <= 12; i++){
+				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
+				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+				draw_gl_line (gl_ctx, (int []){x0, y0}, (int []){ x1, y1}, r->line_thickness);
+				x0 = x1;
+				y0 = y1;
+			}
+			
+		}
+		else if (cmd->type == NK_COMMAND_RECT_FILLED) {
+			const struct nk_command_rect_filled *r = (const struct nk_command_rect_filled *)cmd;
+			
+			int x0, y0, x1, y1, i, cx, cy;
+			struct edge edges[20];
+			
+			nk_to_gl_color(gl_ctx, r->color);
+			
+			edges[0] = (struct edge){r->x + r->rounding, r->y, r->x + r->w -r->rounding, r->y};
+			x0 =  r->x + r->w - r->rounding;
+			cx = x0;
+			y0 = r->y;
+			cy = r->y + r->rounding;
+			for (i=13; i <= 16; i++){
+				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
+				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+				edges[i] = (struct edge){x0, y0, x1, y1};
+				x0 = x1;
+				y0 = y1;
+			}
+			edges[17] = (struct edge){r->x + r->w, r->y + r->rounding, r->x + r->w, r->y + r->h - r->rounding};
+			cx = r->x + r->w - r->rounding;
+			x0 = r->x + r->w;
+			y0 = r->y + r->h - r->rounding;
+			cy = y0;
+			for (i=1; i <= 4; i++){
+				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
+				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+				edges[i] = (struct edge){x0, y0, x1, y1};
+				x0 = x1;
+				y0 = y1;
+			}
+			edges[18] = (struct edge){r->x + r->w - r->rounding, r->y + r->h,  r->x + r->rounding, r->y + r->h};
+			x0 = r->x + r->rounding;
+			cx = x0;
+			y0 = r->y + r->h;
+			cy = r->y + r->h - r->rounding;
+			for (i=5; i <= 8; i++){
+				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
+				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+				edges[i] = (struct edge){x0, y0, x1, y1};
+				x0 = x1;
+				y0 = y1;
+			}
+			edges[19] = (struct edge){r->x, r->y + r->h - r->rounding, r->x, r->y + r->rounding};
+			cx = r->x + r->rounding;
+			x0 = r->x;
+			y0 = r->y + r->rounding;
+			cy = y0;
+			for (i=9; i <= 12; i++){
+				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
+				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+				edges[i] = (struct edge){x0, y0, x1, y1};
+				x0 = x1;
+				y0 = y1;
+			}
+			
+			draw_gl_polygon (gl_ctx, 20, edges);
+		}
+		else if (cmd->type == NK_COMMAND_IMAGE) {
+			const struct nk_command_image *i = (struct nk_command_image *)cmd;
+			bmp_img *img = (bmp_img *)i->img.handle.ptr;
+			
+			if (i->h > 0 && i->w > 0){
+				gl_ctx->fg[0] = 255;
+				gl_ctx->fg[1] = 255;
+				gl_ctx->fg[2] = 255;
+				gl_ctx->fg[3] = 255;
+				glUniform1i(gl_ctx->tex_uni, 1);
+				draw_gl_image (gl_ctx, i->x, i->y, img->width, img->height, img);
+			}
+		}
+		else if  (cmd->type == NK_COMMAND_TEXT) {
+			const struct nk_command_text *t = (const struct nk_command_text*)cmd;
+			nk_to_gl_color(gl_ctx, t->foreground);
+			bmp_color color = nk_to_bmp_color(t->foreground);
+			
+			/* get font descriptor */
+			struct tfont *font = (struct tfont *)t->font->userdata.ptr;
+			
+			/* rendering text by default general drawing engine */
+			list_node * graph = list_new(NULL, FRAME_LIFE);
+			if (graph) {
+				if (font_parse_str(font, graph, FRAME_LIFE, (char *)t->string, NULL, 0)){
+					graph_list_color(graph, color);
+					graph_list_modify(graph, t->x, t->y + t->font->height, t->font->height, -t->font->height, 0.0);
+					
+					struct draw_param param = {.ofs_x = 0, .ofs_y = 0, .scale = 1.0, .list = NULL, .subst = NULL, .len_subst = 0, .inc_thick = 0};
+					graph_list_draw_gl(graph, gl_ctx, param);
+				}
+			}
+			
+		}
+		else if  (cmd->type == NK_COMMAND_SCISSOR) {
+			const struct nk_command_scissor *s =(const struct nk_command_scissor*)cmd;
+			
+			glScissor((GLint)s->x, (GLint)(gl_ctx->win_h - s->y - s->h), (GLsizei)s->w, (GLsizei)s->h);
+			glEnable(GL_SCISSOR_TEST);
+		}
+		glUnmapBuffer(GL_ARRAY_BUFFER);
+		glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+		glDrawElements(GL_TRIANGLES, gl_ctx->elem_count*3, GL_UNSIGNED_INT, 0);
+	}
+	
+	gl_ctx->flip_y = 0;
+	glDisable(GL_SCISSOR_TEST);
+	
+	return 1;
 }
 
 NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
@@ -1122,6 +1316,20 @@ int gui_start(gui_obj *gui){
 	
 	gui->main_w = 2048;
 	gui->main_h = 2048;
+	
+	gui->gl_ctx.vert_count = 0;
+	gui->gl_ctx.elem_count = 0;
+	gui->gl_ctx.verts = NULL;
+	gui->gl_ctx.elems = NULL;
+	gui->gl_ctx.win_w = 800;
+	gui->gl_ctx.win_h = 600;
+	gui->gl_ctx.flip_y = 0;
+	gui->gl_ctx.fg[0] = 255; gui->gl_ctx.fg[1] = 255; gui->gl_ctx.fg[2] = 255; gui->gl_ctx.fg[3] = 255;
+	gui->gl_ctx.bg[0] = 100; gui->gl_ctx.bg[1] = 100; gui->gl_ctx.bg[2] = 100; gui->gl_ctx.bg[3] = 255;
+	
+	gui->gl_ctx.tex = 0;
+	gui->gl_ctx.tex_w = 20;
+	gui->gl_ctx.tex_h = 20;
 	
 	gui->win_x = SDL_WINDOWPOS_CENTERED;
 	gui->win_y = SDL_WINDOWPOS_CENTERED;

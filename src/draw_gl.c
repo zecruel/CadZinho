@@ -43,16 +43,15 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[2], int p1[2], int thick){
 	float dx = p1[0] - p0[0];
 	float dy = p1[1] - p0[1];
 	float modulus = sqrt(pow(dx, 2) + pow(dy, 2));
-	float cosine = 0.0;
-	float sine = 1.0;
+	float cosine = 1.0;
+	float sine = 0.0;
 	if (modulus > TOLERANCE){
 		cosine = dx/modulus;
 		sine = dy/modulus;
 	}
 	else {
-		thick = 2; /* two pixel as minimal thickness  - a dot*/
-		cosine = 1.0;
-		sine = 1.0;
+		/* a dot*/
+		p1[0] += thick;
 	}
 	
 	/* convert input coordinates, in pixles (int), to openGL units */
@@ -190,6 +189,99 @@ int draw_gl_quad (struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2]
 	gl_ctx->verts[j].col[3] = gl_ctx->fg[3];
 	gl_ctx->verts[j].uv[0] = 1.0;
 	gl_ctx->verts[j].uv[1] = (float)(1 - gl_ctx->flip_y);
+	gl_ctx->vert_count ++;
+	/* store vertex indexes in elements buffer - 2 triangles that share vertices  */
+	/* 0 */
+	j = gl_ctx->elem_count * 3;
+	gl_ctx->elems[j] = gl_ctx->vert_count - 4;
+	gl_ctx->elems[j+1] = gl_ctx->vert_count - 3;
+	gl_ctx->elems[j+2] = gl_ctx->vert_count - 2;
+	/* 1 */
+	gl_ctx->elems[j+3] = gl_ctx->vert_count - 3;
+	gl_ctx->elems[j+4] = gl_ctx->vert_count - 2;
+	gl_ctx->elems[j+5] = gl_ctx->vert_count - 1;
+	gl_ctx->elem_count+= 2;
+	
+	return 1;
+}
+
+int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int w, int h){
+	/* emulate drawing a filled and convex quadrilateral, using triangles in openGL */
+	
+	/* verify struct and buffers */
+	if (!gl_ctx) return 0;
+	if (!gl_ctx->verts) return 0;
+	if (!gl_ctx->elems) return 0;
+	
+	/* orientation in drawing area */
+	float flip_y = (gl_ctx->flip_y) ? -1.0 : 1.0;
+	float scale_u = 1.0;
+	float scale_v = 1.0;
+	
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, gl_ctx->tex);
+	
+	if (w > gl_ctx->tex_w || h > gl_ctx->tex_h){
+		
+		scale_u = 1.0;
+		scale_v = 1.0;
+		gl_ctx->tex_w = w;
+		gl_ctx->tex_h = h;
+	}
+	else {
+		
+		scale_u = (float) w / (float) gl_ctx->tex_w;
+		scale_v = (float) h / (float) gl_ctx->tex_h;
+	}
+	
+	/* convert input coordinates, in pixles (int), to openGL units and store vertices - 4 vertices */
+	/* 0 */
+	int j = gl_ctx->vert_count;
+	gl_ctx->verts[j].pos[0] = ((float) x / gl_ctx->win_w) * 2.0 - 1.0;
+	gl_ctx->verts[j].pos[1] = flip_y * (((float) y / gl_ctx->win_h) * 2.0 - 1.0);
+	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
+	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
+	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
+	gl_ctx->verts[j].col[3] = gl_ctx->fg[3];
+	gl_ctx->verts[j].uv[0] = 0.0;
+	gl_ctx->verts[j].uv[1] = (float)(1 - gl_ctx->flip_y) * scale_v;
+	gl_ctx->vert_count ++;
+	/* 1 */
+	j = gl_ctx->vert_count;
+	gl_ctx->verts[j].pos[0] = ((float) x / gl_ctx->win_w) * 2.0 - 1.0;
+	gl_ctx->verts[j].pos[1] = flip_y * (((float) (y + h) / gl_ctx->win_h) * 2.0 - 1.0);
+	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
+	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
+	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
+	gl_ctx->verts[j].col[3] = gl_ctx->fg[3];
+	gl_ctx->verts[j].uv[0] = 0.0;
+	gl_ctx->verts[j].uv[1] = (float)(gl_ctx->flip_y) * scale_v;
+	gl_ctx->vert_count ++;
+	/* 2 */
+	j = gl_ctx->vert_count;
+	gl_ctx->verts[j].pos[0] = ((float) (x + w) / gl_ctx->win_w) * 2.0 - 1.0;
+	gl_ctx->verts[j].pos[1] = flip_y * (((float) y / gl_ctx->win_h) * 2.0 - 1.0);
+	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
+	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
+	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
+	gl_ctx->verts[j].col[3] = gl_ctx->fg[3];
+	gl_ctx->verts[j].uv[0] = scale_u;
+	gl_ctx->verts[j].uv[1] = (float)(1 - gl_ctx->flip_y) * scale_v;
+	gl_ctx->vert_count ++;
+	/* 3 */
+	j = gl_ctx->vert_count;
+	gl_ctx->verts[j].pos[0] = ((float) (x + w) / gl_ctx->win_w) * 2.0 - 1.0;
+	gl_ctx->verts[j].pos[1] = flip_y * (((float) (y + h) / gl_ctx->win_h) * 2.0 - 1.0);
+	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
+	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
+	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
+	gl_ctx->verts[j].col[3] = gl_ctx->fg[3];
+	gl_ctx->verts[j].uv[0] =  scale_u;
+	gl_ctx->verts[j].uv[1] = (float)(gl_ctx->flip_y) * scale_v;
 	gl_ctx->vert_count ++;
 	/* store vertex indexes in elements buffer - 2 triangles that share vertices  */
 	/* 0 */

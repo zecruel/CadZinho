@@ -810,7 +810,7 @@ int main(int argc, char** argv){
 					case SDL_MOUSEBUTTONUP:
 						gui->mouse_x = event.button.x;
 						gui->mouse_y = event.button.y;
-						//gui->mouse_y = gui->main_h - gui->mouse_y;
+						gui->mouse_y = gui->win_h - gui->mouse_y;
 						if (event.button.button == SDL_BUTTON_LEFT){
 							leftMouseButtonDown = 0;
 						}
@@ -821,7 +821,7 @@ int main(int argc, char** argv){
 					case SDL_MOUSEBUTTONDOWN:
 						gui->mouse_x = event.button.x;
 						gui->mouse_y = event.button.y;
-						//gui->mouse_y = gui->main_h - gui->mouse_y;
+						gui->mouse_y = gui->win_h - gui->mouse_y;
 						if (event.button.button == SDL_BUTTON_LEFT){
 							leftMouseButtonDown = 1;
 							leftMouseButtonClick = 1;
@@ -835,7 +835,7 @@ int main(int argc, char** argv){
 						MouseMotion = 1;
 						gui->mouse_x = event.motion.x;
 						gui->mouse_y = event.motion.y;
-						//gui->mouse_y = gui->main_h - gui->mouse_y;
+						gui->mouse_y = gui->win_h - gui->mouse_y;
 						pos_x = (double) gui->mouse_x/gui->zoom + gui->ofs_x;
 						pos_y = (double) gui->mouse_y/gui->zoom + gui->ofs_y;
 						gui->draw = 1;

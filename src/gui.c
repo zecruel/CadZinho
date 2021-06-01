@@ -125,7 +125,21 @@ struct gui_glyph * gui_new_glyph (struct gui_font *gfont, int code_p){
 			w = (w < 25)? w : 25;
 			h = (h < 20)? h : 20;
 			/* rasterize glyph*/
-			stbtt_MakeGlyphBitmap((stbtt_fontinfo *) tt_fnt->info, glyph->rast, w, h, 25, scale, scale, curr_glyph->g_idx);
+			unsigned char rast[20*25];
+			stbtt_MakeGlyphBitmap((stbtt_fontinfo *) tt_fnt->info, rast, w, h, 25, scale, scale, curr_glyph->g_idx);
+			
+			/* copy rasterized glyph in main image */
+			int i = 0, j = 0;
+			for (j = 0; j < h; j++){
+				for (i = 0; i < w; i++){ /* pixel by pixel */
+					//img->frg.a = (curr_glyph->rast[j * 25 + i] * color.a) / 255;
+					//bmp_point_raw (img, x + i, y + j);
+					glyph->rast[j*w+i][0] = 255;
+					glyph->rast[j*w+i][1] = 255;
+					glyph->rast[j*w+i][2] = 255;
+					glyph->rast[j*w+i][3] = rast[j * 25 + i] ;
+				}
+			}
 			
 			/* update glyph parameters */
 			glyph->x = x0;
@@ -483,13 +497,17 @@ int nk_gl_render(gui_obj *gui) {
 	const struct nk_command *cmd = NULL;
 	
 	gl_ctx->flip_y = 1;
+	gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+	gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	gl_ctx->vert_count = 0;
+	gl_ctx->elem_count = 0;
+	glUniform1i(gl_ctx->tex_uni, 0);
 	
 	nk_foreach(cmd, gui->ctx){
-		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-		gl_ctx->vert_count = 0;
-		gl_ctx->elem_count = 0;
-		glUniform1i(gl_ctx->tex_uni, 0);
+		if (gl_ctx->elems == NULL){
+			gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+			gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+		}
 		
 		if (cmd->type == NK_COMMAND_LINE) {
 			const struct nk_command_line *l = (const struct nk_command_line *)cmd;
@@ -617,12 +635,20 @@ int nk_gl_render(gui_obj *gui) {
 			bmp_img *img = (bmp_img *)i->img.handle.ptr;
 			
 			if (i->h > 0 && i->w > 0){
+				/* draw bitmap image */
+				draw_gl (gl_ctx, 1); /* force draw previous commands and cleanup */
+				/* choose blank base color */
 				gl_ctx->fg[0] = 255;
 				gl_ctx->fg[1] = 255;
 				gl_ctx->fg[2] = 255;
 				gl_ctx->fg[3] = 255;
-				glUniform1i(gl_ctx->tex_uni, 1);
+				/* prepare for new opengl commands */
+				gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+				gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+				glUniform1i(gl_ctx->tex_uni, 1); /* choose second texture */
+				/* finally draw image */
 				draw_gl_image (gl_ctx, i->x, i->y, img->width, img->height, img);
+				draw_gl (gl_ctx, 1); /* force draw and cleanup */
 			}
 		}
 		else if  (cmd->type == NK_COMMAND_TEXT) {
@@ -633,30 +659,103 @@ int nk_gl_render(gui_obj *gui) {
 			/* get font descriptor */
 			struct tfont *font = (struct tfont *)t->font->userdata.ptr;
 			
-			/* rendering text by default general drawing engine */
-			list_node * graph = list_new(NULL, FRAME_LIFE);
-			if (graph) {
-				if (font_parse_str(font, graph, FRAME_LIFE, (char *)t->string, NULL, 0)){
-					graph_list_color(graph, color);
-					graph_list_modify(graph, t->x, t->y + t->font->height, t->font->height, -t->font->height, 0.0);
-					
-					struct draw_param param = {.ofs_x = 0, .ofs_y = 0, .scale = 1.0, .list = NULL, .subst = NULL, .len_subst = 0, .inc_thick = 0};
-					graph_list_draw_gl(graph, gl_ctx, param);
+			if (font->type != FONT_TT){ /*shape font */
+				/* rendering text by default general drawing engine */
+				list_node * graph = list_new(NULL, FRAME_LIFE);
+				if (graph) {
+					if (font_parse_str(font, graph, FRAME_LIFE, (char *)t->string, NULL, 0)){
+						graph_list_color(graph, color);
+						graph_list_modify(graph, t->x, t->y + t->font->height, t->font->height, -t->font->height, 0.0);
+						
+						struct draw_param param = {.ofs_x = 0, .ofs_y = 0, .scale = 1.0, .list = NULL, .subst = NULL, .len_subst = 0, .inc_thick = 0};
+						graph_list_draw_gl(graph, gl_ctx, param);
+					}
 				}
+			}
+			else { /* True Type font */
+				/* rendering text by glyph raster images - used only in GUI */
+				struct tt_font *tt_fnt = font->data;
+				
+				/* get gui font structure */
+				struct gui_font * gfont = gui_get_font (gui->ui_font_list, (struct nk_user_font *) t->font);
+				struct gui_glyph *curr_glyph = NULL;
+				int ofs = 0, str_start = 0, code_p;
+				double ofs_x = 0.0;
+				
+				draw_gl (gl_ctx, 1); /* force draw previous commands and cleanup */
+				/* prepare for new opengl commands */
+				gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+				gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+				glUniform1i(gl_ctx->tex_uni, 1); /* choose second texture */
+				/* finally draw image */
+				int desc = fabs(tt_fnt->descent) * (double)t->font->height + 0.5;
+				//int lg = fabs(tt_fnt->line_gap) * (double)t->font->height + 0.5;
+				int height = t->font->height + desc;// + lg;
+				
+				draw_gl_rect (gl_ctx, t->x, t->y, t->w, height);
+				
+				/* sweep the text string, decoding UTF8 in code points*/
+				glActiveTexture(GL_TEXTURE1);
+				glBindTexture(GL_TEXTURE_2D, gl_ctx->tex);
+				
+				glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, t->w, height, GL_RGBA, GL_UNSIGNED_BYTE, gui->blank_tex);
+				
+				while (ofs = utf8_to_codepoint((char *)t->string + str_start, &code_p)){
+					str_start += ofs;
+					curr_glyph = gui_get_glyph (gfont, code_p);
+					
+					/* calcule current glyph position in texture */
+					int x = curr_glyph->x + (int) ofs_x;
+					int y = curr_glyph->y + (int) t->font->height;
+					
+					int w = curr_glyph->w;
+					int h = curr_glyph->h;
+					
+					glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_RGBA, GL_UNSIGNED_BYTE, curr_glyph->rast);
+					
+					ofs_x += curr_glyph->adv; /*update position for next glyph */
+				}
+				
+				draw_gl (gl_ctx, 1); /* force draw and cleanup */
 			}
 			
 		}
 		else if  (cmd->type == NK_COMMAND_SCISSOR) {
 			const struct nk_command_scissor *s =(const struct nk_command_scissor*)cmd;
-			
+			draw_gl (gl_ctx, 1); /* force draw previous commands and cleanup */
 			glScissor((GLint)s->x, (GLint)(gl_ctx->win_h - s->y - s->h), (GLsizei)s->w, (GLsizei)s->h);
 			glEnable(GL_SCISSOR_TEST);
 		}
-		glUnmapBuffer(GL_ARRAY_BUFFER);
-		glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-		glDrawElements(GL_TRIANGLES, gl_ctx->elem_count*3, GL_UNSIGNED_INT, 0);
+		
+		else if  (cmd->type == NK_COMMAND_TRIANGLE) {
+			
+			const struct nk_command_triangle*t = (const struct nk_command_triangle*)cmd;
+			
+			/*change the color */
+			nk_to_gl_color(gl_ctx, t->color);
+			
+			draw_gl_line (gl_ctx, (int []){t->a.x, t->a.y}, (int []){t->b.x, t->b.y}, t->line_thickness);
+			draw_gl_line (gl_ctx, (int []){t->b.x, t->b.y}, (int []){t->c.x, t->c.y}, t->line_thickness);
+			draw_gl_line (gl_ctx, (int []){t->c.x, t->c.y}, (int []){t->a.x, t->a.y}, t->line_thickness);
+		} 
+		
+		else if  (cmd->type == NK_COMMAND_TRIANGLE_FILLED){
+			const struct nk_command_triangle_filled *t = (const struct nk_command_triangle_filled *)cmd;
+			
+			/*change the color */
+			nk_to_gl_color(gl_ctx, t->color);
+			
+			draw_gl_triang (gl_ctx, (int []){t->a.x, t->a.y},
+					(int []){t->b.x, t->b.y},
+					(int []){t->c.x, t->c.y});
+		}
+		
+		
+		
+		draw_gl (gl_ctx, 0);
 	}
 	
+	draw_gl (gl_ctx, 1); /* force draw and cleanup */
 	gl_ctx->flip_y = 0;
 	glDisable(GL_SCISSOR_TEST);
 	
@@ -971,14 +1070,14 @@ NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
 							rect_pos pos_p0 = rect_find_pos(x, y, img->clip_x, img->clip_y, img->clip_x + img->clip_w, img->clip_y + img->clip_h);
 							rect_pos pos_p1 = rect_find_pos(x+w, y+h, img->clip_x, img->clip_y, img->clip_x + img->clip_w, img->clip_y + img->clip_h);
 							if (!(pos_p0 & pos_p1)){
-								/* copy rasterized glyph in main image */
+								/* copy rasterized glyph in main image 
 								int i = 0, j = 0;
 								for (j = 0; j < h; j++){
-									for (i = 0; i < w; i++){ /* pixel by pixel */
+									for (i = 0; i < w; i++){ /* pixel by pixel 
 										img->frg.a = (curr_glyph->rast[j * 25 + i] * color.a) / 255;
 										bmp_point_raw (img, x + i, y + j);
 									}
-								}
+								}*/
 							}
 							ofs_x += curr_glyph->adv; /*update position for next glyph */
 						}
@@ -1328,8 +1427,8 @@ int gui_start(gui_obj *gui){
 	gui->gl_ctx.bg[0] = 100; gui->gl_ctx.bg[1] = 100; gui->gl_ctx.bg[2] = 100; gui->gl_ctx.bg[3] = 255;
 	
 	gui->gl_ctx.tex = 0;
-	gui->gl_ctx.tex_w = 20;
-	gui->gl_ctx.tex_h = 20;
+	gui->gl_ctx.tex_w = 600;
+	gui->gl_ctx.tex_h = 600;
 	
 	gui->win_x = SDL_WINDOWPOS_CENTERED;
 	gui->win_y = SDL_WINDOWPOS_CENTERED;
@@ -1565,6 +1664,8 @@ int gui_start(gui_obj *gui){
 	gui->drwg_rcnt_pos = 0;
 	
 	gui->num_brk_pts = 0;
+	
+	memset(gui->blank_tex, 0, 4*20*600);
 	
 	return 1;
 }

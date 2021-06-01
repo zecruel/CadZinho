@@ -170,7 +170,7 @@ enum Ortho_view{
 struct gui_glyph{
 	int code_p, x, y, w, h;
 	double adv;
-	unsigned char rast[20*25];
+	unsigned char rast[20*25][4];
 	struct gui_glyph *next;
 };
 	
@@ -375,6 +375,8 @@ struct Gui_obj {
 	char script_dynamic[DXF_MAX_CHARS];
 	
 	char image_path[DXF_MAX_CHARS];
+	
+	unsigned char blank_tex[4*20*600]; /* blank texture */
 	
 };
 typedef struct Gui_obj gui_obj;

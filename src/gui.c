@@ -749,7 +749,146 @@ int nk_gl_render(gui_obj *gui) {
 					(int []){t->b.x, t->b.y},
 					(int []){t->c.x, t->c.y});
 		}
+		else if  (cmd->type == NK_COMMAND_CIRCLE) {
+			const struct nk_command_circle *c = (const struct nk_command_circle *)cmd;
+			/*change the color */
+			nk_to_gl_color(gl_ctx, c->color);
+			
+			int x0, y0, x1, y1, i;
+			double major_ax, minor_ax, cx, cy;
+			//struct edge edges[20];
+			
+			major_ax = c->w / 2.0;
+			minor_ax = c->h / 2.0;
+			
+			cx = c->x + major_ax;
+			cy = c->y + minor_ax;
+			
+			x0 = 0.5 + cx + major_ax;
+			y0 = 0.5 + cy;
+			
+			for (i = 1; i < 20; i++){
+				x1 = 0.5 + cx + major_ax * cos( 0.1 * M_PI * i );
+				y1 = 0.5 + cy + minor_ax * sin( 0.1 * M_PI * i );
+				draw_gl_line (gl_ctx, (int []){x0, y0}, (int []){ x1, y1}, c->line_thickness);
+				x0 = x1;
+				y0 = y1;
+			}
+			x1 = 0.5 + cx + major_ax;
+			y1 = 0.5 + cy;
+			draw_gl_line (gl_ctx, (int []){x0, y0}, (int []){ x1, y1}, c->line_thickness);
+		} 		
+		else if  (cmd->type == NK_COMMAND_CIRCLE_FILLED) {
+			const struct nk_command_circle_filled *c = (const struct nk_command_circle_filled *)cmd;
+			/*change the color */
+			nk_to_gl_color(gl_ctx, c->color);
+			
+			int x0, y0, x1, y1, i;
+			double major_ax, minor_ax, cx, cy;
+			struct edge edges[20];
+			
+			major_ax = c->w / 2.0;
+			minor_ax = c->h / 2.0;
+			
+			cx = c->x + major_ax;
+			cy = c->y + minor_ax;
+			
+			x0 = 0.5 + cx + major_ax;
+			y0 = 0.5 + cy;
+			
+			for (i = 1; i < 20; i++){
+				x1 = 0.5 + cx + major_ax * cos( 0.1 * M_PI * i );
+				y1 = 0.5 + cy + minor_ax * sin( 0.1 * M_PI * i );
+				edges[i-1] = (struct edge){x0, y0, x1, y1};
+				x0 = x1;
+				y0 = y1;
+			}
+			x1 = 0.5 + cx + major_ax;
+			y1 = 0.5 + cy;
+			edges[19] = (struct edge){x0, y0, x1, y1};
+			
+			draw_gl_polygon (gl_ctx, 20, edges);
+		} 
+		else if  (cmd->type == NK_COMMAND_POLYGON) {
+			const struct nk_command_polygon *p = (const struct nk_command_polygon*)cmd;
+			/*change the color */
+			nk_to_gl_color(gl_ctx, p->color);
+			
+			//int i;
+			//float vertices[p->point_count * 2];
+			//for (i = 0; i < p->point_count; i++) {
+			// vertices[i*2] = p->points[i].x;
+			// vertices[(i*2) + 1] = p->points[i].y;
+			//}
+			//al_draw_polyline((const float*)&vertices, (2 * sizeof(float)),
+			//    (int)p->point_count, ALLEGRO_LINE_JOIN_ROUND, ALLEGRO_LINE_CAP_CLOSED,
+			//  color, (float)p->line_thickness, 0.0);
+			//printf("polygon ");//------------------------------------teste
+		}
 		
+		else if  (cmd->type == NK_COMMAND_POLYGON_FILLED) {
+			const struct nk_command_polygon_filled *p = (const struct nk_command_polygon_filled *)cmd;
+			/*change the color */
+			nk_to_gl_color(gl_ctx, p->color);
+			
+			//int i;
+			//float vertices[p->point_count * 2];
+			// for (i = 0; i < p->point_count; i++) {
+			//    vertices[i*2] = p->points[i].x;
+			//     vertices[(i*2) + 1] = p->points[i].y;
+			// }
+			//  al_draw_filled_polygon((const float*)&vertices, (int)p->point_count, color);
+			//printf("fill_polygon ");//------------------------------------teste
+		}
+		
+		else if  (cmd->type == NK_COMMAND_POLYLINE) {
+			const struct nk_command_polyline *p = (const struct nk_command_polyline *)cmd;
+			/*change the color */
+			nk_to_gl_color(gl_ctx, p->color);
+			
+			//int i;
+			//float vertices[p->point_count * 2];
+			//  for (i = 0; i < p->point_count; i++) {
+			//      vertices[i*2] = p->points[i].x;
+			//      vertices[(i*2) + 1] = p->points[i].y;
+			//  }
+			//  al_draw_polyline((const float*)&vertices, (2 * sizeof(float)),
+			//      (int)p->point_count, ALLEGRO_LINE_JOIN_ROUND, ALLEGRO_LINE_CAP_ROUND,
+			//      color, (float)p->line_thickness, 0.0);
+			//printf("polyline ");//------------------------------------teste
+		}
+		else if  (cmd->type == NK_COMMAND_CURVE) {
+			const struct nk_command_curve *q = (const struct nk_command_curve *)cmd;
+			/*change the color */
+			nk_to_gl_color(gl_ctx, q->color);
+			
+			// float points[8];
+			// points[0] = (float)q->begin.x;
+			// points[1] = (float)q->begin.y;
+			// points[2] = (float)q->ctrl[0].x;
+			// points[3] = (float)q->ctrl[0].y;
+			//points[4] = (float)q->ctrl[1].x;
+			// points[5] = (float)q->ctrl[1].y;
+			// points[6] = (float)q->end.x;
+			// points[7] = (float)q->end.y;
+			// al_draw_spline(points, color, (float)q->line_thickness);
+			//printf("curve ");//------------------------------------teste
+		}
+		else if  (cmd->type == NK_COMMAND_ARC) {
+			const struct nk_command_arc *a = (const struct nk_command_arc *)cmd;
+			/*change the color */
+			nk_to_gl_color(gl_ctx, a->color);
+			
+			//    al_draw_arc((float)a->cx, (float)a->cy, (float)a->r, a->a[0],
+			//       a->a[1], color, (float)a->line_thickness);
+			//printf("arc ");//------------------------------------teste
+		}
+		else if  (cmd->type == NK_COMMAND_ARC_FILLED) {
+			
+		}
+		else if  (cmd->type == NK_COMMAND_RECT_MULTI_COLOR) {
+			
+		}
 		
 		
 		draw_gl (gl_ctx, 0);
@@ -1427,8 +1566,8 @@ int gui_start(gui_obj *gui){
 	gui->gl_ctx.bg[0] = 100; gui->gl_ctx.bg[1] = 100; gui->gl_ctx.bg[2] = 100; gui->gl_ctx.bg[3] = 255;
 	
 	gui->gl_ctx.tex = 0;
-	gui->gl_ctx.tex_w = 600;
-	gui->gl_ctx.tex_h = 600;
+	gui->gl_ctx.tex_w = 2400;
+	gui->gl_ctx.tex_h = 2400;
 	
 	gui->win_x = SDL_WINDOWPOS_CENTERED;
 	gui->win_y = SDL_WINDOWPOS_CENTERED;

@@ -62,6 +62,8 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[2], int p1[2], int thick);
 
 int draw_gl_quad (struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2]);
 
+int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int w, int h);
+
 int draw_gl_triang (struct ogl *gl_ctx, int p0[2], int p1[2], int p2[2]);
 
 int draw_gl_polygon (struct ogl *gl_ctx, int n, struct edge edges[]);
@@ -73,6 +75,8 @@ int draw_gl (struct ogl *gl_ctx, int force);
 int graph_list_draw_gl(list_node *list, struct ogl *gl_ctx, struct draw_param param);
 
 int graph_list_draw_gl2(list_node *list, struct ogl *gl_ctx, struct draw_param param);
+
+int dxf_list_draw_gl(list_node *list, struct ogl *gl_ctx,  struct draw_param param);
 
 int dxf_ents_draw_gl(dxf_drawing *drawing, struct ogl *gl_ctx, struct draw_param param);
 

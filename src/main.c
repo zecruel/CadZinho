@@ -802,7 +802,7 @@ int main(int argc, char** argv){
 			//printf("show\n");
 		}
 		else{
-			//SDL_ShowCursor(SDL_DISABLE);
+			SDL_ShowCursor(SDL_DISABLE);
 			
 			if (ev_type != 0){
 				double wheel = 1.0;
@@ -1565,7 +1565,7 @@ int main(int argc, char** argv){
 			SDL_GetWindowSize(window, &gui->gl_ctx.win_w, &gui->gl_ctx.win_h);
 			glViewport(0, 0, gui->gl_ctx.win_w, gui->gl_ctx.win_h);
 			
-			
+			#if(0)
 			if (gui->win_w > gui->main_w){ /* if window exceedes main image */
 				/* fit windo to main image size*/
 				gui->win_w = gui->main_w;
@@ -1581,6 +1581,7 @@ int main(int argc, char** argv){
 			img->clip_x = 0; img->clip_y = gui->main_h - gui->win_h;
 			img->clip_w = gui->win_w;
 			img->clip_h = gui->win_h;
+			#endif
 			
 			d_param.ofs_x = gui->ofs_x;
 			d_param.ofs_y = gui->ofs_y;
@@ -1590,10 +1591,16 @@ int main(int argc, char** argv){
 			d_param.len_subst = 0;
 			d_param.inc_thick = 0;
 			
-			/* Clear the screen to black */
+			/* Clear the screen to background color */
 			glClearColor((GLfloat) background.r/255, (GLfloat) background.g/255, 
 				(GLfloat) background.b/255, (GLfloat) background.a/255);
 			glClear(GL_COLOR_BUFFER_BIT);
+			
+			gui->gl_ctx.verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+			gui->gl_ctx.elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+			gui->gl_ctx.vert_count = 0;
+			gui->gl_ctx.elem_count = 0;
+			glUniform1i(gui->gl_ctx.tex_uni, 0);
 			
 			//bmp_fill_clip(img, img->bkg); /* clear bitmap */
 			//dxf_ents_draw(gui->drawing, img, gui->ofs_x, gui->ofs_y, gui->zoom); /* redraw */
@@ -1607,7 +1614,8 @@ int main(int argc, char** argv){
 			//graph_draw(hers, img, gui->ofs_x, gui->ofs_y, gui->zoom);
 			/*===================== teste ===============*/
 			
-			draw_cursor(img, gui->mouse_x, gui->mouse_y, cursor);
+			//draw_cursor(img, gui->mouse_x, gui->mouse_y, cursor);
+			draw_cross_cursor_gl(gui, gui->mouse_x, gui->mouse_y, cursor);
 			
 			
 			/*hilite test */
@@ -1621,17 +1629,22 @@ int main(int argc, char** argv){
 			d_param.len_subst = 1;
 			d_param.inc_thick = 3;
 			
+			
 			if(gui->element != NULL){
-				//graph_list_draw_fix(gui->element->obj.graphics, img, gui->ofs_x, gui->ofs_y, gui->zoom, hilite);
-				graph_list_draw(gui->element->obj.graphics, img, d_param);
+				//graph_list_draw(gui->element->obj.graphics, img, d_param);
+				graph_list_draw_gl2(gui->element->obj.graphics, &gui->gl_ctx, d_param);
 			}
 			if((gui->draw_phanton)&&(gui->phanton)){
-				//dxf_list_draw(gui->sel_list, img, gui->ofs_x - (x1 - x0), gui->ofs_y - (y1 - y0), gui->zoom, hilite);
-				graph_list_draw(gui->phanton, img, d_param);
+				//graph_list_draw(gui->phanton, img, d_param);
+				graph_list_draw_gl2(gui->phanton, &gui->gl_ctx, d_param);
 			}
-			if (gui->sel_list->next) /* verify if  has elements in list */
-				dxf_list_draw(gui->sel_list, img, d_param);
+			if (gui->sel_list->next) {/* verify if  has elements in list */
+				//dxf_list_draw(gui->sel_list, img, d_param);
+				dxf_list_draw_gl(gui->sel_list, &gui->gl_ctx, d_param);
+			}
 			
+			/* ---------------------------------- */
+			draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
 			
 			if ((gui->draw_vert) && (gui->element)){
 				/* draw vertices */
@@ -1646,7 +1659,7 @@ int main(int argc, char** argv){
 			}
 			
 			/* set image visible window*/
-			img->clip_x = 0; img->clip_y = 0;
+			//img->clip_x = 0; img->clip_y = 0;
 			
 			/*draw gui*/
 			//nk_sdl_render(gui, img);

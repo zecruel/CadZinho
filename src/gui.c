@@ -698,6 +698,13 @@ int nk_gl_render(gui_obj *gui) {
 				glActiveTexture(GL_TEXTURE1);
 				glBindTexture(GL_TEXTURE_2D, gl_ctx->tex);
 				
+				if (t->w > gl_ctx->tex_w || height > gl_ctx->tex_h){ /* verify if image is greater then texture */
+					gl_ctx->tex_w = (gl_ctx->tex_w > t->w) ? gl_ctx->tex_w : t->w;
+					gl_ctx->tex_h = (gl_ctx->tex_h > height) ? gl_ctx->tex_h : height;
+					/* realoc texture */
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gl_ctx->tex_w, gl_ctx->tex_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+				}
+				
 				glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, t->w, height, GL_RGBA, GL_UNSIGNED_BYTE, gui->blank_tex);
 				
 				while (ofs = utf8_to_codepoint((char *)t->string + str_start, &code_p)){
@@ -1566,8 +1573,8 @@ int gui_start(gui_obj *gui){
 	gui->gl_ctx.bg[0] = 100; gui->gl_ctx.bg[1] = 100; gui->gl_ctx.bg[2] = 100; gui->gl_ctx.bg[3] = 255;
 	
 	gui->gl_ctx.tex = 0;
-	gui->gl_ctx.tex_w = 2400;
-	gui->gl_ctx.tex_h = 2400;
+	gui->gl_ctx.tex_w = 600;
+	gui->gl_ctx.tex_h = 600;
 	
 	gui->win_x = SDL_WINDOWPOS_CENTERED;
 	gui->win_y = SDL_WINDOWPOS_CENTERED;
@@ -2259,6 +2266,36 @@ void gui_draw_vert(gui_obj *gui, bmp_img *img, dxf_node *obj){
 			}
 		}
 	}
+}
+
+int draw_cross_cursor_gl(gui_obj *gui, int x, int y, bmp_color color){
+	if (!gui) return 0;
+	
+	struct ogl *gl_ctx = &(gui->gl_ctx);
+	
+	/* init opengl context */
+	if (gl_ctx->elems == NULL){
+		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	}
+	/* set the color */
+	gl_ctx->fg[0] = color.r;
+	gl_ctx->fg[1] = color.g;
+	gl_ctx->fg[2] = color.b;
+	gl_ctx->fg[3] = color.a;
+	
+	/* draw cursor */
+	draw_gl_line (gl_ctx, (int []){0, y}, (int []){gl_ctx->win_w,y}, 3);
+	draw_gl_line (gl_ctx, (int []){x, 0}, (int []){x, gl_ctx->win_h}, 3);
+	
+	draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x+5, y+5}, 1);
+	draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x+5, y-5}, 1);
+	draw_gl_line (gl_ctx, (int []){x+5, y-5}, (int []){x+5, y+5}, 1);
+	draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x-5, y+5}, 1);	
+	
+		
+	draw_gl (gl_ctx, 0);
+	return 1;
 }
 
 //#endif

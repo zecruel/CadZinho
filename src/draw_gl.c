@@ -374,18 +374,19 @@ int draw_gl_image (struct ogl *gl_ctx, int x, int y, int w, int h, bmp_img *img)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, gl_ctx->tex);
 	
-	if (img->width > gl_ctx->tex_w || img->height > gl_ctx->tex_h){
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img->width, img->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->buf);
-		scale_u = 1.0;
-		scale_v = 1.0;
-		gl_ctx->tex_w = img->width;
-		gl_ctx->tex_h = img->height;
+	if (img->width > gl_ctx->tex_w || img->height > gl_ctx->tex_h){ /* verify if image is greater then texture */
+		gl_ctx->tex_w = (gl_ctx->tex_w > img->width) ? gl_ctx->tex_w : img->width;
+		gl_ctx->tex_h = (gl_ctx->tex_h > img->height) ? gl_ctx->tex_h : img->height;
+		/* realoc texture */
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gl_ctx->tex_w, gl_ctx->tex_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	}
-	else {
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, img->width, img->height, GL_RGBA, GL_UNSIGNED_BYTE, img->buf);
-		scale_u = (float) img->width / (float) gl_ctx->tex_w;
-		scale_v = (float) img->height / (float) gl_ctx->tex_h;
-	}
+	
+	/* transfer image pixels to texture */
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, img->width, img->height, GL_RGBA, GL_UNSIGNED_BYTE, img->buf);
+	/* image dimmensions in texture */
+	scale_u = (float) img->width / (float) gl_ctx->tex_w;
+	scale_v = (float) img->height / (float) gl_ctx->tex_h;
+	
 	
 	/* convert input coordinates, in pixles (int), to openGL units and store vertices - 4 vertices */
 	/* 0 */
@@ -467,18 +468,18 @@ int draw_gl_image2(struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, gl_ctx->tex);
 	
-	if (img->width > gl_ctx->tex_w || img->height > gl_ctx->tex_h){
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img->width, img->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->buf);
-		scale_u = 1.0;
-		scale_v = 1.0;
-		gl_ctx->tex_w = img->width;
-		gl_ctx->tex_h = img->height;
+	if (img->width > gl_ctx->tex_w || img->height > gl_ctx->tex_h){ /* verify if image is greater then texture */
+		gl_ctx->tex_w = (gl_ctx->tex_w > img->width) ? gl_ctx->tex_w : img->width;
+		gl_ctx->tex_h = (gl_ctx->tex_h > img->height) ? gl_ctx->tex_h : img->height;
+		/* realoc texture */
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gl_ctx->tex_w, gl_ctx->tex_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	}
-	else {
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, img->width, img->height, GL_RGBA, GL_UNSIGNED_BYTE, img->buf);
-		scale_u = (float) img->width / (float) gl_ctx->tex_w;
-		scale_v = (float) img->height / (float) gl_ctx->tex_h;
-	}
+	
+	/* transfer image pixels to texture */
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, img->width, img->height, GL_RGBA, GL_UNSIGNED_BYTE, img->buf);
+	/* image dimmensions in texture */
+	scale_u = (float) img->width / (float) gl_ctx->tex_w;
+	scale_v = (float) img->height / (float) gl_ctx->tex_h;
 	
 	/* convert input coordinates, in pixles (int), to openGL units and store vertices - 4 vertices */
 	/* 0 */
@@ -663,10 +664,11 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 		(yd0 > gl_ctx->win_h && yd1 > gl_ctx->win_h) ) return 0;
 	
 	/* define color */
-	gl_ctx->fg[0] = master->color.r;
-	gl_ctx->fg[1] = master->color.g;
-	gl_ctx->fg[2] = master->color.b;
-	gl_ctx->fg[3] = master->color.a;
+	bmp_color color = validate_color(master->color, param.list, param.subst, param.len_subst);
+	gl_ctx->fg[0] = color.r;
+	gl_ctx->fg[1] = color.g;
+	gl_ctx->fg[2] = color.b;
+	gl_ctx->fg[3] = color.a;
 	
 	/* check if graph is legible (greater then 5 pixels) */
 	if (xd1 - xd0 < 5 && yd1 - yd0 < 5 && current->next != NULL){
@@ -1042,6 +1044,28 @@ int graph_list_draw_gl2(list_node *list, struct ogl *gl_ctx, struct draw_param p
 	return ok;
 }
 
+int dxf_list_draw_gl(list_node *list, struct ogl *gl_ctx,  struct draw_param param){
+	list_node *current = NULL;
+		
+	if (list != NULL){
+		current = list->next;
+		
+		/* starts the content sweep  */
+		while (current != NULL){
+			if (current->data){
+				if (((dxf_node *)current->data)->type == DXF_ENT){ /* DXF entity */
+					// -------------------------------------------
+					/* draw each entity */
+					graph_list_draw_gl2(((dxf_node *)current->data)->obj.graphics, gl_ctx, param);
+					
+					//---------------------------------------
+				}
+			}
+			current = current->next;
+		}
+	}
+}
+
 int dxf_ents_draw_gl(dxf_drawing *drawing, struct ogl *gl_ctx, struct draw_param param){
 	dxf_node *current = NULL;
 	//int lay_idx = 0;
@@ -1049,22 +1073,13 @@ int dxf_ents_draw_gl(dxf_drawing *drawing, struct ogl *gl_ctx, struct draw_param
 	if ((drawing->ents != NULL) && (drawing->main_struct != NULL)){
 		current = drawing->ents->obj.content->next;
 		
-		int init = 0;
 		/* starts the content sweep  */
 		while (current != NULL){
 			if (current->type == DXF_ENT){ /* DXF entity */
 				/*verify if entity layer is on and thaw */
 				if ((!drawing->layers[current->obj.layer].off) && 
 					(!drawing->layers[current->obj.layer].frozen)){
-					if (!init){
-						gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-						gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-						gl_ctx->vert_count = 0;
-						gl_ctx->elem_count = 0;
-						glUniform1i(gl_ctx->tex_uni, 0);
-						
-						init = 1;
-					}
+					
 					/* draw each entity */
 					graph_list_draw_gl2(current->obj.graphics, gl_ctx, param);
 					
@@ -1072,6 +1087,5 @@ int dxf_ents_draw_gl(dxf_drawing *drawing, struct ogl *gl_ctx, struct draw_param
 			}
 			current = current->next;
 		}
-		draw_gl (gl_ctx, 1); /* force draw and cleanup */
 	}
 }

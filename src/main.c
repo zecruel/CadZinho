@@ -590,7 +590,7 @@ int main(int argc, char** argv){
 	
 	
 	gui->svg_curves = i_svg_all_curves();
-	gui->svg_bmp = i_svg_all_bmp(gui->svg_curves, ICON_SIZE, ICON_SIZE);
+	gui->svg_bmp = i_svg_all_bmp(gui->svg_curves, ICON_SIZE-1, ICON_SIZE-1);
 	
 	bmp_free(gui->svg_bmp[SVG_LOCK]);
 	gui->svg_bmp[SVG_LOCK] = i_svg_bmp(gui->svg_curves[SVG_LOCK], 16, 16);

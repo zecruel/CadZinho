@@ -647,7 +647,8 @@ int nk_gl_render(gui_obj *gui) {
 				gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 				glUniform1i(gl_ctx->tex_uni, 1); /* choose second texture */
 				/* finally draw image */
-				draw_gl_image (gl_ctx, i->x, i->y, img->width, img->height, img);
+				//draw_gl_image (gl_ctx, i->x, i->y, img->width, img->height, img);
+				draw_gl_image (gl_ctx, i->x, i->y, i->w, i->h, img);
 				draw_gl (gl_ctx, 1); /* force draw and cleanup */
 			}
 		}
@@ -690,9 +691,9 @@ int nk_gl_render(gui_obj *gui) {
 				/* finally draw image */
 				int desc = fabs(tt_fnt->descent) * (double)t->font->height + 0.5;
 				//int lg = fabs(tt_fnt->line_gap) * (double)t->font->height + 0.5;
-				int height = t->font->height + desc;// + lg;
+				int height = t->font->height + desc + 1;// + lg;
 				
-				draw_gl_rect (gl_ctx, t->x, t->y, t->w, height);
+				draw_gl_rect (gl_ctx, t->x, t->y-2, t->w, height);
 				
 				/* sweep the text string, decoding UTF8 in code points*/
 				glActiveTexture(GL_TEXTURE1);
@@ -713,7 +714,10 @@ int nk_gl_render(gui_obj *gui) {
 					
 					/* calcule current glyph position in texture */
 					int x = curr_glyph->x + (int) ofs_x;
-					int y = curr_glyph->y + (int) t->font->height;
+					int y = curr_glyph->y + (int) t->font->height + 1;
+					
+					x = (x < 0 ) ? 0 : x;
+					y = (y < 0 ) ? 0 : y;
 					
 					int w = curr_glyph->w;
 					int h = curr_glyph->h;

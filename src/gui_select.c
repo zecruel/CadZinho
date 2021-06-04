@@ -197,15 +197,15 @@ int gui_select_info (gui_obj *gui){
 		
 		/* Selection type option - single element or by rectangle */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
-		nk_layout_row_begin(gui->ctx, NK_STATIC, 30, 4);
+		nk_layout_row_begin(gui->ctx, NK_STATIC, 28, 4);
 		if (gui_tab_img (gui, gui->svg_bmp[SVG_I_SEL],
-			gui->sel_type == SEL_INTL, 30))
+			gui->sel_type == SEL_INTL, 28))
 			gui->sel_type = SEL_INTL;
 		if (gui_tab_img (gui, gui->svg_bmp[SVG_SINGLE_SEL],
-			gui->sel_type == SEL_ELEMENT, 30))
+			gui->sel_type == SEL_ELEMENT, 28))
 			gui->sel_type = SEL_ELEMENT;
 		if (gui_tab_img (gui, gui->svg_bmp[SVG_RECT_SEL],
-			gui->sel_type == SEL_RECTANGLE, 30))
+			gui->sel_type == SEL_RECTANGLE, 28))
 			gui->sel_type = SEL_RECTANGLE;
 		nk_style_pop_vec2(gui->ctx);
 		nk_layout_row_end(gui->ctx);

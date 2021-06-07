@@ -1594,8 +1594,8 @@ int gui_start(gui_obj *gui){
 	gui->mouse_y = 0;
 	
 	gui->zoom = 20.0;
-	gui->ofs_x = -11.0;
-	gui->ofs_y = -71.0;
+	gui->ofs_x = -10.0;
+	gui->ofs_y = -5.0;
 	gui->prev_zoom = 20.0;
 	
 	gui->user_x = 0.0;

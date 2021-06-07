@@ -643,29 +643,80 @@ int gui_bottom_win (gui_obj *gui){
 				en_attr = 1;
 			}
 		}
-		nk_layout_row_push(gui->ctx, 16*(22 + 3) + 13);
+		nk_layout_row_push(gui->ctx, 15*(28) + 20);
 		if (nk_group_begin(gui->ctx, "attractors", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+			
 			/* Buttons to select attractor mode*/
-			int selected, i, attr = 1;
-			nk_layout_row_static(gui->ctx, 22, 22, 15);
-			for (i = 0; i < 15; i++){
-				selected = (gui->curr_attr_t & attr);
-				/* uses styles "sel" or "unsel", deppending each status*/
-				//nk_layout_row_push(gui->ctx, 22);
-				if (selected){
-					if (nk_button_image_styled(gui->ctx, &gui->b_icon_sel, nk_image_ptr(gui->attr_vec[i]))){
-						gui->curr_attr_t &= ~attr; /* clear bit of current type*/
-					}
-				}else {
-					if (nk_button_image_styled(gui->ctx, &gui->b_icon_unsel, nk_image_ptr(gui->attr_vec[i]))){
-						gui->curr_attr_t |= attr; /* set bit of current type*/
-					}
-				}
-				attr <<= 1; /* next attractor type (bit coded)*/
+			nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
+			nk_layout_row_begin(gui->ctx, NK_STATIC, 28, 15);
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_END],
+				gui->curr_attr_t & ATRC_END, 28)){
+				gui->curr_attr_t ^= ATRC_END;
 			}
-			/*-------------------------------*/
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_MID],
+				gui->curr_attr_t & ATRC_MID, 28)){
+				gui->curr_attr_t ^= ATRC_MID;
+			}
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_CENTER],
+				gui->curr_attr_t & ATRC_CENTER, 28)){
+				gui->curr_attr_t ^= ATRC_CENTER;
+			}
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_QUAD],
+				gui->curr_attr_t & ATRC_QUAD, 28)){
+				gui->curr_attr_t ^= ATRC_QUAD;
+			}
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_INTER],
+				gui->curr_attr_t & ATRC_INTER, 28)){
+				gui->curr_attr_t ^= ATRC_INTER;
+			}
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_AINT],
+				gui->curr_attr_t & ATRC_AINT, 28)){
+				gui->curr_attr_t ^= ATRC_AINT;
+			}
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_EXT],
+				gui->curr_attr_t & ATRC_EXT, 28)){
+				gui->curr_attr_t ^= ATRC_EXT;
+			}
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_INS],
+				gui->curr_attr_t & ATRC_INS, 28)){
+				gui->curr_attr_t ^= ATRC_INS;
+			}
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_NODE],
+				gui->curr_attr_t & ATRC_NODE, 28)){
+				gui->curr_attr_t ^= ATRC_NODE;
+			}
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_OCENTER],
+				gui->curr_attr_t & ATRC_OCENTER, 28)){
+				gui->curr_attr_t ^= ATRC_OCENTER;
+			}
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_PAR],
+				gui->curr_attr_t & ATRC_PAR, 28)){
+				gui->curr_attr_t ^= ATRC_PAR;
+			}
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_PERP],
+				gui->curr_attr_t & ATRC_PERP, 28)){
+				gui->curr_attr_t ^= ATRC_PERP;
+			}
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_TAN],
+				gui->curr_attr_t & ATRC_TAN, 28)){
+				gui->curr_attr_t ^= ATRC_TAN;
+			}
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_CTRL],
+				gui->curr_attr_t & ATRC_CTRL, 28)){
+				gui->curr_attr_t ^= ATRC_CTRL;
+			}
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_ANY],
+				gui->curr_attr_t & ATRC_ANY, 28)){
+				gui->curr_attr_t ^= ATRC_ANY;
+			}
+			
+			nk_style_pop_vec2(gui->ctx);
+			nk_layout_row_end(gui->ctx);
+			
 			nk_group_end(gui->ctx);
 		}
+		
+		/*-------------------------------*/
 		
 		nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
 		

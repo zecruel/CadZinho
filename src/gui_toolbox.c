@@ -625,30 +625,16 @@ int gui_bottom_win (gui_obj *gui){
 		
 		
 		/*----------- attractors --------------*/
-		//nk_layout_row_push(gui->ctx, 160);
-		//nk_label(gui->ctx, "Attractors ->", NK_TEXT_RIGHT);
-		
-		/* Toggle on/off attractors*/
-		nk_layout_row_push(gui->ctx, 30);
-		/*if (en_attr){
-			nk_selectable_label(gui->ctx, "On", NK_TEXT_CENTERED, &en_attr);
-		}
-		else nk_selectable_label(gui->ctx, "Off", NK_TEXT_CENTERED, &en_attr);*/
-		if (en_attr){
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon_sel, nk_image_ptr(gui->svg_bmp[SVG_MAGNET]))){
-				en_attr = 0;
-			}
-		}else {
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon_unsel, nk_image_ptr(gui->svg_bmp[SVG_MAGNET]))){
-				en_attr = 1;
-			}
-		}
-		nk_layout_row_push(gui->ctx, 15*(28) + 20);
+		nk_layout_row_push(gui->ctx, 16*(28) + 20);
 		if (nk_group_begin(gui->ctx, "attractors", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 			
-			/* Buttons to select attractor mode*/
 			nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
-			nk_layout_row_begin(gui->ctx, NK_STATIC, 28, 15);
+			nk_layout_row_begin(gui->ctx, NK_STATIC, 28, 16);
+			/* enable/disable attractors */
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_MAGNET], en_attr, 28)){
+				en_attr = !en_attr;
+			}
+			/* Buttons to select attractor mode*/
 			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_END],
 				gui->curr_attr_t & ATRC_END, 28)){
 				gui->curr_attr_t ^= ATRC_END;
@@ -715,7 +701,6 @@ int gui_bottom_win (gui_obj *gui){
 			
 			nk_group_end(gui->ctx);
 		}
-		
 		/*-------------------------------*/
 		
 		nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);

@@ -434,6 +434,15 @@ void gui_simple_select(gui_obj *gui);
 
 void gui_draw_vert(gui_obj *gui, bmp_img *img, dxf_node *obj);
 
+
+int nk_gl_render(gui_obj *gui) ;
+
+int draw_cross_cursor_gl(gui_obj *gui, int x, int y, bmp_color color);
+
+int draw_attractor_gl(gui_obj *gui, enum attract_type type, int x, int y, bmp_color color);
+
+void gui_draw_vert_gl(gui_obj *gui, dxf_node *obj);
+
 extern int dxf_lw[];
 extern const char *dxf_lw_descr[];
 extern bmp_color dxf_colors[];

@@ -15,9 +15,9 @@
  #include "bmp.h"
  #include "graph.h"
  
-#define MAX_TRIANG 1000000
-#define MAX_TRIANG_2 800000
-#define MAX_SCAN_LINES 150000
+#define MAX_TRIANG 100000
+#define MAX_TRIANG_2 80000
+#define MAX_SCAN_LINES 15000
 #define MAX_P_NODES 1000
 
 #define GLSL(src) "#version 150 core\n" #src

@@ -2295,11 +2295,486 @@ int draw_cross_cursor_gl(gui_obj *gui, int x, int y, bmp_color color){
 	draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x+5, y+5}, 1);
 	draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x+5, y-5}, 1);
 	draw_gl_line (gl_ctx, (int []){x+5, y-5}, (int []){x+5, y+5}, 1);
-	draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x-5, y+5}, 1);	
+	draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x-5, y+5}, 1);
 	
-		
 	draw_gl (gl_ctx, 0);
 	return 1;
 }
 
-//#endif
+int draw_attractor_gl(gui_obj *gui, enum attract_type type, int x, int y, bmp_color color){
+	if (!gui) return 0;
+	
+	struct ogl *gl_ctx = &(gui->gl_ctx);
+	
+	/* init opengl context */
+	if (gl_ctx->elems == NULL){
+		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	}
+	/* set the color */
+	gl_ctx->fg[0] = color.r;
+	gl_ctx->fg[1] = color.g;
+	gl_ctx->fg[2] = color.b;
+	gl_ctx->fg[3] = color.a;
+	
+	/* draw attractor mark*/
+	if (type == ATRC_NONE){
+		return 0;
+	}
+	switch (type){
+		case ATRC_END:
+			/* draw square */
+			draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x+5, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x+5, y-5}, 1);
+			draw_gl_line (gl_ctx, (int []){x+5, y-5}, (int []){x+5, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x-5, y+5}, 1);
+			break;
+		case ATRC_MID:
+			/* draw triangle */
+			draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x+5, y-5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x+5, y-5}, (int []){x, y+5}, 1);
+			break;
+		case ATRC_CENTER:
+			/* draw circle */
+			draw_gl_line (gl_ctx, (int []){x-7, y}, (int []){x-5, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x, y+7}, 1);
+			draw_gl_line (gl_ctx, (int []){x, y+7}, (int []){x+5, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x+5, y+5}, (int []){x+7, y}, 1);
+			draw_gl_line (gl_ctx, (int []){x+7, y}, (int []){x+5, y-5}, 1);
+			draw_gl_line (gl_ctx, (int []){x+5, y-5}, (int []){x, y-7}, 1);
+			draw_gl_line (gl_ctx, (int []){x, y-7}, (int []){x-5, y-5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x-7, y}, 1);
+			break;
+		case ATRC_OCENTER:
+			/* draw a *star */
+			draw_gl_line (gl_ctx, (int []){x, y-5}, (int []){x, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y}, (int []){x+5, y}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x+5, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x+5, y-5}, 1);
+			break;
+		case ATRC_NODE:
+			/* draw circle with x*/
+			draw_gl_line (gl_ctx, (int []){x-7, y}, (int []){x-5, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x, y+7}, 1);
+			draw_gl_line (gl_ctx, (int []){x, y+7}, (int []){x+5, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x+5, y+5}, (int []){x+7, y}, 1);
+			draw_gl_line (gl_ctx, (int []){x+7, y}, (int []){x+5, y-5}, 1);
+			draw_gl_line (gl_ctx, (int []){x+5, y-5}, (int []){x, y-7}, 1);
+			draw_gl_line (gl_ctx, (int []){x, y-7}, (int []){x-5, y-5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x-7, y}, 1);
+			
+			draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x+5, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x+5, y-5}, 1);
+			break;
+		case ATRC_QUAD:
+			/* draw diamond */
+			draw_gl_line (gl_ctx, (int []){x-7, y}, (int []){x, y+7}, 1);
+			draw_gl_line (gl_ctx, (int []){x, y+7}, (int []){x+7, y}, 1);
+			draw_gl_line (gl_ctx, (int []){x+7, y}, (int []){x, y-7}, 1);
+			draw_gl_line (gl_ctx, (int []){x, y-7}, (int []){x-7, y}, 1);
+			break;
+		case ATRC_INTER:
+			/* draw x */
+			draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x+5, y+5}, 3);
+			draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x+5, y-5}, 3);
+			break;
+		case ATRC_EXT:
+			draw_gl_line (gl_ctx, (int []){x-7, y}, (int []){x-2, y}, 3);
+			draw_gl_line (gl_ctx, (int []){x, y}, (int []){x+3, y}, 3);
+			draw_gl_line (gl_ctx, (int []){x+5, y}, (int []){x+7, y}, 3);
+			break;
+		case ATRC_PERP:
+			/* draw square */
+			draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x-5, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x+5, y-5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y}, (int []){x, y}, 1);
+			draw_gl_line (gl_ctx, (int []){x, y-5}, (int []){x, y}, 1);
+			break;
+		case ATRC_INS:
+			draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x+1, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x+1, y+5}, (int []){x+1, y+1}, 1);
+			draw_gl_line (gl_ctx, (int []){x+1, y+1}, (int []){x+5, y+1}, 1);
+			draw_gl_line (gl_ctx, (int []){x+5, y+1}, (int []){x+5, y-5}, 1);
+			draw_gl_line (gl_ctx, (int []){x+5, y-5}, (int []){x-1, y-5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-1, y-5}, (int []){x-1, y-1}, 1);
+			draw_gl_line (gl_ctx, (int []){x-1, y-1}, (int []){x-5, y-1}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y-1}, (int []){x-5, y+5}, 1);
+			break;
+		case ATRC_TAN:
+			draw_gl_line (gl_ctx, (int []){x-6, y+6}, (int []){x+6, y+6}, 1);
+			//bmp_line(img, x-5, y+5, x+5, y+5);
+			//bmp_circle(img, x, y, 5);
+			draw_gl_line (gl_ctx, (int []){x-5, y}, (int []){x-3, y+3}, 1);
+			draw_gl_line (gl_ctx, (int []){x-3, y+3}, (int []){x, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x, y+5}, (int []){x+3, y+3}, 1);
+			draw_gl_line (gl_ctx, (int []){x+3, y+3}, (int []){x+5, y}, 1);
+			draw_gl_line (gl_ctx, (int []){x+5, y}, (int []){x+3, y-3}, 1);
+			draw_gl_line (gl_ctx, (int []){x+3, y-3}, (int []){x, y-5}, 1);
+			draw_gl_line (gl_ctx, (int []){x, y-5}, (int []){x-3, y-3}, 1);
+			draw_gl_line (gl_ctx, (int []){x-3, y-3}, (int []){x-5, y}, 1);
+			break;
+		case ATRC_PAR:
+			/* draw two lines */
+			draw_gl_line (gl_ctx, (int []){x-5, y-1}, (int []){x+1, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-1, y-5}, (int []){x+5, y+1}, 1);
+			break;
+		case ATRC_CTRL:
+			/* draw a cross */
+			draw_gl_line (gl_ctx, (int []){x, y-5}, (int []){x, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y}, (int []){x+5, y}, 1);
+			break;
+		case ATRC_AINT:
+			/* draw square with x */
+			draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x-5, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x+5, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x+5, y+5}, (int []){x+5, y-5}, 1);
+			draw_gl_line (gl_ctx, (int []){x+5, y-5}, (int []){x-5, y-5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x+5, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x+5, y-5}, 1);
+			break;
+		case ATRC_ANY:
+			/* draw a Hourglass */
+			draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x+5, y+5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x+5, y-5}, 1);
+			draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x+5, y+5}, 2);
+			draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x+5, y-5}, 2);
+			break;
+	}
+	
+	draw_gl (gl_ctx, 0);
+	return 1;
+}
+
+int gui_draw_vert_rect_gl(gui_obj *gui, double x, double y, bmp_color color){
+	
+	if (!gui) return 0;
+	
+	struct ogl *gl_ctx = &(gui->gl_ctx);
+	
+	/* init opengl context */
+	if (gl_ctx->elems == NULL){
+		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	}
+	/* set the color */
+	gl_ctx->fg[0] = color.r;
+	gl_ctx->fg[1] = color.g;
+	gl_ctx->fg[2] = color.b;
+	gl_ctx->fg[3] = color.a;
+	
+	/* convert entities coordinates to screen coordinates */
+	int x1 = (int) round((x - gui->ofs_x) * gui->zoom);
+	int y1 = (int) round((y - gui->ofs_y) * gui->zoom);
+	
+	draw_gl_quad (gl_ctx, (int []){x1-7, y1+7}, (int []){x1-7, y1-7}, (int []){x1+7, y1+7}, (int []){x1+7, y1-7});
+	
+	draw_gl (gl_ctx, 0);
+	return 1;
+}
+
+void gui_draw_vert_gl(gui_obj *gui, dxf_node *obj){
+	dxf_node *current = NULL;
+	dxf_node *prev = NULL, *stop = NULL;
+	int pt = 0;
+	enum dxf_graph ent_type = DXF_NONE;
+	double x = 0.0, y = 0.0, z = 0.0;
+	double point[3];
+	
+	int ellip = 0;
+	
+	if (!obj) return;
+	if (obj->type != DXF_ENT) return;
+	
+	int vert_count = 0;
+	
+	stop = obj;
+	ent_type =  dxf_ident_ent_type (obj);
+	
+	if ((ent_type != DXF_HATCH) && (obj->obj.content)){
+		current = obj->obj.content->next;
+		prev = current;
+	}
+	else if ((ent_type == DXF_HATCH) && (obj->obj.content)){
+		current = dxf_find_attr_i(obj, 91, 0);
+		if (current){
+			current = current->next;
+			prev = current;
+		}
+		dxf_node *end_bond = dxf_find_attr_i(obj, 75, 0);
+		if (end_bond) stop = end_bond;
+	}
+	
+	while (current){
+		prev = current;
+		if (current->type == DXF_ENT){
+			/*
+			point[0] = of_x;
+			point[1] = of_y;
+			point[2] = of_z;
+			
+			dxf_get_extru(obj, point);
+			
+			ofs_x = point[0];
+			ofs_y = point[1];
+			ofs_z = point[2];
+			*/
+			if (current->obj.content){
+				ent_type =  dxf_ident_ent_type (current);
+				/* starts the content sweep */
+				current = current->obj.content->next;
+				
+				continue;
+			}
+		}
+		else {
+			if (ent_type != DXF_POLYLINE){
+				/* get the vertex coordinate set */
+				if (current->value.group == 10){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 20))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 30))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+			}
+			if (ent_type == DXF_HATCH){
+				/* hatch bondary path type */
+				if (current->value.group == 72){ 
+					if (current->value.i_data == 3)
+						ellip = 1; /* ellipse */
+				}
+			}
+			if (ent_type == DXF_LINE || ent_type == DXF_TEXT ||
+			ent_type == DXF_HATCH || ent_type == DXF_ATTRIB){
+				/* get the vertex coordinate set */
+				if (current->value.group == 11){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 21))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 31))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+			}
+			else if (ent_type == DXF_TRACE || ent_type == DXF_SOLID){
+				/* get the vertex coordinate set */
+				if (current->value.group == 11){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 21))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 31))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+				
+				
+				
+				/* get the vertex coordinate set */
+				if (current->value.group == 12){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 22))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 32))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+				
+				
+				/* get the vertex coordinate set */
+				if (current->value.group == 13){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 23))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 33))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+			}
+			else if (ent_type == DXF_DIMENSION){
+				/* get the vertex coordinate set */
+				if (current->value.group == 13){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 23))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 33))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+				
+				
+				/* get the vertex coordinate set */
+				if (current->value.group == 14){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 24))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 34))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+				
+				
+				/* get the vertex coordinate set */
+				if (current->value.group == 15){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 25))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 35))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+			}
+		}
+		if (pt){
+			pt = 0;
+			if(vert_count == gui->vert_idx) 
+				gui_draw_vert_rect_gl(gui, x, y, dxf_colors[225]);
+			else gui_draw_vert_rect_gl(gui, x, y, dxf_colors[224]);
+			
+			vert_count++;
+		}
+		
+		if ((prev == NULL) || (prev == stop)){ /* stop the search if back on initial entity */
+			current = NULL;
+			break;
+		}
+		current = current->next; /* go to the next in the list */
+		/* ============================================================= */
+		while (current == NULL){
+			/* end of list sweeping */
+			if ((prev == NULL) || (prev == stop)){ /* stop the search if back on initial entity */
+				//printf("para\n");
+				current = NULL;
+				break;
+			}
+			/* try to back in structure hierarchy */
+			prev = prev->master;
+			if (prev){ /* up in structure */
+				/* try to continue on previous point in structure */
+				current = prev->next;
+				if(prev == stop){
+					current = NULL;
+					break;
+				}
+				
+			}
+			else{ /* stop the search if structure ends */
+				current = NULL;
+				break;
+			}
+		}
+	}
+}

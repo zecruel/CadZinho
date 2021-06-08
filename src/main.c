@@ -1643,20 +1643,24 @@ int main(int argc, char** argv){
 				dxf_list_draw_gl(gui->sel_list, &gui->gl_ctx, d_param);
 			}
 			
-			/* ---------------------------------- */
-			draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
+			
 			
 			if ((gui->draw_vert) && (gui->element)){
 				/* draw vertices */
-				gui_draw_vert(gui, img, gui->element);
+				//gui_draw_vert(gui, img, gui->element);
+				gui_draw_vert_gl(gui, gui->element);
 			}
 			
 			if (gui->near_attr){ /* check if needs to draw an attractor mark */
 				/* convert entities coordinates to screen coordinates */
 				int attr_x = (int) round((gui->near_x - gui->ofs_x) * gui->zoom);
 				int attr_y = (int) round((gui->near_y - gui->ofs_y) * gui->zoom);
-				draw_attractor(img, gui->near_attr, attr_x, attr_y, yellow);
+				//draw_attractor(img, gui->near_attr, attr_x, attr_y, yellow);
+				draw_attractor_gl(gui, gui->near_attr, attr_x, attr_y, yellow);
 			}
+			
+			/* ---------------------------------- */
+			draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
 			
 			/* set image visible window*/
 			//img->clip_x = 0; img->clip_y = 0;

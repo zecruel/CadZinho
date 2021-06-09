@@ -517,7 +517,8 @@ int nk_gl_render(gui_obj *gui) {
 		else if (cmd->type == NK_COMMAND_RECT) {
 			const struct nk_command_rect *r = (const struct nk_command_rect *)cmd;
 			
-			int x0, y0, x1, y1, i, cx, cy;
+			int x0, y0, x1, y1, i;
+			double step = 2 * M_PI  / 16.0, cx, cy;
 			
 			nk_to_gl_color(gl_ctx, r->color);
 			
@@ -527,54 +528,55 @@ int nk_gl_render(gui_obj *gui) {
 			y0 = r->y;
 			cy = r->y + r->rounding;
 			for (i=13; i <= 16; i++){
-				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+				x1 = cx +  r->rounding * cos(i * step);
+				y1 = cy +  r->rounding * sin(i * step);
 				draw_gl_line (gl_ctx, (int []){x0, y0}, (int []){x1, y1}, r->line_thickness);
 				x0 = x1;
 				y0 = y1;
 			}
-			draw_gl_line (gl_ctx, (int []){r->x + r->w, r->y + r->rounding}, (int []){ r->x + r->w, r->y + r->h - r->rounding}, r->line_thickness);
+			draw_gl_line (gl_ctx, (int []){x0, y0}, (int []){ r->x + r->w, r->y + r->h - r->rounding}, r->line_thickness);
 			cx = r->x + r->w - r->rounding;
 			x0 = r->x + r->w;
 			y0 = r->y + r->h - r->rounding;
 			cy = y0;
 			for (i=1; i <= 4; i++){
-				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+				x1 = cx +  r->rounding * cos(i * step);
+				y1 = cy +  r->rounding * sin(i * step);
 				draw_gl_line (gl_ctx, (int []){x0, y0}, (int []){x1, y1}, r->line_thickness);
 				x0 = x1;
 				y0 = y1;
 			}
-			draw_gl_line (gl_ctx, (int []){r->x + r->w - r->rounding, r->y + r->h}, (int []){ r->x + r->rounding, r->y + r->h}, r->line_thickness);
+			draw_gl_line (gl_ctx, (int []){x0, y0}, (int []){ r->x + r->rounding, r->y + r->h}, r->line_thickness);
 			x0 = r->x + r->rounding;
 			cx = x0;
 			y0 = r->y + r->h;
 			cy = r->y + r->h - r->rounding;
 			for (i=5; i <= 8; i++){
-				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+				x1 = cx +  r->rounding * cos(i * step);
+				y1 = cy +  r->rounding * sin(i * step);
 				draw_gl_line (gl_ctx, (int []){x0, y0}, (int []){ x1, y1}, r->line_thickness);
 				x0 = x1;
 				y0 = y1;
 			}
-			draw_gl_line (gl_ctx, (int []){r->x, r->y + r->h - r->rounding}, (int []){ r->x, r->y + r->rounding}, r->line_thickness);
+			draw_gl_line (gl_ctx, (int []){x0, y0}, (int []){ r->x, r->y + r->rounding}, r->line_thickness);
 			cx = r->x + r->rounding;
 			x0 = r->x;
 			y0 = r->y + r->rounding;
 			cy = y0;
-			for (i=9; i <= 12; i++){
-				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+			for (i=9; i < 12; i++){
+				x1 = cx +  r->rounding * cos(i * step);
+				y1 = cy +  r->rounding * sin(i * step);
 				draw_gl_line (gl_ctx, (int []){x0, y0}, (int []){ x1, y1}, r->line_thickness);
 				x0 = x1;
 				y0 = y1;
 			}
-			
+			draw_gl_line (gl_ctx, (int []){x0, y0}, (int []){r->x + r->rounding, r->y}, r->line_thickness);
 		}
 		else if (cmd->type == NK_COMMAND_RECT_FILLED) {
 			const struct nk_command_rect_filled *r = (const struct nk_command_rect_filled *)cmd;
 			
-			int x0, y0, x1, y1, i, cx, cy;
+			int x0, y0, x1, y1, i;
+			double step = 2 * M_PI  / 16.0, cx, cy;
 			struct edge edges[20];
 			
 			nk_to_gl_color(gl_ctx, r->color);
@@ -585,49 +587,49 @@ int nk_gl_render(gui_obj *gui) {
 			y0 = r->y;
 			cy = r->y + r->rounding;
 			for (i=13; i <= 16; i++){
-				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+				x1 = cx +  r->rounding * cos(i * step);
+				y1 = cy +  r->rounding * sin(i * step);
 				edges[i] = (struct edge){x0, y0, x1, y1};
 				x0 = x1;
 				y0 = y1;
 			}
-			edges[17] = (struct edge){r->x + r->w, r->y + r->rounding, r->x + r->w, r->y + r->h - r->rounding};
+			edges[17] = (struct edge){x0, y0, r->x + r->w, r->y + r->h - r->rounding};
 			cx = r->x + r->w - r->rounding;
 			x0 = r->x + r->w;
 			y0 = r->y + r->h - r->rounding;
 			cy = y0;
 			for (i=1; i <= 4; i++){
-				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+				x1 = cx +  r->rounding * cos(i * step);
+				y1 = cy +  r->rounding * sin(i * step);
 				edges[i] = (struct edge){x0, y0, x1, y1};
 				x0 = x1;
 				y0 = y1;
 			}
-			edges[18] = (struct edge){r->x + r->w - r->rounding, r->y + r->h,  r->x + r->rounding, r->y + r->h};
+			edges[18] = (struct edge){x0, y0,  r->x + r->rounding, r->y + r->h};
 			x0 = r->x + r->rounding;
 			cx = x0;
 			y0 = r->y + r->h;
 			cy = r->y + r->h - r->rounding;
 			for (i=5; i <= 8; i++){
-				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+				x1 = cx +  r->rounding * cos(i * step);
+				y1 = cy +  r->rounding * sin(i * step);
 				edges[i] = (struct edge){x0, y0, x1, y1};
 				x0 = x1;
 				y0 = y1;
 			}
-			edges[19] = (struct edge){r->x, r->y + r->h - r->rounding, r->x, r->y + r->rounding};
+			edges[19] = (struct edge){x0, y0, r->x, r->y + r->rounding};
 			cx = r->x + r->rounding;
 			x0 = r->x;
 			y0 = r->y + r->rounding;
 			cy = y0;
-			for (i=9; i <= 12; i++){
-				x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-				y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
+			for (i=9; i < 12; i++){
+				x1 = cx +  r->rounding * cos(i * step);
+				y1 = cy +  r->rounding * sin(i * step);
 				edges[i] = (struct edge){x0, y0, x1, y1};
 				x0 = x1;
 				y0 = y1;
 			}
-			
+			edges[12] = (struct edge){x0, y0, r->x + r->rounding, r->y};
 			draw_gl_polygon (gl_ctx, 20, edges);
 		}
 		else if (cmd->type == NK_COMMAND_IMAGE) {
@@ -910,387 +912,6 @@ int nk_gl_render(gui_obj *gui) {
 	glDisable(GL_SCISSOR_TEST);
 	
 	return 1;
-}
-
-NK_API void nk_sdl_render(gui_obj *gui, bmp_img *img){
-	const struct nk_command *cmd = NULL;
-	bmp_color color = {.r = 255, .g = 255, .b =255, .a = 255};
-	int iter = 0;
-	
-	static int one_time = 0;
-	if (!one_time){
-		//one_time =1;
-	}
-	
-	if ((img != NULL) && (gui != NULL)){
-		
-		/* initialize the image with a solid line pattern */
-		img->patt_i = 0;
-		img->pix_count = 0;
-		img->patt_size = 1;
-		img->pattern[0] = 1;
-		img->zero_tl =1;
-
-		nk_foreach(cmd, gui->ctx){
-			
-			/* break the loop, if more then 10000 iterations */
-			iter += 1;
-			if (iter > 10000){
-				printf("error render\n");
-				break;
-			}
-			
-			switch (cmd->type) {
-				case NK_COMMAND_NOP: break;
-				
-				case NK_COMMAND_SCISSOR: {
-					const struct nk_command_scissor *s =(const struct nk_command_scissor*)cmd;
-					img->clip_x = (unsigned int)s->x;
-					img->clip_y = (unsigned int)s->y;
-					img->clip_w = (unsigned int)s->w;
-					img->clip_h = (unsigned int)s->h;
-				} break;
-				
-				case NK_COMMAND_LINE: {
-					const struct nk_command_line *l = (const struct nk_command_line *)cmd;
-					color = nk_to_bmp_color(l->color);
-					/*change the color */
-					img->frg = color;
-					/*change tickness */
-					img->tick = (unsigned int) l->line_thickness;
-					
-					bmp_line(img, l->begin.x, l->begin.y, l->end.x,l->end.y);
-				} break;
-				
-				case NK_COMMAND_RECT: {
-					const struct nk_command_rect *r = (const struct nk_command_rect *)cmd;
-					color = nk_to_bmp_color(r->color);
-					/*change the color */
-					img->frg = color;
-					/*change tickness */
-					img->tick = (unsigned int) r->line_thickness;
-					
-					int x0, y0, x1, y1, i, cx, cy;
-					
-					bmp_line(img, r->x + r->rounding, r->y, r->x + r->w -r->rounding, r->y);
-					x0 =  r->x + r->w - r->rounding;
-					cx = x0;
-					y0 = r->y;
-					cy = r->y + r->rounding;
-					for (i=13; i <= 16; i++){
-						x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-						y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
-						bmp_line(img, x0, y0, x1, y1);
-						x0 = x1;
-						y0 = y1;
-					}
-					bmp_line(img, r->x + r->w, r->y + r->rounding, r->x + r->w, r->y + r->h - r->rounding);
-					cx = r->x + r->w - r->rounding;
-					x0 = r->x + r->w;
-					y0 = r->y + r->h - r->rounding;
-					cy = y0;
-					for (i=1; i <= 4; i++){
-						x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-						y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
-						bmp_line(img, x0, y0, x1, y1);
-						x0 = x1;
-						y0 = y1;
-					}
-					bmp_line(img, r->x + r->w - r->rounding, r->y + r->h, r->x + r->rounding, r->y + r->h);
-					x0 = r->x + r->rounding;
-					cx = x0;
-					y0 = r->y + r->h;
-					cy = r->y + r->h - r->rounding;
-					for (i=5; i <= 8; i++){
-						x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-						y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
-						bmp_line(img, x0, y0, x1, y1);
-						x0 = x1;
-						y0 = y1;
-					}
-					bmp_line(img, r->x, r->y + r->h - r->rounding, r->x, r->y + r->rounding);
-					cx = r->x + r->rounding;
-					x0 = r->x;
-					y0 = r->y + r->rounding;
-					cy = y0;
-					for (i=9; i <= 12; i++){
-						x1 = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-						y1 = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
-						bmp_line(img, x0, y0, x1, y1);
-						x0 = x1;
-						y0 = y1;
-					}
-				} break;
-				
-				case NK_COMMAND_RECT_FILLED: {
-					const struct nk_command_rect_filled *r = (const struct nk_command_rect_filled *)cmd;
-					
-					int vert_x[20], vert_y[20];
-					int i, cx, cy;
-					
-					vert_x[0] = r->x + r->rounding;
-					vert_x[1] = r->x + r->w - r->rounding;
-					
-					cx =  r->x + r->w - r->rounding;
-					cy = r->y + r->rounding;
-					for (i=13; i < 16; i++){
-						vert_x[i-11] = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-						vert_y[i-11] = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
-					}
-					
-					vert_x[5] = r->x + r->w;
-					vert_x[6] = r->x + r->w;
-					
-					cx = r->x + r->w - r->rounding;
-					cy = r->y + r->h - r->rounding;
-					for (i=1; i < 4; i++){
-						vert_x[i+6] = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-						vert_y[i+6] = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
-					}
-					
-					vert_x[10] = r->x + r->w - r->rounding;
-					vert_x[11] = r->x + r->rounding;
-					
-					cx = r->x + r->rounding;
-					cy = r->y + r->h - r->rounding;
-					for (i=5; i < 8; i++){
-						vert_x[i+7] = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-						vert_y[i+7] = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
-					}
-					
-					vert_x[15] = r->x;
-					vert_x[16] = r->x;
-					
-					cx = r->x + r->rounding;
-					cy = r->y + r->rounding;
-					for (i=9; i < 12; i++){
-						vert_x[i+8] = cx +  round((double)r->rounding * cos(2 * M_PI * i  / 16.0));
-						vert_y[i+8] = cy +  round((double)r->rounding * sin(2 * M_PI * i  / 16.0));
-					}
-					
-					vert_y[0] = r->y;
-					vert_y[1] = r->y;
-					
-					vert_y[5] = r->y + r->rounding;
-					vert_y[6] = r->y + r->h - r->rounding;
-					
-					vert_y[10] = r->y + r->h;
-					vert_y[11] = r->y + r->h;
-					
-					vert_y[15] = r->y + r->h - r->rounding;
-					vert_y[16] = r->y + r->rounding;
-					
-					color = nk_to_bmp_color(r->color);
-					/*change the color */
-					img->frg = color;
-					
-					bmp_poly_fill(img, 20, vert_x, vert_y, NULL);
-				} break;
-				
-				case NK_COMMAND_CIRCLE: {
-					const struct nk_command_circle *c = (const struct nk_command_circle *)cmd;
-					color = nk_to_bmp_color(c->color);
-					/*change the color */
-					img->frg = color;
-					/*change tickness */
-					img->tick = c->line_thickness;
-					int xr = c->w/2;
-					
-					bmp_circle(img, c->x + xr, c->y + xr, xr);
-				} break;
-				
-				case NK_COMMAND_CIRCLE_FILLED: {
-					const struct nk_command_circle_filled *c = (const struct nk_command_circle_filled *)cmd;
-					color = nk_to_bmp_color(c->color);
-					/*change the color */
-					img->frg = color;
-					int xr = c->w/2;
-					
-					bmp_circle_fill(img, c->x + xr, c->y + xr, xr);
-				} break;
-				
-				case NK_COMMAND_TRIANGLE: {
-					const struct nk_command_triangle*t = (const struct nk_command_triangle*)cmd;
-					color = nk_to_bmp_color(t->color);
-					/*change the color */
-					img->frg = color;
-					/*change tickness */
-					img->tick = t->line_thickness;
-					bmp_line(img, t->a.x, t->a.y, t->b.x, t->b.y);
-					bmp_line(img, t->b.x, t->b.y, t->c.x, t->c.y);
-					bmp_line(img, t->c.x, t->c.y, t->a.x, t->a.y);
-				} break;
-				
-				case NK_COMMAND_TRIANGLE_FILLED: {
-					const struct nk_command_triangle_filled *t = (const struct nk_command_triangle_filled *)cmd;
-					int vert_x[3] = {t->a.x, t->b.x, t->c.x};
-					int vert_y[3] = {t->a.y, t->b.y, t->c.y};
-					
-					color = nk_to_bmp_color(t->color);
-					/*change the color */
-					img->frg = color;
-					
-					bmp_poly_fill(img, 3, vert_x, vert_y, NULL);
-				} break;
-				
-				case NK_COMMAND_POLYGON: {
-					const struct nk_command_polygon *p = (const struct nk_command_polygon*)cmd;
-					color = nk_to_bmp_color(p->color);
-					//int i;
-					//float vertices[p->point_count * 2];
-					//for (i = 0; i < p->point_count; i++) {
-					// vertices[i*2] = p->points[i].x;
-					// vertices[(i*2) + 1] = p->points[i].y;
-					//}
-					//al_draw_polyline((const float*)&vertices, (2 * sizeof(float)),
-					//    (int)p->point_count, ALLEGRO_LINE_JOIN_ROUND, ALLEGRO_LINE_CAP_CLOSED,
-					//  color, (float)p->line_thickness, 0.0);
-					//printf("polygon ");//------------------------------------teste
-				} break;
-				
-				case NK_COMMAND_POLYGON_FILLED: {
-					const struct nk_command_polygon_filled *p = (const struct nk_command_polygon_filled *)cmd;
-					color = nk_to_bmp_color(p->color);
-					//int i;
-					//float vertices[p->point_count * 2];
-					// for (i = 0; i < p->point_count; i++) {
-					//    vertices[i*2] = p->points[i].x;
-					//     vertices[(i*2) + 1] = p->points[i].y;
-					// }
-					//  al_draw_filled_polygon((const float*)&vertices, (int)p->point_count, color);
-					//printf("fill_polygon ");//------------------------------------teste
-				} break;
-				
-				case NK_COMMAND_POLYLINE: {
-					const struct nk_command_polyline *p = (const struct nk_command_polyline *)cmd;
-					color = nk_to_bmp_color(p->color);
-					//int i;
-					//float vertices[p->point_count * 2];
-					//  for (i = 0; i < p->point_count; i++) {
-					//      vertices[i*2] = p->points[i].x;
-					//      vertices[(i*2) + 1] = p->points[i].y;
-					//  }
-					//  al_draw_polyline((const float*)&vertices, (2 * sizeof(float)),
-					//      (int)p->point_count, ALLEGRO_LINE_JOIN_ROUND, ALLEGRO_LINE_CAP_ROUND,
-					//      color, (float)p->line_thickness, 0.0);
-					//printf("polyline ");//------------------------------------teste
-				} break;
-				
-				case NK_COMMAND_TEXT: {
-					const struct nk_command_text *t = (const struct nk_command_text*)cmd;
-					color = nk_to_bmp_color(t->foreground);
-					img->frg = color;
-					
-					/* get font descriptor */
-					struct tfont *font = (struct tfont *)t->font->userdata.ptr;
-					
-					if (font->type != FONT_TT){ /*shape font */
-						/* rendering text by default general drawing engine */
-						list_node * graph = list_new(NULL, FRAME_LIFE);
-						if (graph) {
-							if (font_parse_str(font, graph, FRAME_LIFE, (char *)t->string, NULL, 0)){
-								graph_list_color(graph, color);
-								graph_list_modify(graph, t->x, t->y + t->font->height, t->font->height, -t->font->height, 0.0);
-								//graph_list_draw(graph, img, 0.0, 0.0, 1.0);
-								graph_list_draw_aa(graph, img, 0.0, 0.0, 1.0);
-							}
-						}
-					}
-					else { /* True Type font */
-						/* rendering text by glyph raster images - used only in GUI */
-						/* get gui font structure */
-						struct gui_font * gfont = gui_get_font (gui->ui_font_list, (struct nk_user_font *) t->font);
-						struct gui_glyph *curr_glyph = NULL;
-						int ofs = 0, str_start = 0, code_p;
-						double ofs_x = 0.0;
-						
-						/* sweep the text string, decoding UTF8 in code points*/
-						while (ofs = utf8_to_codepoint((char *)t->string + str_start, &code_p)){
-							str_start += ofs;
-							curr_glyph = gui_get_glyph (gfont, code_p);
-							
-							/* calcule current glyph position in main image */
-							int x = t->x + curr_glyph->x + (int) ofs_x;
-							int y = t->y + curr_glyph->y + (int) t->font->height;
-							
-							int w = curr_glyph->w;
-							int h = curr_glyph->h;
-							
-							/* verify if glyph will be showed in image's clip area */
-							rect_pos pos_p0 = rect_find_pos(x, y, img->clip_x, img->clip_y, img->clip_x + img->clip_w, img->clip_y + img->clip_h);
-							rect_pos pos_p1 = rect_find_pos(x+w, y+h, img->clip_x, img->clip_y, img->clip_x + img->clip_w, img->clip_y + img->clip_h);
-							if (!(pos_p0 & pos_p1)){
-								/* copy rasterized glyph in main image 
-								int i = 0, j = 0;
-								for (j = 0; j < h; j++){
-									for (i = 0; i < w; i++){ /* pixel by pixel 
-										img->frg.a = (curr_glyph->rast[j * 25 + i] * color.a) / 255;
-										bmp_point_raw (img, x + i, y + j);
-									}
-								}*/
-							}
-							ofs_x += curr_glyph->adv; /*update position for next glyph */
-						}
-					}
-				} break;
-				
-				case NK_COMMAND_CURVE: {
-					const struct nk_command_curve *q = (const struct nk_command_curve *)cmd;
-					color = nk_to_bmp_color(q->color);
-					// float points[8];
-					// points[0] = (float)q->begin.x;
-					// points[1] = (float)q->begin.y;
-					// points[2] = (float)q->ctrl[0].x;
-					// points[3] = (float)q->ctrl[0].y;
-					//points[4] = (float)q->ctrl[1].x;
-					// points[5] = (float)q->ctrl[1].y;
-					// points[6] = (float)q->end.x;
-					// points[7] = (float)q->end.y;
-					// al_draw_spline(points, color, (float)q->line_thickness);
-					//printf("curve ");//------------------------------------teste
-				} break;
-				
-				case NK_COMMAND_ARC: {
-					const struct nk_command_arc *a = (const struct nk_command_arc *)cmd;
-					color = nk_to_bmp_color(a->color);
-					//    al_draw_arc((float)a->cx, (float)a->cy, (float)a->r, a->a[0],
-					//       a->a[1], color, (float)a->line_thickness);
-					//printf("arc ");//------------------------------------teste
-				} break;
-				
-				case NK_COMMAND_RECT_MULTI_COLOR: {
-					if (!one_time){
-						one_time =1;
-						//printf("multi_c ");//------------------------------------teste
-					}
-				} break;
-				
-				case NK_COMMAND_IMAGE: {
-					const struct nk_command_image *i = (struct nk_command_image *)cmd;
-					if (i->h > 0 && i->w > 0){
-						bmp_img *w_img = (bmp_img *)i->img.handle.ptr;
-						if (w_img){
-							w_img->zero_tl = 1;
-							bmp_copy(w_img, img, i->x, i->y);
-							w_img->zero_tl = 0;
-						}
-					}
-				} break;
-				
-				case NK_COMMAND_ARC_FILLED: {
-					
-				} break;
-				
-				default: break;
-			}
-		}
-		/* reset image parameters */
-		img->zero_tl = 0;
-		img->clip_x = 0;
-		img->clip_y = 0;
-		img->clip_w = img->width;
-		img->clip_h = img->height;
-	}
 }
 
 static void nk_sdl_clipbard_paste(nk_handle usr, struct nk_text_edit *edit){
@@ -1931,344 +1552,6 @@ void gui_simple_select(gui_obj *gui){
 			}
 		}
 		gui->draw = 1;
-	}
-}
-
-void gui_draw_vert_rect(gui_obj *gui, bmp_img *img, double x, double y, bmp_color color){
-	
-	/* set the color */
-	img->frg = color;
-	/* convert entities coordinates to screen coordinates */
-	int x1 = (int) round((x - gui->ofs_x) * gui->zoom);
-	int y1 = (int) round((y - gui->ofs_y) * gui->zoom);
-	
-	int vert_x[2], vert_y[2];
-	
-	vert_x[0] = x1 - 7;
-	vert_x[1] = x1 + 7;
-	vert_y[0] = y1 - 7;
-	vert_y[1] = y1 + 7;
-	
-	bmp_simple_rect_fill(img, vert_x, vert_y);
-}
-
-void gui_draw_vert(gui_obj *gui, bmp_img *img, dxf_node *obj){
-	dxf_node *current = NULL;
-	dxf_node *prev = NULL, *stop = NULL;
-	int pt = 0;
-	enum dxf_graph ent_type = DXF_NONE;
-	double x = 0.0, y = 0.0, z = 0.0;
-	double point[3];
-	
-	int ellip = 0;
-	
-	if (!obj) return;
-	if (obj->type != DXF_ENT) return;
-	
-	int vert_count = 0;
-	
-	//bmp_color blue = {.r = 0, .g = 0, .b =255, .a = 255};
-	
-	/*
-	point[0] = of_x;
-	point[1] = of_y;
-	point[2] = of_z;
-	
-	dxf_get_extru(obj, point);
-	
-	ofs_x = point[0];
-	ofs_y = point[1];
-	ofs_z = point[2];
-	*/
-	
-	stop = obj;
-	ent_type =  dxf_ident_ent_type (obj);
-	
-	if ((ent_type != DXF_HATCH) && (obj->obj.content)){
-		current = obj->obj.content->next;
-		prev = current;
-	}
-	else if ((ent_type == DXF_HATCH) && (obj->obj.content)){
-		current = dxf_find_attr_i(obj, 91, 0);
-		if (current){
-			current = current->next;
-			prev = current;
-		}
-		dxf_node *end_bond = dxf_find_attr_i(obj, 75, 0);
-		if (end_bond) stop = end_bond;
-	}
-	
-	while (current){
-		prev = current;
-		if (current->type == DXF_ENT){
-			/*
-			point[0] = of_x;
-			point[1] = of_y;
-			point[2] = of_z;
-			
-			dxf_get_extru(obj, point);
-			
-			ofs_x = point[0];
-			ofs_y = point[1];
-			ofs_z = point[2];
-			*/
-			if (current->obj.content){
-				ent_type =  dxf_ident_ent_type (current);
-				/* starts the content sweep */
-				current = current->obj.content->next;
-				
-				continue;
-			}
-		}
-		else {
-			if (ent_type != DXF_POLYLINE){
-				/* get the vertex coordinate set */
-				if (current->value.group == 10){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 20))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 30))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-			}
-			if (ent_type == DXF_HATCH){
-				/* hatch bondary path type */
-				if (current->value.group == 72){ 
-					if (current->value.i_data == 3)
-						ellip = 1; /* ellipse */
-				}
-			}
-			if (ent_type == DXF_LINE || ent_type == DXF_TEXT ||
-			ent_type == DXF_HATCH || ent_type == DXF_ATTRIB){
-				/* get the vertex coordinate set */
-				if (current->value.group == 11){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 21))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 31))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-			}
-			else if (ent_type == DXF_TRACE || ent_type == DXF_SOLID){
-				/* get the vertex coordinate set */
-				if (current->value.group == 11){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 21))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 31))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-				
-				
-				
-				/* get the vertex coordinate set */
-				if (current->value.group == 12){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 22))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 32))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-				
-				
-				/* get the vertex coordinate set */
-				if (current->value.group == 13){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 23))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 33))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-			}
-			else if (ent_type == DXF_DIMENSION){
-				/* get the vertex coordinate set */
-				if (current->value.group == 13){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 23))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 33))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-				
-				
-				/* get the vertex coordinate set */
-				if (current->value.group == 14){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 24))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 34))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-				
-				
-				/* get the vertex coordinate set */
-				if (current->value.group == 15){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 25))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 35))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-			}
-		}
-		if (pt){
-			pt = 0;
-			if(vert_count == gui->vert_idx) 
-				gui_draw_vert_rect(gui, img, x, y, dxf_colors[225]);
-			else gui_draw_vert_rect(gui, img, x, y, dxf_colors[224]);
-			
-			vert_count++;
-		}
-		
-		if ((prev == NULL) || (prev == stop)){ /* stop the search if back on initial entity */
-			current = NULL;
-			break;
-		}
-		current = current->next; /* go to the next in the list */
-		/* ============================================================= */
-		while (current == NULL){
-			/* end of list sweeping */
-			if ((prev == NULL) || (prev == stop)){ /* stop the search if back on initial entity */
-				//printf("para\n");
-				current = NULL;
-				break;
-			}
-			/* try to back in structure hierarchy */
-			prev = prev->master;
-			if (prev){ /* up in structure */
-				/* try to continue on previous point in structure */
-				current = prev->next;
-				if(prev == stop){
-					current = NULL;
-					break;
-				}
-				
-			}
-			else{ /* stop the search if structure ends */
-				current = NULL;
-				break;
-			}
-		}
 	}
 }
 

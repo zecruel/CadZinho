@@ -70,155 +70,12 @@
 struct Matrix *aux_mtx1 = NULL;
 
 /* ---------------------------------------------------------*/
-void draw_cursor(bmp_img *img, int x, int y, bmp_color color){
-	/* draw cursor */
-	/* set the pattern */
-	double pat = 1;
-	patt_change(img, &pat, 1);
-	/* set the color */
-	img->frg = color;
-	/* set the tickness */
-	img->tick = 3;
-	bmp_line(img, 0, y, img->width, y);
-	bmp_line(img, x, 0, x, img->height);
-	img->tick = 1;
-	bmp_line(img, x-5, y+5, x+5, y+5);
-	bmp_line(img, x-5, y-5, x+5, y-5);
-	bmp_line(img, x+5, y-5, x+5, y+5);
-	bmp_line(img, x-5, y-5, x-5, y+5);
-}
 
-void draw_attractor(bmp_img *img, enum attract_type type, int x, int y, bmp_color color){
-	/* draw attractor mark*/
-	if (type != ATRC_NONE){
-		/* set the pattern */
-		double pat = 1;
-		patt_change(img, &pat, 1);
-		/* set the color */
-		img->frg = color;
-		/* set the tickness */
-		img->tick = 1;
-	}
-	switch (type){
-		case ATRC_END:
-			/* draw square */
-			bmp_line(img, x-5, y-5, x-5, y+5);
-			bmp_line(img, x-5, y+5, x+5, y+5);
-			bmp_line(img, x+5, y+5, x+5, y-5);
-			bmp_line(img, x+5, y-5, x-5, y-5);
-			break;
-		case ATRC_MID:
-			/* draw triangle */
-			bmp_line(img, x-5, y-5, x+5, y-5);
-			bmp_line(img, x-5, y-5, x, y+5);
-			bmp_line(img, x+5, y-5, x, y+5);
-			break;
-		case ATRC_CENTER:
-			/* draw circle */
-			bmp_circle(img, x, y, 7);
-			break;
-		case ATRC_OCENTER:
-			/* draw a *star */
-			bmp_line(img, x, y-5, x, y+5);
-			bmp_line(img, x-5, y, x+5, y);
-			bmp_line(img, x-5, y-5, x+5, y+5);
-			bmp_line(img, x-5, y+5, x+5, y-5);
-			break;
-		case ATRC_NODE:
-			/* draw circle with x*/
-			bmp_circle(img, x, y, 5);
-			bmp_line(img, x-5, y-5, x+5, y+5);
-			bmp_line(img, x-5, y+5, x+5, y-5);
-			break;
-		case ATRC_QUAD:
-			/* draw diamond */
-			bmp_line(img, x-7, y, x, y+7);
-			bmp_line(img, x, y+7, x+7, y);
-			bmp_line(img, x+7, y, x, y-7);
-			bmp_line(img, x, y-7, x-7, y);
-			break;
-		case ATRC_INTER:
-			/* draw x */
-			img->tick = 3;
-			bmp_line(img, x-5, y-5, x+5, y+5);
-			bmp_line(img, x-5, y+5, x+5, y-5);
-			break;
-		case ATRC_EXT:
-			img->tick = 3;
-			bmp_line(img, x-7, y, x-2, y);
-			bmp_line(img, x, y, x+3, y);
-			bmp_line(img, x+5, y, x+7, y);
-			break;
-		case ATRC_PERP:
-			/* draw square */
-			bmp_line(img, x-5, y-5, x-5, y+5);
-			bmp_line(img, x-5, y-5, x+5, y-5);
-			bmp_line(img, x-5, y, x, y);
-			bmp_line(img, x, y-5, x, y);
-			break;
-		case ATRC_INS:
-			bmp_line(img, x-5, y+5, x+1, y+5);
-			bmp_line(img, x+1, y+5, x+1, y+1);
-			bmp_line(img, x+1, y+1, x+5, y+1);
-			bmp_line(img, x+5, y+1, x+5, y-5);
-			bmp_line(img, x+5, y-5, x-1, y-5);
-			bmp_line(img, x-1, y-5, x-1, y-1);
-			bmp_line(img, x-1, y-1, x-5, y-1);
-			bmp_line(img, x-5, y-1, x-5, y+5);
-			break;
-		case ATRC_TAN:
-			bmp_line(img, x-5, y+5, x+5, y+5);
-			bmp_circle(img, x, y, 5);
-			break;
-		case ATRC_PAR:
-			/* draw two lines */
-			bmp_line(img, x-5, y-1, x+1, y+5);
-			bmp_line(img, x-1, y-5, x+5, y+1);
-			break;
-		case ATRC_CTRL:
-			/* draw a cross */
-			bmp_line(img, x, y-5, x, y+5);
-			bmp_line(img, x-5, y, x+5, y);
-			break;
-		case ATRC_AINT:
-			/* draw square with x */
-			bmp_line(img, x-5, y-5, x-5, y+5);
-			bmp_line(img, x-5, y+5, x+5, y+5);
-			bmp_line(img, x+5, y+5, x+5, y-5);
-			bmp_line(img, x+5, y-5, x-5, y-5);
-			bmp_line(img, x-5, y-5, x+5, y+5);
-			bmp_line(img, x-5, y+5, x+5, y-5);
-			break;
-		case ATRC_ANY:
-			/* draw a Hourglass */
-			bmp_line(img, x-5, y-5, x+5, y+5);
-			bmp_line(img, x-5, y+5, x+5, y-5);
-			img->tick = 2;
-			bmp_line(img, x-5, y+5, x+5, y+5);
-			bmp_line(img, x-5, y-5, x+5, y-5);
-			break;
-	}
-}
-
-void attrc_get_imgs(bmp_img *vec[], int num, int w, int h){
-	
-	bmp_color yellow = {.r = 255, .g = 255, .b =0, .a = 255};
-	bmp_color transp = {.r = 255, .g = 255, .b = 255, .a = 0};
-	
-	int i, attr = 1, x = w/2, y = h/2;
-	for (i = 0; i < num; i++){
-		vec[i] = bmp_new(w, h, transp, yellow);
-		
-		draw_attractor(vec[i], attr, x, y, yellow);
-		if (vec[i]) vec[i]->zero_tl = 1;
-		attr <<= 1;
-	}
-	
-}
 
 void zoom_ext(dxf_drawing *drawing, bmp_img *img, double *zoom, double *ofs_x, double *ofs_y){
-	double min_x, min_y, max_x, max_y;
-	double zoom_x, zoom_y;
+	double min_x = 0.0, min_y = 0.0, max_x = 20.0, max_y = 20.0;
+	double zoom_x = 1.0, zoom_y = 1.0;
+	
 	dxf_ents_ext(drawing, &min_x, &min_y, &max_x, &max_y);
 	zoom_x = (max_x - min_x)/img->width;
 	zoom_y = (max_y - min_y)/img->height;
@@ -231,11 +88,13 @@ void zoom_ext(dxf_drawing *drawing, bmp_img *img, double *zoom, double *ofs_x, d
 }
 
 void zoom_ext2(dxf_drawing *drawing, int x, int y, int width, int height, double *zoom, double *ofs_x, double *ofs_y){
-	double min_x, min_y, max_x, max_y;
-	double zoom_x, zoom_y;
+	double min_x = 0.0, min_y = 0.0, max_x = 20.0, max_y = 20.0;
+	double zoom_x = 1.0, zoom_y = 1.0;
+	
 	dxf_ents_ext(drawing, &min_x, &min_y, &max_x, &max_y);
 	zoom_x = fabs(max_x - min_x)/width;
 	zoom_y = fabs(max_y - min_y)/height;
+	
 	*zoom = (zoom_x > zoom_y) ? zoom_x : zoom_y;
 	*zoom = 1/(1.1 * (*zoom));
 	
@@ -297,8 +156,8 @@ int main(int argc, char** argv){
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
 	/* enable ati-aliasing */
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
+	//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+	//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
 	
 	char *pref_path = SDL_GetPrefPath("CadZinho", "CadZinho");
 	
@@ -446,30 +305,12 @@ int main(int argc, char** argv){
 	//glDisable(GL_SCISSOR_TEST);
 	
 	/* ------------------------------------------------------------------------------- */
-		
-	//SDL_Renderer * renderer = SDL_CreateRenderer(window, -1, 0);
 	
-	//SDL_RendererInfo rend_info;
-	
-	//SDL_GetRendererInfo(renderer, &rend_info);
-	
-	//gui->main_w = rend_info.max_texture_width;
-	//gui->main_h = rend_info.max_texture_height;
 	
 	if ((gui->main_w <= 0) || (gui->main_h <= 0)){
 		gui->main_w = 2048;
 		gui->main_h = 2048;
 	}
-	
-	/*
-	SDL_Texture * canvas = SDL_CreateTexture(
-		renderer,
-		SDL_PIXELFORMAT_ARGB8888,
-		SDL_TEXTUREACCESS_STATIC, 
-		gui->main_w, /* width */
-		//gui->main_h); /* height */
-		
-	//SDL_SetTextureBlendMode(canvas, SDL_BLENDMODE_BLEND);
 	
 	char *base_path = SDL_GetBasePath();
 	printf ("%s\n", base_path);
@@ -585,6 +426,7 @@ int main(int argc, char** argv){
 	set_style(gui->ctx, THEME_GREEN);
 	
 	gui->ctx->style.edit.padding = nk_vec2(4, -6);
+	//gui->ctx->style.button.rounding = 10.0;
 	
 	/* init the toolbox image */
 	
@@ -610,8 +452,6 @@ int main(int argc, char** argv){
 	gui->i_cz48 = i_svg_bmp(gui->svg_curves[SVG_CZ], 48, 48);
 	gui->i_trash = i_svg_bmp(gui->svg_curves[SVG_TRASH], 16, 16);
 	
-	
-	attrc_get_imgs(gui->attr_vec, 15, 16, 16);
 	
 	//struct nk_style_button b_icon_style;
 	if (gui){
@@ -726,32 +566,6 @@ int main(int argc, char** argv){
 	SDL_FreeSurface(surface);
 
 	
-	/*
-	SDL_RendererInfo info;
-	if (SDL_GetRenderDriverInfo(0, &info) == 0){
-		//printf("Driver num pix format = %d\n", info.num_texture_formats);
-		for (i = 0; i < info.num_texture_formats; i++){
-			switch (info.texture_formats[i]){
-				case SDL_PIXELFORMAT_ARGB8888:
-					//printf("pix format ARGB8888\n");
-					//img->r_i = 2;
-					//img->g_i = 1;
-					//img->b_i = 0;
-					//img->a_i = 3;
-					break;
-				case SDL_PIXELFORMAT_RGBA8888:
-					//printf("pix format RGBA8888\n");
-					break;
-				case SDL_PIXELFORMAT_ABGR8888:
-					//printf("pix format ABGR8888\n");
-					break;
-				case SDL_PIXELFORMAT_BGRA8888:
-					//printf("pix format BGRA8888\n");
-					break;
-			}
-		}
-	}
-	*/
 
 		
 	SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
@@ -1098,6 +912,8 @@ int main(int argc, char** argv){
 			gui->progress = 0;
 			
 			file_buf = load_file_reuse(gui->curr_path, &file_size);
+			gui->drawing->font_list = gui->font_list;
+			gui->drawing->dflt_font = get_font_list(gui->font_list, "txt.shx");
 			open_prg = dxf_read(gui->drawing, file_buf->buffer, file_size, &gui->progress);
 			
 			low_proc = 0;
@@ -1565,23 +1381,6 @@ int main(int argc, char** argv){
 			SDL_GetWindowSize(window, &gui->gl_ctx.win_w, &gui->gl_ctx.win_h);
 			glViewport(0, 0, gui->gl_ctx.win_w, gui->gl_ctx.win_h);
 			
-			#if(0)
-			if (gui->win_w > gui->main_w){ /* if window exceedes main image */
-				/* fit windo to main image size*/
-				gui->win_w = gui->main_w;
-				SDL_SetWindowSize(window, gui->win_w, gui->win_h);
-			}
-			if (gui->win_h > gui->main_h){/* if window exceedes main image */
-				/* fit windo to main image size*/
-				gui->win_h = gui->main_h;
-				SDL_SetWindowSize(window, gui->win_w, gui->win_h);
-			}
-			
-			/* set image visible window*/
-			img->clip_x = 0; img->clip_y = gui->main_h - gui->win_h;
-			img->clip_w = gui->win_w;
-			img->clip_h = gui->win_h;
-			#endif
 			
 			d_param.ofs_x = gui->ofs_x;
 			d_param.ofs_y = gui->ofs_y;
@@ -1602,9 +1401,6 @@ int main(int argc, char** argv){
 			gui->gl_ctx.elem_count = 0;
 			glUniform1i(gui->gl_ctx.tex_uni, 0);
 			
-			//bmp_fill_clip(img, img->bkg); /* clear bitmap */
-			//dxf_ents_draw(gui->drawing, img, gui->ofs_x, gui->ofs_y, gui->zoom); /* redraw */
-			//dxf_ents_draw(gui->drawing, img, d_param);
 			
 			dxf_ents_draw_gl(gui->drawing, &gui->gl_ctx, d_param);
 			
@@ -1673,13 +1469,6 @@ int main(int argc, char** argv){
 			
 			win_r.x = 0; win_r.y = 0;
 			win_r.w = gui->win_w; win_r.h = gui->win_h;
-			
-			//SDL_UpdateTexture(canvas, &win_r, img->buf, gui->main_w * 4);
-			//SDL_RenderClear(renderer);
-			//SDL_RenderCopy(renderer, canvas, &win_r, NULL);
-			//SDL_RenderPresent(renderer);
-			
-			
 			
 			
 			/*draw gui*/

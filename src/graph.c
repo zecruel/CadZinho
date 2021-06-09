@@ -1132,10 +1132,10 @@ void graph_draw_fix(graph_obj * master, bmp_img * img, double ofs_x, double ofs_
 
 void graph_arc(graph_obj * master, double c_x, double c_y, double c_z, double radius, double ang_start, double ang_end, int sig){
 	if (master){
-		int n = 256; //numero de vertices do polígono regular que aproxima o circulo ->bom numero 
+		int n = 32; //numero de vertices do polígono regular que aproxima o circulo ->bom numero 
 		double ang;
 		int steps, i;
-		double x0, y0, x1, y1;
+		double x0, y0, x1, y1, step;
 		
 		ang_start *= M_PI/180;
 		ang_end *= M_PI/180;
@@ -1144,7 +1144,8 @@ void graph_arc(graph_obj * master, double c_x, double c_y, double c_z, double ra
 		if (ang <= 0){ ang = ang + 2*M_PI;}
 		
 		//descobre quantos passos para o laço a seguir
-		steps = (int) floor(fabs(ang*n/(2*M_PI))); //numero de vertices do arco
+		//steps = (int) floor(fabs(ang*n/(2*M_PI))); //numero de vertices do arco
+		step = ang/(double) n;
 		
 		x0 = c_x + radius * cos(ang_start);
 		y0 = c_y + radius * sin(ang_start);
@@ -1152,9 +1153,9 @@ void graph_arc(graph_obj * master, double c_x, double c_y, double c_z, double ra
 		//printf("Arco, stp = %d, r = %0.2f, ang = %0.2f\n pts = )", steps, radius, ang);
 		
 		//já começa do segundo vértice
-		for (i = 1; i < steps; i++){
-			x1 = c_x + radius * cos(2 * M_PI * i * sig/ n + ang_start);
-			y1 = c_y + radius * sin(2 * M_PI * i * sig/ n + ang_start);
+		for (i = 1; i < n; i++){
+			x1 = c_x + radius * cos(step * i * sig + ang_start);
+			y1 = c_y + radius * sin(step * i * sig + ang_start);
 			
 			
 			line_add(master, x0, y0, c_z, x1, y1, c_z);
@@ -1216,8 +1217,8 @@ void graph_ellipse(graph_obj * master,
 		double p2_x, double p2_y, double p2_z,
 		double minor_ax, double ang_start, double ang_end){
 	if (master){
-		int n = 256; //numero de vertices do polígono regular que aproxima o circulo ->bom numero 
-		double ang, major_ax, cosine, sine;
+		int n = 32; //numero de vertices do polígono regular que aproxima o circulo ->bom numero 
+		double ang, major_ax, cosine, sine, step;
 		int steps, i;
 		double x0, y0, x1, y1;
 		double xx0, yy0, xx1, yy1;
@@ -1239,7 +1240,8 @@ void graph_ellipse(graph_obj * master,
 		if (ang <= 0){ ang = ang + 2*M_PI;}
 		
 		//descobre quantos passos para o laço a seguir
-		steps = (int) floor(fabs(ang*n/(2*M_PI))); //numero de vertices do arco
+		//steps = (int) floor(fabs(ang*n/(2*M_PI))); //numero de vertices do arco
+		step = ang/(double) n;
 		
 		x0 = p1_x + major_ax * cos(ang_start);
 		y0 = p1_y + minor_ax * sin(ang_start);
@@ -1247,9 +1249,9 @@ void graph_ellipse(graph_obj * master,
 		//printf("Arco, stp = %d, r = %0.2f, ang = %0.2f\n pts = )", steps, radius, ang);
 		
 		//já começa do segundo vértice
-		for (i = 1; i < steps; i++){
-			x1 = p1_x + major_ax * cos(2 * M_PI * i / n + ang_start);
-			y1 = p1_y + minor_ax * sin(2 * M_PI * i / n + ang_start);
+		for (i = 1; i < n; i++){
+			x1 = p1_x + major_ax * cos(step * i  + ang_start);
+			y1 = p1_y + minor_ax * sin(step * i  + ang_start);
 			
 			xx0 = cosine*(x0-p1_x) - sine*(y0-p1_y) + p1_x;
 			yy0 = sine*(x0-p1_x) + cosine*(y0-p1_y) + p1_y;
@@ -1278,8 +1280,8 @@ void graph_ellipse2(graph_obj * master,
 		double major_ax, double minor_ax, 
 		double ang_start, double ang_end){
 	if (master){
-		int n = 256; //numero de vertices do polígono regular que aproxima o circulo ->bom numero 
-		double ang;
+		int n = 32; //numero de vertices do polígono regular que aproxima o circulo ->bom numero 
+		double ang, step;
 		int steps, i;
 		double x0, y0, x1, y1;
 		
@@ -1296,7 +1298,8 @@ void graph_ellipse2(graph_obj * master,
 		if (ang <= 0){ ang = ang + 2*M_PI;}
 		
 		//descobre quantos passos para o laço a seguir
-		steps = (int) floor(fabs(ang*n/(2*M_PI))); //numero de vertices do arco
+		//steps = (int) floor(fabs(ang*n/(2*M_PI))); //numero de vertices do arco
+		step = ang/(double) n;
 		
 		x0 = major_ax * cos(ang_start);
 		y0 = minor_ax * sin(ang_start);
@@ -1304,9 +1307,9 @@ void graph_ellipse2(graph_obj * master,
 		//printf("Arco, stp = %d, r = %0.2f, ang = %0.2f\n pts = )", steps, radius, ang);
 		
 		//já começa do segundo vértice
-		for (i = 1; i < steps; i++){
-			x1 = major_ax * cos(2 * M_PI * i / n + ang_start);
-			y1 = minor_ax * sin(2 * M_PI * i / n + ang_start);
+		for (i = 1; i < n; i++){
+			x1 = major_ax * cos(step * i + ang_start);
+			y1 = minor_ax * sin(step * i + ang_start);
 			
 			line_add(master, x0, y0, 0.0, x1, y1, 0.0);
 			//printf("(%0.2f,%0.2f),", x1, y1);

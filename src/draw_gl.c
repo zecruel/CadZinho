@@ -51,7 +51,8 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[2], int p1[2], int thick){
 	}
 	else {
 		/* a dot*/
-		p1[0] += thick;
+		//p1[0] += thick;
+		return 0;
 	}
 	
 	/* convert input coordinates, in pixles (int), to openGL units */
@@ -858,7 +859,14 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 							//bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
 							xd0 = p1x + 0.5; yd0 = p1y + 0.5;
 							xd1 = p2x + 0.5; yd1 = p2y + 0.5;
-							draw_gl_line (gl_ctx, (int []){xd0, yd0}, (int []){ xd1, yd1}, thick);
+							if (xd0 != xd1 || yd0 != yd1){
+								draw_gl_line (gl_ctx, (int []){xd0, yd0}, (int []){ xd1, yd1}, thick);
+							} else { /* draw a dot */
+								int t = thick;
+								if (t < 1) t = 1;
+								draw_gl_quad (gl_ctx, (int []){xd0, yd0 + t}, (int []){xd0, yd0}, 
+									(int []){xd0 + t, yd0 + t}, (int []){xd0 + t, yd0});
+							}
 						}
 					}
 					
@@ -876,7 +884,14 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 							//bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
 							xd0 = p1x + 0.5; yd0 = p1y + 0.5;
 							xd1 = p2x + 0.5; yd1 = p2y + 0.5;
-							draw_gl_line (gl_ctx, (int []){xd0, yd0}, (int []){ xd1, yd1}, thick);
+							if (xd0 != xd1 || yd0 != yd1){
+								draw_gl_line (gl_ctx, (int []){xd0, yd0}, (int []){ xd1, yd1}, thick);
+							} else { /* draw a dot */
+								int t = thick;
+								if (t < 1) t = 1;
+								draw_gl_quad (gl_ctx, (int []){xd0, yd0 + t}, (int []){xd0, yd0}, 
+									(int []){xd0 + t, yd0 + t}, (int []){xd0 + t, yd0});
+							}
 						}
 						p1x = p2x;
 						p1y = p2y;

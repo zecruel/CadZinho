@@ -24,9 +24,30 @@ int gui_load_conf (const char *fname, gui_obj *gui) {
 	
 	/* load configuration file as Lua script*/
 	if (status = luaL_loadfile(L, fname) != LUA_OK){
-		printf("cannot run config. file: %s", lua_tostring(L, -1));
+		FILE *file = fopen(fname, "w"); /* open the file */
+		if (file){
+			const char *dflt_config = "-- CadZinho default configuration file\n"
+				"-- This file is writen in Lua language\n"
+				"\n"
+				"-- define initial window size\n"
+				"width = 1265\n"
+				"height = 700\n"
+				"font_path = \"/usr/share/fonts/\"\n"
+				"fonts = {\n"
+				"	\"romans.shx\",\n" 
+				"	\"txt.shx\"\n"
+				"	}\n"
+				"ui_font = {\"txt.shx\", 11}\n";
+			
+			fprintf(file, dflt_config);
+			fclose(file);
+		}
+		
+		if (status = luaL_loadfile(L, fname) != LUA_OK){
+			printf("cannot run config. file: %s", lua_tostring(L, -1));
+		}
 	} 
-	else if (status = lua_pcall(L, 0, LUA_MULTRET, 0) != LUA_OK){
+	if (status = lua_pcall(L, 0, LUA_MULTRET, 0) != LUA_OK){
 		printf("cannot run config. file: %s", lua_tostring(L, -1));
 	}
 	

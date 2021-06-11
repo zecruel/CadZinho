@@ -105,29 +105,52 @@ void zoom_ext2(dxf_drawing *drawing, int x, int y, int width, int height, double
 int main(int argc, char** argv){
 	aux_mtx1 = malloc(sizeof(struct Matrix));
 	
+	char keyin[64];
+	int keyin_len = 0;
+	int keyin_timer = 0;
+	keyin[0] = 0;
+	
 	gui_obj *gui = malloc(sizeof(gui_obj));
 	gui_start(gui);
 	
 	
 	
+	
+	
+	//setlocale(LC_ALL,""); //seta a localidade como a current do computador para aceitar acentuacao
+	int i, ok;
+	
+	
+	
+	SDL_Rect win_r, display_r;
+	
+	/* init the SDL2 */
+	SDL_Init(SDL_INIT_VIDEO);
+	
+	
+	/* --------------- Configure paths ----------*/
+	
+	char *pref_path = SDL_GetPrefPath("CadZinho", "CadZinho");
+	//printf("pref dir = %s\n", gui->base_dir);
+	
 	/* full path of clipboard file */
 	char clip_path[DXF_MAX_CHARS + 1];
 	clip_path[0] = 0;
-	strncpy(clip_path, gui->base_dir, DXF_MAX_CHARS);
-	printf("base dir = %s\n", gui->base_dir);
-	strncat(clip_path, "test_clip.dxf", DXF_MAX_CHARS);
+	strncpy(clip_path, pref_path, DXF_MAX_CHARS);
+	//printf("base dir = %s\n", gui->base_dir);
+	strncat(clip_path, "clipboard.dxf", DXF_MAX_CHARS);
 	printf("clip path = %s\n", clip_path);
 	
 	/* full path of init file */
 	char init_path[DXF_MAX_CHARS + 1];
 	init_path[0] = 0;
-	strncpy(init_path, gui->base_dir, DXF_MAX_CHARS);
+	strncpy(init_path, pref_path, DXF_MAX_CHARS);
 	strncat(init_path, "init.lua", DXF_MAX_CHARS);
 	
 	/* full path of config file */
 	char config_path[DXF_MAX_CHARS + 1];
 	config_path[0] = 0;
-	strncpy(config_path, gui->base_dir, DXF_MAX_CHARS);
+	strncpy(config_path, pref_path, DXF_MAX_CHARS);
 	strncat(config_path, "config.lua", DXF_MAX_CHARS);
 	
 	/* initialize fonts paths with base directory  */
@@ -136,17 +159,13 @@ int main(int argc, char** argv){
 		strncat (gui->dflt_fonts_path, (char []){PATH_SEPARATOR, 0}, 5 * DXF_MAX_CHARS);
 	}
 	
-	//setlocale(LC_ALL,""); //seta a localidade como a current do computador para aceitar acentuacao
-	int i, ok;
+	/* -------------------------------------------------------------------------- */
 	
 	//load (Lua1, "config.lua", &gui->win_w, &gui->win_h);
 	gui_load_conf (config_path, gui);
 	gui_load_ini(init_path, gui);
 	
-	SDL_Rect win_r, display_r;
-	
-	/* init the SDL2 */
-	SDL_Init(SDL_INIT_VIDEO);
+	/* ------------------------------------------------------------------------*/
 	
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -158,8 +177,6 @@ int main(int argc, char** argv){
 	/* enable ati-aliasing */
 	//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 	//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
-	
-	char *pref_path = SDL_GetPrefPath("CadZinho", "CadZinho");
 	
 	SDL_Window * window = SDL_CreateWindow(
 		"CadZinho", /* title */
@@ -668,16 +685,16 @@ int main(int argc, char** argv){
 						break;
 					
 					case (SDL_DROPFILE): {      // In case if dropped file
-						//dropped_filedir = event.drop.file;
-						// Shows directory of dropped file
-						//SDL_ShowSimpleMessageBox(
-						//	SDL_MESSAGEBOX_INFORMATION,
-						//	"File dropped on window",
-						//	dropped_filedir,
-						//	window);
-						//printf(dropped_filedir);
-						//printf("\n----------------------------\n");
-						//SDL_free(dropped_filedir);    // Free dropped_filedir memory
+						/* get file path -> drop event has previously proccessed and string was moved to clipboard !!!*/
+						char *dropped_filedir = SDL_GetClipboardText(); 
+						strncpy (gui->curr_path, dropped_filedir, DXF_MAX_CHARS);
+						//printf("File: %s\n", gui->curr_path);
+						/* open file */
+						gui->action = FILE_OPEN;
+						gui->path_ok = 1;
+						gui->hist_new = 1; /* not change history entries */
+						
+						SDL_free(dropped_filedir);    // Free dropped_filedir memory
 						}
 						break;
 					case SDL_KEYDOWN: {
@@ -744,6 +761,12 @@ int main(int argc, char** argv){
 						}break;
 					case SDL_TEXTINPUT:
 						/* text input */
+						keyin[keyin_len] = *event.text.text;
+						if (keyin_len < 63) keyin_len++;
+						keyin[keyin_len] = 0;
+						keyin_timer = 0;
+						gui->draw = 1;
+					
 						/* if the user enters a character relative a number */
 						if ((*event.text.text > 41) && (*event.text.text < 58)){
 							gui->user_number = 1; /* sinalize a user flag */
@@ -751,10 +774,10 @@ int main(int argc, char** argv){
 						break;
 					case SDL_WINDOWEVENT:
 						if (event.window.event == SDL_WINDOWEVENT_RESIZED){
-							
+							gui->draw = 1;
 						}
 						if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED){
-							
+							gui->draw = 1;
 						}
 				}
 			}
@@ -1323,6 +1346,49 @@ int main(int argc, char** argv){
 		}
 		
 		
+		if (strcmp(keyin, "31") == 0){
+			gui->modal = DUPLI;
+			keyin_timer = 0;
+			keyin_len = 0;
+			keyin[0] = 0;
+			gui->step = 0;
+		}
+		else if (strcmp(keyin, "32") == 0){
+			gui->modal = MOVE;
+			keyin_timer = 0;
+			keyin_len = 0;
+			keyin[0] = 0;
+			gui->step = 0;
+		}
+		else if (strcmp(keyin, "33") == 0){
+			gui->modal = SCALE;
+			keyin_timer = 0;
+			keyin_len = 0;
+			keyin[0] = 0;
+			gui->step = 0;
+		}
+		else if (strcmp(keyin, "34") == 0){
+			gui->modal = ROTATE;
+			keyin_timer = 0;
+			keyin_len = 0;
+			keyin[0] = 0;
+			gui->step = 0;
+		}
+		else if (strcmp(keyin, "35") == 0){
+			gui->modal = MIRROR;
+			keyin_timer = 0;
+			keyin_len = 0;
+			keyin[0] = 0;
+			gui->step = 0;
+		}
+		else if (strcmp(keyin, "1") == 0){
+			gui->modal = SELECT;
+			keyin_timer = 0;
+			keyin_len = 0;
+			keyin[0] = 0;
+			gui->step = 0;
+		}
+		
 		
 		
 		gui_select_interactive(gui);
@@ -1455,6 +1521,22 @@ int main(int argc, char** argv){
 				draw_attractor_gl(gui, gui->near_attr, attr_x, attr_y, yellow);
 			}
 			
+			
+			/* -------- KEYIN --  rendering text by default general drawing engine */
+			if (keyin_len > 0){
+				list_node * graph = list_new(NULL, FRAME_LIFE);
+				if (graph) {
+					if (font_parse_str(gui->dflt_font, graph, FRAME_LIFE, keyin, NULL, 0)){
+						graph_list_color(graph, white);
+						graph_list_modify(graph, 230, 100, 20.0, 20.0, 0.0);
+						
+						struct draw_param param = {.ofs_x = 0, .ofs_y = 0, .scale = 1.0, .list = NULL, .subst = NULL, .len_subst = 0, .inc_thick = 0};
+						graph_list_draw_gl(graph, &gui->gl_ctx, param);
+					}
+				}
+			}
+			
+			
 			/* ---------------------------------- */
 			draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
 			
@@ -1509,6 +1591,17 @@ int main(int argc, char** argv){
 			SDL_Delay(30);
 			SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEMOTION);
 		}
+		
+		/* -------- KEYIN */
+		if (keyin_timer < 40){
+			keyin_timer++;
+		} else {
+			if (keyin_len) gui->draw = 1;
+			keyin_timer = 0;
+			keyin_len = 0;
+			keyin[0] = 0;
+		}
+		
 	}
 	
 	/* safe quit */

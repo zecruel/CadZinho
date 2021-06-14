@@ -249,7 +249,7 @@ bmp_img * bmp_new (unsigned int width, unsigned int height, bmp_color bkg, bmp_c
 		img->end_x[0] = 0; img->end_x[1] = 0; img->end_x[2] = 0; img->end_x[3] = 0;
 		img->end_y[0] = 0; img->end_y[1] = 0; img->end_y[2] = 0; img->end_y[3] = 0;
 		
-		/*order of color components in buffer. Init with ARGB */
+		/*order of color components in buffer. Init with RGBA */
 		img->r_i = 0;
 		img->g_i = 1;
 		img->b_i = 2;

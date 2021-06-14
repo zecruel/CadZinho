@@ -36,8 +36,128 @@ void sel_list_clear (gui_obj *gui){
 the fowling functions are for rendering text in gui, by rastering each
 glyphs in a monochrome image in memory. */
 
+static void plot_(unsigned char rast[][4], int w, int h, int x, int y, double a){
+	
+	
+	y = h - y;
+	
+	if (x < 0 || y < 0 || w < 0) return;
+	if (x > 24 || y > 19 || w > 24) return;
+	
+	int ofs = y * w + x;
+	int alpha = rast[ofs][3] + a * 255;
+	
+	rast[ofs][0] = 255;
+	rast[ofs][1] = 255;
+	rast[ofs][2] = 255;
+	rast[ofs][3] = (alpha < 255) ? alpha : 255;
+}
+
+/* Xiaolin Wu antialising line algorithm
+font: http://rosettacode.org/wiki/Xiaolin_Wu%27s_line_algorithm#C */
+#define ipart_(X) ((int)(X))
+#define round_(X) ((int)(((double)(X))+0.5))
+#define fpart_(X) (((double)(X))-(double)ipart_(X))
+#define rfpart_(X) (1.0-fpart_(X))
+ 
+#define swap_(a, b) do{ __typeof__(a) tmp;  tmp = a; a = b; b = tmp; }while(0)
+static void line_antialias( unsigned char rast[][4], int w, int h, double x1, double y1, double x2, double y2){
+	double dx = x2 - x1;
+	double dy = y2 - y1;
+	
+	if ( fabs(dx) > fabs(dy) ) {
+		if ( x2 < x1 ) {
+			swap_(x1, x2);
+			swap_(y1, y2);
+		}
+		double gradient = dy / dx;
+		double xend = round_(x1);
+		double yend = y1 + gradient*(xend - x1);
+		double xgap = rfpart_(x1 + 0.5);
+		int xpxl1 = xend;
+		int ypxl1 = ipart_(yend);
+		plot_(rast, w, h, xpxl1, ypxl1, rfpart_(yend)*xgap);
+		plot_(rast, w, h, xpxl1, ypxl1+1, fpart_(yend)*xgap);
+		double intery = yend + gradient;
+
+		xend = round_(x2);
+		yend = y2 + gradient*(xend - x2);
+		xgap = fpart_(x2+0.5);
+		int xpxl2 = xend;
+		int ypxl2 = ipart_(yend);
+		plot_(rast, w, h, xpxl2, ypxl2, rfpart_(yend) * xgap);
+		plot_(rast, w, h, xpxl2, ypxl2 + 1, fpart_(yend) * xgap);
+
+		int x;
+		for(x=xpxl1+1; x < xpxl2; x++) {
+			plot_(rast, w, h, x, ipart_(intery), rfpart_(intery));
+			plot_(rast, w, h, x, ipart_(intery) + 1, fpart_(intery));
+			intery += gradient;
+		}
+	} else {
+		if ( y2 < y1 ) {
+			swap_(x1, x2);
+			swap_(y1, y2);
+		}
+		double gradient = dx / dy;
+		double yend = round_(y1);
+		double xend = x1 + gradient*(yend - y1);
+		double ygap = rfpart_(y1 + 0.5);
+		int ypxl1 = yend;
+		int xpxl1 = ipart_(xend);
+		plot_(rast, w, h, xpxl1, ypxl1, rfpart_(xend)*ygap);
+		plot_(rast, w, h, xpxl1 + 1, ypxl1, fpart_(xend)*ygap);
+		double interx = xend + gradient;
+
+		yend = round_(y2);
+		xend = x2 + gradient*(yend - y2);
+		ygap = fpart_(y2+0.5);
+		int ypxl2 = yend;
+		int xpxl2 = ipart_(xend);
+		plot_(rast, w, h, xpxl2, ypxl2, rfpart_(xend) * ygap);
+		plot_(rast, w, h, xpxl2 + 1, ypxl2, fpart_(xend) * ygap);
+
+		int y;
+		for(y=ypxl1+1; y < ypxl2; y++) {
+			plot_(rast, w, h, ipart_(interx), y, rfpart_(interx));
+			plot_(rast, w, h, ipart_(interx) + 1, y, fpart_(interx));
+			interx += gradient;
+		}
+	}
+}
+#undef swap_
+//#undef plot_
+#undef ipart_
+#undef fpart_
+#undef round_
+#undef rfpart_
+
+static void graph_aa(graph_obj * master, unsigned char rast[][4], int w, int h, double scale){
+	if ((master == NULL) || (rast == NULL)) return;
+	double xd0, yd0, xd1, yd1;
+	line_node *current = master->list->next;
+	int ok = 1;
+
+	/* draw the lines */
+	while(current){ /*sweep the list content */
+		/* apply the scale and offset */
+		ok = 1;
+		
+		ok &= !(isnan(xd0 = ((current->x0 ) * scale) + 0.5));
+		ok &= !(isnan(yd0 = ((current->y0 ) * scale) + 0.5));
+		ok &= !(isnan(xd1 = ((current->x1 ) * scale) + 0.5));
+		ok &= !(isnan(yd1 = ((current->y1 ) * scale) + 0.5));
+		
+		if (ok){
+			line_antialias(rast, w, h, xd0, yd0, xd1, yd1);
+		}
+		current = current->next; /* go to next */
+	}
+}
+
+
 struct gui_font * gui_new_font (struct nk_user_font *base_font){
-	/* create a new font structute */
+	/* create a new font structure */
 	/* memory allocation */
 	struct gui_font *font = calloc(1, sizeof(struct gui_font));
 	if (font){
@@ -93,14 +213,28 @@ struct gui_glyph * gui_new_glyph (struct gui_font *gfont, int code_p){
 		glyph->w = 0;
 		glyph->h = 0;
 		glyph->adv = 0.0;
-		memset(glyph->rast, 0, 20*25);
+		memset(glyph->rast, 0, 500);
 		glyph->next = NULL;
 	}
+	//else return NULL;
 	/* -------- raster the glyph and get its size parameters ----------*/
 	struct tfont *font = (struct tfont *)gfont->font->userdata.ptr;
 	if (font->type != FONT_TT){ /* shape font*/
+		double w = 0.0, h = 0.0;
 		
-		/* TODO*/
+		/* rendering text by default general drawing engine */
+		graph_obj * graph = font_parse_cp(font, code_p, 0, FRAME_LIFE, &w);
+		h = gfont->font->height;
+		w = w * h + 1;
+		if (graph) {
+			graph_aa(graph, glyph->rast, w, h+1, h);
+		}
+		/* update glyph parameters */
+		glyph->x = 0;
+		glyph->y = -h;
+		glyph->w = w;
+		glyph->h = h*1.5;
+		glyph->adv = w-0.5;
 		
 	}
 	else { /* True Type font*/
@@ -662,6 +796,7 @@ int nk_gl_render(gui_obj *gui) {
 			/* get font descriptor */
 			struct tfont *font = (struct tfont *)t->font->userdata.ptr;
 			
+			#if (0)
 			if (font->type != FONT_TT){ /*shape font */
 				/* rendering text by default general drawing engine */
 				list_node * graph = list_new(NULL, FRAME_LIFE);
@@ -675,9 +810,10 @@ int nk_gl_render(gui_obj *gui) {
 					}
 				}
 			}
-			else { /* True Type font */
+			#endif
+			//else { /* True Type font */
 				/* rendering text by glyph raster images - used only in GUI */
-				struct tt_font *tt_fnt = font->data;
+				
 				
 				/* get gui font structure */
 				struct gui_font * gfont = gui_get_font (gui->ui_font_list, (struct nk_user_font *) t->font);
@@ -691,11 +827,16 @@ int nk_gl_render(gui_obj *gui) {
 				gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 				glUniform1i(gl_ctx->tex_uni, 1); /* choose second texture */
 				/* finally draw image */
-				int desc = fabs(tt_fnt->descent) * (double)t->font->height + 0.5;
-				//int lg = fabs(tt_fnt->line_gap) * (double)t->font->height + 0.5;
-				int height = t->font->height + desc + 1;// + lg;
+				int height = t->font->height + 5;
+				if (font->type == FONT_TT){
+					struct tt_font *tt_fnt = font->data;
+					int desc = fabs(tt_fnt->descent) * (double)t->font->height + 0.5;
+					//int lg = fabs(tt_fnt->line_gap) * (double)t->font->height + 0.5;
+					height = t->font->height + desc + 1;// + lg;
+				}
 				
-				draw_gl_rect (gl_ctx, t->x, t->y-2, t->w, height);
+				
+				draw_gl_rect (gl_ctx, t->x, t->y-3, t->w, height);
 				
 				/* sweep the text string, decoding UTF8 in code points*/
 				glActiveTexture(GL_TEXTURE1);
@@ -730,7 +871,7 @@ int nk_gl_render(gui_obj *gui) {
 				}
 				
 				draw_gl (gl_ctx, 1); /* force draw and cleanup */
-			}
+			//}
 			
 		}
 		else if  (cmd->type == NK_COMMAND_SCISSOR) {

@@ -170,8 +170,9 @@ enum Ortho_view{
 struct gui_glyph{
 	int code_p, x, y, w, h;
 	double adv;
-	unsigned char rast[20*25][4];
 	struct gui_glyph *next;
+	unsigned char rast[20*25][4];
+	
 };
 	
 struct gui_font{

@@ -761,15 +761,17 @@ int main(int argc, char** argv){
 						}break;
 					case SDL_TEXTINPUT:
 						/* text input */
-						keyin[keyin_len] = *event.text.text;
-						if (keyin_len < 63) keyin_len++;
-						keyin[keyin_len] = 0;
-						keyin_timer = 0;
-						gui->draw = 1;
 					
 						/* if the user enters a character relative a number */
-						if ((*event.text.text > 41) && (*event.text.text < 58)){
+						if ((*event.text.text > 41) && (*event.text.text < 58) && (gui->en_distance||!gui->entry_relative)){
 							gui->user_number = 1; /* sinalize a user flag */
+						}
+						else{
+							keyin[keyin_len] = *event.text.text;
+							if (keyin_len < 63) keyin_len++;
+							keyin[keyin_len] = 0;
+							keyin_timer = 0;
+							gui->draw = 1;
 						}
 						break;
 					case SDL_WINDOWEVENT:

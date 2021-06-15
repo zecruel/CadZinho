@@ -56,4 +56,8 @@ char * load_file(char *path, long *fsize);
 
 char * try_load_dflt(char *path, char *dflt);
 
+const char * operating_system();
+
+int opener(const char *url);
+
 #endif

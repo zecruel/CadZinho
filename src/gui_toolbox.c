@@ -568,7 +568,8 @@ int gui_main_win(gui_obj *gui){
 		/*------------ end second line --------------*/
 		
 		if (gui->show_app_about){
-			/* file open popup */
+			/* About Cadzinho */
+			const char* site = "https://github.com/zecruel/CadZinho";
 			static struct nk_rect s = {20, 100, 400, 150};
 			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "About", NK_WINDOW_CLOSABLE, s)){
 				nk_layout_row_dynamic(gui->ctx, 50, 2);
@@ -584,6 +585,10 @@ int gui_main_win(gui_obj *gui){
 				nk_layout_row_end(gui->ctx);
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				nk_label(gui->ctx, "CadZinho is licensed under the MIT License.",  NK_TEXT_LEFT);
+				if (nk_button_label(gui->ctx, site)){
+					opener(site);
+				}
+				nk_label(gui->ctx, operating_system(),  NK_TEXT_LEFT);
 				nk_popup_end(gui->ctx);
 			} else gui->show_app_about = nk_false;
 		}

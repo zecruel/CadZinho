@@ -367,3 +367,88 @@ char * try_load_dflt(char *path, char *dflt){
 	
 	return buf;
 }
+
+/*-----------------------------------------*/
+
+/*
+Get to know your operating system
+
+MIT licensed.
+Copyright (c) Abraham Hernandez <abraham@abranhe.com>
+modified by Zecruel - Cadzinho - https://stackoverflow.com/a/5920028/14506399
+*/
+const char * operating_system() {
+	#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)|| defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+		/*define something for Windows (32-bit and 64-bit, this part is common)*/
+		#ifdef _WIN64
+			/* define something for Windows (64-bit only) */
+			return "win64";
+		#else
+			/* define something for Windows (32-bit only) */
+			return "win32";
+		#endif
+	#elif __APPLE__ || __MACH__
+		#include <TargetConditionals.h>
+		#if TARGET_IPHONE_SIMULATOR
+			/* iOS Simulator */
+		#elif TARGET_OS_IPHONE
+			/* iOS device */
+		#elif TARGET_OS_MAC
+			/* Other kinds of Mac OS */
+		#else
+			/* Unknown Apple platform */
+		#endif
+		return "macOS";
+	#elif __linux__
+		return "linux";
+	#elif __FreeBSD__
+		return "freeBSD";
+	#elif __unix || __unix__ /* all unices not caught above */
+		return "unix";
+	#elif defined(_POSIX_VERSION)
+		return "unix";
+	#else
+		return "other";
+	#endif
+}
+
+/*
+Open URLS in C
+
+MIT licensed.
+Copyright (c) Abraham Hernandez <abraham@abranhe.com>
+Modified by Zecruel - CadZinho
+*/
+
+int opener(const char *url) {
+    
+	const char *platform = operating_system();
+	const char *cmd = NULL;
+
+	/* Hanlde macOS */
+	if (!strcmp(platform, "macOS")) {
+		cmd = "open";
+	}
+	/* Handle Windows */
+	else if (!strcmp(platform, "win32") || !strcmp(platform, "win64")) {
+		cmd = "start";
+	}
+	/* Handle Linux, Unix, etc */
+	else if (!strcmp(platform, "unix")
+	|| !strcmp(platform, "linux") 
+	|| !strcmp(platform, "freeBSD") 
+	|| !strcmp(platform, "other")) {
+		cmd = "xdg-open";
+	}
+
+	char script[PATH_MAX_CHARS] = "";
+	strncat(script, cmd, PATH_MAX_CHARS - 1);
+	strncat(script, " ", PATH_MAX_CHARS - 1);
+	strncat(script, url, PATH_MAX_CHARS - 1 - strlen(script));
+	
+	system(script);
+
+	return 1;
+}
+
+/*------------------------------------------------------*/

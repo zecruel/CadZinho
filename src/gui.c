@@ -1486,11 +1486,13 @@ int gui_start(gui_obj *gui){
 	gui->show_tstyles_mng = 0;
 	gui->show_blk_mng = 0;
 	gui->show_ltyp_mng = 0;
+	gui->show_config = 0;
 	
 	gui->curr_path[0] = 0;
 	gui->base_dir[0] = 0;
 	gui->dwg_file[0] = 0;
 	gui->dwg_dir[0] = 0;
+	gui->pref_path = NULL;
 	
 	gui->paper_fam = 0;
 	gui->sel_paper = 6;

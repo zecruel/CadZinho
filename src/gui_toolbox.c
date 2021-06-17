@@ -419,7 +419,7 @@ int gui_main_win(gui_obj *gui){
 				
 				//gui->show_app_file = 1;
 				
-				gui->action = REDRAW;
+				gui->show_config = 1;
 			}
 			nk_group_end(gui->ctx);
 		}

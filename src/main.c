@@ -131,7 +131,7 @@ int main(int argc, char** argv){
 	/* --------------- Configure paths ----------*/
 	
 	char *pref_path = SDL_GetPrefPath("CadZinho", "CadZinho");
-	//printf("pref dir = %s\n", gui->base_dir);
+	gui->pref_path = pref_path;
 	
 	/* full path of clipboard file */
 	char clip_path[DXF_MAX_CHARS + 1];
@@ -843,6 +843,10 @@ int main(int argc, char** argv){
 		
 		if (gui->show_tstyles_mng){
 			gui->show_tstyles_mng = tstyles_mng (gui);
+		}
+		
+		if (gui->show_config){ /* configuration window */
+			gui->show_config = config_win (gui);
 		}
 		
 		if (progr_win){

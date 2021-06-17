@@ -337,12 +337,14 @@ struct Gui_obj {
 	int show_tstyles_mng;
 	int show_blk_mng;
 	int show_ltyp_mng;
+	int show_config;
 	
 	
 	char curr_path[MAX_PATH_LEN];
 	char base_dir[DXF_MAX_CHARS + 1];
 	char dwg_file[DXF_MAX_CHARS + 1];
 	char dwg_dir[DXF_MAX_CHARS + 1];
+	char *pref_path;
 	
 	char drwg_hist[DRWG_HIST_MAX][DXF_MAX_CHARS];
 	int drwg_hist_size;

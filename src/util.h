@@ -60,4 +60,6 @@ const char * operating_system();
 
 int opener(const char *url);
 
+const char * dflt_fonts_dir ();
+
 #endif

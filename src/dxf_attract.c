@@ -535,7 +535,7 @@ double *alin_x, double *alin_y, double *alin_z,
 double *w, double *h, double *rot, 
 int *alin_v, int *alin_h){
 	int ok = 0;
-	#if(0)
+	
 	if(obj){
 		dxf_node *current = NULL;
 		double pt1_x = 0, pt1_y = 0, pt1_z = 0;
@@ -548,7 +548,7 @@ int *alin_v, int *alin_h){
 		char *pos_st, *pos_curr, *pos_tmp, special;
 		int under_l, over_l;
 		double fnt_size, txt_size;
-		shape *shx_font = NULL;
+		//shape *shx_font = NULL;
 		
 		t_style[0] = 0;
 		tmp_str[0] = 0;
@@ -625,7 +625,7 @@ int *alin_v, int *alin_h){
 			}
 			current = current->next; /* go to the next in the list */
 		}
-		
+		#if (0)
 		/* find the tstyle index and font*/
 		*fnt_idx = dxf_tstyle_idx(drawing, t_style);
 		shx_font = drawing->text_styles[*fnt_idx].shx_font;
@@ -710,7 +710,7 @@ int *alin_v, int *alin_h){
 		
 		/* find the dimentions of text */
 		txt_size = size/(*above);
-		
+		#endif
 		
 		/* convert OCS to WCS */
 		normal[0] = extru_x;
@@ -722,6 +722,7 @@ int *alin_v, int *alin_h){
 		*alin_x = pt2_x;
 		*alin_y = pt2_y;
 		*alin_z = pt2_z;
+		#if (0)
 		axis_transform(ins_x, ins_y, ins_z, normal);
 		axis_transform(alin_x, alin_y, alin_z, normal);
 		pt1_x = 1.0;
@@ -735,8 +736,11 @@ int *alin_v, int *alin_h){
 		*h = size * fabs(pt1_y / pt1_x);
 		*above *= txt_size;
 		*below *= txt_size;
+		#else
+		ok = 1;
+		#endif
 	}
-	#endif
+	
 	return ok;
 }
 

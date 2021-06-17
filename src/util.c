@@ -317,7 +317,7 @@ struct Mem_buffer *  load_file_reuse(char *path, long *fsize){
 	
 	//char *buf = malloc(*fsize + 1);
 	struct Mem_buffer *buf = manage_buffer(*fsize + 1, BUF_GET);
-	if (!buf){
+	if (!buf || !buf->buffer){
 		*fsize = 0;
 		fclose(file);
 		return NULL;
@@ -452,3 +452,31 @@ int opener(const char *url) {
 }
 
 /*------------------------------------------------------*/
+
+const char * dflt_fonts_dir (){
+	const char *platform = operating_system();
+
+	/* Hanlde macOS */
+	if (!strcmp(platform, "macOS")) {
+		return "/Library/Fonts/";
+	}
+	/* Handle Windows */
+	else if (!strcmp(platform, "win32") || !strcmp(platform, "win64")) {
+		char *windir = getenv("WINDIR");
+		if (windir){
+			static char fntdir[PATH_MAX_CHARS] = "";
+			strncat(fntdir, windir, PATH_MAX_CHARS - 1);
+			strncat(fntdir, "\\Fonts\\", PATH_MAX_CHARS - 1 - strlen(fntdir));
+			return fntdir;
+		}
+		return "C:\\Windows\\Fonts\\";
+	}
+	/* Handle Linux, Unix, etc */
+	else if (!strcmp(platform, "unix")
+	|| !strcmp(platform, "linux") 
+	|| !strcmp(platform, "freeBSD") 
+	|| !strcmp(platform, "other")) {
+		return "/usr/share/fonts/";
+	}
+	return NULL;
+}

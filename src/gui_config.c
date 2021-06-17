@@ -26,20 +26,24 @@ int gui_load_conf (const char *fname, gui_obj *gui) {
 	if (status = luaL_loadfile(L, fname) != LUA_OK){
 		FILE *file = fopen(fname, "w"); /* open the file */
 		if (file){
-			const char *dflt_config = "-- CadZinho default configuration file\n"
+			fprintf(file,  "-- CadZinho default configuration file\n"
 				"-- This file is writen in Lua language\n"
 				"\n"
 				"-- define initial window size\n"
 				"width = 1265\n"
-				"height = 700\n"
-				"font_path = \"/usr/share/fonts/\"\n"
-				"fonts = {\n"
+				"height = 700\n");
+			const char * font_dir = dflt_fonts_dir ();
+			if (font_dir){
+				fprintf(file, "font_path = \"");
+				fprintf(file, font_dir);
+				fprintf(file, "\"\n");
+			}
+			fprintf(file, "fonts = {\n"
 				"	\"romans.shx\",\n" 
 				"	\"txt.shx\"\n"
 				"	}\n"
-				"ui_font = {\"txt.shx\", 11}\n";
+				"ui_font = {\"txt.shx\", 10}\n");
 			
-			fprintf(file, dflt_config);
 			fclose(file);
 		}
 		
@@ -73,11 +77,12 @@ int gui_load_conf (const char *fname, gui_obj *gui) {
 		
 	}
 	else{ /* default value, if not definied in file*/
-		#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-		strncpy(gui->dflt_fonts_path, "C:\\Windows\\Fonts\\", 5 * DXF_MAX_CHARS);
-		#else
-		strncat(gui->dflt_fonts_path, "/usr/share/fonts/", 5 * DXF_MAX_CHARS);
-		#endif
+		const char * font_dir = dflt_fonts_dir ();
+		if (font_dir)
+			strncat(gui->dflt_fonts_path, font_dir, 5 * DXF_MAX_CHARS);
+		else
+			strncat(gui->dflt_fonts_path, "/", 5 * DXF_MAX_CHARS);
+		
 	}
 	lua_pop(L, 1);
 	
@@ -262,4 +267,39 @@ int gui_load_ini(const char *fname, gui_obj *gui) {
 	lua_close(L);
 	
 	return 1;
+}
+
+int config_win (gui_obj *gui){
+	int show_config = 1;
+	int i = 0;
+	gui->next_win_x += gui->next_win_w + 3;
+	//gui->next_win_y += gui->next_win_h + 3;
+	gui->next_win_w = 200;
+	gui->next_win_h = 300;
+	
+	//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "config", NK_WINDOW_CLOSABLE, nk_rect(310, 50, 200, 300))){
+	if (nk_begin(gui->ctx, "Config", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
+	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
+	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		nk_label(gui->ctx, "Pref Path:", NK_TEXT_LEFT);
+		if (nk_button_label(gui->ctx, "Open dir")){
+			if(gui->pref_path) opener(gui->pref_path);
+			else {
+				
+			}
+		}
+		if (nk_button_label(gui->ctx, "Open config")){
+			/* full path of config file */
+			char config_path[DXF_MAX_CHARS + 1];
+			config_path[0] = 0;
+			strncpy(config_path, gui->pref_path, DXF_MAX_CHARS);
+			strncat(config_path, "config.lua", DXF_MAX_CHARS);
+			opener(config_path);
+		}
+		
+	} else show_config = 0;
+	nk_end(gui->ctx);
+	
+	return show_config;
 }

@@ -480,3 +480,153 @@ const char * dflt_fonts_dir (){
 	}
 	return NULL;
 }
+
+int is_arabic(int cp){
+	return (cp > 1568 && cp < 1611);
+}
+
+static int arabic (int prev, int curr, int next){
+	/* https://en.wikipedia.org/wiki/Arabic_script_in_Unicode */
+	/* https://en.wikipedia.org/wiki/Arabic_Presentation_Forms-B */
+	/* code points from 1569 to 1610 */
+	static int arabic_form_b[][4] = {/*0 = Isolated, 1 = End, 2 = Middle, 3 = Beginning  */
+		{65152,65152,0,0}, /* Hamza  */
+		{65153,65154,0,0}, /* Alef With Madda Above  */
+		{65155,65156,0,0}, /* Alef With Hamza Above  */
+		{65157,65158,0,0}, /* Waw With Hamza Above  */
+		{65159,65160,0,0}, /* Alef With Hamza Below  */
+		{65161,65162,65164,65163}, /* Yeh With Hamza Above  */
+		{65165,65166,0,0}, /* Alef  */
+		{65167,65168,65170,65169}, /* Beh  */
+		{65171,65172,0,0}, /* Teh Marbuta  */
+		{65173,65174,65176,65175}, /* Teh  */
+		{65177,65178,65180,65179}, /* Theh  */
+		{65181,65182,65184,65183}, /* Jeem  */
+		{65185,65186,65188,65187}, /* Hah  */
+		{65189,65190,65192,65191}, /* Khah  */
+		{65193,65194,0,0}, /* Dal  */
+		{65195,65196,0,0}, /* Thal  */
+		{65197,65198,0,0}, /* Reh  */
+		{65199,65200,0,0}, /* Zain  */
+		{65201,65202,65204,65203}, /* Seen  */
+		{65205,65206,65208,65207}, /* Sheen  */
+		{65209,65210,65212,65211}, /* Sad  */
+		{65213,65214,65216,65215}, /* Dad  */
+		{65217,65218,65220,65219}, /* Tah  */
+		{65221,65222,65224,65223}, /* Zah  */
+		{65225,65226,65228,65227}, /* Ain  */
+		{65229,65230,65232,65231}, /* Ghain  */
+		{0,0,0,0}, /* Keheh With Two Dots Above  */
+		{0,0,0,0}, /* Keheh With Three Dots Below  */
+		{0,0,0,0}, /* Farsi Yeh With Inverted V  */
+		{0,0,0,0}, /* Farsi Yeh With Two Dots Above  */
+		{0,0,0,0}, /* Farsi Yeh With Three Dots Above  */
+		{1600,1600,1600,1600}, /* Arabic Tatweel */
+		{65233,65234,65236,65235}, /* Feh  */
+		{65237,65238,65240,65239}, /* Qaf  */
+		{65241,65242,65244,65243}, /* Kaf  */
+		{65245,65246,65248,65247}, /* Lam  */
+		{65249,65250,65252,65251}, /* Meem  */
+		{65253,65254,65256,65255}, /* Noon  */
+		{65257,65258,65260,65259}, /* Heh  */
+		{65261,65262,0,0}, /* Waw  */
+		{65263,65264,0,0}, /* Alef Maksura  */
+		{65265,65266,65268,65267}, /* Yeh  */
+	};
+	static int ligature[][2]={
+		{0, 0},
+		{65269, 65270}, /*ligature Lam/Alef With Madda Above  */
+		{65271, 65272}, /*ligature Lam/Alef With Hamza Above  */
+		{0, 0},
+		{65273, 65274}, /*ligature Lam/Alef With Hamza Below  */
+		{0, 0},
+		{65275, 65276} /*ligature Lam/Alef  */
+	};
+	
+	/* Alef indexes = 1,2,4,6
+	Lam index = 35 */
+	
+	if (!is_arabic(curr)) return curr;
+	curr -= 1569;
+	
+	if (is_arabic(prev)) prev -= 1569;
+	else prev = -1;
+	
+	if (is_arabic(next)) next -= 1569;
+	else next = -1;
+	
+	if (prev >= 0){
+		if (prev == 35 && (curr == 1 || curr == 2 || curr == 4 || curr == 6)) 
+			return 0; /* Lam/Alef previous procceced */
+		if (arabic_form_b[prev][2]){
+			if (next >= 0 && arabic_form_b[curr][2]){
+				return arabic_form_b[curr][2];
+			}
+			return arabic_form_b[curr][1];
+		}			
+	}
+	if (next >= 0){
+		if (curr == 35 && (next == 1 || next == 2 || next == 4 || next == 6)) {
+			/* Lam/Alef ligature */
+			if (prev >= 0 && arabic_form_b[prev][2]){
+				return ligature[next][1];
+			}
+			return ligature[next][0];
+		}
+		if(arabic_form_b[curr][3]) return arabic_form_b[curr][3];
+	}
+	return arabic_form_b[curr][0];
+}
+
+int is_devanagari(int cp){
+	return (cp > 2303 && cp < 2432);
+}
+
+static int devanagari (int prev, int curr, int next){
+	if (next == 2367 || next == 2382){
+		return next;
+	}
+	if (curr == 2367 || curr == 2382){
+		return prev;
+	}
+	return curr;
+}
+
+int is_bengali(int cp){
+	return (cp > 2431 && cp < 2559);
+}
+
+static int bengali (int prev, int curr, int next){
+	if (next == 2495 || next == 2503 || next == 2504){
+		return next;
+	}
+	if (curr == 2495 || curr == 2503 || curr == 2504){
+		return prev;
+	}
+	/* ????? - 3 code points?
+	prev + 0x9cb = 0x9c7 + prev + 0x9be
+	prev + 0x9cc = 0x9c7 + prev + 0x9d7
+	???? */
+	if (next == 2507 || next == 2508){
+		return next;
+	}
+	if (curr == 2507 || curr == 2508){
+		return prev;
+	}
+	/* ?????? */
+	
+	return curr;
+}
+
+int contextual_codepoint (int prev, int curr, int next){
+	if (is_arabic(curr)) {
+		return arabic (prev, curr, next);
+	}
+	if (is_devanagari(curr)) {
+		return devanagari (prev, curr, next);
+	}
+	if (is_bengali(curr)) {
+		return bengali (prev, curr, next);
+	}
+	return curr;
+}

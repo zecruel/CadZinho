@@ -1396,6 +1396,7 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 			list_node * graph = list_new(NULL, FRAME_LIFE);
 			
 			int ofs = 0, str_start = 0, code_p, prev_cp = 0, txt_len;
+			int cp = 0, p_cp = 0, n_cp = 0;
 			double w = 0.0, ofs_x = 0.0, ofs_y = 0.0;
 			double w_fac = 1.0, spc_fac = 1.0, h_fac = 1.0;
 			
@@ -1485,8 +1486,11 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 					}
 				}
 				if (code_p) {
+					if (!utf8_to_codepoint(text + str_start + ofs, &n_cp)) n_cp = 0;
+					cp = contextual_codepoint(prev_cp, code_p, n_cp);
+					
 					w = 0.0;
-					curr_graph = font_parse_cp(font, code_p, prev_cp, pool_idx, &w);
+					curr_graph = font_parse_cp(font, cp, p_cp, pool_idx, &w);
 					//curr_graph = font_parse_cp(font, code_p, 0, pool_idx, &w);
 					w *= w_fac;
 					if (backwards) ofs_x -= w * spc_fac;
@@ -1532,6 +1536,7 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 					if (!backwards) ofs_x += w * spc_fac;
 					
 					prev_cp = code_p;
+					p_cp = cp;
 				}
 				/* get next codepoint */
 				str_start += ofs;

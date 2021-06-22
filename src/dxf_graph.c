@@ -1663,6 +1663,8 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		
 		int stack_pos = 0;
 		
+		int backwards = 0;
+		
 		stack[0].under_l = 0;
 		stack[0].over_l = 0;
 		stack[0].stike = 0;
@@ -1809,6 +1811,11 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				else stack[0].font = drawing->dflt_font;
 				if(!stack[0].font) stack[0].font = drawing->dflt_font;
 			}
+			
+			if (fnt_idx >= 0) 
+				if ((drawing->text_styles[fnt_idx].flags2 & 2) != 0)
+					backwards = 1;
+			
 			/* initial width and oblique angle from style */
 			if (fnt_idx >= 0){
 				stack[0].w_fac = drawing->text_styles[fnt_idx].width_f;
@@ -1826,6 +1833,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			
 			int terminate_word = 0, column = 0;
 			int ofs = 0, str_start = 0, code_p, prev_cp = 0, txt_len;
+			int cp = 0, p_cp = 0, n_cp = 0;
 			double w = 0.0, word_x = 0.0, word_y = 0.0, word_w = 0.0;
 			double line_x = 0.0, line_y = 0.0, line_w = 0.0, line_h = 1.0;
 			double spacing = 0.5, line_spc = 1.666;
@@ -2371,6 +2379,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						prev_cp = ' ';
 						
 						spacing = w;
+						if (backwards) spacing *= -1;
 						terminate_word = 1;
 						code_p = 0;
 					}
@@ -2387,11 +2396,14 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						/* initial tab space is 4 x space width */
 						spacing = w * 4;
 						if (stack[stack_pos].p_t > 0) spacing = stack[stack_pos].p_t;
+						
+						if (backwards) spacing *= -1;
 						terminate_word = 1;
 						code_p = 0;
 					}
 					if (terminate_word){
 						terminate_word = 0;
+						
 						/* adjust text in rectangle with break lines*/
 						if ((rect_w > 0.0) && (word_x + word_w > rect_w/t_size)){
 							/* positioning current line */
@@ -2428,10 +2440,16 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 					
 					
 					if (code_p) {
+						if (!utf8_to_codepoint(text + str_start + ofs, &n_cp)) n_cp = 0;
+						cp = contextual_codepoint(prev_cp, code_p, n_cp);
+						
 						w = 0.0;
-						curr_graph = font_parse_cp(stack[stack_pos].font, code_p, prev_cp, pool_idx, &w);
+						curr_graph = font_parse_cp(stack[stack_pos].font, cp, p_cp, pool_idx, &w);
 						w *= stack[stack_pos].w_fac;
 						w *= stack[stack_pos].h_fac;
+						
+						/* update the ofset */
+						if(backwards) word_w -= w * stack[stack_pos].spc_fac;
 						
 						if (curr_graph){
 							/* oblique angle*/
@@ -2502,9 +2520,10 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						}
 						
 						/* update the ofset */
-						word_w += w * stack[stack_pos].spc_fac;
+						if(!backwards) word_w += w * stack[stack_pos].spc_fac;
 						
 						prev_cp = code_p;
+						p_cp = cp;
 					}
 					/* get next codepoint */
 					str_start += ofs;

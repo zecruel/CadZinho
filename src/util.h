@@ -62,4 +62,6 @@ int opener(const char *url);
 
 const char * dflt_fonts_dir ();
 
+int contextual_codepoint (int prev, int curr, int next);
+
 #endif

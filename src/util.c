@@ -481,14 +481,17 @@ const char * dflt_fonts_dir (){
 	return NULL;
 }
 
-int is_arabic(int cp){
+int is_arabic(int cp){ /* verify if unicode code point is an arabic letter */
 	return (cp > 1568 && cp < 1611);
 }
 
 static int arabic (int prev, int curr, int next){
+	/* Return the corresponding glyph (cursive form) of a unicode arabic "character", 
+	according its context (beginning, middle or ending in "word", or a isolated letter) */
+	
 	/* https://en.wikipedia.org/wiki/Arabic_script_in_Unicode */
 	/* https://en.wikipedia.org/wiki/Arabic_Presentation_Forms-B */
-	/* code points from 1569 to 1610 */
+	/* equivalents of code points from 1569 to 1610 */
 	static int arabic_form_b[][4] = {/*0 = Isolated, 1 = End, 2 = Middle, 3 = Beginning  */
 		{65152,65152,0,0}, /* Hamza  */
 		{65153,65154,0,0}, /* Alef With Madda Above  */
@@ -546,6 +549,7 @@ static int arabic (int prev, int curr, int next){
 	/* Alef indexes = 1,2,4,6
 	Lam index = 35 */
 	
+	/* get indexes of letters, to lookup table */
 	if (!is_arabic(curr)) return curr;
 	curr -= 1569;
 	
@@ -555,27 +559,28 @@ static int arabic (int prev, int curr, int next){
 	if (is_arabic(next)) next -= 1569;
 	else next = -1;
 	
-	if (prev >= 0){
+	if (prev >= 0){ /* verify if letter is in middle or end */
+		/* Lam/Alef ligature */
 		if (prev == 35 && (curr == 1 || curr == 2 || curr == 4 || curr == 6)) 
 			return 0; /* Lam/Alef previous procceced */
 		if (arabic_form_b[prev][2]){
 			if (next >= 0 && arabic_form_b[curr][2]){
-				return arabic_form_b[curr][2];
+				return arabic_form_b[curr][2]; /* middle letter */
 			}
-			return arabic_form_b[curr][1];
+			return arabic_form_b[curr][1]; /* ending letter */
 		}			
 	}
-	if (next >= 0){
+	if (next >= 0){ /* verify if letter is in beginning */
+		/* special case - Lam/Alef ligature */
 		if (curr == 35 && (next == 1 || next == 2 || next == 4 || next == 6)) {
-			/* Lam/Alef ligature */
 			if (prev >= 0 && arabic_form_b[prev][2]){
-				return ligature[next][1];
+				return ligature[next][1]; /* ligature at end */
 			}
-			return ligature[next][0];
-		}
-		if(arabic_form_b[curr][3]) return arabic_form_b[curr][3];
+			return ligature[next][0]; /* isolated ligature*/
+		} /* **** */
+		if(arabic_form_b[curr][3]) return arabic_form_b[curr][3]; /* beginning letter */
 	}
-	return arabic_form_b[curr][0];
+	return arabic_form_b[curr][0]; /* isolated letter */
 }
 
 int is_devanagari(int cp){

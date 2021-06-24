@@ -267,20 +267,44 @@ int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	/* register methods */
 	luaL_setfuncs(T, yxml_meths, 0);
 	
-	
-	
-	
-	#if(0)
 	/* adjust package path for "require" in script file*/
+	luaL_Buffer b;  /* to store parcial strings */
+	luaL_buffinit(T, &b); /* init the Lua buffer */
+	luaL_addstring(&b, gui->base_dir);
+	luaL_addstring(&b, "script");
+	luaL_addchar(&b, DIR_SEPARATOR);
+	luaL_addstring(&b, "?.lua;");
+	luaL_addstring(&b, gui->base_dir);
+	luaL_addstring(&b, "script");
+	luaL_addchar(&b, DIR_SEPARATOR);
+	luaL_addstring(&b, "?");
+	luaL_addchar(&b, DIR_SEPARATOR);
+	luaL_addstring(&b, "init.lua;");
+	
+	luaL_addstring(&b, gui->pref_path);
+	luaL_addstring(&b, "script");
+	luaL_addchar(&b, DIR_SEPARATOR);
+	luaL_addstring(&b, "?.lua;");
+	luaL_addstring(&b, gui->pref_path);
+	luaL_addstring(&b, "script");
+	luaL_addchar(&b, DIR_SEPARATOR);
+	luaL_addstring(&b, "?");
+	luaL_addchar(&b, DIR_SEPARATOR);
+	luaL_addstring(&b, "init.lua;");
+	
+	luaL_addstring(&b, ".");
+	luaL_addchar(&b, DIR_SEPARATOR);
+	luaL_addstring(&b, "?.lua;");
+	luaL_addstring(&b, ".");
+	luaL_addchar(&b, DIR_SEPARATOR);
+	luaL_addstring(&b, "?");
+	luaL_addchar(&b, DIR_SEPARATOR);
+	luaL_addstring(&b, "init.lua;");
+	
 	lua_getglobal( T, "package");
-	strncpy (p_path, gui->base_dir, 5 * DXF_MAX_CHARS - strlen(p_path) - 1);
-	strncat(p_path, "script", 5 * DXF_MAX_CHARS - strlen(p_path) - 1);
-	strncat(p_path, (char []){DIR_SEPARATOR, 0}, 5 * DXF_MAX_CHARS - strlen(p_path) - 1);
-	strncat(p_path, "?.lua", 5 * DXF_MAX_CHARS - strlen(p_path) - 1);
-	lua_pushstring( T, p_path); /* new package path */
+	luaL_pushresult(&b); /* finalize string and put on Lua stack  - new package path */
 	lua_setfield( T, -2, "path"); 
 	lua_pop( T, 1 ); /* get rid of package table from top of stack */
-	#endif
 	
 	/* set start time of script execution */
 	script->time = clock();

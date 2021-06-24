@@ -14,6 +14,8 @@ struct script_obj{
 	int active;
 	int dynamic;
 	char path[DXF_MAX_CHARS];
+	clock_t time;
+	double timeout;
 };
 
 struct ent_lua { /* DXF entity object, in Lua userdata */
@@ -26,6 +28,7 @@ struct ent_lua { /* DXF entity object, in Lua userdata */
 #include "gui.h"
 
 int set_timeout (lua_State *L);
+int debug_print (lua_State *L);
 int script_get_sel (lua_State *L);
 int script_ent_write (lua_State *L);
 

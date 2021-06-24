@@ -68,6 +68,33 @@ returns:
 	- success, as boolean
 */
 int set_timeout (lua_State *L) {
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!script){
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	/* get passed value */
+	int isnum = 0;
+	double timeout = lua_tonumberx (L, -1, &isnum);
+	/* verify if a valid number */
+	if (isnum){
+		script->timeout = timeout; /* set timeout value */
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	lua_pushboolean(L, 0); /* return fail */
+	return 1;
+}
+
+/* equivalent to a "print" lua function, that outputs to a text edit widget */
+int debug_print (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
 	lua_gettable(L, LUA_REGISTRYINDEX); 
@@ -80,16 +107,61 @@ int set_timeout (lua_State *L) {
 		return 1;
 	}
 	
-	/* get passed value */
-	int isnum = 0;
-	double timeout = lua_tonumberx (L, -1, &isnum);
-	/* verify if a valid number */
-	if (isnum){
-		gui->script_timeout = timeout; /* set timeout value */
-		lua_pushboolean(L, 1); /* return success */
-		return 1;
+	char msg[DXF_MAX_CHARS];
+	int n = lua_gettop(L);    /* number of arguments */
+	int i;
+	int type;
+	
+	for (i = 1; i <= n; i++) {
+		type = lua_type(L, i); /* identify Lua variable type */
+		
+		/* print variables separator (4 spaces) */
+		if (i > 1) nk_str_append_str_char(&gui->debug_edit.string, "    ");
+		
+		switch(type) {
+			case LUA_TSTRING: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "%s", lua_tostring(L, i));
+				break;
+			}
+			case LUA_TNUMBER: {
+			/* LUA_NUMBER may be double or integer */
+				snprintf(msg, DXF_MAX_CHARS - 1, "%.9g", lua_tonumber(L, i));
+				break;
+			}
+			case LUA_TTABLE: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_topointer(L, i));
+				break;
+			}
+			case LUA_TFUNCTION: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_topointer(L, i));
+				break;		}
+			case LUA_TUSERDATA: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_touserdata(L, i));
+				break;
+			}
+			case LUA_TLIGHTUSERDATA: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_touserdata(L, i));
+				break;
+			}
+			case LUA_TBOOLEAN: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "%s", lua_toboolean(L, i) ? "true" : "false");
+				break;
+			}
+			case LUA_TTHREAD: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_topointer(L, i));
+				break;
+			}
+			case LUA_TNIL: {
+				snprintf(msg, DXF_MAX_CHARS - 1, "nil");
+				break;
+			}
+		}
+		nk_str_append_str_char(&gui->debug_edit.string, msg);
 	}
-	lua_pushboolean(L, 0); /* return fail */
+	/*enter a new line*/
+	nk_str_append_str_char(&gui->debug_edit.string, "\n");
+	
+	lua_pushboolean(L, 1); /* return success */
 	return 1;
 }
 

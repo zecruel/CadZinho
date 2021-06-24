@@ -84,13 +84,13 @@ void script_check(lua_State *L, lua_Debug *ar){
 	
 	/* listen to "Hook Count" events to verify execution time and timeout */
 	else if(ar->event == LUA_HOOKCOUNT){
-		/* get gui object from Lua instance */
-		lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+		/* get script object from Lua instance */
+		lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
 		lua_gettable(L, LUA_REGISTRYINDEX); 
-		gui_obj *gui = lua_touserdata (L, -1);
+		struct script_obj *script = lua_touserdata (L, -1);
 		lua_pop(L, 1);
 		
-		if (!gui){ /* error in gui object access */
+		if (!script){ /* error in gui object access */
 			lua_pushstring(L, "Auto check: no access to CadZinho enviroment");
 			lua_error(L);
 			return;
@@ -100,10 +100,10 @@ void script_check(lua_State *L, lua_Debug *ar){
 		double diff_t;
 		/* get the elapsed time since script starts or continue */
 		end_t = clock();
-		diff_t = (double)(end_t - gui->script_time) / CLOCKS_PER_SEC;
+		diff_t = (double)(end_t - script->time) / CLOCKS_PER_SEC;
 		
 		/* verify if timeout is reachead. Its made to prevent user script stuck main program*/
-		if (diff_t >= gui->script_timeout){
+		if (diff_t >= script->timeout){
 			char msg[DXF_MAX_CHARS];
 			lua_getinfo(L, "Sl", ar); /* fill debug informations */
 			
@@ -116,78 +116,6 @@ void script_check(lua_State *L, lua_Debug *ar){
 			return;
 		}
 	}
-}
-
-/* equivalent to a "print" lua function, that outputs to a text edit widget */
-static int debug_print (lua_State *L) {
-	/* get gui object from Lua instance */
-	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
-	lua_gettable(L, LUA_REGISTRYINDEX); 
-	gui_obj *gui = lua_touserdata (L, -1);
-	lua_pop(L, 1);
-	
-	/* verify if gui is valid */
-	if (!gui){
-		lua_pushboolean(L, 0); /* return fail */
-		return 1;
-	}
-	
-	char msg[DXF_MAX_CHARS];
-	int n = lua_gettop(L);    /* number of arguments */
-	int i;
-	int type;
-	
-	for (i = 1; i <= n; i++) {
-		type = lua_type(L, i); /* identify Lua variable type */
-		
-		/* print variables separator (4 spaces) */
-		if (i > 1) nk_str_append_str_char(&gui->debug_edit.string, "    ");
-		
-		switch(type) {
-			case LUA_TSTRING: {
-				snprintf(msg, DXF_MAX_CHARS - 1, "%s", lua_tostring(L, i));
-				break;
-			}
-			case LUA_TNUMBER: {
-			/* LUA_NUMBER may be double or integer */
-				snprintf(msg, DXF_MAX_CHARS - 1, "%.9g", lua_tonumber(L, i));
-				break;
-			}
-			case LUA_TTABLE: {
-				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_topointer(L, i));
-				break;
-			}
-			case LUA_TFUNCTION: {
-				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_topointer(L, i));
-				break;		}
-			case LUA_TUSERDATA: {
-				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_touserdata(L, i));
-				break;
-			}
-			case LUA_TLIGHTUSERDATA: {
-				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_touserdata(L, i));
-				break;
-			}
-			case LUA_TBOOLEAN: {
-				snprintf(msg, DXF_MAX_CHARS - 1, "%s", lua_toboolean(L, i) ? "true" : "false");
-				break;
-			}
-			case LUA_TTHREAD: {
-				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_topointer(L, i));
-				break;
-			}
-			case LUA_TNIL: {
-				snprintf(msg, DXF_MAX_CHARS - 1, "nil");
-				break;
-			}
-		}
-		nk_str_append_str_char(&gui->debug_edit.string, msg);
-	}
-	/*enter a new line*/
-	nk_str_append_str_char(&gui->debug_edit.string, "\n");
-	
-	lua_pushboolean(L, 1); /* return success */
-	return 1;
 }
 
 /* run script from file */
@@ -220,6 +148,11 @@ int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	/* put the gui structure in lua global registry */
 	lua_pushstring(T, "cz_gui");
 	lua_pushlightuserdata(T, (void *)gui);
+	lua_settable(T, LUA_REGISTRYINDEX);
+	
+	/* put the current script structure in lua global registry */
+	lua_pushstring(T, "cz_script");
+	lua_pushlightuserdata(T, (void *)script);
 	lua_settable(T, LUA_REGISTRYINDEX);
 	
 	/* add functions in cadzinho object*/
@@ -350,8 +283,8 @@ int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	#endif
 	
 	/* set start time of script execution */
-	gui->script_time = clock();
-	gui->script_timeout = 10.0; /* default timeout value */
+	script->time = clock();
+	script->timeout = 10.0; /* default timeout value */
 	
 	/* hook function to breakpoints and  timeout verification*/
 	lua_sethook(T, script_check, LUA_MASKCOUNT|LUA_MASKLINE, 500);

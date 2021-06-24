@@ -1802,6 +1802,7 @@ dxf_drawing *dxf_drawing_new(int pool){
 	dxf_drawing *drawing = malloc(sizeof(dxf_drawing));
 	if (drawing){
 		drawing->img_list = NULL;
+		drawing->pool = pool;
 		if (!dxf_drawing_clear(drawing)){
 			free(drawing);
 			return NULL;

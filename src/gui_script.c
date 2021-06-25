@@ -55,8 +55,8 @@ void script_check(lua_State *L, lua_Debug *ar){
 		lua_pop(L, 1);
 		
 		if (!gui){ /* error in gui object access */
-			lua_pushstring(L, "Auto check: no access to CadZinho enviroment");
-			lua_error(L);
+			//lua_pushstring(L, "Auto check: no access to CadZinho enviroment");
+			//lua_error(L);
 			return;
 		}
 		
@@ -91,8 +91,8 @@ void script_check(lua_State *L, lua_Debug *ar){
 		lua_pop(L, 1);
 		
 		if (!script){ /* error in gui object access */
-			lua_pushstring(L, "Auto check: no access to CadZinho enviroment");
-			lua_error(L);
+			//lua_pushstring(L, "Auto check: no access to CadZinho enviroment");
+			//lua_error(L);
 			return;
 		}
 		
@@ -118,14 +118,11 @@ void script_check(lua_State *L, lua_Debug *ar){
 	}
 }
 
-/* run script from file */
-int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
+/* init script from file or alternative string chunk */
+int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char *alt_chunk) {
 	if(!gui) return 0;
 	if(!script) return 0;
-	char msg[DXF_MAX_CHARS];
-	//char p_path[5 * DXF_MAX_CHARS];
-	
-	//p_path[0] = 0;
+	if (!fname && !alt_chunk) return 0;
 	
 	/* initialize script object */ 
 	if(!(script->L = luaL_newstate())) return 0; /* opens Lua */
@@ -134,6 +131,8 @@ int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	script->active = 0;
 	script->dynamic = 0;
 	strncpy(script->path, fname, DXF_MAX_CHARS - 1);
+	
+	script->timeout = 10.0; /* default timeout value */
 	
 	luaL_openlibs(script->L); /* opens the standard libraries */
 	
@@ -219,7 +218,6 @@ int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	luaL_setfuncs(T, methods, 0);
 	
 	
-	
 	static const struct luaL_Reg miniz_meths[] = {
 		{"read", script_miniz_read},
 		{"close", script_miniz_close},
@@ -241,9 +239,6 @@ int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	lua_setfield(T, -2, "__index");
 	/* register methods */
 	luaL_setfuncs(T, miniz_meths, 0);
-	
-	
-	
 	
 	static const struct luaL_Reg yxml_meths[] = {
 		{"read", script_yxml_read},
@@ -306,38 +301,69 @@ int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	lua_setfield( T, -2, "path"); 
 	lua_pop( T, 1 ); /* get rid of package table from top of stack */
 	
-	/* set start time of script execution */
-	script->time = clock();
-	script->timeout = 10.0; /* default timeout value */
-	
 	/* hook function to breakpoints and  timeout verification*/
 	lua_sethook(T, script_check, LUA_MASKCOUNT|LUA_MASKLINE, 500);
-		
+	
 	/* load lua script file */
-	if (luaL_loadfile(T, (const char *) fname) != LUA_OK){
+	if (fname){
+		script->status = luaL_loadfile(T, (const char *) fname);
+		if ( script->status == LUA_OK) return 1;
+		if ( script->status == LUA_ERRFILE && alt_chunk) {
+			lua_pop(T, 1); /* pop error message from Lua stack */
+			script->status = luaL_loadstring(T, (const char *) alt_chunk);
+			if ( script->status == LUA_OK) return 1;
+		}
+	}
+	else {
+		script->status = luaL_loadstring(T, (const char *) alt_chunk);
+		if ( script->status == LUA_OK) return 1;
+	}
+	
+	return -1;
+	
+}
+
+/* run script from file */
+int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
+	if(!gui) return 0;
+	if(!script) return 0;
+	char msg[DXF_MAX_CHARS];
+	
+	/* load lua script file */
+	int st = gui_script_init (gui, script, fname, NULL);
+	
+	if (st == -1){
 		/* error on loading */
-		snprintf(msg, DXF_MAX_CHARS-1, "cannot run script file: %s", lua_tostring(T, -1));
+		snprintf(msg, DXF_MAX_CHARS-1, "cannot run script file: %s", lua_tostring(script->T, -1));
 		nk_str_append_str_char(&gui->debug_edit.string, msg);
 		
-		lua_pop(T, 1); /* pop error message from Lua stack */
+		lua_pop(script->T, 1); /* pop error message from Lua stack */
+		
+		lua_close(script->L);
+		script->L = NULL;
+		script->T = NULL;
+		script->active = 0;
+		script->dynamic = 0;
 	}
 	
 	/* run Lua script*/
-	else {
+	else if (st){
 		
-		//script->active = 1;
+		/* set start time of script execution */
+		script->time = clock();
+		script->timeout = 10.0; /* default timeout value */
 		
 		/* add main entry to do/redo list */
 		do_add_entry(&gui->list_do, "SCRIPT");
 		
 		int n_results = 0; /* for Lua 5.4*/
-		script->status = lua_resume(T, NULL, 0, &n_results); /* start thread */
+		script->status = lua_resume(script->T, NULL, 0, &n_results); /* start thread */
 		if (script->status != LUA_OK && script->status != LUA_YIELD){
 			/* execution error */
-			snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(T, -1));
+			snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(script->T, -1));
 			nk_str_append_str_char(&gui->debug_edit.string, msg);
 			
-			lua_pop(T, 1); /* pop error message from Lua stack */
+			lua_pop(script->T, 1); /* pop error message from Lua stack */
 		}
 		/* clear variable if thread is no yielded*/
 		if ((script->status != LUA_YIELD && script->active == 0 && script->dynamic == 0) ||
@@ -349,168 +375,6 @@ int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 			script->dynamic = 0;
 		}
 	}
-	
-	return 1;
-	
-}
-
-/* init script enviroment */
-int gui_script_init (gui_obj *gui) {
-	if(!gui) return 0;
-	char msg[DXF_MAX_CHARS];
-	//char p_path[5 * DXF_MAX_CHARS];
-	
-	//p_path[0] = 0;
-	
-	/* initialize script object */ 
-	if(!(gui->lua_script.L = luaL_newstate())) return 0; /* opens Lua */
-	gui->lua_script.T = NULL;
-	gui->lua_script.status = LUA_OK;
-	gui->lua_script.active = 0;
-	gui->lua_script.dynamic = 0;
-	gui->lua_script.path[0] = 0;
-	
-	lua_State *L = gui->lua_script.L;
-	luaL_openlibs(L); /* opens the standard libraries */
-	
-	/* put the gui structure in lua global registry */
-	lua_pushstring(L, "cz_gui");
-	lua_pushlightuserdata(L, (void *)gui);
-	lua_settable(L, LUA_REGISTRYINDEX);
-	
-	/* add functions in cadzinho object*/
-	static const luaL_Reg cz_lib[] = {
-		{"db_print",   debug_print},
-		{"set_timeout", set_timeout},
-		{"get_sel", script_get_sel},
-		{"get_ent_typ", script_get_ent_typ},
-		{"get_blk_name", script_get_blk_name},
-		{"count_attrib", script_count_attrib},
-		{"get_attrib_i", script_get_attrib_i},
-		{"get_attribs", script_get_attribs},
-		{"get_points", script_get_points},
-		{"get_ext", script_get_ext},
-		{"get_blk_ents", script_get_blk_ents},
-		{"get_all", script_get_all},
-		
-		{"edit_attr", script_edit_attr},
-		{"add_ext", script_add_ext},
-		{"edit_ext_i", script_edit_ext_i},
-		{"del_ext_i", script_del_ext_i},
-		{"del_ext_all", script_del_ext_all},
-		
-		{"new_line", script_new_line},
-		{"new_pline", script_new_pline},
-		{"pline_append", script_pline_append},
-		{"pline_close", script_pline_close},
-		{"new_circle", script_new_circle},
-		{"new_hatch", script_new_hatch},
-		{"new_text", script_new_text},
-		{"new_block", script_new_block},
-		
-		{"get_dwg_appids", script_get_dwg_appids},
-		
-		{"set_layer", script_set_layer},
-		{"set_color", script_set_color},
-		{"set_ltype", script_set_ltype},
-		{"set_style", script_set_style},
-		{"set_lw", script_set_lw},
-		{"new_appid", script_new_appid},
-		
-		{"win_show", script_win_show},
-		{"win_close", script_win_close},
-		{"nk_layout", script_nk_layout},
-		{"nk_button", script_nk_button},
-		{"nk_label", script_nk_label},
-		{"nk_edit", script_nk_edit},
-		{"start_dynamic", script_start_dynamic},
-		{"stop_dynamic", script_stop_dynamic},
-		{"ent_draw", script_ent_draw},
-		{NULL, NULL}
-	};
-	luaL_newlib(L, cz_lib);
-	lua_setglobal(L, "cadzinho");
-	
-	/* create a new type of lua userdata to represent a DXF entity */
-	static const struct luaL_Reg methods [] = {
-		{"write", script_ent_write},
-		{NULL, NULL}
-	};
-	luaL_newmetatable(L, "cz_ent_obj");
-	lua_pushvalue(L, -1); /*  */
-	lua_setfield(L, -2, "__index");
-	luaL_setfuncs(L, methods, 0);
-	
-	
-	
-	static const struct luaL_Reg miniz_meths[] = {
-		{"read", script_miniz_read},
-		{"close", script_miniz_close},
-		{"__gc", script_miniz_close},
-		{NULL, NULL}
-	};
-	static const struct luaL_Reg miniz_funcs[] = {
-		{"open", script_miniz_open},
-		{NULL, NULL}
-	};
-	luaL_newlib(L, miniz_funcs);
-	lua_setglobal(L, "miniz");
-	
-	/* create a new type of lua userdata to represent a ZIP archive */
-	/* create metatable */
-	luaL_newmetatable(L, "Zip");
-	/* metatable.__index = metatable */
-	lua_pushvalue(L, -1);
-	lua_setfield(L, -2, "__index");
-	/* register methods */
-	luaL_setfuncs(L, miniz_meths, 0);
-	
-	
-	
-	
-	static const struct luaL_Reg yxml_meths[] = {
-		{"read", script_yxml_read},
-		{"close", script_yxml_close},
-		{"__gc", script_yxml_close},
-		{NULL, NULL}
-	};
-	static const struct luaL_Reg yxml_funcs[] = {
-		{"new", script_yxml_new},
-		{NULL, NULL}
-	};
-	luaL_newlib(L, yxml_funcs);
-	lua_setglobal(L, "yxml");
-	
-	/* create a new type of lua userdata to represent a XML parser */
-	/* create metatable */
-	luaL_newmetatable(L, "Yxml");
-	/* metatable.__index = metatable */
-	lua_pushvalue(L, -1);
-	lua_setfield(L, -2, "__index");
-	/* register methods */
-	luaL_setfuncs(L, yxml_meths, 0);
-	
-	
-	
-	
-	#if(0)
-	/* adjust package path for "require" in script file*/
-	lua_getglobal( L, "package");
-	strncpy (p_path, gui->base_dir, 5 * DXF_MAX_CHARS - strlen(p_path) - 1);
-	strncat(p_path, "script", 5 * DXF_MAX_CHARS - strlen(p_path) - 1);
-	strncat(p_path, (char []){DIR_SEPARATOR, 0}, 5 * DXF_MAX_CHARS - strlen(p_path) - 1);
-	strncat(p_path, "?.lua", 5 * DXF_MAX_CHARS - strlen(p_path) - 1);
-	lua_pushstring( L, p_path); /* new package path */
-	lua_setfield( L, -2, "path"); 
-	lua_pop( L, 1 ); /* get rid of package table from top of stack */
-	#endif
-	
-	/* set start time of script execution */
-	//gui->script_time = clock();
-	gui->script_timeout = 10.0; /* default timeout value */
-	
-	/* hook function to breakpoints and  timeout verification*/
-	lua_sethook(L, script_check, LUA_MASKCOUNT|LUA_MASKLINE, 500);
 	
 	return 1;
 	

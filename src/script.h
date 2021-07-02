@@ -65,6 +65,7 @@ int script_set_color (lua_State *L);
 int script_set_ltype (lua_State *L);
 int script_set_style (lua_State *L);
 int script_set_lw (lua_State *L);
+int script_set_modal (lua_State *L) ;
 int script_new_appid (lua_State *L);
 
 int script_start_dynamic (lua_State *L);

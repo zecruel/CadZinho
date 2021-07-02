@@ -111,6 +111,9 @@ void script_check(lua_State *L, lua_Debug *ar){
 			snprintf(msg, DXF_MAX_CHARS-1, "script timeout exceeded in %s, line %d, exec time %f s\n", ar->source, ar->currentline, diff_t);
 			//nk_str_append_str_char(&gui->debug_edit.string, msg);
 			
+			script->active = 0;
+			script->dynamic = 0;
+			
 			lua_pushstring(L, msg);
 			lua_error(L);
 			return;
@@ -191,6 +194,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"set_ltype", script_set_ltype},
 		{"set_style", script_set_style},
 		{"set_lw", script_set_lw},
+		{"set_modal", script_set_modal},
 		{"new_appid", script_new_appid},
 		
 		{"win_show", script_win_show},
@@ -299,7 +303,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	lua_getglobal( T, "package");
 	luaL_pushresult(&b); /* finalize string and put on Lua stack  - new package path */
 	lua_setfield( T, -2, "path"); 
-	lua_pop( T, 1 ); /* get rid of package table from top of stack */
+	lua_pop( T, 4 ); /* get rid of package table from top of stack */
 	
 	/* hook function to breakpoints and  timeout verification*/
 	lua_sethook(T, script_check, LUA_MASKCOUNT|LUA_MASKLINE, 500);
@@ -307,16 +311,18 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	/* load lua script file */
 	if (fname){
 		script->status = luaL_loadfile(T, (const char *) fname);
-		if ( script->status == LUA_OK) return 1;
 		if ( script->status == LUA_ERRFILE && alt_chunk) {
 			lua_pop(T, 1); /* pop error message from Lua stack */
 			script->status = luaL_loadstring(T, (const char *) alt_chunk);
-			if ( script->status == LUA_OK) return 1;
 		}
 	}
 	else {
 		script->status = luaL_loadstring(T, (const char *) alt_chunk);
-		if ( script->status == LUA_OK) return 1;
+	}
+	
+	if ( script->status == LUA_OK)  {
+		lua_setglobal(T, "cz_main_func");
+		return 1;
 	}
 	
 	return -1;
@@ -356,6 +362,7 @@ int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 		/* add main entry to do/redo list */
 		do_add_entry(&gui->list_do, "SCRIPT");
 		
+		lua_getglobal(script->T, "cz_main_func");
 		int n_results = 0; /* for Lua 5.4*/
 		script->status = lua_resume(script->T, NULL, 0, &n_results); /* start thread */
 		if (script->status != LUA_OK && script->status != LUA_YIELD){
@@ -476,7 +483,7 @@ int script_win (gui_obj *gui){
 				if (nk_button_symbol(gui->ctx, NK_SYMBOL_TRIANGLE_RIGHT)){
 					if (gui->lua_script.status == LUA_YIELD){
 						gui->script_time = clock();
-						int n_results = 0; /* for Lua 5.4*/
+						static int n_results = 0; /* for Lua 5.4*/
 						gui->lua_script.status = lua_resume(gui->lua_script.T, NULL, 0, &n_results);
 						if (gui->lua_script.status != LUA_YIELD && gui->lua_script.status != LUA_OK){
 							/* execution error */

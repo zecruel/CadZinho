@@ -588,6 +588,24 @@ int main(int argc, char** argv){
 	SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
 	
 	
+	
+	/*-------------------------------- Key-in script --------------------- */
+	struct script_obj keyin_script;
+	keyin_script.L = NULL;
+	keyin_script.T = NULL;
+	keyin_script.active = 0;
+	keyin_script.dynamic = 0;
+	
+	/* full path of keyin file */
+	char keyin_path[DXF_MAX_CHARS + 1];
+	keyin_path[0] = 0;
+	strncpy(keyin_path, pref_path, DXF_MAX_CHARS);
+	strncat(keyin_path, "keyin.lua", DXF_MAX_CHARS);
+	
+	if (gui_script_init (gui, &keyin_script, keyin_path, NULL) == 1){
+		keyin_script.active = 1;
+	}
+	
 	/*===================== teste ===============*/
 	
 	//list_node * tt_test = list_new(NULL, PRG_LIFE);
@@ -1351,7 +1369,37 @@ int main(int argc, char** argv){
 			gui->prev_modal = gui->modal;
 		}
 		
-		
+		/*-------------------------------- Key-in script --------------------- */
+		if (keyin_script.active){
+			keyin_script.time = clock();
+			keyin_script.timeout = 1.0; /* default timeout value */
+			
+			lua_pushstring(keyin_script.T, keyin);
+			lua_setglobal(keyin_script.T, "keyin");
+			
+			lua_pushboolean(keyin_script.T, 0);
+			lua_setglobal(keyin_script.T, "accept");
+			//print_lua_stack(keyin_script.T);
+			
+			lua_getglobal(keyin_script.T, "cz_main_func");
+			int n_results = 0; /* for Lua 5.4*/
+			keyin_script.status = lua_resume(keyin_script.T, NULL, 0, &n_results); /* start thread */
+			if (keyin_script.status != LUA_OK){
+				keyin_script.active = 0;
+				
+			}
+			else {
+				
+				lua_getglobal(keyin_script.T, "accept");
+				if (lua_toboolean(keyin_script.T, -1)){
+					keyin_timer = 0;
+					keyin_len = 0;
+					keyin[0] = 0;
+				}
+				lua_pop(keyin_script.T, 1);
+			}
+		}
+		/*
 		if (strcmp(keyin, "31") == 0){
 			gui->modal = DUPLI;
 			keyin_timer = 0;
@@ -1393,7 +1441,7 @@ int main(int argc, char** argv){
 			keyin_len = 0;
 			keyin[0] = 0;
 			gui->step = 0;
-		}
+		}*/
 		
 		
 		
@@ -1674,6 +1722,11 @@ int main(int argc, char** argv){
 	free(aux_mtx1);
 	nk_sdl_shutdown(gui);
 	manage_buffer(0, BUF_FREE);
+	
+	/*-------------------------------- Key-in script clean-up--------------------- */
+	if (keyin_script.L){
+		lua_close(keyin_script.L);
+	}
 	
 	return 0;
 	

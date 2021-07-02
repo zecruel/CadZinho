@@ -2871,6 +2871,220 @@ int script_set_lw (lua_State *L) {
 	return 1;
 }
 
+/* set gui modal */
+/* given parameters:
+	- modal, as string ( acceptable values = SELECT, LINE, ...)
+returns:
+	- boolean, success or fail
+*/
+int script_set_modal (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "set_modal: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 1)) { /* arguments types */
+		lua_pushliteral(L, "set_modal: incorrect argument type");
+		lua_error(L);
+	}
+	/* ----------------switch the modal options --------------*/
+	char modal[DXF_MAX_CHARS];
+	strncpy(modal, lua_tostring(L, 1), DXF_MAX_CHARS - 1);
+	str_upp(modal);
+	char *new_modal = trimwhitespace(modal);
+	
+	if (strcmp(new_modal, "LINE") == 0){
+		gui->modal = LINE;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "POLYLINE") == 0){
+		gui->modal = POLYLINE;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "RECT") == 0){
+		gui->modal = RECT;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "TEXT") == 0){
+		gui->modal = TEXT;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "CIRCLE") == 0){
+		gui->modal = CIRCLE;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "ELLIPSE") == 0){
+		gui->modal = ELLIPSE;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "ARC") == 0){
+		gui->modal = ARC;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "SPLINE") == 0){
+		gui->modal = SPLINE;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "HATCH") == 0){
+		gui->modal = HATCH;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "MTEXT") == 0){
+		gui->modal = MTEXT;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "INSERT") == 0){
+		gui->modal = INSERT;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "IMAGE") == 0){
+		gui->modal = IMAGE;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "MOVE") == 0){
+		gui->modal = MOVE;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "DUPLI") == 0){
+		gui->modal = DUPLI;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "SCALE") == 0){
+		gui->modal = SCALE;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "ROTATE") == 0){
+		gui->modal = ROTATE;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "MIRROR") == 0){
+		gui->modal = MIRROR;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "EXPLODE") == 0){
+		gui->modal = EXPLODE;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "ADD_ATTRIB") == 0){
+		gui->modal = ADD_ATTRIB;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "ED_ATTR") == 0){
+		gui->modal = ED_ATTR;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "ED_TEXT") == 0){
+		gui->modal = ED_TEXT;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "TXT_PROP") == 0){
+		gui->modal = TXT_PROP;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "VERTEX") == 0){
+		gui->modal = VERTEX;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "NEW_BLK") == 0){
+		gui->modal = NEW_BLK;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "SELECT") == 0){
+		gui->modal = SELECT;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "FIND") == 0){
+		gui->modal = FIND;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "MEASURE") == 0){
+		gui->modal = MEASURE;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	else if (strcmp(new_modal, "PROP") == 0){
+		gui->modal = PROP;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	if (strcmp(new_modal, "SCRIPT") == 0){
+		gui->modal = SCRIPT;
+		gui->step = 0;
+		lua_pushboolean(L, 1); /* return success */
+		return 1;
+	}
+	
+	lua_pushboolean(L, 0); /* return fail */
+	return 1;
+}
+
 
 /* new APPID to the drawing */
 /* given parameters:

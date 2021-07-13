@@ -622,6 +622,8 @@ int main(int argc, char** argv){
 	strncpy(func_keys_path, pref_path, DXF_MAX_CHARS);
 	strncat(func_keys_path, "func_keys.lua", DXF_MAX_CHARS);
 	
+	miss_file (func_keys_path, func_key_dflt_file);
+	
 	if (gui_script_init (gui, &func_keys_script, func_keys_path, NULL)){
 		func_keys_script.active = 1;
 	}
@@ -1430,14 +1432,12 @@ int main(int argc, char** argv){
 		if ( func_keys_script.active && strlen(function_key) > 0 ){
 			func_keys_script.time = clock();
 			func_keys_script.timeout = 1.0; /* default timeout value */
-			if (luaL_dofile (func_keys_script.T,  func_keys_path) == LUA_OK) {
-				lua_getglobal(func_keys_script.T, function_key);
-				if (lua_isstring(func_keys_script.T, -1)){
-					const char *func_str = lua_tostring(func_keys_script.T, -1);
-					luaL_dostring (func_keys_script.T, func_str);
-					
-				}
-				lua_pop(func_keys_script.T, 1);
+			
+			lua_pushstring(func_keys_script.T, function_key);
+			lua_setglobal(func_keys_script.T, "function_key");
+			
+			if (luaL_dofile (func_keys_script.T,  func_keys_path) != LUA_OK) {
+				/* error*/
 			}
 		}
 		

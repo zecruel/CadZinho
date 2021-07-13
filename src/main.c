@@ -105,10 +105,13 @@ void zoom_ext2(dxf_drawing *drawing, int x, int y, int width, int height, double
 int main(int argc, char** argv){
 	aux_mtx1 = malloc(sizeof(struct Matrix));
 	
-	char keyin[64];
-	int keyin_len = 0;
-	int keyin_timer = 0;
-	keyin[0] = 0;
+	char macro[64];
+	int macro_len = 0;
+	int macro_timer = 0;
+	macro[0] = 0;
+	
+	char function_key[20];
+	function_key[0] = 0;
 	
 	gui_obj *gui = malloc(sizeof(gui_obj));
 	gui_start(gui);
@@ -589,21 +592,38 @@ int main(int argc, char** argv){
 	
 	
 	
-	/*-------------------------------- Key-in script --------------------- */
-	struct script_obj keyin_script;
-	keyin_script.L = NULL;
-	keyin_script.T = NULL;
-	keyin_script.active = 0;
-	keyin_script.dynamic = 0;
+	/*-------------------------------- keyboard macros script --------------------- */
+	struct script_obj macro_script;
+	macro_script.L = NULL;
+	macro_script.T = NULL;
+	macro_script.active = 0;
+	macro_script.dynamic = 0;
 	
-	/* full path of keyin file */
-	char keyin_path[DXF_MAX_CHARS + 1];
-	keyin_path[0] = 0;
-	strncpy(keyin_path, pref_path, DXF_MAX_CHARS);
-	strncat(keyin_path, "keyin.lua", DXF_MAX_CHARS);
+	/* full path of macro file */
+	char macro_path[DXF_MAX_CHARS + 1];
+	macro_path[0] = 0;
+	strncpy(macro_path, pref_path, DXF_MAX_CHARS);
+	strncat(macro_path, "macro.lua", DXF_MAX_CHARS);
 	
-	if (gui_script_init (gui, &keyin_script, keyin_path, NULL) == 1){
-		keyin_script.active = 1;
+	if (gui_script_init (gui, &macro_script, macro_path, NULL) == 1){
+		macro_script.active = 1;
+	}
+	
+	/*-------------------------------- functions keys script --------------------- */
+	struct script_obj func_keys_script;
+	func_keys_script.L = NULL;
+	func_keys_script.T = NULL;
+	func_keys_script.active = 0;
+	func_keys_script.dynamic = 0;
+	
+	/* full path of func_keys file */
+	char func_keys_path[DXF_MAX_CHARS + 1];
+	func_keys_path[0] = 0;
+	strncpy(func_keys_path, pref_path, DXF_MAX_CHARS);
+	strncat(func_keys_path, "func_keys.lua", DXF_MAX_CHARS);
+	
+	if (gui_script_init (gui, &func_keys_script, func_keys_path, NULL)){
+		func_keys_script.active = 1;
 	}
 	
 	/*===================== teste ===============*/
@@ -718,6 +738,12 @@ int main(int argc, char** argv){
 					case SDL_KEYDOWN: {
 						SDL_Keycode key = event.key.keysym.sym;
 						SDL_Keymod mod = event.key.keysym.mod;
+						int n_func = sizeof(func_keys)/sizeof(struct func_key);
+						for (i = 0; i < n_func; i++){
+							if (func_keys[i].code == key && (func_keys[i].mod & mod || func_keys[i].mod == KMOD_NONE)){
+								strncpy (function_key, func_keys[i].key, 19);
+							}
+						}
 						
 						if (key == SDLK_RCTRL || key == SDLK_LCTRL) ctrlDown = 1;
 					
@@ -785,10 +811,10 @@ int main(int argc, char** argv){
 							gui->user_number = 1; /* sinalize a user flag */
 						}
 						else{
-							keyin[keyin_len] = *event.text.text;
-							if (keyin_len < 63) keyin_len++;
-							keyin[keyin_len] = 0;
-							keyin_timer = 0;
+							macro[macro_len] = *event.text.text;
+							if (macro_len < 63) macro_len++;
+							macro[macro_len] = 0;
+							macro_timer = 0;
 							gui->draw = 1;
 						}
 						break;
@@ -1369,81 +1395,51 @@ int main(int argc, char** argv){
 			gui->prev_modal = gui->modal;
 		}
 		
-		/*-------------------------------- Key-in script --------------------- */
-		if (keyin_script.active){
-			keyin_script.time = clock();
-			keyin_script.timeout = 1.0; /* default timeout value */
+		/*-------------------------------- macro script --------------------- */
+		if ( macro_script.active && strlen(macro) > 0 ){
+			macro_script.time = clock();
+			macro_script.timeout = 1.0; /* default timeout value */
 			
-			lua_pushstring(keyin_script.T, keyin);
-			lua_setglobal(keyin_script.T, "keyin");
+			lua_pushstring(macro_script.T, macro);
+			lua_setglobal(macro_script.T, "macro");
 			
-			lua_pushboolean(keyin_script.T, 0);
-			lua_setglobal(keyin_script.T, "accept");
-			//print_lua_stack(keyin_script.T);
+			lua_pushboolean(macro_script.T, 0);
+			lua_setglobal(macro_script.T, "accept");
+			//print_lua_stack(macro_script.T);
 			
-			lua_getglobal(keyin_script.T, "cz_main_func");
+			lua_getglobal(macro_script.T, "cz_main_func");
 			int n_results = 0; /* for Lua 5.4*/
-			keyin_script.status = lua_resume(keyin_script.T, NULL, 0, &n_results); /* start thread */
-			if (keyin_script.status != LUA_OK){
-				keyin_script.active = 0;
+			macro_script.status = lua_resume(macro_script.T, NULL, 0, &n_results); /* start thread */
+			if (macro_script.status != LUA_OK){
+				macro_script.active = 0;
 				
 			}
 			else {
 				
-				lua_getglobal(keyin_script.T, "accept");
-				if (lua_toboolean(keyin_script.T, -1)){
-					keyin_timer = 0;
-					keyin_len = 0;
-					keyin[0] = 0;
+				lua_getglobal(macro_script.T, "accept");
+				if (lua_toboolean(macro_script.T, -1)){
+					macro_timer = 0;
+					macro_len = 0;
+					macro[0] = 0;
 				}
-				lua_pop(keyin_script.T, 1);
+				lua_pop(macro_script.T, 1);
 			}
 		}
-		/*
-		if (strcmp(keyin, "31") == 0){
-			gui->modal = DUPLI;
-			keyin_timer = 0;
-			keyin_len = 0;
-			keyin[0] = 0;
-			gui->step = 0;
-		}
-		else if (strcmp(keyin, "32") == 0){
-			gui->modal = MOVE;
-			keyin_timer = 0;
-			keyin_len = 0;
-			keyin[0] = 0;
-			gui->step = 0;
-		}
-		else if (strcmp(keyin, "33") == 0){
-			gui->modal = SCALE;
-			keyin_timer = 0;
-			keyin_len = 0;
-			keyin[0] = 0;
-			gui->step = 0;
-		}
-		else if (strcmp(keyin, "34") == 0){
-			gui->modal = ROTATE;
-			keyin_timer = 0;
-			keyin_len = 0;
-			keyin[0] = 0;
-			gui->step = 0;
-		}
-		else if (strcmp(keyin, "35") == 0){
-			gui->modal = MIRROR;
-			keyin_timer = 0;
-			keyin_len = 0;
-			keyin[0] = 0;
-			gui->step = 0;
-		}
-		else if (strcmp(keyin, "1") == 0){
-			gui->modal = SELECT;
-			keyin_timer = 0;
-			keyin_len = 0;
-			keyin[0] = 0;
-			gui->step = 0;
-		}*/
 		
-		
+		/*-------------------------------- function key script --------------------- */
+		if ( func_keys_script.active && strlen(function_key) > 0 ){
+			func_keys_script.time = clock();
+			func_keys_script.timeout = 1.0; /* default timeout value */
+			if (luaL_dofile (func_keys_script.T,  func_keys_path) == LUA_OK) {
+				lua_getglobal(func_keys_script.T, function_key);
+				if (lua_isstring(func_keys_script.T, -1)){
+					const char *func_str = lua_tostring(func_keys_script.T, -1);
+					luaL_dostring (func_keys_script.T, func_str);
+					
+				}
+				lua_pop(func_keys_script.T, 1);
+			}
+		}
 		
 		gui_select_interactive(gui);
 		gui_line_interactive(gui);
@@ -1576,11 +1572,11 @@ int main(int argc, char** argv){
 			}
 			
 			
-			/* -------- KEYIN --  rendering text by default general drawing engine */
-			if (keyin_len > 0){
+			/* -------- macro --  rendering text by default general drawing engine 
+			if (macro_len > 0){
 				list_node * graph = list_new(NULL, FRAME_LIFE);
 				if (graph) {
-					if (font_parse_str(gui->dflt_font, graph, FRAME_LIFE, keyin, NULL, 0)){
+					if (font_parse_str(gui->dflt_font, graph, FRAME_LIFE, macro, NULL, 0)){
 						graph_list_color(graph, white);
 						graph_list_modify(graph, 230, 100, 20.0, 20.0, 0.0);
 						
@@ -1589,6 +1585,7 @@ int main(int argc, char** argv){
 					}
 				}
 			}
+			*/
 			
 			
 			/* ---------------------------------- */
@@ -1646,16 +1643,17 @@ int main(int argc, char** argv){
 			SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEMOTION);
 		}
 		
-		/* -------- KEYIN */
-		if (keyin_timer < 40){
-			keyin_timer++;
+		/* -------- macro */
+		if (macro_timer < 40){
+			macro_timer++;
 		} else {
-			if (keyin_len) gui->draw = 1;
-			keyin_timer = 0;
-			keyin_len = 0;
-			keyin[0] = 0;
+			if (macro_len) gui->draw = 1;
+			macro_timer = 0;
+			macro_len = 0;
+			macro[0] = 0;
 		}
 		
+		function_key[0] = 0;
 	}
 	
 	/* safe quit */
@@ -1723,9 +1721,14 @@ int main(int argc, char** argv){
 	nk_sdl_shutdown(gui);
 	manage_buffer(0, BUF_FREE);
 	
-	/*-------------------------------- Key-in script clean-up--------------------- */
-	if (keyin_script.L){
-		lua_close(keyin_script.L);
+	/*-------------------------------- macro script clean-up--------------------- */
+	if (macro_script.L){
+		lua_close(macro_script.L);
+	}
+	
+	/*-------------------------------- func_keys script clean-up--------------------- */
+	if (func_keys_script.L){
+		lua_close(func_keys_script.L);
 	}
 	
 	return 0;

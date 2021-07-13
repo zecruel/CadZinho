@@ -2984,7 +2984,7 @@ int script_set_modal (lua_State *L) {
 		lua_pushboolean(L, 1); /* return success */
 		return 1;
 	}
-	else if (strcmp(new_modal, "DUPLI") == 0){
+	else if (strcmp(new_modal, "DUPLICATE") == 0){
 		gui->modal = DUPLI;
 		gui->step = 0;
 		lua_pushboolean(L, 1); /* return success */

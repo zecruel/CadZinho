@@ -321,7 +321,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	}
 	
 	if ( script->status == LUA_OK)  {
-		lua_setglobal(T, "cz_main_func");
+		lua_setglobal(T, "cz_main_func"); /* store main function in global variable */
 		return 1;
 	}
 	

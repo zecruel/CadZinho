@@ -8,6 +8,6 @@
 int script_win (gui_obj *gui);
 int gui_script_interactive(gui_obj *gui);
 
-int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char *alt_chunk) ;
+int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char *alt_chunk);
 
 #endif

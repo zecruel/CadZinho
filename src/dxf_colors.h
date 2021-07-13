@@ -3489,4 +3489,51 @@ struct page_def *fam_pages[] = {
 
 const char *fam_pages_descr[] = {"ISO A", "ISO B", "US", "ANSI", "ARCH", "IMAGE"};
 const int fam_pages_len[] = {13, 11, 5, 5, 6, 4};
+
+struct func_key {
+	char key[15];
+	SDL_Keycode code;
+	SDL_Keymod mod;
+};
+
+struct func_key func_keys[] = {
+	{ "f1", SDLK_F1, KMOD_NONE},
+	{ "f2", SDLK_F2, KMOD_NONE},
+	{ "f3", SDLK_F3, KMOD_NONE},
+	{ "f4", SDLK_F4, KMOD_NONE},
+	{ "f5", SDLK_F5, KMOD_NONE},
+	{ "f6", SDLK_F6, KMOD_NONE},
+	{ "f7", SDLK_F7, KMOD_NONE},
+	{ "f8", SDLK_F8, KMOD_NONE},
+	{ "f9", SDLK_F9, KMOD_NONE},
+	{ "f10", SDLK_F10, KMOD_NONE},
+	{ "f11", SDLK_F11, KMOD_NONE},
+	{ "f12", SDLK_F12, KMOD_NONE},
+	
+	{ "ctrl_f1", SDLK_F1, KMOD_CTRL},
+	{ "ctrl_f2", SDLK_F2, KMOD_CTRL},
+	{ "ctrl_f3", SDLK_F3, KMOD_CTRL},
+	{ "ctrl_f4", SDLK_F4, KMOD_CTRL},
+	{ "ctrl_f5", SDLK_F5, KMOD_CTRL},
+	{ "ctrl_f6", SDLK_F6, KMOD_CTRL},
+	{ "ctrl_f7", SDLK_F7, KMOD_CTRL},
+	{ "ctrl_f8", SDLK_F8, KMOD_CTRL},
+	{ "ctrl_f9", SDLK_F9, KMOD_CTRL},
+	{ "ctrl_f10", SDLK_F10, KMOD_CTRL},
+	{ "ctrl_f11", SDLK_F11, KMOD_CTRL},
+	{ "ctrl_f12", SDLK_F12, KMOD_CTRL},
+	
+	{ "shift_f1", SDLK_F1, KMOD_SHIFT},
+	{ "shift_f2", SDLK_F2, KMOD_SHIFT},
+	{ "shift_f3", SDLK_F3, KMOD_SHIFT},
+	{ "shift_f4", SDLK_F4, KMOD_SHIFT},
+	{ "shift_f5", SDLK_F5, KMOD_SHIFT},
+	{ "shift_f6", SDLK_F6, KMOD_SHIFT},
+	{ "shift_f7", SDLK_F7, KMOD_SHIFT},
+	{ "shift_f8", SDLK_F8, KMOD_SHIFT},
+	{ "shift_f9", SDLK_F9, KMOD_SHIFT},
+	{ "shift_f10", SDLK_F10, KMOD_SHIFT},
+	{ "shift_f11", SDLK_F11, KMOD_SHIFT},
+	{ "shift_f12", SDLK_F12, KMOD_SHIFT},
+};
 	

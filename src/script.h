@@ -13,6 +13,7 @@ struct script_obj{
 	int status;
 	int active;
 	int dynamic;
+	int do_init;
 	char path[DXF_MAX_CHARS];
 	clock_t time;
 	double timeout;

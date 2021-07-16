@@ -368,6 +368,25 @@ char * try_load_dflt(char *path, char *dflt){
 	return buf;
 }
 
+int miss_file (char *path, char *dflt){
+	if (!path) return 0;
+	if (strlen(path) < 1) return 0;
+	if (file_exists(path)) return 1;
+	
+	if (!dflt) return 0;
+	if (strlen(dflt) < 1) return 0;
+	
+	FILE *file = fopen(path, "w"); /* open the file */
+	if (file){
+		fprintf(file,  dflt);
+		
+		fclose(file);
+		return 1;
+	}
+	
+	return 0;
+}
+
 /*-----------------------------------------*/
 
 /*

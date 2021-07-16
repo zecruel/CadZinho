@@ -622,7 +622,7 @@ int main(int argc, char** argv){
 	strncpy(func_keys_path, pref_path, DXF_MAX_CHARS);
 	strncat(func_keys_path, "func_keys.lua", DXF_MAX_CHARS);
 	
-	miss_file (func_keys_path, func_key_dflt_file);
+	miss_file (func_keys_path, (char*)func_key_dflt_file);
 	
 	if (gui_script_init (gui, &func_keys_script, func_keys_path, NULL)){
 		func_keys_script.active = 1;
@@ -1401,6 +1401,7 @@ int main(int argc, char** argv){
 		if ( macro_script.active && strlen(macro) > 0 ){
 			macro_script.time = clock();
 			macro_script.timeout = 1.0; /* default timeout value */
+			macro_script.do_init = 0;
 			
 			lua_pushstring(macro_script.T, macro);
 			lua_setglobal(macro_script.T, "macro");
@@ -1432,6 +1433,7 @@ int main(int argc, char** argv){
 		if ( func_keys_script.active && strlen(function_key) > 0 ){
 			func_keys_script.time = clock();
 			func_keys_script.timeout = 1.0; /* default timeout value */
+			func_keys_script.do_init = 0;
 			
 			lua_pushstring(func_keys_script.T, function_key);
 			lua_setglobal(func_keys_script.T, "function_key");

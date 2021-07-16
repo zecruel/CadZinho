@@ -91,8 +91,8 @@ void script_check(lua_State *L, lua_Debug *ar){
 		lua_pop(L, 1);
 		
 		if (!script){ /* error in gui object access */
-			//lua_pushstring(L, "Auto check: no access to CadZinho enviroment");
-			//lua_error(L);
+			lua_pushstring(L, "Auto check: no access to CadZinho script object");
+			lua_error(L);
 			return;
 		}
 		
@@ -133,6 +133,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	script->status = LUA_OK;
 	script->active = 0;
 	script->dynamic = 0;
+	script->do_init = 0;
 	strncpy(script->path, fname, DXF_MAX_CHARS - 1);
 	
 	script->timeout = 10.0; /* default timeout value */
@@ -358,9 +359,10 @@ int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 		/* set start time of script execution */
 		script->time = clock();
 		script->timeout = 10.0; /* default timeout value */
+		script->do_init = 0;
 		
 		/* add main entry to do/redo list */
-		do_add_entry(&gui->list_do, "SCRIPT");
+		//do_add_entry(&gui->list_do, "SCRIPT");
 		
 		lua_getglobal(script->T, "cz_main_func");
 		int n_results = 0; /* for Lua 5.4*/

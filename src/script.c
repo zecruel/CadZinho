@@ -233,6 +233,17 @@ int script_ent_write (lua_State *L) {
 		lua_error(L);
 	}
 	
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	if (!script){ /* error in gui object access */
+		lua_pushstring(L, "Auto check: no access to CadZinho script object");
+		lua_error(L);
+	}
+	
 	struct ent_lua *ent_obj;
 	
 	/* verify passed arguments */
@@ -261,7 +272,21 @@ int script_ent_write (lua_State *L) {
 	/*append to drawing */
 	if (ent_obj->orig_ent) dxf_obj_subst(ent_obj->orig_ent, new_ent);
 	else drawing_ent_append(ent_obj->drawing, new_ent);
+	
 	/* add to undo/redo list*/
+	if (!script->do_init){
+		char msg[DXF_MAX_CHARS];
+		strncpy(msg, "SCRIPT:", DXF_MAX_CHARS - 1);
+		lua_Debug ar;
+		lua_getstack (L, 1, &ar);
+		lua_getinfo(L, "S", &ar); /* get script file name */
+		if (strlen (get_filename(ar.short_src)) > 0)
+			strncat(msg, get_filename(ar.short_src), DXF_MAX_CHARS - 8);
+		else
+			strncat(msg, get_filename(script->path), DXF_MAX_CHARS - 8);
+		do_add_entry(&gui->list_do, msg);
+		script->do_init = 1;
+	}
 	do_add_item(gui->list_do.current, ent_obj->orig_ent, new_ent);
 	
 	if(ent_obj->sel){
@@ -2455,6 +2480,18 @@ int script_new_block (lua_State *L) {
 		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
 		lua_error(L);
 	}
+	
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	if (!script){ /* error in gui object access */
+		lua_pushstring(L, "Auto check: no access to CadZinho script object");
+		lua_error(L);
+	}
+	
 	/* verify passed arguments */
 	int n = lua_gettop(L);    /* number of arguments */
 	if (n < 2){
@@ -2572,7 +2609,21 @@ int script_new_block (lua_State *L) {
 	if (ok) ok = dxf_obj_append(drawing->blks, blk);
 	
 	if (ok) {
-		/* undo/redo list*/
+		/* add to undo/redo list*/
+		if (!script->do_init){
+			char msg[DXF_MAX_CHARS];
+			strncpy(msg, "SCRIPT:", DXF_MAX_CHARS - 1);
+			lua_Debug ar;
+			lua_getstack (L, 1, &ar);
+			lua_getinfo(L, "S", &ar); /* get script file name */
+			if (strlen (get_filename(ar.short_src)) > 0)
+				strncat(msg, get_filename(ar.short_src), DXF_MAX_CHARS - 8);
+			else
+				strncat(msg, get_filename(script->path), DXF_MAX_CHARS - 8);
+			do_add_entry(&gui->list_do, msg);
+			script->do_init = 1;
+		}
+		
 		do_add_item(gui->list_do.current, NULL, blkrec);
 		do_add_item(gui->list_do.current, NULL, blk);
 		lua_pushlightuserdata(L, (void *) blk); /* return success */

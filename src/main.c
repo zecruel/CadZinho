@@ -1390,8 +1390,8 @@ int main(int argc, char** argv){
 			//printf("change tool\n");
 			
 			if (gui->prev_modal == SCRIPT){
-				gui->lua_script.active = 0;
-				gui->lua_script.dynamic = 0;
+				gui->lua_script[0].active = 0;
+				gui->lua_script[0].dynamic = 0;
 			}
 			
 			gui->prev_modal = gui->modal;

@@ -17,6 +17,12 @@ struct script_obj{
 	char path[DXF_MAX_CHARS];
 	clock_t time;
 	double timeout;
+	
+	char win[DXF_MAX_CHARS];
+	char win_title[DXF_MAX_CHARS];
+	int win_x, win_y, win_w, win_h;
+	
+	char dyn_func[DXF_MAX_CHARS];
 };
 
 struct ent_lua { /* DXF entity object, in Lua userdata */

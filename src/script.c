@@ -74,7 +74,7 @@ int set_timeout (lua_State *L) {
 	struct script_obj *script = lua_touserdata (L, -1);
 	lua_pop(L, 1);
 	
-	/* verify if gui is valid */
+	/* verify if script is valid */
 	if (!script){
 		lua_pushboolean(L, 0); /* return fail */
 		return 1;
@@ -239,7 +239,7 @@ int script_ent_write (lua_State *L) {
 	struct script_obj *script = lua_touserdata (L, -1);
 	lua_pop(L, 1);
 	
-	if (!script){ /* error in gui object access */
+	if (!script){ /* error in script object access */
 		lua_pushstring(L, "Auto check: no access to CadZinho script object");
 		lua_error(L);
 	}
@@ -2487,7 +2487,7 @@ int script_new_block (lua_State *L) {
 	struct script_obj *script = lua_touserdata (L, -1);
 	lua_pop(L, 1);
 	
-	if (!script){ /* error in gui object access */
+	if (!script){ /* error in script object access */
 		lua_pushstring(L, "Auto check: no access to CadZinho script object");
 		lua_error(L);
 	}
@@ -3238,6 +3238,17 @@ int script_start_dynamic (lua_State *L) {
 		lua_error(L);
 	}
 	
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	if (!script){ /* error in script object access */
+		lua_pushstring(L, "Auto check: no access to CadZinho script object");
+		lua_error(L);
+	}
+	
 	int n = lua_gettop(L);    /* number of arguments */
 	if (n < 1){
 		lua_pushliteral(L, "start_dynamic: invalid number of arguments");
@@ -3254,10 +3265,11 @@ int script_start_dynamic (lua_State *L) {
 		lua_pushboolean(L, 0); /* return fail */
 		return 1;
 	}
-	gui->lua_script.dynamic = 1;
+	
+	script->dynamic = 1;
 	gui->modal = SCRIPT;
 	gui_first_step(gui);
-	strncpy(gui->script_dynamic, name, DXF_MAX_CHARS - 1);
+	strncpy(script->dyn_func, name, DXF_MAX_CHARS - 1);
 	
 	lua_pushboolean(L, 1); /* return success */
 	return 1;
@@ -3276,8 +3288,19 @@ int script_stop_dynamic (lua_State *L) {
 		lua_error(L);
 	}
 	
-	gui->lua_script.dynamic = 0;
-	gui->script_dynamic[0] = 0;
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	if (!script){ /* error in script object access */
+		lua_pushstring(L, "Auto check: no access to CadZinho script object");
+		lua_error(L);
+	}
+	
+	script->dynamic = 0;
+	script->dyn_func[0] = 0;
 	gui_default_modal(gui);
 	
 	return 0;
@@ -3340,6 +3363,17 @@ int script_win_show (lua_State *L) {
 		lua_error(L);
 	}
 	
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	if (!script){ /* error in script object access */
+		lua_pushstring(L, "Auto check: no access to CadZinho script object");
+		lua_error(L);
+	}
+	
 	int n = lua_gettop(L);    /* number of arguments */
 	if (n < 6){
 		lua_pushliteral(L, "win_show: invalid number of arguments");
@@ -3366,16 +3400,16 @@ int script_win_show (lua_State *L) {
 		lua_pushboolean(L, 0); /* return fail */
 		return 1;
 	}
-	gui->lua_script.active = 1;
+	script->active = 1;
 	gui->modal = SCRIPT;
 	gui_first_step(gui);
-	strncpy(gui->script_win, name, DXF_MAX_CHARS - 1);
+	strncpy(script->win, name, DXF_MAX_CHARS - 1);
 	
-	strncpy(gui->script_win_title, lua_tostring(L, 2), DXF_MAX_CHARS - 1);
-	gui->script_win_x = lua_tonumber(L, 3);
-	gui->script_win_y = lua_tonumber(L, 4);
-	gui->script_win_w = lua_tonumber(L, 5);
-	gui->script_win_h = lua_tonumber(L, 6);
+	strncpy(script->win_title, lua_tostring(L, 2), DXF_MAX_CHARS - 1);
+	script->win_x = lua_tonumber(L, 3);
+	script->win_y = lua_tonumber(L, 4);
+	script->win_w = lua_tonumber(L, 5);
+	script->win_h = lua_tonumber(L, 6);
 	
 	lua_pushboolean(L, 1); /* return success */
 	return 1;
@@ -3394,8 +3428,19 @@ int script_win_close (lua_State *L) {
 		lua_error(L);
 	}
 	
-	gui->lua_script.active = 0;
-	gui->script_win[0] = 0;
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	if (!script){ /* error in script object access */
+		lua_pushstring(L, "Auto check: no access to CadZinho script object");
+		lua_error(L);
+	}
+	
+	script->active = 0;
+	script->win[0] = 0;
 	gui_default_modal(gui);
 	
 	return 0;

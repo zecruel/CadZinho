@@ -41,6 +41,8 @@
 #define BRK_PTS_MAX 50
 #define DRWG_RECENT_MAX 10
 
+#define MAX_SCRIPTS 10
+
 #define ICON_SIZE 24
 
 #define SMART_STEP(x) pow(10.0, floor(log10(fabs(x) + 1.0e-8)) - 1.0)
@@ -364,18 +366,10 @@ struct Gui_obj {
 	
 	dxf_drawing *clip_drwg;
 	
-	struct script_obj lua_script;
+	struct script_obj lua_script[MAX_SCRIPTS];
 	char curr_script[MAX_PATH_LEN];
-	clock_t script_time;
-	double script_timeout;
 	struct script_brk_pt brk_pts[BRK_PTS_MAX];
 	int num_brk_pts;
-	
-	char script_win[DXF_MAX_CHARS];
-	char script_win_title[DXF_MAX_CHARS];
-	int script_win_x, script_win_y, script_win_w, script_win_h;
-	
-	char script_dynamic[DXF_MAX_CHARS];
 	
 	char image_path[DXF_MAX_CHARS];
 	

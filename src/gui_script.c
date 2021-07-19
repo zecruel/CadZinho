@@ -483,43 +483,43 @@ int script_win (gui_obj *gui){
 				
 				nk_layout_row_static(gui->ctx, 28, 28, 6);
 				if (nk_button_symbol(gui->ctx, NK_SYMBOL_TRIANGLE_RIGHT)){
-					if (gui->lua_script.status == LUA_YIELD){
-						gui->script_time = clock();
+					if (gui->lua_script[0].status == LUA_YIELD){
+						gui->lua_script[0].time = clock();
 						static int n_results = 0; /* for Lua 5.4*/
-						gui->lua_script.status = lua_resume(gui->lua_script.T, NULL, 0, &n_results);
-						if (gui->lua_script.status != LUA_YIELD && gui->lua_script.status != LUA_OK){
+						gui->lua_script[0].status = lua_resume(gui->lua_script[0].T, NULL, 0, &n_results);
+						if (gui->lua_script[0].status != LUA_YIELD && gui->lua_script[0].status != LUA_OK){
 							/* execution error */
 							char msg[DXF_MAX_CHARS];
-							snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(gui->lua_script.T, -1));
+							snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(gui->lua_script[0].T, -1));
 							nk_str_append_str_char(&gui->debug_edit.string, msg);
 							
-							lua_pop(gui->lua_script.T, 1); /* pop error message from Lua stack */
+							lua_pop(gui->lua_script[0].T, 1); /* pop error message from Lua stack */
 						}
 						/* clear variable if thread is no yielded*/
-						if ((gui->lua_script.status != LUA_YIELD && gui->lua_script.active == 0 && gui->lua_script.dynamic == 0) ||
-							(gui->lua_script.status != LUA_YIELD && gui->lua_script.status != LUA_OK)) {
-							lua_close(gui->lua_script.L);
-							gui->lua_script.L = NULL;
-							gui->lua_script.T = NULL;
-							gui->lua_script.active = 0;
-							gui->lua_script.dynamic = 0;
+						if ((gui->lua_script[0].status != LUA_YIELD && gui->lua_script[0].active == 0 && gui->lua_script[0].dynamic == 0) ||
+							(gui->lua_script[0].status != LUA_YIELD && gui->lua_script[0].status != LUA_OK)) {
+							lua_close(gui->lua_script[0].L);
+							gui->lua_script[0].L = NULL;
+							gui->lua_script[0].T = NULL;
+							gui->lua_script[0].active = 0;
+							gui->lua_script[0].dynamic = 0;
 						}
 					}
-					else if (gui->lua_script.active == 0 && gui->lua_script.dynamic == 0){
-						gui_script_run (gui, &gui->lua_script, gui->curr_script);
+					else if (gui->lua_script[0].active == 0 && gui->lua_script[0].dynamic == 0){
+						gui_script_run (gui, &gui->lua_script[0], gui->curr_script);
 					}
 				}
-				if (gui->lua_script.status == LUA_YIELD || gui->lua_script.active || gui->lua_script.dynamic){
+				if (gui->lua_script[0].status == LUA_YIELD || gui->lua_script[0].active || gui->lua_script[0].dynamic){
 					if(nk_button_symbol(gui->ctx, NK_SYMBOL_RECT_SOLID)){
-						lua_close(gui->lua_script.L);
-						gui->lua_script.L = NULL;
-						gui->lua_script.T = NULL;
+						lua_close(gui->lua_script[0].L);
+						gui->lua_script[0].L = NULL;
+						gui->lua_script[0].T = NULL;
 						
-						if (gui->lua_script.active || gui->lua_script.dynamic)
+						if (gui->lua_script[0].active || gui->lua_script[0].dynamic)
 							gui_default_modal(gui);
 						
-						gui->lua_script.active = 0;
-						gui->lua_script.dynamic = 0;
+						gui->lua_script[0].active = 0;
+						gui->lua_script[0].dynamic = 0;
 					}
 				}
 				
@@ -587,7 +587,7 @@ int script_win (gui_obj *gui){
 				}
 			}
 			/* view variables tabs */
-			else if (script_tab == VARS && gui->lua_script.status == LUA_YIELD){
+			else if (script_tab == VARS && gui->lua_script[0].status == LUA_YIELD){
 				static int num_vars = 0;
 				int ok = 0;
 				lua_Debug ar;
@@ -596,34 +596,34 @@ int script_win (gui_obj *gui){
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				if (nk_button_label(gui->ctx, "All Globals")){
-					lua_pushglobaltable(gui->lua_script.T);
-					lua_pushnil(gui->lua_script.T);
+					lua_pushglobaltable(gui->lua_script[0].T);
+					lua_pushnil(gui->lua_script[0].T);
 					i = 0;
-					while (lua_next(gui->lua_script.T, -2) != 0) {
-						snprintf(vars[i], DXF_MAX_CHARS-1, "%s", lua_tostring(gui->lua_script.T, -2));
-						lua_getglobal(gui->lua_script.T, vars[i]);
-						print_lua_var(values[i], gui->lua_script.T);
-						lua_pop(gui->lua_script.T, 1);
+					while (lua_next(gui->lua_script[0].T, -2) != 0) {
+						snprintf(vars[i], DXF_MAX_CHARS-1, "%s", lua_tostring(gui->lua_script[0].T, -2));
+						lua_getglobal(gui->lua_script[0].T, vars[i]);
+						print_lua_var(values[i], gui->lua_script[0].T);
+						lua_pop(gui->lua_script[0].T, 1);
 						
 						
 						//snprintf(values[i], DXF_MAX_CHARS-1, "-");
-						lua_pop(gui->lua_script.T, 1);
+						lua_pop(gui->lua_script[0].T, 1);
 						i++;
 					}
-					lua_pop(gui->lua_script.T, 1);
+					lua_pop(gui->lua_script[0].T, 1);
 					num_vars = i;
 				}
 				if (nk_button_label(gui->ctx, "All Locals")){
-					ok = lua_getstack(gui->lua_script.T, 0, &ar);
+					ok = lua_getstack(gui->lua_script[0].T, 0, &ar);
 					if (ok){
 						i = 0;
 						const char * name;
 
-						while ((name = lua_getlocal(gui->lua_script.T, &ar, i+1))) {
+						while ((name = lua_getlocal(gui->lua_script[0].T, &ar, i+1))) {
 							strncpy(vars[i], name, DXF_MAX_CHARS - 1);
-							//snprintf(values[i], DXF_MAX_CHARS-1, "%s", lua_tostring(gui->lua_script, -1));
-							print_lua_var(values[i], gui->lua_script.T);
-							lua_pop(gui->lua_script.T, 1);
+							//snprintf(values[i], DXF_MAX_CHARS-1, "%s", lua_tostring(gui->lua_script[0], -1));
+							print_lua_var(values[i], gui->lua_script[0].T);
+							lua_pop(gui->lua_script[0].T, 1);
 							i++;
 						}
 						num_vars = i;
@@ -639,9 +639,9 @@ int script_win (gui_obj *gui){
 					nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, glob, DXF_MAX_CHARS - 1, nk_filter_default);
 					if (nk_button_label(gui->ctx, "Print")){
 						char msg[DXF_MAX_CHARS];
-						lua_getglobal(gui->lua_script.T, glob);
-						print_lua_var(str_tmp, gui->lua_script.T);
-						lua_pop(gui->lua_script.T, 1);
+						lua_getglobal(gui->lua_script[0].T, glob);
+						print_lua_var(str_tmp, gui->lua_script[0].T);
+						lua_pop(gui->lua_script[0].T, 1);
 						
 						snprintf(msg, DXF_MAX_CHARS-1, "Global %s - %s\n", glob, str_tmp);
 						nk_str_append_str_char(&gui->debug_edit.string, msg);
@@ -652,16 +652,16 @@ int script_win (gui_obj *gui){
 					if (nk_button_label(gui->ctx, "Print")){
 						long i_loc = strtol(loc, NULL, 10);
 						char msg[DXF_MAX_CHARS];
-						ok = lua_getstack(gui->lua_script.T, 0, &ar);
+						ok = lua_getstack(gui->lua_script[0].T, 0, &ar);
 						if (ok){
 							const char * name;
 
-							if (name = lua_getlocal(gui->lua_script.T, &ar, i_loc)) {
+							if (name = lua_getlocal(gui->lua_script[0].T, &ar, i_loc)) {
 								
-								print_lua_var(str_tmp, gui->lua_script.T);
+								print_lua_var(str_tmp, gui->lua_script[0].T);
 								snprintf(msg, DXF_MAX_CHARS-1, "Local %s - %s\n", name, str_tmp);
 								nk_str_append_str_char(&gui->debug_edit.string, msg);
-								lua_pop(gui->lua_script.T, 1);
+								lua_pop(gui->lua_script[0].T, 1);
 								
 							}
 						}
@@ -723,78 +723,81 @@ int gui_script_interactive(gui_obj *gui){
 		gui->phanton = NULL;
 		gui->draw_phanton = 0;
 	}
-	if (gui->lua_script.L != NULL && gui->lua_script.T != NULL &&
-		strlen(gui->script_dynamic) > 0 && gui->lua_script.dynamic)
-	{
-		lua_getglobal(gui->lua_script.T, gui->script_dynamic);
-		gui->script_time = clock();
-		
-		lua_createtable (gui->lua_script.T, 0, 3);
-		lua_pushnumber(gui->lua_script.T,  gui->step_x[gui->step]);
-		lua_setfield(gui->lua_script.T, -2, "x");
-		lua_pushnumber(gui->lua_script.T,  gui->step_y[gui->step]);
-		lua_setfield(gui->lua_script.T, -2, "y");
-		
-		if (gui->ev & EV_CANCEL)
-			lua_pushliteral(gui->lua_script.T, "cancel");
-		else if (gui->ev & EV_ENTER)
-			lua_pushliteral(gui->lua_script.T, "enter");
-		else if (gui->ev & EV_MOTION)
-			lua_pushliteral(gui->lua_script.T, "motion");
-		else
-			lua_pushliteral(gui->lua_script.T, "none");
-		lua_setfield(gui->lua_script.T, -2, "type");
-		gui->lua_script.status = lua_pcall(gui->lua_script.T, 1, 0, 0);
-		
-		if(gui->phanton) gui->draw_phanton = 1;
-		
-		if (!gui->lua_script.dynamic){
-			gui->script_dynamic[0] = 0;
-		}
-	}
-	
-	if (gui->lua_script.L != NULL && gui->lua_script.T != NULL){
-		if (strlen(gui->script_win) > 0 && gui->lua_script.active){
-			int win;
-			if (win = nk_begin(gui->ctx, gui->script_win_title,
-				nk_rect(gui->script_win_x, gui->script_win_y,
-					gui->script_win_w, gui->script_win_h),
-				NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|
-				NK_WINDOW_SCALABLE|
-				NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE))
-			{
-				lua_getglobal(gui->lua_script.T, gui->script_win);
-				gui->script_time = clock();
-				gui->lua_script.status = lua_pcall(gui->lua_script.T, 0, 0, 0);
-			}
-			nk_end(gui->ctx);
-			
-			if (!win){
-				gui->lua_script.active = 0;
-				gui->script_win[0] = 0;
-			}
-		}
-		
-		if (gui->lua_script.status != LUA_YIELD && gui->lua_script.status != LUA_OK){
-			/* execution error */
-			char msg[DXF_MAX_CHARS];
-			snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(gui->lua_script.T, -1));
-			nk_str_append_str_char(&gui->debug_edit.string, msg);
-			
-			lua_pop(gui->lua_script.T, 1); /* pop error message from Lua stack */
-		}
-		
-		if((gui->lua_script.status != LUA_YIELD && gui->lua_script.active == 0 && gui->lua_script.dynamic == 0) ||
-			(gui->lua_script.status != LUA_YIELD && gui->lua_script.status != LUA_OK))
+	static int i;
+	for (i = 0; i < MAX_SCRIPTS; i++){
+		if (gui->lua_script[i].L != NULL && gui->lua_script[i].T != NULL &&
+			strlen(gui->lua_script[i].dyn_func) > 0 && gui->lua_script[i].dynamic)
 		{
-			lua_close(gui->lua_script.L);
-			gui->lua_script.L = NULL;
-			gui->lua_script.T = NULL;
-			gui->lua_script.active = 0;
-			gui->lua_script.dynamic = 0;
-			gui->script_win[0] = 0;
-			gui->script_dynamic[0] = 0;
-			gui_default_modal(gui);
+			lua_getglobal(gui->lua_script[i].T, gui->lua_script[i].dyn_func);
+			gui->lua_script[i].time = clock();
+			
+			lua_createtable (gui->lua_script[i].T, 0, 3);
+			lua_pushnumber(gui->lua_script[i].T,  gui->step_x[gui->step]);
+			lua_setfield(gui->lua_script[i].T, -2, "x");
+			lua_pushnumber(gui->lua_script[i].T,  gui->step_y[gui->step]);
+			lua_setfield(gui->lua_script[i].T, -2, "y");
+			
+			if (gui->ev & EV_CANCEL)
+				lua_pushliteral(gui->lua_script[i].T, "cancel");
+			else if (gui->ev & EV_ENTER)
+				lua_pushliteral(gui->lua_script[i].T, "enter");
+			else if (gui->ev & EV_MOTION)
+				lua_pushliteral(gui->lua_script[i].T, "motion");
+			else
+				lua_pushliteral(gui->lua_script[i].T, "none");
+			lua_setfield(gui->lua_script[i].T, -2, "type");
+			gui->lua_script[i].status = lua_pcall(gui->lua_script[i].T, 1, 0, 0);
+			
+			if(gui->phanton) gui->draw_phanton = 1;
+			
+			if (!gui->lua_script[i].dynamic){
+				gui->lua_script[i].dyn_func[0] = 0;
+			}
+		}
+		
+		if (gui->lua_script[i].L != NULL && gui->lua_script[i].T != NULL){
+			if (strlen(gui->lua_script[i].win) > 0 && gui->lua_script[i].active){
+				int win;
+				if (win = nk_begin(gui->ctx, gui->lua_script[i].win_title,
+					nk_rect(gui->lua_script[i].win_x, gui->lua_script[i].win_y,
+						gui->lua_script[i].win_w, gui->lua_script[i].win_h),
+					NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|
+					NK_WINDOW_SCALABLE|
+					NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE))
+				{
+					lua_getglobal(gui->lua_script[i].T, gui->lua_script[i].win);
+					gui->lua_script[i].time = clock();
+					gui->lua_script[i].status = lua_pcall(gui->lua_script[i].T, 0, 0, 0);
+				}
+				nk_end(gui->ctx);
+				
+				if (!win){
+					gui->lua_script[i].active = 0;
+					gui->lua_script[i].win[0] = 0;
+				}
+			}
+			
+			if (gui->lua_script[i].status != LUA_YIELD && gui->lua_script[i].status != LUA_OK){
+				/* execution error */
+				char msg[DXF_MAX_CHARS];
+				snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(gui->lua_script[i].T, -1));
+				nk_str_append_str_char(&gui->debug_edit.string, msg);
+				
+				lua_pop(gui->lua_script[i].T, 1); /* pop error message from Lua stack */
+			}
+			
+			if((gui->lua_script[i].status != LUA_YIELD && gui->lua_script[i].active == 0 && gui->lua_script[i].dynamic == 0) ||
+				(gui->lua_script[i].status != LUA_YIELD && gui->lua_script[i].status != LUA_OK))
+			{
+				lua_close(gui->lua_script[i].L);
+				gui->lua_script[i].L = NULL;
+				gui->lua_script[i].T = NULL;
+				gui->lua_script[i].active = 0;
+				gui->lua_script[i].dynamic = 0;
+				gui->lua_script[i].win[0] = 0;
+				gui->lua_script[i].dyn_func[0] = 0;
+				gui_default_modal(gui);
+			}
 		}
 	}
 }

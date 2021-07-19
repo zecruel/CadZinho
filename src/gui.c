@@ -1275,8 +1275,11 @@ NK_API
 void nk_sdl_shutdown(gui_obj *gui)
 {
 	if(gui){
-		if (gui->lua_script.L != NULL)
-			lua_close(gui->lua_script.L);
+		int i;
+		for (i = 0; i < MAX_SCRIPTS; i++){
+			if (gui->lua_script[i].L != NULL)
+				lua_close(gui->lua_script[i].L);
+		}
 		
 		nk_textedit_free(&(gui->text_edit));
 		nk_textedit_free(&(gui->debug_edit));
@@ -1516,20 +1519,26 @@ int gui_start(gui_obj *gui){
 	gui->image_w = 0;
 	gui->image_h = 0;
 	
-	gui->lua_script.L = NULL;
-	gui->lua_script.T = NULL;
-	gui->lua_script.active = 0;
-	gui->lua_script.dynamic = 0;
-	gui->lua_script.status = LUA_OK;
-	gui->lua_script.path[0] = 0;
-	strncpy(gui->curr_script, "D:\\documentos\\cadzinho\\lua\\test.lua", MAX_PATH_LEN - 1);
-	gui->script_timeout = 10.0;
+	for (i = 0; i < MAX_SCRIPTS; i++){
+		memset (&gui->lua_script[i], 0, sizeof(struct script_obj));
+		/*gui->lua_script[i].L = NULL;
+		gui->lua_script[i].T = NULL;
+		gui->lua_script[i].active = 0;
+		gui->lua_script[i].dynamic = 0;
+		gui->lua_script[i].status = LUA_OK;
+		gui->lua_script[i].path[0] = 0; */
+		
+		gui->lua_script[i].timeout = 10.0;
+		/*
+		gui->lua_script[i].win[0] = 0;
+		gui->lua_script[i].win_title[0] = 0;
+		
+		gui->lua_script[i].dyn_func[0] = 0;
+		*/
+	}
 	
-	gui->script_win[0] = 0;
-	gui->script_win_title[0] = 0;
-	
-	gui->script_dynamic[0] = 0;
-	
+	//strncpy(gui->curr_script, "D:\\documentos\\cadzinho\\lua\\test.lua", MAX_PATH_LEN - 1);
+	gui->curr_script[0] = 0;
 	gui->image_path[0] = 0;
 	
 	/* ----------- init font list ------------------- */

@@ -160,6 +160,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	
 	/* add functions in cadzinho object*/
 	static const luaL_Reg cz_lib[] = {
+		{"exec_file", gui_script_exec_file},
 		{"db_print",   debug_print},
 		{"set_timeout", set_timeout},
 		{"get_sel", script_get_sel},
@@ -387,6 +388,65 @@ int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	
 	return 1;
 	
+}
+
+/* execute a lua script file */
+/* A new Lua state is created and apended in main execution list 
+given parameters:
+	- file path
+returns:
+	- success, as boolean
+*/
+int gui_script_exec_file (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	if (!script){ /* error in script object access */
+		lua_pushstring(L, "Auto check: no access to CadZinho script object");
+		lua_error(L);
+	}
+	
+	/* verify passed arguments */
+	if (!lua_isstring(L, 1)) {
+		lua_pushliteral(L, "exec_file: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/*try to find a available gui script slot */
+	int i;
+	struct script_obj *gui_script = NULL;
+	for (i = 1; i < MAX_SCRIPTS; i++){ /* start from 1 index (0 index is reserved) */
+		if (gui->lua_script[i].L == NULL && gui->lua_script[i].T == NULL ){
+			/* success */
+			gui_script = &gui->lua_script[i];
+			break;
+		}
+	}
+	if (!gui_script){
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	/* run script from file */
+	gui_script_run (gui, gui_script, (char *) lua_tostring(L, 1));
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
 }
 
 /* GUI window for scripts */

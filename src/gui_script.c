@@ -427,9 +427,22 @@ int gui_script_exec_file (lua_State *L) {
 		lua_error(L);
 	}
 	
-	/*try to find a available gui script slot */
 	int i;
 	struct script_obj *gui_script = NULL;
+	char path[DXF_MAX_CHARS + 1];
+	strncpy(path, lua_tostring(L, 1), DXF_MAX_CHARS);
+	
+	/*verify if same script file is already running */
+	for (i = 0; i < MAX_SCRIPTS; i++){
+		if (gui->lua_script[i].L != NULL && gui->lua_script[i].T != NULL ){
+			if (strcmp (gui->lua_script[i].path, path) == 0){
+				lua_pushboolean(L, 0); /* return fail */
+				return 1;
+			}
+		}
+	}
+	
+	/*try to find a available gui script slot */
 	for (i = 1; i < MAX_SCRIPTS; i++){ /* start from 1 index (0 index is reserved) */
 		if (gui->lua_script[i].L == NULL && gui->lua_script[i].T == NULL ){
 			/* success */
@@ -443,7 +456,7 @@ int gui_script_exec_file (lua_State *L) {
 	}
 	
 	/* run script from file */
-	gui_script_run (gui, gui_script, (char *) lua_tostring(L, 1));
+	gui_script_run (gui, gui_script, path);
 	
 	lua_pushboolean(L, 1); /* return success */
 	return 1;
@@ -784,19 +797,23 @@ int gui_script_interactive(gui_obj *gui){
 		gui->draw_phanton = 0;
 	}
 	static int i;
-	for (i = 0; i < MAX_SCRIPTS; i++){
+	for (i = 0; i < MAX_SCRIPTS; i++){ /* sweep script slots and execute each valid */
+		
+		/* dynamic functions */
 		if (gui->lua_script[i].L != NULL && gui->lua_script[i].T != NULL &&
 			strlen(gui->lua_script[i].dyn_func) > 0 && gui->lua_script[i].dynamic)
 		{
-			lua_getglobal(gui->lua_script[i].T, gui->lua_script[i].dyn_func);
-			gui->lua_script[i].time = clock();
+			gui->lua_script[i].time = clock(); /* refresh clock */
 			
+			/* get dynamic function */
+			lua_getglobal(gui->lua_script[i].T, gui->lua_script[i].dyn_func);
+			/* pass current mouse position */
 			lua_createtable (gui->lua_script[i].T, 0, 3);
 			lua_pushnumber(gui->lua_script[i].T,  gui->step_x[gui->step]);
 			lua_setfield(gui->lua_script[i].T, -2, "x");
 			lua_pushnumber(gui->lua_script[i].T,  gui->step_y[gui->step]);
 			lua_setfield(gui->lua_script[i].T, -2, "y");
-			
+			/* pass events */
 			if (gui->ev & EV_CANCEL)
 				lua_pushliteral(gui->lua_script[i].T, "cancel");
 			else if (gui->ev & EV_ENTER)
@@ -806,6 +823,8 @@ int gui_script_interactive(gui_obj *gui){
 			else
 				lua_pushliteral(gui->lua_script[i].T, "none");
 			lua_setfield(gui->lua_script[i].T, -2, "type");
+			
+			/*finally call the function */
 			gui->lua_script[i].status = lua_pcall(gui->lua_script[i].T, 1, 0, 0);
 			
 			if(gui->phanton) gui->draw_phanton = 1;
@@ -815,10 +834,16 @@ int gui_script_interactive(gui_obj *gui){
 			}
 		}
 		
+		/* window functions */
 		if (gui->lua_script[i].L != NULL && gui->lua_script[i].T != NULL){
 			if (strlen(gui->lua_script[i].win) > 0 && gui->lua_script[i].active){
 				int win;
-				if (win = nk_begin(gui->ctx, gui->lua_script[i].win_title,
+				
+				/* different windows names, according its index, to prevent crashes in nuklear */
+				char win_id[32];
+				snprintf(win_id, 31, "script_win_%d", i);
+				/* create window */
+				if (win = nk_begin_titled (gui->ctx, win_id, gui->lua_script[i].win_title,
 					nk_rect(gui->lua_script[i].win_x, gui->lua_script[i].win_y,
 						gui->lua_script[i].win_w, gui->lua_script[i].win_h),
 					NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|
@@ -829,7 +854,7 @@ int gui_script_interactive(gui_obj *gui){
 					gui->lua_script[i].time = clock();
 					gui->lua_script[i].status = lua_pcall(gui->lua_script[i].T, 0, 0, 0);
 				}
-				nk_end(gui->ctx);
+				nk_end(gui->ctx); /* not allow user to ends windows, to prevent nuklear crashes */
 				
 				if (!win){
 					gui->lua_script[i].active = 0;

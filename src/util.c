@@ -355,11 +355,13 @@ char * load_file(char *path, long *fsize){
 }
 
 char * try_load_dflt(char *path, char *dflt){
+	/* try to load a file to a buffer. If file fails, load a default string */
 	long fsize;
 	
-	char *buf = load_file(path, &fsize);
+	char *buf = load_file(path, &fsize); /* first, try file */
 	
 	if (buf == NULL && dflt != NULL) {
+		/* if no file, then copy default string to buffer */
 		fsize = strlen(dflt) + 1;
 		buf = calloc(fsize, 1);
 		if (buf) memcpy (buf, dflt, fsize);
@@ -369,22 +371,28 @@ char * try_load_dflt(char *path, char *dflt){
 }
 
 int miss_file (char *path, char *dflt){
+	/* create a file to path, if file not exists. Use contents of default passsed string */
+	
+	/* verify if path is a valid string */
 	if (!path) return 0;
 	if (strlen(path) < 1) return 0;
-	if (file_exists(path)) return 1;
 	
+	if (file_exists(path)) return 1; /* file exists, nothing to do. Return success */
+	
+	/* verify if default string is valid */
 	if (!dflt) return 0;
 	if (strlen(dflt) < 1) return 0;
 	
-	FILE *file = fopen(path, "w"); /* open the file */
+	FILE *file = fopen(path, "w"); /* try to create file */
 	if (file){
+		/* then write contents of default string */
 		fprintf(file,  dflt);
 		
 		fclose(file);
-		return 1;
+		return 1; /* success */
 	}
 	
-	return 0;
+	return 0; /* fail */
 }
 
 /*-----------------------------------------*/

@@ -21,17 +21,28 @@ function reg_poly(cx, cy, n, r, ang)
 end
 
 function test_script_dyn(event)
+	cadzinho.nk_layout(20, 1)
+	cadzinho.nk_label("Regular polygon")
+	
+	cadzinho.nk_layout(20, 2)
+	cadzinho.nk_label("Sides:")
+	cadzinho.nk_edit(sides)
+	
+	
+	cadzinho.nk_layout(20, 1)
 	if count == 0 then
+		cadzinho.nk_label('Enter center')
 		if event.type == 'enter' then
 			count = count + 1
 			cx = event.x
 			cy = event.y
 			
-			cadzinho.db_print('enter radius')
+			
 		elseif event.type == 'cancel' then
 			cadzinho.stop_dynamic()
 		end
 	else
+		cadzinho.nk_label('Enter radius')
 		if event.type == 'motion' then
 			r = ((event.x - cx)^2 + (event.y - cy)^2) ^ 0.5
 			ang = math.atan((event.y - cy), (event.x - cx))
@@ -53,22 +64,11 @@ function test_script_dyn(event)
 			pline:write()
 		
 			count = 0
-			cadzinho.db_print('enter center')
 		elseif event.type == 'cancel' then
 			count = 0
-			cadzinho.db_print('enter center')
+			
 		end
 	end
 end
-
-function polyg_win()
-	cadzinho.nk_layout(20, 1)
-	
-	cadzinho.nk_label("Sides:")
-	cadzinho.nk_edit(sides)
-	
-end
-
-cadzinho.win_show("polyg_win", "script test", 200,200,200,200)
 
 cadzinho.start_dynamic("test_script_dyn")

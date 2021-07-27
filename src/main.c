@@ -832,7 +832,11 @@ int main(int argc, char** argv){
 			
 		}
 		
-		
+		if (MouseMotion) gui->ev |= EV_MOTION;
+		if (leftMouseButtonClick) gui->ev |= EV_ENTER;
+		if (rightMouseButtonClick) gui->ev |= EV_CANCEL;
+		if (gui->keyEnter) gui->ev |= EV_LOCK_AX;
+		if (ctrlDown) gui->ev |= EV_ADD;
 		
 		gui->next_win_h = 6 + 4 + ICON_SIZE + 4 + 6 + 4 + ICON_SIZE + 4 + 6 + 8;
 		gui->next_win_x = 2;
@@ -928,11 +932,7 @@ int main(int argc, char** argv){
 			
 			
 		}
-		if (MouseMotion) gui->ev |= EV_MOTION;
-		if (leftMouseButtonClick) gui->ev |= EV_ENTER;
-		if (rightMouseButtonClick) gui->ev |= EV_CANCEL;
-		if (gui->keyEnter) gui->ev |= EV_LOCK_AX;
-		if (ctrlDown) gui->ev |= EV_ADD;
+		
 		
 		/*================================================
 		==================================================

@@ -1,6 +1,7 @@
 #include "script.h"
 #include "miniz.h"
 #include "yxml.h"
+#include "gui_script.h"
 
 /* for debug purposes - print a Lua variable in given buffer string (idx is its position on Lua stack)*/
 static int print_lua_var(char * value, lua_State * L, int idx){
@@ -3265,6 +3266,8 @@ int script_start_dynamic (lua_State *L) {
 		lua_pushboolean(L, 0); /* return fail */
 		return 1;
 	}
+	
+	gui_script_clear_dyn(gui);
 	
 	script->dynamic = 1;
 	gui->modal = SCRIPT;

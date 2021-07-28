@@ -12,4 +12,8 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 
 int gui_script_exec_file (lua_State *L);
 
+int gui_script_dyn(gui_obj *gui);
+
+int gui_script_clear_dyn(gui_obj *gui);
+
 #endif

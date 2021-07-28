@@ -3,6 +3,7 @@
 #include "gui_ltype.h"
 #include "gui_file.h"
 #include "gui_xy.h"
+#include "gui_script.h"
 
 extern const char *dxf_seed_2007;
 

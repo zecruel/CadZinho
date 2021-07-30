@@ -6,6 +6,7 @@
 #include "lualib.h"
 
 #include "dxf.h"
+#include <time.h>
 
 struct script_obj{
 	lua_State *L; /* main lua state */

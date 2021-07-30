@@ -3404,8 +3404,6 @@ int script_win_show (lua_State *L) {
 		return 1;
 	}
 	script->active = 1;
-	gui->modal = SCRIPT;
-	gui_first_step(gui);
 	strncpy(script->win, name, DXF_MAX_CHARS - 1);
 	
 	strncpy(script->win_title, lua_tostring(L, 2), DXF_MAX_CHARS - 1);
@@ -3444,7 +3442,6 @@ int script_win_close (lua_State *L) {
 	
 	script->active = 0;
 	script->win[0] = 0;
-	gui_default_modal(gui);
 	
 	return 0;
 }

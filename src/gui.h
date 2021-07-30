@@ -41,7 +41,7 @@
 #define BRK_PTS_MAX 50
 #define DRWG_RECENT_MAX 10
 
-#define MAX_SCRIPTS 10
+#define MAX_SCRIPTS 32
 
 #define ICON_SIZE 24
 

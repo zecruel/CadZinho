@@ -796,6 +796,7 @@ int script_win (gui_obj *gui){
 
 int gui_script_interactive(gui_obj *gui){
 	static int i;
+	
 	for (i = 0; i < MAX_SCRIPTS; i++){ /* sweep script slots and execute each valid */
 		/* window functions */
 		if (gui->lua_script[i].L != NULL && gui->lua_script[i].T != NULL){
@@ -836,15 +837,18 @@ int gui_script_interactive(gui_obj *gui){
 				}
 				
 				lua_pop(gui->lua_script[i].T, 1); /* pop error message from Lua stack */
+				
+				gui_default_modal(gui); /* back to default modal */
 			}
 			
 			if (gui->lua_script[i].status != LUA_YIELD) {
-				gui->lua_script[i].do_init = 0;
+				gui->lua_script[i].do_init = 0; /* reinit script do list */
 			}
 			
 			if((gui->lua_script[i].status != LUA_YIELD && gui->lua_script[i].active == 0 && gui->lua_script[i].dynamic == 0) ||
 				(gui->lua_script[i].status != LUA_YIELD && gui->lua_script[i].status != LUA_OK))
 			{
+				/* clear inactive script slots */
 				lua_close(gui->lua_script[i].L);
 				gui->lua_script[i].L = NULL;
 				gui->lua_script[i].T = NULL;
@@ -852,7 +856,6 @@ int gui_script_interactive(gui_obj *gui){
 				gui->lua_script[i].dynamic = 0;
 				gui->lua_script[i].win[0] = 0;
 				gui->lua_script[i].dyn_func[0] = 0;
-				gui_default_modal(gui);
 			}
 		}
 	}

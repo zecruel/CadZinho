@@ -219,11 +219,8 @@ int gui_tools_win (gui_obj *gui){
 			gui_txt_prop_info (gui);
 			gui_vertex_info (gui);
 			
-			if (gui->modal == SCRIPT) {
-				//nk_layout_row_dynamic(gui->ctx, 20, 1);
-				//nk_label(gui->ctx, "Runing Script", NK_TEXT_LEFT);
-				gui_script_dyn(gui);
-			}
+			/* execute scripts in dynamic mode*/
+			gui_script_dyn(gui);
 			
 			nk_group_end(gui->ctx);
 		}

@@ -31,8 +31,6 @@
 #include "nanosvg.h"
 #include "nanosvgrast.h"
 
-#include <whereami.h>
-
 #define FONT_SCALE 1.4
 #define FIXED_MEM 128*1024
 
@@ -169,6 +167,13 @@ enum Ortho_view{
 	O_BACK
 };
 
+enum theme {THEME_BLACK,
+	THEME_WHITE,
+	THEME_RED,
+	THEME_BLUE,
+	THEME_DARK,
+	THEME_GREEN};
+
 struct gui_glyph{
 	int code_p, x, y, w, h;
 	double adv;
@@ -195,6 +200,8 @@ struct Gui_obj {
 	struct gui_font *ui_font_list;
 	void *buf; /*for fixed memory */
 	void *last; /* to verify if needs to draw */
+	
+	enum theme theme;
 	
 	dxf_drawing *drawing;
 	dxf_node *element, *near_el;
@@ -346,7 +353,7 @@ struct Gui_obj {
 	char base_dir[DXF_MAX_CHARS + 1];
 	char dwg_file[DXF_MAX_CHARS + 1];
 	char dwg_dir[DXF_MAX_CHARS + 1];
-	char *pref_path;
+	char pref_path[DXF_MAX_CHARS + 1];
 	
 	char drwg_hist[DRWG_HIST_MAX][DXF_MAX_CHARS];
 	int drwg_hist_size;
@@ -378,7 +385,7 @@ struct Gui_obj {
 };
 typedef struct Gui_obj gui_obj;
 
-enum theme {THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK, THEME_GREEN};
+
 
 
 

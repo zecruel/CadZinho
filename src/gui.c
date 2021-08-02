@@ -1315,6 +1315,8 @@ int gui_start(gui_obj *gui){
 	gui->buf = NULL;
 	gui->last = NULL;
 	
+	gui->theme = THEME_GREEN;
+	
 	gui->drawing = NULL;
 	gui->element = NULL;
 	gui->near_el = NULL;
@@ -1495,7 +1497,7 @@ int gui_start(gui_obj *gui){
 	gui->base_dir[0] = 0;
 	gui->dwg_file[0] = 0;
 	gui->dwg_dir[0] = 0;
-	gui->pref_path = NULL;
+	gui->pref_path[0] = 0;
 	
 	gui->paper_fam = 0;
 	gui->sel_paper = 6;
@@ -1558,6 +1560,7 @@ int gui_start(gui_obj *gui){
 	
 	
 	/* ----------- init base directory path ------------------- */
+	#if(0)
 	{
 		//strncpy (gui->base_dir, get_dir(argv[0]), DXF_MAX_CHARS);
 		char path[DXF_MAX_CHARS + 1] = "";
@@ -1571,6 +1574,7 @@ int gui_start(gui_obj *gui){
 			strncat (gui->base_dir, (char []){DIR_SEPARATOR, 0}, DXF_MAX_CHARS);
 		}
 	}
+	#endif
 	
 	/* ----------- init history ------------------- */
 	for (i = 0; i < DRWG_HIST_MAX; i++)

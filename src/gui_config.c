@@ -69,6 +69,31 @@ int gui_load_conf (const char *fname, gui_obj *gui) {
 	else gui->win_h = 710; /* default value, if not definied in file*/
 	lua_pop(L, 1);
 	
+	/* -------------------- get theme -------------------*/
+	lua_getglobal(L, "theme");
+	if (lua_isstring(L, -1)){
+		const char *theme = lua_tostring(L, -1);
+		//enum theme {THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK, THEME_GREEN};
+		if (strcmp(theme, "green") == 0){
+			gui->theme = THEME_GREEN;
+		}
+		else if (strcmp(theme, "black") == 0){
+			gui->theme = THEME_BLACK;
+		}
+		else if (strcmp(theme, "white") == 0){
+			gui->theme = THEME_WHITE;
+		}
+		else if (strcmp(theme, "red") == 0){
+			gui->theme = THEME_RED;
+		}
+		else if (strcmp(theme, "blue") == 0){
+			gui->theme = THEME_BLUE;
+		}
+		else if (strcmp(theme, "dark") == 0){
+			gui->theme = THEME_DARK;
+		}
+	}
+	
 	/* -------------------- get fonts paths -------------------*/
 	lua_getglobal(L, "font_path");
 	if (lua_isstring(L, -1)){
@@ -147,6 +172,8 @@ int gui_load_conf (const char *fname, gui_obj *gui) {
 			lua_pop(L, 1);
 		}
 		#endif
+		
+		
 	}
 	else
 	{ /* default font, if not definied in file*/

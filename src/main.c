@@ -61,7 +61,9 @@
 #define OS_WIN
 #endif
 
-
+#define KGFLAGS_IMPLEMENTATION
+#include "kgflags.h"
+#include <dirent.h>
 
 /* ---------------------------------------------------------*/
 /* ------------------   GLOBALS  ----------------------- */
@@ -132,29 +134,65 @@ int main(int argc, char** argv){
 	
 	
 	/* --------------- Configure paths ----------*/
+	char *base_path = SDL_GetBasePath();
+	if (base_path){
+		strncpy(gui->base_dir, base_path, DXF_MAX_CHARS);
+		SDL_free(base_path);
+	}
 	
-	char *pref_path = SDL_GetPrefPath("CadZinho", "CadZinho");
-	gui->pref_path = pref_path;
+	
+	char *pref_path = NULL;  // guaranteed to be assigned only if kgflags_parse succeeds
+	kgflags_string("pref", NULL, "Preferences directory.", false, (const char **) &pref_path);
+	kgflags_parse(argc, argv);
+	
+	if (pref_path){
+		DIR* dir = opendir(pref_path);
+		if (dir) {
+			/* Directory exists. */
+			pref_path = realpath(pref_path, NULL);
+			if (strlen (pref_path) > 0){
+				if (pref_path[strlen (pref_path) - 1] == DIR_SEPARATOR){
+					strncpy(gui->pref_path, pref_path, DXF_MAX_CHARS);
+				}
+				else {
+					snprintf(gui->pref_path, DXF_MAX_CHARS, "%s%c", pref_path, DIR_SEPARATOR);
+				}
+			}
+			
+			free(pref_path);
+			closedir(dir);
+		}
+	}
+	
+	if (strlen (gui->pref_path) == 0){
+		pref_path = SDL_GetPrefPath("CadZinho", "CadZinho");
+		if (pref_path){
+			if (strlen (pref_path) > 0){
+				if (pref_path[strlen (pref_path) - 1] == DIR_SEPARATOR){
+					strncpy(gui->pref_path, pref_path, DXF_MAX_CHARS);
+				}
+				else {
+					snprintf(gui->pref_path, DXF_MAX_CHARS, "%s%c", pref_path, DIR_SEPARATOR);
+				}
+			}
+			SDL_free(pref_path);
+		}
+	}
 	
 	/* full path of clipboard file */
 	char clip_path[DXF_MAX_CHARS + 1];
 	clip_path[0] = 0;
-	strncpy(clip_path, pref_path, DXF_MAX_CHARS);
-	//printf("base dir = %s\n", gui->base_dir);
-	strncat(clip_path, "clipboard.dxf", DXF_MAX_CHARS);
-	printf("clip path = %s\n", clip_path);
+	snprintf(clip_path, DXF_MAX_CHARS, "%sclipboard.dxf", gui->pref_path);
 	
 	/* full path of init file */
 	char init_path[DXF_MAX_CHARS + 1];
 	init_path[0] = 0;
-	strncpy(init_path, pref_path, DXF_MAX_CHARS);
-	strncat(init_path, "init.lua", DXF_MAX_CHARS);
+	snprintf(init_path, DXF_MAX_CHARS, "%sinit.lua", gui->pref_path);
 	
 	/* full path of config file */
 	char config_path[DXF_MAX_CHARS + 1];
 	config_path[0] = 0;
-	strncpy(config_path, pref_path, DXF_MAX_CHARS);
-	strncat(config_path, "config.lua", DXF_MAX_CHARS);
+	snprintf(config_path, DXF_MAX_CHARS, "%sconfig.lua", gui->pref_path);
 	
 	/* initialize fonts paths with base directory  */
 	if (strlen(gui->base_dir)){
@@ -332,13 +370,6 @@ int main(int argc, char** argv){
 		gui->main_h = 2048;
 	}
 	
-	char *base_path = SDL_GetBasePath();
-	printf ("%s\n", base_path);
-	printf ("%s\n", argv[0]);
-	printf ("%s\n", get_dir(argv[0]));
-	printf ("%s\n", gui->dflt_fonts_path);
-	
-	
 	double pos_x, pos_y;
 
 	int open_prg = 0;
@@ -443,7 +474,7 @@ int main(int argc, char** argv){
 	//~ set_style(gui->ctx, THEME_RED);
 	//~ set_style(gui->ctx, THEME_BLUE);
 	//~ set_style(gui->ctx, THEME_DARK);
-	set_style(gui->ctx, THEME_GREEN);
+	set_style(gui->ctx, gui->theme);
 	
 	gui->ctx->style.edit.padding = nk_vec2(4, -6);
 	//gui->ctx->style.button.rounding = 10.0;
@@ -602,8 +633,7 @@ int main(int argc, char** argv){
 	/* full path of macro file */
 	char macro_path[DXF_MAX_CHARS + 1];
 	macro_path[0] = 0;
-	strncpy(macro_path, pref_path, DXF_MAX_CHARS);
-	strncat(macro_path, "macro.lua", DXF_MAX_CHARS);
+	snprintf(macro_path, DXF_MAX_CHARS, "%smacro.lua", gui->pref_path);
 	
 	if (gui_script_init (gui, &macro_script, macro_path, NULL) == 1){
 		macro_script.active = 1;
@@ -619,8 +649,7 @@ int main(int argc, char** argv){
 	/* full path of func_keys file */
 	char func_keys_path[DXF_MAX_CHARS + 1];
 	func_keys_path[0] = 0;
-	strncpy(func_keys_path, pref_path, DXF_MAX_CHARS);
-	strncat(func_keys_path, "func_keys.lua", DXF_MAX_CHARS);
+	snprintf(func_keys_path, DXF_MAX_CHARS, "%sfunc_keys.lua", gui->pref_path);
 	
 	miss_file (func_keys_path, (char*)func_key_dflt_file);
 	
@@ -1659,7 +1688,6 @@ int main(int argc, char** argv){
 	}
 	
 	/* safe quit */
-	//SDL_free(base_path);
 	
 	/* Delete allocated resources */
 	glDeleteProgram(shaderProgram);
@@ -1678,7 +1706,6 @@ int main(int argc, char** argv){
 	//SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	
-	SDL_free(pref_path);
 	SDL_Quit();
 	
 	if(free_font_list(gui->font_list)){

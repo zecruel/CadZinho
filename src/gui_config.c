@@ -92,6 +92,15 @@ int gui_load_conf (const char *fname, gui_obj *gui) {
 		else if (strcmp(theme, "dark") == 0){
 			gui->theme = THEME_DARK;
 		}
+		else if (strcmp(theme, "brown") == 0){
+			gui->theme = THEME_BROWN;
+		}
+		else if (strcmp(theme, "purple") == 0){
+			gui->theme = THEME_PURPLE;
+		}
+		else if (strcmp(theme, "default") == 0){
+			gui->theme = THEME_DEFAULT;
+		}
 	}
 	
 	/* -------------------- get fonts paths -------------------*/

@@ -635,9 +635,12 @@ int main(int argc, char** argv){
 	macro_path[0] = 0;
 	snprintf(macro_path, DXF_MAX_CHARS, "%smacro.lua", gui->pref_path);
 	
+	miss_file (macro_path, (char*)macro_dflt_file);
+	
 	if (gui_script_init (gui, &macro_script, macro_path, NULL) == 1){
 		macro_script.active = 1;
 	}
+	
 	
 	/*-------------------------------- functions keys script --------------------- */
 	struct script_obj func_keys_script;

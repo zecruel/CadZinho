@@ -172,7 +172,10 @@ enum theme {THEME_BLACK,
 	THEME_RED,
 	THEME_BLUE,
 	THEME_DARK,
-	THEME_GREEN};
+	THEME_GREEN,
+	THEME_BROWN,
+	THEME_PURPLE,
+	THEME_DEFAULT};
 
 struct gui_glyph{
 	int code_p, x, y, w, h;

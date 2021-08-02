@@ -566,6 +566,69 @@ void set_style(struct nk_context *ctx, enum theme theme){
         table[NK_COLOR_SCROLLBAR_CURSOR_ACTIVE] = nk_rgba(71, 161, 80, 255);
         table[NK_COLOR_TAB_HEADER] = nk_rgba(48, 112, 54, 255);
         nk_style_from_table(ctx, table);
+} else if (theme == THEME_BROWN) {
+        table[NK_COLOR_TEXT] = nk_rgba(210, 210, 210, 255);
+        table[NK_COLOR_WINDOW] = nk_rgba(71, 67, 57, 215);
+        table[NK_COLOR_HEADER] = nk_rgba(56, 51, 51, 220);
+        table[NK_COLOR_BORDER] = nk_rgba(46, 46, 46, 255);
+        table[NK_COLOR_BUTTON] = nk_rgba(111, 83, 48, 255);
+        table[NK_COLOR_BUTTON_HOVER] = nk_rgba(121, 93, 58, 255);
+        table[NK_COLOR_BUTTON_ACTIVE] = nk_rgba(126, 98, 63, 255);
+        table[NK_COLOR_TOGGLE] = nk_rgba(61, 58, 50, 255);
+        table[NK_COLOR_TOGGLE_HOVER] = nk_rgba(56, 53, 45, 255);
+        table[NK_COLOR_TOGGLE_CURSOR] = nk_rgba(111, 83, 48, 255);
+        table[NK_COLOR_SELECT] = nk_rgba(61, 67, 57, 255);
+        table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(111, 83, 48, 255);
+        table[NK_COLOR_SLIDER] = nk_rgba(61, 58, 50, 255);
+        table[NK_COLOR_SLIDER_CURSOR] = nk_rgba(111, 83, 48, 245);
+        table[NK_COLOR_SLIDER_CURSOR_HOVER] = nk_rgba(116, 88, 53, 255);
+        table[NK_COLOR_SLIDER_CURSOR_ACTIVE] = nk_rgba(121, 93, 58, 255);
+        table[NK_COLOR_PROPERTY] = nk_rgba(61, 58, 50, 255);
+        table[NK_COLOR_EDIT] = nk_rgba(61, 58, 50, 225);
+        table[NK_COLOR_EDIT_CURSOR] = nk_rgba(210, 210, 210, 255);
+        table[NK_COLOR_COMBO] = nk_rgba(61, 58, 50, 255);
+        table[NK_COLOR_CHART] = nk_rgba(61, 58, 50, 255);
+        table[NK_COLOR_CHART_COLOR] = nk_rgba(111, 83, 48, 255);
+        table[NK_COLOR_CHART_COLOR_HIGHLIGHT] = nk_rgba(0, 0, 255, 255);
+        table[NK_COLOR_SCROLLBAR] = nk_rgba(61, 58, 50, 255);
+        table[NK_COLOR_SCROLLBAR_CURSOR] = nk_rgba(111, 83, 48, 255);
+        table[NK_COLOR_SCROLLBAR_CURSOR_HOVER] = nk_rgba(116, 88, 53, 255);
+        table[NK_COLOR_SCROLLBAR_CURSOR_ACTIVE] = nk_rgba(121, 93, 58, 255);
+        table[NK_COLOR_TAB_HEADER] = nk_rgba(111, 83, 48, 255);
+        nk_style_from_table(ctx, table);
+} else if (theme == THEME_PURPLE) {
+        table[NK_COLOR_TEXT] = nk_rgba(210, 210, 210, 255);
+        table[NK_COLOR_WINDOW] = nk_rgba(67, 57, 71, 215);
+        table[NK_COLOR_HEADER] = nk_rgba(51, 51, 56, 220);
+        table[NK_COLOR_BORDER] = nk_rgba(46, 46, 46, 255);
+        table[NK_COLOR_BUTTON] = nk_rgba(83, 48, 111, 255);
+        table[NK_COLOR_BUTTON_HOVER] = nk_rgba(93, 58, 121, 255);
+        table[NK_COLOR_BUTTON_ACTIVE] = nk_rgba(98, 63, 126, 255);
+        table[NK_COLOR_TOGGLE] = nk_rgba(58, 50, 61, 255);
+        table[NK_COLOR_TOGGLE_HOVER] = nk_rgba(53, 45, 56, 255);
+        table[NK_COLOR_TOGGLE_CURSOR] = nk_rgba(83, 48, 111, 255);
+        table[NK_COLOR_SELECT] = nk_rgba(67, 57, 61, 255);
+        table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(83, 48, 111, 255);
+        table[NK_COLOR_SLIDER] = nk_rgba(58, 50, 61, 255);
+        table[NK_COLOR_SLIDER_CURSOR] = nk_rgba(83, 48, 111, 245);
+        table[NK_COLOR_SLIDER_CURSOR_HOVER] = nk_rgba(88, 53, 116, 255);
+        table[NK_COLOR_SLIDER_CURSOR_ACTIVE] = nk_rgba(93, 58, 121, 255);
+        table[NK_COLOR_PROPERTY] = nk_rgba(58, 50, 61, 255);
+        table[NK_COLOR_EDIT] = nk_rgba(58, 50, 61, 225);
+        table[NK_COLOR_EDIT_CURSOR] = nk_rgba(210, 210, 210, 255);
+        table[NK_COLOR_COMBO] = nk_rgba(58, 50, 61, 255);
+        table[NK_COLOR_CHART] = nk_rgba(58, 50, 61, 255);
+        table[NK_COLOR_CHART_COLOR] = nk_rgba(83, 48, 111, 255);
+        table[NK_COLOR_CHART_COLOR_HIGHLIGHT] = nk_rgba(0, 255, 0, 255);
+        table[NK_COLOR_SCROLLBAR] = nk_rgba(58, 50, 61, 255);
+        table[NK_COLOR_SCROLLBAR_CURSOR] = nk_rgba(83, 48, 111, 255);
+        table[NK_COLOR_SCROLLBAR_CURSOR_HOVER] = nk_rgba(88, 53, 116, 255);
+        table[NK_COLOR_SCROLLBAR_CURSOR_ACTIVE] = nk_rgba(93, 58, 121, 255);
+        table[NK_COLOR_TAB_HEADER] = nk_rgba(83, 48, 111, 255);
+        nk_style_from_table(ctx, table);
+	/*} else if (theme == THEME_TEST) {
+        
+        nk_style_from_table(ctx, table);*/
     } else {
         nk_style_default(ctx);
     }

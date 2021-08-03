@@ -63,7 +63,11 @@
 
 #define KGFLAGS_IMPLEMENTATION
 #include "kgflags.h"
+/* POSIX libs*/
 #include <dirent.h>
+//#include <sys/stat.h>
+#include <unistd.h>
+
 
 /* ---------------------------------------------------------*/
 /* ------------------   GLOBALS  ----------------------- */
@@ -149,17 +153,27 @@ int main(int argc, char** argv){
 		DIR* dir = opendir(pref_path);
 		if (dir) {
 			/* Directory exists. */
-			pref_path = realpath(pref_path, NULL);
-			if (strlen (pref_path) > 0){
-				if (pref_path[strlen (pref_path) - 1] == DIR_SEPARATOR){
-					strncpy(gui->pref_path, pref_path, DXF_MAX_CHARS);
-				}
-				else {
-					snprintf(gui->pref_path, DXF_MAX_CHARS, "%s%c", pref_path, DIR_SEPARATOR);
+			
+			/* get curent directory */
+			char curr_path[MAX_PATH_LEN];
+			getcwd(curr_path, MAX_PATH_LEN);
+			
+			chdir(pref_path); /* change working dir to pref_path*/
+			
+			//pref_path = realpath(pref_path, NULL);
+			getcwd(gui->pref_path, DXF_MAX_CHARS);
+			int len = strlen (gui->pref_path) ;
+			if (len < DXF_MAX_CHARS - 1){
+				if (gui->pref_path[len - 1] != DIR_SEPARATOR){
+					gui->pref_path[len] = DIR_SEPARATOR;
+					gui->pref_path[len + 1]  = 0;
 				}
 			}
+			else {
+				gui->pref_path[0] = 0;
+			}
 			
-			free(pref_path);
+			chdir(curr_path); /* change working back*/
 			closedir(dir);
 		}
 	}

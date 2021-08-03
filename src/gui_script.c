@@ -232,6 +232,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	};
 	static const struct luaL_Reg miniz_funcs[] = {
 		{"open", script_miniz_open},
+		{"write",  script_miniz_write},
 		{NULL, NULL}
 	};
 	luaL_newlib(T, miniz_funcs);

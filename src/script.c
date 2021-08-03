@@ -3687,6 +3687,43 @@ int script_miniz_read (lua_State *L) {
 	return 1;
 }
 
+int script_miniz_write(lua_State *L) {
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 3){
+		lua_pushliteral(L, "write: invalid number of arguments");
+		lua_error(L);
+	}
+	int i;
+	for (i = 1; i <= n; i++){
+		if (!lua_isstring(L, i)) { /* the archive is a Lua userdata type*/
+			lua_pushliteral(L, "write: incorrect argument type");
+			lua_error(L);
+		}
+	}
+	
+	mz_bool ok = 0;
+	
+	const char *zip = lua_tostring(L, 1);
+	const char *arch = lua_tostring(L, 2);
+	const char *buf = lua_tostring(L, 3);
+	const char *comment = "";
+	
+	if (n > 3) comment = lua_tostring(L, 4);
+	
+	int buf_sz = strlen(buf);
+	int com_sz = strlen(comment);
+	
+	ok =  mz_zip_add_mem_to_archive_file_in_place(zip, arch, buf, buf_sz, comment, com_sz, MZ_DEFAULT_COMPRESSION);
+	
+	if (ok) lua_pushboolean(L, 1); /* return success */
+	else lua_pushboolean(L, 0); /* return fail */
+	
+	/* return success */
+	return 1;
+}
+
 
 /* ==================== YXML ===========================*/
 

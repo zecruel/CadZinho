@@ -62,7 +62,9 @@ int cmp_file_date(const void * a, const void * b) {
 	struct file_info *info1 = ((struct sort_by_idx *)a)->data;
 	struct file_info *info2 = ((struct sort_by_idx *)b)->data;
 	
-	return (int)round(difftime(info1->date, info2->date));
+	double diff = difftime(info1->date, info2->date);
+	if (diff < 0.0) return -1;
+	else return 1;
 }
 
 int cmp_file_date_rev(const void * a, const void * b) { /* reverse */

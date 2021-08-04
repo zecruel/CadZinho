@@ -3587,6 +3587,12 @@ struct script_miniz_arch {
 	mz_zip_archive *archive;
 };
 
+/* open a compressed file (zip) to read content */
+/* given parameters:
+	- path to compressed file, as string
+returns:
+	- a Zip object (use methods to read and close), or nil if fail
+*/
 int script_miniz_open (lua_State *L) {
 	/* verify passed arguments */
 	int n = lua_gettop(L);    /* number of arguments */
@@ -3622,6 +3628,12 @@ int script_miniz_open (lua_State *L) {
 	return 1;
 }
 
+/* close a previouly opened compressed file (zip) to read content */
+/* given parameters:
+	- a Zip object (this function is called as method inside object)
+returns:
+	- a boolean indicating success or fail
+*/
 int script_miniz_close (lua_State *L) {
 	
 	struct script_miniz_arch * zip;
@@ -3632,7 +3644,7 @@ int script_miniz_close (lua_State *L) {
 		lua_pushliteral(L, "close: invalid number of arguments");
 		lua_error(L);
 	}
-	if (!( zip =  luaL_checkudata(L, 1, "Zip") )) { /* the archive is a Lua userdata type*/
+	if (!( zip =  luaL_checkudata(L, 1, "Zip") )) { /* the Zip object is a Lua userdata type*/
 		lua_pushliteral(L, "close: incorrect argument type");
 		lua_error(L);
 	}
@@ -3649,8 +3661,14 @@ int script_miniz_close (lua_State *L) {
 	return 1;
 }
 
+/* read an archive inside a compressed file (zip) */
+/* given parameters:
+	- a Zip object (this function is called as method inside object)
+	- name of archive, as string
+returns:
+	-  a buffer with archive contents (string), or nil if fail
+*/
 int script_miniz_read (lua_State *L) {
-	
 	struct script_miniz_arch * zip;
 	
 	/* verify passed arguments */
@@ -3659,7 +3677,7 @@ int script_miniz_read (lua_State *L) {
 		lua_pushliteral(L, "read: invalid number of arguments");
 		lua_error(L);
 	}
-	if (!( zip =  luaL_checkudata(L, 1, "Zip") )) { /* the archive is a Lua userdata type*/
+	if (!( zip =  luaL_checkudata(L, 1, "Zip") )) { /* the Zip object is a Lua userdata type*/
 		lua_pushliteral(L, "read: incorrect argument type");
 		lua_error(L);
 	}
@@ -3687,6 +3705,15 @@ int script_miniz_read (lua_State *L) {
 	return 1;
 }
 
+/* write to an archive inside a compressed file (zip) */
+/* given parameters:
+	- path to compressed file, as string
+	- name of archive, as string
+	- buffer with archive contents, as string
+	- a comment, as string (optional)
+returns:
+	- a boolean indicating success or fail
+*/
 int script_miniz_write(lua_State *L) {
 	
 	/* verify passed arguments */
@@ -3697,7 +3724,7 @@ int script_miniz_write(lua_State *L) {
 	}
 	int i;
 	for (i = 1; i <= n; i++){
-		if (!lua_isstring(L, i)) { /* the archive is a Lua userdata type*/
+		if (!lua_isstring(L, i)) {
 			lua_pushliteral(L, "write: incorrect argument type");
 			lua_error(L);
 		}
@@ -3733,6 +3760,12 @@ struct script_yxml_state {
 	yxml_t *x;
 };
 
+/* Creates a XML parser object */
+/* given parameters:
+	- none
+returns:
+	- a Yxml object (use methods to read and close), or nil if fail
+*/
 int script_yxml_new (lua_State *L) {
 	
 	struct script_yxml_state * state;
@@ -3756,6 +3789,12 @@ int script_yxml_new (lua_State *L) {
 	return 1;
 }
 
+/* close a XML parser object */
+/* given parameters:
+	- a Yxml object (this function is called as method inside object)
+returns:
+	- a boolean indicating success or fail
+*/
 int script_yxml_close (lua_State *L) {
 	
 	struct script_yxml_state * state;
@@ -3766,7 +3805,7 @@ int script_yxml_close (lua_State *L) {
 		lua_pushliteral(L, "close: invalid number of arguments");
 		lua_error(L);
 	}
-	if (!( state =  luaL_checkudata(L, 1, "Yxml") )) { /* the archive is a Lua userdata type*/
+	if (!( state =  luaL_checkudata(L, 1, "Yxml") )) { /* the Yxml object is a Lua userdata type*/
 		lua_pushliteral(L, "close: incorrect argument type");
 		lua_error(L);
 	}
@@ -3782,6 +3821,17 @@ int script_yxml_close (lua_State *L) {
 	return 1;
 }
 
+/* parse a XML stream*/
+/* given parameters:
+	- a Yxml parser object (this function is called as method inside object)
+	- XML stream, as string
+returns:
+	-  a table, or nil if fail
+NOTES: inside main table are created sub-tables for each XML element, with:
+	- element name string, with key "id"
+	- atttribute table, with key "attr" (each atrribute's value string stored in table, with its name as key)
+	- contents table, with key "cont" (can store strings or element's tables, as see above)
+*/
 int script_yxml_read (lua_State *L) {
 	
 	struct script_yxml_state * state;

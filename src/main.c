@@ -155,8 +155,8 @@ int main(int argc, char** argv){
 			/* Directory exists. */
 			
 			/* get curent directory */
-			char curr_path[MAX_PATH_LEN];
-			getcwd(curr_path, MAX_PATH_LEN);
+			//char curr_path[MAX_PATH_LEN];
+			//getcwd(curr_path, MAX_PATH_LEN);
 			
 			chdir(pref_path); /* change working dir to pref_path*/
 			
@@ -173,7 +173,7 @@ int main(int argc, char** argv){
 				gui->pref_path[0] = 0;
 			}
 			
-			chdir(curr_path); /* change working back*/
+			//chdir(curr_path); /* change working back*/
 			closedir(dir);
 		}
 	}
@@ -218,8 +218,13 @@ int main(int argc, char** argv){
 	
 	//load (Lua1, "config.lua", &gui->win_w, &gui->win_h);
 	gui_load_conf (config_path, gui);
-	gui_load_ini(init_path, gui);
 	
+	chdir(gui->base_dir); /* change working dir to base path*/
+	
+	gui_load_ini(init_path, gui);
+	if (strlen(get_dir(gui->drwg_recent[gui->drwg_rcnt_size - 1])) > 0){
+		chdir(get_dir(gui->drwg_recent[gui->drwg_rcnt_size - 1]));
+	}
 	/* ------------------------------------------------------------------------*/
 	
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);

@@ -126,12 +126,14 @@ void print_graph_pdf(graph_obj * master, struct txt_buf *buf, struct print_param
 					PDF_BUF_SIZE - buf->pos,
 					"[");
 				if(master->patt_size > 1){
-					int patt_el = (int) fabs(master->pattern[0] * param.scale * param.resolution) + 1;
+					int patt_el = (int) fabs(master->pattern[0] * param.scale * param.resolution);
+					if (patt_el < param.resolution) patt_el = (int) param.resolution;
 					buf->pos +=snprintf(buf->data + buf->pos,
 						PDF_BUF_SIZE - buf->pos,
 						"%d", patt_el);
 					for (i = 1; i < master->patt_size; i++){
-						patt_el = (int) fabs(master->pattern[i] * param.scale * param.resolution) + 1;
+						patt_el = (int) fabs(master->pattern[i] * param.scale * param.resolution);
+						if (patt_el < param.resolution) patt_el = (int) param.resolution;
 						buf->pos +=snprintf(buf->data + buf->pos,
 							PDF_BUF_SIZE - buf->pos,
 							" %d", patt_el);
@@ -718,8 +720,8 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	struct pdf_object *page = pdf_append_page(pdf);
 	
 	/* add the print objet to pdf page */
-	pdf_add_stream(pdf, page, buf->data); /* non compressed stream */
-	//pdf_add_stream_zip(pdf, page, pCmp, cmp_len); /* compressed stream */
+	//pdf_add_stream(pdf, page, buf->data); /* non compressed stream */
+	pdf_add_stream_zip(pdf, page, pCmp, cmp_len); /* compressed stream */
 	
 	/* save pdf file */ 
 	int e = pdf_save(pdf, dest);

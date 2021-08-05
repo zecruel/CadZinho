@@ -217,6 +217,28 @@ int main(int argc, char** argv){
 	/* -------------------------------------------------------------------------- */
 	
 	//load (Lua1, "config.lua", &gui->win_w, &gui->win_h);
+	miss_file (config_path, (char*)gui_dflt_conf());
+	
+	struct script_obj conf_script;
+	conf_script.L = NULL;
+	conf_script.T = NULL;
+	conf_script.active = 0;
+	conf_script.dynamic = 0;
+	
+	if (gui_script_init (gui, &conf_script, config_path, (char*)gui_dflt_conf()) == 1){
+		conf_script.time = clock();
+		conf_script.timeout = 1.0; /* default timeout value */
+		conf_script.do_init = 0;
+		
+		lua_getglobal(conf_script.T, "cz_main_func");
+		int n_results = 0; /* for Lua 5.4*/
+		conf_script.status = lua_resume(conf_script.T, NULL, 0, &n_results); /* start thread */
+		if (conf_script.status != LUA_OK){
+			conf_script.active = 0; /* error */			
+		}
+		lua_close(conf_script.L);
+	}
+	
 	gui_load_conf (config_path, gui);
 	
 	chdir(gui->base_dir); /* change working dir to base path*/
@@ -675,7 +697,7 @@ int main(int argc, char** argv){
 	
 	miss_file (func_keys_path, (char*)func_key_dflt_file);
 	
-	if (gui_script_init (gui, &func_keys_script, func_keys_path, NULL)){
+	if (gui_script_init (gui, &func_keys_script, func_keys_path, NULL) == 1){
 		func_keys_script.active = 1;
 	}
 	

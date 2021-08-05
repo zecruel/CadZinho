@@ -8,6 +8,8 @@
 #include "lauxlib.h"
 #include "lualib.h"
 
+const char* gui_dflt_conf();
+
 int gui_load_conf (const char *fname, gui_obj *gui);
 
 int gui_save_init (char *fname, gui_obj *gui);

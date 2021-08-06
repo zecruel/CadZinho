@@ -220,10 +220,6 @@ struct Gui_obj {
 	
 	struct ogl gl_ctx;
 	
-	/* background image dimension */
-	unsigned int main_w;
-	unsigned int main_h;
-	
 	/* Window dimension */
 	int win_x;
 	int win_y;

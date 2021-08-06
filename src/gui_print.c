@@ -283,7 +283,7 @@ int print_win (gui_obj *gui){
 				
 				/* get origin */
 				ofs_x = gui->ofs_x;
-				ofs_y = gui->ofs_y + (gui->main_h - gui->win_h) / gui->zoom ;
+				ofs_y = gui->ofs_y;
 				
 				/* get the better scale to fit in width or height */
 				zoom_x = gui->win_w/(page_w * gui->zoom);

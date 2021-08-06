@@ -1393,9 +1393,6 @@ int gui_start(gui_obj *gui){
 	gui->free_sel = 1;
 	gui->sel_ent_filter = ~DXF_NONE;
 	
-	gui->main_w = 2048;
-	gui->main_h = 2048;
-	
 	gui->gl_ctx.vert_count = 0;
 	gui->gl_ctx.elem_count = 0;
 	gui->gl_ctx.verts = NULL;
@@ -1621,23 +1618,10 @@ int gui_start(gui_obj *gui){
 	/* load internal shape library "ltypeshp", for use in complex linetypes*/
 	add_shp_font_list(gui->font_list, "ltypeshp.shx", (char *)shp_ltypeshp);
 	
-	
-	/* ----------- init base directory path ------------------- */
-	#if(0)
-	{
-		//strncpy (gui->base_dir, get_dir(argv[0]), DXF_MAX_CHARS);
-		char path[DXF_MAX_CHARS + 1] = "";
-		int length, dirname_length;
-		/* get main path */
-		length = wai_getExecutablePath(path, DXF_MAX_CHARS, &dirname_length);
-		if (length > 0){
-			path[dirname_length] = '\0';
-			/* initialize base directory (executable dir) */
-			strncpy (gui->base_dir, path, DXF_MAX_CHARS);
-			strncat (gui->base_dir, (char []){DIR_SEPARATOR, 0}, DXF_MAX_CHARS);
-		}
-	}
-	#endif
+	/* ui default font */
+	struct tfont *ui_font = get_font_list(gui->font_list, "txt.shx");
+	gui->ui_font.userdata = nk_handle_ptr(ui_font);
+	gui->ui_font.height = 10.0;
 	
 	/* ----------- init history ------------------- */
 	for (i = 0; i < DRWG_HIST_MAX; i++)

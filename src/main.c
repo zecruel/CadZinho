@@ -214,17 +214,19 @@ int main(int argc, char** argv){
 		strncat (gui->dflt_fonts_path, (char []){PATH_SEPARATOR, 0}, 5 * DXF_MAX_CHARS);
 	}
 	
-	/* -------------------------------------------------------------------------- */
+	/* -------------- load main configuration options ---------------*/
 	
-	//load (Lua1, "config.lua", &gui->win_w, &gui->win_h);
+	/* verify if file exists, or try to create a new one with default options */
 	miss_file (config_path, (char*)gui_dflt_conf());
 	
+	/* init the Lua instance, to run configuration */
 	struct script_obj conf_script;
 	conf_script.L = NULL;
 	conf_script.T = NULL;
 	conf_script.active = 0;
 	conf_script.dynamic = 0;
 	
+	/* try to run configuration, by file or default string */
 	if (gui_script_init (gui, &conf_script, config_path, (char*)gui_dflt_conf()) == 1){
 		conf_script.time = clock();
 		conf_script.timeout = 1.0; /* default timeout value */
@@ -236,14 +238,53 @@ int main(int argc, char** argv){
 		if (conf_script.status != LUA_OK){
 			conf_script.active = 0; /* error */			
 		}
+		/* finaly get configuration from global variables in Lua instance */
+		gui_get_conf (conf_script.T);
+		
+		/* close script and clean instance*/
 		lua_close(conf_script.L);
+		conf_script.L = NULL;
+		conf_script.T = NULL;
+		conf_script.active = 0;
+		conf_script.dynamic = 0;
 	}
 	
-	gui_load_conf (config_path, gui);
+	/* -------------- load last session states ---------------*/
+	
+	/* init the Lua instance, to run init */
+	conf_script.L = NULL;
+	conf_script.T = NULL;
+	conf_script.active = 0;
+	conf_script.dynamic = 0;
+	
+	/* try to run init file */
+	if (gui_script_init (gui, &conf_script, init_path, NULL) == 1){
+		conf_script.time = clock();
+		conf_script.timeout = 1.0; /* default timeout value */
+		conf_script.do_init = 0;
+		
+		lua_getglobal(conf_script.T, "cz_main_func");
+		int n_results = 0; /* for Lua 5.4*/
+		conf_script.status = lua_resume(conf_script.T, NULL, 0, &n_results); /* start thread */
+		if (conf_script.status != LUA_OK){
+			conf_script.active = 0; /* error */			
+		}
+		/* finaly get states from global variables in Lua instance */
+		gui_get_ini (conf_script.T);
+		
+		/* close script and clean instance*/
+		lua_close(conf_script.L);
+		conf_script.L = NULL;
+		conf_script.T = NULL;
+		conf_script.active = 0;
+		conf_script.dynamic = 0;
+	}
+	
+	/* -------------------------------------------------------------------------- */
 	
 	chdir(gui->base_dir); /* change working dir to base path*/
 	
-	gui_load_ini(init_path, gui);
+	/* try to change working dir from last opened drawing */
 	if (strlen(get_dir(gui->drwg_recent[gui->drwg_rcnt_size - 1])) > 0){
 		chdir(get_dir(gui->drwg_recent[gui->drwg_rcnt_size - 1]));
 	}
@@ -405,12 +446,6 @@ int main(int argc, char** argv){
 	
 	/* ------------------------------------------------------------------------------- */
 	
-	
-	if ((gui->main_w <= 0) || (gui->main_h <= 0)){
-		gui->main_w = 2048;
-		gui->main_h = 2048;
-	}
-	
 	double pos_x, pos_y;
 
 	int open_prg = 0;
@@ -500,11 +535,7 @@ int main(int argc, char** argv){
 	/* initialize the undo/redo list */
 	//struct do_list gui->list_do;
 	init_do_list(&gui->list_do);
-	
-	
-	/* init the main image */
-	bmp_img * img = bmp_new(gui->main_w, gui->main_h, grey, red);
-	
+		
 	/* init Nuklear GUI */
 	
 	nk_sdl_init(gui);
@@ -1595,13 +1626,6 @@ int main(int argc, char** argv){
 			
 			dxf_ents_draw_gl(gui->drawing, &gui->gl_ctx, d_param);
 			
-			/*===================== teste ===============*/
-			//graph_list_draw(tt_test, img, gui->ofs_x, gui->ofs_y, gui->zoom);
-			
-			//graph_draw(hers, img, gui->ofs_x, gui->ofs_y, gui->zoom);
-			/*===================== teste ===============*/
-			
-			//draw_cursor(img, gui->mouse_x, gui->mouse_y, cursor);
 			draw_cross_cursor_gl(gui, gui->mouse_x, gui->mouse_y, cursor);
 			
 			
@@ -1618,15 +1642,12 @@ int main(int argc, char** argv){
 			
 			
 			if(gui->element != NULL){
-				//graph_list_draw(gui->element->obj.graphics, img, d_param);
 				graph_list_draw_gl2(gui->element->obj.graphics, &gui->gl_ctx, d_param);
 			}
 			if((gui->draw_phanton)&&(gui->phanton)){
-				//graph_list_draw(gui->phanton, img, d_param);
 				graph_list_draw_gl2(gui->phanton, &gui->gl_ctx, d_param);
 			}
 			if (gui->sel_list->next) {/* verify if  has elements in list */
-				//dxf_list_draw(gui->sel_list, img, d_param);
 				dxf_list_draw_gl(gui->sel_list, &gui->gl_ctx, d_param);
 			}
 			
@@ -1634,7 +1655,6 @@ int main(int argc, char** argv){
 			
 			if ((gui->draw_vert) && (gui->element)){
 				/* draw vertices */
-				//gui_draw_vert(gui, img, gui->element);
 				gui_draw_vert_gl(gui, gui->element);
 			}
 			
@@ -1642,7 +1662,6 @@ int main(int argc, char** argv){
 				/* convert entities coordinates to screen coordinates */
 				int attr_x = (int) round((gui->near_x - gui->ofs_x) * gui->zoom);
 				int attr_y = (int) round((gui->near_y - gui->ofs_y) * gui->zoom);
-				//draw_attractor(img, gui->near_attr, attr_x, attr_y, yellow);
 				draw_attractor_gl(gui, gui->near_attr, attr_x, attr_y, yellow);
 			}
 			
@@ -1666,11 +1685,6 @@ int main(int argc, char** argv){
 			/* ---------------------------------- */
 			draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
 			
-			/* set image visible window*/
-			//img->clip_x = 0; img->clip_y = 0;
-			
-			/*draw gui*/
-			//nk_sdl_render(gui, img);
 			
 			
 			
@@ -1772,7 +1786,6 @@ int main(int argc, char** argv){
 	
 	do_mem_pool(FREE_DO_ALL);
 	
-	bmp_free(img);
 	bmp_free(gui->color_img);
 	bmp_free(gui->preview_img);
 	bmp_free(gui->i_cz48);

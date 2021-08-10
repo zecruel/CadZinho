@@ -63,10 +63,6 @@
 
 #define KGFLAGS_IMPLEMENTATION
 #include "kgflags.h"
-/* POSIX libs*/
-#include <dirent.h>
-//#include <sys/stat.h>
-#include <unistd.h>
 
 
 /* ---------------------------------------------------------*/
@@ -150,32 +146,7 @@ int main(int argc, char** argv){
 	kgflags_parse(argc, argv);
 	
 	if (pref_path){
-		DIR* dir = opendir(pref_path);
-		if (dir) {
-			/* Directory exists. */
-			
-			/* get curent directory */
-			//char curr_path[MAX_PATH_LEN];
-			//getcwd(curr_path, MAX_PATH_LEN);
-			
-			chdir(pref_path); /* change working dir to pref_path*/
-			
-			//pref_path = realpath(pref_path, NULL);
-			getcwd(gui->pref_path, DXF_MAX_CHARS);
-			int len = strlen (gui->pref_path) ;
-			if (len < DXF_MAX_CHARS - 1){
-				if (gui->pref_path[len - 1] != DIR_SEPARATOR){
-					gui->pref_path[len] = DIR_SEPARATOR;
-					gui->pref_path[len + 1]  = 0;
-				}
-			}
-			else {
-				gui->pref_path[0] = 0;
-			}
-			
-			//chdir(curr_path); /* change working back*/
-			closedir(dir);
-		}
+		strncpy(gui->pref_path, dir_full(pref_path), DXF_MAX_CHARS);
 	}
 	
 	if (strlen (gui->pref_path) == 0){
@@ -191,6 +162,17 @@ int main(int argc, char** argv){
 			}
 			SDL_free(pref_path);
 		}
+	}
+	
+	if (strlen (gui->pref_path) == 0){ /* pref path is not present */
+		/* pref path = base path */
+		strncpy(gui->pref_path, gui->base_dir, DXF_MAX_CHARS);
+	}
+	else {
+		char script_path[MAX_PATH_LEN+1];
+		script_path[0] = 0;
+		snprintf(script_path, MAX_PATH_LEN, "%sscript%c", gui->pref_path, DIR_SEPARATOR);
+		dir_miss (script_path);
 	}
 	
 	/* full path of clipboard file */
@@ -212,6 +194,7 @@ int main(int argc, char** argv){
 	if (strlen(gui->base_dir)){
 		strncpy (gui->dflt_fonts_path, gui->base_dir, 5 * DXF_MAX_CHARS);
 		strncat (gui->dflt_fonts_path, (char []){PATH_SEPARATOR, 0}, 5 * DXF_MAX_CHARS);
+		dir_change(gui->base_dir); /* change working dir to base path*/
 	}
 	
 	/* -------------- load main configuration options ---------------*/
@@ -282,11 +265,9 @@ int main(int argc, char** argv){
 	
 	/* -------------------------------------------------------------------------- */
 	
-	chdir(gui->base_dir); /* change working dir to base path*/
-	
 	/* try to change working dir from last opened drawing */
 	if (strlen(get_dir(gui->drwg_recent[gui->drwg_rcnt_size - 1])) > 0){
-		chdir(get_dir(gui->drwg_recent[gui->drwg_rcnt_size - 1]));
+		dir_change(get_dir(gui->drwg_recent[gui->drwg_rcnt_size - 1]));
 	}
 	/* ------------------------------------------------------------------------*/
 	

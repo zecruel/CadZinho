@@ -83,6 +83,85 @@ int cmp_file_size_rev(const void * a, const void * b) { /* reverse */
 	return -cmp_file_size(a, b);
 }
 
+/* ------------------------------------------- */
+
+int dir_check(char *path) { /* verify if directory exists */
+	/* check if path is a valid string */
+	if (!path) return 0;
+	if (strlen(path) < 1) return 0;
+	
+	DIR* dir = opendir(path);
+	if (dir) {
+		closedir(dir);
+		return 1; /* success */
+	}
+	
+	return 0; /* fail */
+}
+
+char * dir_full(char *path) { /* get full path of a folder */
+	static char full_path[MAX_PATH_LEN+1];
+	full_path[0] = 0; /*init */
+	
+	/* check if path is a valid folder */
+	if (!dir_check(path)) return full_path;
+	
+	/* Directory exists. */
+	
+	/* get curent directory */
+	char curr_path[MAX_PATH_LEN+1];
+	getcwd(curr_path, MAX_PATH_LEN);
+	
+	chdir(path); /* change working dir to path*/
+	
+	/* put dir separator at end of returnned string */
+	getcwd(full_path, MAX_PATH_LEN);
+	int len = strlen (full_path) ;
+	if (len < MAX_PATH_LEN - 1){
+		if (full_path[len - 1] != DIR_SEPARATOR){
+			full_path[len] = DIR_SEPARATOR;
+			full_path[len + 1]  = 0;
+		}
+	}
+	else {
+		full_path[0] = 0; /* fail - full_path is truncated */
+	}
+	
+	chdir(curr_path); /* change working back */
+	
+	return full_path;
+}
+
+int dir_change( char *path) { /* change current directory */
+	/* check if path is a valid string */
+	if (!path) return 0;
+	if (strlen(path) < 1) return 0;
+	
+	int ret = chdir(path); 
+	if (!ret) return 1; /* success */
+	return 0; /* fail */
+}
+
+int dir_make (char *path) {
+	/* check if path is a valid string */
+	if (!path) return 0;
+	if (strlen(path) < 1) return 0;
+	
+	int ret = mkdir(path, 0700);
+	if (!ret) return 1; /* success */
+	return 0; /* fail */
+}
+
+int dir_miss (char* path){ /* try to create a folder, if not exists */
+	/* check if path is a valid string */
+	if (!path) return 0;
+	if (strlen(path) < 1) return 0;
+	
+	if (dir_check(path)) return 1; /* folder already exists */
+	return dir_make (path); /* try to create folder */
+}
+
+
 /* file explorer window */
 int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int num_ext, char *init_dir){
 	if ((ext_type == NULL) || (ext_descr == NULL) || num_ext == 0) return 0;

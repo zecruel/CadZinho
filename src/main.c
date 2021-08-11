@@ -185,56 +185,17 @@ int main(int argc, char** argv){
 	init_path[0] = 0;
 	snprintf(init_path, DXF_MAX_CHARS, "%sinit.lua", gui->pref_path);
 	
-	/* full path of config file */
-	char config_path[DXF_MAX_CHARS + 1];
-	config_path[0] = 0;
-	snprintf(config_path, DXF_MAX_CHARS, "%sconfig.lua", gui->pref_path);
-	
-	/* initialize fonts paths with base directory  */
 	if (strlen(gui->base_dir)){
-		strncpy (gui->dflt_fonts_path, gui->base_dir, 5 * DXF_MAX_CHARS);
-		strncat (gui->dflt_fonts_path, (char []){PATH_SEPARATOR, 0}, 5 * DXF_MAX_CHARS);
 		dir_change(gui->base_dir); /* change working dir to base path*/
 	}
 	
 	/* -------------- load main configuration options ---------------*/
-	
-	/* verify if file exists, or try to create a new one with default options */
-	miss_file (config_path, (char*)gui_dflt_conf());
-	
-	/* init the Lua instance, to run configuration */
-	struct script_obj conf_script;
-	conf_script.L = NULL;
-	conf_script.T = NULL;
-	conf_script.active = 0;
-	conf_script.dynamic = 0;
-	
-	/* try to run configuration, by file or default string */
-	if (gui_script_init (gui, &conf_script, config_path, (char*)gui_dflt_conf()) == 1){
-		conf_script.time = clock();
-		conf_script.timeout = 1.0; /* default timeout value */
-		conf_script.do_init = 0;
-		
-		lua_getglobal(conf_script.T, "cz_main_func");
-		int n_results = 0; /* for Lua 5.4*/
-		conf_script.status = lua_resume(conf_script.T, NULL, 0, &n_results); /* start thread */
-		if (conf_script.status != LUA_OK){
-			conf_script.active = 0; /* error */			
-		}
-		/* finaly get configuration from global variables in Lua instance */
-		gui_get_conf (conf_script.T);
-		
-		/* close script and clean instance*/
-		lua_close(conf_script.L);
-		conf_script.L = NULL;
-		conf_script.T = NULL;
-		conf_script.active = 0;
-		conf_script.dynamic = 0;
-	}
+	gui_load_conf (gui);
 	
 	/* -------------- load last session states ---------------*/
 	
 	/* init the Lua instance, to run init */
+	struct script_obj conf_script;
 	conf_script.L = NULL;
 	conf_script.T = NULL;
 	conf_script.active = 0;
@@ -294,136 +255,7 @@ int main(int argc, char** argv){
 	/* ------------------------------ opengl --------------------------------------*/
 	gui->gl_ctx.ctx = SDL_GL_CreateContext(window);
 	
-	/* buffer setup */
-        GLsizei vs = sizeof(struct Vertex);
-        size_t vp = offsetof(struct Vertex, pos);
-        size_t vt = offsetof(struct Vertex, uv);
-        size_t vc = offsetof(struct Vertex, col);
-	
-	/* Init GLEW */
-	glewExperimental = GL_TRUE;
-	if (glewInit() != GLEW_OK) {
-		fprintf(stderr, "Failed to initialize GLEW\n");
-		return -1;
-	}
-
-	/* Create Vertex Array Object */
-	GLuint vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-
-	/* Create a Vertex Buffer Object and copy the vertex data to it */
-	GLuint vbo;
-	glGenBuffers(1, &vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, MAX_TRIANG * 3 * vs, NULL, GL_STREAM_DRAW); //GL_STATIC_DRAW);
-	
-	/* Create a Element Buffer Object */
-	GLuint ebo;
-	glGenBuffers(1, &ebo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, MAX_TRIANG * 3 * sizeof(GLuint), NULL,  GL_STREAM_DRAW);//GL_STATIC_DRAW); //GL_STREAM_DRAW
-	
-	/* Create and compile the vertex shader */
-	const char* vertexSource = GLSL(
-		in vec3 position;
-		in vec2 uv;
-		in vec4 color;
-		out vec4 vertexColor;
-		out vec2 texcoord;
-	
-		void main() {
-			gl_Position = vec4(position, 1.0);
-			vertexColor = color;
-			texcoord = uv;
-		}
-	); /* =========== vertex shader */
-
-	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vertexSource, NULL);
-	glCompileShader(vertexShader);
-
-	/* Create and compile the fragment shader */
-	const char* fragmentSource = GLSL(
-		in vec4 vertexColor;
-		in vec2 texcoord;
-		
-		out vec4 outColor;
-		
-		uniform sampler2D tex;
-
-		void main() {
-			outColor = texture(tex, texcoord) * vertexColor;
-		}
-	); /* ========== fragment shader */
-
-	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
-	glCompileShader(fragmentShader);
-
-	/* Link the vertex and fragment shader into a shader program */
-	GLuint shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glBindFragDataLocation(shaderProgram, 0, "outColor");
-	glLinkProgram(shaderProgram);
-	glUseProgram(shaderProgram);
-		
-	/*texture */
-	GLuint textures[2];
-	glGenTextures(2, textures);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, textures[0]);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	
-	/* blank texture (default) */
-	GLubyte blank[] = {255, 255, 255, 255};
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, blank);
-	
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, textures[1]);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gui->gl_ctx.tex_w, gui->gl_ctx.tex_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	
-	gui->gl_ctx.tex = textures[1];
-	gui->gl_ctx.tex_uni = glGetUniformLocation(shaderProgram, "tex");
-	
-	glUniform1i(gui->gl_ctx.tex_uni, 0);
-
-	/* Specify the layout of the vertex data */
-	GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
-	GLint uvAttrib = glGetAttribLocation(shaderProgram, "uv");
-	GLint colorAttrib = glGetAttribLocation(shaderProgram, "color");
-	
-	glEnableVertexAttribArray(posAttrib);
-	glEnableVertexAttribArray(uvAttrib);
-	glEnableVertexAttribArray(colorAttrib);
-	
-	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, vs, (void*)vp);
-        glVertexAttribPointer(uvAttrib, 2, GL_FLOAT, GL_FALSE, vs, (void*)vt);
-        glVertexAttribPointer(colorAttrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, vs, (void*)vc);
-	
-	
-	glEnable(GL_BLEND); 
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	
-	/* load vertices/elements directly into vertex/element buffer */
-        gui->gl_ctx.verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-        gui->gl_ctx.elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-	
-	//glScissor(200,200,100,100);
-	//glEnable(GL_SCISSOR_TEST);
-	//glDisable(GL_SCISSOR_TEST);
+	draw_gl_init ((void *)gui, 0);
 	
 	/* ------------------------------------------------------------------------------- */
 	
@@ -522,15 +354,15 @@ int main(int argc, char** argv){
 	nk_sdl_init(gui);
 	
 	//enum theme {THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK, THEME_GREEN};
-	//~ set_style(gui->ctx, THEME_BLACK);
-	//~ set_style(gui->ctx, THEME_WHITE);
-	//~ set_style(gui->ctx, THEME_RED);
-	//~ set_style(gui->ctx, THEME_BLUE);
-	//~ set_style(gui->ctx, THEME_DARK);
-	set_style(gui->ctx, gui->theme);
+	//~ set_style(gui, THEME_BLACK);
+	//~ set_style(gui, THEME_WHITE);
+	//~ set_style(gui, THEME_RED);
+	//~ set_style(gui, THEME_BLUE);
+	//~ set_style(gui, THEME_DARK);
+	set_style(gui, gui->theme);
 	
-	gui->ctx->style.edit.padding = nk_vec2(4, -6);
-	//gui->ctx->style.button.rounding = 10.0;
+	
+	
 	
 	/* init the toolbox image */
 	
@@ -558,28 +390,7 @@ int main(int argc, char** argv){
 	
 	
 	//struct nk_style_button b_icon_style;
-	if (gui){
-		gui->b_icon = gui->ctx->style.button;
-	}
-	gui->b_icon.image_padding.x = -4;
-	gui->b_icon.image_padding.y = -4;
 	
-	/* style for toggle buttons (or select buttons) with image */
-	//struct nk_style_button gui->b_icon_sel, gui->b_icon_unsel;
-	if (gui){
-		gui->b_icon_sel = gui->ctx->style.button;
-		gui->b_icon_unsel = gui->ctx->style.button;
-	}
-	//gui->b_icon_unsel.normal = nk_style_item_color(nk_rgba(58, 67, 57, 255));
-	gui->b_icon_unsel.normal = gui->ctx->style.checkbox.normal;
-	//gui->b_icon_unsel.hover = nk_style_item_color(nk_rgba(73, 84, 72, 255));
-	gui->b_icon_unsel.hover =  gui->ctx->style.checkbox.hover;
-	
-	//gui->b_icon_unsel.active = nk_style_item_color(nk_rgba(81, 92, 80, 255));
-	gui->b_icon_sel.image_padding.x = -4;
-	gui->b_icon_sel.image_padding.y = -4;
-	gui->b_icon_unsel.image_padding.x = -4;
-	gui->b_icon_unsel.image_padding.y = -4;
 	
 	gui->color_img = bmp_new(15, 13, black, red);
 	struct nk_image i_color = nk_image_ptr(gui->color_img);
@@ -1594,8 +1405,8 @@ int main(int argc, char** argv){
 			d_param.inc_thick = 0;
 			
 			/* Clear the screen to background color */
-			glClearColor((GLfloat) background.r/255, (GLfloat) background.g/255, 
-				(GLfloat) background.b/255, (GLfloat) background.a/255);
+			glClearColor((GLfloat) gui->background.r/255, (GLfloat) gui->background.g/255, 
+				(GLfloat) gui->background.b/255, 1.0);
 			glClear(GL_COLOR_BUFFER_BIT);
 			
 			gui->gl_ctx.verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
@@ -1631,7 +1442,6 @@ int main(int argc, char** argv){
 			if (gui->sel_list->next) {/* verify if  has elements in list */
 				dxf_list_draw_gl(gui->sel_list, &gui->gl_ctx, d_param);
 			}
-			
 			
 			
 			if ((gui->draw_vert) && (gui->element)){
@@ -1729,12 +1539,7 @@ int main(int argc, char** argv){
 	/* safe quit */
 	
 	/* Delete allocated resources */
-	glDeleteProgram(shaderProgram);
-	glDeleteShader(fragmentShader);
-	glDeleteShader(vertexShader);
-	glDeleteBuffers(1, &ebo);
-	glDeleteBuffers(1, &vbo);
-	glDeleteVertexArrays(1, &vao);
+	draw_gl_init ((void *)gui, 1);
 	
 	SDL_GL_DeleteContext(gui->gl_ctx.ctx);
 	

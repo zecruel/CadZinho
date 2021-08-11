@@ -1,4 +1,5 @@
 #include "gui_config.h"
+#include "gui_script.h"
 
 const char* gui_dflt_conf() {
 	static const char *conf = "-- CadZinho enviroment configuration file\n"
@@ -21,8 +22,52 @@ const char* gui_dflt_conf() {
 	"-- Font to use in user interface (must be preloaded). File and size in pts\n"
 	"ui_font = {\"txt.shx\", 10}\n\n"
 	"-- Interface theme - green (default), black, white, red, blue, dark, brown or purple\n"
-	"theme = \"green\"\n\n";
+	"theme = \"green\"\n\n"
+	"-- Background color - RGB components, integer values from 0 to 255\n"
+	"background = { r=100, g=100, b=100 }\n\n";
 	return conf;
+}
+
+int gui_load_conf (gui_obj *gui){
+	/* initialize fonts paths with base directory  */
+	snprintf(gui->dflt_fonts_path, 5 * DXF_MAX_CHARS, "%s%c", gui->pref_path, PATH_SEPARATOR);
+	
+	/* full path of config file */
+	char config_path[DXF_MAX_CHARS + 1];
+	config_path[0] = 0;
+	snprintf(config_path, DXF_MAX_CHARS, "%sconfig.lua", gui->pref_path);
+	
+	/* verify if file exists, or try to create a new one with default options */
+	miss_file (config_path, (char*)gui_dflt_conf());
+	
+	/* init the Lua instance, to run configuration */
+	struct script_obj conf_script;
+	conf_script.L = NULL;
+	conf_script.T = NULL;
+	conf_script.active = 0;
+	conf_script.dynamic = 0;
+	
+	if (gui_script_init (gui, &conf_script, config_path, (char*)gui_dflt_conf()) == 1){
+		conf_script.time = clock();
+		conf_script.timeout = 1.0; /* default timeout value */
+		conf_script.do_init = 0;
+		
+		lua_getglobal(conf_script.T, "cz_main_func");
+		int n_results = 0; /* for Lua 5.4*/
+		conf_script.status = lua_resume(conf_script.T, NULL, 0, &n_results); /* start thread */
+		if (conf_script.status != LUA_OK){
+			conf_script.active = 0; /* error */			
+		}
+		/* finaly get configuration from global variables in Lua instance */
+		gui_get_conf (conf_script.T);
+		
+		/* close script and clean instance*/
+		lua_close(conf_script.L);
+		conf_script.L = NULL;
+		conf_script.T = NULL;
+		conf_script.active = 0;
+		conf_script.dynamic = 0;
+	}
 }
 
 int gui_get_conf (lua_State *L) {
@@ -82,6 +127,7 @@ int gui_get_conf (lua_State *L) {
 			gui->theme = THEME_DEFAULT;
 		}
 	}
+	lua_pop(L, 1);
 	
 	/* -------------------- get fonts paths -------------------*/
 	lua_getglobal(L, "font_path");
@@ -154,6 +200,36 @@ int gui_get_conf (lua_State *L) {
 		struct tfont *ui_font = get_font_list(gui->font_list, "txt.shx");
 		gui->ui_font.userdata = nk_handle_ptr(ui_font);
 		gui->ui_font.height = 10.0;
+	}
+	lua_pop(L, 1);
+	
+	/* -------------------- get background color -------------------*/
+	lua_getglobal(L, "background");
+	if (lua_istable(L, -1)){
+		if (lua_getfield(L, -1, "r") == LUA_TNUMBER){
+			int value = lua_tonumber(L, -1);
+			if (value >= 0 && value < 256){
+				gui->background.r = value;
+			}
+		}
+		lua_pop(L, 1);
+		if (lua_getfield(L, -1, "g") == LUA_TNUMBER){
+			int value = lua_tonumber(L, -1);
+			if (value >= 0 && value < 256){
+				gui->background.g = value;
+			}
+		}
+		lua_pop(L, 1);
+		if (lua_getfield(L, -1, "b") == LUA_TNUMBER){
+			int value = lua_tonumber(L, -1);
+			if (value >= 0 && value < 256){
+				gui->background.b = value;
+			}
+		}
+		lua_pop(L, 1);
+	}
+	else{ /* default value, if not definied in file*/
+		
 	}
 	lua_pop(L, 1);
 	
@@ -297,6 +373,22 @@ int config_win (gui_obj *gui){
 			strncpy(config_path, gui->pref_path, DXF_MAX_CHARS);
 			strncat(config_path, "config.lua", DXF_MAX_CHARS);
 			opener(config_path);
+		}
+		if (nk_button_label(gui->ctx, "Reload config")){
+			gui_list_font_free (gui->ui_font_list);
+			gui->ui_font_list = gui_new_font (NULL);
+			
+			gui_load_conf (gui);
+			set_style(gui, gui->theme);
+			
+			{
+				double font_size = 0.8;
+				for (i = 0; i < FONT_NUM_SIZE; i++){
+					gui->alt_font_sizes[i] = gui->ui_font;
+					gui->alt_font_sizes[i].height = font_size * gui->ui_font.height;
+					font_size += 0.2;
+				}
+			}
 		}
 		
 	} else show_config = 0;

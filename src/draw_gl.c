@@ -1,4 +1,5 @@
 #include "draw_gl.h"
+ #include "gui.h"
 
 #define TOLERANCE 1e-6
 
@@ -27,6 +28,154 @@ static int cmp_node (const void * a, const void * b) {
 	else if (r < 0) return -1;
 	/* if node.up values are same, compare node.low values */
 	else return (aa->low - bb->low);
+}
+
+int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
+	gui_obj *gui = data;
+	
+	static GLuint vao, vbo, ebo, vertexShader, fragmentShader, shaderProgram;
+	static int init = 0;
+	
+	if (!init && !clear){ /* init OpenGL */
+		/* buffer setup */
+		GLsizei vs = sizeof(struct Vertex);
+		size_t vp = offsetof(struct Vertex, pos);
+		size_t vt = offsetof(struct Vertex, uv);
+		size_t vc = offsetof(struct Vertex, col);
+		
+		/* Init GLEW */
+		glewExperimental = GL_TRUE;
+		if (glewInit() != GLEW_OK) {
+			fprintf(stderr, "Failed to initialize GLEW\n");
+			return -1;
+		}
+
+		/* Create Vertex Array Object */
+		glGenVertexArrays(1, &vao);
+		glBindVertexArray(vao);
+
+		/* Create a Vertex Buffer Object and copy the vertex data to it */
+		glGenBuffers(1, &vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, MAX_TRIANG * 3 * vs, NULL, GL_STREAM_DRAW); //GL_STATIC_DRAW);
+		
+		/* Create a Element Buffer Object */
+		glGenBuffers(1, &ebo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, MAX_TRIANG * 3 * sizeof(GLuint), NULL,  GL_STREAM_DRAW);//GL_STATIC_DRAW); //GL_STREAM_DRAW
+		
+		/* Create and compile the vertex shader */
+		const char* vertexSource = GLSL(
+			in vec3 position;
+			in vec2 uv;
+			in vec4 color;
+			out vec4 vertexColor;
+			out vec2 texcoord;
+		
+			void main() {
+				gl_Position = vec4(position, 1.0);
+				vertexColor = color;
+				texcoord = uv;
+			}
+		); /* =========== vertex shader */
+
+		vertexShader = glCreateShader(GL_VERTEX_SHADER);
+		glShaderSource(vertexShader, 1, &vertexSource, NULL);
+		glCompileShader(vertexShader);
+
+		/* Create and compile the fragment shader */
+		const char* fragmentSource = GLSL(
+			in vec4 vertexColor;
+			in vec2 texcoord;
+			
+			out vec4 outColor;
+			
+			uniform sampler2D tex;
+
+			void main() {
+				outColor = texture(tex, texcoord) * vertexColor;
+			}
+		); /* ========== fragment shader */
+
+		fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+		glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
+		glCompileShader(fragmentShader);
+
+		/* Link the vertex and fragment shader into a shader program */
+		shaderProgram = glCreateProgram();
+		glAttachShader(shaderProgram, vertexShader);
+		glAttachShader(shaderProgram, fragmentShader);
+		glBindFragDataLocation(shaderProgram, 0, "outColor");
+		glLinkProgram(shaderProgram);
+		glUseProgram(shaderProgram);
+			
+		/*texture */
+		GLuint textures[2];
+		glGenTextures(2, textures);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textures[0]);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		
+		/* blank texture (default) */
+		GLubyte blank[] = {255, 255, 255, 255};
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, blank);
+		
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, textures[1]);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gui->gl_ctx.tex_w, gui->gl_ctx.tex_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		
+		gui->gl_ctx.tex = textures[1];
+		gui->gl_ctx.tex_uni = glGetUniformLocation(shaderProgram, "tex");
+		
+		glUniform1i(gui->gl_ctx.tex_uni, 0);
+
+		/* Specify the layout of the vertex data */
+		GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
+		GLint uvAttrib = glGetAttribLocation(shaderProgram, "uv");
+		GLint colorAttrib = glGetAttribLocation(shaderProgram, "color");
+		
+		glEnableVertexAttribArray(posAttrib);
+		glEnableVertexAttribArray(uvAttrib);
+		glEnableVertexAttribArray(colorAttrib);
+		
+		glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, vs, (void*)vp);
+		glVertexAttribPointer(uvAttrib, 2, GL_FLOAT, GL_FALSE, vs, (void*)vt);
+		glVertexAttribPointer(colorAttrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, vs, (void*)vc);
+		
+		
+		glEnable(GL_BLEND); 
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		
+		/* load vertices/elements directly into vertex/element buffer */
+		gui->gl_ctx.verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gui->gl_ctx.elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+		
+		//glScissor(200,200,100,100);
+		//glEnable(GL_SCISSOR_TEST);
+		//glDisable(GL_SCISSOR_TEST);
+		init = 1;
+		return 1;
+	}
+	else if (init && clear){ /* clear OpenGL - Delete allocated resources */
+		glDeleteProgram(shaderProgram);
+		glDeleteShader(fragmentShader);
+		glDeleteShader(vertexShader);
+		glDeleteBuffers(1, &ebo);
+		glDeleteBuffers(1, &vbo);
+		glDeleteVertexArrays(1, &vao);
+		return 1;
+	}
 }
 
 int draw_gl_line (struct ogl *gl_ctx, int p0[2], int p1[2], int thick){

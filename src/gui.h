@@ -384,7 +384,9 @@ struct Gui_obj {
 };
 typedef struct Gui_obj gui_obj;
 
+struct gui_font * gui_new_font (struct nk_user_font *base_font);
 
+int gui_list_font_free (struct gui_font *list);
 
 
 
@@ -401,7 +403,7 @@ void sel_list_clear (gui_obj *gui);
 int gui_tab (gui_obj *gui, const char *title, int active);
 int gui_tab_img (gui_obj *gui, bmp_img *img, int active, int w);
 
-void set_style(struct nk_context *ctx, enum theme theme);
+void set_style(gui_obj *gui, enum theme theme);
 
 float nk_user_font_get_text_width(nk_handle handle, float height, const char *text, int len);
 

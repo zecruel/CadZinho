@@ -6,6 +6,10 @@ Please, check the compatibility first. */
 
 #include "gui_file.h"
 #include <time.h>
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)|| defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+#include <direct.h>
+#endif
+
 /* POSIX libs*/
 #include <dirent.h>
 #include <sys/stat.h>
@@ -147,7 +151,11 @@ int dir_make (char *path) {
 	if (!path) return 0;
 	if (strlen(path) < 1) return 0;
 	
-	int ret = mkdir(path, 0700);
+	#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)|| defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+		int ret = _mkdir(path);
+	#else
+		int ret = mkdir(path, 0777);
+	#endif
 	if (!ret) return 1; /* success */
 	return 0; /* fail */
 }

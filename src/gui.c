@@ -347,6 +347,46 @@ int gui_list_font_free (struct gui_font *list){
 	
 	free (list); /* free main list structure */
 }
+
+float gui_str_width(nk_handle handle, float height, const char *text, int len){
+	/* get width of a rendered text */
+	/* callback function for Nuklear internal calculations */
+	struct tfont *font = (struct tfont *)handle.ptr;
+	if ((text== NULL) || (font==NULL))  return 0.0;
+	int ofs = 0, str_start = 0, code_p;
+	
+	float width = 0.0;
+	double w = 0.0;
+	struct tt_glyph *curr_glyph = NULL;
+	graph_obj * graph = NULL;
+	
+	while (str_start < len){ /* parse each UTF8 codepoint in text */
+		ofs = utf8_to_codepoint((char *)text + str_start, &code_p);
+		str_start += ofs;
+		
+		if (font->type != FONT_TT) /* shape font*/{	
+			w = 0.0;
+			
+			/* rendering text by default general drawing engine */
+			graph = font_parse_cp(font, code_p, 0, FRAME_LIFE, &w);
+			
+			w = w * height + 1; /* width is proportional to height */
+			width += w-0.5; /* update width */
+			
+		}
+		else{ /* true type font */
+			w = 0.0;
+			curr_glyph = NULL;
+			curr_glyph = tt_find_cp ((struct tt_font *) font->data, code_p); 
+			if (curr_glyph){
+				w = curr_glyph->adv; /* get advance in stored glyph */
+			}
+			/* width is proportional to height */
+			width += w * height; /* update width */
+		}
+	}
+	return width;
+}
 /* ************************************************************* */
 
 int gui_tab (gui_obj *gui, const char *title, int active){
@@ -659,27 +699,6 @@ void set_style(gui_obj *gui, enum theme theme){
 	gui->b_icon_unsel.image_padding.y = -4;
     
     
-}
-
-float nk_user_font_get_text_width2(nk_handle handle, float height, const char *text, int len){
-	struct tfont *font = (struct tfont *)handle.ptr;
-	if ((text!= NULL) && (font!=NULL)) {
-		
-	
-		/* We must copy into a new buffer with exact length null-terminated
-		as nuklear uses variable size buffers and shx_fonts routines doesn't
-		accept a length, it infers length from null-termination */
-		char txt_cpy[len+2];
-		strncpy((char*)&txt_cpy, text, len);
-		//txt_cpy[len - 1] = ' ';
-		txt_cpy[len] = '\0';
-		
-		double txt_w;
-		if (font_str_w(font, txt_cpy, &txt_w, 0)){
-			return (float) height * txt_w;
-		}
-	}
-	return 0.0;
 }
 
 bmp_color nk_to_bmp_color(struct nk_color color){
@@ -1194,8 +1213,8 @@ NK_API int nk_sdl_init(gui_obj* gui){
 	
 	//gui->ui_font.userdata = nk_handle_ptr(ui_font);
 	//gui->ui_font.height = 11.0;
-	
-	gui->ui_font.width = nk_user_font_get_text_width2;
+
+	gui->ui_font.width = gui_str_width;
 	
 	nk_style_set_font(gui->ctx, &(gui->ui_font));
 	

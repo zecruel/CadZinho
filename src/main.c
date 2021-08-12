@@ -330,12 +330,6 @@ int main(int argc, char** argv){
 	bmp_color green = {.r = 0, .g = 255, .b =0, .a = 255};
 	bmp_color yellow = {.r = 255, .g = 255, .b =0, .a = 255};
 	bmp_color grey = {.r = 100, .g = 100, .b = 100, .a = 255};
-	bmp_color magenta_l = {.r = 255, .g = 0, .b = 255, .a = 150};
-	bmp_color transp = {.r = 255, .g = 255, .b = 255, .a = 0};
-	bmp_color cursor = {.r = 255, .g = 255, .b = 255, .a = 100};
-	bmp_color background = {.r = 100, .g = 100, .b = 100, .a = 255};
-	
-	bmp_color hilite[] = {magenta_l, };
 	
 	/* line types in use */
 	double center [] = {12, -6, 2 , -6};
@@ -1418,7 +1412,8 @@ int main(int argc, char** argv){
 			
 			dxf_ents_draw_gl(gui->drawing, &gui->gl_ctx, d_param);
 			
-			draw_cross_cursor_gl(gui, gui->mouse_x, gui->mouse_y, cursor);
+			
+			draw_cursor_gl(gui, gui->mouse_x, gui->mouse_y, gui->cursor);
 			
 			
 			/*hilite test */
@@ -1428,7 +1423,7 @@ int main(int argc, char** argv){
 			
 			
 			
-			d_param.subst = hilite;
+			d_param.subst = &gui->hilite;
 			d_param.len_subst = 1;
 			d_param.inc_thick = 3;
 			

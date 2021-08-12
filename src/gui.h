@@ -176,6 +176,13 @@ enum theme {THEME_BLACK,
 	THEME_BROWN,
 	THEME_PURPLE,
 	THEME_DEFAULT};
+	
+enum Cursor_type{
+	CURSOR_CROSS,
+	CURSOR_SQUARE,
+	CURSOR_X,
+	CURSOR_CIRCLE
+};
 
 struct gui_glyph{
 	int code_p, x, y, w, h;
@@ -205,6 +212,7 @@ struct Gui_obj {
 	void *last; /* to verify if needs to draw */
 	
 	enum theme theme;
+	enum Cursor_type cursor;
 	
 	dxf_drawing *drawing;
 	dxf_node *element, *near_el;
@@ -279,6 +287,7 @@ struct Gui_obj {
 	enum attract_type curr_attr_t;
 	
 	bmp_color background;
+	bmp_color hilite;
 	
 	NSVGimage **svg_curves;
 	bmp_img **svg_bmp;
@@ -442,7 +451,7 @@ void gui_draw_vert(gui_obj *gui, bmp_img *img, dxf_node *obj);
 
 int nk_gl_render(gui_obj *gui) ;
 
-int draw_cross_cursor_gl(gui_obj *gui, int x, int y, bmp_color color);
+int draw_cursor_gl(gui_obj *gui, int x, int y, enum Cursor_type type);
 
 int draw_attractor_gl(gui_obj *gui, enum attract_type type, int x, int y, bmp_color color);
 

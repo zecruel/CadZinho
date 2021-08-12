@@ -1418,6 +1418,7 @@ int gui_start(gui_obj *gui){
 	
 	int i = 0, j = 0;
 	bmp_color gray = {.r = 100, .g = 100, .b = 100, .a = 255};
+	bmp_color hilite = {.r = 255, .g = 0, .b = 255, .a = 125};
 	
 	gui->ctx = NULL;
 	gui->font = NULL;
@@ -1425,6 +1426,7 @@ int gui_start(gui_obj *gui){
 	gui->last = NULL;
 	
 	gui->theme = THEME_GREEN;
+	gui->cursor = CURSOR_CROSS;
 	
 	gui->drawing = NULL;
 	gui->element = NULL;
@@ -1519,6 +1521,7 @@ int gui_start(gui_obj *gui){
 	gui->curr_attr_t = ATRC_END|ATRC_MID|ATRC_QUAD;
 	
 	gui->background = gray;
+	gui->hilite = hilite;
 	
 	gui->svg_curves = NULL;
 	gui->svg_bmp = NULL;
@@ -1804,7 +1807,7 @@ void gui_simple_select(gui_obj *gui){
 	}
 }
 
-int draw_cross_cursor_gl(gui_obj *gui, int x, int y, bmp_color color){
+int draw_cursor_gl(gui_obj *gui, int x, int y, enum Cursor_type type) {
 	if (!gui) return 0;
 	
 	struct ogl *gl_ctx = &(gui->gl_ctx);
@@ -1814,16 +1817,10 @@ int draw_cross_cursor_gl(gui_obj *gui, int x, int y, bmp_color color){
 		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	}
-	/* set the color */
-	/*gl_ctx->fg[0] = color.r;
-	gl_ctx->fg[1] = color.g;
-	gl_ctx->fg[2] = color.b;
-	gl_ctx->fg[3] = color.a;*/
+	/* set the color to contrast with background*/
 	gl_ctx->fg[0] = gui->background.r ^ 255;
 	gl_ctx->fg[1] = gui->background.g ^ 255;
 	gl_ctx->fg[2] = gui->background.b ^ 255;
-	//double alfa = fabs(gui->background.r + gui->background.g + gui->background.b - 382);
-	//gl_ctx->fg[3] = 255 - 0.32*alfa;
 	int alpha = 0;
 	if (gui->background.r > 90 && gui->background.r <125) alpha += 30;
 	if (gui->background.g > 90 && gui->background.g <125) alpha += 30;
@@ -1831,13 +1828,49 @@ int draw_cross_cursor_gl(gui_obj *gui, int x, int y, bmp_color color){
 	gl_ctx->fg[3] = 100 + alpha;
 	
 	/* draw cursor */
-	draw_gl_line (gl_ctx, (int []){0, y}, (int []){gl_ctx->win_w,y}, 3);
-	draw_gl_line (gl_ctx, (int []){x, 0}, (int []){x, gl_ctx->win_h}, 3);
-	
-	draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x+5, y+5}, 1);
-	draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x+5, y-5}, 1);
-	draw_gl_line (gl_ctx, (int []){x+5, y-5}, (int []){x+5, y+5}, 1);
-	draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x-5, y+5}, 1);
+	if (type == CURSOR_SQUARE){
+		draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x+5, y+5}, 3);
+		draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x+5, y-5}, 3);
+		draw_gl_line (gl_ctx, (int []){x+5, y-5}, (int []){x+5, y+5}, 3);
+		draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x-5, y+5}, 3);
+	}
+	else if (type == CURSOR_X){
+		draw_gl_line (gl_ctx, (int []){x-10, y-10}, (int []){x+10, y+10}, 3);
+		draw_gl_line (gl_ctx, (int []){x-10, y+10}, (int []){x+10, y-10}, 3);
+	}
+	else if (type == CURSOR_CIRCLE){
+		int x0, y0, x1, y1, i;
+		double major_ax, minor_ax;
+		struct edge edges[20];
+		
+		major_ax = 5.0;
+		minor_ax = 5.0;
+		
+		x0 = 0.5 + x + major_ax;
+		y0 = 0.5 + y;
+		
+		for (i = 1; i < 20; i++){
+			x1 = 0.5 + x + major_ax * cos( 0.1 * M_PI * i );
+			y1 = 0.5 + y + minor_ax * sin( 0.1 * M_PI * i );
+			edges[i-1] = (struct edge){x0, y0, x1, y1};
+			x0 = x1;
+			y0 = y1;
+		}
+		x1 = 0.5 + x + major_ax;
+		y1 = 0.5 + y;
+		edges[19] = (struct edge){x0, y0, x1, y1};
+		
+		draw_gl_polygon (gl_ctx, 20, edges);
+	}
+	else{
+		draw_gl_line (gl_ctx, (int []){0, y}, (int []){gl_ctx->win_w,y}, 3);
+		draw_gl_line (gl_ctx, (int []){x, 0}, (int []){x, gl_ctx->win_h}, 3);
+		
+		draw_gl_line (gl_ctx, (int []){x-5, y+5}, (int []){x+5, y+5}, 1);
+		draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x+5, y-5}, 1);
+		draw_gl_line (gl_ctx, (int []){x+5, y-5}, (int []){x+5, y+5}, 1);
+		draw_gl_line (gl_ctx, (int []){x-5, y-5}, (int []){x-5, y+5}, 1);
+	}
 	
 	draw_gl (gl_ctx, 0);
 	return 1;

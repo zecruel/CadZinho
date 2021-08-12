@@ -24,7 +24,11 @@ const char* gui_dflt_conf() {
 	"-- Interface theme - green (default), black, white, red, blue, dark, brown or purple\n"
 	"theme = \"green\"\n\n"
 	"-- Background color - RGB components, integer values from 0 to 255\n"
-	"background = { r=100, g=100, b=100 }\n\n";
+	"background = { r=100, g=100, b=100 }\n\n"
+	"-- Hilite color - RGB components, integer values from 0 to 255\n"
+	"hilite = { r=255, g=0, b=255 }\n\n"
+	"-- Drawing cursor type - cross (default), square, x or circle\n"
+	"cursor = \"cross\"\n\n";
 	return conf;
 }
 
@@ -229,7 +233,60 @@ int gui_get_conf (lua_State *L) {
 		lua_pop(L, 1);
 	}
 	else{ /* default value, if not definied in file*/
-		
+		gui->background.r = 100;
+		gui->background.g = 100;
+		gui->background.b = 100;
+	}
+	lua_pop(L, 1);
+	
+	/* -------------------- get hilite color -------------------*/
+	lua_getglobal(L, "hilite");
+	if (lua_istable(L, -1)){
+		if (lua_getfield(L, -1, "r") == LUA_TNUMBER){
+			int value = lua_tonumber(L, -1);
+			if (value >= 0 && value < 256){
+				gui->hilite.r = value;
+			}
+		}
+		lua_pop(L, 1);
+		if (lua_getfield(L, -1, "g") == LUA_TNUMBER){
+			int value = lua_tonumber(L, -1);
+			if (value >= 0 && value < 256){
+				gui->hilite.g = value;
+			}
+		}
+		lua_pop(L, 1);
+		if (lua_getfield(L, -1, "b") == LUA_TNUMBER){
+			int value = lua_tonumber(L, -1);
+			if (value >= 0 && value < 256){
+				gui->hilite.b = value;
+			}
+		}
+		lua_pop(L, 1);
+	}
+	else{ /* default value, if not definied in file*/
+		gui->hilite.r = 255;
+		gui->hilite.g = 0;
+		gui->hilite.b = 255;
+	}
+	lua_pop(L, 1);
+	
+	/* -------------------- get cursor -------------------*/
+	lua_getglobal(L, "cursor");
+	if (lua_isstring(L, -1)){
+		const char *cursor = lua_tostring(L, -1);
+		if (strcmp(cursor, "cross") == 0){
+			gui->cursor = CURSOR_CROSS;
+		}
+		else if (strcmp(cursor, "square") == 0){
+			gui->cursor = CURSOR_SQUARE;
+		}
+		else if (strcmp(cursor, "x") == 0){
+			gui->cursor = CURSOR_X;
+		}
+		else if (strcmp(cursor, "circle") == 0){
+			gui->cursor = CURSOR_CIRCLE;
+		}
 	}
 	lua_pop(L, 1);
 	

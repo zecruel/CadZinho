@@ -916,13 +916,14 @@ int main(int argc, char** argv){
 					gui->drwg_rcnt_size++;
 				
 			}
-			
-			strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
-			strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
-			
-			char title[DXF_MAX_CHARS] = "CadZinho - ";
-			strncat (title, gui->dwg_file, DXF_MAX_CHARS);
-			SDL_SetWindowTitle(window, title);
+			if (open_prg >= 0){
+				strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
+				strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
+				
+				char title[DXF_MAX_CHARS] = "CadZinho - ";
+				strncat (title, gui->dwg_file, DXF_MAX_CHARS);
+				SDL_SetWindowTitle(window, title);
+			}
 		}
 		else if((gui->action == FILE_SAVE) && (gui->path_ok)){
 			gui->action = NONE; gui->path_ok = 0;

@@ -504,8 +504,8 @@ int ltyp_mng (gui_obj *gui){
 	int num_ltypes = 0;
 	
 	static bmp_img ltyp_prev[DXF_MAX_LTYPES + 1];
-	#define PREV_W 300
-	#define PREV_H 40
+	#define PREV_W 294
+	#define PREV_H 34
 	static unsigned char prev_buf[DXF_MAX_LTYPES + 1][4 * PREV_W * PREV_H];
 	if (!init){
 		bmp_color transp = {.r = 255, .g = 255, .b = 255, .a = 0};
@@ -1129,7 +1129,7 @@ int ltyp_mng (gui_obj *gui){
 						bmp_fill (&(ltyp_prev[DXF_MAX_LTYPES]), ltyp_prev[DXF_MAX_LTYPES].bkg); /* clear the image with the background color */
 						graph_draw3(graph, &(ltyp_prev[DXF_MAX_LTYPES]), d_param); /* finally draw preview */
 						
-						nk_layout_row(gui->ctx, NK_STATIC, 52, 4, (float[]){70, 300, 120});
+						nk_layout_row(gui->ctx, NK_STATIC, 40, 4, (float[]){70, 300, 120});
 						nk_label(gui->ctx, "Preview:", NK_TEXT_RIGHT);
 						/* show preview image as a button */
 						nk_button_image_styled(gui->ctx, &gui->b_icon_unsel, nk_image_ptr(&(ltyp_prev[DXF_MAX_LTYPES])));

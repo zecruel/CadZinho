@@ -144,9 +144,6 @@ int gui_get_conf (lua_State *L) {
 		const char * font_dir = dflt_fonts_dir ();
 		if (font_dir)
 			strncat(gui->dflt_fonts_path, font_dir, 5 * DXF_MAX_CHARS);
-		else
-			strncat(gui->dflt_fonts_path, "/", 5 * DXF_MAX_CHARS);
-		
 	}
 	lua_pop(L, 1);
 	
@@ -271,7 +268,7 @@ int gui_get_conf (lua_State *L) {
 	}
 	lua_pop(L, 1);
 	
-	/* -------------------- get cursor -------------------*/
+	/* -------------------- get cursor type -------------------*/
 	lua_getglobal(L, "cursor");
 	if (lua_isstring(L, -1)){
 		const char *cursor = lua_tostring(L, -1);

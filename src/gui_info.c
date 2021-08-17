@@ -1,4 +1,5 @@
 #include "gui_info.h"
+#include "sqlite3.h"
 
 void nk_dxf_ent_info (struct nk_context *ctx, dxf_node *ent, int id){ /* print the entity structure */
 	/* use Nuklear widgets to show a DXF entity structure */
@@ -120,6 +121,111 @@ int info_win (gui_obj *gui){
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		if (nk_button_label(gui->ctx, "Generate DB")){
+			sqlite3 *db;
+			sqlite3_stmt *res;
+			char *zErrMsg = 0;
+			int rc;
+			
+			
+			rc = sqlite3_open("test.db", &db);
+    
+			if (rc != SQLITE_OK) {
+				printf("Cannot open database: %s\n", sqlite3_errmsg(db));
+			}
+			else {
+				char *sql = "DROP TABLE IF EXISTS Ents;" 
+					"CREATE TABLE Ents(Id BIGINT, Entity TEXT, Layer TEXT, Color INT, LineType TEXT, LineW DECIMAL);";
+				//rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
+				rc = sqlite3_exec(db, sql, 0, 0, 0);
+
+				if (rc != SQLITE_OK) {
+					printf("Failed to fetch data: %s\n", sqlite3_errmsg(db));
+				}    
+				else {
+					#if (0)
+					rc = sqlite3_step(res);
+
+					if (rc != SQLITE_DONE) {
+						printf("Failed to create table\n" );
+					}
+					sqlite3_finalize(res);
+					#endif
+					
+					if (gui->sel_list != NULL){
+						char layer[DXF_MAX_CHARS+1];
+						char ltype[DXF_MAX_CHARS+1];
+						int color, lw;
+						dxf_node *ent = NULL, *tmp = NULL;
+						
+						list_node *current = gui->sel_list->next;
+						char *sql = "INSERT INTO Ents VALUES (?1, ?2, ?3, ?4, ?5, ?6);";
+						rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
+
+						if (rc != SQLITE_OK) {
+							printf("Failed to insert data: %s\n", sqlite3_errmsg(db));
+							current = NULL;
+						}
+						
+						
+						// starts the content sweep 
+						//i = 2;
+						while (current != NULL){
+							if (current->data){
+								if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
+									ent = current->data;
+									
+									
+									/* clear variables */
+									layer[0] = 0;
+									ltype[0] = 0;
+									color = 256; /* color by layer */
+									lw = -1; /* line weight by layer */
+									
+									/* get raw parameters directly from entity */
+									if(tmp = dxf_find_attr2(ent, 8))
+										strncpy (layer, tmp->value.s_data, DXF_MAX_CHARS);
+									if(tmp = dxf_find_attr2(ent, 6))
+										strncpy (ltype, tmp->value.s_data, DXF_MAX_CHARS);
+									if(tmp = dxf_find_attr2(ent, 62))
+										color = abs(tmp->value.i_data);
+									if(tmp = dxf_find_attr2(ent, 370))
+										lw = tmp->value.i_data;
+									
+									
+									
+									sqlite3_bind_int64(res, 1, (sqlite3_int64)ent);
+									sqlite3_bind_text(res, 2, ent->obj.name, -1, NULL);
+									sqlite3_bind_text(res, 3, layer, -1, NULL);
+									sqlite3_bind_int(res, 4, color);
+									sqlite3_bind_text(res, 5, ltype, -1, NULL);
+									sqlite3_bind_double(res, 6, lw / 100.0);
+									
+									rc = sqlite3_step(res);
+
+									if (rc != SQLITE_DONE) {
+										printf("Failed to put data\n" );
+										break;
+									}
+									sqlite3_reset(res);
+									
+								}
+							}
+							current = current->next;
+						}
+						
+						sqlite3_finalize(res);
+					}
+					
+					
+					
+				}
+			}
+			
+			sqlite3_close(db);
+		}
+		
+		
 		nk_label(gui->ctx, "BLK:", NK_TEXT_LEFT);
 		i = 1;
 		nk_dxf_ent_info (gui->ctx, gui->drawing->blks, i);

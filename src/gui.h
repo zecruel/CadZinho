@@ -31,6 +31,8 @@
 #include "nanosvg.h"
 #include "nanosvgrast.h"
 
+#include "shp_font.h"
+
 #define FONT_SCALE 1.4
 #define FIXED_MEM 128*1024
 
@@ -213,6 +215,11 @@ struct Gui_obj {
 	
 	enum theme theme;
 	enum Cursor_type cursor;
+	
+	char *seed;
+	char *dflt_pat;
+	char *dflt_lin;
+	char *extra_lin;
 	
 	dxf_drawing *drawing;
 	dxf_node *element, *near_el;
@@ -463,9 +470,6 @@ extern bmp_color dxf_colors[];
 extern const char *text_al_h[];
 extern const char *text_al_v[];
 extern const char *std_h_pat;
-extern const char *shp_font_romans;
-extern const char *shp_font_txt;
-extern const char *shp_ltypeshp;
 extern const char *dflt_ltype;
 extern const char *extra_ltype;
 

@@ -1,5 +1,7 @@
 #include "gui_info.h"
+#if(0)
 #include "sqlite3.h"
+#endif
 
 void nk_dxf_ent_info (struct nk_context *ctx, dxf_node *ent, int id){ /* print the entity structure */
 	/* use Nuklear widgets to show a DXF entity structure */
@@ -121,6 +123,8 @@ int info_win (gui_obj *gui){
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		
+		#if (0)
 		if (nk_button_label(gui->ctx, "Generate DB")){
 			sqlite3 *db;
 			sqlite3_stmt *res;
@@ -136,21 +140,12 @@ int info_win (gui_obj *gui){
 			else {
 				char *sql = "DROP TABLE IF EXISTS Ents;" 
 					"CREATE TABLE Ents(Id BIGINT, Entity TEXT, Layer TEXT, Color INT, LineType TEXT, LineW DECIMAL);";
-				//rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 				rc = sqlite3_exec(db, sql, 0, 0, 0);
 
 				if (rc != SQLITE_OK) {
 					printf("Failed to fetch data: %s\n", sqlite3_errmsg(db));
 				}    
 				else {
-					#if (0)
-					rc = sqlite3_step(res);
-
-					if (rc != SQLITE_DONE) {
-						printf("Failed to create table\n" );
-					}
-					sqlite3_finalize(res);
-					#endif
 					
 					if (gui->sel_list != NULL){
 						char layer[DXF_MAX_CHARS+1];
@@ -224,7 +219,7 @@ int info_win (gui_obj *gui){
 			
 			sqlite3_close(db);
 		}
-		
+		#endif
 		
 		nk_label(gui->ctx, "BLK:", NK_TEXT_LEFT);
 		i = 1;

@@ -499,7 +499,21 @@ shp_typ *shp_font_load(char *buf){
 				curr_mark = ignore;
 			
 			if (curr_mark[0] == '0'){ /* hexadecimal */
-				cmds[cmd_pos] = strtol(curr_mark, NULL, 16);
+				if (str_size == 5) { /* two bytes */
+					char temp [3];
+					temp[2] = 0; /* terminate string */
+					/* first byte */
+					temp[0] = curr_mark[1];
+					temp[1] = curr_mark[2];
+					cmds[cmd_pos] = strtol(temp, NULL, 16);
+					cmd_pos++;
+					
+					/*second byte */
+					temp[0] = curr_mark[3];
+					temp[1] = curr_mark[4];
+					cmds[cmd_pos] = strtol(temp, NULL, 16);
+				} else 
+					cmds[cmd_pos] = strtol(curr_mark, NULL, 16);
 			}
 			else if((curr_mark[0] == '-') && (curr_mark[1] == '0')){ /* negative hexadecimal */
 				cmds[cmd_pos] = strtol(curr_mark + 1, NULL, 16);
@@ -663,7 +677,35 @@ graph_obj *shp_parse_cp(shp_typ *shp_font, int pool_idx, int cp, double *w){
 			/* subshape */
 			if(bypass) bypass = 0;
 			else{
-				/*TODO*/
+				int sub_cp = 0;
+				/*get sub shape code point */
+				if (shp_font->unicode){
+					sub_cp = (shp->cmds[index + 1] << 8) + shp->cmds[index + 2];
+				}
+				else {
+					sub_cp = shp->cmds[index + 1];
+				}
+				
+				/* call recursively to obtain subshape graphics */
+				double xd0, yd0, xd1, yd1, sub_w = 0.0;
+				graph_obj *sub_gr = shp_parse_cp(shp_font, FRAME_LIFE, sub_cp, &sub_w);
+				line_node *sub_lin = NULL;
+				
+				if (sub_gr){ /* add result to list */
+					sub_lin = sub_gr->list->next;
+					/* add the lines */
+					while(sub_lin){ /*sweep the list content */
+						xd0 = pre_x + sub_lin->x0 * scale;
+						yd0 = pre_y + sub_lin->y0 * scale;
+						xd1 = pre_x + sub_lin->x1 * scale;
+						yd1 = pre_y + sub_lin->y1 * scale;
+						
+						line_add(line_list, xd0, yd0, 0.0, xd1, yd1, 0.0);
+						
+						sub_lin = sub_lin->next; /* go to next */
+					}
+				}
+				pre_x += sub_w * scale; /* update position */
 			}
 			if (shp_font->unicode) index += 3;
 			else index += 2;

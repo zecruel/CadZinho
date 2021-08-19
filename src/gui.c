@@ -1655,17 +1655,32 @@ int gui_start(gui_obj *gui){
 	/* ----------- init font list ------------------- */
 	gui->font_list = list_new(NULL, PRG_LIFE);
 	/* load internal shape font "romans" */
-	if(add_shp_font_list(gui->font_list, "romans.shx", (char *)shp_font_romans)){
-		struct tfont *font = get_font_list(gui->font_list, "romans.shx");
+	//if(add_shp_font_list(gui->font_list, "romans.shx", (char *)shp_font_romans)){
+	if( add_shp_font_list(gui->font_list, "txt.shx", (char *) shp_font_txt()) ){
+		struct tfont *font = get_font_list(gui->font_list, "txt.shx");
 		if (font){ /* verify if loaded */
 			gui->dflt_font = font; /* set it as default font (substitute other missing fonts) */
 		}
 	}
 	/* load internal shape font "txt", classic CAD font */
-	add_shp_font_list(gui->font_list, "txt.shx", (char *)shp_font_txt);
+	//add_shp_font_list(gui->font_list, "txt.shx", (char *)shp_font_txt);
+	add_shp_font_list(gui->font_list, "romant.shx", (char *) shp_font_romant());
+	add_shp_font_list(gui->font_list, "gothicg.shx", (char *) shp_font_gothicg());
+	add_shp_font_list(gui->font_list, "isocp.shx", (char *) shp_font_isocp());
+	add_shp_font_list(gui->font_list, "scriptc.shx", (char *) shp_font_scriptc());
+	add_shp_font_list(gui->font_list, "simplex.shx", (char *) shp_font_simplex());
+	add_shp_font_list(gui->font_list, "gothici.shx", (char *) shp_font_gothici());
+	add_shp_font_list(gui->font_list, "romans.shx", (char *) shp_font_romans());
+	add_shp_font_list(gui->font_list, "romanc.shx", (char *) shp_font_romanc());
+	add_shp_font_list(gui->font_list, "complex.shx", (char *) shp_font_complex());
+	add_shp_font_list(gui->font_list, "scripts.shx", (char *) shp_font_scripts());
+	add_shp_font_list(gui->font_list, "italic.shx", (char *) shp_font_italic());
+	add_shp_font_list(gui->font_list, "gothice.shx", (char *) shp_font_gothice());
+	//add_shp_font_list(gui->font_list, "txt.shx", (char *) shp_font_txt());
+	add_shp_font_list(gui->font_list, "romand.shx", (char *) shp_font_romand());
 	
 	/* load internal shape library "ltypeshp", for use in complex linetypes*/
-	add_shp_font_list(gui->font_list, "ltypeshp.shx", (char *)shp_ltypeshp);
+	add_shp_font_list(gui->font_list, "ltypeshp.shx", (char *) shp_font_ltypeshp());
 	
 	/* ui default font */
 	struct tfont *ui_font = get_font_list(gui->font_list, "txt.shx");

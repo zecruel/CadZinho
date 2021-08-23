@@ -175,7 +175,7 @@ int gui_vertex_info (gui_obj *gui){
 					else{
 						/* modify bulge of current vertex */
 						nk_layout_row_dynamic(gui->ctx, 20, 1);
-						double b = nk_propertyd(gui->ctx, "#Bulge", -10.0d, bulge->value.d_data, 10.0, 0.1d, 0.1d);
+						double b = nk_propertyd(gui->ctx, "#Bulge", -10.0, bulge->value.d_data, 10.0, 0.1, 0.1f);
 						
 						if (fabs(b - bulge->value.d_data) > 1.0e-9){
 							bulge->value.d_data = b;

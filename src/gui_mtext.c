@@ -138,7 +138,7 @@ int gui_mtext_info (gui_obj *gui){
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		gui->txt_h = nk_propertyd(gui->ctx, "Text Height", 1e-9, gui->txt_h, 1e9, SMART_STEP(gui->txt_h), SMART_STEP(gui->txt_h));
-		gui->rect_w = nk_propertyd(gui->ctx, "Rect width", 0.0d, gui->rect_w, 1e9, SMART_STEP(gui->rect_w), SMART_STEP(gui->rect_w));
+		gui->rect_w = nk_propertyd(gui->ctx, "Rect width", 0.0, gui->rect_w, 1e9, SMART_STEP(gui->rect_w), SMART_STEP(gui->rect_w));
 		
 		if (gui->t_al_v > 2) gui->t_al_v = 0;
 		if (gui->t_al_h > 2) gui->t_al_h = 0;

@@ -133,9 +133,9 @@ int gui_insert_info (gui_obj *gui){
 			nk_label(gui->ctx, "Enter place point", NK_TEXT_LEFT);
 			
 			/* scale and rotation parameters */
-			gui->scale_x = nk_propertyd(gui->ctx, "Scale", 0.0d, gui->scale_x, 100000.0d, 0.1d, 0.1d);
+			gui->scale_x = nk_propertyd(gui->ctx, "Scale", 0.0, gui->scale_x, 100000.0, 0.1, 0.1f);
 			gui->scale_y = gui->scale_x; //gui->scale_z = gui->scale_x;
-			gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0d, gui->angle, 180.0d, 0.1d, 0.1d);
+			gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0, gui->angle, 180.0, 0.1, 0.1f);
 		}
 		if (show_blk_pp){
 			/* explore and select block popup */

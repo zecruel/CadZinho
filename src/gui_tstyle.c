@@ -743,7 +743,7 @@ int tstyles_mng (gui_obj *gui){
 			
 			struct nk_style_button *sel_type;
 			
-			nk_layout_row(gui->ctx, NK_STATIC, 185, 2, (float[]){170, 190});
+			nk_layout_row(gui->ctx, NK_STATIC, 190, 2, (float[]){167, 193});
 			
 			if (nk_group_begin(gui->ctx, "Available Fonts", NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
 				/* show loaded fonts, available for setting */
@@ -829,7 +829,7 @@ int tstyles_mng (gui_obj *gui){
 			}
 			if (nk_group_begin(gui->ctx, "Font_prev", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 				/* preview img */
-				nk_layout_row_dynamic(gui->ctx, 172, 1);
+				nk_layout_row_dynamic(gui->ctx, 175, 1);
 				nk_button_image(gui->ctx,  nk_image_ptr(gui->preview_img));
 				
 				nk_group_end(gui->ctx);

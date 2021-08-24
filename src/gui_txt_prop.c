@@ -197,7 +197,7 @@ int gui_txt_prop_info (gui_obj *gui){
 		/* ----------- angle ------------ */
 		nk_checkbox_label(gui->ctx, "Angle:", &en_ang);
 		if (en_ang){
-			ang = nk_propertyd(gui->ctx, "#", 0.0d, ang, 360.0d, 0.1d, 0.1d);
+			ang = nk_propertyd(gui->ctx, "#", 0.0, ang, 360.0, 0.1, 0.1f);
 		}
 		else {/* only show information */
 			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", ang);
@@ -207,7 +207,7 @@ int gui_txt_prop_info (gui_obj *gui){
 		/* ----------- rectangle width (MTEXT only) ------------ */
 		nk_checkbox_label(gui->ctx, "Rec W:", &en_rec);
 		if (en_rec){
-			rec_w = nk_propertyd(gui->ctx, "#", 0.0d, rec_w, 1.0e9, SMART_STEP(rec_w), SMART_STEP(rec_w));
+			rec_w = nk_propertyd(gui->ctx, "#", 0.0, rec_w, 1.0e9, SMART_STEP(rec_w), SMART_STEP(rec_w));
 		}
 		else {/* only show information */
 			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", rec_w);

@@ -316,7 +316,7 @@ int gui_rotate_info (gui_obj *gui){
 			nk_label(gui->ctx, ang_str, NK_TEXT_LEFT);
 		}
 		if (gui->rot_mode != ROT_3POINTS)
-			gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0d, gui->angle, 180.0d, 0.1d, 0.1d);
+			gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0, gui->angle, 180.0, 0.1, 0.1f);
 	}
 	return 1;
 }

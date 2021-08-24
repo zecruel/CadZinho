@@ -234,8 +234,8 @@ int gui_hatch_info (gui_obj *gui){
 			if (gui->h_type == HATCH_USER){/*User definied simple hatch*/
 				/* the user can select only angle and spacing of continuous lines*/
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				gui->user_patt.ang = nk_propertyd(gui->ctx, "Angle", 0.0d, gui->user_patt.ang, 360.0d, 0.1d, 0.1d);
-				gui->user_patt.dy = nk_propertyd(gui->ctx, "Spacing", 0.0d, gui->user_patt.dy, 1e9, SMART_STEP(gui->user_patt.dy), SMART_STEP(gui->user_patt.dy));
+				gui->user_patt.ang = nk_propertyd(gui->ctx, "Angle", 0.0, gui->user_patt.ang, 360.0, 0.1, 0.1f);
+				gui->user_patt.dy = nk_propertyd(gui->ctx, "Spacing", 0.0, gui->user_patt.dy, 1e9, SMART_STEP(gui->user_patt.dy), SMART_STEP(gui->user_patt.dy));
 			}
 			else if (gui->h_type == HATCH_PREDEF){ /*Hatch pattern from a library */
 				/*the library or family of pattern hatchs is a .pat file, according the
@@ -321,7 +321,7 @@ int gui_hatch_info (gui_obj *gui){
 				/* optional rotation and scale */
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				gui->patt_scale = nk_propertyd(gui->ctx, "#Scale", 1e-9, gui->patt_scale, 1e9, SMART_STEP(gui->patt_scale), SMART_STEP(gui->patt_scale));
-				gui->patt_ang = nk_propertyd(gui->ctx, "Angle", 0.0d, gui->patt_ang, 360.0d, 0.1d, 0.1d);
+				gui->patt_ang = nk_propertyd(gui->ctx, "Angle", 0.0, gui->patt_ang, 360.0, 0.1, 0.1f);
 			}
 			nk_group_end(gui->ctx);
 		}

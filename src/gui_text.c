@@ -116,7 +116,7 @@ int gui_text_info (gui_obj *gui){
 	nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->txt, DXF_MAX_CHARS, nk_filter_default);
 	/* size and rotation parameters */
 	gui->txt_h = nk_propertyd(gui->ctx, "Height", 1e-9, gui->txt_h, 1e9, SMART_STEP(gui->txt_h), SMART_STEP(gui->txt_h));
-	gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0d, gui->angle, 180.0d, 0.1d, 0.1d);
+	gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0, gui->angle, 180.0, 0.1, 0.1f);
 	/* text aligment parameters */
 	nk_layout_row_dynamic(gui->ctx, 20, 2);
 	gui->t_al_v = nk_combo(gui->ctx, text_al_v, T_AL_V_LEN, gui->t_al_v, 20, nk_vec2(100,105));

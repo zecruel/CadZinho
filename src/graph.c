@@ -2509,7 +2509,12 @@ font: http://rosettacode.org/wiki/Xiaolin_Wu%27s_line_algorithm#C */
 #define fpart_(X) (((double)(X))-(double)ipart_(X))
 #define rfpart_(X) (1.0-fpart_(X))
  
+#ifdef _MSC_VER
+//silly,stupid,i know,msvc does not support this feature now
+#define swap_(a, b) do{ double tmp;  tmp = a; a = b; b = tmp; }while(0)
+#else
 #define swap_(a, b) do{ __typeof__(a) tmp;  tmp = a; a = b; b = tmp; }while(0)
+#endif
 void draw_line_antialias( bmp_img * img, double x1, double y1, double x2, double y2){
 	double dx = x2 - x1;
 	double dy = y2 - y1;

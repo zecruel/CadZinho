@@ -21848,7 +21848,7 @@ nk_textedit_paste(struct nk_text_edit *state, char const *ctext, int len)
 
     /* try to insert the characters */
     str_cursor = nk_str_at_rune(&state->string, state->cursor, &unicode, &glyph_len);
-    cursor = (void *)str_cursor - state->string.buffer.memory.ptr;
+    cursor = str_cursor - state->string.buffer.memory.ptr;
     
     glyphs = nk_utf_len(ctext, len);
     if (nk_str_insert_text_char(&state->string, cursor, text, len)) {

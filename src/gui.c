@@ -59,8 +59,12 @@ font: http://rosettacode.org/wiki/Xiaolin_Wu%27s_line_algorithm#C */
 #define round_(X) ((int)(((double)(X))+0.5))
 #define fpart_(X) (((double)(X))-(double)ipart_(X))
 #define rfpart_(X) (1.0-fpart_(X))
- 
+#ifdef _MSC_VER
+//silly,stupid,i know,msvc does not support this feature now
+#define swap_(a, b) do{ double tmp;  tmp = a; a = b; b = tmp; }while(0)
+#else
 #define swap_(a, b) do{ __typeof__(a) tmp;  tmp = a; a = b; b = tmp; }while(0)
+#endif
 static void line_antialias( unsigned char rast[][4], int w, int h, double x1, double y1, double x2, double y2){
 	double dx = x2 - x1;
 	double dy = y2 - y1;

@@ -118,7 +118,7 @@
 #define PDF_RGB_B(c) ((((c) >> 0) & 0xff) / 255.0)
 #define PDF_IS_TRANSPARENT(c) (((c) >> 24) == 0xff)
 
-#if defined(_MSC_VER) && (_MSC_VER < 1900)
+#if defined(_MSC_VER)
 /*
  * As stated here:
  * http://stackoverflow.com/questions/70013/how-to-detect-if-im-compiling-code-with-visual-studio-2008
@@ -130,7 +130,7 @@
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
 #define SKIP_ATTRIBUTE
-#endif // _MSC_VER && _MSC_VER < 1900
+#endif // _MSC_VER
 
 #ifndef M_SQRT2
 #define M_SQRT2 1.41421356237309504880f

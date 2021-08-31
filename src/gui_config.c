@@ -33,13 +33,37 @@ const char* gui_dflt_conf() {
 }
 
 int gui_load_conf (gui_obj *gui){
-	/* initialize fonts paths with base directory  */
-	snprintf(gui->dflt_fonts_path, 5 * DXF_MAX_CHARS, "%s%c", gui->pref_path, PATH_SEPARATOR);
+	/* initialize fonts paths with base directory and resource folder */
+	snprintf(gui->dflt_fonts_path, 5 * DXF_MAX_CHARS, "%s%c%sres%cfont%c%c", gui->pref_path, PATH_SEPARATOR,
+		gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR, PATH_SEPARATOR);
+	
+	/* load default files */
+	char new_path[MAX_PATH_LEN+1];
+	
+	/* seed */
+	new_path[0] = 0;
+	snprintf(new_path, MAX_PATH_LEN, "%sres%cseed.dxf", gui->pref_path, DIR_SEPARATOR);
+	gui->seed = try_load_dflt(new_path, (char *)dxf_seed_2007);
+	/* linetypes */
+	new_path[0] = 0;
+	snprintf(new_path, MAX_PATH_LEN, "%sres%clin%cdefault.lin", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+	gui->dflt_lin = try_load_dflt(new_path, (char *)ltype_lib_dflt());
+	new_path[0] = 0;
+	snprintf(new_path, MAX_PATH_LEN, "%sres%clin%cextra.lin", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+	gui->extra_lin = try_load_dflt(new_path, (char *)ltype_lib_extra());
+	/* hatch pattern */
+	new_path[0] = 0;
+	snprintf(new_path, MAX_PATH_LEN, "%sres%cpat%cdefault.pat", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+	gui->dflt_pat = try_load_dflt(new_path, (char *)h_pattern_lib_dflt());
+	
+	/* load hatches patterns -NEED IMPROVEMENTS */
+	gui->hatch_fam.next = dxf_hatch_family("Standard", "Internal standard pattern library", gui->dflt_pat);
+	if(gui->hatch_fam.next) gui->end_fam = gui->hatch_fam.next;
 	
 	/* full path of config file */
-	char config_path[DXF_MAX_CHARS + 1];
+	char config_path[MAX_PATH_LEN + 1];
 	config_path[0] = 0;
-	snprintf(config_path, DXF_MAX_CHARS, "%sconfig.lua", gui->pref_path);
+	snprintf(config_path, MAX_PATH_LEN, "%sconfig.lua", gui->pref_path);
 	
 	/* verify if file exists, or try to create a new one with default options */
 	miss_file (config_path, (char*)gui_dflt_conf());
@@ -431,6 +455,16 @@ int config_win (gui_obj *gui){
 		if (nk_button_label(gui->ctx, "Reload config")){
 			gui_list_font_free (gui->ui_font_list);
 			gui->ui_font_list = gui_new_font (NULL);
+			
+			if (gui->seed) free(gui->seed);
+			if (gui->dflt_pat) free(gui->dflt_pat);
+			if (gui->dflt_lin) free(gui->dflt_lin);
+			if (gui->extra_lin) free(gui->extra_lin);
+			
+			gui->seed = NULL;
+			gui->dflt_pat = NULL;
+			gui->dflt_lin = NULL;
+			gui->extra_lin = NULL;
 			
 			gui_load_conf (gui);
 			set_style(gui, gui->theme);

@@ -971,12 +971,12 @@ int ltyp_mng (gui_obj *gui){
 					if (gui_tab (gui, "Default", lib_mode == LT_LIB_DFLT)) {
 						/* default library - configurable internal library */
 						lib_mode = LT_LIB_DFLT;
-						lib = load_lin_buf(gui->drawing, (char *)dflt_ltype, &n_lib); /* parse library */
+						lib = load_lin_buf(gui->drawing, gui->dflt_lin, &n_lib); /* parse library */
 					}
 					if (gui_tab (gui, "Extra", lib_mode == LT_LIB_EXTRA)) {
 						/* extra library - another configurable internal library */
 						lib_mode = LT_LIB_EXTRA;
-						lib = load_lin_buf(gui->drawing, (char *)extra_ltype, &n_lib); /* parse library */
+						lib = load_lin_buf(gui->drawing, gui->extra_lin, &n_lib); /* parse library */
 					}
 					if (gui_tab (gui, "File", lib_mode == LT_LIB_FILE)) {
 						/* external library, from .LIN files */

@@ -169,10 +169,43 @@ int main(int argc, char** argv){
 		strncpy(gui->pref_path, gui->base_dir, DXF_MAX_CHARS);
 	}
 	else {
-		char script_path[MAX_PATH_LEN+1];
-		script_path[0] = 0;
-		snprintf(script_path, MAX_PATH_LEN, "%sscript%c", gui->pref_path, DIR_SEPARATOR);
-		dir_miss (script_path);
+		char new_path[MAX_PATH_LEN+1];
+		/* script path */
+		new_path[0] = 0;
+		snprintf(new_path, MAX_PATH_LEN, "%sscript%c", gui->pref_path, DIR_SEPARATOR);
+		dir_miss (new_path);
+		
+		/* resources path and seed file*/
+		new_path[0] = 0;
+		snprintf(new_path, MAX_PATH_LEN, "%sres%c", gui->pref_path, DIR_SEPARATOR);
+		dir_miss (new_path);
+		new_path[0] = 0;
+		snprintf(new_path, MAX_PATH_LEN, "%sres%cseed.dxf", gui->pref_path, DIR_SEPARATOR);
+		miss_file (new_path, (char *)dxf_seed_2007);
+		
+		/* fonts path */
+		new_path[0] = 0;
+		snprintf(new_path, MAX_PATH_LEN, "%sres%cfont%c", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+		dir_miss (new_path);
+		
+		/* line types path and files */
+		new_path[0] = 0;
+		snprintf(new_path, MAX_PATH_LEN, "%sres%clin%c", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+		dir_miss (new_path);
+		new_path[0] = 0;
+		snprintf(new_path, MAX_PATH_LEN, "%sres%clin%cdefault.lin", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+		miss_file (new_path, (char *)ltype_lib_dflt());
+		new_path[0] = 0;
+		snprintf(new_path, MAX_PATH_LEN, "%sres%clin%cextra.lin", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+		miss_file (new_path, (char *)ltype_lib_extra());
+		
+		/* hatch patterns path and file*/
+		new_path[0] = 0;
+		snprintf(new_path, MAX_PATH_LEN, "%sres%cpat%c", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+		dir_miss (new_path);
+		new_path[0] = 0;
+		snprintf(new_path, MAX_PATH_LEN, "%sres%cpat%cdefault.pat", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+		miss_file (new_path, (char *)h_pattern_lib_dflt());
 	}
 	
 	/* full path of clipboard file */
@@ -416,14 +449,10 @@ int main(int argc, char** argv){
 	url = NULL; /* pass a null file only for initialize the drawing structure */
 	
 	/* **************** init the main drawing ************ */
-	char *seed = try_load_dflt("seed.dxf", (char *)dxf_seed_2007);
 	
-	while (dxf_read (gui->drawing, seed, strlen(seed), &gui->progress) > 0){
+	while (dxf_read (gui->drawing, gui->seed, strlen(gui->seed), &gui->progress) > 0){
 		
 	}
-	
-	free(seed);
-	seed = NULL;
 	
 	gui->layer_idx = dxf_lay_idx (gui->drawing, "0");
 	gui->ltypes_idx = dxf_ltype_idx (gui->drawing, "BYLAYER");
@@ -1581,6 +1610,11 @@ int main(int argc, char** argv){
 	
 	//dxf_hatch_free(gui->list_pattern.next);
 	dxf_h_fam_free(gui->hatch_fam.next);
+	
+	if (gui->seed) free(gui->seed);
+	if (gui->dflt_pat) free(gui->dflt_pat);
+	if (gui->dflt_lin) free(gui->dflt_lin);
+	if (gui->extra_lin) free(gui->extra_lin);
 	
 	free(gui->clip_drwg);
 	

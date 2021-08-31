@@ -1432,6 +1432,11 @@ int gui_start(gui_obj *gui){
 	gui->theme = THEME_GREEN;
 	gui->cursor = CURSOR_CROSS;
 	
+	gui->seed = NULL;
+	gui->dflt_pat = NULL;
+	gui->dflt_lin = NULL;
+	gui->extra_lin = NULL;
+	
 	gui->drawing = NULL;
 	gui->element = NULL;
 	gui->near_el = NULL;
@@ -1577,9 +1582,8 @@ int gui_start(gui_obj *gui){
 	gui->hatch_fam.next = NULL;
 	gui->end_fam = &(gui->hatch_fam);
 	
-	gui->hatch_fam.next = dxf_hatch_family("Standard", "Internal standard pattern library", (char*)std_h_pat);
-	if(gui->hatch_fam.next) gui->end_fam = gui->hatch_fam.next;
-	//dxf_parse_patt((char*)acadiso_pat, &(gui->list_pattern));
+	//gui->hatch_fam.next = dxf_hatch_family("Standard", "Internal standard pattern library", (char*) h_pattern_lib_dflt () );
+	//if(gui->hatch_fam.next) gui->end_fam = gui->hatch_fam.next;
 	
 	gui->patt_scale = 1.0;
 	gui->patt_ang = 0.0;

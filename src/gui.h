@@ -32,6 +32,8 @@
 #include "nanosvgrast.h"
 
 #include "shp_font.h"
+#include "ltype.h"
+#include "hatch_pat.h"
 
 #define FONT_SCALE 1.4
 #define FIXED_MEM 128*1024
@@ -469,9 +471,7 @@ extern const char *dxf_lw_descr[];
 extern bmp_color dxf_colors[];
 extern const char *text_al_h[];
 extern const char *text_al_v[];
-extern const char *std_h_pat;
-extern const char *dflt_ltype;
-extern const char *extra_ltype;
+extern const char *dxf_seed_2007;
 
 
 #ifndef DXF_LW_LEN

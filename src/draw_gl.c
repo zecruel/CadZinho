@@ -829,6 +829,10 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 	
 	/* if has a bitmap image associated */
 	if (master->img){
+		/* base colors */
+		bmp_color white = {.r = 255, .g = 255, .b =255, .a = 255};
+		bmp_color transp = {.r = 255, .g = 255, .b =255, .a = 0};
+		
 		int tl[2], bl[2], tr[2], br[2];
 		/* apply  offset an scale */
 		/* first vertice */
@@ -848,13 +852,25 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 		tl[0] = 0.5 + (current->x1 - param.ofs_x) * param.scale;
 		tl[1] = 0.5 + (current->y1 - param.ofs_y) * param.scale;
 		
+		/* draw a frame */
+		color = validate_color(transp, param.list, param.subst, param.len_subst);
+		gl_ctx->fg[0] = color.r;
+		gl_ctx->fg[1] = color.g;
+		gl_ctx->fg[2] = color.b;
+		gl_ctx->fg[3] = color.a;
+		draw_gl_line (gl_ctx, bl, br, 1 + param.inc_thick);
+		draw_gl_line (gl_ctx, br, tr, 1 + param.inc_thick);
+		draw_gl_line (gl_ctx, tr, tl, 1 + param.inc_thick);
+		draw_gl_line (gl_ctx, tl, bl, 1 + param.inc_thick);
+		
 		/* draw bitmap image */
 		draw_gl (gl_ctx, 1); /* force draw previous commands and cleanup */
 		/* choose blank base color */
-		gl_ctx->fg[0] = 255;
-		gl_ctx->fg[1] = 255;
-		gl_ctx->fg[2] = 255;
-		gl_ctx->fg[3] = 255;
+		color = validate_color(white, param.list, param.subst, param.len_subst);
+		gl_ctx->fg[0] = color.r;
+		gl_ctx->fg[1] = color.g;
+		gl_ctx->fg[2] = color.b;
+		gl_ctx->fg[3] = color.a;
 		/* prepare for new opengl commands */
 		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);

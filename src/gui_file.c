@@ -14,7 +14,7 @@ Please, check the compatibility first. */
 #ifndef _MSC_VER
 #include <dirent.h>
 #else
-#include "dirent.h"
+#include "_dirent.h"
 #endif
 #include <sys/stat.h>
 #ifndef _MSC_VER

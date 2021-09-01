@@ -13,6 +13,8 @@ Please, check the compatibility first. */
 /* POSIX libs*/
 #ifndef _MSC_VER
 #include <dirent.h>
+#else
+#include "dirent.h"
 #endif
 #include <sys/stat.h>
 #ifndef _MSC_VER
@@ -98,19 +100,11 @@ int dir_check(char *path) { /* verify if directory exists */
 	if (!path) return 0;
 	if (strlen(path) < 1) return 0;
 	
-#ifdef _MSC_VER
-  if (_access(path, 0) == 0) {
-    struct stat st;
-    stat(path, &st);
-    return (st.st_mode & S_IFDIR) != 0;
-  }
-#else
 	DIR* dir = opendir(path);
 	if (dir) {
 		closedir(dir);
 		return 1; /* success */
 	}
-#endif
 	return 0; /* fail */
 }
 

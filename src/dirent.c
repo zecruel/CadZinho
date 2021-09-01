@@ -6,8 +6,7 @@
  * under the MIT license.  For all details and documentation, see
  * https://github.com/tronkko/dirent
  */
-#include "dirent.h"
-#ifdef DIRENT_H
+#ifdef _MSC_VER
 
 /* Hide warnings about unreferenced local functions */
 #if defined(__clang__)
@@ -37,6 +36,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <ctype.h>
+#include "dirent.h"
 
 /* Indicates that d_type field is available in dirent structure */
 #define _DIRENT_HAVE_D_TYPE
@@ -1003,4 +1003,5 @@ static void dirent_set_errno(int error)
 #ifdef __cplusplus
 }
 #endif
-#endif /*DIRENT_H*/
+#endif//_MSC_VER
+

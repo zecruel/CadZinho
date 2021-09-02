@@ -305,8 +305,10 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	luaL_addchar(&b, DIR_SEPARATOR);
 	luaL_addstring(&b, "init.lua;");
 	
-	lua_getglobal( T, "package");
 	luaL_pushresult(&b); /* finalize string and put on Lua stack  - new package path */
+	
+	lua_getglobal( T, "package");
+	lua_insert( T, 4 ); /* setup stack  for next operation*/
 	lua_setfield( T, -2, "path"); 
 	lua_pop( T, 4 ); /* get rid of package table from top of stack */
 	

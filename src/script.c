@@ -3900,10 +3900,16 @@ int script_yxml_read (lua_State *L) {
 					}
 				}
 				/* store content string with key "cont" in element owner table */
-				if (content && lua_istable(L, -1)){
-					lua_pushstring(L, "cont");
+				if (content){
 					luaL_pushresult(&b); /* finalize string and put on Lua stack */
-					lua_rawset(L, -3);
+					if (lua_istable(L, -2)){
+						lua_pushstring(L, "cont");
+						lua_insert (L, lua_gettop(L) - 1); /* setup Lua stack to next operation */
+						lua_rawset(L, -3);
+					}
+					else {
+						lua_pop(L, 1);
+					}
 				}
 				/* store element in its owner table, if exists */
 				if (lua_istable(L, -1) && lua_istable(L, -2)){
@@ -3918,7 +3924,6 @@ int script_yxml_read (lua_State *L) {
 			case YXML_CONTENT:
 				if (!content){ /*init content */
 					content = 1;
-					luaL_buffinit(L, &b); /* init the Lua buffer */
 					/* store attr table in its owner */
 					if (attr){
 						attr = 0;
@@ -3930,6 +3935,7 @@ int script_yxml_read (lua_State *L) {
 							lua_rawset(L, -3);
 						}
 					}
+					luaL_buffinit(L, &b); /* init the Lua buffer */
 				}
 				/* store parcial string */
 				luaL_addstring(&b, state->x->data);
@@ -3953,10 +3959,11 @@ int script_yxml_read (lua_State *L) {
 				and its value is in Lua buffer "b". */
 				if (attrval){
 					attrval = 0;
-					if (lua_istable(L, -1)){
+					luaL_pushresult(&b); /* finalize string and put on Lua stack */
+					if (lua_istable(L, -2)){
 						/* store in its owner table, where its name is the key */
 						lua_pushstring(L, state->x->attr);
-						luaL_pushresult(&b); /* finalize string and put on Lua stack */
+						lua_insert (L, lua_gettop(L) - 1); /* setup Lua stack to next operation */
 						lua_rawset(L, -3);
 					}
 				}

@@ -1,5 +1,5 @@
 # Make file for CadZinho on Windows Visual C++ version
-# Copyright 2021 by Yuguo Zhang <Exaybachay@126.com>
+# Yuguo Zhang <Exaybachay@126.com>
 # This makefile is for using Visual C++ with nmake.
 # Usage for Microsoft:
 #     nmake -f Makefile.msvc
@@ -57,7 +57,7 @@ LDFLAGS  = $(LD_BASE_FLAGS) $(LD_OPT_FLAGS) $(LD_ARCH_FLAGS)
 all:	$(EXE)
 
 OBJS=\
-	$(DIR_O)\bmp.obj $(DIR_O)\dirent.obj $(DIR_O)\draw_gl.obj $(DIR_O)\dxf.obj \
+	$(DIR_O)\bmp.obj $(DIR_O)\_dirent.obj $(DIR_O)\draw_gl.obj $(DIR_O)\dxf.obj \
   $(DIR_O)\dxf_attract.obj $(DIR_O)\dxf_copy.obj $(DIR_O)\dxf_create.obj $(DIR_O)\dxf_edit.obj \
 	$(DIR_O)\dxf_ent.obj $(DIR_O)\dxf_graph.obj $(DIR_O)\dxf_hatch.obj $(DIR_O)\dxf_image.obj \
 	$(DIR_O)\dxf_math.obj $(DIR_O)\dxf_print.obj $(DIR_O)\font.obj $(DIR_O)\graph.obj \
@@ -75,7 +75,9 @@ OBJS=\
 	$(DIR_O)\gui_select.obj $(DIR_O)\gui_spline.obj $(DIR_O)\gui_text.obj \
 	$(DIR_O)\gui_toolbox.obj $(DIR_O)\gui_tstyle.obj $(DIR_O)\gui_txt_prop.obj \
 	$(DIR_O)\gui_vertex.obj $(DIR_O)\gui_xy.obj \
-	$(DIR_O)\i_svg_media.obj $(DIR_O)\list.obj $(DIR_O)\main.obj \
+	$(DIR_O)\hatch_pat.obj \
+	$(DIR_O)\i_svg_media.obj $(DIR_O)\list.obj $(DIR_O)\ltype.obj \
+	$(DIR_O)\main.obj \
 	$(DIR_O)\miniz.obj $(DIR_O)\pdfgen.obj $(DIR_O)\rref.obj \
 	$(DIR_O)\script.obj $(DIR_O)\shape.obj $(DIR_O)\shp_font.obj \
 	$(DIR_O)\tt_graph.obj $(DIR_O)\util.obj $(DIR_O)\yxml.obj

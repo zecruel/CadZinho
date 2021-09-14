@@ -61,6 +61,7 @@ void shp_font_free(shp_typ *shp_font){
 				current = next_shp;
 			}
 		}
+	        free(shp_font);
 	}
 }
 

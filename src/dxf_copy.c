@@ -806,7 +806,7 @@ int dxf_cpy_sty_drwg(dxf_drawing *source, dxf_drawing *dest){
 int dxf_block_cpy(dxf_drawing *source, dxf_drawing *dest, dxf_node *block){
 	int ok = 0;
 	char name[DXF_MAX_CHARS], layer[DXF_MAX_CHARS];
-	if (!dest || !name || !block) return 0;
+	if (!dest || !source || !block) return 0;
 	dxf_node *blkrec = NULL, *blk = NULL, *endblk = NULL, *handle = NULL;
 	dxf_node *obj, *new_ent, *current;
 	

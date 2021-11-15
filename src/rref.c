@@ -28,8 +28,9 @@ void MtxSwapRows( struct Matrix * m, int rix1, int rix2)
     if (rix1 == rix2) return;
     r1 = m->mtx[rix1];
     r2 = m->mtx[rix2];
-    for (ix=0; ix<m->dim_x; ix++)
+    for (ix=0; ix<m->dim_x; ix++){
         temp = r1[ix]; r1[ix]=r2[ix]; r2[ix]=temp;
+    }
 }
  
 void MtxNormalizeRow( struct Matrix * m, int rix, int lead)

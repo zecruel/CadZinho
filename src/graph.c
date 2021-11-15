@@ -1713,7 +1713,7 @@ void graph_mod_axis(graph_obj * master, double normal[3] , double elev){
 			master->flags &= ~(EXT_INI);
 			
 			
-			if ((fabs(normal[0] < 0.015625)) && (fabs(normal[1] < 0.015625))){
+			if ((fabs(normal[0]) < 0.015625) && (fabs(normal[1]) < 0.015625)){
 				cross_product(wy_axis, normal, x_axis);
 			}
 			else{

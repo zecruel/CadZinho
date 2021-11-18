@@ -1116,7 +1116,7 @@ graph_obj * dxf_spline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 	n_ctrl = num_ctrl; //+ numfit * order;
 	
 	/*verify if NURBS is valid*/
-	if (order < 1 && order > 14) return NULL;
+	if (order < 1 || order > 14) return NULL;
 	if (n_ctrl < order + 1) return NULL;
 	
 	/* number of necessary control points and knots to interpolate the curve locally */

@@ -1,9 +1,9 @@
 SRC_PATH=./src/
 CC=gcc
 COMPILER_FLAGS = -g -c
-LINKER_FLAGS = `sdl2-config --cflags --libs` -llua -lm
-INCLUDE_PATHS = -I. -I./src/ -I/usr/include/SDL2
-LIBRARY_PATHS = -L/usr/lib/ -L.
+LINKER_FLAGS = `pkg-config --libs lua sdl2` -lm -lGL -lGLU -lGLEW
+INCLUDE_PATHS = -I. -I./src/ `pkg-config --cflags lua sdl2`
+LIBRARY_PATHS = -L/usr/lib -L.
 EXE=cadzinho
 
 SRC=$(wildcard $(SRC_PATH)*.c)

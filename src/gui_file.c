@@ -566,3 +566,61 @@ int file_pop (gui_obj *gui, enum files_types filters[], int num_filters, char *i
 	}
 	return show_app_file;
 }
+
+int gui_file_open (gui_obj *gui, enum files_types filters[], int num_filters, char *init_dir){
+//int file_pop (gui_obj *gui, enum files_types filters[], int num_filters, char *init_dir){
+	/* simple popup for entering file name/path */
+	
+	int show_app_file = 1, i;
+	/*static struct nk_rect s = {20, 200, 400, 150};
+	if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "File", NK_WINDOW_CLOSABLE, s)){*/
+	if (nk_begin(gui->ctx, "Open file", nk_rect(20, 100, 400, 300),
+	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
+	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		nk_label(gui->ctx, "File to Open:", NK_TEXT_CENTERED);
+		
+		/* user can type the file name/path, or paste text, or drop from system navigator */
+		nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
+		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_path, MAX_PATH_LEN, nk_filter_default);
+		
+		nk_layout_row_dynamic(gui->ctx, 20, 2);
+		if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
+			//nk_popup_close(gui->ctx);
+			show_app_file = 2;
+			gui->show_file_br = 0;
+		}
+		if (nk_button_label(gui->ctx, "Explore")) {
+			/* option for internal file explorer */
+			int i;
+			
+			/* update file extension filter */
+			for (i = 0; i < num_filters; i++){
+				gui->file_filter_types[i] = filter_types[filters[i]];
+				gui->file_filter_descr[i] = filter_descr[filters[i]];
+			}
+			gui->file_filter_count = num_filters;
+			gui->show_file_br = 1;
+		}
+		
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		nk_label(gui->ctx, "Recent:", NK_TEXT_CENTERED);
+		nk_layout_row_dynamic(gui->ctx, 20, 2);
+		for (i = 1; i <= gui->drwg_rcnt_size; i++){
+			/* get position in array, considering as circular buffer */
+			int pos = (gui->drwg_rcnt_pos - i);
+			if (pos < 0) pos = DRWG_RECENT_MAX + pos;
+			char *file = get_filename( gui->drwg_recent[pos] );
+			
+			if (nk_button_label(gui->ctx, file)) {
+				strncpy(gui->curr_path, gui->drwg_recent[pos], MAX_PATH_LEN);
+			}
+		}
+		
+	} else {
+		show_app_file = 0;
+		gui->show_file_br = 0;
+	}
+	nk_end(gui->ctx);
+	return show_app_file;
+}

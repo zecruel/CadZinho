@@ -592,10 +592,13 @@ int gui_main_win(gui_obj *gui){
 			} else gui->show_app_about = nk_false;
 		}
 		
+	} // *** test
+	nk_end(gui->ctx); //***test
 		if (gui->show_app_file){
 			enum files_types filters[2] = {FILE_DXF, FILE_ALL};
 			char path[20];
-			gui->show_app_file = file_pop (gui, filters, 2, NULL);
+			//gui->show_app_file = file_pop (gui, filters, 2, NULL); // *** test
+			gui->show_app_file = gui_file_open (gui, filters, 2, NULL);  // *** test
 			if (gui->show_app_file == 2){
 					//if (strlen(file_path) > 4){
 						gui->path_ok = 1;
@@ -604,8 +607,8 @@ int gui_main_win(gui_obj *gui){
 				gui->show_app_file = 0;
 			}
 		}
-	}
-	nk_end(gui->ctx);
+	//} // *** test
+	//nk_end(gui->ctx); // *** test
 	
 	
 	return 1;

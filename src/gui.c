@@ -1549,6 +1549,8 @@ int gui_start(gui_obj *gui){
 	gui->blk_descr[0] = 0;
 	gui->tag_mark[0] = '#'; gui->tag_mark[1] = 0;
 	gui->hide_mark[0] = '*'; gui->hide_mark[1] = 0;
+	gui->value_mark[0] = '$'; gui->value_mark[1] = 0;
+	gui->dflt_value[0] = '?'; gui->dflt_value[1] = 0;
 	
 	gui->sel_list = NULL;
 	gui->phanton = NULL;

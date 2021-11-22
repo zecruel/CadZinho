@@ -315,10 +315,12 @@ struct Gui_obj {
 	char txt[DXF_MAX_CHARS];
 	char tag[DXF_MAX_CHARS];
 	char long_txt[5 * DXF_MAX_CHARS];
-	char blk_name[DXF_MAX_CHARS];
-	char blk_descr[DXF_MAX_CHARS];
-	char tag_mark[DXF_MAX_CHARS];
-	char hide_mark[DXF_MAX_CHARS];
+	char blk_name[DXF_MAX_CHARS+1];
+	char blk_descr[DXF_MAX_CHARS+1];
+	char tag_mark[DXF_MAX_CHARS+1];
+	char hide_mark[DXF_MAX_CHARS+1];
+	char value_mark[DXF_MAX_CHARS+1];
+	char dflt_value[DXF_MAX_CHARS+1];
 	
 	char patt_name[DXF_MAX_CHARS];
 	char patt_descr[DXF_MAX_CHARS];

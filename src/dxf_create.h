@@ -63,36 +63,37 @@ int do_redo(struct do_list *list);
 void dxf_obj_transverse(dxf_node *source);
 
 dxf_node * dxf_new_line (double x0, double y0, double z0,
-double x1, double y1, double z1,
-int color, char *layer, char *ltype, int lw, int paper, int pool);
+	double x1, double y1, double z1,
+	int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 dxf_node * dxf_new_lwpolyline (double x0, double y0, double z0,
 double bulge, int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 int dxf_lwpoly_append (dxf_node * poly,
-double x0, double y0, double z0, double bulge, int pool);
+	double x0, double y0, double z0, double bulge, int pool);
 
 int dxf_lwpoly_remove (dxf_node * poly, int idx);
 
 dxf_node * dxf_new_circle (double x0, double y0, double z0,
-double r, int color, char *layer, char *ltype, int lw, int paper, int pool);
+	double r, int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 dxf_node * dxf_new_text (double x0, double y0, double z0, double h,
-char *txt, int color, char *layer, char *ltype, int lw, int paper, int pool);
+	char *txt, int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 dxf_node * dxf_new_mtext (double x0, double y0, double z0, double h,
-char *txt[], int num_txt, int color, char *layer, char *ltype, int lw, int paper, int pool);
+	char *txt[], int num_txt, int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 dxf_node * dxf_new_attdef (double x0, double y0, double z0, double h,
-char *txt, char *tag, int color, char *layer, char *ltype, int lw, int paper, int pool);
+	char *txt, char *tag, int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 dxf_node * dxf_new_attrib (double x0, double y0, double z0, double h,
-char *txt, char *tag, int color, char *layer, char *ltype, int lw, int paper, int pool);
+	char *txt, char *tag, int color, char *layer, char *ltype, int lw, int paper, int pool);
 
-dxf_node * dxf_attdef_cpy (dxf_node *text, char *tag, double x0, double y0, double z0, int hide, int pool);
+dxf_node * dxf_attdef_cpy (dxf_node *text, char *tag, char *value,
+	double x0, double y0, double z0, int hide, int pool);
 
 dxf_node * dxf_attrib_cpy (dxf_node *attdef, double x0, double y0, double z0, 
-double scale, double rotation, int pool);
+	double scale, double rotation, int pool);
 
 dxf_node * dxf_new_seqend (char *layer, int pool);
 
@@ -103,21 +104,15 @@ dxf_node * dxf_new_begblk (char *name, char *layer, char *owner, int pool);
 dxf_node * dxf_new_blkrec (char *name, int pool);
 
 int dxf_block_append(dxf_node *blk, dxf_node *obj);
-
-int dxf_new_block(dxf_drawing *drawing, char *name, char *descr,
-	double x, double y, double z,
-	int txt2attr, char *mark, char *hide_mark, 
-	char *layer, list_node *list,
-	struct do_list *list_do, int pool);
 	
-int dxf_new_block2(dxf_drawing *drawing, char *name, char *descr,
+int dxf_new_block(dxf_drawing *drawing, char *name, char *descr,
 	double x, double y, double z,
 	int txt2attr, char *mark, char *hide_mark,  char *value_mark, char *dflt_value,
 	char *layer, list_node *list,
 	struct do_list *list_do, int pool);
 
 dxf_node * dxf_new_insert (char *name, double x0, double y0, double z0,
-int color, char *layer, char *ltype, int lw, int paper, int pool);
+	int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 int dxf_insert_append(dxf_drawing *drawing, dxf_node *ins, dxf_node *obj, int pool);
 
@@ -130,40 +125,40 @@ int dxf_new_tstyle (dxf_drawing *drawing, char *name);
 int dxf_new_tstyle_shp (dxf_drawing *drawing, char *name);
 
 dxf_node * dxf_new_hatch (struct h_pattern *pattern, graph_obj *bound,
-int solid, int assoc,
-int style, /* 0 = normal odd, 1 = outer, 2 = ignore */
-int type, /* 0 = user, 1 = predefined, 2 =custom */
-double rot, double scale,
-int color, char *layer, char *ltype, int lw, int paper, int pool);
+	int solid, int assoc,
+	int style, /* 0 = normal odd, 1 = outer, 2 = ignore */
+	int type, /* 0 = user, 1 = predefined, 2 =custom */
+	double rot, double scale,
+	int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 dxf_node * dxf_new_hatch2 (struct h_pattern *pattern, list_node *bound_list,
-int solid, int assoc,
-int style, /* 0 = normal odd, 1 = outer, 2 = ignore */
-int type, /* 0 = user, 1 = predefined, 2 =custom */
-double rot, double scale,
-int color, char *layer, char *ltype, int lw, int paper, int pool);
+	int solid, int assoc,
+	int style, /* 0 = normal odd, 1 = outer, 2 = ignore */
+	int type, /* 0 = user, 1 = predefined, 2 =custom */
+	double rot, double scale,
+	int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 dxf_node * dxf_new_spline (dxf_node *poly, int degree, int closed,
-int color, char *layer, char *ltype, int lw, int paper, int pool);
+	int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 dxf_node * dxf_new_spline2 (dxf_node *poly, int closed,
-int color, char *layer, char *ltype, int lw, int paper, int pool);
+	int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 dxf_node * dxf_new_arc (double x0, double y0, double z0,
-double r, double start, double end,
-int color, char *layer, char *ltype, int lw, int paper, int pool);
+	double r, double start, double end,
+	int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 dxf_node * dxf_new_ellipse (double x0, double y0, double z0,
-double x1, double y1, double z1,
-double r, double start, double end,
-int color, char *layer, char *ltype, int lw, int paper, int pool);
+	double x1, double y1, double z1,
+	double r, double start, double end,
+	int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 dxf_node * dxf_new_imgdef (char *path, int pool);
 
 dxf_node * dxf_new_image (dxf_drawing *drawing,
-double x0, double y0, double z0,
-double u[3], double v[3], double w, double h,
-char *path,
-int color, char *layer, char *ltype, int lw, int paper, int pool);
+	double x0, double y0, double z0,
+	double u[3], double v[3], double w, double h,
+	char *path,
+	int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 #endif

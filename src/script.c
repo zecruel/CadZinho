@@ -2463,6 +2463,13 @@ int script_new_text (lua_State *L) {
 /* given parameters:
 	- entities, as table of userdata
 	- block name, as string
+	- description, as string (optional)
+	- convert texts elements to tags, as boolean (optional) - default is "false"
+	- mark for convert to tag, as string (optional) - default is "#"
+	- mark for hidden tags, as string (optional) - default is "*"
+	- mark for tag value, as string (optional) - default is "$"
+	- default value for tags, as string (optional) - default is "?"
+	- x, y, z, as number (optional) - reference point (zero) for block. If not given, minimal coordinates of elements is used.
 returns:
 	- block entry, as userdata
 Notes:
@@ -2515,13 +2522,99 @@ int script_new_block (lua_State *L) {
 		return 1;
 	}
 	
+	char descr[DXF_MAX_CHARS+1];
+	descr[0] = 0;
+	double x, y, z;
+	int txt2attr = 0, ref_pt = 0;
+	char mark[DXF_MAX_CHARS+1];
+	mark[0] = '#'; mark[1] = 0;
+	char hide_mark[DXF_MAX_CHARS+1];
+	hide_mark[0] = '*'; hide_mark[1] = 0;
+	char value_mark[DXF_MAX_CHARS+1];
+	value_mark[0] = '$'; value_mark[1] = 0;
+	char dflt_value[DXF_MAX_CHARS+1];
+	dflt_value[0] = '?'; dflt_value[1] = 0;
+	
+	
 	/* get name */
-	char name[DXF_MAX_CHARS];
+	char name[DXF_MAX_CHARS+1];
 	name[0] = 0;
-	strncpy(name, lua_tostring(L, 2), DXF_MAX_CHARS - 1);
+	strncpy(name, lua_tostring(L, 2), DXF_MAX_CHARS);
 	if (strlen(name) <= 0) { /* invalid text */
 		lua_pushnil(L); /* return fail */
 		return 1;
+	}
+	
+	if (n > 2){
+		if (!lua_isstring(L, 3)) { /* arguments types */
+			lua_pushliteral(L, "new_block: incorrect argument type");
+			lua_error(L);
+		}
+		else{
+			strncpy(descr, lua_tostring(L, 3), DXF_MAX_CHARS);
+		}
+	}
+	
+	if (n > 3){
+		if (!lua_isboolean(L, 4)) { /* arguments types */
+			lua_pushliteral(L, "new_block: incorrect argument type");
+			lua_error(L);
+		}
+		else{
+			txt2attr = lua_toboolean(L, 4);
+		}
+	}
+	
+	if (txt2attr){
+		if (n > 4){
+			if (!lua_isstring(L, 5)) { /* arguments types */
+				lua_pushliteral(L, "new_block: incorrect argument type");
+				lua_error(L);
+			}
+			else if (strlen (lua_tostring(L, 5)) ){
+				strncpy(mark, lua_tostring(L, 5), DXF_MAX_CHARS);
+			}
+		}
+		if (n > 5){
+			if (!lua_isstring(L, 6)) { /* arguments types */
+				lua_pushliteral(L, "new_block: incorrect argument type");
+				lua_error(L);
+			}
+			else if (strlen (lua_tostring(L, 6)) ){
+				strncpy(hide_mark, lua_tostring(L, 6), DXF_MAX_CHARS);
+			}
+		}
+		if (n > 6){
+			if (!lua_isstring(L, 7)) { /* arguments types */
+				lua_pushliteral(L, "new_block: incorrect argument type");
+				lua_error(L);
+			}
+			else if (strlen (lua_tostring(L, 7)) ){
+				strncpy(value_mark, lua_tostring(L, 7), DXF_MAX_CHARS);
+			}
+		}
+		if (n > 7){
+			if (!lua_isstring(L, 8)) { /* arguments types */
+				lua_pushliteral(L, "new_block: incorrect argument type");
+				lua_error(L);
+			}
+			else if (strlen (lua_tostring(L, 8)) ){
+				strncpy(dflt_value, lua_tostring(L, 8), DXF_MAX_CHARS);
+			}
+		}
+	}
+	
+	if (n > 10){
+		if (!lua_isnumber(L, 9) || !lua_isnumber(L, 10) || !lua_isnumber(L, 11) ) { /* arguments types */
+			lua_pushliteral(L, "new_block: incorrect argument type");
+			lua_error(L);
+		}
+		else{
+			ref_pt = 1;
+			x = lua_tonumber(L, 9);
+			y = lua_tonumber(L, 10);
+			z = lua_tonumber(L, 11);
+		}
 	}
 	
 	dxf_drawing *drawing = gui->drawing;
@@ -2538,11 +2631,13 @@ int script_new_block (lua_State *L) {
 	double max_x = 0.0, max_y = 0.0;
 	double min_x = 0.0, min_y = 0.0;
 	int init_ext = 0, ok = 0;
-	char txt[DXF_MAX_CHARS], tag[DXF_MAX_CHARS];
-	txt[0] = 0;
+	char tag[DXF_MAX_CHARS+1], value[DXF_MAX_CHARS+1];
+	value[0] = 0;
 	tag[0] = 0;
 	
-	//int mark_len = strlen(mark);
+	int mark_len = strlen(mark);
+	int hide_mark_len = strlen(hide_mark);
+	int value_mark_len = strlen(value_mark);
 	
 	/* create BLOCK_RECORD table entry*/
 	blkrec = dxf_new_blkrec (name, DWG_LIFE);
@@ -2551,6 +2646,8 @@ int script_new_block (lua_State *L) {
 	
 	/* begin block */
 	if (handle) blk = dxf_new_begblk (name, gui->drawing->layers[gui->layer_idx].name, (char *)handle->value.s_data, DWG_LIFE);
+	/* change the block description */
+	dxf_attr_change(blk, 4, (void *)descr);
 	/* get a handle */
 	ok = ent_handle(drawing, blk);
 	/* use the handle to owning the ENDBLK ent */
@@ -2563,21 +2660,27 @@ int script_new_block (lua_State *L) {
 	
 	struct ent_lua *ent_obj;
 	
-	/* first get the list coordinates extention */
-	/* iterate over table */
-	lua_pushnil(L);  /* first key */
-	while (lua_next(L, 1) != 0) { /* table index are shifted*/
-		/* uses 'key' (at index -2) and 'value' (at index -1) */
-		if ( ent_obj =  luaL_checkudata(L, -1, "cz_ent_obj") ){
-			/* get entity */
-			obj = ent_obj->curr_ent;  /*try to get current entity */
-			if (!obj) obj = ent_obj->orig_ent; /* if not current, try original entity */
-			
-			list_node *graphics = dxf_graph_parse(gui->drawing, obj, 0, FRAME_LIFE);
-			graph_list_ext(graphics, &init_ext, &min_x, &min_y, &max_x, &max_y);
+	if (!ref_pt){
+		/* get the list coordinates extention */
+		/* iterate over table */
+		lua_pushnil(L);  /* first key */
+		while (lua_next(L, 1) != 0) { /* table index are shifted*/
+			/* uses 'key' (at index -2) and 'value' (at index -1) */
+			if ( ent_obj =  luaL_checkudata(L, -1, "cz_ent_obj") ){
+				/* get entity */
+				obj = ent_obj->curr_ent;  /*try to get current entity */
+				if (!obj) obj = ent_obj->orig_ent; /* if not current, try original entity */
+				
+				list_node *graphics = dxf_graph_parse(gui->drawing, obj, 0, FRAME_LIFE);
+				graph_list_ext(graphics, &init_ext, &min_x, &min_y, &max_x, &max_y);
+			}
+			/* removes 'value'; keeps 'key' for next iteration */
+			lua_pop(L, 1);
 		}
-		/* removes 'value'; keeps 'key' for next iteration */
-		lua_pop(L, 1);
+		
+		x = min_x;
+		y = min_y;
+		z = 0.0;
 	}
 	
 	/*then copy the entities of list and apply offset in their coordinates*/
@@ -2589,13 +2692,76 @@ int script_new_block (lua_State *L) {
 			/* get entity */
 			obj = ent_obj->curr_ent;  /*try to get current entity */
 			if (!obj) obj = ent_obj->orig_ent; /* if not current, try original entity */
+			
 			if (obj->type == DXF_ENT){ /* DXF entity  */
-				
-				new_ent = dxf_ent_copy(obj, DWG_LIFE);
+				if(strcmp(obj->obj.name, "TEXT") == 0 && txt2attr){
+					text = dxf_find_attr2(obj, 1);
+					if (text){
+						if (strncmp (text->value.s_data, mark, mark_len) == 0){
+							/*skip marked text, to future proccess */
+							lua_pop(L, 1); /* removes 'value'; keeps 'key' for next iteration */
+							continue;
+						}
+					}
+				}
+				if(strcmp(obj->obj.name, "INSERT") == 0){
+					/* don't copy ATTRIB in INSERT ents */
+					new_ent = dxf_ent_cpy_simple(obj, DWG_LIFE);
+					dxf_attr_change(new_ent, 66, (int[]){0});
+				}
+				else new_ent = dxf_ent_copy(obj, DWG_LIFE);
 				ent_handle(drawing, new_ent);
-				dxf_edit_move(new_ent, -min_x, -min_y, 0.0);
+				dxf_edit_move(new_ent, -x, -y, -z);
 				dxf_obj_append(blk, new_ent);
 			}
+			
+		}
+		/* removes 'value'; keeps 'key' for next iteration */
+		lua_pop(L, 1);
+	}
+	
+	/*then transform marked text entities to attdef*/
+	/* iterate over table */
+	lua_pushnil(L);  /* first key */
+	while (lua_next(L, 1) != 0) { /* table index are shifted*/
+		/* uses 'key' (at index -2) and 'value' (at index -1) */
+		if ( ent_obj =  luaL_checkudata(L, -1, "cz_ent_obj") ){
+			/* get entity */
+			obj = ent_obj->curr_ent;  /*try to get current entity */
+			if (!obj) obj = ent_obj->orig_ent; /* if not current, try original entity */
+			
+			if (obj->type == DXF_ENT){ /* DXF entity  */
+				if(strcmp(obj->obj.name, "TEXT") == 0 && txt2attr){
+					text = dxf_find_attr2(obj, 1);
+					if (text){
+						if (strncmp (text->value.s_data, mark, mark_len) == 0){
+							strncpy(tag, text->value.s_data + mark_len, DXF_MAX_CHARS);
+							value[0] = 0;
+							if (dflt_value) {
+								strncpy(value, dflt_value, DXF_MAX_CHARS);
+							}
+							
+							/* try to find value mark */
+							if (value_mark_len){
+								char *v = strstr(tag,  value_mark);
+								if (v){
+									/* copy to value string */
+									strncpy(value, v + value_mark_len, DXF_MAX_CHARS);
+									*v = 0; /* strip value from tag string */
+								}
+							}
+							/* verify if is marked to invisible attribute*/
+							if (strncmp (tag, hide_mark, hide_mark_len) == 0){
+								new_ent = dxf_attdef_cpy (obj, tag + hide_mark_len, value, x, y, z, 1, DWG_LIFE);
+							}
+							else new_ent = dxf_attdef_cpy (obj, tag, value, x, y, z, 0, DWG_LIFE);
+							ent_handle(drawing, new_ent);
+							dxf_obj_append(blk, new_ent);
+						}
+					}
+				}
+			}
+			
 		}
 		/* removes 'value'; keeps 'key' for next iteration */
 		lua_pop(L, 1);
@@ -2624,7 +2790,6 @@ int script_new_block (lua_State *L) {
 			do_add_entry(&gui->list_do, msg);
 			script->do_init = 1;
 		}
-		
 		do_add_item(gui->list_do.current, NULL, blkrec);
 		do_add_item(gui->list_do.current, NULL, blk);
 		lua_pushlightuserdata(L, (void *) blk); /* return success */

@@ -176,7 +176,8 @@ int gui_insert_info (gui_obj *gui){
 					blk_idx = -1;
 					
 					/* get description of current block */
-					blk_nm = dxf_find_attr2(blk, 1);
+					descr [0] = 0;
+					blk_nm = dxf_find_attr2(blk, 4);
 					if (blk_nm){
 						strncpy(descr, blk_nm->value.s_data, DXF_MAX_CHARS);
 						

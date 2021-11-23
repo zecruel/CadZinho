@@ -42,12 +42,7 @@ int gui_block_interactive(gui_obj *gui){
 		else{
 			if (gui->ev & EV_ENTER){
 				/* confirm block creation */
-				/*dxf_new_block(gui->drawing, gui->blk_name, gui->blk_descr,
-				gui->step_x[1], gui->step_y[1], 0.0,
-				gui->text2tag, gui->tag_mark, gui->hide_mark,
-				"0", gui->sel_list, &gui->list_do, DWG_LIFE);				
-				gui_default_modal(gui);*/
-				dxf_new_block2(gui->drawing, gui->blk_name, gui->blk_descr,
+				dxf_new_block (gui->drawing, gui->blk_name, gui->blk_descr,
 				gui->step_x[1], gui->step_y[1], 0.0,
 				gui->text2tag, gui->tag_mark, gui->hide_mark, gui->value_mark, gui->dflt_value,
 				"0", gui->sel_list, &gui->list_do, DWG_LIFE);				

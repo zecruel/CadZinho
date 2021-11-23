@@ -125,8 +125,8 @@ dxf_node * dxf_drwg_cpy(dxf_drawing *source, dxf_drawing *dest, dxf_node *obj){
 		
 		block = dxf_find_obj_descr2(source->blks, "BLOCK", blk_name->value.s_data);
 		if(!block) return NULL;
-		
-		if (!dxf_block_cpy(source, dest, block)) return NULL;
+		dxf_node *block_rec = NULL, *new_block = NULL;
+		if (!dxf_block_cpy(source, dest, block, &block_rec, &new_block)) return NULL;
 	}
 	if (strcmp(obj->obj.name, "DIMENSION") == 0){
 		/* copy DIMSTYLE */
@@ -803,7 +803,7 @@ int dxf_cpy_sty_drwg(dxf_drawing *source, dxf_drawing *dest){
 	return ok;
 }
 
-int dxf_block_cpy(dxf_drawing *source, dxf_drawing *dest, dxf_node *block){
+int dxf_block_cpy(dxf_drawing *source, dxf_drawing *dest, dxf_node *block, dxf_node **block_rec, dxf_node **new_block){
 	int ok = 0;
 	char name[DXF_MAX_CHARS], layer[DXF_MAX_CHARS];
 	if (!dest || !source || !block) return 0;
@@ -860,12 +860,10 @@ int dxf_block_cpy(dxf_drawing *source, dxf_drawing *dest, dxf_node *block){
 	if (ok) ok = dxf_obj_append(blk, endblk);
 	
 	/*attach to blocks section*/
-	//if (ok) do_add_entry(list_do, "NEW BLOCK"); /* undo/redo list*/
 	if (ok) ok = dxf_obj_append(dest->blks_rec, blkrec);
-	//if (ok) do_add_item(list_do->current, NULL, blkrec);/* undo/redo list*/
+	if (ok) *block_rec = blkrec;
 	if (ok) ok = dxf_obj_append(dest->blks, blk);
-	//if (ok) do_add_item(list_do->current, NULL, blk);/* undo/redo list*/
-	
+	if (ok) *new_block = blk;
 	
 	return ok;
 }

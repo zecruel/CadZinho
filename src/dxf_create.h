@@ -105,11 +105,11 @@ dxf_node * dxf_new_blkrec (char *name, int pool);
 
 int dxf_block_append(dxf_node *blk, dxf_node *obj);
 	
-int dxf_new_block(dxf_drawing *drawing, char *name, char *descr,
+int dxf_new_block (dxf_drawing *drawing, char *name, char *descr,
 	double x, double y, double z,
 	int txt2attr, char *mark, char *hide_mark,  char *value_mark, char *dflt_value,
 	char *layer, list_node *list,
-	struct do_list *list_do, int pool);
+	dxf_node **block_rec, dxf_node **block, int pool);
 
 dxf_node * dxf_new_insert (char *name, double x0, double y0, double z0,
 	int color, char *layer, char *ltype, int lw, int paper, int pool);

@@ -1066,7 +1066,7 @@ int dxf_new_block (dxf_drawing *drawing, char *name, char *descr,
 	double x, double y, double z,
 	int txt2attr, char *mark, char *hide_mark,  char *value_mark, char *dflt_value,
 	char *layer, list_node *list,
-	struct do_list *list_do, int pool)
+	dxf_node **block_rec, dxf_node **block, int pool)
 {
 	int ok = 0;
 	
@@ -1179,14 +1179,57 @@ int dxf_new_block (dxf_drawing *drawing, char *name, char *descr,
 			if (ok) ok = dxf_obj_append(blk, endblk);
 			
 			/*attach to blocks section*/
-			if (ok) do_add_entry(list_do, "NEW BLOCK"); /* undo/redo list*/
 			if (ok) ok = dxf_obj_append(drawing->blks_rec, blkrec);
-			if (ok) do_add_item(list_do->current, NULL, blkrec);/* undo/redo list*/
+			if (ok) *block_rec = blkrec;
 			if (ok) ok = dxf_obj_append(drawing->blks, blk);
-			if (ok) do_add_item(list_do->current, NULL, blk);/* undo/redo list*/
+			if (ok) *block = blk;
 			
 		}
 	}
+	
+	return ok;
+}
+
+int dxf_new_blk_file (dxf_drawing *drawing, char *name, char *descr,
+	double x, double y, double z,
+	int txt2attr, char *mark, char *hide_mark,  char *value_mark, char *dflt_value,
+	char *layer, char * path,
+	dxf_node **block_rec, dxf_node **block, int pool)
+{
+	int ok = 0;
+	dxf_drawing * tmp_drwg = dxf_drawing_new(ONE_TIME);
+	/* clear memory pool used before */
+	dxf_mem_pool(ZERO_DXF, ONE_TIME);
+	//graph_mem_pool(ZERO_GRAPH, ONE_TIME);
+	//graph_mem_pool(ZERO_LINE, ONE_TIME);
+	dxf_drawing_clear(tmp_drwg);
+	
+	/* load the clipboard file */
+	long file_size = 0;
+	int progress = 0;
+	struct Mem_buffer *file_buf = load_file_reuse(path, &file_size);
+	while (dxf_read (tmp_drwg, file_buf->buffer, file_size, &progress) > 0){
+		
+	}
+	
+	list_node * list = dxf_ents_list(tmp_drwg, ONE_TIME);
+	dxf_node *tmp_blk = NULL, *tmp_rec = NULL;
+	
+	ok = dxf_new_block (tmp_drwg, name, descr, x, y, z, txt2attr, 
+		mark, hide_mark, value_mark, dflt_value, layer, list,
+		&tmp_rec, &tmp_blk, ONE_TIME);
+	
+	ok = dxf_block_cpy(tmp_drwg, drawing, tmp_blk, block_rec, block);
+	
+	/* change the block description */
+	dxf_attr_change(*block, 4, (void *)descr);
+	
+	/* clear the file buffer */
+	manage_buffer(0, BUF_RELEASE);
+	file_buf = NULL;
+	file_size = 0;
+	
+	free(tmp_drwg);
 	
 	return ok;
 }

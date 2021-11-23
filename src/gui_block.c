@@ -42,10 +42,16 @@ int gui_block_interactive(gui_obj *gui){
 		else{
 			if (gui->ev & EV_ENTER){
 				/* confirm block creation */
-				dxf_new_block (gui->drawing, gui->blk_name, gui->blk_descr,
-				gui->step_x[1], gui->step_y[1], 0.0,
-				gui->text2tag, gui->tag_mark, gui->hide_mark, gui->value_mark, gui->dflt_value,
-				"0", gui->sel_list, &gui->list_do, DWG_LIFE);				
+				dxf_node *blkrec = NULL, *blk = NULL;
+				if (dxf_new_block (gui->drawing, gui->blk_name, gui->blk_descr,
+					gui->step_x[1], gui->step_y[1], 0.0,
+					gui->text2tag, gui->tag_mark, gui->hide_mark, gui->value_mark, gui->dflt_value,
+					"0", gui->sel_list, &blkrec, &blk, DWG_LIFE))
+				{
+					do_add_entry(&gui->list_do, "NEW BLOCK"); /* undo/redo list*/
+					do_add_item(gui->list_do.current, NULL, blkrec); /* undo/redo list*/
+					do_add_item(gui->list_do.current, NULL, blk); /* undo/redo list*/
+				}
 				gui_default_modal(gui);
 			}
 			else if (gui->ev & EV_CANCEL){
@@ -370,6 +376,7 @@ int gui_blk_mng (gui_obj *gui){
 		
 		if ((show_blk_create)){ /* block creation popup interface */
 			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "New Block", NK_WINDOW_CLOSABLE, nk_rect(200, 40, 320, 300))){
+				static int show_app_file = 0;
 				/* enter new name */
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				nk_label(gui->ctx, "Name:", NK_TEXT_LEFT);
@@ -425,6 +432,57 @@ int gui_blk_mng (gui_obj *gui){
 					nk_popup_close(gui->ctx);
 				}
 				
+				
+				/* ********************** test ************************ */
+				/* supported file format */
+				static const char *ext_type[] = {
+					"DXF",
+					"*"
+				};
+				static const char *ext_descr[] = {
+					"Drawing files (.dxf)",
+					"All files (*)"
+				};
+				#define FILTER_COUNT 2
+				if (nk_button_label(gui->ctx, "File")){
+					strncpy(gui->blk_name, new_name, DXF_MAX_CHARS);
+					
+					show_app_file = 1;
+					/* set filter for suported output formats */
+					for (i = 0; i < FILTER_COUNT; i++){
+						gui->file_filter_types[i] = ext_type[i];
+						gui->file_filter_descr[i] = ext_descr[i];
+					}
+					gui->file_filter_count = FILTER_COUNT;
+					gui->filter_idx = 0;
+					
+					gui->show_file_br = 1;
+					gui->curr_path[0] = 0;
+				}
+				if (show_app_file){ /* running file browser */
+					if (gui->show_file_br == 2){ /* return file OK */
+						/* close browser window*/
+						gui->show_file_br = 0;
+						show_app_file = 0;
+						/* update output path */
+						//strncpy(path, gui->curr_path, DXF_MAX_CHARS - 1);
+						dxf_node *blkrec = NULL, *blk = NULL;
+						if (dxf_new_blk_file (gui->drawing, gui->blk_name, gui->blk_descr,
+							0.0, 0.0, 0.0,
+							gui->text2tag, gui->tag_mark, gui->hide_mark, gui->value_mark, gui->dflt_value,
+							"0", gui->curr_path, &blkrec, &blk, DWG_LIFE))
+						{
+							do_add_entry(&gui->list_do, "NEW BLOCK"); /* undo/redo list*/
+							do_add_item(gui->list_do.current, NULL, blkrec); /* undo/redo list*/
+							do_add_item(gui->list_do.current, NULL, blk); /* undo/redo list*/
+							
+							/* close popup */
+							show_blk_create = 0;
+							nk_popup_close(gui->ctx);
+						}
+					}
+				}
+				/* **************************************************** */
 				nk_popup_end(gui->ctx);
 			} else {
 				create = 0;

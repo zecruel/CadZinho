@@ -2524,7 +2524,7 @@ int script_new_block (lua_State *L) {
 	
 	char descr[DXF_MAX_CHARS+1];
 	descr[0] = 0;
-	double x, y, z;
+	double orig[3];
 	int txt2attr = 0, ref_pt = 0;
 	char mark[DXF_MAX_CHARS+1];
 	mark[0] = '#'; mark[1] = 0;
@@ -2611,9 +2611,9 @@ int script_new_block (lua_State *L) {
 		}
 		else{
 			ref_pt = 1;
-			x = lua_tonumber(L, 9);
-			y = lua_tonumber(L, 10);
-			z = lua_tonumber(L, 11);
+			orig[0] = lua_tonumber(L, 9);
+			orig[1] = lua_tonumber(L, 10);
+			orig[2] = lua_tonumber(L, 11);
 		}
 	}
 	
@@ -2625,65 +2625,15 @@ int script_new_block (lua_State *L) {
 		return 1;
 	}
 	
-	dxf_node *blkrec = NULL, *blk = NULL, *endblk = NULL, *handle = NULL;
-	dxf_node *obj, *new_ent, *text, *attdef;
-	//list_node *vec_graph = NULL;
-	double max_x = 0.0, max_y = 0.0;
-	double min_x = 0.0, min_y = 0.0;
-	int init_ext = 0, ok = 0;
-	char tag[DXF_MAX_CHARS+1], value[DXF_MAX_CHARS+1];
-	value[0] = 0;
-	tag[0] = 0;
-	
-	int mark_len = strlen(mark);
-	int hide_mark_len = strlen(hide_mark);
-	int value_mark_len = strlen(value_mark);
-	
-	/* create BLOCK_RECORD table entry*/
-	blkrec = dxf_new_blkrec (name, DWG_LIFE);
-	ok = ent_handle(drawing, blkrec);
-	if (ok) handle = dxf_find_attr2(blkrec, 5); ok = 0;
-	
-	/* begin block */
-	if (handle) blk = dxf_new_begblk (name, gui->drawing->layers[gui->layer_idx].name, (char *)handle->value.s_data, DWG_LIFE);
-	/* change the block description */
-	dxf_attr_change(blk, 4, (void *)descr);
-	/* get a handle */
-	ok = ent_handle(drawing, blk);
-	/* use the handle to owning the ENDBLK ent */
-	if (ok) handle = dxf_find_attr2(blk, 5); ok = 0;
-	if (handle) endblk = dxf_new_endblk (gui->drawing->layers[gui->layer_idx].name, (char *)handle->value.s_data, DWG_LIFE);
-	else {
-		lua_pushnil(L); /* return fail */
-		return 1;
-	}
+	dxf_node *blkrec = NULL, *blk = NULL;
+	dxf_node *obj;
 	
 	struct ent_lua *ent_obj;
 	
-	if (!ref_pt){
-		/* get the list coordinates extention */
-		/* iterate over table */
-		lua_pushnil(L);  /* first key */
-		while (lua_next(L, 1) != 0) { /* table index are shifted*/
-			/* uses 'key' (at index -2) and 'value' (at index -1) */
-			if ( ent_obj =  luaL_checkudata(L, -1, "cz_ent_obj") ){
-				/* get entity */
-				obj = ent_obj->curr_ent;  /*try to get current entity */
-				if (!obj) obj = ent_obj->orig_ent; /* if not current, try original entity */
-				
-				list_node *graphics = dxf_graph_parse(gui->drawing, obj, 0, FRAME_LIFE);
-				graph_list_ext(graphics, &init_ext, &min_x, &min_y, &max_x, &max_y);
-			}
-			/* removes 'value'; keeps 'key' for next iteration */
-			lua_pop(L, 1);
-		}
-		
-		x = min_x;
-		y = min_y;
-		z = 0.0;
-	}
+	/* create the vector of returned values */
+	list_node *list = list_new(NULL, FRAME_LIFE);
 	
-	/*then copy the entities of list and apply offset in their coordinates*/
+	/*create a list of entities, from passed lua table*/
 	/* iterate over table */
 	lua_pushnil(L);  /* first key */
 	while (lua_next(L, 1) != 0) { /* table index are shifted*/
@@ -2693,87 +2643,24 @@ int script_new_block (lua_State *L) {
 			obj = ent_obj->curr_ent;  /*try to get current entity */
 			if (!obj) obj = ent_obj->orig_ent; /* if not current, try original entity */
 			
-			if (obj->type == DXF_ENT){ /* DXF entity  */
-				if(strcmp(obj->obj.name, "TEXT") == 0 && txt2attr){
-					text = dxf_find_attr2(obj, 1);
-					if (text){
-						if (strncmp (text->value.s_data, mark, mark_len) == 0){
-							/*skip marked text, to future proccess */
-							lua_pop(L, 1); /* removes 'value'; keeps 'key' for next iteration */
-							continue;
-						}
-					}
-				}
-				if(strcmp(obj->obj.name, "INSERT") == 0){
-					/* don't copy ATTRIB in INSERT ents */
-					new_ent = dxf_ent_cpy_simple(obj, DWG_LIFE);
-					dxf_attr_change(new_ent, 66, (int[]){0});
-				}
-				else new_ent = dxf_ent_copy(obj, DWG_LIFE);
-				ent_handle(drawing, new_ent);
-				dxf_edit_move(new_ent, -x, -y, -z);
-				dxf_obj_append(blk, new_ent);
-			}
+			list_push(list, list_new((void *)obj, FRAME_LIFE));
 			
 		}
 		/* removes 'value'; keeps 'key' for next iteration */
 		lua_pop(L, 1);
 	}
 	
-	/*then transform marked text entities to attdef*/
-	/* iterate over table */
-	lua_pushnil(L);  /* first key */
-	while (lua_next(L, 1) != 0) { /* table index are shifted*/
-		/* uses 'key' (at index -2) and 'value' (at index -1) */
-		if ( ent_obj =  luaL_checkudata(L, -1, "cz_ent_obj") ){
-			/* get entity */
-			obj = ent_obj->curr_ent;  /*try to get current entity */
-			if (!obj) obj = ent_obj->orig_ent; /* if not current, try original entity */
-			
-			if (obj->type == DXF_ENT){ /* DXF entity  */
-				if(strcmp(obj->obj.name, "TEXT") == 0 && txt2attr){
-					text = dxf_find_attr2(obj, 1);
-					if (text){
-						if (strncmp (text->value.s_data, mark, mark_len) == 0){
-							strncpy(tag, text->value.s_data + mark_len, DXF_MAX_CHARS);
-							value[0] = 0;
-							if (dflt_value) {
-								strncpy(value, dflt_value, DXF_MAX_CHARS);
-							}
-							
-							/* try to find value mark */
-							if (value_mark_len){
-								char *v = strstr(tag,  value_mark);
-								if (v){
-									/* copy to value string */
-									strncpy(value, v + value_mark_len, DXF_MAX_CHARS);
-									*v = 0; /* strip value from tag string */
-								}
-							}
-							/* verify if is marked to invisible attribute*/
-							if (strncmp (tag, hide_mark, hide_mark_len) == 0){
-								new_ent = dxf_attdef_cpy (obj, tag + hide_mark_len, value, x, y, z, 1, DWG_LIFE);
-							}
-							else new_ent = dxf_attdef_cpy (obj, tag, value, x, y, z, 0, DWG_LIFE);
-							ent_handle(drawing, new_ent);
-							dxf_obj_append(blk, new_ent);
-						}
-					}
-				}
-			}
-			
-		}
-		/* removes 'value'; keeps 'key' for next iteration */
-		lua_pop(L, 1);
-	}
+	int ok = 0;
 	
-	/* end the block*/
-	if (endblk) ok = ent_handle(drawing, endblk);
-	if (ok) ok = dxf_obj_append(blk, endblk);
-	
-	/*attach to blocks section*/
-	if (ok) ok = dxf_obj_append(drawing->blks_rec, blkrec);
-	if (ok) ok = dxf_obj_append(drawing->blks, blk);
+	/* Create block*/	
+	if (ref_pt) ok = dxf_new_block (drawing, name, descr, orig, txt2attr, 
+		mark, hide_mark, value_mark, dflt_value, 
+		gui->drawing->layers[gui->layer_idx].name, list,
+		&blkrec, &blk, DWG_LIFE);
+	else ok = dxf_new_block (drawing, name, descr, NULL, txt2attr, 
+		mark, hide_mark, value_mark, dflt_value, 
+		gui->drawing->layers[gui->layer_idx].name, list,
+		&blkrec, &blk, DWG_LIFE);
 	
 	if (ok) {
 		/* add to undo/redo list*/

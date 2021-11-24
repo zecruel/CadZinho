@@ -37,6 +37,7 @@ enum LineWeight { //AcDb::LineWeight
 */
 
 extern struct Matrix *aux_mtx1;
+extern struct tfont *dflt_font;
 
 void * do_mem_pool(enum dxf_pool_action action){
 	
@@ -1063,12 +1064,16 @@ int dxf_block_append(dxf_node *blk, dxf_node *obj){
 }
 
 int dxf_new_block (dxf_drawing *drawing, char *name, char *descr,
-	double x, double y, double z,
+	double orig[3],
 	int txt2attr, char *mark, char *hide_mark,  char *value_mark, char *dflt_value,
 	char *layer, list_node *list,
 	dxf_node **block_rec, dxf_node **block, int pool)
 {
 	int ok = 0;
+	
+	/* init return values */
+	*block_rec = NULL;
+	*block = NULL;
 	
 	if ((drawing) && (name)){
 		dxf_node *blkrec = NULL, *blk = NULL, *endblk = NULL, *handle = NULL;
@@ -1100,6 +1105,32 @@ int dxf_new_block (dxf_drawing *drawing, char *name, char *descr,
 			/* use the handle to owning the ENDBLK ent */
 			if (ok) handle = dxf_find_attr2(blk, 5); ok = 0;
 			if (handle) endblk = dxf_new_endblk (layer, (char *)handle->value.s_data, pool);
+			
+			/* *********** */
+			double x = 0.0, y = 0.0, z = 0.0;
+			if (orig){
+				x = orig[0];
+				y = orig[1];
+				z = orig[2];
+			}
+			else{
+				list_node *blk_g; /*graphic object of current block */
+				int blk_ei; /*extents flag of current block */
+				/* extents parameters */
+				double blk_x0, blk_y0, blk_x1, blk_y1;
+				
+				/* get graphics of current block*/
+				blk_g = dxf_list_parse(drawing, list, 0, FRAME_LIFE);
+				
+				/* get extents parameters of current block*/
+				graph_list_ext(blk_g, &blk_ei, &blk_x0, &blk_y0, &blk_x1, &blk_y1);
+				if (blk_ei) {
+					x = blk_x0;
+					y = blk_y0;
+					z = 0.0;
+				}
+			}
+			/* ********** */
 			
 			if (list != NULL){ /* append list of objects in block*/
 				list_node *current = list->next;
@@ -1191,38 +1222,59 @@ int dxf_new_block (dxf_drawing *drawing, char *name, char *descr,
 }
 
 int dxf_new_blk_file (dxf_drawing *drawing, char *name, char *descr,
-	double x, double y, double z,
+	double orig[3],
 	int txt2attr, char *mark, char *hide_mark,  char *value_mark, char *dflt_value,
 	char *layer, char * path,
 	dxf_node **block_rec, dxf_node **block, int pool)
 {
 	int ok = 0;
-	dxf_drawing * tmp_drwg = dxf_drawing_new(ONE_TIME);
+	
+	if ( !path || !block_rec || !block ) return 0; /* fail */
+	
+	/* init return values */
+	*block_rec = NULL;
+	*block = NULL;
+	
+	dxf_drawing * tmp_drwg = dxf_drawing_new(FRAME_LIFE);
+	if ( !tmp_drwg ) return 0; /* fail */
+	
 	/* clear memory pool used before */
-	dxf_mem_pool(ZERO_DXF, ONE_TIME);
-	//graph_mem_pool(ZERO_GRAPH, ONE_TIME);
-	//graph_mem_pool(ZERO_LINE, ONE_TIME);
+	//dxf_mem_pool(ZERO_DXF, ONE_TIME);
 	dxf_drawing_clear(tmp_drwg);
 	
-	/* load the clipboard file */
+	/* load temp drawing file */
 	long file_size = 0;
 	int progress = 0;
 	struct Mem_buffer *file_buf = load_file_reuse(path, &file_size);
-	while (dxf_read (tmp_drwg, file_buf->buffer, file_size, &progress) > 0){
+	while (ok = dxf_read (tmp_drwg, file_buf->buffer, file_size, &progress) > 0){
 		
 	}
 	
-	list_node * list = dxf_ents_list(tmp_drwg, ONE_TIME);
+	if ( ok < 0 ) { /* error on load */
+		/* clear the file buffer */
+		manage_buffer(0, BUF_RELEASE);
+		file_buf = NULL;
+		file_size = 0;
+		free(tmp_drwg);
+		
+		return 0; /* fail */
+	}
+	
+	//dxf_ents_parse(gui->drawing);
+	
+	list_node * list = dxf_ents_list(tmp_drwg, FRAME_LIFE);
 	dxf_node *tmp_blk = NULL, *tmp_rec = NULL;
 	
-	ok = dxf_new_block (tmp_drwg, name, descr, x, y, z, txt2attr, 
-		mark, hide_mark, value_mark, dflt_value, layer, list,
-		&tmp_rec, &tmp_blk, ONE_TIME);
+	tmp_drwg->dflt_font = dflt_font; /* init any font to parse */
 	
-	ok = dxf_block_cpy(tmp_drwg, drawing, tmp_blk, block_rec, block);
+	ok = dxf_new_block (tmp_drwg, name, descr, orig, txt2attr, 
+		mark, hide_mark, value_mark, dflt_value, layer, list,
+		&tmp_rec, &tmp_blk, FRAME_LIFE);
+	
+	if (ok) ok = dxf_block_cpy(tmp_drwg, drawing, tmp_blk, block_rec, block);
 	
 	/* change the block description */
-	dxf_attr_change(*block, 4, (void *)descr);
+	if (ok) dxf_attr_change(*block, 4, (void *)descr);
 	
 	/* clear the file buffer */
 	manage_buffer(0, BUF_RELEASE);

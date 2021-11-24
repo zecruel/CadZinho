@@ -512,6 +512,7 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 				work = NULL;
 				sel_file[0] = 0;
 				show_browser = 0;
+				nk_window_show(gui->ctx, "File explorer", NK_HIDDEN);
 			}
 			
 		}

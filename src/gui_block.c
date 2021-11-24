@@ -44,7 +44,7 @@ int gui_block_interactive(gui_obj *gui){
 				/* confirm block creation */
 				dxf_node *blkrec = NULL, *blk = NULL;
 				if (dxf_new_block (gui->drawing, gui->blk_name, gui->blk_descr,
-					gui->step_x[1], gui->step_y[1], 0.0,
+					(double []){gui->step_x[1], gui->step_y[1], 0.0},
 					gui->text2tag, gui->tag_mark, gui->hide_mark, gui->value_mark, gui->dflt_value,
 					"0", gui->sel_list, &blkrec, &blk, DWG_LIFE))
 				{
@@ -468,7 +468,7 @@ int gui_blk_mng (gui_obj *gui){
 						//strncpy(path, gui->curr_path, DXF_MAX_CHARS - 1);
 						dxf_node *blkrec = NULL, *blk = NULL;
 						if (dxf_new_blk_file (gui->drawing, gui->blk_name, gui->blk_descr,
-							0.0, 0.0, 0.0,
+							NULL,//(double []){0.0, 0.0, 0.0},
 							gui->text2tag, gui->tag_mark, gui->hide_mark, gui->value_mark, gui->dflt_value,
 							"0", gui->curr_path, &blkrec, &blk, DWG_LIFE))
 						{
@@ -476,6 +476,9 @@ int gui_blk_mng (gui_obj *gui){
 							do_add_item(gui->list_do.current, NULL, blkrec); /* undo/redo list*/
 							do_add_item(gui->list_do.current, NULL, blk); /* undo/redo list*/
 							
+							create = 0;
+							/* update informations */
+							blk_idx = 1;
 							/* close popup */
 							show_blk_create = 0;
 							nk_popup_close(gui->ctx);

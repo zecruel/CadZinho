@@ -1389,6 +1389,8 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 				else font = drawing->dflt_font;
 			}
 			
+			if (!font) font = drawing->dflt_font;
+			
 			if (fnt_idx >= 0) 
 				if ((drawing->text_styles[fnt_idx].flags2 & 2) != 0)
 					backwards = 1;

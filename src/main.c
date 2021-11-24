@@ -70,6 +70,7 @@
 
 #include "dxf_colors.h"
 struct Matrix *aux_mtx1 = NULL;
+struct tfont *dflt_font = NULL;
 
 /* ---------------------------------------------------------*/
 
@@ -439,6 +440,10 @@ int main(int argc, char** argv){
 	//bmp_img * gui->preview_img;
 	gui->preview_img = bmp_new(160, 160, grey, red);
 	//char tag_mark[DXF_MAX_CHARS];
+	
+	
+	/* init global variable font */
+	dflt_font = get_font_list(gui->font_list, "txt.shx"); /* GLOBAL GLOBAL*/
 	
 	
 	/* init the drawing */

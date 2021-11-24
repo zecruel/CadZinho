@@ -10,6 +10,7 @@
 #include "list.h"
 #include "graph.h"
 #include "dxf_hatch.h"
+#include "dxf_graph.h"
 
 struct do_item {
 	struct do_item *prev;
@@ -106,9 +107,15 @@ dxf_node * dxf_new_blkrec (char *name, int pool);
 int dxf_block_append(dxf_node *blk, dxf_node *obj);
 	
 int dxf_new_block (dxf_drawing *drawing, char *name, char *descr,
-	double x, double y, double z,
+	double orig[3],
 	int txt2attr, char *mark, char *hide_mark,  char *value_mark, char *dflt_value,
 	char *layer, list_node *list,
+	dxf_node **block_rec, dxf_node **block, int pool);
+
+int dxf_new_blk_file (dxf_drawing *drawing, char *name, char *descr,
+	double orig[3],
+	int txt2attr, char *mark, char *hide_mark,  char *value_mark, char *dflt_value,
+	char *layer, char * path,
 	dxf_node **block_rec, dxf_node **block, int pool);
 
 dxf_node * dxf_new_insert (char *name, double x0, double y0, double z0,

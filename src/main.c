@@ -170,42 +170,42 @@ int main(int argc, char** argv){
 		strncpy(gui->pref_path, gui->base_dir, DXF_MAX_CHARS);
 	}
 	else {
-		char new_path[MAX_PATH_LEN+1];
+		char new_path[PATH_MAX_CHARS+1];
 		/* script path */
 		new_path[0] = 0;
-		snprintf(new_path, MAX_PATH_LEN, "%sscript%c", gui->pref_path, DIR_SEPARATOR);
+		snprintf(new_path, PATH_MAX_CHARS, "%sscript%c", gui->pref_path, DIR_SEPARATOR);
 		dir_miss (new_path);
 		
 		/* resources path and seed file*/
 		new_path[0] = 0;
-		snprintf(new_path, MAX_PATH_LEN, "%sres%c", gui->pref_path, DIR_SEPARATOR);
+		snprintf(new_path, PATH_MAX_CHARS, "%sres%c", gui->pref_path, DIR_SEPARATOR);
 		dir_miss (new_path);
 		new_path[0] = 0;
-		snprintf(new_path, MAX_PATH_LEN, "%sres%cseed.dxf", gui->pref_path, DIR_SEPARATOR);
+		snprintf(new_path, PATH_MAX_CHARS, "%sres%cseed.dxf", gui->pref_path, DIR_SEPARATOR);
 		miss_file (new_path, (char *)dxf_seed_2007);
 		
 		/* fonts path */
 		new_path[0] = 0;
-		snprintf(new_path, MAX_PATH_LEN, "%sres%cfont%c", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+		snprintf(new_path, PATH_MAX_CHARS, "%sres%cfont%c", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
 		dir_miss (new_path);
 		
 		/* line types path and files */
 		new_path[0] = 0;
-		snprintf(new_path, MAX_PATH_LEN, "%sres%clin%c", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+		snprintf(new_path, PATH_MAX_CHARS, "%sres%clin%c", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
 		dir_miss (new_path);
 		new_path[0] = 0;
-		snprintf(new_path, MAX_PATH_LEN, "%sres%clin%cdefault.lin", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+		snprintf(new_path, PATH_MAX_CHARS, "%sres%clin%cdefault.lin", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
 		miss_file (new_path, (char *)ltype_lib_dflt());
 		new_path[0] = 0;
-		snprintf(new_path, MAX_PATH_LEN, "%sres%clin%cextra.lin", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+		snprintf(new_path, PATH_MAX_CHARS, "%sres%clin%cextra.lin", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
 		miss_file (new_path, (char *)ltype_lib_extra());
 		
 		/* hatch patterns path and file*/
 		new_path[0] = 0;
-		snprintf(new_path, MAX_PATH_LEN, "%sres%cpat%c", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+		snprintf(new_path, PATH_MAX_CHARS, "%sres%cpat%c", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
 		dir_miss (new_path);
 		new_path[0] = 0;
-		snprintf(new_path, MAX_PATH_LEN, "%sres%cpat%cdefault.pat", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+		snprintf(new_path, PATH_MAX_CHARS, "%sres%cpat%cdefault.pat", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
 		miss_file (new_path, (char *)h_pattern_lib_dflt());
 	}
 	

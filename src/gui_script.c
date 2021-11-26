@@ -188,6 +188,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"new_hatch", script_new_hatch},
 		{"new_text", script_new_text},
 		{"new_block", script_new_block},
+		{"new_block_file", script_new_block_file},
 		
 		{"get_dwg_appids", script_get_dwg_appids},
 		
@@ -268,6 +269,17 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	lua_setfield(T, -2, "__index");
 	/* register methods */
 	luaL_setfuncs(T, yxml_meths, 0);
+	
+	/* add functions in cadzinho object*/
+	static const luaL_Reg fs_lib[] = {
+		{"dir", script_fs_dir },
+		{"chdir", script_fs_chdir },
+		{"cwd", script_fs_cwd },
+		{"script_path", script_fs_script_path},
+		{NULL, NULL}
+	};
+	luaL_newlib(T, fs_lib);
+	lua_setglobal(T, "fs");
 	
 	/* adjust package path for "require" in script file*/
 	luaL_Buffer b;  /* to store parcial strings */
@@ -553,14 +565,14 @@ int script_win (gui_obj *gui){
 						gui->show_file_br = 0;
 						show_app_file = 0;
 						/* update output path */
-						strncpy(gui->curr_script, gui->curr_path, MAX_PATH_LEN - 1);
+						strncpy(gui->curr_script, gui->curr_path, PATH_MAX_CHARS - 1);
 					}
 				}
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				
 				/* user can type the file name/path, or paste text, or drop from system navigator */
 				//nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
-				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_script, MAX_PATH_LEN, nk_filter_default);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_script, PATH_MAX_CHARS, nk_filter_default);
 				
 				nk_layout_row_static(gui->ctx, 28, 28, 6);
 				if (nk_button_symbol(gui->ctx, NK_SYMBOL_TRIANGLE_RIGHT)){

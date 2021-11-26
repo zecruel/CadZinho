@@ -2685,6 +2685,217 @@ int script_new_block (lua_State *L) {
 	return 1;
 }
 
+/* create a BLOCK from a DXF file*/
+/* given parameters:
+	- file path, as string
+	- block name, as string
+	- description, as string (optional)
+	- convert texts elements to tags, as boolean (optional) - default is "false"
+	- mark for convert to tag, as string (optional) - default is "#"
+	- mark for hidden tags, as string (optional) - default is "*"
+	- mark for tag value, as string (optional) - default is "$"
+	- default value for tags, as string (optional) - default is "?"
+	- x, y, z, as number (optional) - reference point (zero) for block. If not given, minimal coordinates of elements is used.
+returns:
+	- block entry, as userdata
+Notes:
+	- This function will append the created block to drawing's Block section.
+	No actions are requiried after this.
+*/
+int script_new_block_file (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	if (!script){ /* error in script object access */
+		lua_pushstring(L, "Auto check: no access to CadZinho script object");
+		lua_error(L);
+	}
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "new_block: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_isstring(L, 1)) { /* arguments types */
+		lua_pushliteral(L, "new_block: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 2)) { /* arguments types */
+		lua_pushliteral(L, "new_block: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* verify if table is empty */
+	if (lua_rawlen(L, 1) <=0){
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	char descr[DXF_MAX_CHARS+1];
+	descr[0] = 0;
+	double orig[3];
+	int txt2attr = 0, ref_pt = 0;
+	char mark[DXF_MAX_CHARS+1];
+	mark[0] = '#'; mark[1] = 0;
+	char hide_mark[DXF_MAX_CHARS+1];
+	hide_mark[0] = '*'; hide_mark[1] = 0;
+	char value_mark[DXF_MAX_CHARS+1];
+	value_mark[0] = '$'; value_mark[1] = 0;
+	char dflt_value[DXF_MAX_CHARS+1];
+	dflt_value[0] = '?'; dflt_value[1] = 0;
+	
+	/* get path */
+	char path[PATH_MAX_CHARS+1];
+	path[0] = 0;
+	strncpy(path, lua_tostring(L, 1), PATH_MAX_CHARS);
+	if (strlen(path) <= 0) { /* invalid text */
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	/* get name */
+	char name[DXF_MAX_CHARS+1];
+	name[0] = 0;
+	strncpy(name, lua_tostring(L, 2), DXF_MAX_CHARS);
+	if (strlen(name) <= 0) { /* invalid text */
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	if (n > 2){
+		if (!lua_isstring(L, 3)) { /* arguments types */
+			lua_pushliteral(L, "new_block: incorrect argument type");
+			lua_error(L);
+		}
+		else{
+			strncpy(descr, lua_tostring(L, 3), DXF_MAX_CHARS);
+		}
+	}
+	
+	if (n > 3){
+		if (!lua_isboolean(L, 4)) { /* arguments types */
+			lua_pushliteral(L, "new_block: incorrect argument type");
+			lua_error(L);
+		}
+		else{
+			txt2attr = lua_toboolean(L, 4);
+		}
+	}
+	
+	if (txt2attr){
+		if (n > 4){
+			if (!lua_isstring(L, 5)) { /* arguments types */
+				lua_pushliteral(L, "new_block: incorrect argument type");
+				lua_error(L);
+			}
+			else if (strlen (lua_tostring(L, 5)) ){
+				strncpy(mark, lua_tostring(L, 5), DXF_MAX_CHARS);
+			}
+		}
+		if (n > 5){
+			if (!lua_isstring(L, 6)) { /* arguments types */
+				lua_pushliteral(L, "new_block: incorrect argument type");
+				lua_error(L);
+			}
+			else if (strlen (lua_tostring(L, 6)) ){
+				strncpy(hide_mark, lua_tostring(L, 6), DXF_MAX_CHARS);
+			}
+		}
+		if (n > 6){
+			if (!lua_isstring(L, 7)) { /* arguments types */
+				lua_pushliteral(L, "new_block: incorrect argument type");
+				lua_error(L);
+			}
+			else if (strlen (lua_tostring(L, 7)) ){
+				strncpy(value_mark, lua_tostring(L, 7), DXF_MAX_CHARS);
+			}
+		}
+		if (n > 7){
+			if (!lua_isstring(L, 8)) { /* arguments types */
+				lua_pushliteral(L, "new_block: incorrect argument type");
+				lua_error(L);
+			}
+			else if (strlen (lua_tostring(L, 8)) ){
+				strncpy(dflt_value, lua_tostring(L, 8), DXF_MAX_CHARS);
+			}
+		}
+	}
+	
+	if (n > 10){
+		if (!lua_isnumber(L, 9) || !lua_isnumber(L, 10) || !lua_isnumber(L, 11) ) { /* arguments types */
+			lua_pushliteral(L, "new_block: incorrect argument type");
+			lua_error(L);
+		}
+		else{
+			ref_pt = 1;
+			orig[0] = lua_tonumber(L, 9);
+			orig[1] = lua_tonumber(L, 10);
+			orig[2] = lua_tonumber(L, 11);
+		}
+	}
+	
+	dxf_drawing *drawing = gui->drawing;
+	
+	/* verify if block not exist */
+	if (dxf_find_obj_descr2(drawing->blks, "BLOCK", name) != NULL){
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	dxf_node *blkrec = NULL, *blk = NULL;
+	
+	int ok = 0;
+	
+	/* Create block*/
+	if (ref_pt) ok = dxf_new_blk_file (drawing, name, descr, orig, txt2attr, 
+		mark, hide_mark, value_mark, dflt_value, 
+		gui->drawing->layers[gui->layer_idx].name, path,
+		&blkrec, &blk, DWG_LIFE);
+	else ok = dxf_new_blk_file (drawing, name, descr, NULL, txt2attr, 
+		mark, hide_mark, value_mark, dflt_value, 
+		gui->drawing->layers[gui->layer_idx].name, path,
+		&blkrec, &blk, DWG_LIFE);
+	
+	if (ok) {
+		/* add to undo/redo list*/
+		if (!script->do_init){
+			char msg[DXF_MAX_CHARS];
+			strncpy(msg, "SCRIPT:", DXF_MAX_CHARS - 1);
+			lua_Debug ar;
+			lua_getstack (L, 1, &ar);
+			lua_getinfo(L, "S", &ar); /* get script file name */
+			if (strlen (get_filename(ar.short_src)) > 0)
+				strncat(msg, get_filename(ar.short_src), DXF_MAX_CHARS - 8);
+			else
+				strncat(msg, get_filename(script->path), DXF_MAX_CHARS - 8);
+			do_add_entry(&gui->list_do, msg);
+			script->do_init = 1;
+		}
+		do_add_item(gui->list_do.current, NULL, blkrec);
+		do_add_item(gui->list_do.current, NULL, blk);
+		lua_pushlightuserdata(L, (void *) blk); /* return success */
+	}
+	else lua_pushnil(L); /* return fail */
+	return 1;
+}
+
 /* ========= get drawing's global parameters =========== */
 
 /* get the APPIDs in drawing */
@@ -4029,5 +4240,128 @@ int script_yxml_read (lua_State *L) {
 	
 	if (!lua_istable(L, -1)) lua_pushnil(L); /* return fail */
 	/* or return success */
+	return 1;
+}
+
+
+/* ================== File system ======================== */
+
+/* List a directory */
+/* given parameters:
+	- path, as string (optional)
+returns:
+	- table with directory contents
+*/
+int script_fs_dir (lua_State *L) {
+	
+	char path[PATH_MAX_CHARS+1];
+	path[0] = '.'; path[1] = 0;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n > 0){
+		if (!lua_isstring(L, 1)) { /* arguments types */
+			lua_pushliteral(L, "dir: incorrect argument type");
+			lua_error(L);
+		}
+		else if (strlen (lua_tostring(L, 1)) ){
+			strncpy(path, lua_tostring(L, 1), PATH_MAX_CHARS);
+		}
+	}
+	
+	DIR *d;
+	d = opendir(path);
+	if (d == NULL)
+	{
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	int i;
+	struct dirent *entry;
+	lua_newtable(L);
+	for (i=1; (entry = readdir(d)) != NULL; i++) {
+		lua_pushstring(L, entry->d_name);
+		lua_rawseti(L, -2, i);
+	}
+	closedir(d);
+	return 1;
+}
+
+/* Change current directory */
+/* given parameters:
+	- path, as string
+returns:
+	- a boolean indicating success or fail
+*/
+int script_fs_chdir (lua_State *L) {
+	
+	char path[PATH_MAX_CHARS+1];
+	path[0] = '.'; path[1] = 0;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "chdir: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_isstring(L, 1)) { /* arguments types */
+		lua_pushliteral(L, "chdir: incorrect argument type");
+		lua_error(L);
+	}
+	else if (strlen (lua_tostring(L, 1)) ){
+		strncpy(path, lua_tostring(L, 1), PATH_MAX_CHARS);
+	}
+	else {
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	int ret = chdir(path); 
+	
+	lua_pushboolean(L, ret != 0); /* return success or fail */
+	return 1;
+}
+
+/* Get current directory */
+/* given parameters:
+	- none
+returns:
+	- path, as string
+*/
+int script_fs_cwd (lua_State *L) {
+	
+	char curr_path[PATH_MAX_CHARS+1];
+	getcwd(curr_path, PATH_MAX_CHARS);
+	
+	lua_pushstring(L, curr_path); /* return success or fail */
+	return 1;
+}
+
+/* Get current script path */
+/* given parameters:
+	- none
+returns:
+	- path, as string
+*/
+int script_fs_script_path(lua_State *L) {
+	
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	char curr_path[PATH_MAX_CHARS+1];
+	lua_Debug ar;
+	lua_getstack (L, 1, &ar);
+	lua_getinfo(L, "S", &ar); /* get script file name */
+	if (strlen (ar.short_src) > 0)
+		strncpy(curr_path, ar.short_src, PATH_MAX_CHARS);
+	else
+		strncpy(curr_path, script->path, PATH_MAX_CHARS);
+	
+	lua_pushstring(L, curr_path); /* return success or fail */
 	return 1;
 }

@@ -14,7 +14,7 @@ int print_win (gui_obj *gui){
 	static char ofs_x_str[64] = "0.00";
 	static char ofs_y_str[64] = "0.00";
 	static char scale_str[64] = "1.00";
-	static char sel_file[MAX_PATH_LEN] = "output.pdf";
+	static char sel_file[PATH_MAX_CHARS] = "output.pdf";
 	static char tmp_str[64];
 	static int unit = PRT_MM, new_unit = PRT_MM;
 	static int mono = 0, dark = 0, out_fmt = PRT_PDF;
@@ -409,13 +409,13 @@ int print_win (gui_obj *gui){
 				gui->show_file_br = 0;
 				show_app_file = 0;
 				/* update output path */
-				strncpy(sel_file, gui->curr_path, MAX_PATH_LEN);
+				strncpy(sel_file, gui->curr_path, PATH_MAX_CHARS);
 				/* update output format*/
 				out_fmt = gui->filter_idx;
 				if (out_fmt >= PRT_SIZE - 1) out_fmt = 0;
 			}
 		} /* manual entry to output path */
-		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, sel_file, MAX_PATH_LEN, nk_filter_default);
+		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, sel_file, PATH_MAX_CHARS, nk_filter_default);
 		
 		/* Print command */
 		nk_layout_row_dynamic(gui->ctx, 20, 2);

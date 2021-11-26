@@ -1,26 +1,4 @@
-/* ATTENTION: this source code file is not fully portable.
-It use POSIX libraries that are not part of the C standard.
-Therefore, not all compilers and platafforms can make this file._
-Please, check the compatibility first. */
-
-
 #include "gui_file.h"
-#include <time.h>
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)|| defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-#include <direct.h>
-#endif
-
-/* POSIX libs*/
-#ifndef _MSC_VER
-#include <dirent.h>
-#else
-#include "_dirent.h"
-#endif
-#include <sys/stat.h>
-#ifndef _MSC_VER
-#include <unistd.h>
-#endif
-/*-----------*/
 
 
 const char *filter_types[] = {
@@ -93,94 +71,13 @@ int cmp_file_size_rev(const void * a, const void * b) { /* reverse */
 	return -cmp_file_size(a, b);
 }
 
-/* ------------------------------------------- */
-
-int dir_check(char *path) { /* verify if directory exists */
-	/* check if path is a valid string */
-	if (!path) return 0;
-	if (strlen(path) < 1) return 0;
-	
-	DIR* dir = opendir(path);
-	if (dir) {
-		closedir(dir);
-		return 1; /* success */
-	}
-	return 0; /* fail */
-}
-
-char * dir_full(char *path) { /* get full path of a folder */
-	static char full_path[MAX_PATH_LEN+1];
-	full_path[0] = 0; /*init */
-	
-	/* check if path is a valid folder */
-	if (!dir_check(path)) return full_path;
-	
-	/* Directory exists. */
-	
-	/* get curent directory */
-	char curr_path[MAX_PATH_LEN+1];
-	getcwd(curr_path, MAX_PATH_LEN);
-	
-	chdir(path); /* change working dir to path*/
-	
-	/* put dir separator at end of returnned string */
-	getcwd(full_path, MAX_PATH_LEN);
-	int len = strlen (full_path) ;
-	if (len < MAX_PATH_LEN - 1){
-		if (full_path[len - 1] != DIR_SEPARATOR){
-			full_path[len] = DIR_SEPARATOR;
-			full_path[len + 1]  = 0;
-		}
-	}
-	else {
-		full_path[0] = 0; /* fail - full_path is truncated */
-	}
-	
-	chdir(curr_path); /* change working back */
-	
-	return full_path;
-}
-
-int dir_change( char *path) { /* change current directory */
-	/* check if path is a valid string */
-	if (!path) return 0;
-	if (strlen(path) < 1) return 0;
-	
-	int ret = chdir(path); 
-	if (!ret) return 1; /* success */
-	return 0; /* fail */
-}
-
-int dir_make (char *path) {
-	/* check if path is a valid string */
-	if (!path) return 0;
-	if (strlen(path) < 1) return 0;
-	
-	#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)|| defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-		int ret = _mkdir(path);
-	#else
-		int ret = mkdir(path, 0777);
-	#endif
-	if (!ret) return 1; /* success */
-	return 0; /* fail */
-}
-
-int dir_miss (char* path){ /* try to create a folder, if not exists */
-	/* check if path is a valid string */
-	if (!path) return 0;
-	if (strlen(path) < 1) return 0;
-	
-	if (dir_check(path)) return 1; /* folder already exists */
-	return dir_make (path); /* try to create folder */
-}
-
 
 /* file explorer window */
 int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int num_ext, char *init_dir){
 	if ((ext_type == NULL) || (ext_descr == NULL) || num_ext == 0) return 0;
 	
-	static char full_path[MAX_PATH_LEN];
-	static char sel_file[MAX_PATH_LEN];
+	static char full_path[PATH_MAX_CHARS];
+	static char sel_file[PATH_MAX_CHARS];
 	
 	/* change to initial directory, if it has passed */
 	if (init_dir) chdir(init_dir);
@@ -285,8 +182,8 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 		static int sort_reverse = 0;
 		
 		/* show current directory */
-		char curr_path[MAX_PATH_LEN];
-		getcwd(curr_path, MAX_PATH_LEN);
+		char curr_path[PATH_MAX_CHARS+1];
+		getcwd(curr_path, PATH_MAX_CHARS);
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label_colored(gui->ctx, "Current directory:", NK_TEXT_LEFT, nk_rgb(255,255,0));
 		
@@ -441,7 +338,7 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 				idx = sort_files[i].idx;
 				if (nk_button_label_styled(gui->ctx, &b_file,  files[idx].name)){
 					/* select file */
-					strncpy(sel_file, files[idx].name, MAX_PATH_LEN);
+					strncpy(sel_file, files[idx].name, PATH_MAX_CHARS);
 				}
 				
 				/*show byte size */
@@ -479,7 +376,7 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 			
 			/* show the selected file*/
 			nk_flags res; /* the user will can edit the file name */
-			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, sel_file, MAX_PATH_LEN, nk_filter_default);
+			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, sel_file, PATH_MAX_CHARS, nk_filter_default);
 			if (res & NK_EDIT_COMMITED){ /* user hit enter */
 				nk_edit_unfocus(gui->ctx);
 				/* the user also will can enter a new path */
@@ -497,11 +394,11 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 			if (nk_button_label(gui->ctx,  "OK")){
 				/* return the full path of selected file and close window*/
 				if (strlen(sel_file) > 0){
-					snprintf(full_path, MAX_PATH_LEN, "%s%c%s", curr_path, DIR_SEPARATOR, sel_file);
+					snprintf(full_path, PATH_MAX_CHARS, "%s%c%s", curr_path, DIR_SEPARATOR, sel_file);
 				}
 				closedir(work);
 				work = NULL;
-				strncpy(gui->curr_path, full_path, MAX_PATH_LEN);
+				strncpy(gui->curr_path, full_path, PATH_MAX_CHARS);
 				full_path[0] = 0;
 				sel_file[0] = 0;
 				show_browser = 2;
@@ -539,7 +436,7 @@ int file_pop (gui_obj *gui, enum files_types filters[], int num_filters, char *i
 		
 		/* user can type the file name/path, or paste text, or drop from system navigator */
 		nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
-		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_path, MAX_PATH_LEN, nk_filter_default);
+		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_path, PATH_MAX_CHARS, nk_filter_default);
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
@@ -583,7 +480,7 @@ int gui_file_open (gui_obj *gui, enum files_types filters[], int num_filters, ch
 		
 		/* user can type the file name/path, or paste text, or drop from system navigator */
 		nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
-		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_path, MAX_PATH_LEN, nk_filter_default);
+		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_path, PATH_MAX_CHARS, nk_filter_default);
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
@@ -614,7 +511,7 @@ int gui_file_open (gui_obj *gui, enum files_types filters[], int num_filters, ch
 			char *file = get_filename( gui->drwg_recent[pos] );
 			
 			if (nk_button_label(gui->ctx, file)) {
-				strncpy(gui->curr_path, gui->drwg_recent[pos], MAX_PATH_LEN);
+				strncpy(gui->curr_path, gui->drwg_recent[pos], PATH_MAX_CHARS);
 			}
 		}
 		

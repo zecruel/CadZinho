@@ -38,7 +38,7 @@
 #define FONT_SCALE 1.4
 #define FIXED_MEM 128*1024
 
-#define MAX_PATH_LEN 512
+//#define PATH_MAX_CHARS 512
 #define DRWG_HIST_MAX 50
 #define BRK_PTS_MAX 50
 #define DRWG_RECENT_MAX 10
@@ -368,7 +368,7 @@ struct Gui_obj {
 	int show_config;
 	
 	
-	char curr_path[MAX_PATH_LEN];
+	char curr_path[PATH_MAX_CHARS];
 	char base_dir[DXF_MAX_CHARS + 1];
 	char dwg_file[DXF_MAX_CHARS + 1];
 	char dwg_dir[DXF_MAX_CHARS + 1];
@@ -393,7 +393,7 @@ struct Gui_obj {
 	dxf_drawing *clip_drwg;
 	
 	struct script_obj lua_script[MAX_SCRIPTS];
-	char curr_script[MAX_PATH_LEN];
+	char curr_script[PATH_MAX_CHARS];
 	struct script_brk_pt brk_pts[BRK_PTS_MAX];
 	int num_brk_pts;
 	

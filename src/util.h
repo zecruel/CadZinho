@@ -14,7 +14,29 @@
 #define DIR_SEPARATOR '/'
 #endif
 
-#define PATH_MAX_CHARS 250
+#define PATH_MAX_CHARS 512
+
+/* ATTENTION: this source code file is not fully portable.
+It use POSIX libraries that are not part of the C standard.
+Therefore, not all compilers and platafforms can make this file._
+Please, check the compatibility first. */
+
+#include <time.h>
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)|| defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+#include <direct.h>
+#endif
+
+/* POSIX libs*/
+#ifndef _MSC_VER
+#include <dirent.h>
+#else
+#include "_dirent.h"
+#endif
+#include <sys/stat.h>
+#ifndef _MSC_VER
+#include <unistd.h>
+#endif
+/*-----------*/
 
 struct Mem_buffer {
 	char *buffer;
@@ -65,5 +87,15 @@ int opener(const char *url);
 const char * dflt_fonts_dir ();
 
 int contextual_codepoint (int prev, int curr, int next);
+
+int dir_check(char *path); /* verify if directory exists */
+
+char * dir_full(char *path); /* get full path of a folder */
+
+int dir_change( char *path); /* change current directory */
+
+int dir_make (char *path);
+
+int dir_miss (char* path); /* try to create a folder, if not exists */
 
 #endif

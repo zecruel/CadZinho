@@ -38,22 +38,22 @@ int gui_load_conf (gui_obj *gui){
 		gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR, PATH_SEPARATOR);
 	
 	/* load default files */
-	char new_path[MAX_PATH_LEN+1];
+	char new_path[PATH_MAX_CHARS+1];
 	
 	/* seed */
 	new_path[0] = 0;
-	snprintf(new_path, MAX_PATH_LEN, "%sres%cseed.dxf", gui->pref_path, DIR_SEPARATOR);
+	snprintf(new_path, PATH_MAX_CHARS, "%sres%cseed.dxf", gui->pref_path, DIR_SEPARATOR);
 	gui->seed = try_load_dflt(new_path, (char *)dxf_seed_2007);
 	/* linetypes */
 	new_path[0] = 0;
-	snprintf(new_path, MAX_PATH_LEN, "%sres%clin%cdefault.lin", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+	snprintf(new_path, PATH_MAX_CHARS, "%sres%clin%cdefault.lin", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
 	gui->dflt_lin = try_load_dflt(new_path, (char *)ltype_lib_dflt());
 	new_path[0] = 0;
-	snprintf(new_path, MAX_PATH_LEN, "%sres%clin%cextra.lin", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+	snprintf(new_path, PATH_MAX_CHARS, "%sres%clin%cextra.lin", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
 	gui->extra_lin = try_load_dflt(new_path, (char *)ltype_lib_extra());
 	/* hatch pattern */
 	new_path[0] = 0;
-	snprintf(new_path, MAX_PATH_LEN, "%sres%cpat%cdefault.pat", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
+	snprintf(new_path, PATH_MAX_CHARS, "%sres%cpat%cdefault.pat", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
 	gui->dflt_pat = try_load_dflt(new_path, (char *)h_pattern_lib_dflt());
 	
 	/* load hatches patterns -NEED IMPROVEMENTS */
@@ -61,9 +61,9 @@ int gui_load_conf (gui_obj *gui){
 	if(gui->hatch_fam.next) gui->end_fam = gui->hatch_fam.next;
 	
 	/* full path of config file */
-	char config_path[MAX_PATH_LEN + 1];
+	char config_path[PATH_MAX_CHARS + 1];
 	config_path[0] = 0;
-	snprintf(config_path, MAX_PATH_LEN, "%sconfig.lua", gui->pref_path);
+	snprintf(config_path, PATH_MAX_CHARS, "%sconfig.lua", gui->pref_path);
 	
 	/* verify if file exists, or try to create a new one with default options */
 	miss_file (config_path, (char*)gui_dflt_conf());

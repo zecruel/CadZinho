@@ -1246,6 +1246,12 @@ int dxf_new_blk_file (dxf_drawing *drawing, char *name, char *descr,
 	long file_size = 0;
 	int progress = 0;
 	struct Mem_buffer *file_buf = load_file_reuse(path, &file_size);
+	if (!file_buf){
+		free(tmp_drwg);
+		
+		return 0; /* fail */
+	}
+	
 	while (ok = dxf_read (tmp_drwg, file_buf->buffer, file_size, &progress) > 0){
 		
 	}

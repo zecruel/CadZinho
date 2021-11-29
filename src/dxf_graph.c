@@ -832,6 +832,281 @@ graph_obj * dxf_pline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 	return NULL;
 }
 
+list_node * dxf_pline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
+	if(!ent) return NULL;
+	if (ent->type != DXF_ENT) return NULL;
+	if (!ent->obj.content) return NULL;
+	
+	dxf_node *current = NULL, *nxt_atr = NULL, *nxt_ent = NULL, *vertex = NULL;
+	graph_obj *curr_graph = NULL;
+	double pt1_x = 0, pt1_y = 0, pt1_z = 0;
+	double start_w = 0, end_w = 0;
+	double bulge = 0;
+	double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
+	double elev = 0.0;
+	double thick = 0.0;
+	
+	int pline_flag = 0, num_verts = 0, num_faces = 0;
+	double prev_x, prev_y, prev_z, last_x, last_y, last_z;
+	double prev_bulge = 0;
+	
+	/*flags*/
+	int paper = 0, closed = 0, mesh = 0;
+	if (current = dxf_find_attr2(ent, 67) ){
+		paper = current->value.i_data;
+	}
+	
+	if ( !((p_space == 0 && paper == 0) || (p_space != 0 &&  paper != 0)) ) return NULL;
+	
+	list_node * graph = list_new(NULL, FRAME_LIFE);
+	
+	if (current = dxf_find_attr2(ent, 30) ){
+		elev = current->value.d_data;
+	}
+	if (current = dxf_find_attr2(ent, 39) ){
+		thick = current->value.d_data;
+	}
+	if (current = dxf_find_attr2(ent, 70) ){
+		pline_flag = current->value.i_data;
+	}
+	
+	if (pline_flag & 1) closed = 1;
+	if (pline_flag & 64) mesh = 1;
+	
+	if (mesh){
+		nxt_atr = NULL;
+		if (current = dxf_find_attr_nxt(ent, &nxt_atr, 71) ){
+			num_verts = current->value.i_data;
+			if (current = dxf_find_attr_nxt(ent, &nxt_atr, 72) ){
+				num_faces = current->value.i_data;
+			}
+		}
+	}
+	
+	if (current = dxf_find_attr2(ent, 40) ){
+		start_w = current->value.d_data;
+	}
+	if (current = dxf_find_attr2(ent, 41) ){
+		end_w = current->value.d_data;
+	}
+	
+	nxt_atr = NULL;
+	if (current = dxf_find_attr_nxt(ent, &nxt_atr, 210) ){
+		extru_x = current->value.d_data;
+		if (current = dxf_find_attr_nxt(ent, &nxt_atr, 220) ){
+			extru_y = current->value.d_data;
+			if (current = dxf_find_attr_nxt(ent, &nxt_atr, 230) ){
+				extru_z = current->value.d_data;
+			}
+		}
+	}
+	/* for convertion OCS to WCS */
+	normal[0] = extru_x;
+	normal[1] = extru_y;
+	normal[2] = extru_z;
+	
+	nxt_ent = NULL;
+	if (vertex = dxf_find_obj_nxt(ent, &nxt_ent, "VERTEX") ){
+		
+		pt1_x = 0; pt1_y = 0; pt1_z = 0;
+		bulge =0;
+		
+		nxt_atr = NULL;
+		if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 10) ){
+			pt1_x = current->value.d_data;
+			if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 20) ){
+				pt1_y = current->value.d_data;
+				if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 30) ){
+					pt1_z = current->value.d_data;
+				}
+			}
+			nxt_atr = NULL;
+			if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 42) ){
+				bulge = current->value.d_data;
+			}
+		}
+		
+		last_x = pt1_x;
+		last_y = pt1_y;
+		last_z = pt1_z;
+		
+		prev_x = pt1_x;
+		prev_y = pt1_y;
+		prev_z = pt1_z;
+		prev_bulge = bulge;
+			
+	} else return NULL;
+	
+	if (!mesh){
+		curr_graph = graph_new(pool_idx);
+		if (!curr_graph) return NULL;
+		/*change tickness */
+		curr_graph->tick = start_w;
+		while (vertex = dxf_find_obj_nxt(ent, &nxt_ent, "VERTEX") ){
+			pt1_x = 0; pt1_y = 0; pt1_z = 0;
+			bulge = 0;
+			nxt_atr = NULL;
+			if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 10) ){
+				pt1_x = current->value.d_data;
+				if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 20) ){
+					pt1_y = current->value.d_data;
+					if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 30) ){
+						pt1_z = current->value.d_data;
+						
+					}
+				}
+				nxt_atr = NULL;
+				if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 42) ){
+					bulge = current->value.d_data;
+				}
+			}
+			
+			if (prev_bulge == 0){
+				line_add(curr_graph, prev_x, prev_y, prev_z, pt1_x, pt1_y, pt1_z);
+			}
+			else{
+				graph_arc_bulge(curr_graph, prev_x, prev_y, prev_z, pt1_x, pt1_y, pt1_z, prev_bulge);
+			}
+			
+			prev_x = pt1_x;
+			prev_y = pt1_y;
+			prev_z = pt1_z;
+			prev_bulge = bulge;
+				
+		} 
+		if(closed){
+			if (prev_bulge == 0){
+				line_add(curr_graph, prev_x, prev_y, prev_z, last_x, last_y, last_z);
+			}
+			else{
+				graph_arc_bulge(curr_graph, prev_x, prev_y, prev_z, last_x, last_y, last_z, prev_bulge);
+			}
+		}
+		/* convert OCS to WCS */
+		graph_mod_axis(curr_graph, normal, elev);
+		
+		list_push(graph, list_new((void *)curr_graph, pool_idx));
+	}
+	else{
+		/***************************/
+		
+		struct Mem_buffer *buf = manage_buffer(num_verts * 3 * sizeof(double), BUF_GET);
+		if (!buf) return NULL;
+		double *verts_data = (double *) buf->buffer;
+		verts_data[0] = prev_x;
+		verts_data[1] = prev_y;
+		verts_data[2] = prev_z;
+		int face[4], num_pts = 0;
+		
+		curr_graph = graph_new(pool_idx);
+		if (!curr_graph) return NULL;
+		/*change tickness */
+		curr_graph->tick = start_w;
+		int i;
+		for (i = 1; i < num_verts; i++){
+			if ( !(vertex = dxf_find_obj_nxt(ent, &nxt_ent, "VERTEX") ) ) break;
+			pt1_x = 0; pt1_y = 0; pt1_z = 0;
+			nxt_atr = NULL;
+			if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 10) ){
+				pt1_x = current->value.d_data;
+				if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 20) ){
+					pt1_y = current->value.d_data;
+					if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 30) ){
+						pt1_z = current->value.d_data;
+					}
+				}
+			}
+			
+			verts_data[3*i ] = pt1_x;
+			verts_data[3*i + 1] = pt1_y;
+			verts_data[3*i + 2] = pt1_z;
+			
+		} 
+		for (i = 0; i < num_faces; i++){
+			if ( !(vertex = dxf_find_obj_nxt(ent, &nxt_ent, "VERTEX") ) ) break;
+			nxt_atr = NULL;
+			num_pts = 0;
+			if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 71) ){
+				face[0] = current->value.i_data;
+				if (face[0] > 0){
+					face[0]--; /* change to index base 0*/
+					num_pts++;
+				}
+				else face[0] = 0; /* invalid index */
+				if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 72) ){
+					face[1] = current->value.i_data;
+					if (face[1] > 0){
+						face[1]--; /* change to index base 0*/
+						num_pts++;
+					}
+					else face[1] = 0; /* invalid index */
+					if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 73) ){
+						face[2] = current->value.i_data;
+						if (face[2] > 0){
+							face[2]--; /* change to index base 0*/
+							num_pts++;
+						}
+						else face[2] = 0; /* invalid index */
+						if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 74) ){
+							face[3] = current->value.i_data;
+							if (face[3] > 0){
+								face[3]--; /* change to index base 0*/
+								num_pts++;
+							}
+							else face[3] = 0; /* invalid index */
+						}
+					}
+				}
+			}
+			if (num_pts < 3) continue;
+			
+			curr_graph = graph_new(pool_idx);
+			if (!curr_graph) continue;
+			curr_graph->flags |= FILLED;
+			
+			if (num_pts > 3){
+				line_add(curr_graph,
+					verts_data[3 * face[0]], verts_data[3 * face[0] + 1], verts_data[3 * face[0] + 2],
+					verts_data[3 * face[1]], verts_data[3 * face[1] + 1], verts_data[3 * face[1] + 2] );
+				line_add(curr_graph,
+					verts_data[3 * face[1]], verts_data[3 * face[1] + 1], verts_data[3 * face[1] + 2],
+					verts_data[3 * face[2]], verts_data[3 * face[2] + 1], verts_data[3 * face[2] + 2] );
+				line_add(curr_graph,
+					verts_data[3 * face[2]], verts_data[3 * face[2] + 1], verts_data[3 * face[2] + 2],
+					verts_data[3 * face[3]], verts_data[3 * face[3] + 1], verts_data[3 * face[3] + 2] );
+				line_add(curr_graph,
+					verts_data[3 * face[3]], verts_data[3 * face[3] + 1], verts_data[3 * face[3] + 2],
+					verts_data[3 * face[0]], verts_data[3 * face[0] + 1], verts_data[3 * face[0] + 2] );
+			}
+			else{
+				line_add(curr_graph,
+					verts_data[3 * face[0]], verts_data[3 * face[0] + 1], verts_data[3 * face[0] + 2],
+					verts_data[3 * face[1]], verts_data[3 * face[1] + 1], verts_data[3 * face[1] + 2] );
+				line_add(curr_graph,
+					verts_data[3 * face[1]], verts_data[3 * face[1] + 1], verts_data[3 * face[1] + 2],
+					verts_data[3 * face[2]], verts_data[3 * face[2] + 1], verts_data[3 * face[2] + 2] );
+				line_add(curr_graph,
+					verts_data[3 * face[2]], verts_data[3 * face[2] + 1], verts_data[3 * face[2] + 2],
+					verts_data[3 * face[0]], verts_data[3 * face[0] + 1], verts_data[3 * face[0] + 2] );
+			}
+			
+			
+			list_push(graph, list_new((void *)curr_graph, pool_idx));
+		} 
+		if(closed){
+			
+		}
+		/* convert OCS to WCS */
+		graph_mod_axis(curr_graph, normal, elev);
+		
+		list_push(graph, list_new((void *)curr_graph, pool_idx));
+		/**************************************/
+		manage_buffer(0, BUF_RELEASE);
+	}
+	
+	return graph;
+}
+
 graph_obj * dxf_lwpline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
 	if(ent){
 		dxf_node *current = NULL, *prev;
@@ -3241,12 +3516,31 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			}
 			else if (strcmp(current->obj.name, "POLYLINE") == 0){
 				ent_type = DXF_POLYLINE;
+				#if(0)
 				curr_graph = dxf_pline_parse(drawing, current, p_space, pool_idx);
 				if (curr_graph){
 					/* store the graph in the return vector */
 					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
 					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
 					mod_idx++;
+				}
+				#endif
+				list_node * poly_list = dxf_pline_parse2(drawing, current, p_space, pool_idx);
+				
+				if ((poly_list != NULL)){
+					list_node *curr_node = poly_list->next;
+					
+					// starts the content sweep 
+					while (curr_node != NULL){
+						if (curr_node->data){
+							curr_graph = (graph_obj *)curr_node->data;
+							/* store the graph in the return vector */
+							list_push(list_ret, list_new((void *)curr_graph, pool_idx));
+							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+							mod_idx++;
+						}
+						curr_node = curr_node->next;
+					}
 				}
 				
 			}

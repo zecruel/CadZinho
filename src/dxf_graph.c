@@ -654,185 +654,7 @@ graph_obj * dxf_ellipse_parse(dxf_drawing *drawing, dxf_node * ent, int p_space,
 	return NULL;
 }
 
-graph_obj * dxf_pline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
-	if(ent){
-		dxf_node *current = NULL, *prev;
-		graph_obj *curr_graph = NULL;
-		double pt1_x = 0, pt1_y = 0, pt1_z = 0;
-		double start_w = 0, end_w = 0;
-		double bulge = 0;
-		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
-		double elev = 0.0;
-		char tmp_str[20];
-		
-		int pline_flag = 0;
-		int first = 0, closed =0;
-		double prev_x, prev_y, prev_z, last_x, last_y, last_z;
-		double prev_bulge = 0;
-		
-		/*flags*/
-		int pt1 = 0, init = 0, paper = 0, vert = 0;
-		
-		if (ent->type == DXF_ENT){
-			if (ent->obj.content){
-				current = ent->obj.content->next;
-				//printf("%s\n", ent->obj.name);
-			}
-		}
-		while (current){
-			prev = current;
-			if (current->type == DXF_ATTR){ /* DXF attibute */
-				switch (current->value.group){
-					
-					case 10:
-						pt1_x = current->value.d_data;
-						pt1 = 1; /* set flag */
-						break;
-					case 20:
-						pt1_y = current->value.d_data;
-						pt1 = 1; /* set flag */
-						break;
-					case 30:
-						pt1_z = current->value.d_data;
-						pt1 = 1; /* set flag */
-						break;
-					case 38:
-						elev = current->value.d_data;
-						break;
-					case 40:
-						start_w = current->value.d_data;
-						break;
-					case 41:
-						end_w = current->value.d_data;
-						break;
-					case 42:
-						bulge = current->value.d_data;
-						break;
-					case 70:
-						pline_flag = current->value.i_data;
-						break;
-					case 67:
-						paper = current->value.i_data;
-						break;
-					case 210:
-						extru_x = current->value.d_data;
-						break;
-					case 220:
-						extru_y = current->value.d_data;
-						break;
-					case 230:
-						extru_z = current->value.d_data;
-						break;
-					case 101:
-						strcpy(tmp_str, current->value.s_data);
-						str_upp(tmp_str);
-						char *tmp = trimwhitespace(tmp_str);
-						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
-							current = NULL;
-							continue;
-						}
-				}
-			}
-			else if (current->type == DXF_ENT){
-				if((init == 0) &&
-				(((p_space == 0) && (paper == 0)) || 
-				((p_space != 0) && (paper != 0)))){
-					init = 1;
-					curr_graph = graph_new(pool_idx);
-					if (curr_graph){
-						
-						/*change tickness */
-						curr_graph->tick = start_w;
-						
-						pt1_x = 0; pt1_y = 0; pt1_z = 0;
-						bulge =0;
-						
-						if (pline_flag & 1){
-							closed = 1;
-						}
-						else {
-							closed = 0;
-						}
-						
-						/* for convertion OCS to WCS */
-						normal[0] = extru_x;
-						normal[1] = extru_y;
-						normal[2] = extru_z;
-					}
-				}
-				
-				if ((strcmp(current->obj.name, "VERTEX") == 0) && (current->obj.content)){
-					current = current->obj.content->next;
-					vert = 1;
-					//printf("vertice\n");
-					continue;
-				}
-			}
-			current = current->next; /* go to the next in the list */
-		
-		
-			if ((current == NULL) && (vert)){
-				vert = 0;
-				if((first != 0) && (curr_graph != NULL)){
-					//printf("(%0.2f, %0.2f)-(%0.2f, %0.2f)\n", prev_x, prev_y, pt1_x, pt1_y);
-					if (prev_bulge == 0){
-						line_add(curr_graph, prev_x, prev_y, prev_z, pt1_x, pt1_y, pt1_z);
-					}
-					else{
-						graph_arc_bulge(curr_graph, prev_x, prev_y, prev_z, pt1_x, pt1_y, pt1_z, prev_bulge);
-					}
-				}
-				else if(first == 0){
-					first = 1;
-					
-					//printf("primeiro vertice\n");
-					last_x = pt1_x;
-					last_y = pt1_y;
-					last_z = pt1_z;
-				}
-				prev_x = pt1_x;
-				prev_y = pt1_y;
-				prev_z = pt1_z;
-				prev_bulge = bulge;
-				
-				pt1_x = 0; pt1_y = 0; pt1_z = 0;
-				bulge =0;
-			}
-		
-			while (current == NULL){
-				
-				prev = prev->master;
-				if (prev){ /* up in structure */
-					
-					/* ====== close complex entities ============== */
-					if (prev == ent){ /* back on polyline ent */
-						if((closed != 0) && (curr_graph != NULL)){
-							if (prev_bulge == 0){
-								line_add(curr_graph, prev_x, prev_y, prev_z, last_x, last_y, last_z);
-							}
-							else{
-								graph_arc_bulge(curr_graph, prev_x, prev_y, prev_z, last_x, last_y, last_z, prev_bulge);
-							}
-						}
-						//printf("fim\n");
-						
-						/* convert OCS to WCS */
-						graph_mod_axis(curr_graph, normal, elev);
-						
-						break;
-					}
-					/* try to continue on previous point in structure */
-					current = prev->next;
-				}
-			}
-		}
-		
-		return curr_graph;
-	}
-	return NULL;
-}
-
-list_node * dxf_pline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
+list_node * dxf_pline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
 	if(!ent) return NULL;
 	if (ent->type != DXF_ENT) return NULL;
 	if (!ent->obj.content) return NULL;
@@ -849,68 +671,91 @@ list_node * dxf_pline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 	int pline_flag = 0, num_verts = 0, num_faces = 0;
 	double prev_x, prev_y, prev_z, last_x, last_y, last_z;
 	double prev_bulge = 0;
+	char tmp_str[21];
 	
 	/*flags*/
 	int paper = 0, closed = 0, mesh = 0;
-	if (current = dxf_find_attr2(ent, 67) ){
-		paper = current->value.i_data;
+	
+	current = ent->obj.content->next;
+	
+	/* get header parameters for POLYLINE */
+	while (current){
+		if (current->type == DXF_ATTR){ /* DXF attibute */
+			switch (current->value.group){
+				case 30:
+					elev = current->value.d_data;
+					break;
+				case 39:
+					thick = current->value.d_data;
+					break;
+				case 40:
+					start_w = current->value.d_data;
+					break;
+				case 41:
+					end_w = current->value.d_data;
+					break;
+				case 71: /* 3D mesh polyface*/
+					num_verts = current->value.i_data;
+					break;
+				case 72: /* 3D mesh polyface*/
+					num_faces = current->value.i_data;
+					break;
+				case 70:
+					pline_flag = current->value.i_data;
+					break;
+				case 67:
+					paper = current->value.i_data;
+					break;
+				case 210:
+					extru_x = current->value.d_data;
+					break;
+				case 220:
+					extru_y = current->value.d_data;
+					break;
+				case 230:
+					extru_z = current->value.d_data;
+					break;
+				case 101:
+					strncpy(tmp_str, current->value.s_data, 20);
+					str_upp(tmp_str);
+					char *tmp = trimwhitespace(tmp_str);
+					if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+						current = NULL;
+						continue;
+					}
+			}
+		}
+		else if (current->type == DXF_ENT){
+			/* stops reading parameters, when reaches to first sub-entity (probaly a VERTEX) */
+			nxt_ent = current;
+			current = NULL;
+			continue;
+		}
+		
+		current = current->next; /* go to the next in the list */
 	}
 	
+	/* verify if POLYLINE is in a desired mode (model or paper) */
 	if ( !((p_space == 0 && paper == 0) || (p_space != 0 &&  paper != 0)) ) return NULL;
 	
 	list_node * graph = list_new(NULL, FRAME_LIFE);
 	
-	if (current = dxf_find_attr2(ent, 30) ){
-		elev = current->value.d_data;
-	}
-	if (current = dxf_find_attr2(ent, 39) ){
-		thick = current->value.d_data;
-	}
-	if (current = dxf_find_attr2(ent, 70) ){
-		pline_flag = current->value.i_data;
-	}
-	
 	if (pline_flag & 1) closed = 1;
 	if (pline_flag & 64) mesh = 1;
 	
-	if (mesh){
-		nxt_atr = NULL;
-		if (current = dxf_find_attr_nxt(ent, &nxt_atr, 71) ){
-			num_verts = current->value.i_data;
-			if (current = dxf_find_attr_nxt(ent, &nxt_atr, 72) ){
-				num_faces = current->value.i_data;
-			}
-		}
-	}
 	
-	if (current = dxf_find_attr2(ent, 40) ){
-		start_w = current->value.d_data;
-	}
-	if (current = dxf_find_attr2(ent, 41) ){
-		end_w = current->value.d_data;
-	}
-	
-	nxt_atr = NULL;
-	if (current = dxf_find_attr_nxt(ent, &nxt_atr, 210) ){
-		extru_x = current->value.d_data;
-		if (current = dxf_find_attr_nxt(ent, &nxt_atr, 220) ){
-			extru_y = current->value.d_data;
-			if (current = dxf_find_attr_nxt(ent, &nxt_atr, 230) ){
-				extru_z = current->value.d_data;
-			}
-		}
-	}
 	/* for convertion OCS to WCS */
 	normal[0] = extru_x;
 	normal[1] = extru_y;
 	normal[2] = extru_z;
 	
-	nxt_ent = NULL;
+	/* get the first vertex */
 	if (vertex = dxf_find_obj_nxt(ent, &nxt_ent, "VERTEX") ){
 		
 		pt1_x = 0; pt1_y = 0; pt1_z = 0;
 		bulge =0;
 		
+		/* coordinates */
 		nxt_atr = NULL;
 		if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 10) ){
 			pt1_x = current->value.d_data;
@@ -920,16 +765,19 @@ list_node * dxf_pline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 					pt1_z = current->value.d_data;
 				}
 			}
+			/* bulge */
 			nxt_atr = NULL;
 			if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 42) ){
 				bulge = current->value.d_data;
 			}
 		}
 		
+		/* store first vertex coordinates, in case of closed POLYLINE */
 		last_x = pt1_x;
 		last_y = pt1_y;
 		last_z = pt1_z;
 		
+		/* prepare for next  segment */
 		prev_x = pt1_x;
 		prev_y = pt1_y;
 		prev_z = pt1_z;
@@ -937,14 +785,19 @@ list_node * dxf_pline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 			
 	} else return NULL;
 	
-	if (!mesh){
+	if (!mesh){ /* parse as a proper polyline string */
+		
 		curr_graph = graph_new(pool_idx);
 		if (!curr_graph) return NULL;
+		
 		/*change tickness */
 		curr_graph->tick = start_w;
+		
 		while (vertex = dxf_find_obj_nxt(ent, &nxt_ent, "VERTEX") ){
+			/*current vertex */
 			pt1_x = 0; pt1_y = 0; pt1_z = 0;
 			bulge = 0;
+			/* coordinates */
 			nxt_atr = NULL;
 			if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 10) ){
 				pt1_x = current->value.d_data;
@@ -955,12 +808,14 @@ list_node * dxf_pline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 						
 					}
 				}
+				/* bulge */
 				nxt_atr = NULL;
 				if (current = dxf_find_attr_nxt(vertex, &nxt_atr, 42) ){
 					bulge = current->value.d_data;
 				}
 			}
 			
+			/* store line segment data */
 			if (prev_bulge == 0){
 				line_add(curr_graph, prev_x, prev_y, prev_z, pt1_x, pt1_y, pt1_z);
 			}
@@ -968,13 +823,15 @@ list_node * dxf_pline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 				graph_arc_bulge(curr_graph, prev_x, prev_y, prev_z, pt1_x, pt1_y, pt1_z, prev_bulge);
 			}
 			
+			/* prepare for next segment */
 			prev_x = pt1_x;
 			prev_y = pt1_y;
 			prev_z = pt1_z;
 			prev_bulge = bulge;
 				
 		} 
-		if(closed){
+		/* end of polyline */
+		if(closed){ /* add a last segment to first point, if is a closed polyline */
 			if (prev_bulge == 0){
 				line_add(curr_graph, prev_x, prev_y, prev_z, last_x, last_y, last_z);
 			}
@@ -985,23 +842,24 @@ list_node * dxf_pline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 		/* convert OCS to WCS */
 		graph_mod_axis(curr_graph, normal, elev);
 		
-		list_push(graph, list_new((void *)curr_graph, pool_idx));
+		list_push(graph, list_new((void *)curr_graph, pool_idx)); /* store polyline in returned structure */
 	}
-	else{
-		/***************************/
+	else{ /* parse as a 3D mesh polyface*/
 		
+		/* store vertices cordinates in a buffer */
 		struct Mem_buffer *buf = manage_buffer(num_verts * 3 * sizeof(double), BUF_GET);
 		if (!buf) return NULL;
 		double *verts_data = (double *) buf->buffer;
+		
+		int face[4]; /* face's vertices indexes */
+		int num_pts = 0; /* face's vertices size (3 or 4)*/
+		
+		/* store first coordinate, previously parsed */
 		verts_data[0] = prev_x;
 		verts_data[1] = prev_y;
 		verts_data[2] = prev_z;
-		int face[4], num_pts = 0;
 		
-		curr_graph = graph_new(pool_idx);
-		if (!curr_graph) return NULL;
-		/*change tickness */
-		curr_graph->tick = start_w;
+		/* sweeps VERTEX ents that define coordinates and store data in buffer */
 		int i;
 		for (i = 1; i < num_verts; i++){
 			if ( !(vertex = dxf_find_obj_nxt(ent, &nxt_ent, "VERTEX") ) ) break;
@@ -1017,11 +875,14 @@ list_node * dxf_pline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 				}
 			}
 			
+			/* store in buffer */
 			verts_data[3*i ] = pt1_x;
 			verts_data[3*i + 1] = pt1_y;
 			verts_data[3*i + 2] = pt1_z;
 			
 		} 
+		
+		/* sweeps VERTEX ents that define faces and parse the mesh */
 		for (i = 0; i < num_faces; i++){
 			if ( !(vertex = dxf_find_obj_nxt(ent, &nxt_ent, "VERTEX") ) ) break;
 			nxt_atr = NULL;
@@ -1058,13 +919,14 @@ list_node * dxf_pline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 					}
 				}
 			}
-			if (num_pts < 3) continue;
+			if (num_pts < 3) continue; /* verify if a valid face */
 			
 			curr_graph = graph_new(pool_idx);
 			if (!curr_graph) continue;
 			curr_graph->flags |= FILLED;
 			
-			if (num_pts > 3){
+			/* build the face with coordinates indexes*/
+			if (num_pts > 3){ /* 4 point face */
 				line_add(curr_graph,
 					verts_data[3 * face[0]], verts_data[3 * face[0] + 1], verts_data[3 * face[0] + 2],
 					verts_data[3 * face[1]], verts_data[3 * face[1] + 1], verts_data[3 * face[1] + 2] );
@@ -1078,7 +940,7 @@ list_node * dxf_pline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 					verts_data[3 * face[3]], verts_data[3 * face[3] + 1], verts_data[3 * face[3] + 2],
 					verts_data[3 * face[0]], verts_data[3 * face[0] + 1], verts_data[3 * face[0] + 2] );
 			}
-			else{
+			else{ /* 3 point face - triangle*/
 				line_add(curr_graph,
 					verts_data[3 * face[0]], verts_data[3 * face[0] + 1], verts_data[3 * face[0] + 2],
 					verts_data[3 * face[1]], verts_data[3 * face[1] + 1], verts_data[3 * face[1] + 2] );
@@ -1090,17 +952,14 @@ list_node * dxf_pline_parse2(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 					verts_data[3 * face[0]], verts_data[3 * face[0] + 1], verts_data[3 * face[0] + 2] );
 			}
 			
-			
-			list_push(graph, list_new((void *)curr_graph, pool_idx));
+			list_push(graph, list_new((void *)curr_graph, pool_idx)); /* store face in returned structure */
 		} 
+		/* end of mesh parse */
 		if(closed){
 			
 		}
-		/* convert OCS to WCS */
-		graph_mod_axis(curr_graph, normal, elev);
 		
-		list_push(graph, list_new((void *)curr_graph, pool_idx));
-		/**************************************/
+		/* release the vertex buffer */
 		manage_buffer(0, BUF_RELEASE);
 	}
 	
@@ -3516,16 +3375,8 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			}
 			else if (strcmp(current->obj.name, "POLYLINE") == 0){
 				ent_type = DXF_POLYLINE;
-				#if(0)
-				curr_graph = dxf_pline_parse(drawing, current, p_space, pool_idx);
-				if (curr_graph){
-					/* store the graph in the return vector */
-					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
-					mod_idx++;
-				}
-				#endif
-				list_node * poly_list = dxf_pline_parse2(drawing, current, p_space, pool_idx);
+				
+				list_node * poly_list = dxf_pline_parse(drawing, current, p_space, pool_idx);
 				
 				if ((poly_list != NULL)){
 					list_node *curr_node = poly_list->next;

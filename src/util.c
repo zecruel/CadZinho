@@ -386,7 +386,7 @@ int miss_file (char *path, char *dflt){
 	FILE *file = fopen(path, "w"); /* try to create file */
 	if (file){
 		/* then write contents of default string */
-		fprintf(file,  dflt);
+		fprintf(file, "%s", dflt);
 		
 		fclose(file);
 		return 1; /* success */

@@ -122,8 +122,12 @@ int main(int argc, char** argv){
 	
 	
 	
-	
+#ifdef _MSC_VER
+  //let msvcrt do the charset convensions
+  setlocale(LC_ALL, ".UTF-8");
+#else
 	//setlocale(LC_ALL,""); //seta a localidade como a current do computador para aceitar acentuacao
+#endif
 	int i, ok;
 	
 	

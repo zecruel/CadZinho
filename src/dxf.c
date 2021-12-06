@@ -89,8 +89,7 @@ void dxf_ent_print2 (dxf_node *ent){ /* print the entity structure */
 				for (i=0; i<indent; i++){ /* print the indentation spaces */
 					printf("    ");
 				}
-				printf(current->obj.name);  /* print the string of entity's name */
-				printf("\n");
+				printf("%s\n", current->obj.name);  /* print the string of entity's name */
 			}
 			if (current->obj.content){
 				/* starts the content sweep */
@@ -108,7 +107,7 @@ void dxf_ent_print2 (dxf_node *ent){ /* print the entity structure */
 			switch (current->value.t_data) {
 				case DXF_STR:
 					if(current->value.s_data){
-						printf(current->value.s_data);
+						printf("%s", current->value.s_data);
 					}
 					break;
 				case DXF_FLOAT:
@@ -160,8 +159,7 @@ void dxf_ent_print_f (dxf_node *ent, char *path){ /* print the entity structure 
 				for (i=0; i<indent; i++){ /* print the indentation spaces */
 					fprintf(file, "    ");
 				}
-				fprintf(file, current->obj.name);  /* print the string of entity's name */
-				fprintf(file, "\n");
+				fprintf(file, "%s\n", current->obj.name);  /* print the string of entity's name */
 			}
 			if (current->obj.content){
 				/* starts the content sweep */
@@ -179,7 +177,7 @@ void dxf_ent_print_f (dxf_node *ent, char *path){ /* print the entity structure 
 			switch (current->value.t_data) {
 				case DXF_STR:
 					if(current->value.s_data){
-						fprintf(file, current->value.s_data);
+						fprintf(file, "%s", current->value.s_data);
 					}
 					break;
 				case DXF_FLOAT:

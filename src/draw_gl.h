@@ -42,6 +42,10 @@ struct ogl { /* openGL context to pass main parameters */
 	GLuint tex;
 	int tex_w, tex_h;
 	GLint tex_uni;
+	
+	
+	GLint transf_uni;
+	GLfloat transf[4][4];
 
 };
 
@@ -50,7 +54,7 @@ struct p_node { /* node to perform scanline fill algorithm */
 };
 
 struct edge { /* polygon edge */
-	int x0, y0, x1, y1;
+	int x0, y0, z0, x1, y1, z1;
 };
 
 struct Image {

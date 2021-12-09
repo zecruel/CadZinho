@@ -750,6 +750,9 @@ int nk_gl_render(gui_obj *gui) {
 	gl_ctx->elem_count = 0;
 	glUniform1i(gl_ctx->tex_uni, 0);
 	
+	glDepthFunc(GL_ALWAYS);
+	
+	
 	nk_foreach(cmd, gui->ctx){
 		if (gl_ctx->elems == NULL){
 			gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
@@ -828,7 +831,7 @@ int nk_gl_render(gui_obj *gui) {
 			
 			nk_to_gl_color(gl_ctx, r->color);
 			
-			edges[0] = (struct edge){r->x + r->rounding, r->y, r->x + r->w -r->rounding, r->y};
+			edges[0] = (struct edge){r->x + r->rounding, 0, r->y, r->x + r->w -r->rounding, r->y, 0};
 			x0 =  r->x + r->w - r->rounding;
 			cx = x0;
 			y0 = r->y;
@@ -836,11 +839,11 @@ int nk_gl_render(gui_obj *gui) {
 			for (i=13; i <= 16; i++){
 				x1 = cx +  r->rounding * cos(i * step);
 				y1 = cy +  r->rounding * sin(i * step);
-				edges[i] = (struct edge){x0, y0, x1, y1};
+				edges[i] = (struct edge){x0, y0, 0, x1, y1, 0};
 				x0 = x1;
 				y0 = y1;
 			}
-			edges[17] = (struct edge){x0, y0, r->x + r->w, r->y + r->h - r->rounding};
+			edges[17] = (struct edge){x0, y0, 0, r->x + r->w, r->y + r->h - r->rounding, 0};
 			cx = r->x + r->w - r->rounding;
 			x0 = r->x + r->w;
 			y0 = r->y + r->h - r->rounding;
@@ -848,11 +851,11 @@ int nk_gl_render(gui_obj *gui) {
 			for (i=1; i <= 4; i++){
 				x1 = cx +  r->rounding * cos(i * step);
 				y1 = cy +  r->rounding * sin(i * step);
-				edges[i] = (struct edge){x0, y0, x1, y1};
+				edges[i] = (struct edge){x0, y0, 0, x1, y1, 0};
 				x0 = x1;
 				y0 = y1;
 			}
-			edges[18] = (struct edge){x0, y0,  r->x + r->rounding, r->y + r->h};
+			edges[18] = (struct edge){x0, y0, 0, r->x + r->rounding, r->y + r->h, 0};
 			x0 = r->x + r->rounding;
 			cx = x0;
 			y0 = r->y + r->h;
@@ -860,11 +863,11 @@ int nk_gl_render(gui_obj *gui) {
 			for (i=5; i <= 8; i++){
 				x1 = cx +  r->rounding * cos(i * step);
 				y1 = cy +  r->rounding * sin(i * step);
-				edges[i] = (struct edge){x0, y0, x1, y1};
+				edges[i] = (struct edge){x0, y0, 0, x1, y1, 0};
 				x0 = x1;
 				y0 = y1;
 			}
-			edges[19] = (struct edge){x0, y0, r->x, r->y + r->rounding};
+			edges[19] = (struct edge){x0, y0, 0, r->x, r->y + r->rounding, 0};
 			cx = r->x + r->rounding;
 			x0 = r->x;
 			y0 = r->y + r->rounding;
@@ -872,11 +875,11 @@ int nk_gl_render(gui_obj *gui) {
 			for (i=9; i < 12; i++){
 				x1 = cx +  r->rounding * cos(i * step);
 				y1 = cy +  r->rounding * sin(i * step);
-				edges[i] = (struct edge){x0, y0, x1, y1};
+				edges[i] = (struct edge){x0, y0, 0, x1, y1, 0};
 				x0 = x1;
 				y0 = y1;
 			}
-			edges[12] = (struct edge){x0, y0, r->x + r->rounding, r->y};
+			edges[12] = (struct edge){x0, y0, 0, r->x + r->rounding, r->y, 0};
 			draw_gl_polygon (gl_ctx, 20, edges);
 		}
 		else if (cmd->type == NK_COMMAND_IMAGE) {
@@ -1066,13 +1069,13 @@ int nk_gl_render(gui_obj *gui) {
 			for (i = 1; i < 20; i++){
 				x1 = 0.5 + cx + major_ax * cos( 0.1 * M_PI * i );
 				y1 = 0.5 + cy + minor_ax * sin( 0.1 * M_PI * i );
-				edges[i-1] = (struct edge){x0, y0, x1, y1};
+				edges[i-1] = (struct edge){x0, y0, 0, x1, y1, 0};
 				x0 = x1;
 				y0 = y1;
 			}
 			x1 = 0.5 + cx + major_ax;
 			y1 = 0.5 + cy;
-			edges[19] = (struct edge){x0, y0, x1, y1};
+			edges[19] = (struct edge){x0, y0, 0, x1, y1, 0};
 			
 			draw_gl_polygon (gl_ctx, 20, edges);
 		} 
@@ -1876,13 +1879,13 @@ int draw_cursor_gl(gui_obj *gui, int x, int y, enum Cursor_type type) {
 		for (i = 1; i < 20; i++){
 			x1 = 0.5 + x + major_ax * cos( 0.1 * M_PI * i );
 			y1 = 0.5 + y + minor_ax * sin( 0.1 * M_PI * i );
-			edges[i-1] = (struct edge){x0, y0, x1, y1};
+			edges[i-1] = (struct edge){x0, y0, 0, x1, y1, 0};
 			x0 = x1;
 			y0 = y1;
 		}
 		x1 = 0.5 + x + major_ax;
 		y1 = 0.5 + y;
-		edges[19] = (struct edge){x0, y0, x1, y1};
+		edges[19] = (struct edge){x0, y0, 0, x1, y1, 0};
 		
 		draw_gl_polygon (gl_ctx, 20, edges);
 	}

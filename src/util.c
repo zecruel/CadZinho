@@ -743,3 +743,13 @@ int dir_miss (char* path){ /* try to create a folder, if not exists */
 	if (dir_check(path)) return 1; /* folder already exists */
 	return dir_make (path); /* try to create folder */
 }
+
+
+void matrix4_mul(float *mat_a, float *mat_b, float *mat_r) {
+    for (unsigned int i = 0; i < 16; i += 4)
+        for (unsigned int j = 0; j < 4; ++j)
+            mat_r[i + j] = (mat_b[i + 0] * mat_a[j +  0])
+                            + (mat_b[i + 1] * mat_a[j +  4])
+                            + (mat_b[i + 2] * mat_a[j +  8])
+                            + (mat_b[i + 3] * mat_a[j + 12]);
+}

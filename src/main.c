@@ -1437,10 +1437,31 @@ int main(int argc, char** argv){
 			d_param.len_subst = 0;
 			d_param.inc_thick = 0;
 			
+			/*
+			gui->gl_ctx.transf[0][0] = 0.7071;
+			gui->gl_ctx.transf[0][1] = 0.0;
+			gui->gl_ctx.transf[0][2] = -0.7071;
+			gui->gl_ctx.transf[0][3] = 0.0;
+			gui->gl_ctx.transf[1][0] = 0.4082;
+			gui->gl_ctx.transf[1][1] = 0.8165;
+			gui->gl_ctx.transf[1][2] = 0.4082;
+			gui->gl_ctx.transf[1][3] = 0.0;
+			gui->gl_ctx.transf[2][0] = 0.5774;
+			gui->gl_ctx.transf[2][1] = -0.5774;
+			gui->gl_ctx.transf[2][2] = 0.5774;
+			gui->gl_ctx.transf[2][3] = 0.0;
+			gui->gl_ctx.transf[3][0] = 0.0;
+			gui->gl_ctx.transf[3][1] = 0.0;
+			gui->gl_ctx.transf[3][2] = 0.0;
+			gui->gl_ctx.transf[3][3] = 1.0;
+			glUniformMatrix4fv(gui->gl_ctx.transf_uni, 1,  GL_FALSE, &gui->gl_ctx.transf[0][0]);
+			glDepthFunc(GL_LESS);
+			*/
+			
 			/* Clear the screen to background color */
 			glClearColor((GLfloat) gui->background.r/255, (GLfloat) gui->background.g/255, 
 				(GLfloat) gui->background.b/255, 1.0);
-			glClear(GL_COLOR_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
 			
 			gui->gl_ctx.verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 			gui->gl_ctx.elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
@@ -1509,7 +1530,6 @@ int main(int argc, char** argv){
 			
 			/* ---------------------------------- */
 			draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
-			
 			
 			
 			

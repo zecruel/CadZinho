@@ -3210,6 +3210,117 @@ graph_obj * dxf_solid_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 	return NULL;
 }
 
+graph_obj * dxf_3dface_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
+	if(!ent) return NULL;
+	if (ent->type != DXF_ENT) return NULL;
+	if (!ent->obj.content) return NULL;
+	
+	dxf_node *current = NULL;
+	double pt1_x = 0, pt1_y = 0, pt1_z = 0;
+	double pt2_x = 0, pt2_y = 0, pt2_z = 0;
+	double pt3_x = 0, pt3_y = 0, pt3_z = 0;
+	double pt4_x = 0, pt4_y = 0, pt4_z = 0;
+	char tmp_str[20];
+	
+	int i, paper = 0;
+	
+	/*flags*/
+	int pt1 = 0, pt2 = 0, pt3 = 0, pt4 = 0;
+	
+	
+	current = ent->obj.content->next;
+	while (current){
+		if (current->type == DXF_ATTR){ /* DXF attibute */
+			switch (current->value.group){
+				case 10:
+					pt1_x = current->value.d_data;
+					pt1 = 1; /* set flag */
+					break;
+				case 20:
+					pt1_y = current->value.d_data;
+					pt1 = 1; /* set flag */
+					break;
+				case 30:
+					pt1_z = current->value.d_data;
+					pt1 = 1; /* set flag */
+					break;
+				case 11:
+					pt2_x = current->value.d_data;
+					pt2 = 1; /* set flag */
+					break;
+				case 21:
+					pt2_y = current->value.d_data;
+					pt2 = 1; /* set flag */
+					break;
+				case 31:
+					pt2_z = current->value.d_data;
+					pt2 = 1; /* set flag */
+					break;
+				case 12:
+					pt3_x = current->value.d_data;
+					pt3 = 1; /* set flag */
+					break;
+				case 22:
+					pt3_y = current->value.d_data;
+					pt3 = 1; /* set flag */
+					break;
+				case 32:
+					pt3_z = current->value.d_data;
+					pt3 = 1; /* set flag */
+					break;
+				case 13:
+					pt4_x = current->value.d_data;
+					pt4 = 1; /* set flag */
+					break;
+				case 23:
+					pt4_y = current->value.d_data;
+					pt4 = 1; /* set flag */
+					break;
+				case 33:
+					pt4_z = current->value.d_data;
+					pt4 = 1; /* set flag */
+					break;
+				case 67:
+					paper = current->value.i_data;
+					break;
+				case 101:
+					strcpy(tmp_str, current->value.s_data);
+					str_upp(tmp_str);
+					char *tmp = trimwhitespace(tmp_str);
+					if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+						current = NULL;
+						continue;
+					}
+			}
+		}
+		current = current->next; /* go to the next in the list */
+	}
+	if (((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))){
+		graph_obj *curr_graph = graph_new(pool_idx);
+		if (curr_graph){
+			/* mark as filled object */
+			//curr_graph->fill = 1;
+			curr_graph->flags |= FILLED;
+			
+			/* add the graph */
+			//line_add(curr_graph, pt1_x, pt1_y, pt1_z, pt2_x, pt2_y, pt2_z);
+			
+			if (pt4){
+				line_add(curr_graph, pt1_x, pt1_y, pt1_z, pt2_x, pt2_y, pt2_z);
+				line_add(curr_graph, pt2_x, pt2_y, pt2_z, pt3_x, pt3_y, pt3_z);
+				line_add(curr_graph, pt3_x, pt3_y, pt3_z, pt4_x, pt4_y, pt4_z);
+				line_add(curr_graph, pt4_x, pt4_y, pt4_z, pt1_x, pt1_y, pt1_z);
+			}
+			else{
+				line_add(curr_graph, pt1_x, pt1_y, pt1_z, pt2_x, pt2_y, pt2_z);
+				line_add(curr_graph, pt2_x, pt2_y, pt2_z, pt3_x, pt3_y, pt3_z);
+				line_add(curr_graph, pt3_x, pt3_y, pt3_z, pt1_x, pt1_y, pt1_z);
+			}
+		}
+		return curr_graph;
+	}
+}
+
 int proc_obj_graph(dxf_drawing *drawing, dxf_node * ent, graph_obj * graph, struct ins_save ins){
 	if ((drawing) && (ent) && (graph)){
 		dxf_node *layer_obj, *ltscale_obj;
@@ -3431,6 +3542,18 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			else if (strcmp(current->obj.name, "SOLID") == 0){
 				ent_type = DXF_SOLID;
 				curr_graph = dxf_solid_parse(drawing, current, p_space, pool_idx);
+				if (curr_graph){
+					/* store the graph in the return vector */
+					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
+					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+					mod_idx++;
+				}
+				
+				
+			}
+			else if (strcmp(current->obj.name, "3DFACE") == 0){
+				ent_type = DXF_3DFACE;
+				curr_graph = dxf_3dface_parse(drawing, current, p_space, pool_idx);
 				if (curr_graph){
 					/* store the graph in the return vector */
 					list_push(list_ret, list_new((void *)curr_graph, pool_idx));

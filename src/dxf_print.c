@@ -1886,6 +1886,7 @@ int print_img(dxf_drawing *drawing, struct print_param param, char *dest){
 	struct draw_param d_param;
 	d_param.ofs_x = param.ofs_x;
 	d_param.ofs_y = param.ofs_y;
+	d_param.ofs_z = 0;
 	d_param.scale = param.scale * param.resolution;
 	d_param.list = param.list;
 	d_param.subst = param.subst;

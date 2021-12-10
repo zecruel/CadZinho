@@ -1431,13 +1431,14 @@ int main(int argc, char** argv){
 			
 			d_param.ofs_x = gui->ofs_x;
 			d_param.ofs_y = gui->ofs_y;
+			d_param.ofs_z = 0;
 			d_param.scale = gui->zoom;
 			d_param.list = NULL;
 			d_param.subst = NULL;
 			d_param.len_subst = 0;
 			d_param.inc_thick = 0;
 			
-			/*
+			/* 3D test */
 			gui->gl_ctx.transf[0][0] = 0.7071;
 			gui->gl_ctx.transf[0][1] = 0.0;
 			gui->gl_ctx.transf[0][2] = -0.7071;
@@ -1454,9 +1455,10 @@ int main(int argc, char** argv){
 			gui->gl_ctx.transf[3][1] = 0.0;
 			gui->gl_ctx.transf[3][2] = 0.0;
 			gui->gl_ctx.transf[3][3] = 1.0;
-			glUniformMatrix4fv(gui->gl_ctx.transf_uni, 1,  GL_FALSE, &gui->gl_ctx.transf[0][0]);
+			
+			//glUniformMatrix4fv(gui->gl_ctx.transf_uni, 1,  GL_FALSE, &gui->gl_ctx.transf[0][0]);
 			glDepthFunc(GL_LESS);
-			*/
+			
 			
 			/* Clear the screen to background color */
 			glClearColor((GLfloat) gui->background.r/255, (GLfloat) gui->background.g/255, 

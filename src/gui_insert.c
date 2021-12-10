@@ -207,6 +207,7 @@ int gui_insert_info (gui_obj *gui){
 					struct draw_param d_param;
 					d_param.ofs_x = o_x;
 					d_param.ofs_y = o_y;
+					d_param.ofs_z = 0;
 					d_param.scale = z;
 					d_param.list = NULL;
 					d_param.subst = NULL;

@@ -50,7 +50,7 @@ struct ogl { /* openGL context to pass main parameters */
 };
 
 struct p_node { /* node to perform scanline fill algorithm */
-	int up, low;
+	int up, low, z;
 };
 
 struct edge { /* polygon edge */
@@ -64,17 +64,17 @@ struct Image {
 
 int draw_gl_init (void *data, int clear);
 
-int draw_gl_line (struct ogl *gl_ctx, int p0[2], int p1[2], int thick);
+int draw_gl_line (struct ogl *gl_ctx, int p0[3], int p1[3], int thick);
 
-int draw_gl_quad (struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2]);
+int draw_gl_quad (struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3]);
 
-int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int w, int h);
+int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int z, int w, int h);
 
-int draw_gl_triang (struct ogl *gl_ctx, int p0[2], int p1[2], int p2[2]);
+int draw_gl_triang (struct ogl *gl_ctx, int p0[3], int p1[3], int p2[3]);
 
 int draw_gl_polygon (struct ogl *gl_ctx, int n, struct edge edges[]);
 
-int draw_gl_image (struct ogl *gl_ctx, int x, int y, int w, int h, bmp_img *img);
+int draw_gl_image_rec (struct ogl *gl_ctx, int x, int y, int z, int w, int h, bmp_img *img);
 
 int draw_gl (struct ogl *gl_ctx, int force);
 

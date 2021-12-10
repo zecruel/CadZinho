@@ -471,6 +471,7 @@ int print_win (gui_obj *gui){
 			struct draw_param d_param;
 			d_param.ofs_x = o_x;
 			d_param.ofs_y = o_y;
+			d_param.ofs_z = 0;
 			d_param.scale = z * scale;
 			d_param.list = param.list;
 			d_param.subst = param.subst;

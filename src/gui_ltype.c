@@ -616,6 +616,7 @@ int ltyp_mng (gui_obj *gui){
 		struct draw_param d_param;
 		d_param.ofs_x = 0;
 		d_param.ofs_y = 0;
+		d_param.ofs_z = 0;
 		/* try to scale its size to view and compare pattern*/
 		if (ltypes[i].length > 0.0 && max_len > 40.0 * ltypes[i].length) 
 			d_param.scale = (double) 0.95*PREV_W /(4 * ltypes[i].length);
@@ -1118,6 +1119,7 @@ int ltyp_mng (gui_obj *gui){
 						struct draw_param d_param;
 						d_param.ofs_x = 0;
 						d_param.ofs_y = 0;
+						d_param.ofs_z = 0;
 						/* try to scale its size to view and compare pattern*/
 						d_param.scale = 1.0;
 						if (lib[sel_ltyp].length > 0.0) 

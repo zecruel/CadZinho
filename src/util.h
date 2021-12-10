@@ -98,4 +98,6 @@ int dir_make (char *path);
 
 int dir_miss (char* path); /* try to create a folder, if not exists */
 
+void matrix4_mul(float *mat_a, float *mat_b, float *mat_r);
+
 #endif

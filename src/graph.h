@@ -76,6 +76,7 @@ struct draw_param{
 	double h;
 	double ofs_x;
 	double ofs_y;
+	double ofs_z;
 	double scale;
 	double resolution;
 	int mono;

@@ -142,20 +142,20 @@ int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
 		
 		glUniform1i(gui->gl_ctx.tex_uni, 0);
 		
-		gui->gl_ctx.transf[0][0] = 2.0 / gui->gl_ctx.win_w;
+		gui->gl_ctx.transf[0][0] = 1.0;
 		gui->gl_ctx.transf[0][1] = 0.0;
 		gui->gl_ctx.transf[0][2] = 0.0;
 		gui->gl_ctx.transf[0][3] = 0.0;
 		gui->gl_ctx.transf[1][0] = 0.0;
-		gui->gl_ctx.transf[1][1] = ( (gui->gl_ctx.flip_y) ? -1.0 : 1.0 )  * 2.0 / gui->gl_ctx.win_h;
+		gui->gl_ctx.transf[1][1] = 1.0;
 		gui->gl_ctx.transf[1][2] = 0.0;
 		gui->gl_ctx.transf[1][3] = 0.0;
 		gui->gl_ctx.transf[2][0] = 0.0;
 		gui->gl_ctx.transf[2][1] = 0.0;
 		gui->gl_ctx.transf[2][2] = 1.0;
 		gui->gl_ctx.transf[2][3] = 0.0;
-		gui->gl_ctx.transf[3][0] = -1.0;
-		gui->gl_ctx.transf[3][1] = ( (gui->gl_ctx.flip_y) ? -1.0 : 1.0 ) * -1.0;
+		gui->gl_ctx.transf[3][0] = 0.0;
+		gui->gl_ctx.transf[3][1] = 0.0;
 		gui->gl_ctx.transf[3][2] = 0.0;
 		gui->gl_ctx.transf[3][3] = 1.0;
 		
@@ -205,7 +205,7 @@ int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
 	}
 }
 
-int draw_gl_line (struct ogl *gl_ctx, int p0[2], int p1[2], int thick){
+int draw_gl_line (struct ogl *gl_ctx, int p0[3], int p1[3], int thick){
 	/* emulate drawing a single line with thickness, using triangles in openGL */
 	
 	/* verify struct and buffers */
@@ -236,8 +236,10 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[2], int p1[2], int thick){
 	float ty = tx;
 	float x0 = (float) p0[0];
 	float y0 = (float) p0[1];
+	float z0 = (float) p0[2];
 	float x1 = (float) p1[0];
 	float y1 = (float) p1[1];
+	float z1 = (float) p1[2];
 	
 	/* orientation in drawing area */
 	float flip_y = (gl_ctx->flip_y) ? -1.0 : 1.0;
@@ -247,7 +249,7 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[2], int p1[2], int thick){
 	int j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = x0 - sine * tx;
 	gl_ctx->verts[j].pos[1] = y0 + cosine * ty;
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = z0;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -259,7 +261,7 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[2], int p1[2], int thick){
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = x0 + sine * tx;
 	gl_ctx->verts[j].pos[1] = y0 - cosine * ty;
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = z0;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -271,7 +273,7 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[2], int p1[2], int thick){
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = x1 - sine * tx;
 	gl_ctx->verts[j].pos[1] = y1 + cosine * ty;
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = z1;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -283,7 +285,7 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[2], int p1[2], int thick){
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = x1 + sine * tx;
 	gl_ctx->verts[j].pos[1] = y1 - cosine * ty;
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = z1;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -307,7 +309,7 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[2], int p1[2], int thick){
 	return 1;
 }
 
-int draw_gl_quad (struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2]){
+int draw_gl_quad (struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3]){
 	/* emulate drawing a filled and convex quadrilateral, using triangles in openGL */
 	
 	/* verify struct and buffers */
@@ -323,7 +325,7 @@ int draw_gl_quad (struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2]
 	int j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) bl[0];
 	gl_ctx->verts[j].pos[1] = (float) bl[1];
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) bl[2];
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -335,7 +337,7 @@ int draw_gl_quad (struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2]
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) tl[0];
 	gl_ctx->verts[j].pos[1] = (float) tl[1];
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) tl[2];
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -347,7 +349,7 @@ int draw_gl_quad (struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2]
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) br[0];
 	gl_ctx->verts[j].pos[1] = (float) br[1];
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) br[2];
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -359,7 +361,7 @@ int draw_gl_quad (struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2]
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) tr[0];
 	gl_ctx->verts[j].pos[1] = (float) tr[1];
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) tr[2];
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -382,7 +384,7 @@ int draw_gl_quad (struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2]
 	return 1;
 }
 
-int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int w, int h){
+int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int z, int w, int h){
 	/* emulate drawing a filled and convex quadrilateral, using triangles in openGL */
 	
 	/* verify struct and buffers */
@@ -416,7 +418,7 @@ int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int w, int h){
 	int j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) x;
 	gl_ctx->verts[j].pos[1] = (float) y;
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) z;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -428,7 +430,7 @@ int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int w, int h){
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) x;
 	gl_ctx->verts[j].pos[1] = (float) (y + h);
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) z;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -440,7 +442,7 @@ int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int w, int h){
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) (x + w);
 	gl_ctx->verts[j].pos[1] = (float) y;
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) z;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -452,7 +454,7 @@ int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int w, int h){
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) (x + w);
 	gl_ctx->verts[j].pos[1] = (float) (y + h);
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) z;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -475,7 +477,7 @@ int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int w, int h){
 	return 1;
 }
 
-int draw_gl_triang (struct ogl *gl_ctx, int p0[2], int p1[2], int p2[2]){
+int draw_gl_triang (struct ogl *gl_ctx, int p0[3], int p1[3], int p2[3]){
 	/* add a triangle to openGL */
 	
 	/* verify struct and buffers */
@@ -491,7 +493,7 @@ int draw_gl_triang (struct ogl *gl_ctx, int p0[2], int p1[2], int p2[2]){
 	int j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) p0[0];
 	gl_ctx->verts[j].pos[1] = (float) p0[1];
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) p0[2];
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -503,7 +505,7 @@ int draw_gl_triang (struct ogl *gl_ctx, int p0[2], int p1[2], int p2[2]){
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) p1[0];
 	gl_ctx->verts[j].pos[1] = (float) p1[1];
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) p1[2];
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -515,7 +517,7 @@ int draw_gl_triang (struct ogl *gl_ctx, int p0[2], int p1[2], int p2[2]){
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) p2[0];
 	gl_ctx->verts[j].pos[1] = (float) p2[1];
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) p2[2];
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -534,7 +536,7 @@ int draw_gl_triang (struct ogl *gl_ctx, int p0[2], int p1[2], int p2[2]){
 	return 1;
 }
 
-int draw_gl_image (struct ogl *gl_ctx, int x, int y, int w, int h, bmp_img *img){
+int draw_gl_image_rec (struct ogl *gl_ctx, int x, int y, int z, int w, int h, bmp_img *img){
 	/* emulate drawing a filled and convex quadrilateral, using triangles in openGL */
 	
 	/* verify struct and buffers */
@@ -570,7 +572,7 @@ int draw_gl_image (struct ogl *gl_ctx, int x, int y, int w, int h, bmp_img *img)
 	int j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) x;
 	gl_ctx->verts[j].pos[1] = (float) y;
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) z;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -582,7 +584,7 @@ int draw_gl_image (struct ogl *gl_ctx, int x, int y, int w, int h, bmp_img *img)
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) x;
 	gl_ctx->verts[j].pos[1] = (float) (y + h);
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) z;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -594,7 +596,7 @@ int draw_gl_image (struct ogl *gl_ctx, int x, int y, int w, int h, bmp_img *img)
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) (x + w);
 	gl_ctx->verts[j].pos[1] = (float) y;
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) z;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -606,7 +608,7 @@ int draw_gl_image (struct ogl *gl_ctx, int x, int y, int w, int h, bmp_img *img)
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) (x + w);
 	gl_ctx->verts[j].pos[1] = (float) (y + h);
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) z;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -629,7 +631,7 @@ int draw_gl_image (struct ogl *gl_ctx, int x, int y, int w, int h, bmp_img *img)
 	return 1;
 }
 
-int draw_gl_image2(struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2], bmp_img *img){
+int draw_gl_image_quad(struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3], bmp_img *img){
 	/* emulate drawing a filled and convex quadrilateral, using triangles in openGL */
 	
 	/* verify struct and buffers */
@@ -663,7 +665,7 @@ int draw_gl_image2(struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2
 	int j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) bl[0];
 	gl_ctx->verts[j].pos[1] = (float) bl[1];
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) bl[2];
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -675,7 +677,7 @@ int draw_gl_image2(struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) tl[0];
 	gl_ctx->verts[j].pos[1] = (float) tl[1];
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) tl[2];
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -687,7 +689,7 @@ int draw_gl_image2(struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) br[0];
 	gl_ctx->verts[j].pos[1] = (float) br[1];
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) br[2];
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -699,7 +701,7 @@ int draw_gl_image2(struct ogl *gl_ctx, int tl[2], int bl[2], int tr[2], int br[2
 	j = gl_ctx->vert_count;
 	gl_ctx->verts[j].pos[0] = (float) tr[0];
 	gl_ctx->verts[j].pos[1] = (float) tr[1];
-	gl_ctx->verts[j].pos[2] = 0.0;
+	gl_ctx->verts[j].pos[2] = (float) tr[2];
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -763,23 +765,29 @@ int draw_gl_polygon (struct ogl *gl_ctx, int n, struct edge edges[]){
 				/* up scanline */
 				if (edges[j].y0 == scan_lines[i - 1]) { /*interception in one vertex */
 					nodes[nodes_count].up = edges[j].x0;
+					nodes[nodes_count].z = edges[j].z0;
 				}
 				else if (edges[j].y1 == scan_lines[i-1]) {  /*interception in other vertex */
 					nodes[nodes_count].up = edges[j].x1;
+					nodes[nodes_count].z = edges[j].z1;
 				}
 				else {  /* claculate interception in ege*/
 					nodes[nodes_count].up = (int) round(edges[j].x1 + (double) (scan_lines[i - 1] - edges[j].y1)/(edges[j].y0 - edges[j].y1)*(edges[j].x0 - edges[j].x1));
+					nodes[nodes_count].z = edges[j].z0;
 				}
 				
 				/* lower scanline */
 				if (edges[j].y0 == scan_lines[i]) { /*interception in one vertex */
 					nodes[nodes_count].low = edges[j].x0;
+					nodes[nodes_count].z = edges[j].z0;
 				}
 				else if (edges[j].y1 == scan_lines[i]) { /*interception in other vertex */
 					nodes[nodes_count].low = edges[j].x1;
+					nodes[nodes_count].z = edges[j].z1;
 				}
 				else { /* claculate interception in ege*/
 					nodes[nodes_count].low = (int) round(edges[j].x1 + (double) (scan_lines[i] - edges[j].y1)/(edges[j].y0 - edges[j].y1)*(edges[j].x0 - edges[j].x1));
+					nodes[nodes_count].z = edges[j].z0;
 				}
 				
 				nodes_count++;
@@ -792,21 +800,21 @@ int draw_gl_polygon (struct ogl *gl_ctx, int n, struct edge edges[]){
 		/* draw quads (or triangles) between nodes pairs*/
 		for (j = 1; j < nodes_count; j+= 2){ /* triangle, if up corners are same */
 			if (nodes[j - 1].up == nodes[j].up){
-				draw_gl_triang (gl_ctx, (int[]){nodes[j - 1].up, scan_lines[i-1]},
-					(int[]){nodes[j - 1].low, scan_lines[i]},
-					(int[]){nodes[j].low, scan_lines[i]});
+				draw_gl_triang (gl_ctx, (int[]){nodes[j - 1].up, scan_lines[i-1], nodes[j - 1].z},
+					(int[]){nodes[j - 1].low, scan_lines[i], nodes[j - 1].z},
+					(int[]){nodes[j].low, scan_lines[i], nodes[j].z});
 			}
 			
 			else if (nodes[j - 1].low == nodes[j].low){ /* triangle, if lower corners are same */
-				draw_gl_triang (gl_ctx, (int[]){nodes[j - 1].up, scan_lines[i-1]},
-					(int[]){nodes[j - 1].low, scan_lines[i]},
-					(int[]){nodes[j].up, scan_lines[i-1]});
+				draw_gl_triang (gl_ctx, (int[]){nodes[j - 1].up, scan_lines[i-1], nodes[j - 1].z},
+					(int[]){nodes[j - 1].low, scan_lines[i], nodes[j - 1].z},
+					(int[]){nodes[j].up, scan_lines[i-1], nodes[j].z});
 			}
 			else { /* general case - quadrilateral polygon */
-				draw_gl_quad (gl_ctx, (int[]){nodes[j - 1].up, scan_lines[i-1]},
-					(int[]){nodes[j - 1].low, scan_lines[i]},
-					(int[]){nodes[j].up, scan_lines[i-1]},
-					(int[]){nodes[j].low, scan_lines[i]});
+				draw_gl_quad (gl_ctx, (int[]){nodes[j - 1].up, scan_lines[i-1], nodes[j - 1].z},
+					(int[]){nodes[j - 1].low, scan_lines[i], nodes[j - 1].z},
+					(int[]){nodes[j].up, scan_lines[i-1], nodes[j].z},
+					(int[]){nodes[j].low, scan_lines[i], nodes[j].z});
 			}
 		}
 	}
@@ -820,9 +828,9 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 	if (master->list == NULL) return 0;
 	if (master->list->next == NULL) return 0;
 	
-	double x0, y0, x1, y1;
+	double x0, y0, z0, x1, y1, z1;
 	int xd0, yd0, zd0, xd1, yd1, zd1;
-	double dx, dy, modulus, sine, cosine;
+	double dx, dy, dz, modulus, sine, cosine, uz;
 	line_node *current = master->list->next;
 	int i, iter, thick;
 	
@@ -833,6 +841,11 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 	yd0 = 0.5 + (master->ext_min_y - param.ofs_y) * param.scale;
 	xd1 = 0.5 + (master->ext_max_x - param.ofs_x) * param.scale;
 	yd1 = 0.5 + (master->ext_max_y - param.ofs_y) * param.scale;
+	
+	/* TODO */
+	zd0 = 0;
+	zd1 = 0;
+	
 	
 	/* verify if current graph is inside window*/
 	if ( (xd0 < 0 && xd1 < 0) || 
@@ -850,7 +863,7 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 	/* check if graph is legible (greater then 5 pixels) */
 	if (xd1 - xd0 < 5 && yd1 - yd0 < 5 && current->next != NULL){
 		/* draw a single triangle if not legible */
-		draw_gl_triang (gl_ctx, (int[]){xd0, yd0}, (int[]){xd0, yd1}, (int[]){xd1, yd0});
+		draw_gl_triang (gl_ctx, (int[]){xd0, yd0, zd0}, (int[]){xd0, yd1, zd0}, (int[]){xd1, yd0, zd0});
 		return 0;
 	}
 	
@@ -860,24 +873,28 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 		bmp_color white = {.r = 255, .g = 255, .b =255, .a = 255};
 		bmp_color transp = {.r = 255, .g = 255, .b =255, .a = 0};
 		
-		int tl[2], bl[2], tr[2], br[2];
+		int tl[3], bl[3], tr[3], br[3];
 		/* apply  offset an scale */
 		/* first vertice */
 		bl[0] = 0.5 + (current->x0 - param.ofs_x) * param.scale;
 		bl[1] = 0.5 + (current->y0 - param.ofs_y) * param.scale;
+		bl[2] = 0.5 + (current->z0 - param.ofs_z) * param.scale;
 		/* second vertice */
 		br[0] = 0.5 + (current->x1 - param.ofs_x) * param.scale;
 		br[1] = 0.5 + (current->y1 - param.ofs_y) * param.scale;
+		br[2] = 0.5 + (current->z1 - param.ofs_z) * param.scale;
 		current = current->next;
 		if (!current) return 0;
 		/* 3# vertice */
 		tr[0] = 0.5 + (current->x1 - param.ofs_x) * param.scale;
 		tr[1] = 0.5 + (current->y1 - param.ofs_y) * param.scale;
+		tr[2] = 0.5 + (current->z1 - param.ofs_z) * param.scale;
 		current = current->next;
 		if (!current) return 0;
 		/* 4# vertice */
 		tl[0] = 0.5 + (current->x1 - param.ofs_x) * param.scale;
 		tl[1] = 0.5 + (current->y1 - param.ofs_y) * param.scale;
+		tl[2] = 0.5 + (current->z1 - param.ofs_z) * param.scale;
 		
 		/* draw a frame */
 		color = validate_color(transp, param.list, param.subst, param.len_subst);
@@ -903,7 +920,7 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 		glUniform1i(gl_ctx->tex_uni, 1); /* choose second texture */
 		/* finally draw image */
-		draw_gl_image2(gl_ctx, tl, bl, tr, br, master->img);
+		draw_gl_image_quad(gl_ctx, tl, bl, tr, br, master->img);
 		draw_gl (gl_ctx, 1); /* force draw and cleanup */
 		
 		return 1;
@@ -918,10 +935,10 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 			/* apply the scale and offset */
 			xd0 = 0.5 + (current->x0 - param.ofs_x) * param.scale;
 			yd0 = 0.5 + (current->y0 - param.ofs_y) * param.scale;
-			zd0 = 0.5 + (current->z0) * param.scale;
+			zd0 = 0.5 + (current->z0 - param.ofs_z) * param.scale;
 			xd1 = 0.5 + (current->x1 - param.ofs_x) * param.scale;
 			yd1 = 0.5 + (current->y1 - param.ofs_y) * param.scale;
-			zd1 = 0.5 + (current->z1) * param.scale;
+			zd1 = 0.5 + (current->z1 - param.ofs_z) * param.scale;
 			
 			/* build edges array */
 			edges[i] = (struct edge){xd0, yd0, zd0, xd1, yd1, zd1};
@@ -931,7 +948,25 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 			else current = NULL;
 		}
 		
-		draw_gl_polygon (gl_ctx, i, edges);
+		if (i > 2){
+			if (i < 4){
+				//int draw_gl_triang (struct ogl *gl_ctx, int p0[3], int p1[3], int p2[3]);
+				draw_gl_triang (gl_ctx, (int []){edges[0].x0, edges[0].y0, edges[0].z0},
+					(int []){edges[1].x0, edges[1].y0, edges[1].z0},
+					(int []){edges[2].x0, edges[2].y0, edges[2].z0});
+			}
+			else if (i < 5) {
+				//int draw_gl_quad (struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3]);
+				draw_gl_quad (gl_ctx, (int []){edges[0].x0, edges[0].y0, edges[0].z0},
+					(int []){edges[1].x0, edges[1].y0, edges[1].z0},
+					(int []){edges[3].x0, edges[3].y0, edges[3].z0},
+					(int []){edges[2].x0, edges[2].y0, edges[2].z0});
+			}
+			else {
+				draw_gl_polygon (gl_ctx, i, edges);
+			}
+			
+		}
 	}
 	else {
 		/* set the thickness */
@@ -950,7 +985,7 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 			int patt_i = 0, patt_a_i = 0, patt_p_i = 0, draw;
 			double patt_int, patt_part, patt_rem = 0.0, patt_acc, patt_rem_n;
 			
-			double p1x, p1y, p2x, p2y;
+			double p1x, p1y, p1z, p2x, p2y, p2z;
 			double last;
 			
 			/* draw the lines */
@@ -958,25 +993,31 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 				
 				x0 = current->x0;
 				y0 = current->y0;
+				z0 = current->z0;
 				x1 = current->x1;
 				y1 = current->y1;
+				z1 = current->z1;
 				
 				/* get polar parameters of line */
 				dx = x1 - x0;
 				dy = y1 - y0;
-				modulus = sqrt(pow(dx, 2) + pow(dy, 2));
+				dz = z1 - z0;
+				modulus = sqrt(pow(dx, 2) + pow(dy, 2) + pow(dz, 2));
 				cosine = 1.0;
 				sine = 0.0;
+				uz = 0.0;
 				
 				if (modulus > TOLERANCE){
 					cosine = dx/modulus;
 					sine = dy/modulus;
+					uz = dz/modulus;
 				}
 				
 				/* initial point */
 				draw = master->pattern[patt_i] >= 0.0;
 				p1x = ((x0 - param.ofs_x) * param.scale);
 				p1y = ((y0 - param.ofs_y) * param.scale);
+				p1z = ((z0 - param.ofs_z) * param.scale);
 				
 				if (patt_rem <= modulus){ /* current segment needs some iterations over pattern */
 				
@@ -1012,6 +1053,7 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 					/* first stroke - remainder of past pattern*/
 					p2x = patt_rem * param.scale * cosine + p1x;
 					p2y = patt_rem * param.scale * sine + p1y;
+					p2z = patt_rem * param.scale * uz + p1z;
 					
 					if (patt_rem > 0) {
 						/*------------- complex line type ----------------*/
@@ -1032,11 +1074,13 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 									while(cplx_lin){ /*sweep the list content */
 										xd0 = 0.5 + p2x + ((cplx_lin->x0 * cosine -  cplx_lin->y0 * sine) * param.scale);
 										yd0 = 0.5 + p2y + ((cplx_lin->x0 * sine +  cplx_lin->y0 * cosine) * param.scale);
+										zd0 = 0.5 + p2z;
 										xd1 = 0.5 + p2x + ((cplx_lin->x1 * cosine -  cplx_lin->y1 * sine) * param.scale);
 										yd1 = 0.5 + p2y + ((cplx_lin->x1 * sine +  cplx_lin->y1 * cosine) * param.scale);
+										zd1 = 0.5 + p2z;
 										
 										//bmp_line(img, xd0, yd0, xd1, yd1);
-										draw_gl_line (gl_ctx, (int []){xd0, yd0}, (int []){ xd1, yd1}, 0);
+										draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, 0);
 										
 										cplx_lin = cplx_lin->next; /* go to next */
 									}
@@ -1051,15 +1095,15 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 						
 						if (draw){
 							//bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
-							xd0 = p1x + 0.5; yd0 = p1y + 0.5;
-							xd1 = p2x + 0.5; yd1 = p2y + 0.5;
-							if (xd0 != xd1 || yd0 != yd1){
-								draw_gl_line (gl_ctx, (int []){xd0, yd0}, (int []){ xd1, yd1}, thick);
+							xd0 = p1x + 0.5; yd0 = p1y + 0.5; zd0 = p1z + 0.5;
+							xd1 = p2x + 0.5; yd1 = p2y + 0.5; zd1 = p2z + 0.5;
+							if (xd0 != xd1 || yd0 != yd1 || zd0 != zd1){
+								draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
 							} else { /* draw a dot */
 								int t = thick;
 								if (t < 1) t = 1;
-								draw_gl_quad (gl_ctx, (int []){xd0, yd0 + t}, (int []){xd0, yd0}, 
-									(int []){xd0 + t, yd0 + t}, (int []){xd0 + t, yd0});
+								draw_gl_quad (gl_ctx, (int []){xd0, yd0 + t, zd0}, (int []){xd0, yd0, zd0}, 
+									(int []){xd0 + t, yd0 + t, zd0}, (int []){xd0 + t, yd0, zd0});
 							}
 						}
 					}
@@ -1074,21 +1118,23 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 						draw = master->pattern[patt_i] >= 0.0;
 						p2x = fabs(master->pattern[patt_i]) * param.scale * cosine + p1x;
 						p2y = fabs(master->pattern[patt_i]) * param.scale * sine + p1y;
+						p2z = fabs(master->pattern[patt_i]) * param.scale * uz + p1z;
 						if (draw){
 							//bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
-							xd0 = p1x + 0.5; yd0 = p1y + 0.5;
-							xd1 = p2x + 0.5; yd1 = p2y + 0.5;
-							if (xd0 != xd1 || yd0 != yd1){
-								draw_gl_line (gl_ctx, (int []){xd0, yd0}, (int []){ xd1, yd1}, thick);
+							xd0 = p1x + 0.5; yd0 = p1y + 0.5; zd0 = p1z + 0.5;
+							xd1 = p2x + 0.5; yd1 = p2y + 0.5; zd1 = p2z + 0.5;
+							if (xd0 != xd1 || yd0 != yd1 || zd0 != zd1){
+								draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
 							} else { /* draw a dot */
 								int t = thick;
 								if (t < 1) t = 1;
-								draw_gl_quad (gl_ctx, (int []){xd0, yd0 + t}, (int []){xd0, yd0}, 
-									(int []){xd0 + t, yd0 + t}, (int []){xd0 + t, yd0});
+								draw_gl_quad (gl_ctx, (int []){xd0, yd0 + t, zd0}, (int []){xd0, yd0, zd0}, 
+									(int []){xd0 + t, yd0 + t, zd0}, (int []){xd0 + t, yd0, zd0});
 							}
 						}
 						p1x = p2x;
 						p1y = p2y;
+						p1z = p2z;
 						
 						/*------------- complex line type ----------------*/
 						if (master->cmplx_pat[patt_i] != NULL &&  /* complex element */
@@ -1109,11 +1155,13 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 										
 										xd0 = 0.5 + p1x + ((cplx_lin->x0 * cosine -  cplx_lin->y0 * sine) * param.scale);
 										yd0 = 0.5 + p1y + ((cplx_lin->x0 * sine +  cplx_lin->y0 * cosine) * param.scale);
+										zd0 = 0.5 + p1z;
 										xd1 = 0.5 + p1x + ((cplx_lin->x1 * cosine -  cplx_lin->y1 * sine) * param.scale);
 										yd1 = 0.5 + p1y + ((cplx_lin->x1 * sine +  cplx_lin->y1 * cosine) * param.scale);
+										zd1 = 0.5 + p1z;
 										
 										//bmp_line(img, xd0, yd0, xd1, yd1);
-										draw_gl_line (gl_ctx, (int []){xd0, yd0}, (int []){ xd1, yd1}, 0);
+										draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, 0);
 										
 										cplx_lin = cplx_lin->next; /* go to next */
 									}
@@ -1129,27 +1177,30 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 					
 					p2x = last * param.scale * cosine + p1x;
 					p2y = last * param.scale * sine + p1y;
+					p2z = last * param.scale * uz + p1z;
 					draw = master->pattern[patt_i] >= 0.0;
 					if (draw) {//bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
-						xd0 = p1x + 0.5; yd0 = p1y + 0.5;
-						xd1 = p2x + 0.5; yd1 = p2y + 0.5;
-						draw_gl_line (gl_ctx, (int []){xd0, yd0}, (int []){ xd1, yd1}, thick);
+						xd0 = p1x + 0.5; yd0 = p1y + 0.5; zd0 = p1z + 0.5;
+						xd1 = p2x + 0.5; yd1 = p2y + 0.5; zd1 = p2z + 0.5;
+						draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
 					}
 				}
 				else{ /* current segment is in same past iteration pattern */
 					p2x = modulus * param.scale * cosine + p1x;
 					p2y = modulus * param.scale * sine + p1y;
+					p2z = modulus * param.scale * uz + p1z;
 					
 					patt_rem -= modulus;
 				
 					if (draw){
 						//bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
-						xd0 = p1x + 0.5; yd0 = p1y + 0.5;
-						xd1 = p2x + 0.5; yd1 = p2y + 0.5;
-						draw_gl_line (gl_ctx, (int []){xd0, yd0}, (int []){ xd1, yd1}, thick);
+						xd0 = p1x + 0.5; yd0 = p1y + 0.5; zd0 = p1z + 0.5;
+						xd1 = p2x + 0.5; yd1 = p2y + 0.5; zd1 = p2z + 0.5;
+						draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
 					}
 					p1x = p2x;
 					p1y = p2y;
+					p1z = p2z;
 				}
 			
 				current = current->next; /* go to next */
@@ -1161,12 +1212,14 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 				
 				xd0 = 0.5 + (current->x0 - param.ofs_x) * param.scale;
 				yd0 = 0.5 + (current->y0 - param.ofs_y) * param.scale;
+				zd0 = 0.5 + (current->z0 - param.ofs_z) * param.scale;
 				xd1 = 0.5 + (current->x1 - param.ofs_x) * param.scale;
 				yd1 = 0.5 + (current->y1 - param.ofs_y) * param.scale;
+				zd1 = 0.5 + (current->z1 - param.ofs_z) * param.scale;
 				
 				if (master->pattern[0] >= 0.0)
 					//bmp_line_norm(img, x0, y0, x1, y1, -sine, cosine);
-					draw_gl_line (gl_ctx, (int []){xd0, yd0}, (int []){ xd1, yd1}, thick);
+					draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
 				
 				current = current->next; /* go to next */
 			}
@@ -1178,23 +1231,29 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 int draw_gl (struct ogl *gl_ctx, int force){
 	if (!gl_ctx) return 0;
 	if (gl_ctx->elem_count > MAX_TRIANG_2 || force ){
-		gl_ctx->transf[0][0] = 2.0 / gl_ctx->win_w;
-		gl_ctx->transf[0][1] = 0.0;
-		gl_ctx->transf[0][2] = 0.0;
-		gl_ctx->transf[0][3] = 0.0;
-		gl_ctx->transf[1][0] = 0.0;
-		gl_ctx->transf[1][1] = ( (gl_ctx->flip_y) ? -1.0 : 1.0 )  * 2.0 / gl_ctx->win_h;
-		gl_ctx->transf[1][2] = 0.0;
-		gl_ctx->transf[1][3] = 0.0;
-		gl_ctx->transf[2][0] = 0.0;
-		gl_ctx->transf[2][1] = 0.0;
-		gl_ctx->transf[2][2] = 1.0;
-		gl_ctx->transf[2][3] = 0.0;
-		gl_ctx->transf[3][0] = -1.0;
-		gl_ctx->transf[3][1] = ( (gl_ctx->flip_y) ? -1.0 : 1.0 ) * -1.0;
-		gl_ctx->transf[3][2] = 0.0;
-		gl_ctx->transf[3][3] = 1.0;
-		glUniformMatrix4fv(gl_ctx->transf_uni, 1,  GL_FALSE, &gl_ctx->transf[0][0]);
+		float win_mtx[4][4];
+		float res_mtx[4][4];
+		
+		win_mtx[0][0] = 2.0 / gl_ctx->win_w;
+		win_mtx[0][1] = 0.0;
+		win_mtx[0][2] = 0.0;
+		win_mtx[0][3] = 0.0;
+		win_mtx[1][0] = 0.0;
+		win_mtx[1][1] = ( (gl_ctx->flip_y) ? -1.0 : 1.0 )  * 2.0 / gl_ctx->win_h;
+		win_mtx[1][2] = 0.0;
+		win_mtx[1][3] = 0.0;
+		win_mtx[2][0] = 0.0;
+		win_mtx[2][1] = 0.0;
+		win_mtx[2][2] = 2.0 / gl_ctx->win_w;
+		win_mtx[2][3] = 0.0;
+		win_mtx[3][0] = -1.0;
+		win_mtx[3][1] = ( (gl_ctx->flip_y) ? -1.0 : 1.0 ) * -1.0;
+		win_mtx[3][2] = 1.0;
+		win_mtx[3][3] = 1.0;
+		
+		matrix4_mul(win_mtx[0], gl_ctx->transf[0], res_mtx[0]);
+		
+		glUniformMatrix4fv(gl_ctx->transf_uni, 1,  GL_FALSE, res_mtx[0]);
 		
 		glUnmapBuffer(GL_ARRAY_BUFFER);
 		glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
@@ -1204,6 +1263,7 @@ int draw_gl (struct ogl *gl_ctx, int force){
 		gl_ctx->elems = NULL;
 		gl_ctx->verts = NULL;
 		glUniform1i(gl_ctx->tex_uni, 0);
+		
 		return 1;
 	}
 	return 0;

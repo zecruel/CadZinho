@@ -493,6 +493,35 @@ int config_win (gui_obj *gui){
 		gui->sin_gamma = sin(gui->gamma * M_PI / 180.0);
 		gui->cos_gamma = cos(gui->gamma * M_PI / 180.0);
 		
+		
+		float m[4][4], inv_m[4][4];
+		m[0][0] = gui->cos_alpha*gui->cos_beta;
+		m[0][1] = gui->cos_alpha*gui->sin_beta*gui->sin_gamma - gui->sin_alpha*gui->cos_gamma;
+		m[0][2] = gui->cos_alpha*gui->sin_beta*gui->cos_gamma + gui->sin_alpha*gui->sin_gamma;
+		m[0][3] = 0.0;
+		m[1][0] = gui->sin_alpha*gui->cos_beta;
+		m[1][1] = gui->sin_alpha*gui->sin_beta*gui->sin_gamma + gui->cos_alpha*gui->cos_gamma;
+		m[1][2] = gui->sin_alpha*gui->sin_beta*gui->cos_gamma - gui->cos_alpha*gui->sin_gamma;
+		m[1][3] = 0.0;
+		m[2][0] = -gui->sin_beta;
+		m[2][1] = gui->cos_beta*gui->sin_gamma;
+		m[2][2] = gui->cos_beta*gui->cos_gamma;
+		m[2][3] = 0.0;
+		m[3][0] = 0.0;
+		m[3][1] = 0.0;
+		m[3][2] = 0.0;
+		m[3][3] = 1.0;
+		
+		invert_4matrix(m[0], inv_m[0]);
+		
+		float w = gui->gl_ctx.win_w * inv_m[0][0] + gui->gl_ctx.win_h * inv_m[0][1];
+		float h = gui->gl_ctx.win_w * inv_m[1][0] + gui->gl_ctx.win_h * inv_m[1][1];
+		
+		char text[64];
+		snprintf(text, 63, "w=%0.1f,  h=%0.1f", w, h);
+		//snprintf(text, 63, "%0.1f, %0.1f, %0.1f, %0.1f", inv_m[0][0], inv_m[0][1], inv_m[1][0], inv_m[1][1]);
+		nk_label(gui->ctx, text, NK_TEXT_CENTERED);
+		
 	} else show_config = 0;
 	nk_end(gui->ctx);
 	

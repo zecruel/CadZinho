@@ -1248,7 +1248,7 @@ int draw_gl (struct ogl *gl_ctx, int force){
 		win_mtx[2][3] = 0.0;
 		win_mtx[3][0] = -1.0;
 		win_mtx[3][1] = ( (gl_ctx->flip_y) ? -1.0 : 1.0 ) * -1.0;
-		win_mtx[3][2] = 1.0;
+		win_mtx[3][2] = -1.0;
 		win_mtx[3][3] = 1.0;
 		
 		matrix4_mul(win_mtx[0], gl_ctx->transf[0], res_mtx[0]);

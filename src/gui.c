@@ -1730,6 +1730,17 @@ int gui_start(gui_obj *gui){
 	
 	memset(gui->blank_tex, 0, 4*20*600);
 	
+	
+	gui->alpha = 0.0;
+	gui->beta = 0.0;
+	gui->gamma = 0.0;
+	gui->sin_alpha = 0.0;
+	gui->cos_alpha = 1.0;
+	gui->sin_beta = 0.0;
+	gui->cos_beta = 1.0;
+	gui->sin_gamma = 0.0;
+	gui->cos_gamma = 1.0;
+	
 	return 1;
 }
 

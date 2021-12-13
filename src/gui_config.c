@@ -479,6 +479,20 @@ int config_win (gui_obj *gui){
 			}
 		}
 		
+		nk_property_float(gui->ctx, "#Alpha", -180.0, &gui->alpha, 180.0f, 0.1f, 1.0);
+		nk_property_float(gui->ctx, "#Beta", -180.0, &gui->beta, 180.0f, 0.1f, 1.0);
+		nk_property_float(gui->ctx, "#Gamma", -180.0, &gui->gamma, 180.0f, 0.1f, 1.0);
+		/*nk_slider_float(gui->ctx, -180.0, &gui->alpha, 180.0f, 0.1f);
+		nk_slider_float(gui->ctx, -180.0, &gui->beta, 180.0f, 0.1f);
+		nk_slider_float(gui->ctx, -180.0, &gui->gamma, 180.0f, 0.1f);*/
+		
+		gui->sin_alpha = sin(gui->alpha * M_PI / 180.0);
+		gui->cos_alpha = cos(gui->alpha * M_PI / 180.0);
+		gui->sin_beta = sin(gui->beta * M_PI / 180.0);
+		gui->cos_beta = cos(gui->beta * M_PI / 180.0);
+		gui->sin_gamma = sin(gui->gamma * M_PI / 180.0);
+		gui->cos_gamma = cos(gui->gamma * M_PI / 180.0);
+		
 	} else show_config = 0;
 	nk_end(gui->ctx);
 	

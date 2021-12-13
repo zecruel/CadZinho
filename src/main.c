@@ -1439,6 +1439,7 @@ int main(int argc, char** argv){
 			d_param.inc_thick = 0;
 			
 			/* 3D test */
+			/*
 			gui->gl_ctx.transf[0][0] = 0.7071;
 			gui->gl_ctx.transf[0][1] = 0.0;
 			gui->gl_ctx.transf[0][2] = -0.7071;
@@ -1455,9 +1456,29 @@ int main(int argc, char** argv){
 			gui->gl_ctx.transf[3][1] = 0.0;
 			gui->gl_ctx.transf[3][2] = 0.0;
 			gui->gl_ctx.transf[3][3] = 1.0;
-			
 			//glUniformMatrix4fv(gui->gl_ctx.transf_uni, 1,  GL_FALSE, &gui->gl_ctx.transf[0][0]);
 			glDepthFunc(GL_LESS);
+			*/
+			gui->gl_ctx.transf[0][0] = gui->cos_alpha*gui->cos_gamma - gui->sin_alpha*gui->cos_beta*gui->sin_gamma;
+			gui->gl_ctx.transf[0][1] = gui->sin_alpha*gui->cos_gamma + gui->cos_alpha*gui->cos_beta*gui->sin_gamma;
+			gui->gl_ctx.transf[0][2] = gui->sin_beta*gui->sin_gamma;
+			gui->gl_ctx.transf[0][3] = 0.0;
+			gui->gl_ctx.transf[1][0] = -gui->cos_alpha*gui->sin_gamma - gui->sin_alpha*gui->cos_beta*gui->cos_gamma;
+			gui->gl_ctx.transf[1][1] = -gui->sin_alpha*gui->sin_gamma + gui->cos_alpha*gui->cos_beta*gui->cos_gamma;
+			gui->gl_ctx.transf[1][2] = gui->sin_beta*gui->cos_gamma;
+			gui->gl_ctx.transf[1][3] = 0.0;
+			gui->gl_ctx.transf[2][0] = gui->sin_alpha*gui->sin_beta;
+			gui->gl_ctx.transf[2][1] = -gui->cos_alpha*gui->sin_beta;
+			gui->gl_ctx.transf[2][2] = gui->cos_beta;
+			gui->gl_ctx.transf[2][3] = 0.0;
+			gui->gl_ctx.transf[3][0] = 0.0;
+			gui->gl_ctx.transf[3][1] = 0.0;
+			gui->gl_ctx.transf[3][2] = 0.0;
+			gui->gl_ctx.transf[3][3] = 1.0;
+			//glDepthFunc(GL_ALWAYS);
+			glDepthFunc(GL_LESS);
+			
+			
 			
 			
 			/* Clear the screen to background color */

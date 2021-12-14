@@ -315,8 +315,10 @@ graph_obj * graph_new(int pool_idx){
 		//new_obj->ext_ini = 0;
 		new_obj->ext_min_x = 0.0;
 		new_obj->ext_min_y = 0.0;
+		new_obj->ext_min_z = 0.0;
 		new_obj->ext_max_x = 0.0;
 		new_obj->ext_max_y = 0.0;
+		new_obj->ext_max_z = 0.0;
 		
 		new_obj->img = NULL;
 		
@@ -377,20 +379,26 @@ void line_add(graph_obj * master, double x0, double y0, double z0, double x1, do
 			/* sort the coordinates of entire line*/
 			double min_x = (x0 <= x1) ? x0 : x1;
 			double min_y = (y0 <= y1) ? y0 : y1;
+			double min_z = (z0 <= z1) ? z0 : z1;
 			double max_x = (x0 > x1) ? x0 : x1;
 			double max_y = (y0 > y1) ? y0 : y1;
+			double max_z = (z0 > z1) ? z0 : z1;
 			if (!(master->flags & EXT_INI)){
 				master->flags |= EXT_INI;
 				master->ext_min_x = min_x;
 				master->ext_min_y = min_y;
+				master->ext_min_z = min_z;
 				master->ext_max_x = max_x;
 				master->ext_max_y = max_y;
+				master->ext_max_z = max_z;
 			}
 			else{
 				master->ext_min_x = (master->ext_min_x <= min_x) ? master->ext_min_x : min_x;
 				master->ext_min_y = (master->ext_min_y <= min_y) ? master->ext_min_y : min_y;
+				master->ext_min_z = (master->ext_min_z <= min_z) ? master->ext_min_z : min_z;
 				master->ext_max_x = (master->ext_max_x > max_x) ? master->ext_max_x : max_x;
 				master->ext_max_y = (master->ext_max_y > max_y) ? master->ext_max_y : max_y;
+				master->ext_max_z = (master->ext_max_z > max_z) ? master->ext_max_z : max_z;
 			}
 		}
 	}
@@ -421,14 +429,18 @@ void graph_merge(graph_obj * master, graph_obj *tail){
 				master->flags |= EXT_INI;
 				master->ext_min_x = tail->ext_min_x;
 				master->ext_min_y = tail->ext_min_y;
+				master->ext_min_z = tail->ext_min_z;
 				master->ext_max_x = tail->ext_max_x;
 				master->ext_max_y = tail->ext_max_y;
+				master->ext_max_z = tail->ext_max_z;
 			}
 			else{
 				master->ext_min_x = (master->ext_min_x < tail->ext_min_x) ? master->ext_min_x : tail->ext_min_x;
 				master->ext_min_y = (master->ext_min_y < tail->ext_min_y) ? master->ext_min_y : tail->ext_min_y;
+				master->ext_min_z = (master->ext_min_z < tail->ext_min_z) ? master->ext_min_z : tail->ext_min_z;
 				master->ext_max_x = (master->ext_max_x > tail->ext_max_x) ? master->ext_max_x : tail->ext_max_x;
 				master->ext_max_y = (master->ext_max_y > tail->ext_max_y) ? master->ext_max_y : tail->ext_max_y;
+				master->ext_max_z = (master->ext_max_z > tail->ext_max_z) ? master->ext_max_z : tail->ext_max_z;
 			}
 		}
 	}
@@ -1328,9 +1340,9 @@ void graph_ellipse2(graph_obj * master,
 void graph_modify(graph_obj * master, double ofs_x, double ofs_y, double scale_x, double scale_y, double rot){
 	if ((master != NULL)){
 		if(master->list->next){ /* check if list is not empty */
-			double x0, y0, x1, y1;
+			double x0, y0, z0, x1, y1, z1;
 			double sine = 0, cosine = 1;
-			double min_x, min_y, max_x, max_y;
+			double min_x, min_y, min_z, max_x, max_y, max_z;
 			line_node *current = master->list->next;
 			master->flags &= ~(EXT_INI);
 			
@@ -1351,6 +1363,10 @@ void graph_modify(graph_obj * master, double ofs_x, double ofs_y, double scale_x
 				x1 = cosine*(current->x1-ofs_x) - sine*(current->y1-ofs_y) + ofs_x;
 				y1 = sine*(current->x1-ofs_x) + cosine*(current->y1-ofs_y) + ofs_y;
 				
+				/* TODO*/
+				z0 = current->z0;
+				z1 = current->z1;
+				
 				/* update the graph */
 				current->x0 = x0;
 				current->y0 = y0;
@@ -1361,20 +1377,26 @@ void graph_modify(graph_obj * master, double ofs_x, double ofs_y, double scale_x
 				/* sort the coordinates of entire line*/
 				min_x = (x0 < x1) ? x0 : x1;
 				min_y = (y0 < y1) ? y0 : y1;
+				min_z = (z0 < z1) ? z0 : z1;
 				max_x = (x0 > x1) ? x0 : x1;
 				max_y = (y0 > y1) ? y0 : y1;
+				max_z = (z0 > z1) ? z0 : z1;
 				if (!(master->flags & EXT_INI)){
 					master->flags |= EXT_INI;
 					master->ext_min_x = min_x;
 					master->ext_min_y = min_y;
+					master->ext_min_z = min_z;
 					master->ext_max_x = max_x;
 					master->ext_max_y = max_y;
+					master->ext_max_z = max_z;
 				}
 				else{
 					master->ext_min_x = (master->ext_min_x < min_x) ? master->ext_min_x : min_x;
 					master->ext_min_y = (master->ext_min_y < min_y) ? master->ext_min_y : min_y;
+					master->ext_min_z = (master->ext_min_z < min_z) ? master->ext_min_z : min_z;
 					master->ext_max_x = (master->ext_max_x > max_x) ? master->ext_max_x : max_x;
 					master->ext_max_y = (master->ext_max_y > max_y) ? master->ext_max_y : max_y;
+					master->ext_max_z = (master->ext_max_z > max_z) ? master->ext_max_z : max_z;
 				}
 				
 				current = current->next; /* go to next */
@@ -1386,9 +1408,9 @@ void graph_modify(graph_obj * master, double ofs_x, double ofs_y, double scale_x
 void graph_rot(graph_obj * master, double base_x, double base_y, double rot){
 	if ((master != NULL)){
 		if(master->list->next){ /* check if list is not empty */
-			double x0, y0, x1, y1;
+			double x0, y0, z0, x1, y1, z1;
 			double sine = 0, cosine = 1;
-			double min_x, min_y, max_x, max_y;
+			double min_x, min_y, min_z, max_x, max_y, max_z;
 			line_node *current = master->list->next;
 			master->flags &= ~(EXT_INI);
 			
@@ -1410,24 +1432,34 @@ void graph_rot(graph_obj * master, double base_x, double base_y, double rot){
 				current->x1 = x1;
 				current->y1 = y1;
 				
+				/* TODO*/
+				z0 = current->z0;
+				z1 = current->z1;
+				
 				/*update the extent of graph */
 				/* sort the coordinates of entire line*/
 				min_x = (x0 < x1) ? x0 : x1;
 				min_y = (y0 < y1) ? y0 : y1;
+				min_z = (z0 < z1) ? z0 : z1;
 				max_x = (x0 > x1) ? x0 : x1;
 				max_y = (y0 > y1) ? y0 : y1;
+				max_z = (z0 > z1) ? z0 : z1;
 				if (!(master->flags & EXT_INI)){
 					master->flags |= EXT_INI;
 					master->ext_min_x = min_x;
 					master->ext_min_y = min_y;
+					master->ext_min_z = min_z;
 					master->ext_max_x = max_x;
 					master->ext_max_y = max_y;
+					master->ext_max_z = max_z;
 				}
 				else{
 					master->ext_min_x = (master->ext_min_x < min_x) ? master->ext_min_x : min_x;
 					master->ext_min_y = (master->ext_min_y < min_y) ? master->ext_min_y : min_y;
+					master->ext_min_z = (master->ext_min_z < min_z) ? master->ext_min_z : min_z;
 					master->ext_max_x = (master->ext_max_x > max_x) ? master->ext_max_x : max_x;
 					master->ext_max_y = (master->ext_max_y > max_y) ? master->ext_max_y : max_y;
+					master->ext_max_z = (master->ext_max_z > max_z) ? master->ext_max_z : max_z;
 				}
 				
 				current = current->next; /* go to next */
@@ -1701,13 +1733,13 @@ void rbspline(int npts, int k, int p1, double b[], double h[], double p[]){
 void graph_mod_axis(graph_obj * master, double normal[3] , double elev){
 	if ((master != NULL)){
 		if(master->list->next){ /* check if list is not empty */
-			double x_axis[3], y_axis[3], point[3], x_col[3], y_col[3];
+			double x_axis[3], y_axis[3], point[3], x_col[3], y_col[3], z_col[3];
 			double wy_axis[3] = {0.0, 1.0, 0.0};
 			double wz_axis[3] = {0.0, 0.0, 1.0};
 			
 			
-			double x0, y0, x1, y1;
-			double min_x, min_y, max_x, max_y;
+			double x0, y0, z0, x1, y1, z1;
+			double min_x, min_y, min_z, max_x, max_y, max_z;
 			line_node *current = master->list->next;
 			
 			master->flags &= ~(EXT_INI);
@@ -1733,6 +1765,10 @@ void graph_mod_axis(graph_obj * master, double normal[3] , double elev){
 			y_col[1] = y_axis[1];
 			y_col[2] = normal[1];
 			
+			z_col[0] = x_axis[2];
+			z_col[1] = y_axis[2];
+			z_col[2] = normal[2];
+			
 			/* apply changes to each point */
 			while(current){ /*sweep the list content */
 				/* apply the scale and offset */
@@ -1742,6 +1778,7 @@ void graph_mod_axis(graph_obj * master, double normal[3] , double elev){
 				if (fabs(point[2]) < TOLERANCE) point[2] = elev;
 				x0 = dot_product(point, x_col);
 				y0 = dot_product(point, y_col);
+				z0 = dot_product(point, z_col);
 				
 				point[0] = current->x1;
 				point[1] = current->y1;
@@ -1749,32 +1786,41 @@ void graph_mod_axis(graph_obj * master, double normal[3] , double elev){
 				if (fabs(point[2]) < TOLERANCE) point[2] = elev;
 				x1 = dot_product(point, x_col);
 				y1 = dot_product(point, y_col);
+				z1 = dot_product(point, z_col);
 				
 				
 				/* update the graph */
 				current->x0 = x0;
 				current->y0 = y0;
+				current->z0 = z0;
 				current->x1 = x1;
 				current->y1 = y1;
+				current->z1 = z1;
 				
 				/*update the extent of graph */
 				/* sort the coordinates of entire line*/
 				min_x = (x0 < x1) ? x0 : x1;
 				min_y = (y0 < y1) ? y0 : y1;
+				min_z = (z0 < z1) ? z0 : z1;
 				max_x = (x0 > x1) ? x0 : x1;
 				max_y = (y0 > y1) ? y0 : y1;
+				max_z = (z0 > z1) ? z0 : z1;
 				if (!(master->flags & EXT_INI)){
 					master->flags |= EXT_INI;
 					master->ext_min_x = min_x;
 					master->ext_min_y = min_y;
+					master->ext_min_z = min_z;
 					master->ext_max_x = max_x;
 					master->ext_max_y = max_y;
+					master->ext_max_z = max_z;
 				}
 				else{
 					master->ext_min_x = (master->ext_min_x < min_x) ? master->ext_min_x : min_x;
 					master->ext_min_y = (master->ext_min_y < min_y) ? master->ext_min_y : min_y;
+					master->ext_min_z = (master->ext_min_z < min_z) ? master->ext_min_z : min_z;
 					master->ext_max_x = (master->ext_max_x > max_x) ? master->ext_max_x : max_x;
 					master->ext_max_y = (master->ext_max_y > max_y) ? master->ext_max_y : max_y;
+					master->ext_max_z = (master->ext_max_z > max_z) ? master->ext_max_z : max_z;
 				}
 				
 				current = current->next; /* go to next */
@@ -1939,7 +1985,8 @@ int graph_list_draw_fix(list_node *list, bmp_img * img, double ofs_x, double ofs
 }
 #endif
 
-int graph_list_ext(list_node *list, int *init, double * min_x, double * min_y, double * max_x, double * max_y){
+int graph_list_ext(list_node *list, int *init, double * min_x, double * min_y, double * min_z,
+  double * max_x, double * max_y, double * max_z){
 	list_node *current = NULL;
 	graph_obj *curr_graph = NULL;
 	int ok = 0;
@@ -1956,14 +2003,18 @@ int graph_list_ext(list_node *list, int *init, double * min_x, double * min_y, d
 						*init = 1;
 						*min_x = curr_graph->ext_min_x;
 						*min_y = curr_graph->ext_min_y;
+						*min_z = curr_graph->ext_min_z;
 						*max_x = curr_graph->ext_max_x;
 						*max_y = curr_graph->ext_max_y;
+						*max_z = curr_graph->ext_max_z;
 					}
 					else{
 						*min_x = (*min_x < curr_graph->ext_min_x) ? *min_x : curr_graph->ext_min_x;
 						*min_y = (*min_y < curr_graph->ext_min_y) ? *min_y : curr_graph->ext_min_y;
+						*min_z = (*min_z < curr_graph->ext_min_z) ? *min_z : curr_graph->ext_min_z;
 						*max_x = (*max_x > curr_graph->ext_max_x) ? *max_x : curr_graph->ext_max_x;
 						*max_y = (*max_y > curr_graph->ext_max_y) ? *max_y : curr_graph->ext_max_y;
+						*max_z = (*max_z > curr_graph->ext_max_z) ? *max_z : curr_graph->ext_max_z;
 					}
 				}
 			}
@@ -2843,7 +2894,7 @@ void graph_matrix(graph_obj * master, double matrix[3][3]){
 		if(master->list->next){ /* check if list is not empty */
 			double x0, y0, z0, x1, y1, z1;
 			double sine = 0, cosine = 1;
-			double min_x, min_y, max_x, max_y;
+			double min_x, min_y, min_z, max_x, max_y, max_z;
 			line_node *current = master->list->next;
 			master->flags &= ~(EXT_INI);
 			
@@ -2870,20 +2921,26 @@ void graph_matrix(graph_obj * master, double matrix[3][3]){
 				/* sort the coordinates of entire line*/
 				min_x = (x0 < x1) ? x0 : x1;
 				min_y = (y0 < y1) ? y0 : y1;
+				min_z = (z0 < z1) ? z0 : z1;
 				max_x = (x0 > x1) ? x0 : x1;
 				max_y = (y0 > y1) ? y0 : y1;
+				max_z = (z0 > z1) ? z0 : z1;
 				if (!(master->flags & EXT_INI)){
 					master->flags |= EXT_INI;
 					master->ext_min_x = min_x;
 					master->ext_min_y = min_y;
+					master->ext_min_z = min_z;
 					master->ext_max_x = max_x;
 					master->ext_max_y = max_y;
+					master->ext_max_z = max_z;
 				}
 				else{
 					master->ext_min_x = (master->ext_min_x < min_x) ? master->ext_min_x : min_x;
 					master->ext_min_y = (master->ext_min_y < min_y) ? master->ext_min_y : min_y;
+					master->ext_min_z = (master->ext_min_z < min_z) ? master->ext_min_z : min_z;
 					master->ext_max_x = (master->ext_max_x > max_x) ? master->ext_max_x : max_x;
 					master->ext_max_y = (master->ext_max_y > max_y) ? master->ext_max_y : max_y;
+					master->ext_max_z = (master->ext_max_z > max_z) ? master->ext_max_z : max_z;
 				}
 				
 				current = current->next; /* go to next */

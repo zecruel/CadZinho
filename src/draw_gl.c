@@ -841,10 +841,8 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 	yd0 = 0.5 + (master->ext_min_y - param.ofs_y) * param.scale;
 	xd1 = 0.5 + (master->ext_max_x - param.ofs_x) * param.scale;
 	yd1 = 0.5 + (master->ext_max_y - param.ofs_y) * param.scale;
-	
-	/* TODO */
-	zd0 = 0;
-	zd1 = 0;
+	zd0 = 0.5 + (master->ext_min_z - param.ofs_z) * param.scale;
+	zd1 = 0.5 + (master->ext_max_z - param.ofs_z) * param.scale;
 	
 	
 	/* verify if current graph is inside window*/
@@ -861,7 +859,7 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 	gl_ctx->fg[3] = color.a;
 	
 	/* check if graph is legible (greater then 5 pixels) */
-	if (xd1 - xd0 < 5 && yd1 - yd0 < 5 && current->next != NULL){
+	if (xd1 - xd0 < 5 && yd1 - yd0 < 5 && zd1 - zd0 < 5 && current->next != NULL){
 		/* draw a single triangle if not legible */
 		draw_gl_triang (gl_ctx, (int[]){xd0, yd0, zd0}, (int[]){xd0, yd1, zd0}, (int[]){xd1, yd0, zd0});
 		return 0;

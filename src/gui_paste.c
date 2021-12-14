@@ -3,7 +3,7 @@
 int gui_paste_interactive(gui_obj *gui){
 	if (gui->modal == PASTE){
 		//static dxf_node *new_el;
-		static double min_x, min_y, max_x, max_y, center_x, center_y;
+		static double min_x, min_y, min_z, max_x, max_y, max_z, center_x, center_y;
 		if (gui->step == 0){
 			if (!gui->clip_drwg) gui_default_modal(gui);
 			gui->draw_tmp = 1;
@@ -20,7 +20,7 @@ int gui_paste_interactive(gui_obj *gui){
 			if (!gui->phanton) gui_default_modal(gui);
 			//dxf_ents_ext(dxf_drawing *drawing, double * min_x, double * min_y, double * max_x, double * max_y)
 			
-			dxf_ents_ext(gui->clip_drwg, &min_x, &min_y, &max_x, &max_y);
+			dxf_ents_ext(gui->clip_drwg, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
 			center_x = min_x + (max_x - min_x)/2.0;
 			center_y = min_y + (max_y - min_y)/2.0;
 			

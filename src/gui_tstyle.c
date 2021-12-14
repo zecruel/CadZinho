@@ -781,6 +781,7 @@ int tstyles_mng (gui_obj *gui){
 					int ei; /*extents flag of preview */
 					/* extents and zoom parameters */
 					double x0, y0, x1, y1, z, z_x, z_y, o_x, o_y;
+					double z0, z1;
 					
 					int pos1, pos2, pos3, pos4;
 					
@@ -795,7 +796,7 @@ int tstyles_mng (gui_obj *gui){
 					graph_list_modify_idx(preview, 0.0, -2.8 , 1.0, 1.0, 0.0, pos1 + pos2, pos1 + pos2 + pos3 - 1);
 					graph_list_modify_idx(preview, 0.0, -4.2 , 1.0, 1.0, 0.0, pos1 + pos2 + pos3, pos1 + pos2 + pos3 + pos4);
 					/* get extents parameters*/
-					graph_list_ext(preview, &ei, &x0, &y0, &x1, &y1);
+					graph_list_ext(preview, &ei, &x0, &y0, &z0, &x1, &y1, &z1);
 					/*change color */
 					graph_list_color(preview, color);
 					

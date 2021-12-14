@@ -57,8 +57,8 @@ struct Graph_obj{
 	list_node * cmplx_pat[20];
 	int patt_size;
 	/* extent information */
-	double ext_min_x, ext_min_y;
-	double ext_max_x, ext_max_y;
+	double ext_min_x, ext_min_y, ext_min_z;
+	double ext_max_x, ext_max_y, ext_max_z;
 	//int ext_ini;
 	/*fill flag*/
 	//int fill;
@@ -131,7 +131,8 @@ int graph_list_draw(list_node *list, bmp_img * img, struct draw_param param);
 
 //int graph_list_draw_fix(list_node *list, bmp_img * img, double ofs_x, double ofs_y, double scale, bmp_color color);
 
-int graph_list_ext(list_node *list, int *init, double * min_x, double * min_y, double * max_x, double * max_y);
+int graph_list_ext(list_node *list, int *init, double * min_x, double * min_y, double * min_z,
+  double * max_x, double * max_y, double * max_z);
 
 int graph_list_modify(list_node *list, double ofs_x, double ofs_y , double scale_x, double scale_y, double rot);
 

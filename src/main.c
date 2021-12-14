@@ -76,10 +76,10 @@ struct tfont *dflt_font = NULL;
 
 
 void zoom_ext(dxf_drawing *drawing, bmp_img *img, double *zoom, double *ofs_x, double *ofs_y){
-	double min_x = 0.0, min_y = 0.0, max_x = 20.0, max_y = 20.0;
+	double min_x = 0.0, min_y = 0.0, min_z, max_x = 20.0, max_y = 20.0, max_z;
 	double zoom_x = 1.0, zoom_y = 1.0;
 	
-	dxf_ents_ext(drawing, &min_x, &min_y, &max_x, &max_y);
+	dxf_ents_ext(drawing, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
 	zoom_x = (max_x - min_x)/img->width;
 	zoom_y = (max_y - min_y)/img->height;
 	*zoom = (zoom_x > zoom_y) ? zoom_x : zoom_y;
@@ -91,10 +91,10 @@ void zoom_ext(dxf_drawing *drawing, bmp_img *img, double *zoom, double *ofs_x, d
 }
 
 void zoom_ext2(dxf_drawing *drawing, int x, int y, int width, int height, double *zoom, double *ofs_x, double *ofs_y){
-	double min_x = 0.0, min_y = 0.0, max_x = 20.0, max_y = 20.0;
+	double min_x = 0.0, min_y = 0.0, min_z, max_x = 20.0, max_y = 20.0, max_z;
 	double zoom_x = 1.0, zoom_y = 1.0;
 	
-	dxf_ents_ext(drawing, &min_x, &min_y, &max_x, &max_y);
+	dxf_ents_ext(drawing, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
 	zoom_x = fabs(max_x - min_x)/width;
 	zoom_y = fabs(max_y - min_y)/height;
 	

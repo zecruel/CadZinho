@@ -110,6 +110,7 @@ int gui_blk_mng (gui_obj *gui){
 		int blk_ei; /*extents flag of current block */
 		/* extents and zoom parameters */
 		double blk_x0, blk_y0, blk_x1, blk_y1, z, z_x, z_y, o_x, o_y;
+		double blk_z0, blk_z1;
 		
 		block_use(gui->drawing); /* update blocks in use*/
 		
@@ -210,7 +211,7 @@ int gui_blk_mng (gui_obj *gui){
 			/* get graphics of current block*/
 			blk_g = dxf_graph_parse(gui->drawing, blk, 0, FRAME_LIFE);
 			/* get extents parameters of current block*/
-			graph_list_ext(blk_g, &blk_ei, &blk_x0, &blk_y0, &blk_x1, &blk_y1);
+			graph_list_ext(blk_g, &blk_ei, &blk_x0, &blk_y0, &blk_z0, &blk_x1, &blk_y1, &blk_z1);
 			
 			/* calcule the zoom and offset for preview */
 			z_x = fabs(blk_x1 - blk_x0)/gui->preview_img->width;

@@ -300,11 +300,11 @@ int print_win (gui_obj *gui){
 			
 			/* adjust print parameters to fit the drawing extends */
 			if (nk_button_label(gui->ctx, "Fit all")){
-				double min_x, min_y, max_x, max_y;
+				double min_x, min_y, min_z, max_x, max_y, max_z;
 				double zoom_x, zoom_y;
 				
 				/* get drawing extents */
-				dxf_ents_ext(gui->drawing, &min_x, &min_y, &max_x, &max_y);
+				dxf_ents_ext(gui->drawing, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
 				
 				/* get the better scale to fit in width or height */
 				zoom_x = fabs(max_x - min_x)/page_w;
@@ -325,10 +325,10 @@ int print_win (gui_obj *gui){
 			/* adjust print parameters to centralize small figure in page*/
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			if (nk_button_label(gui->ctx, "Centralize")){
-				double min_x, min_y, max_x, max_y;
+				double min_x, min_y, min_z, max_x, max_y, max_z;
 				
 				/* get drawing extents */
-				dxf_ents_ext(gui->drawing, &min_x, &min_y, &max_x, &max_y);
+				dxf_ents_ext(gui->drawing, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
 				
 				scale = atof(scale_str);
 				

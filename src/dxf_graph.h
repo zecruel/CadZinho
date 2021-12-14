@@ -27,7 +27,8 @@ list_node * dxf_ents_parse2(dxf_drawing *drawing, int p_space, int pool_idx);
 //int dxf_ents_draw(dxf_drawing *drawing, bmp_img * img, double ofs_x, double ofs_y, double scale);
 int dxf_ents_draw(dxf_drawing *drawing, bmp_img * img, struct draw_param param);
 
-int dxf_ents_ext(dxf_drawing *drawing, double * min_x, double * min_y, double * max_x, double * max_y);
+int dxf_ents_ext(dxf_drawing *drawing, double * min_x, double * min_y, double * min_z,
+  double * max_x, double * max_y, double * max_z);
 
 list_node * dxf_list_parse(dxf_drawing *drawing, list_node *list, int p_space, int pool_idx);
 

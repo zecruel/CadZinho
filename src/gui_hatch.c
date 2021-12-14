@@ -353,6 +353,7 @@ int gui_hatch_info (gui_obj *gui){
 				int pat_ei = 0; /*extents flag */
 				/* extents and zoom parameters */
 				double pat_x0, pat_y0, pat_x1, pat_y1, z, z_x, z_y, o_x, o_y;
+				double pat_z0, pat_z1;
 				double cosine, sine, dx, dy, max;
 				double ang, ox, oy, dash[20];
 				int num_dash;
@@ -494,7 +495,7 @@ int gui_hatch_info (gui_obj *gui){
 				}
 				
 				/* calcule the zoom and offset for preview */
-				graph_list_ext(pat_g, &pat_ei, &pat_x0, &pat_y0, &pat_x1, &pat_y1);
+				graph_list_ext(pat_g, &pat_ei, &pat_x0, &pat_y0, &pat_z0, &pat_x1, &pat_y1, &pat_z1);
 				
 				z_x = fabs(pat_x1 - pat_x0)/gui->preview_img->width;
 				z_y = fabs(pat_y1 - pat_y0)/gui->preview_img->height;

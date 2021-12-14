@@ -1687,9 +1687,9 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 			}
 			
 			txt_size = t_size;
-			double min_x, min_y, max_x, max_y;
+			double min_x, min_y, max_x, max_y, min_z, max_z;
 			int init = 0;
-			graph_list_ext(graph, &init, &min_x, &min_y, &max_x, &max_y);
+			graph_list_ext(graph, &init, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
 			txt_w = fabs(max_x);
 			txt_h = fabs(max_y - min_y);
 			
@@ -2701,9 +2701,9 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			list_clear (line); /* clear line*/
 			
 			txt_size = t_size;
-			double min_x, min_y, max_x, max_y;
+			double min_x, min_y, max_x, max_y, min_z, max_z;
 			int init = 0;
-			graph_list_ext(graph, &init, &min_x, &min_y, &max_x, &max_y);
+			graph_list_ext(graph, &init, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
 			txt_w = fabs(max_x - min_x);
 			txt_h = fabs(max_y - min_y);
 			
@@ -3011,9 +3011,9 @@ list_node * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 			}
 			
 			txt_size = t_size;
-			double min_x, min_y, max_x, max_y;
+			double min_x, min_y, max_x, max_y, min_z, max_z;
 			int init = 0;
-			graph_list_ext(graph, &init, &min_x, &min_y, &max_x, &max_y);
+			graph_list_ext(graph, &init, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
 			txt_w = fabs(max_x);
 			txt_h = fabs(max_y - min_y);
 			
@@ -4172,7 +4172,8 @@ int dxf_list_draw(list_node *list, bmp_img * img, struct draw_param param){
 	}
 }
 
-int dxf_ents_ext(dxf_drawing *drawing, double * min_x, double * min_y, double * max_x, double * max_y){
+int dxf_ents_ext(dxf_drawing *drawing, double * min_x, double * min_y, double * min_z,
+  double * max_x, double * max_y, double * max_z){
 	dxf_node *current = NULL;
 	int ext_ini = 0;
 	//int lay_idx = 0;
@@ -4186,7 +4187,7 @@ int dxf_ents_ext(dxf_drawing *drawing, double * min_x, double * min_y, double * 
 				/*verify if entity layer is thaw */
 				//lay_idx = dxf_layer_get(drawing, current);
 				if (!drawing->layers[current->obj.layer].off){
-					graph_list_ext(current->obj.graphics, &ext_ini, min_x, min_y, max_x, max_y);
+					graph_list_ext(current->obj.graphics, &ext_ini, min_x, min_y, min_z, max_x, max_y, max_z);
 				}
 				
 				/* -------------------------------------------

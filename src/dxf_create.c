@@ -1117,17 +1117,17 @@ int dxf_new_block (dxf_drawing *drawing, char *name, char *descr,
 				list_node *blk_g; /*graphic object of current block */
 				int blk_ei; /*extents flag of current block */
 				/* extents parameters */
-				double blk_x0, blk_y0, blk_x1, blk_y1;
+				double blk_x0, blk_y0, blk_z0, blk_x1, blk_y1, blk_z1;
 				
 				/* get graphics of current block*/
 				blk_g = dxf_list_parse(drawing, list, 0, FRAME_LIFE);
 				
 				/* get extents parameters of current block*/
-				graph_list_ext(blk_g, &blk_ei, &blk_x0, &blk_y0, &blk_x1, &blk_y1);
+				graph_list_ext(blk_g, &blk_ei, &blk_x0, &blk_y0, &blk_z0, &blk_x1, &blk_y1, &blk_z1);
 				if (blk_ei) {
 					x = blk_x0;
 					y = blk_y0;
-					z = 0.0;
+					z = blk_z0;
 				}
 			}
 			/* ********** */

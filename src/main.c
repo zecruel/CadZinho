@@ -1516,6 +1516,9 @@ int main(int argc, char** argv){
 			
 			draw_cursor_gl(gui, gui->mouse_x, gui->mouse_y, gui->cursor);
 			
+			draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
+			glDepthFunc(GL_ALWAYS);
+			
 			
 			/*hilite test */
 			if((gui->draw_tmp)&&(gui->element != NULL)){

@@ -846,11 +846,12 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 	
 	
 	/* verify if current graph is inside window*/
+	/*
 	if ( (xd0 < 0 && xd1 < 0) || 
 		(xd0 > gl_ctx->win_w && xd1 > gl_ctx->win_w) || 
 		(yd0 < 0 && yd1 < 0) || 
 		(yd0 > gl_ctx->win_h && yd1 > gl_ctx->win_h) ) return 0;
-	
+	*/
 	/* define color */
 	bmp_color color = validate_color(master->color, param.list, param.subst, param.len_subst);
 	gl_ctx->fg[0] = color.r;
@@ -1055,9 +1056,9 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 					
 					if (patt_rem > 0) {
 						/*------------- complex line type ----------------*/
-						if (master->cmplx_pat[patt_i] != NULL &&  /* complex element */
-							p2x > 0 && p2x < gl_ctx->win_w && /* inside bound parameters */
-							p2y > 0 && p2y < gl_ctx->win_h )
+						if (master->cmplx_pat[patt_i] != NULL)// &&  /* complex element */
+							//p2x > 0 && p2x < gl_ctx->win_w && /* inside bound parameters */
+							//p2y > 0 && p2y < gl_ctx->win_h )
 						{
 							list_node *cplx = master->cmplx_pat[patt_i]->next;
 							graph_obj *cplx_gr = NULL;
@@ -1135,9 +1136,9 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 						p1z = p2z;
 						
 						/*------------- complex line type ----------------*/
-						if (master->cmplx_pat[patt_i] != NULL &&  /* complex element */
-							p1x > 0 && p1x < gl_ctx->win_w && /* inside bound parameters */
-							p1y > 0 && p1y < gl_ctx->win_h )
+						if (master->cmplx_pat[patt_i] != NULL)// &&  /* complex element */
+							//p1x > 0 && p1x < gl_ctx->win_w && /* inside bound parameters */
+							//p1y > 0 && p1y < gl_ctx->win_h )
 						{
 							list_node *cplx = master->cmplx_pat[patt_i]->next;
 							graph_obj *cplx_gr = NULL;

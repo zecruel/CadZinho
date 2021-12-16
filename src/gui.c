@@ -1734,12 +1734,23 @@ int gui_start(gui_obj *gui){
 	gui->alpha = 0.0;
 	gui->beta = 0.0;
 	gui->gamma = 0.0;
-	gui->sin_alpha = 0.0;
-	gui->cos_alpha = 1.0;
-	gui->sin_beta = 0.0;
-	gui->cos_beta = 1.0;
-	gui->sin_gamma = 0.0;
-	gui->cos_gamma = 1.0;
+	
+	gui->drwg_view[0][0] = 1.0;
+	gui->drwg_view[0][1] = 0.0;
+	gui->drwg_view[0][2] = 0.0;
+	gui->drwg_view[0][3] = 0.0;
+	gui->drwg_view[1][0] = 0.0;
+	gui->drwg_view[1][1] = 1.0;
+	gui->drwg_view[1][2] = 0.0;
+	gui->drwg_view[1][3] = 0.0;
+	gui->drwg_view[2][0] = 0.0;
+	gui->drwg_view[2][1] = 0.0;
+	gui->drwg_view[2][2] = 1.0;
+	gui->drwg_view[2][3] = 0.0;
+	gui->drwg_view[3][0] = 0.0;
+	gui->drwg_view[3][1] = 0.0;
+	gui->drwg_view[3][2] = 0.0;
+	gui->drwg_view[3][3] = 1.0;
 	
 	return 1;
 }

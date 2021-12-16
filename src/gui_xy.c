@@ -205,11 +205,33 @@ int gui_xy(gui_obj *gui){
 		char text[64];
 		double pos_x = (double) gui->mouse_x/gui->zoom + gui->ofs_x;
 		double pos_y = (double) gui->mouse_y/gui->zoom + gui->ofs_y;
+		double pos_z = 0.0;
 		
 		nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
 	
-		nk_layout_row_dynamic(gui->ctx, 17, 1);
+		nk_layout_row_dynamic(gui->ctx, 17, 2);
 		text_len = snprintf(text, 63, "(%f,  %f)", pos_x, pos_y);
+		nk_label(gui->ctx, text, NK_TEXT_CENTERED);
+		
+		
+		
+
+		float inv_m[4][4];
+		invert_4matrix(gui->drwg_view[0], inv_m[0]);
+		
+		float res[4][4];
+		matrix4_mul(gui->drwg_view[0], inv_m[0], res[0]);
+		
+		pos_x = (double) gui->mouse_x * inv_m[0][0] + (double) gui->mouse_y * inv_m[0][1] + inv_m[0][3];
+		pos_y = (double) gui->mouse_x * inv_m[1][0] + (double) gui->mouse_y * inv_m[1][1] + inv_m[1][3];
+		pos_z = (double) gui->mouse_x * inv_m[2][0] + (double) gui->mouse_y * inv_m[2][1] + inv_m[2][3];
+		
+		
+		pos_x = pos_x/gui->zoom + gui->ofs_x;
+		pos_y = pos_y/gui->zoom + gui->ofs_y;
+		pos_z = pos_z/gui->zoom;// + gui->ofs_z;
+		
+		text_len = snprintf(text, 63, "(%0.2f,  %0.2f,  %0.2f)", pos_x, pos_y, pos_z);
 		nk_label(gui->ctx, text, NK_TEXT_CENTERED);
 		
 		nk_style_pop_font(gui->ctx); /* return to the default font*/

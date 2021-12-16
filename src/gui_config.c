@@ -479,48 +479,115 @@ int config_win (gui_obj *gui){
 			}
 		}
 		
-		nk_property_float(gui->ctx, "#Alpha", -180.0, &gui->alpha, 180.0f, 0.1f, 1.0);
-		nk_property_float(gui->ctx, "#Beta", -180.0, &gui->beta, 180.0f, 0.1f, 1.0);
-		nk_property_float(gui->ctx, "#Gamma", -180.0, &gui->gamma, 180.0f, 0.1f, 1.0);
+		nk_property_float(gui->ctx, "#Alpha", -180.0, &gui->alpha, 180.0f, 1.0f, 1.0);
+		nk_property_float(gui->ctx, "#Beta", -180.0, &gui->beta, 180.0f, 1.0f, 1.0);
+		nk_property_float(gui->ctx, "#Gamma", -180.0, &gui->gamma, 180.0f, 1.0f, 1.0);
 		/*nk_slider_float(gui->ctx, -180.0, &gui->alpha, 180.0f, 0.1f);
 		nk_slider_float(gui->ctx, -180.0, &gui->beta, 180.0f, 0.1f);
 		nk_slider_float(gui->ctx, -180.0, &gui->gamma, 180.0f, 0.1f);*/
 		
-		gui->sin_alpha = sin(gui->alpha * M_PI / 180.0);
-		gui->cos_alpha = cos(gui->alpha * M_PI / 180.0);
-		gui->sin_beta = sin(gui->beta * M_PI / 180.0);
-		gui->cos_beta = cos(gui->beta * M_PI / 180.0);
-		gui->sin_gamma = sin(gui->gamma * M_PI / 180.0);
-		gui->cos_gamma = cos(gui->gamma * M_PI / 180.0);
+		nk_layout_row_dynamic(gui->ctx, 20, 3);
+		if (nk_button_label(gui->ctx, "Top")){
+			gui->alpha = 0.0;
+			gui->beta = 0.0;
+			gui->gamma = 0.0;
+		}
+		if (nk_button_label(gui->ctx, "Front")){
+			gui->alpha = 0.0;
+			gui->beta = 0.0;
+			gui->gamma = 90.0;
+		}
+		if (nk_button_label(gui->ctx, "Right")){
+			gui->alpha = 90.0;
+			gui->beta = 0.0;
+			gui->gamma = 90.0;
+		}
+		if (nk_button_label(gui->ctx, "Bottom")){
+			gui->alpha = 0.0;
+			gui->beta = 0.0;
+			gui->gamma = 180.0;
+		}
+		if (nk_button_label(gui->ctx, "Rear")){
+			gui->alpha = 180.0;
+			gui->beta = 0.0;
+			gui->gamma = 90.0;
+		}
+		if (nk_button_label(gui->ctx, "Left")){
+			gui->alpha = -90.0;
+			gui->beta = 0.0;
+			gui->gamma = 90.0;
+		}
+		if (nk_button_label(gui->ctx, "Iso")){
+			gui->alpha = 45.0;
+			gui->beta = 0.0;
+			gui->gamma = 90.0 - 35.264;
+		}
 		
+		double sin_alpha, cos_alpha, sin_beta, cos_beta, sin_gamma, cos_gamma;
 		
-		float m[4][4], inv_m[4][4];
-		m[0][0] = gui->cos_alpha*gui->cos_beta;
-		m[0][1] = gui->cos_alpha*gui->sin_beta*gui->sin_gamma - gui->sin_alpha*gui->cos_gamma;
-		m[0][2] = gui->cos_alpha*gui->sin_beta*gui->cos_gamma + gui->sin_alpha*gui->sin_gamma;
-		m[0][3] = 0.0;
-		m[1][0] = gui->sin_alpha*gui->cos_beta;
-		m[1][1] = gui->sin_alpha*gui->sin_beta*gui->sin_gamma + gui->cos_alpha*gui->cos_gamma;
-		m[1][2] = gui->sin_alpha*gui->sin_beta*gui->cos_gamma - gui->cos_alpha*gui->sin_gamma;
-		m[1][3] = 0.0;
-		m[2][0] = -gui->sin_beta;
-		m[2][1] = gui->cos_beta*gui->sin_gamma;
-		m[2][2] = gui->cos_beta*gui->cos_gamma;
-		m[2][3] = 0.0;
-		m[3][0] = 0.0;
-		m[3][1] = 0.0;
-		m[3][2] = 0.0;
-		m[3][3] = 1.0;
+		sin_alpha = sin(gui->alpha * M_PI / 180.0);
+		cos_alpha = cos(gui->alpha * M_PI / 180.0);
+		sin_beta = sin(gui->beta * M_PI / 180.0);
+		cos_beta = cos(gui->beta * M_PI / 180.0);
+		sin_gamma = sin(gui->gamma * M_PI / 180.0);
+		cos_gamma = cos(gui->gamma * M_PI / 180.0);
 		
-		invert_4matrix(m[0], inv_m[0]);
+		float mat_a[4][4], mat_b[4][4], res[4][4];
 		
-		float w = gui->gl_ctx.win_w * inv_m[0][0] + gui->gl_ctx.win_h * inv_m[0][1];
-		float h = gui->gl_ctx.win_w * inv_m[1][0] + gui->gl_ctx.win_h * inv_m[1][1];
+		mat_a[0][0] = 1.0;
+		mat_a[0][1] = 0.0;
+		mat_a[0][2] = 0.0;
+		mat_a[0][3] = 0.0;
+		mat_a[1][0] = 0.0;
+		mat_a[1][1] = 1.0;
+		mat_a[1][2] = 0.0;
+		mat_a[1][3] = 0.0;
+		mat_a[2][0] = 0.0;
+		mat_a[2][1] = 0.0;
+		mat_a[2][2] = 1.0;
+		mat_a[2][3] = 0.0;
+		mat_a[3][0] = -((float)gui->win_w)/2.0;
+		mat_a[3][1] = -((float)gui->win_h)/2.0;
+		mat_a[3][2] = 0.0;
+		mat_a[3][3] = 1.0;
 		
-		char text[64];
-		snprintf(text, 63, "w=%0.1f,  h=%0.1f", w, h);
-		//snprintf(text, 63, "%0.1f, %0.1f, %0.1f, %0.1f", inv_m[0][0], inv_m[0][1], inv_m[1][0], inv_m[1][1]);
-		nk_label(gui->ctx, text, NK_TEXT_CENTERED);
+		mat_b[0][0] = cos_alpha*cos_beta;
+		mat_b[0][1] = cos_alpha*sin_beta*sin_gamma - sin_alpha*cos_gamma;
+		mat_b[0][2] = cos_alpha*sin_beta*cos_gamma + sin_alpha*sin_gamma;
+		mat_b[0][3] = 0.0;
+		mat_b[1][0] = sin_alpha*cos_beta;
+		mat_b[1][1] = sin_alpha*sin_beta*sin_gamma + cos_alpha*cos_gamma;
+		mat_b[1][2] = sin_alpha*sin_beta*cos_gamma - cos_alpha*sin_gamma;
+		mat_b[1][3] = 0.0;
+		mat_b[2][0] = -sin_beta;
+		mat_b[2][1] = cos_beta*sin_gamma;
+		mat_b[2][2] = cos_beta*cos_gamma;
+		mat_b[2][3] = 0.0;
+		mat_b[3][0] = 0.0;
+		mat_b[3][1] = 0.0;
+		mat_b[3][2] = 0.0;
+		mat_b[3][3] = 1.0;
+		
+		matrix4_mul(mat_b[0], mat_a[0], res[0]);
+		
+		mat_b[0][0] = 1.0;
+		mat_b[0][1] = 0.0;
+		mat_b[0][2] = 0.0;
+		mat_b[0][3] = 0.0;
+		mat_b[1][0] = 0.0;
+		mat_b[1][1] = 1.0;
+		mat_b[1][2] = 0.0;
+		mat_b[1][3] = 0.0;
+		mat_b[2][0] = 0.0;
+		mat_b[2][1] = 0.0;
+		mat_b[2][2] = 1.0;
+		mat_b[2][3] = 0.0;
+		mat_b[3][0] = ((float)gui->win_w)/2.0;
+		mat_b[3][1] = ((float)gui->win_h)/2.0;
+		mat_b[3][2] = 0.0;
+		mat_b[3][3] = 1.0;
+		
+		matrix4_mul(mat_b[0], res[0], gui->drwg_view[0]);
 		
 	} else show_config = 0;
 	nk_end(gui->ctx);

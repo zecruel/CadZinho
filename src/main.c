@@ -577,8 +577,6 @@ int main(int argc, char** argv){
 	//graph_obj * hers = hershey_test (PRG_LIFE);
 	/*===================== teste ===============*/
 	
-	const Uint8* state;
-	
 	/* main loop */
 	while (quit == 0){
 		ev_type = 0;
@@ -601,7 +599,7 @@ int main(int argc, char** argv){
 			//printf("show\n");
 		}
 		else{
-			SDL_ShowCursor(SDL_DISABLE);
+			//SDL_ShowCursor(SDL_DISABLE);
 			
 			if (ev_type != 0){
 				double wheel = 1.0;
@@ -1439,64 +1437,25 @@ int main(int argc, char** argv){
 			d_param.inc_thick = 0;
 			
 			/* 3D test */
-			/*
-			gui->gl_ctx.transf[0][0] = 0.7071;
-			gui->gl_ctx.transf[0][1] = 0.0;
-			gui->gl_ctx.transf[0][2] = -0.7071;
-			gui->gl_ctx.transf[0][3] = 0.0;
-			gui->gl_ctx.transf[1][0] = 0.4082;
-			gui->gl_ctx.transf[1][1] = 0.8165;
-			gui->gl_ctx.transf[1][2] = 0.4082;
-			gui->gl_ctx.transf[1][3] = 0.0;
-			gui->gl_ctx.transf[2][0] = 0.5774;
-			gui->gl_ctx.transf[2][1] = -0.5774;
-			gui->gl_ctx.transf[2][2] = 0.5774;
-			gui->gl_ctx.transf[2][3] = 0.0;
-			gui->gl_ctx.transf[3][0] = 0.0;
-			gui->gl_ctx.transf[3][1] = 0.0;
-			gui->gl_ctx.transf[3][2] = 0.0;
-			gui->gl_ctx.transf[3][3] = 1.0;
-			//glUniformMatrix4fv(gui->gl_ctx.transf_uni, 1,  GL_FALSE, &gui->gl_ctx.transf[0][0]);
-			glDepthFunc(GL_LESS);
-			*/
-			/*
-			gui->gl_ctx.transf[0][0] = gui->cos_alpha*gui->cos_gamma - gui->sin_alpha*gui->cos_beta*gui->sin_gamma;
-			gui->gl_ctx.transf[0][1] = gui->sin_alpha*gui->cos_gamma + gui->cos_alpha*gui->cos_beta*gui->sin_gamma;
-			gui->gl_ctx.transf[0][2] = gui->sin_beta*gui->sin_gamma;
-			gui->gl_ctx.transf[0][3] = 0.0;
-			gui->gl_ctx.transf[1][0] = -gui->cos_alpha*gui->sin_gamma - gui->sin_alpha*gui->cos_beta*gui->cos_gamma;
-			gui->gl_ctx.transf[1][1] = -gui->sin_alpha*gui->sin_gamma + gui->cos_alpha*gui->cos_beta*gui->cos_gamma;
-			gui->gl_ctx.transf[1][2] = gui->sin_beta*gui->cos_gamma;
-			gui->gl_ctx.transf[1][3] = 0.0;
-			gui->gl_ctx.transf[2][0] = gui->sin_alpha*gui->sin_beta;
-			gui->gl_ctx.transf[2][1] = -gui->cos_alpha*gui->sin_beta;
-			gui->gl_ctx.transf[2][2] = gui->cos_beta;
-			gui->gl_ctx.transf[2][3] = 0.0;
-			gui->gl_ctx.transf[3][0] = 0.0;
-			gui->gl_ctx.transf[3][1] = 0.0;
-			gui->gl_ctx.transf[3][2] = 0.0;
-			gui->gl_ctx.transf[3][3] = 1.0;
-			*/
-			gui->gl_ctx.transf[0][0] = gui->cos_alpha*gui->cos_beta;
-			gui->gl_ctx.transf[0][1] = gui->cos_alpha*gui->sin_beta*gui->sin_gamma - gui->sin_alpha*gui->cos_gamma;
-			gui->gl_ctx.transf[0][2] = gui->cos_alpha*gui->sin_beta*gui->cos_gamma + gui->sin_alpha*gui->sin_gamma;
-			gui->gl_ctx.transf[0][3] = 0.0;
-			gui->gl_ctx.transf[1][0] = gui->sin_alpha*gui->cos_beta;
-			gui->gl_ctx.transf[1][1] = gui->sin_alpha*gui->sin_beta*gui->sin_gamma + gui->cos_alpha*gui->cos_gamma;
-			gui->gl_ctx.transf[1][2] = gui->sin_alpha*gui->sin_beta*gui->cos_gamma - gui->cos_alpha*gui->sin_gamma;
-			gui->gl_ctx.transf[1][3] = 0.0;
-			gui->gl_ctx.transf[2][0] = -gui->sin_beta;
-			gui->gl_ctx.transf[2][1] = gui->cos_beta*gui->sin_gamma;
-			gui->gl_ctx.transf[2][2] = gui->cos_beta*gui->cos_gamma;
-			gui->gl_ctx.transf[2][3] = 0.0;
-			gui->gl_ctx.transf[3][0] = 0.0;
-			gui->gl_ctx.transf[3][1] = 0.0;
-			gui->gl_ctx.transf[3][2] = 0.0;
-			gui->gl_ctx.transf[3][3] = 1.0;
+			gui->gl_ctx.transf[0][0] = gui->drwg_view[0][0];
+			gui->gl_ctx.transf[0][1] = gui->drwg_view[0][1];
+			gui->gl_ctx.transf[0][2] = gui->drwg_view[0][2];
+			gui->gl_ctx.transf[0][3] = gui->drwg_view[0][3];
+			gui->gl_ctx.transf[1][0] = gui->drwg_view[1][0];
+			gui->gl_ctx.transf[1][1] = gui->drwg_view[1][1];
+			gui->gl_ctx.transf[1][2] = gui->drwg_view[1][2];
+			gui->gl_ctx.transf[1][3] = gui->drwg_view[1][3];
+			gui->gl_ctx.transf[2][0] = gui->drwg_view[2][0];
+			gui->gl_ctx.transf[2][1] = gui->drwg_view[2][1];
+			gui->gl_ctx.transf[2][2] = gui->drwg_view[2][2];
+			gui->gl_ctx.transf[2][3] = gui->drwg_view[2][3];
+			gui->gl_ctx.transf[3][0] = gui->drwg_view[3][0];
+			gui->gl_ctx.transf[3][1] = gui->drwg_view[3][1];
+			gui->gl_ctx.transf[3][2] = gui->drwg_view[3][2];
+			gui->gl_ctx.transf[3][3] = gui->drwg_view[3][3];
+			
 			//glDepthFunc(GL_ALWAYS);
 			glDepthFunc(GL_LESS);
-			
-			
 			
 			
 			/* Clear the screen to background color */

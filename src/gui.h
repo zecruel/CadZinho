@@ -402,7 +402,8 @@ struct Gui_obj {
 	unsigned char blank_tex[4*20*600]; /* blank texture */
 	
 	float alpha, beta, gamma;
-	double sin_alpha, cos_alpha, sin_beta, cos_beta, sin_gamma, cos_gamma;
+	
+	float drwg_view[4][4];
 	
 };
 typedef struct Gui_obj gui_obj;

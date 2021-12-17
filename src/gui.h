@@ -245,8 +245,8 @@ struct Gui_obj {
 	
 	/*gui pos variables */
 	int next_win_x, next_win_y, next_win_w, next_win_h;
-	int mouse_x, mouse_y;
-	double zoom, ofs_x, ofs_y;
+	int mouse_x, mouse_y;//, mouse_z;
+	double zoom, ofs_x, ofs_y, ofs_z, mouse_z;
 	double prev_zoom;
 	
 	double user_x, user_y;

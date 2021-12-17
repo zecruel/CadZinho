@@ -1476,6 +1476,8 @@ int main(int argc, char** argv){
 			draw_cursor_gl(gui, gui->mouse_x, gui->mouse_y, gui->cursor);
 			
 			draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
+			//glReadPixels(gui->mouse_x, gui->mouse_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &gui->mouse_z);
+			
 			glDepthFunc(GL_ALWAYS);
 			
 			

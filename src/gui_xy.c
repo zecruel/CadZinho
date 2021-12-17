@@ -213,18 +213,12 @@ int gui_xy(gui_obj *gui){
 		text_len = snprintf(text, 63, "(%f,  %f)", pos_x, pos_y);
 		nk_label(gui->ctx, text, NK_TEXT_CENTERED);
 		
-		
-		
-
 		float inv_m[4][4];
 		invert_4matrix(gui->drwg_view[0], inv_m[0]);
 		
-		float res[4][4];
-		matrix4_mul(gui->drwg_view[0], inv_m[0], res[0]);
-		
-		pos_x = (double) gui->mouse_x * inv_m[0][0] + (double) gui->mouse_y * inv_m[0][1] + inv_m[0][3];
-		pos_y = (double) gui->mouse_x * inv_m[1][0] + (double) gui->mouse_y * inv_m[1][1] + inv_m[1][3];
-		pos_z = (double) gui->mouse_x * inv_m[2][0] + (double) gui->mouse_y * inv_m[2][1] + inv_m[2][3];
+		pos_x = (double) gui->mouse_x * inv_m[0][0] + (double) gui->mouse_y * inv_m[1][0] + inv_m[3][0];
+		pos_y = (double) gui->mouse_x * inv_m[0][1] + (double) gui->mouse_y * inv_m[1][1] + inv_m[3][1];
+		pos_z = (double) gui->mouse_x * inv_m[0][2] + (double) gui->mouse_y * inv_m[1][2] + inv_m[3][2];
 		
 		
 		pos_x = pos_x/gui->zoom + gui->ofs_x;

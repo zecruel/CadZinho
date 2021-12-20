@@ -2,6 +2,7 @@
 
 int gui_update_pos(gui_obj *gui){
 	double rect_pt1[2], rect_pt2[2];
+	double cursor_x = 0.0, cursor_y = 0.0;
 	
 	/* if user hit the enter key during a drawing operation, toggle axis lock */
 	if ((gui->modal != SELECT) && (gui->step > 0) && (gui->ev & EV_LOCK_AX)
@@ -209,24 +210,67 @@ int gui_xy(gui_obj *gui){
 		
 		nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
 	
-		nk_layout_row_dynamic(gui->ctx, 17, 2);
+		nk_layout_row_dynamic(gui->ctx, 17, 1);
 		text_len = snprintf(text, 63, "(%f,  %f)", pos_x, pos_y);
 		nk_label(gui->ctx, text, NK_TEXT_CENTERED);
 		
-		float inv_m[4][4];
-		invert_4matrix(gui->drwg_view[0], inv_m[0]);
+		#if(0)
+		/* get ray  from mouse point in screen*/
 		
-		pos_x = (double) gui->mouse_x * inv_m[0][0] + (double) gui->mouse_y * inv_m[1][0] + inv_m[3][0];
-		pos_y = (double) gui->mouse_x * inv_m[0][1] + (double) gui->mouse_y * inv_m[1][1] + inv_m[3][1];
-		pos_z = (double) gui->mouse_x * inv_m[0][2] + (double) gui->mouse_y * inv_m[1][2] + inv_m[3][2];
+		double ray_o[3], ray_dir[3], plane[4], point[3];
 		
+		ray_o[0] = (double) gui->mouse_x * gui->drwg_view_i[0][0] +
+			(double) gui->mouse_y * gui->drwg_view_i[1][0] +
+			gui->drwg_view_i[3][0];
+		ray_o[1] = (double) gui->mouse_x * gui->drwg_view_i[0][1] +
+			(double) gui->mouse_y * gui->drwg_view_i[1][1] +
+			gui->drwg_view_i[3][1];
+		ray_o[2] = (double) gui->mouse_x * gui->drwg_view_i[0][2] +
+			(double) gui->mouse_y * gui->drwg_view_i[1][2] +
+			gui->drwg_view_i[3][2];
+		
+		ray_dir[0] = -gui->drwg_view_i[2][0];
+		ray_dir[1] = -gui->drwg_view_i[2][1];
+		ray_dir[2] = -gui->drwg_view_i[2][2];
+		
+		/* try xy plane*/
+		plane[0] = 0.0; plane[1] = 0.0; plane[2] = 1.0; plane[3] = 0.0;
+		if( ray_plane(ray_o, ray_dir, plane, point)){
+			pos_x = point[0];
+			pos_y = point[1];
+			pos_z = point[2];
+		}
+		else{
+			/* try xz plane*/
+			plane[0] = 0.0; plane[1] = 1.0; plane[2] = 0.0; plane[3] = 0.0;
+			if( ray_plane(ray_o, ray_dir, plane, point)){
+				pos_x = point[0];
+				pos_y = point[1];
+				pos_z = point[2];
+			}
+			else{
+				/* try yz plane*/
+				plane[0] = 1.0; plane[1] = 0.0; plane[2] = 0.0; plane[3] = 0.0;
+				if( ray_plane(ray_o, ray_dir, plane, point)){
+					pos_x = point[0];
+					pos_y = point[1];
+					pos_z = point[2];
+				}
+				else{
+					pos_x = ray_o[0];
+					pos_y = ray_o[1];
+					pos_z = ray_o[2];
+				}
+			}
+		}
 		
 		pos_x = pos_x/gui->zoom + gui->ofs_x;
 		pos_y = pos_y/gui->zoom + gui->ofs_y;
-		pos_z = pos_z/gui->zoom;// + gui->ofs_z;
+		pos_z = pos_z/gui->zoom + gui->ofs_z;
 		
 		text_len = snprintf(text, 63, "(%0.2f,  %0.2f,  %0.2f)", pos_x, pos_y, pos_z);
 		nk_label(gui->ctx, text, NK_TEXT_CENTERED);
+		#endif
 		
 		nk_style_pop_font(gui->ctx); /* return to the default font*/
 		

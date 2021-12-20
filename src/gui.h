@@ -404,6 +404,7 @@ struct Gui_obj {
 	float alpha, beta, gamma;
 	
 	float drwg_view[4][4];
+	float drwg_view_i[4][4];
 	
 };
 typedef struct Gui_obj gui_obj;

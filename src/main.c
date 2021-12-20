@@ -297,7 +297,6 @@ int main(int argc, char** argv){
 	
 	/* ------------------------------------------------------------------------------- */
 	
-	double pos_x, pos_y;
 
 	int open_prg = 0;
 	//int progress = 0;
@@ -608,6 +607,57 @@ int main(int argc, char** argv){
 						gui->mouse_x = event.button.x;
 						gui->mouse_y = event.button.y;
 						gui->mouse_y = gui->win_h - gui->mouse_y;
+						{
+						/* get ray  from mouse point in screen*/
+						double ray_o[3], ray_dir[3], plane[4], point[3];
+						
+						ray_o[0] = (double) gui->mouse_x * gui->drwg_view_i[0][0] +
+							(double) gui->mouse_y * gui->drwg_view_i[1][0] +
+							gui->drwg_view_i[3][0];
+						ray_o[1] = (double) gui->mouse_x * gui->drwg_view_i[0][1] +
+							(double) gui->mouse_y * gui->drwg_view_i[1][1] +
+							gui->drwg_view_i[3][1];
+						ray_o[2] = (double) gui->mouse_x * gui->drwg_view_i[0][2] +
+							(double) gui->mouse_y * gui->drwg_view_i[1][2] +
+							gui->drwg_view_i[3][2];
+						
+						ray_dir[0] = -gui->drwg_view_i[2][0];
+						ray_dir[1] = -gui->drwg_view_i[2][1];
+						ray_dir[2] = -gui->drwg_view_i[2][2];
+						
+						/* try xy plane*/
+						plane[0] = 0.0; plane[1] = 0.0; plane[2] = 1.0; plane[3] = 0.0;
+						if( ray_plane(ray_o, ray_dir, plane, point)){
+							gui->mouse_x = point[0];
+							gui->mouse_y = point[1];
+							//gui->mouse_z = point[2];
+						}
+						else{
+							/* try xz plane*/
+							plane[0] = 0.0; plane[1] = 1.0; plane[2] = 0.0; plane[3] = 0.0;
+							if( ray_plane(ray_o, ray_dir, plane, point)){
+								gui->mouse_x = point[0];
+								gui->mouse_y = point[1];
+								//gui->mouse_z = point[2];
+							}
+							else{
+								/* try yz plane*/
+								plane[0] = 1.0; plane[1] = 0.0; plane[2] = 0.0; plane[3] = 0.0;
+								if( ray_plane(ray_o, ray_dir, plane, point)){
+									gui->mouse_x = point[0];
+									gui->mouse_y = point[1];
+									//gui->mouse_z = point[2];
+								}
+								else{
+									gui->mouse_x = ray_o[0];
+									gui->mouse_y = ray_o[1];
+									//gui->mouse_z = ray_o[2];
+								}
+							}
+						}
+					
+						}
+					
 						if (event.button.button == SDL_BUTTON_LEFT){
 							leftMouseButtonDown = 0;
 						}
@@ -619,6 +669,58 @@ int main(int argc, char** argv){
 						gui->mouse_x = event.button.x;
 						gui->mouse_y = event.button.y;
 						gui->mouse_y = gui->win_h - gui->mouse_y;
+						
+						{
+						/* get ray  from mouse point in screen*/
+						double ray_o[3], ray_dir[3], plane[4], point[3];
+						
+						ray_o[0] = (double) gui->mouse_x * gui->drwg_view_i[0][0] +
+							(double) gui->mouse_y * gui->drwg_view_i[1][0] +
+							gui->drwg_view_i[3][0];
+						ray_o[1] = (double) gui->mouse_x * gui->drwg_view_i[0][1] +
+							(double) gui->mouse_y * gui->drwg_view_i[1][1] +
+							gui->drwg_view_i[3][1];
+						ray_o[2] = (double) gui->mouse_x * gui->drwg_view_i[0][2] +
+							(double) gui->mouse_y * gui->drwg_view_i[1][2] +
+							gui->drwg_view_i[3][2];
+						
+						ray_dir[0] = -gui->drwg_view_i[2][0];
+						ray_dir[1] = -gui->drwg_view_i[2][1];
+						ray_dir[2] = -gui->drwg_view_i[2][2];
+						
+						/* try xy plane*/
+						plane[0] = 0.0; plane[1] = 0.0; plane[2] = 1.0; plane[3] = 0.0;
+						if( ray_plane(ray_o, ray_dir, plane, point)){
+							gui->mouse_x = point[0];
+							gui->mouse_y = point[1];
+							//gui->mouse_z = point[2];
+						}
+						else{
+							/* try xz plane*/
+							plane[0] = 0.0; plane[1] = 1.0; plane[2] = 0.0; plane[3] = 0.0;
+							if( ray_plane(ray_o, ray_dir, plane, point)){
+								gui->mouse_x = point[0];
+								gui->mouse_y = point[1];
+								//gui->mouse_z = point[2];
+							}
+							else{
+								/* try yz plane*/
+								plane[0] = 1.0; plane[1] = 0.0; plane[2] = 0.0; plane[3] = 0.0;
+								if( ray_plane(ray_o, ray_dir, plane, point)){
+									gui->mouse_x = point[0];
+									gui->mouse_y = point[1];
+									//gui->mouse_z = point[2];
+								}
+								else{
+									gui->mouse_x = ray_o[0];
+									gui->mouse_y = ray_o[1];
+									//gui->mouse_z = ray_o[2];
+								}
+							}
+						}
+					
+						}
+						
 						if (event.button.button == SDL_BUTTON_LEFT){
 							leftMouseButtonDown = 1;
 							leftMouseButtonClick = 1;
@@ -633,8 +735,56 @@ int main(int argc, char** argv){
 						gui->mouse_x = event.motion.x;
 						gui->mouse_y = event.motion.y;
 						gui->mouse_y = gui->win_h - gui->mouse_y;
-						pos_x = (double) gui->mouse_x/gui->zoom + gui->ofs_x;
-						pos_y = (double) gui->mouse_y/gui->zoom + gui->ofs_y;
+						{
+						/* get ray  from mouse point in screen*/
+						double ray_o[3], ray_dir[3], plane[4], point[3];
+						
+						ray_o[0] = (double) gui->mouse_x * gui->drwg_view_i[0][0] +
+							(double) gui->mouse_y * gui->drwg_view_i[1][0] +
+							gui->drwg_view_i[3][0];
+						ray_o[1] = (double) gui->mouse_x * gui->drwg_view_i[0][1] +
+							(double) gui->mouse_y * gui->drwg_view_i[1][1] +
+							gui->drwg_view_i[3][1];
+						ray_o[2] = (double) gui->mouse_x * gui->drwg_view_i[0][2] +
+							(double) gui->mouse_y * gui->drwg_view_i[1][2] +
+							gui->drwg_view_i[3][2];
+						
+						ray_dir[0] = -gui->drwg_view_i[2][0];
+						ray_dir[1] = -gui->drwg_view_i[2][1];
+						ray_dir[2] = -gui->drwg_view_i[2][2];
+						
+						/* try xy plane*/
+						plane[0] = 0.0; plane[1] = 0.0; plane[2] = 1.0; plane[3] = 0.0;
+						if( ray_plane(ray_o, ray_dir, plane, point)){
+							gui->mouse_x = point[0];
+							gui->mouse_y = point[1];
+							//gui->mouse_z = point[2];
+						}
+						else{
+							/* try xz plane*/
+							plane[0] = 0.0; plane[1] = 1.0; plane[2] = 0.0; plane[3] = 0.0;
+							if( ray_plane(ray_o, ray_dir, plane, point)){
+								gui->mouse_x = point[0];
+								gui->mouse_y = point[1];
+								//gui->mouse_z = point[2];
+							}
+							else{
+								/* try yz plane*/
+								plane[0] = 1.0; plane[1] = 0.0; plane[2] = 0.0; plane[3] = 0.0;
+								if( ray_plane(ray_o, ray_dir, plane, point)){
+									gui->mouse_x = point[0];
+									gui->mouse_y = point[1];
+									//gui->mouse_z = point[2];
+								}
+								else{
+									gui->mouse_x = ray_o[0];
+									gui->mouse_y = ray_o[1];
+									//gui->mouse_z = ray_o[2];
+								}
+							}
+						}
+					
+						}
 						gui->draw = 1;
 						break;
 					case SDL_MOUSEWHEEL:

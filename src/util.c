@@ -882,3 +882,26 @@ int invert_4matrix(float *m, float *m_inv){
 
     return 1;
 }
+
+/* calcule intersect point between ray and plane */
+/* return 1 success, or 0 if not intersect (ray paralel to plane) */
+int ray_plane(double ray_o[3], /*ray orign point*/
+	double ray_dir[3], /* ray direction vector */
+	double plane[4], /* plane, definied by plane[0]*x + plane[1]*y + plane[2]*z + plane[3] = 0 */
+	double point[3] /* result point (returned value) */
+){
+	double t, den = 0;
+	
+	den = ray_dir[0] * plane[0] + ray_dir[1] * plane[1] + ray_dir[2] * plane[2];
+	
+	if (fabs(den) < 1e-9) return 0; /* no intersection */
+	
+	t = -(ray_o[0] * plane[0] + ray_o[1] * plane[1] + ray_o[2] * plane[2] 
+		+ plane[3]) / den;
+	
+	point[0] = ray_dir[0] * t + ray_o[0];
+	point[1] = ray_dir[1] * t + ray_o[1];
+	point[2] = ray_dir[2] * t + ray_o[2];
+	
+	return 1;
+}

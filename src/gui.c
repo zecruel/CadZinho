@@ -1500,6 +1500,7 @@ int gui_start(gui_obj *gui){
 	gui->zoom = 20.0;
 	gui->ofs_x = -10.0;
 	gui->ofs_y = -5.0;
+	gui->ofs_z = 0.0;
 	gui->prev_zoom = 20.0;
 	
 	gui->user_x = 0.0;
@@ -1752,6 +1753,23 @@ int gui_start(gui_obj *gui){
 	gui->drwg_view[3][2] = 0.0;
 	gui->drwg_view[3][3] = 1.0;
 	
+	gui->drwg_view_i[0][0] = 1.0;
+	gui->drwg_view_i[0][1] = 0.0;
+	gui->drwg_view_i[0][2] = 0.0;
+	gui->drwg_view_i[0][3] = 0.0;
+	gui->drwg_view_i[1][0] = 0.0;
+	gui->drwg_view_i[1][1] = 1.0;
+	gui->drwg_view_i[1][2] = 0.0;
+	gui->drwg_view_i[1][3] = 0.0;
+	gui->drwg_view_i[2][0] = 0.0;
+	gui->drwg_view_i[2][1] = 0.0;
+	gui->drwg_view_i[2][2] = 1.0;
+	gui->drwg_view_i[2][3] = 0.0;
+	gui->drwg_view_i[3][0] = 0.0;
+	gui->drwg_view_i[3][1] = 0.0;
+	gui->drwg_view_i[3][2] = 0.0;
+	gui->drwg_view_i[3][3] = 1.0;
+	
 	return 1;
 }
 
@@ -1929,8 +1947,8 @@ int draw_cursor_gl(gui_obj *gui, int x, int y, enum Cursor_type type) {
 		draw_gl_polygon (gl_ctx, 20, edges);
 	}
 	else{
-		draw_gl_line (gl_ctx, (int []){0, y, 0}, (int []){gl_ctx->win_w,y, 0}, 3);
-		draw_gl_line (gl_ctx, (int []){x, 0, 0}, (int []){x, gl_ctx->win_h, 0}, 3);
+		draw_gl_line (gl_ctx, (int []){-gl_ctx->win_w, y, 0}, (int []){gl_ctx->win_w*2,y, 0}, 3);
+		draw_gl_line (gl_ctx, (int []){x, -gl_ctx->win_h, 0}, (int []){x, gl_ctx->win_h*2, 0}, 3);
 		
 		draw_gl_line (gl_ctx, (int []){x-5, y+5, 0}, (int []){x+5, y+5, 0}, 1);
 		draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x+5, y-5, 0}, 1);

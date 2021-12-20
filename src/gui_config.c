@@ -589,6 +589,8 @@ int config_win (gui_obj *gui){
 		
 		matrix4_mul(mat_b[0], res[0], gui->drwg_view[0]);
 		
+		invert_4matrix(gui->drwg_view[0], gui->drwg_view_i[0]);
+		
 	} else show_config = 0;
 	nk_end(gui->ctx);
 	

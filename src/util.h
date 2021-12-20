@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 #if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 #define PATH_SEPARATOR ';'
@@ -99,5 +100,10 @@ int dir_make (char *path);
 int dir_miss (char* path); /* try to create a folder, if not exists */
 
 void matrix4_mul(float *mat_a, float *mat_b, float *mat_r);
+
+int ray_plane(double ray_o[3], double ray_dir[3],
+	double plane[4], double point[3]);
+	
+int invert_4matrix(float *m, float *m_inv);
 
 #endif

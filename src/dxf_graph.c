@@ -3321,6 +3321,59 @@ graph_obj * dxf_3dface_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 	}
 }
 
+list_node * dxf_file_parse(char *path, int p_space, int pool_idx, list_node * font_list, char* fonts_path){
+	if (!path) return NULL;
+	if (!strlen(path)) return NULL;
+	if (!font_list) return NULL;
+	if (!fonts_path) return NULL;
+	
+	long file_size = 0;
+	int prog = 0;
+	struct Mem_buffer *file_buf = load_file_reuse(path, &file_size);
+	
+	if (!file_buf) return NULL;
+	
+	dxf_drawing drawing;
+	
+	drawing.img_list = NULL;
+	drawing.pool = FRAME_LIFE;
+	drawing.font_list = font_list;
+	drawing.dflt_font = get_font_list(font_list, "txt.shx");
+	drawing.dflt_fonts_path = fonts_path;
+	
+	while (dxf_read (&drawing, file_buf->buffer, file_size, &prog) > 0){
+		
+	}
+	
+	/* clear the file buffer */
+	manage_buffer(0, BUF_RELEASE);
+	file_buf = NULL;
+	file_size = 0;
+	
+	if (!drawing.ents || !drawing.main_struct) return NULL;
+	
+	dxf_node *current = NULL;
+	list_node * list_ret = NULL;
+	list_node *vec_graph;
+		
+	
+	/* create the vector of returned values */
+	list_ret = list_new(NULL, pool_idx);
+	
+	current = drawing.ents->obj.content->next;
+	
+	// starts the content sweep 
+	while (current != NULL){
+		if (current->type == DXF_ENT){ // DXF entity
+			vec_graph = dxf_graph_parse(&drawing, current, p_space, pool_idx);
+			list_merge(list_ret, vec_graph);
+		}
+		current = current->next;
+	}
+	
+	return list_ret;
+}
+
 int proc_obj_graph(dxf_drawing *drawing, dxf_node * ent, graph_obj * graph, struct ins_save ins){
 	if ((drawing) && (ent) && (graph)){
 		dxf_node *layer_obj, *ltscale_obj;
@@ -3720,7 +3773,45 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				ent_type = DXF_BLK;
 				blk_flag = 1;
 				
-				if (current->obj.content){
+				dxf_node *tmp_obj;
+				int xref = 0;
+				char xref_path[DXF_MAX_CHARS+1];
+				
+				
+				/* verify if block is a external reference */
+				if (tmp_obj = dxf_find_attr2(current, 70)){
+					xref = tmp_obj->value.i_data & 4;
+				}
+				if (xref) {
+					
+					xref_path[0] = 0;
+					if (tmp_obj = dxf_find_attr2(current, 1)){
+						strncpy (xref_path, tmp_obj->value.s_data, DXF_MAX_CHARS);
+					}
+					
+					list_node *vec_graph = dxf_file_parse((char *)xref_path, 0, pool_idx, drawing->font_list, drawing->dflt_fonts_path);
+					if (vec_graph){
+						//current->obj.graphics = vec_graph;
+						
+						list_node *curr_node = vec_graph->next;
+						
+						while (curr_node != NULL){
+							if (curr_node->data){
+								curr_graph = (graph_obj *)curr_node->data;
+								/* store the graph in the return vector */
+								list_push(list_ret, list_new((void *)curr_graph, pool_idx));
+								mod_idx++;
+							}
+							curr_node = curr_node->next;
+						}
+				
+					}
+					
+					/* TODO */ 
+					/* stop block processing */
+					current = NULL;
+				}
+				else if (current->obj.content){
 					/* starts the content sweep */
 					current = current->obj.content->next;
 					continue;

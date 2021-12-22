@@ -452,8 +452,6 @@ int gui_start(gui_obj *gui);
 
 int gui_tstyle(gui_obj *gui);
 
-int gui_tstyle2(gui_obj *gui, dxf_drawing *drawing);
-
 int gui_default_modal(gui_obj *gui);
 
 int gui_first_step(gui_obj *gui);

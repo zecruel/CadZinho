@@ -451,12 +451,16 @@ int main(int argc, char** argv){
 	
 	/* init the drawing */
 	gui->drawing = dxf_drawing_new(DWG_LIFE);
-	gui->drawing->font_list = gui->font_list;
-	gui->drawing->dflt_font = gui->dflt_font;
+	
 	
 	url = NULL; /* pass a null file only for initialize the drawing structure */
 	
 	/* **************** init the main drawing ************ */
+	
+	/* load and apply the fonts required for drawing */
+	gui->drawing->font_list = gui->font_list;
+	gui->drawing->dflt_font = get_font_list(gui->font_list, "txt.shx");
+	gui->drawing->dflt_fonts_path = gui->dflt_fonts_path;
 	
 	while (dxf_read (gui->drawing, gui->seed, strlen(gui->seed), &gui->progress) > 0){
 		
@@ -472,12 +476,15 @@ int main(int argc, char** argv){
 	/* **************** init the clipboard drawing ************ */
 	gui->clip_drwg = dxf_drawing_new(ONE_TIME);
 	
+	/* load and apply the fonts required for clipboard drawing */
+	gui->clip_drwg->font_list = gui->font_list;
+	gui->clip_drwg->dflt_font = get_font_list(gui->font_list, "txt.shx");
+	gui->clip_drwg->dflt_fonts_path = gui->dflt_fonts_path;
+	
 	while (dxf_read (gui->clip_drwg, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &gui->progress) > 0){
 		
 	}
 	/* *************************************************** */
-	
-	gui_tstyle(gui);
 	
 	
 	//printf(dxf_seed_r12);
@@ -1029,11 +1036,7 @@ int main(int argc, char** argv){
 				file_size = 0;
 				low_proc = 1;
 				
-				gui->drawing->font_list = gui->font_list;
-				gui->drawing->dflt_font = gui->dflt_font;
-				
 				//dxf_ent_print2(gui->drawing->blks);
-				gui_tstyle(gui);
 				dxf_ents_parse(gui->drawing);				
 				gui->action = VIEW_ZOOM_EXT;
 				gui->layer_idx = dxf_lay_idx (gui->drawing, "0");
@@ -1063,8 +1066,12 @@ int main(int argc, char** argv){
 			gui->progress = 0;
 			
 			file_buf = load_file_reuse(gui->curr_path, &file_size);
+			
+			/* load and apply the fonts required for drawing */
 			gui->drawing->font_list = gui->font_list;
 			gui->drawing->dflt_font = get_font_list(gui->font_list, "txt.shx");
+			gui->drawing->dflt_fonts_path = gui->dflt_fonts_path;
+			
 			open_prg = dxf_read(gui->drawing, file_buf->buffer, file_size, &gui->progress);
 			
 			low_proc = 0;
@@ -1187,6 +1194,12 @@ int main(int argc, char** argv){
 			if (gui->sel_list->next){ /* verify if  has elements in list */
 				/* clear the clipboard drawing and init with basis seed */
 				dxf_drawing_clear(gui->clip_drwg);
+				
+				/* load and apply the fonts required for clipboard drawing */
+				gui->clip_drwg->font_list = gui->font_list;
+				gui->clip_drwg->dflt_font = get_font_list(gui->font_list, "txt.shx");
+				gui->clip_drwg->dflt_fonts_path = gui->dflt_fonts_path;
+				
 				while (dxf_read (gui->clip_drwg, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &gui->progress) > 0){
 					
 				}
@@ -1244,11 +1257,16 @@ int main(int argc, char** argv){
 			/* load the clipboard file */
 			file_size = 0;
 			file_buf = load_file_reuse(clip_path, &file_size);
+			
+			/* load and apply the fonts required for clipboard drawing */
+			gui->clip_drwg->font_list = gui->font_list;
+			gui->clip_drwg->dflt_font = get_font_list(gui->font_list, "txt.shx");
+			gui->clip_drwg->dflt_fonts_path = gui->dflt_fonts_path;
+			
 			while (dxf_read (gui->clip_drwg, file_buf->buffer, file_size, &gui->progress) > 0){
 				
 			}
-			/* load and apply the fonts required for clipboard drawing */
-			gui_tstyle2(gui, gui->clip_drwg);
+			
 			
 			/* clear the file buffer */
 			//free(file_buf);
@@ -1605,7 +1623,7 @@ int main(int argc, char** argv){
 			gui->gl_ctx.transf[3][3] = gui->drwg_view[3][3];
 			
 			//glDepthFunc(GL_ALWAYS);
-			glDepthFunc(GL_LESS);
+			glDepthFunc(GL_LEQUAL);
 			
 			
 			/* Clear the screen to background color */

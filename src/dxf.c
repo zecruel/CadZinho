@@ -1072,6 +1072,8 @@ void dxf_tstyles_assemb (dxf_drawing *drawing){
 	
 	drawing->num_tstyles = 0;
 	
+	struct tfont * font = NULL;
+	
 	/* open default font */
 	//shape *shx_font = shx_font_open("txt.shx");
 	//shape *shx_font = NULL;
@@ -1159,6 +1161,16 @@ void dxf_tstyles_assemb (dxf_drawing *drawing){
 			drawing->text_styles[i].obj = curr_tstyle;
 			
 			strncpy(drawing->text_styles[i].subst_file, subst_file, DXF_MAX_CHARS);
+			
+			/* try to load fonts */
+			if(font = add_font_list(drawing->font_list, drawing->text_styles[i].file, drawing->dflt_fonts_path)){
+				drawing->text_styles[i].font = font;
+			}
+			else if (drawing->dflt_font){
+				font = drawing->dflt_font;
+				drawing->text_styles[i].font = font;
+				strncpy(drawing->text_styles[i].subst_file, font->name, DXF_MAX_CHARS);
+			}
 		}
 		i++;
 		if (!nxt_sty) break; /* end of STYLEs in table */
@@ -1778,8 +1790,11 @@ int dxf_drawing_clear (dxf_drawing *drawing){
 		drawing->num_layers = 0;
 		drawing->num_ltypes = 0;
 		drawing->num_tstyles = 0;
+		/*
 		drawing->font_list = NULL;
 		drawing->dflt_font = NULL;
+		drawing->dflt_fonts_path = NULL;
+		*/
 		
 		dxf_image_clear_list(drawing);
 		//drawing->img_list = NULL;
@@ -1805,6 +1820,9 @@ dxf_drawing *dxf_drawing_new(int pool){
 			free(drawing);
 			return NULL;
 		}
+		drawing->font_list = NULL;
+		drawing->dflt_font = NULL;
+		drawing->dflt_fonts_path = NULL;
 	}
 	
 	return drawing;

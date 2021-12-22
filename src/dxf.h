@@ -218,6 +218,7 @@ struct Dxf_drawing{
 	
 	void *font_list;
 	void *dflt_font;
+	char *dflt_fonts_path;
 	
 	void *img_list;
 	

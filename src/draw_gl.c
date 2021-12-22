@@ -1243,7 +1243,7 @@ int draw_gl (struct ogl *gl_ctx, int force){
 		win_mtx[1][3] = 0.0;
 		win_mtx[2][0] = 0.0;
 		win_mtx[2][1] = 0.0;
-		win_mtx[2][2] = 0.000001;
+		win_mtx[2][2] = -0.000001;
 		win_mtx[2][3] = 0.0;
 		win_mtx[3][0] = -1.0;
 		win_mtx[3][1] = ( (gl_ctx->flip_y) ? -1.0 : 1.0 ) * -1.0;

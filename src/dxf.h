@@ -221,11 +221,17 @@ struct Dxf_drawing{
 	char *dflt_fonts_path;
 	
 	void *img_list;
+	void *xref_list;
 	
 	int version;
 	
 };
 typedef struct Dxf_drawing dxf_drawing;
+
+struct dxf_xref {
+	char path [DXF_MAX_CHARS + 1];
+	dxf_drawing *drwg;
+};
 
 /* functions*/
 
@@ -318,5 +324,11 @@ dxf_node *dxf_find_handle(dxf_node *source, long int handle);
 void drawing_ent_append(dxf_drawing *drawing, dxf_node *element);
 
 list_node * dxf_ents_list(dxf_drawing *drawing, int pool_idx);
+
+dxf_drawing * dxf_xref_list(dxf_drawing *drawing, char *xref_path);
+
+int dxf_xref_clear_list(dxf_drawing *drawing);
+
+void dxf_xref_assemb (dxf_drawing *drawing);
 
 #endif

@@ -75,6 +75,10 @@ struct Mem_buffer * manage_buffer (long size, enum buffer_action action);
 
 struct Mem_buffer *  load_file_reuse(char *path, long *fsize);
 
+struct Mem_buffer * manage_buffer2 (long size, enum buffer_action action);
+
+struct Mem_buffer *  load_file_reuse2 (char *path, long *fsize);
+
 char * load_file(char *path, long *fsize);
 
 char * try_load_dflt(char *path, char *dflt);

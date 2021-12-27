@@ -1661,6 +1661,8 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 			}
 		}
 		
+		/* parse any xref */
+		dxf_xref_assemb (drawing);
 		
 		/* get line type scales */
 		drawing->ltscale = 1.0;
@@ -1797,6 +1799,7 @@ int dxf_drawing_clear (dxf_drawing *drawing){
 		*/
 		
 		dxf_image_clear_list(drawing);
+		dxf_xref_clear_list(drawing);
 		//drawing->img_list = NULL;
 		
 		/* create a new main_struct */
@@ -1815,6 +1818,7 @@ dxf_drawing *dxf_drawing_new(int pool){
 	dxf_drawing *drawing = malloc(sizeof(dxf_drawing));
 	if (drawing){
 		drawing->img_list = NULL;
+		drawing->xref_list = NULL;
 		drawing->pool = pool;
 		if (!dxf_drawing_clear(drawing)){
 			free(drawing);
@@ -2352,4 +2356,140 @@ list_node * dxf_ents_list(dxf_drawing *drawing, int pool_idx){
 	}
 	
 	return list_ret;
+}
+
+dxf_drawing * dxf_get_dwg_list(list_node *list, char *xref_path){
+	/* get a specific XREF drawing from list, by its path */
+	if (list == NULL) return NULL;
+	if (!xref_path) return NULL;
+	
+	struct dxf_xref *xref;
+	
+	list_node *current = list->next;
+	while (current != NULL){ /* sweep the list */
+		if (current->data){
+			xref = (struct dxf_xref *)current->data;
+			if (strcmp(xref->path, xref_path) == 0)
+				/* image found */
+				return xref->drwg;
+		}
+		current = current->next;
+	}
+	return NULL; /* fail the search */
+}
+
+dxf_drawing * dxf_xref_list(dxf_drawing *drawing, char *xref_path){
+	/* load a XREF drawing */
+	
+	if (!xref_path) return NULL;
+	if (!strlen (xref_path)) return NULL;
+	if (!drawing) return NULL;
+	
+	dxf_node *current = NULL;
+	
+	/* init the drawing image list, if its void */
+	if (drawing->xref_list == NULL)
+		drawing->xref_list = list_new(NULL, DWG_LIFE);
+	
+	if (drawing->xref_list == NULL) return NULL; /* exit if fail */
+	
+	struct dxf_xref *xref = malloc(sizeof(struct dxf_xref));
+	if (!xref) return NULL;
+	
+	/* verify if xref is already loaded */
+	dxf_drawing *drwg = dxf_get_dwg_list(drawing->xref_list, xref_path);
+	if (drwg) return drwg; /* return if found */
+	
+	/* alloc the node structure */
+	drwg = dxf_drawing_new(DWG_LIFE);
+	if (!drwg){
+		free(xref);
+		return NULL;
+	}
+	
+	long file_size = 0;
+	int prog = 0;
+	struct Mem_buffer *file_buf = load_file_reuse2(xref_path, &file_size);
+	
+	if (!file_buf) goto xref_error;
+	
+	while (dxf_read (drwg, file_buf->buffer, file_size, &prog) > 0){
+		
+	}
+	
+	/* clear the file buffer */
+	manage_buffer2(0, BUF_RELEASE);
+	file_buf = NULL;
+	file_size = 0;
+	
+	if (!drwg->ents || !drwg->main_struct) goto xref_error;
+	
+	/* store in main list */
+	xref->drwg = drwg;
+	strncpy(xref->path, xref_path, DXF_MAX_CHARS);
+	
+	list_node * new_node = list_new(drwg, DWG_LIFE);
+	list_push(drawing->xref_list, new_node);
+	
+	return drwg;
+	
+	xref_error:
+	free(xref);
+	free(drwg);
+	return NULL;
+}
+
+int dxf_xref_clear_list(dxf_drawing *drawing){
+	/* free memory of loaded xrefs in drawing*/
+	if(!drawing) return 0;
+	if (drawing->xref_list == NULL) return 0;
+	
+	list_node *list = drawing->xref_list;
+	
+	struct dxf_xref *xref;
+	dxf_drawing *drwg;
+	
+	list_node *current = list->next;
+	while (current != NULL){ /* sweep the list */
+		if (current->data){
+			xref = (struct dxf_xref *)current->data;
+			/* free each xref */
+			drwg = xref->drwg;
+			if (drwg){
+				dxf_drawing_clear(drwg);
+				free(drwg);
+			}
+			free(xref);
+		}
+		current = current->next;
+	}
+	drawing->xref_list = NULL; /* clear list head */
+	
+	return 1;
+	
+}
+
+void dxf_xref_assemb (dxf_drawing *drawing){
+	dxf_node *tmp_obj = NULL, *curr_blk = NULL;
+	int xref = 0;
+	char xref_path[DXF_MAX_CHARS+1];
+	
+	dxf_node *nxt_blk = NULL;
+	while (curr_blk = dxf_find_obj_nxt(drawing->blks, &nxt_blk, "BLOCK")){ /* get the next block */
+	
+		/* verify if block is a external reference */
+		if (tmp_obj = dxf_find_attr2(curr_blk, 70)){
+			xref = tmp_obj->value.i_data & 4;
+		}
+		if (xref) {
+			
+			xref_path[0] = 0;
+			if (tmp_obj = dxf_find_attr2(curr_blk, 1)){
+				strncpy (xref_path, tmp_obj->value.s_data, DXF_MAX_CHARS);
+				dxf_xref_list(drawing, xref_path);
+			}
+			
+		}
+		if (!nxt_blk) break; /* end of BLOCKSs in table */
+	}
 }

@@ -3321,7 +3321,7 @@ graph_obj * dxf_3dface_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 	}
 }
 
-list_node * dxf_file_parse(char *path, int p_space, int pool_idx, list_node * font_list, char* fonts_path){
+list_node * dxf_file_parse(char *path, list_node * font_list, char* fonts_path){
 	if (!path) return NULL;
 	if (!strlen(path)) return NULL;
 	if (!font_list) return NULL;
@@ -3358,14 +3358,14 @@ list_node * dxf_file_parse(char *path, int p_space, int pool_idx, list_node * fo
 		
 	
 	/* create the vector of returned values */
-	list_ret = list_new(NULL, pool_idx);
+	list_ret = list_new(NULL,  DWG_LIFE);
 	
 	current = drawing.ents->obj.content->next;
 	
 	// starts the content sweep 
 	while (current != NULL){
 		if (current->type == DXF_ENT){ // DXF entity
-			vec_graph = dxf_graph_parse(&drawing, current, p_space, pool_idx);
+			vec_graph = dxf_graph_parse(&drawing, current, 0, DWG_LIFE);
 			list_merge(list_ret, vec_graph);
 		}
 		current = current->next;
@@ -3425,6 +3425,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 	int ins_stack_pos = 0;
 	
 	struct ins_save ins_zero = {
+		.drwg = drawing,
 		.ins_ent = ent, .prev = NULL,
 		.ofs_x = 0.0, .ofs_y =0.0, .ofs_z =0.0,
 		.rot = 0.0, .scale_x = 1.0 , .scale_y = 1.0, .scale_z = 1.0,
@@ -3788,8 +3789,8 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					if (tmp_obj = dxf_find_attr2(current, 1)){
 						strncpy (xref_path, tmp_obj->value.s_data, DXF_MAX_CHARS);
 					}
-					
-					list_node *vec_graph = dxf_file_parse((char *)xref_path, 0, pool_idx, drawing->font_list, drawing->dflt_fonts_path);
+					#if(0)
+					list_node *vec_graph = dxf_file_parse(&xref_path[0], drawing->font_list, drawing->dflt_fonts_path);
 					if (vec_graph){
 						//current->obj.graphics = vec_graph;
 						
@@ -3808,8 +3809,10 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					}
 					
 					/* TODO */ 
-					/* stop block processing */
-					current = NULL;
+					/* stop block processing ?*/
+					//current = NULL;
+					#endif
+					current = current->obj.content->next;
 				}
 				else if (current->obj.content){
 					/* starts the content sweep */
@@ -3932,6 +3935,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				
 				/* save current entity for future process */
 				ins_stack_pos++;
+				ins_stack[ins_stack_pos].drwg = drawing;
 				ins_stack[ins_stack_pos].ins_ent = blk;
 				ins_stack[ins_stack_pos].prev = prev;
 				
@@ -4057,6 +4061,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 						//prev = ins_stack[ins_stack_pos].ins_ent;
 						//printf("retorna %d\n", ins_stack_pos);
 						current = prev;
+						drawing = ins_stack[ins_stack_pos].drwg;
 					}
 				}
 			}

@@ -1824,6 +1824,7 @@ int main(int argc, char** argv){
 	free(aux_mtx1);
 	nk_sdl_shutdown(gui);
 	manage_buffer(0, BUF_FREE);
+	manage_buffer2(0, BUF_FREE);
 	
 	/*-------------------------------- macro script clean-up--------------------- */
 	if (macro_script.L){

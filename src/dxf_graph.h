@@ -9,6 +9,7 @@
 
 /* for insert objects */
 struct ins_save{
+	dxf_drawing *drwg;
 	dxf_node * ins_ent, *prev;
 	double ofs_x, ofs_y, ofs_z;
 	double rot, scale_x, scale_y, scale_z;

@@ -1661,9 +1661,6 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 			}
 		}
 		
-		/* parse any xref */
-		dxf_xref_assemb (drawing);
-		
 		/* get line type scales */
 		drawing->ltscale = 1.0;
 		drawing->celtscale = 1.0;
@@ -2407,9 +2404,14 @@ dxf_drawing * dxf_xref_list(dxf_drawing *drawing, char *xref_path){
 		return NULL;
 	}
 	
+	/* load and apply the fonts required for drawing */
+	drwg->font_list = drawing->font_list;
+	drwg->dflt_font = drawing->dflt_font;
+	drwg->dflt_fonts_path = drawing->dflt_fonts_path;
+	
 	long file_size = 0;
 	int prog = 0;
-	struct Mem_buffer *file_buf = load_file_reuse2(xref_path, &file_size);
+	struct Mem_buffer *file_buf = load_file_reuse(xref_path, &file_size);
 	
 	if (!file_buf) goto xref_error;
 	
@@ -2418,7 +2420,7 @@ dxf_drawing * dxf_xref_list(dxf_drawing *drawing, char *xref_path){
 	}
 	
 	/* clear the file buffer */
-	manage_buffer2(0, BUF_RELEASE);
+	manage_buffer(0, BUF_RELEASE);
 	file_buf = NULL;
 	file_size = 0;
 	

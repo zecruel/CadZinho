@@ -3789,6 +3789,16 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					if (tmp_obj = dxf_find_attr2(current, 1)){
 						strncpy (xref_path, tmp_obj->value.s_data, DXF_MAX_CHARS);
 					}
+					dxf_drawing *xref_dwg = dxf_xref_list(drawing, xref_path);
+					
+					if (xref_dwg){
+						if ((xref_dwg->ents != NULL) && (xref_dwg->main_struct != NULL)){
+							drawing = xref_dwg;
+							current = drawing->ents->obj.content->next;
+							continue;
+						}
+					}
+					
 					#if(0)
 					list_node *vec_graph = dxf_file_parse(&xref_path[0], drawing->font_list, drawing->dflt_fonts_path);
 					if (vec_graph){
@@ -4057,11 +4067,11 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					}
 					else{
 						prev = ins_stack[ins_stack_pos].prev;
+						drawing = ins_stack[ins_stack_pos].drwg;
 						ins_stack_pos--;
 						//prev = ins_stack[ins_stack_pos].ins_ent;
 						//printf("retorna %d\n", ins_stack_pos);
 						current = prev;
-						drawing = ins_stack[ins_stack_pos].drwg;
 					}
 				}
 			}

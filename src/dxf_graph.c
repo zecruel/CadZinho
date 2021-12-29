@@ -3822,7 +3822,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					/* stop block processing ?*/
 					//current = NULL;
 					#endif
-					current = current->obj.content->next;
+					//current = current->obj.content->next;
 				}
 				else if (current->obj.content){
 					/* starts the content sweep */
@@ -4038,42 +4038,34 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				break;
 			}
 			prev = prev->master;
-			if (prev){ /* up in structure */
+			if (ins_stack_pos > 0){ /* up in structure */
 				/* try to continue on previous point in structure */
-				current = prev->next;
-				//indent --;
-				if (prev == ins_stack[ins_stack_pos].ins_ent){/* back on initial entity */
-					if (mod_idx > 0){
-						graph_list_modify_idx(list_ret,
-							ins_stack[ins_stack_pos].ofs_x,
-							ins_stack[ins_stack_pos].ofs_y,
-							ins_stack[ins_stack_pos].scale_x,
-							ins_stack[ins_stack_pos].scale_y,
-							ins_stack[ins_stack_pos].rot,
-							ins_stack[ins_stack_pos].start_idx,
-							mod_idx - 1
-							);
-						graph_list_mod_ax(list_ret,
-							ins_stack[ins_stack_pos].normal,
-							ins_stack[ins_stack_pos].elev,
-							ins_stack[ins_stack_pos].start_idx,
-							mod_idx - 1
-							);
-					}
-					if (ins_stack_pos < 1){
-						/* stop the search if back on initial entity */
-						current = NULL;
-						break;
-					}
-					else{
-						prev = ins_stack[ins_stack_pos].prev;
-						drawing = ins_stack[ins_stack_pos].drwg;
-						ins_stack_pos--;
-						//prev = ins_stack[ins_stack_pos].ins_ent;
-						//printf("retorna %d\n", ins_stack_pos);
-						current = prev;
-					}
+				
+				if (mod_idx > 0){
+					graph_list_modify_idx(list_ret,
+						ins_stack[ins_stack_pos].ofs_x,
+						ins_stack[ins_stack_pos].ofs_y,
+						ins_stack[ins_stack_pos].scale_x,
+						ins_stack[ins_stack_pos].scale_y,
+						ins_stack[ins_stack_pos].rot,
+						ins_stack[ins_stack_pos].start_idx,
+						mod_idx - 1
+						);
+					graph_list_mod_ax(list_ret,
+						ins_stack[ins_stack_pos].normal,
+						ins_stack[ins_stack_pos].elev,
+						ins_stack[ins_stack_pos].start_idx,
+						mod_idx - 1
+						);
 				}
+				prev = ins_stack[ins_stack_pos].prev;
+				drawing = ins_stack[ins_stack_pos].drwg;
+				ins_stack_pos--;
+				//prev = ins_stack[ins_stack_pos].ins_ent;
+				//printf("retorna %d\n", ins_stack_pos);
+				current = prev;
+				
+				
 			}
 			else{ /* stop the search if structure ends */
 				current = NULL;

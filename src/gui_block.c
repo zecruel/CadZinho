@@ -95,6 +95,8 @@ int gui_blk_mng (gui_obj *gui){
 	static int blk_idx = -1;
 	static int show_app_file = 0;
 	
+	static enum From {INTERACTIVE, FROM_FILE} from = INTERACTIVE;
+	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
 	gui->next_win_w = 650;
@@ -376,31 +378,56 @@ int gui_blk_mng (gui_obj *gui){
 				show_blk_edit = 0;
 			}
 		}
-		
-		if ((show_blk_create)){ /* block creation popup interface */
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "New Block", NK_WINDOW_CLOSABLE, nk_rect(200, 40, 320, 300))){
-				
-				/* enter new name */
-				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				nk_label(gui->ctx, "Name:", NK_TEXT_LEFT);
-				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, new_name, DXF_MAX_CHARS, nk_filter_default);
-				nk_label(gui->ctx, "Description:", NK_TEXT_LEFT);
-				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, gui->blk_descr, DXF_MAX_CHARS, nk_filter_default);
-				nk_checkbox_label(gui->ctx, "Text to Attributes", &gui->text2tag);
-				if(gui->text2tag){
-					nk_layout_row_dynamic(gui->ctx, 20, 2);
-					nk_label(gui->ctx, "Attrib. mark:", NK_TEXT_LEFT);
-					nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->tag_mark, DXF_MAX_CHARS, nk_filter_default);
-					nk_label(gui->ctx, "Hide mark:", NK_TEXT_LEFT);
-					nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->hide_mark, DXF_MAX_CHARS, nk_filter_default);
-					nk_label(gui->ctx, "Value mark:", NK_TEXT_LEFT);
-					nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->value_mark, DXF_MAX_CHARS, nk_filter_default);
-					nk_label(gui->ctx, "Default value:", NK_TEXT_LEFT);
-					nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->dflt_value, DXF_MAX_CHARS, nk_filter_default);
-				}
-				
-				/* confirm */
+	} else {
+		show_blk_mng = 0;
+	}
+	
+	
+	/* **************************************************** */
+	
+	
+	
+	nk_end(gui->ctx);
+	
+	
+	if ((show_blk_create)){ /* block creation popup interface */
+		if (nk_begin(gui->ctx, "New Block", nk_rect(gui->next_win_x + 100, gui->next_win_y + 50, 320, 350), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
+		//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "New Block", NK_WINDOW_CLOSABLE, nk_rect(200, 40, 320, 300))){
+			
+			/* enter new name */
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			nk_label(gui->ctx, "Name:", NK_TEXT_LEFT);
+			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, new_name, DXF_MAX_CHARS, nk_filter_default);
+			nk_label(gui->ctx, "Description:", NK_TEXT_LEFT);
+			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, gui->blk_descr, DXF_MAX_CHARS, nk_filter_default);
+			nk_checkbox_label(gui->ctx, "Text to Attributes", &gui->text2tag);
+			if(gui->text2tag){
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				nk_label(gui->ctx, "Attrib. mark:", NK_TEXT_LEFT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->tag_mark, DXF_MAX_CHARS, nk_filter_default);
+				nk_label(gui->ctx, "Hide mark:", NK_TEXT_LEFT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->hide_mark, DXF_MAX_CHARS, nk_filter_default);
+				nk_label(gui->ctx, "Value mark:", NK_TEXT_LEFT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->value_mark, DXF_MAX_CHARS, nk_filter_default);
+				nk_label(gui->ctx, "Default value:", NK_TEXT_LEFT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->dflt_value, DXF_MAX_CHARS, nk_filter_default);
+			}
+			
+			/* confirm */
+			
+			/* Tabs for select source of block, with two options:
+			- From current drawing, where the user will select elements interactively;
+			- From external drawing file; */
+			nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
+			nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
+			if (gui_tab (gui, "Interactive", from == INTERACTIVE)) from = INTERACTIVE;
+			if (gui_tab (gui, "File", from == FROM_FILE)) from = FROM_FILE;
+			nk_style_pop_vec2(gui->ctx);
+			nk_layout_row_end(gui->ctx);
+			
+			
+			nk_layout_row_dynamic(gui->ctx, 20, 2);
+			if (from == INTERACTIVE){
 				if (nk_button_label(gui->ctx, "Create")){
 					create = 0;
 					
@@ -418,24 +445,8 @@ int gui_blk_mng (gui_obj *gui){
 						show_blk_mng = 0;
 					}
 				}
-				/* cancel - close popup */
-				if (nk_button_label(gui->ctx, "Cancel")){
-					create = 0;
-					show_blk_create = 0;
-					nk_popup_close(gui->ctx);
-				}
-				
-				/* verify creation complete */
-				if (create && dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name)){
-					create = 0;
-					/* update informations */
-					blk_idx = 1;
-					/* close popup */
-					show_blk_create = 0;
-					nk_popup_close(gui->ctx);
-				}
-				
-				
+			}
+			else if (from == FROM_FILE){
 				/* ********************** test ************************ */
 				/* supported file format */
 				static const char *ext_type[] = {
@@ -467,18 +478,34 @@ int gui_blk_mng (gui_obj *gui){
 					blk_idx = -1;
 					/* close popup */
 					show_blk_create = 0;
-					nk_popup_close(gui->ctx);
+					//nk_popup_close(gui->ctx);
 				}
-				
-				nk_popup_end(gui->ctx);
-			} else {
+			}
+			
+			nk_layout_row_dynamic(gui->ctx, 20, 2);
+			
+			/* cancel - close popup */
+			if (nk_button_label(gui->ctx, "Cancel")){
 				create = 0;
 				show_blk_create = 0;
+				//nk_popup_close(gui->ctx);
 			}
+			
+			/* verify creation complete */
+			if (create && dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name)){
+				create = 0;
+				/* update informations */
+				blk_idx = 1;
+				/* close popup */
+				show_blk_create = 0;
+				//nk_popup_close(gui->ctx);
+			}
+			
+			nk_end(gui->ctx);
+		} else {
+			create = 0;
+			show_blk_create = 0;
 		}
-		
-	} else {
-		show_blk_mng = 0;
 	}
 	
 	if (show_app_file){ /* running file browser */
@@ -503,11 +530,12 @@ int gui_blk_mng (gui_obj *gui){
 			}
 		}
 	}
-	/* **************************************************** */
 	
 	
 	
-	nk_end(gui->ctx);
+	
+	
+	
 	
 	/* edit attributes definitions in block */
 	if (show_attr_edit){

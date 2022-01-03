@@ -1782,6 +1782,7 @@ int dxf_drawing_clear (dxf_drawing *drawing){
 		drawing->t_ucs = NULL;
 		drawing->t_vport = NULL;
 		drawing->t_dimst = NULL;
+		drawing->blks_rec = NULL;
 		drawing->t_appid = NULL;
 		drawing->main_struct = NULL;
 		
@@ -2390,14 +2391,15 @@ dxf_drawing * dxf_xref_list(dxf_drawing *drawing, char *xref_path){
 	
 	if (drawing->xref_list == NULL) return NULL; /* exit if fail */
 	
-	struct dxf_xref *xref = malloc(sizeof(struct dxf_xref));
-	if (!xref) return NULL;
-	
 	/* verify if xref is already loaded */
 	dxf_drawing *drwg = dxf_get_dwg_list(drawing->xref_list, xref_path);
 	if (drwg) return drwg; /* return if found */
 	
-	/* alloc the node structure */
+	/* alloc a new xref element to put in list*/
+	struct dxf_xref *xref = malloc(sizeof(struct dxf_xref));
+	if (!xref) return NULL;
+	
+	/* alloc a new drawing structure structure */
 	drwg = dxf_drawing_new(DWG_LIFE);
 	if (!drwg){
 		free(xref);
@@ -2409,12 +2411,14 @@ dxf_drawing * dxf_xref_list(dxf_drawing *drawing, char *xref_path){
 	drwg->dflt_font = drawing->dflt_font;
 	drwg->dflt_fonts_path = drawing->dflt_fonts_path;
 	
+	/* load file in a temporay buffer */
 	long file_size = 0;
 	int prog = 0;
 	struct Mem_buffer *file_buf = load_file_reuse(xref_path, &file_size);
 	
 	if (!file_buf) goto xref_error;
 	
+	/* parse the drawing */
 	while (dxf_read (drwg, file_buf->buffer, file_size, &prog) > 0){
 		
 	}
@@ -2430,11 +2434,12 @@ dxf_drawing * dxf_xref_list(dxf_drawing *drawing, char *xref_path){
 	xref->drwg = drwg;
 	strncpy(xref->path, xref_path, DXF_MAX_CHARS);
 	
-	list_node * new_node = list_new(drwg, DWG_LIFE);
+	list_node * new_node = list_new(xref, DWG_LIFE);
 	list_push(drawing->xref_list, new_node);
 	
 	return drwg;
 	
+	/* some error */
 	xref_error:
 	free(xref);
 	free(drwg);

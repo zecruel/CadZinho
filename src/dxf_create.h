@@ -117,6 +117,10 @@ int dxf_new_blk_file (dxf_drawing *drawing, char *name, char *descr,
 	int txt2attr, char *mark, char *hide_mark,  char *value_mark, char *dflt_value,
 	char *layer, char * path,
 	dxf_node **block_rec, dxf_node **block, int pool);
+	
+int dxf_new_block_xref (dxf_drawing *drawing, char *name, char *descr,
+	char *layer, char *path,
+	dxf_node **block_rec, dxf_node **block, int pool);
 
 dxf_node * dxf_new_insert (char *name, double x0, double y0, double z0,
 	int color, char *layer, char *ltype, int lw, int paper, int pool);

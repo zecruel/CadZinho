@@ -87,7 +87,7 @@ int gui_blk_mng (gui_obj *gui){
 	int i, j, show_blk_mng = 1;
 	
 	static int show_hidden_blks = 0, show_blk_edit = 0, show_attr_edit = 0;
-	static int create = 0, show_blk_create = 0;
+	static int create = 0, show_blk_create = 0, xref = 0, xref_full = 0;
 	static char txt[DXF_MAX_CHARS+1] = "";
 	static char descr[DXF_MAX_CHARS+1] = "";
 	static char new_name[DXF_MAX_CHARS+1] = "";
@@ -391,9 +391,8 @@ int gui_blk_mng (gui_obj *gui){
 	nk_end(gui->ctx);
 	
 	
-	if ((show_blk_create)){ /* block creation popup interface */
+	if ((show_blk_create)){ /* block creation window interface */
 		if (nk_begin(gui->ctx, "New Block", nk_rect(gui->next_win_x + 10, gui->next_win_y + 30, 320, 450), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
-		//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "New Block", NK_WINDOW_CLOSABLE, nk_rect(200, 40, 320, 300))){
 			
 			/* enter new name */
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
@@ -402,7 +401,7 @@ int gui_blk_mng (gui_obj *gui){
 			nk_label(gui->ctx, "Description:", NK_TEXT_LEFT);
 			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, gui->blk_descr, DXF_MAX_CHARS, nk_filter_default);
 			nk_checkbox_label(gui->ctx, "Text to Attributes", &gui->text2tag);
-			if(gui->text2tag){
+			if(gui->text2tag && !xref){
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				nk_label(gui->ctx, "Attrib. mark:", NK_TEXT_LEFT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->tag_mark, DXF_MAX_CHARS, nk_filter_default);
@@ -430,8 +429,9 @@ int gui_blk_mng (gui_obj *gui){
 			nk_layout_row_end(gui->ctx);
 			
 			
-			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			
 			if (from == INTERACTIVE){
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				if (nk_button_label(gui->ctx, "Proceed")){
 					create = 0;
 					/* verify if  block name is valid */
@@ -454,13 +454,12 @@ int gui_blk_mng (gui_obj *gui){
 				}
 			}
 			else if (from == FROM_FILE){
-				//nk_layout_row(gui->ctx, NK_DYNAMIC, 22, 2, (float[]){0.75, 0.25});
 				
-				/* manual entry to file path */
+				nk_layout_row(gui->ctx, NK_DYNAMIC, 22, 2, (float[]){0.5, 0.25});
+				
 				nk_label(gui->ctx, "Path:", NK_TEXT_LEFT);
-				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, path, DXF_MAX_CHARS, nk_filter_default);
 				
-				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				
 				if (nk_button_label(gui->ctx, "Browse")){
 					/* supported file format */
 					static const char *ext_type[] = {
@@ -486,7 +485,17 @@ int gui_blk_mng (gui_obj *gui){
 					gui->curr_path[0] = 0;
 				}
 				
-				//nk_layout_row_dynamic(gui->ctx, 20, 2);
+				/* manual entry to file path */
+				nk_layout_row_dynamic(gui->ctx, 20, 1);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, path, DXF_MAX_CHARS, nk_filter_default);
+				
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				nk_checkbox_label(gui->ctx, "Only reference", &xref);
+				if (xref){
+					nk_checkbox_label(gui->ctx, "Full path", &xref_full);
+				}
+				
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				if (nk_button_label(gui->ctx, "Create")){
 					/* verify if  block name is valid */
 					if(strlen(new_name) < 1){
@@ -497,22 +506,32 @@ int gui_blk_mng (gui_obj *gui){
 						snprintf(gui->log_msg, 63, "Error: exists Block with same name");
 					}
 					else{
-						create = 1;
-						strncpy(gui->blk_name, new_name, DXF_MAX_CHARS);
-						
 						dxf_node *blkrec = NULL, *blk_new = NULL;
-						if (dxf_new_blk_file (gui->drawing, gui->blk_name, gui->blk_descr,
-							NULL,//(double []){0.0, 0.0, 0.0},
-							gui->text2tag, gui->tag_mark, gui->hide_mark, gui->value_mark, gui->dflt_value,
-							"0", path, &blkrec, &blk_new, DWG_LIFE))
-						{
+						int ok = 0;
+						if (xref){
+							if (xref_full){
+								ok =  dxf_new_block_xref (gui->drawing, new_name, gui->blk_descr,
+									"0", path, &blkrec, &blk_new, DWG_LIFE);
+							} else {
+								ok =  dxf_new_block_xref (gui->drawing, new_name, gui->blk_descr,
+									"0", get_filename(path), &blkrec, &blk_new, DWG_LIFE);
+							}
+						} else {
+							ok = dxf_new_blk_file (gui->drawing, new_name, gui->blk_descr,
+								NULL,//(double []){0.0, 0.0, 0.0},
+								gui->text2tag, gui->tag_mark, gui->hide_mark, gui->value_mark, gui->dflt_value,
+								"0", path, &blkrec, &blk_new, DWG_LIFE);
+						}
+						if (ok){
 							do_add_entry(&gui->list_do, "NEW BLOCK"); /* undo/redo list*/
 							do_add_item(gui->list_do.current, NULL, blkrec); /* undo/redo list*/
 							do_add_item(gui->list_do.current, NULL, blk_new); /* undo/redo list*/
 							
 							
 							/* update informations */
+							create = 1;
 							blk_idx = -1;
+							strncpy(gui->blk_name, new_name, DXF_MAX_CHARS);
 							/* close popup */
 							show_blk_create = 0;
 						} else {
@@ -522,7 +541,7 @@ int gui_blk_mng (gui_obj *gui){
 				}
 			}
 			
-			nk_layout_row_dynamic(gui->ctx, 20, 2);
+			//nk_layout_row_dynamic(gui->ctx, 20, 2);
 			
 			/* cancel - close popup */
 			if (nk_button_label(gui->ctx, "Cancel")){
@@ -540,12 +559,11 @@ int gui_blk_mng (gui_obj *gui){
 				show_blk_create = 0;
 				//nk_popup_close(gui->ctx);
 			}
-			
-			nk_end(gui->ctx);
 		} else {
 			create = 0;
 			show_blk_create = 0;
 		}
+		nk_end(gui->ctx);
 	}
 	
 	if (show_app_file){ /* running file browser */

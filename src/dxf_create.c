@@ -1292,6 +1292,58 @@ int dxf_new_blk_file (dxf_drawing *drawing, char *name, char *descr,
 	return ok;
 }
 
+int dxf_new_block_xref (dxf_drawing *drawing, char *name, char *descr,
+	char *layer, char *path,
+	dxf_node **block_rec, dxf_node **block, int pool)
+{
+	int ok = 0;
+	
+	/* init return values */
+	*block_rec = NULL;
+	*block = NULL;
+	
+	if (!drawing || !name || !path) return 0;
+	if (strlen(path) < 1) return 0;
+	
+	dxf_node *blkrec = NULL, *blk = NULL, *endblk = NULL, *handle = NULL;
+	dxf_node *obj, *new_ent, *text, *attdef;
+	
+	/* verify if block not exist */
+	if (dxf_find_obj_descr2(drawing->blks, "BLOCK", name) != NULL) return 0;
+		
+	/* create BLOCK_RECORD table entry*/
+	blkrec = dxf_new_blkrec (name, pool);
+	ok = ent_handle(drawing, blkrec);
+	if (ok) handle = dxf_find_attr2(blkrec, 5); ok = 0;
+	
+	/* begin block */
+	if (handle) blk = dxf_new_begblk (name, layer, (char *)handle->value.s_data, pool);
+	/* change the block description */
+	dxf_attr_change(blk, 4, (void *)descr);
+	
+	/* set xref flag*/
+	dxf_attr_change(blk, 70, (void *)(int []){4});
+	/* path of xref */
+	dxf_attr_change(blk, 1, (void *)path);
+	
+	/* get a handle */
+	ok = ent_handle(drawing, blk);
+	/* use the handle to owning the ENDBLK ent */
+	if (ok) handle = dxf_find_attr2(blk, 5); ok = 0;
+	if (handle) endblk = dxf_new_endblk (layer, (char *)handle->value.s_data, pool);
+	/* end the block*/
+	if (endblk) ok = ent_handle(drawing, endblk);
+	if (ok) ok = dxf_obj_append(blk, endblk);
+	
+	/*attach to blocks section*/
+	if (ok) ok = dxf_obj_append(drawing->blks_rec, blkrec);
+	if (ok) *block_rec = blkrec;
+	if (ok) ok = dxf_obj_append(drawing->blks, blk);
+	if (ok) *block = blk;
+	
+	return ok;
+}
+
 dxf_node * dxf_new_insert (char *name, double x0, double y0, double z0,
 int color, char *layer, char *ltype, int lw, int paper, int pool){
 	/* create a new INSERT */

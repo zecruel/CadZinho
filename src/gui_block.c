@@ -92,6 +92,7 @@ int gui_blk_mng (gui_obj *gui){
 	static char descr[DXF_MAX_CHARS+1] = "";
 	static char new_name[DXF_MAX_CHARS+1] = "";
 	static char new_descr[DXF_MAX_CHARS+1] = "";
+	static char path[DXF_MAX_CHARS+1] = "";
 	static int blk_idx = -1;
 	static int show_app_file = 0;
 	
@@ -391,7 +392,7 @@ int gui_blk_mng (gui_obj *gui){
 	
 	
 	if ((show_blk_create)){ /* block creation popup interface */
-		if (nk_begin(gui->ctx, "New Block", nk_rect(gui->next_win_x + 100, gui->next_win_y + 50, 320, 350), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
+		if (nk_begin(gui->ctx, "New Block", nk_rect(gui->next_win_x + 10, gui->next_win_y + 30, 320, 450), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
 		//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "New Block", NK_WINDOW_CLOSABLE, nk_rect(200, 40, 320, 300))){
 			
 			/* enter new name */
@@ -415,6 +416,9 @@ int gui_blk_mng (gui_obj *gui){
 			
 			/* confirm */
 			
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			nk_label(gui->ctx, "Create block from:", NK_TEXT_LEFT);
+			
 			/* Tabs for select source of block, with two options:
 			- From current drawing, where the user will select elements interactively;
 			- From external drawing file; */
@@ -426,13 +430,16 @@ int gui_blk_mng (gui_obj *gui){
 			nk_layout_row_end(gui->ctx);
 			
 			
-			nk_layout_row_dynamic(gui->ctx, 20, 2);
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			if (from == INTERACTIVE){
-				if (nk_button_label(gui->ctx, "Create")){
+				if (nk_button_label(gui->ctx, "Proceed")){
 					create = 0;
-					
+					/* verify if  block name is valid */
+					if(strlen(new_name) < 1){
+						snprintf(gui->log_msg, 63, "Error: ivalid Block name");
+					}
 					/* verify if exists other block with same name */
-					if(dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", new_name)){
+					else if(dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", new_name)){
 						snprintf(gui->log_msg, 63, "Error: exists Block with same name");
 					}
 					else{ /* proceed to create */
@@ -447,19 +454,24 @@ int gui_blk_mng (gui_obj *gui){
 				}
 			}
 			else if (from == FROM_FILE){
-				/* ********************** test ************************ */
-				/* supported file format */
-				static const char *ext_type[] = {
-					"DXF",
-					"*"
-				};
-				static const char *ext_descr[] = {
-					"Drawing files (.dxf)",
-					"All files (*)"
-				};
-				#define FILTER_COUNT 2
-				if (nk_button_label(gui->ctx, "File")){
-					strncpy(gui->blk_name, new_name, DXF_MAX_CHARS);
+				//nk_layout_row(gui->ctx, NK_DYNAMIC, 22, 2, (float[]){0.75, 0.25});
+				
+				/* manual entry to file path */
+				nk_label(gui->ctx, "Path:", NK_TEXT_LEFT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, path, DXF_MAX_CHARS, nk_filter_default);
+				
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				if (nk_button_label(gui->ctx, "Browse")){
+					/* supported file format */
+					static const char *ext_type[] = {
+						"DXF",
+						"*"
+					};
+					static const char *ext_descr[] = {
+						"Drawing files (.dxf)",
+						"All files (*)"
+					};
+					#define FILTER_COUNT 2
 					
 					show_app_file = 1;
 					/* set filter for suported output formats */
@@ -472,13 +484,41 @@ int gui_blk_mng (gui_obj *gui){
 					
 					gui->show_file_br = 1;
 					gui->curr_path[0] = 0;
-					
-					create = 0;
-					/* update informations */
-					blk_idx = -1;
-					/* close popup */
-					show_blk_create = 0;
-					//nk_popup_close(gui->ctx);
+				}
+				
+				//nk_layout_row_dynamic(gui->ctx, 20, 2);
+				if (nk_button_label(gui->ctx, "Create")){
+					/* verify if  block name is valid */
+					if(strlen(new_name) < 1){
+						snprintf(gui->log_msg, 63, "Error: ivalid Block name");
+					}
+					/* verify if exists other block with same name */
+					else if(dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", new_name)){
+						snprintf(gui->log_msg, 63, "Error: exists Block with same name");
+					}
+					else{
+						create = 1;
+						strncpy(gui->blk_name, new_name, DXF_MAX_CHARS);
+						
+						dxf_node *blkrec = NULL, *blk_new = NULL;
+						if (dxf_new_blk_file (gui->drawing, gui->blk_name, gui->blk_descr,
+							NULL,//(double []){0.0, 0.0, 0.0},
+							gui->text2tag, gui->tag_mark, gui->hide_mark, gui->value_mark, gui->dflt_value,
+							"0", path, &blkrec, &blk_new, DWG_LIFE))
+						{
+							do_add_entry(&gui->list_do, "NEW BLOCK"); /* undo/redo list*/
+							do_add_item(gui->list_do.current, NULL, blkrec); /* undo/redo list*/
+							do_add_item(gui->list_do.current, NULL, blk_new); /* undo/redo list*/
+							
+							
+							/* update informations */
+							blk_idx = -1;
+							/* close popup */
+							show_blk_create = 0;
+						} else {
+							snprintf(gui->log_msg, 63, "Error: in Block creation from file");
+						}
+					}
 				}
 			}
 			
@@ -514,20 +554,7 @@ int gui_blk_mng (gui_obj *gui){
 			gui->show_file_br = 0;
 			show_app_file = 0;
 			/* update output path */
-			//strncpy(path, gui->curr_path, DXF_MAX_CHARS - 1);
-			dxf_node *blkrec = NULL, *blk_new = NULL;
-			if (dxf_new_blk_file (gui->drawing, gui->blk_name, gui->blk_descr,
-				NULL,//(double []){0.0, 0.0, 0.0},
-				gui->text2tag, gui->tag_mark, gui->hide_mark, gui->value_mark, gui->dflt_value,
-				"0", gui->curr_path, &blkrec, &blk_new, DWG_LIFE))
-			{
-				do_add_entry(&gui->list_do, "NEW BLOCK"); /* undo/redo list*/
-				do_add_item(gui->list_do.current, NULL, blkrec); /* undo/redo list*/
-				do_add_item(gui->list_do.current, NULL, blk_new); /* undo/redo list*/
-				
-				
-				//nk_popup_close(gui->ctx);
-			}
+			strncpy(path, gui->curr_path, DXF_MAX_CHARS);
 		}
 	}
 	

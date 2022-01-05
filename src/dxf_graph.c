@@ -3798,31 +3798,8 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 							continue;
 						}
 					}
-					
-					#if(0)
-					list_node *vec_graph = dxf_file_parse(&xref_path[0], drawing->font_list, drawing->dflt_fonts_path);
-					if (vec_graph){
-						//current->obj.graphics = vec_graph;
-						
-						list_node *curr_node = vec_graph->next;
-						
-						while (curr_node != NULL){
-							if (curr_node->data){
-								curr_graph = (graph_obj *)curr_node->data;
-								/* store the graph in the return vector */
-								list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-								mod_idx++;
-							}
-							curr_node = curr_node->next;
-						}
-				
-					}
-					
-					/* TODO */ 
-					/* stop block processing ?*/
-					//current = NULL;
-					#endif
-					//current = current->obj.content->next;
+					/* continue block processing, if xref load fails */
+					current = current->obj.content->next;
 				}
 				else if (current->obj.content){
 					/* starts the content sweep */

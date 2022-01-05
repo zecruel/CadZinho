@@ -1058,64 +1058,72 @@ int main(int argc, char** argv){
 		if((gui->action == FILE_OPEN) && (gui->path_ok)) {
 			gui->action = NONE; gui->path_ok = 0;
 			
-			dxf_mem_pool(ZERO_DXF, DWG_LIFE);
-			graph_mem_pool(ZERO_GRAPH, DWG_LIFE);
-			graph_mem_pool(ZERO_LINE, DWG_LIFE);
-			
-			wait_open = 1;
-			gui->progress = 0;
-			
 			file_buf = load_file_reuse(gui->curr_path, &file_size);
 			
-			/* load and apply the fonts required for drawing */
-			gui->drawing->font_list = gui->font_list;
-			gui->drawing->dflt_font = get_font_list(gui->font_list, "txt.shx");
-			gui->drawing->dflt_fonts_path = gui->dflt_fonts_path;
-			
-			open_prg = dxf_read(gui->drawing, file_buf->buffer, file_size, &gui->progress);
-			
-			low_proc = 0;
-			progr_win = 1;
-			
-			SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
-			
-			/* add file to history */
-			if (gui->hist_new && open_prg >= 0){
-				/* get position in array, considering as circular buffer */
-				int pos = (gui->drwg_hist_wr + gui->drwg_hist_head) % DRWG_HIST_MAX;
-				/* put file path in history */
-				strncpy (gui->drwg_hist[pos], gui->curr_path , DXF_MAX_CHARS);
-				/* history buffer is full -> change the head of buffer to overwrite first entry */
-				if(gui->drwg_hist_wr >= DRWG_HIST_MAX) gui->drwg_hist_head++;
-				/* adjust circular buffer head */
-				gui->drwg_hist_head %= DRWG_HIST_MAX;
+			if (file_buf){
+				/* change dir to main drawing folder */
+				dir_change(get_dir(gui->curr_path));
 				
-				/* adjust buffer parameters to next entries */
-				if (gui->drwg_hist_pos < gui->drwg_hist_size && gui->drwg_hist_pos < DRWG_HIST_MAX - 1)
-					gui->drwg_hist_pos ++; /* position */
-				if (gui->drwg_hist_wr < DRWG_HIST_MAX){
-					gui->drwg_hist_wr ++; /* size */
-					gui->drwg_hist_size = gui->drwg_hist_wr; /* next write position */
+				dxf_mem_pool(ZERO_DXF, DWG_LIFE);
+				graph_mem_pool(ZERO_GRAPH, DWG_LIFE);
+				graph_mem_pool(ZERO_LINE, DWG_LIFE);
+				
+				wait_open = 1;
+				gui->progress = 0;
+			
+				/* load and apply the fonts required for drawing */
+				gui->drawing->font_list = gui->font_list;
+				gui->drawing->dflt_font = get_font_list(gui->font_list, "txt.shx");
+				gui->drawing->dflt_fonts_path = gui->dflt_fonts_path;
+				
+				open_prg = dxf_read(gui->drawing, file_buf->buffer, file_size, &gui->progress);
+				
+				low_proc = 0;
+				progr_win = 1;
+				
+				SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
+				
+				/* add file to history */
+				if (gui->hist_new && open_prg >= 0){
+					/* get position in array, considering as circular buffer */
+					int pos = (gui->drwg_hist_wr + gui->drwg_hist_head) % DRWG_HIST_MAX;
+					/* put file path in history */
+					strncpy (gui->drwg_hist[pos], gui->curr_path , DXF_MAX_CHARS);
+					/* history buffer is full -> change the head of buffer to overwrite first entry */
+					if(gui->drwg_hist_wr >= DRWG_HIST_MAX) gui->drwg_hist_head++;
+					/* adjust circular buffer head */
+					gui->drwg_hist_head %= DRWG_HIST_MAX;
+					
+					/* adjust buffer parameters to next entries */
+					if (gui->drwg_hist_pos < gui->drwg_hist_size && gui->drwg_hist_pos < DRWG_HIST_MAX - 1)
+						gui->drwg_hist_pos ++; /* position */
+					if (gui->drwg_hist_wr < DRWG_HIST_MAX){
+						gui->drwg_hist_wr ++; /* size */
+						gui->drwg_hist_size = gui->drwg_hist_wr; /* next write position */
+					}
+					gui->hist_new = 0;
+					
+					/* put file path in recent file list */
+					strncpy (gui->drwg_recent[gui->drwg_rcnt_pos], gui->curr_path , DXF_MAX_CHARS);
+					if (gui->drwg_rcnt_pos < DRWG_RECENT_MAX - 1)
+						gui->drwg_rcnt_pos++;
+					else gui->drwg_rcnt_pos = 0; /* circular buffer */
+					
+					if (gui->drwg_rcnt_size < DRWG_RECENT_MAX)
+						gui->drwg_rcnt_size++;
+					
 				}
-				gui->hist_new = 0;
-				
-				/* put file path in recent file list */
-				strncpy (gui->drwg_recent[gui->drwg_rcnt_pos], gui->curr_path , DXF_MAX_CHARS);
-				if (gui->drwg_rcnt_pos < DRWG_RECENT_MAX - 1)
-					gui->drwg_rcnt_pos++;
-				else gui->drwg_rcnt_pos = 0; /* circular buffer */
-				
-				if (gui->drwg_rcnt_size < DRWG_RECENT_MAX)
-					gui->drwg_rcnt_size++;
-				
+				if (open_prg >= 0){
+					strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
+					strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
+					
+					char title[DXF_MAX_CHARS] = "CadZinho - ";
+					strncat (title, gui->dwg_file, DXF_MAX_CHARS);
+					SDL_SetWindowTitle(window, title);
+				}
 			}
-			if (open_prg >= 0){
-				strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
-				strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
-				
-				char title[DXF_MAX_CHARS] = "CadZinho - ";
-				strncat (title, gui->dwg_file, DXF_MAX_CHARS);
-				SDL_SetWindowTitle(window, title);
+			else {
+				snprintf(gui->log_msg, 63, "Error in opening drawing: Not file");
 			}
 		}
 		else if((gui->action == FILE_SAVE) && (gui->path_ok)){

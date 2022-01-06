@@ -3794,6 +3794,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					if (xref_dwg){
 						if ((xref_dwg->ents != NULL) && (xref_dwg->main_struct != NULL)){
 							drawing = xref_dwg;
+							drawing->ents->master = current; /* make current block as master object */
 							current = drawing->ents->obj.content->next;
 							continue;
 						}
@@ -3924,8 +3925,12 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				ins_stack_pos++;
 				ins_stack[ins_stack_pos].drwg = drawing;
 				ins_stack[ins_stack_pos].ins_ent = blk;
-				ins_stack[ins_stack_pos].prev = prev;
-				
+				if (current == NULL) {
+					ins_stack[ins_stack_pos].prev = insert_ent;
+				}
+				else {
+					ins_stack[ins_stack_pos].prev = prev;
+				}
 				if (ent_type == DXF_INSERT){
 					ins_stack[ins_stack_pos].ofs_x = pt1_x;
 					ins_stack[ins_stack_pos].ofs_y = pt1_y;
@@ -4009,42 +4014,70 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 		while (current == NULL){
 			/* end of list sweeping */
 			/* try to back in structure hierarchy */
-			if (prev == ent){ /* stop the search if back on initial entity */
-				//printf("para\n");
+			
+			prev = prev->master;
+			if (prev){ /* up in structure */
+				/* try to continue on previous point in structure */
+				//current = prev->next;
+				//indent --;
+				if (prev == ins_stack[ins_stack_pos].ins_ent){/* back on initial entity */
+					if (mod_idx > 0){
+						graph_list_modify_idx(list_ret,
+							0.0,
+							0.0,
+							1.0,
+							1.0,
+							ins_stack[ins_stack_pos].rot,
+							ins_stack[ins_stack_pos].start_idx,
+							mod_idx - 1
+							);
+						graph_list_modify_idx(list_ret,
+							0.0,
+							0.0,
+							ins_stack[ins_stack_pos].scale_x,
+							ins_stack[ins_stack_pos].scale_y,
+							0.0,
+							ins_stack[ins_stack_pos].start_idx,
+							mod_idx - 1
+							);
+						graph_list_modify_idx(list_ret,
+							ins_stack[ins_stack_pos].ofs_x,
+							ins_stack[ins_stack_pos].ofs_y,
+							1.0,
+							1.0,
+							0.0,
+							ins_stack[ins_stack_pos].start_idx,
+							mod_idx - 1
+							);
+						graph_list_mod_ax(list_ret,
+							ins_stack[ins_stack_pos].normal,
+							ins_stack[ins_stack_pos].elev,
+							ins_stack[ins_stack_pos].start_idx,
+							mod_idx - 1
+							);
+					}
+					if (ins_stack_pos < 1){
+						/* stop the search if back on initial entity */
+						current = NULL;
+						break;
+					}
+					else{
+						prev = ins_stack[ins_stack_pos].prev;
+						drawing = ins_stack[ins_stack_pos].drwg;
+						ins_stack_pos--;
+						//prev = ins_stack[ins_stack_pos].ins_ent;
+						//printf("retorna %d\n", ins_stack_pos);
+						current = prev->next;
+						
+					}
+				}
+			}
+			else{ /* stop the search if structure ends */
 				current = NULL;
 				break;
 			}
-			prev = prev->master;
-			if (ins_stack_pos > 0){ /* up in structure */
-				/* try to continue on previous point in structure */
-				
-				if (mod_idx > 0){
-					graph_list_modify_idx(list_ret,
-						ins_stack[ins_stack_pos].ofs_x,
-						ins_stack[ins_stack_pos].ofs_y,
-						ins_stack[ins_stack_pos].scale_x,
-						ins_stack[ins_stack_pos].scale_y,
-						ins_stack[ins_stack_pos].rot,
-						ins_stack[ins_stack_pos].start_idx,
-						mod_idx - 1
-						);
-					graph_list_mod_ax(list_ret,
-						ins_stack[ins_stack_pos].normal,
-						ins_stack[ins_stack_pos].elev,
-						ins_stack[ins_stack_pos].start_idx,
-						mod_idx - 1
-						);
-				}
-				prev = ins_stack[ins_stack_pos].prev;
-				drawing = ins_stack[ins_stack_pos].drwg;
-				ins_stack_pos--;
-				//prev = ins_stack[ins_stack_pos].ins_ent;
-				//printf("retorna %d\n", ins_stack_pos);
-				current = prev;
-				
-				
-			}
-			else{ /* stop the search if structure ends */
+			if (prev == ent){ /* stop the search if back on initial entity */
+				//printf("para\n");
 				current = NULL;
 				break;
 			}

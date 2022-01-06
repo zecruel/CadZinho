@@ -1754,7 +1754,7 @@ int main(int argc, char** argv){
 		
 		nk_clear(gui->ctx); /*IMPORTANT */
 		if (low_proc){
-			SDL_Delay(30);
+			SDL_Delay(20);
 			SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEMOTION);
 		}
 		

@@ -12,6 +12,7 @@ struct ins_save{
 	dxf_drawing *drwg;
 	dxf_node * ins_ent, *prev;
 	double ofs_x, ofs_y, ofs_z;
+	double blk_x, blk_y, blk_z;
 	double rot, scale_x, scale_y, scale_z;
 	int color, ltype, lw;
 	int start_idx, end_idx;

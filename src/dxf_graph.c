@@ -3428,6 +3428,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 		.drwg = drawing,
 		.ins_ent = ent, .prev = NULL,
 		.ofs_x = 0.0, .ofs_y =0.0, .ofs_z =0.0,
+		.blk_x = 0.0, .blk_y =0.0, .blk_z =0.0,
 		.rot = 0.0, .scale_x = 1.0 , .scale_y = 1.0, .scale_z = 1.0,
 		.color = 7, .ltype = 0, .lw =0,
 		.normal = {0.0, 0.0, 1.0},
@@ -3443,14 +3444,15 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 	double scale_x = 1.0, scale_y = 1.0, scale_z = 1.0;
 	double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0;
 	
-	char handle[DXF_MAX_CHARS], l_type[DXF_MAX_CHARS], layer[DXF_MAX_CHARS];
-	char name1[DXF_MAX_CHARS], name2[DXF_MAX_CHARS], comment[DXF_MAX_CHARS];
+	char handle[DXF_MAX_CHARS] = "", l_type[DXF_MAX_CHARS] = "", layer[DXF_MAX_CHARS] = "";
+	char name1[DXF_MAX_CHARS] = "", name2[DXF_MAX_CHARS] = "", comment[DXF_MAX_CHARS] = "";
+	char xref_path[DXF_MAX_CHARS+1] = "";
 	
 	int color = 256, paper = 0;
 	
 	/*flags*/
 	int pt1 = 0;
-	int i;
+	int i, ent_flag = 0;
 	int blk_flag = 0;
 	
 	if (list_ret){
@@ -3774,37 +3776,10 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				ent_type = DXF_BLK;
 				blk_flag = 1;
 				
-				dxf_node *tmp_obj;
-				int xref = 0;
-				char xref_path[DXF_MAX_CHARS+1];
-				
-				
-				/* verify if block is a external reference */
-				if (tmp_obj = dxf_find_attr2(current, 70)){
-					xref = tmp_obj->value.i_data & 4;
-				}
-				if (xref) {
-					
-					xref_path[0] = 0;
-					if (tmp_obj = dxf_find_attr2(current, 1)){
-						strncpy (xref_path, tmp_obj->value.s_data, DXF_MAX_CHARS);
-					}
-					dxf_drawing *xref_dwg = dxf_xref_list(drawing, xref_path);
-					
-					if (xref_dwg){
-						if ((xref_dwg->ents != NULL) && (xref_dwg->main_struct != NULL)){
-							drawing = xref_dwg;
-							drawing->ents->master = current; /* make current block as master object */
-							current = drawing->ents->obj.content->next;
-							continue;
-						}
-					}
-					/* continue block processing, if xref load fails */
-					current = current->obj.content->next;
-				}
-				else if (current->obj.content){
+				if (current->obj.content){
 					/* starts the content sweep */
 					current = current->obj.content->next;
+					prev = current;
 					continue;
 				}
 			}
@@ -3833,6 +3808,9 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					break;
 				case 3:
 					strcpy(name2, current->value.s_data);
+					break;
+				case 1:
+					strcpy(xref_path, current->value.s_data);
 					break;
 				case 5:
 					strcpy(handle, current->value.s_data);
@@ -3879,6 +3857,9 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				case 67:
 					paper = current->value.i_data;
 					//printf("Paper %d\n", paper);
+					break;
+				case 70:
+					ent_flag = current->value.i_data;
 					break;
 				case 210:
 					extru_x = current->value.d_data;
@@ -3935,6 +3916,9 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					ins_stack[ins_stack_pos].ofs_x = pt1_x;
 					ins_stack[ins_stack_pos].ofs_y = pt1_y;
 					ins_stack[ins_stack_pos].ofs_z = pt1_z;
+					ins_stack[ins_stack_pos].blk_x = 0.0;
+					ins_stack[ins_stack_pos].blk_y = 0.0;
+					ins_stack[ins_stack_pos].blk_z = 0.0;
 					ins_stack[ins_stack_pos].scale_x = scale_x;
 					ins_stack[ins_stack_pos].scale_y = scale_y;
 					ins_stack[ins_stack_pos].scale_z = scale_z;
@@ -3951,6 +3935,9 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					ins_stack[ins_stack_pos].ofs_x = 0.0;
 					ins_stack[ins_stack_pos].ofs_y = 0.0;
 					ins_stack[ins_stack_pos].ofs_z = 0.0;
+					ins_stack[ins_stack_pos].blk_x = 0.0;
+					ins_stack[ins_stack_pos].blk_y = 0.0;
+					ins_stack[ins_stack_pos].blk_z = 0.0;
 					ins_stack[ins_stack_pos].scale_x = 1.0;
 					ins_stack[ins_stack_pos].scale_y = 1.0;
 					ins_stack[ins_stack_pos].scale_z = 1.0;
@@ -3987,21 +3974,44 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				comment[0] = 0;
 				name1[0] = 0;
 				name2[0] = 0;
+				xref_path[0] = 0;
 				
 				color = 256; paper= 0;
 				
 				/*clear flags*/
 				pt1 = 0;
+				ent_flag = 0;
 				continue;
 			}
 		}
 		
 		else if (((blk_flag != 0) && (current == NULL))||
-			((blk_flag != 0) && (current != NULL) && (current != blk) && (current->type == DXF_ENT))){
+			((blk_flag != 0) && (current != NULL) && (current != blk) && (current->type == DXF_ENT)))
+		{
 			blk_flag = 0;
 			//p_space = paper;
 			
 			//printf("Bloco %0.2f, %0.2f, %0.2f\n", pt1_x, pt1_y, pt1_z);
+			
+			/* adjust block orign */
+			ins_stack[ins_stack_pos].blk_x = pt1_x;
+			ins_stack[ins_stack_pos].blk_y = pt1_y;
+			ins_stack[ins_stack_pos].blk_z = pt1_z;
+			
+			/* verify if block is a external reference */
+			if (ent_flag & 4) {
+				
+				dxf_drawing *xref_dwg = dxf_xref_list(drawing, xref_path);
+				
+				if (xref_dwg){
+					if ((xref_dwg->ents != NULL) && (xref_dwg->main_struct != NULL)){
+						drawing = xref_dwg;
+						drawing->ents->master = current; /* make current block as master object */
+						current = drawing->ents->obj.content->next;
+						continue;
+					}
+				}
+			}
 		}
 		
 		if (prev == ent){ /* stop the search if back on initial entity */
@@ -4022,6 +4032,15 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				//indent --;
 				if (prev == ins_stack[ins_stack_pos].ins_ent){/* back on initial entity */
 					if (mod_idx > 0){
+						graph_list_modify_idx(list_ret,
+							-ins_stack[ins_stack_pos].blk_x,
+							-ins_stack[ins_stack_pos].blk_y,
+							1.0,
+							1.0,
+							0.0,
+							ins_stack[ins_stack_pos].start_idx,
+							mod_idx - 1
+							);
 						graph_list_modify_idx(list_ret,
 							0.0,
 							0.0,

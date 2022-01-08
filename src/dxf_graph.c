@@ -1262,10 +1262,21 @@ graph_obj * dxf_spline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 	/* initialize the knots vector with first values in curve*/
 	for (i = 0; i< 20; i++) knots[i] = 0.0;
 	curr_knot = dxf_find_attr_i2(start, NULL, 40, 0);
-	knot_jump = step * 1e-5; /* ace in the hole - jump of cat */
 	for (i = 0;  (i < num_knots) && (curr_knot); i++){
-		knots[i] = curr_knot->value.d_data + knot_jump;
+		knots[i] = curr_knot->value.d_data;
 		curr_knot = dxf_find_attr_i2(curr_knot, NULL, 40, 1);
+	}
+	
+	/* add a small value in each knot to prevent equality */
+	if (n_ctrl == num_pts){
+		step = (knots[num_knots - 1] - knots[0])/num_seg;
+	}
+	else {
+		step = (knots[num_knots - order - 1] - knots[order])/num_seg;
+	}
+	knot_jump = step * 1e-5; /* ace in the hole - jump of cat */
+	for (i = 0;  i < num_knots; i++){
+		knots[i] += knot_jump;
 		knot_jump += step * 1e-5;
 	}
 	
@@ -1340,6 +1351,14 @@ graph_obj * dxf_spline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 			prev_y = curr_y;
 			prev_z = curr_z;
 			t += step;
+			
+			/* to  preserve parameter in interval */
+			if (n_ctrl == num_pts){
+				if(t > knots[num_knots - 1]) t = knots[num_knots - 1] - step * 1e-5;
+			}
+			else {
+				if(t > knots[num_knots - order - 1]) t = knots[num_knots - order - 1] - step * 1e-5;
+			}
 		}
 		
 		/* shift the vectors and get values to next iteration */
@@ -3321,59 +3340,6 @@ graph_obj * dxf_3dface_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 	}
 }
 
-list_node * dxf_file_parse(char *path, list_node * font_list, char* fonts_path){
-	if (!path) return NULL;
-	if (!strlen(path)) return NULL;
-	if (!font_list) return NULL;
-	if (!fonts_path) return NULL;
-	
-	long file_size = 0;
-	int prog = 0;
-	struct Mem_buffer *file_buf = load_file_reuse(path, &file_size);
-	
-	if (!file_buf) return NULL;
-	
-	dxf_drawing drawing;
-	
-	drawing.img_list = NULL;
-	drawing.pool = FRAME_LIFE;
-	drawing.font_list = font_list;
-	drawing.dflt_font = get_font_list(font_list, "txt.shx");
-	drawing.dflt_fonts_path = fonts_path;
-	
-	while (dxf_read (&drawing, file_buf->buffer, file_size, &prog) > 0){
-		
-	}
-	
-	/* clear the file buffer */
-	manage_buffer(0, BUF_RELEASE);
-	file_buf = NULL;
-	file_size = 0;
-	
-	if (!drawing.ents || !drawing.main_struct) return NULL;
-	
-	dxf_node *current = NULL;
-	list_node * list_ret = NULL;
-	list_node *vec_graph;
-		
-	
-	/* create the vector of returned values */
-	list_ret = list_new(NULL,  DWG_LIFE);
-	
-	current = drawing.ents->obj.content->next;
-	
-	// starts the content sweep 
-	while (current != NULL){
-		if (current->type == DXF_ENT){ // DXF entity
-			vec_graph = dxf_graph_parse(&drawing, current, 0, DWG_LIFE);
-			list_merge(list_ret, vec_graph);
-		}
-		current = current->next;
-	}
-	
-	return list_ret;
-}
-
 int proc_obj_graph(dxf_drawing *drawing, dxf_node * ent, graph_obj * graph, struct ins_save ins){
 	if ((drawing) && (ent) && (graph)){
 		dxf_node *layer_obj, *ltscale_obj;
@@ -3494,7 +3460,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				
 			}
 			else if (strcmp(current->obj.name, "TEXT") == 0){
-				
+				ent_type = DXF_TEXT;
 				list_node * text_list = dxf_text_parse(drawing, current, p_space, pool_idx);
 				
 				if ((text_list != NULL)){
@@ -3514,9 +3480,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				}
 				
 				
-				ent_type = DXF_TEXT;
-				
-				
+	
 			}
 			else if (strcmp(current->obj.name, "CIRCLE") == 0){
 				ent_type = DXF_CIRCLE;
@@ -3563,7 +3527,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				
 			}
 			else if (strcmp(current->obj.name, "HATCH") == 0){
-				//ent_type = DXF_POLYLINE;
+				ent_type = DXF_HATCH;
 				list_node *hatch_items = list_new(NULL, FRAME_LIFE);
 				
 				int num_h_items= dxf_hatch_parse(hatch_items, drawing, current, p_space, pool_idx);
@@ -3630,7 +3594,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				}
 			}
 			else if (strcmp(current->obj.name, "SPLINE") == 0){
-				//ent_type = DXF_LWPOLYLINE;
+				ent_type = DXF_SPLINE;
 				curr_graph = dxf_spline_parse(drawing, current, p_space, pool_idx);
 				if (curr_graph){
 					/* store the graph in the return vector */
@@ -4042,32 +4006,15 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 							mod_idx - 1
 							);
 						graph_list_modify_idx(list_ret,
-							0.0,
-							0.0,
-							1.0,
-							1.0,
+							ins_stack[ins_stack_pos].ofs_x,
+							ins_stack[ins_stack_pos].ofs_y,
+							ins_stack[ins_stack_pos].scale_x,
+							ins_stack[ins_stack_pos].scale_y,
 							ins_stack[ins_stack_pos].rot,
 							ins_stack[ins_stack_pos].start_idx,
 							mod_idx - 1
 							);
-						graph_list_modify_idx(list_ret,
-							0.0,
-							0.0,
-							ins_stack[ins_stack_pos].scale_x,
-							ins_stack[ins_stack_pos].scale_y,
-							0.0,
-							ins_stack[ins_stack_pos].start_idx,
-							mod_idx - 1
-							);
-						graph_list_modify_idx(list_ret,
-							ins_stack[ins_stack_pos].ofs_x,
-							ins_stack[ins_stack_pos].ofs_y,
-							1.0,
-							1.0,
-							0.0,
-							ins_stack[ins_stack_pos].start_idx,
-							mod_idx - 1
-							);
+						
 						graph_list_mod_ax(list_ret,
 							ins_stack[ins_stack_pos].normal,
 							ins_stack[ins_stack_pos].elev,

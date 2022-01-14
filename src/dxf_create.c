@@ -2694,3 +2694,63 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 
 	return NULL;
 }
+
+dxf_node * dxf_new_dim (int color, char *layer, char *ltype, int lw, int paper, int pool){
+	/* create a new DXF DIMENSION */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbEntity";
+	const char *dxf_subclass = "AcDbDimension";
+	const char *subdim = "AcDbAlingnedDimension";
+	const char *dim_style = "Standard";
+	const char *empty = "";
+	int ok = 1;
+	dxf_node * new_dim = dxf_obj_new ("DIMENSION", pool);
+	
+	ok &= dxf_attr_append(new_dim, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_dim, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_dim, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(new_dim, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_dim, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(new_dim, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(new_dim, 370, (void *) &lw, pool);
+	
+	ok &= dxf_attr_append(new_dim, 100, (void *) dxf_subclass, pool);
+	/* block name */
+	ok &= dxf_attr_append(new_dim, 2, (void *) empty, pool);
+	/* dim base point */
+	ok &= dxf_attr_append(new_dim, 10, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 20, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 30, (void *) (double []){0.0}, pool);
+	/* annotation point */
+	ok &= dxf_attr_append(new_dim, 11, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 21, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 31, (void *) (double []){0.0}, pool);
+	/* flags */
+	ok &= dxf_attr_append(new_dim, 70, (void *) (int []){32}, pool); /* type - linear dimension */
+	ok &= dxf_attr_append(new_dim, 71, (void *) (int []){5}, pool); /* annotation - middle center */
+	/* measure */
+	ok &= dxf_attr_append(new_dim, 42, (void *) (double []){0.0}, pool);
+	/* other flags - ?? */
+	ok &= dxf_attr_append(new_dim, 73, (void *) (int []){0}, pool);
+	ok &= dxf_attr_append(new_dim, 74, (void *) (int []){0}, pool);
+	ok &= dxf_attr_append(new_dim, 75, (void *) (int []){0}, pool);
+	/* dimension style */
+	ok &= dxf_attr_append(new_dim, 3, (void *) dim_style, pool);
+	/* dimension sub class */
+	ok &= dxf_attr_append(new_dim, 100, (void *) subdim, pool);
+	/* two placement points - "measure" */
+	ok &= dxf_attr_append(new_dim, 13, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 23, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 33, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 14, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 24, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 34, (void *) (double []){0.0}, pool);
+	/* dimension rotation angle (degrees) */
+	ok &= dxf_attr_append(new_dim, 50, (void *) (double []){0.0}, pool);
+	
+	if(ok){
+		return new_dim;
+	}
+
+	return NULL;
+}

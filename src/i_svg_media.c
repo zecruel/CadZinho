@@ -499,6 +499,18 @@ char * svg_data[] = {
 	"  <line id=\"hatch7\" stroke=\"#f9f9f9\" y2=\"20.04409\" x2=\"9.3376\" y1=\"6.16962\" x1=\"20.75047\" stroke-linecap=\"null\" stroke-linejoin=\"null\" stroke-dasharray=\"null\" stroke-width=\"2\" fill=\"none\"/>"
 	"  <line stroke=\"#f9f9f9\" id=\"hatch8\" y2=\"20.71985\" x2=\"14.06794\" y1=\"11.59191\" x1=\"21.5764\" stroke-linecap=\"null\" stroke-linejoin=\"null\" stroke-dasharray=\"null\" stroke-width=\"2\" fill=\"none\"/>"
 	"</svg>"},
+	
+	[SVG_DIM_LINEAR] = (char[]){"<svg width=\"96.0000\" height=\"96.0000\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">"
+	"<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M6.304 51.78 L26.61 40.07 \"/>"
+	"<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M6.304 51.78 L26.61 63.49 \"/>"
+	"<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M31.6 14.42 L35.6 10.42 L35.6 34.42 M31.6 34.42 L39.6 34.42 \"/>"
+	"<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M47.6 14.42 L51.6 10.42 L59.6 10.42 L63.6 14.42 L63.6 18.42 L59.6 22.42 L51.6 22.42 L47.6 26.42 L47.6 34.42 L63.6 34.42 \"/>"
+	"<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M6.304 37.59 L6.304 86 \"/>"
+	"<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M6.304 51.78 L89.7 51.78 \"/>"
+	"<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M89.7 51.78 L69.39 40.07 \"/>"
+	"<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M89.7 51.78 L69.39 63.49 \"/>"
+	"<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M89.7 37.59 L89.7 86 \"/>"
+	"</svg>"},
 
 };
 

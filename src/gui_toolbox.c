@@ -176,8 +176,20 @@ int gui_tools_win (gui_obj *gui){
 		}
 		
 		if(tool_grp == GRP_DIM){
-			nk_layout_row_dynamic(gui->ctx, 28, 1); /*space*/
-			nk_layout_row_dynamic(gui->ctx, 28, 1); /*space*/
+			nk_layout_row_static(gui->ctx, 28, 28, 6);
+			
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_LINEAR]))){
+				gui->modal = DIMENSION;
+				gui->step = 0;
+			}
+			
+			/* another line --- temporay */
+			nk_layout_row_static(gui->ctx, 28, 28, 6);
+			
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_LINEAR]))){
+				gui->modal = DIMENSION;
+				gui->step = 0;
+			}
 		}
 		
 		nk_layout_row_dynamic(gui->ctx, 10, 1); /*space*/
@@ -218,6 +230,8 @@ int gui_tools_win (gui_obj *gui){
 			gui_prop_info (gui);
 			gui_txt_prop_info (gui);
 			gui_vertex_info (gui);
+			
+			gui_dim_info (gui);
 			
 			/* execute scripts in dynamic mode*/
 			gui_script_dyn(gui);

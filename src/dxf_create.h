@@ -171,5 +171,7 @@ dxf_node * dxf_new_image (dxf_drawing *drawing,
 	double u[3], double v[3], double w, double h,
 	char *path,
 	int color, char *layer, char *ltype, int lw, int paper, int pool);
+	
+dxf_node * dxf_new_dim (int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 #endif

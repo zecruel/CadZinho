@@ -1579,6 +1579,7 @@ int main(int argc, char** argv){
 		gui_txt_prop_interactive(gui);
 		gui_vertex_interactive(gui);
 		
+		gui_dim_interactive(gui);
 		
 		/* window file browser */
 		if (gui->show_file_br == 1){			

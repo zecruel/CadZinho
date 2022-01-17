@@ -2230,7 +2230,7 @@ int ent_handle(dxf_drawing *drawing, dxf_node *element){
 				int typ = dxf_ident_ent_type(element);
 				if (typ == DXF_DIMENSION || typ == DXF_DIMSTYLE)
 					ok = dxf_attr_change(element, 105, hdl_str);
-				else
+				//else
 					ok = dxf_attr_change(element, 5, hdl_str);
 			}
 		}

@@ -8,7 +8,7 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, double len
 	if(!ent) return NULL;
 	if (ent->type != DXF_ENT) return NULL;
 	if (!ent->obj.content) return NULL;
-	if (strcmp(ent->obj.name, "DIMENSION") == 0) return NULL;
+	if (strcmp(ent->obj.name, "DIMENSION") != 0) return NULL;
 	
 	dxf_node *current = NULL, *nxt_atr = NULL, *nxt_ent = NULL, *vertex = NULL;
 	graph_obj *curr_graph = NULL;
@@ -142,20 +142,23 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, double len
 	
 	/* anotation */
 	snprintf (tmp_str, 20, "%f", length * an_scale);
-	obj = dxf_new_mtext (0.0, 0.0, 0.0, 1.0, &tmp_str, 1, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
+	obj = dxf_new_mtext (0.0, 0.0, 0.0, 1.0, (char*[]){tmp_str}, 1, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
+	dxf_attr_change(obj, 71, &an_place);
 	dxf_edit_scale (obj, scale, scale, scale);
 	dxf_edit_rot (obj, rot);
 	dxf_edit_move (obj, an_pt[0], an_pt[1], an_pt[2]);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
 	/* extension lines */
+	double dir = ((-sine*(base_pt[0]  - pt1[0])+ cosine*(base_pt[1]  - pt1[1])) > 0.0) ? 1.0 : -1.0;
+	
 	obj = dxf_new_line (base_pt[0], base_pt[1], base_pt[2], pt1[0], pt1[1], pt1[2], 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
-	dxf_edit_move (obj, -scale * sine, scale * cosine, 0.0);
+	dxf_edit_move (obj, -scale * sine * 0.5 * dir, scale * cosine * 0.5 * dir, 0.0);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
 	obj = dxf_new_line (base_pt[0] - cosine * length, base_pt[1] - sine * length, base_pt[2], 
 		pt0[0], pt0[1], pt0[2], 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
-	dxf_edit_move (obj, -scale * sine, scale * cosine, 0.0);
+	dxf_edit_move (obj, -scale * sine * 0.5 * dir, scale * cosine * 0.5 * dir, 0.0);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
 	

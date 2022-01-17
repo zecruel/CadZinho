@@ -107,7 +107,8 @@ enum Modal {
 	FIND,
 	PROP,
 	TXT_PROP,
-	VERTEX
+	VERTEX,
+	DIMENSION
 };
 
 enum Gui_ev {

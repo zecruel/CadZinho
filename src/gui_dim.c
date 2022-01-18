@@ -103,6 +103,12 @@ int gui_dim_info (gui_obj *gui){
 				0, "", "", "", "",
 				"0", list, &blkrec, &blk, DWG_LIFE))
 			{	
+				dxf_attr_change(blk, 70, (void*)(int[]){1}); /* set block to annonimous */
+				
+				dxf_attr_append(blkrec, 280, (void *) (int []){1}, DWG_LIFE); /* set dimension block to snapable */
+				dxf_attr_append(blkrec, 281, (void *) (int []){0}, DWG_LIFE); /* set dimension block to non scalable */
+				
+				/* atach block to dimension ent */
 				dxf_attr_change(new_dim, 2, (void*)tmp_str);
 				dxf_node *new_ent = dxf_ent_copy(new_dim, DWG_LIFE);
 				drawing_ent_append(gui->drawing, new_ent);

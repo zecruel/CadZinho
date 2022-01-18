@@ -2701,6 +2701,7 @@ dxf_node * dxf_new_dim (int color, char *layer, char *ltype, int lw, int paper, 
 	const char *dxf_class = "AcDbEntity";
 	const char *dxf_subclass = "AcDbDimension";
 	const char *subdim = "AcDbAlingnedDimension";
+	const char *subdim_end = "AcDbRotatedDimension";
 	const char *dim_style = "Standard";
 	const char *empty = "";
 	int ok = 1;
@@ -2747,6 +2748,9 @@ dxf_node * dxf_new_dim (int color, char *layer, char *ltype, int lw, int paper, 
 	ok &= dxf_attr_append(new_dim, 34, (void *) (double []){0.0}, pool);
 	/* dimension rotation angle (degrees) */
 	ok &= dxf_attr_append(new_dim, 50, (void *) (double []){0.0}, pool);
+	
+	/* dimension sub class -  terminator (ace in the hole) */
+	ok &= dxf_attr_append(new_dim, 100, (void *) subdim_end, pool);
 	
 	if(ok){
 		return new_dim;

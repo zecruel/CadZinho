@@ -2700,10 +2700,11 @@ dxf_node * dxf_new_dim (int color, char *layer, char *ltype, int lw, int paper, 
 	const char *handle = "0";
 	const char *dxf_class = "AcDbEntity";
 	const char *dxf_subclass = "AcDbDimension";
-	const char *subdim = "AcDbAlingnedDimension";
+	const char *subdim = "AcDbAlignedDimension";
 	const char *subdim_end = "AcDbRotatedDimension";
 	const char *dim_style = "Standard";
 	const char *empty = "";
+	const char *user_text = "<>";
 	int ok = 1;
 	dxf_node * new_dim = dxf_obj_new ("DIMENSION", pool);
 	
@@ -2731,6 +2732,8 @@ dxf_node * dxf_new_dim (int color, char *layer, char *ltype, int lw, int paper, 
 	ok &= dxf_attr_append(new_dim, 71, (void *) (int []){5}, pool); /* annotation - middle center */
 	/* measure */
 	ok &= dxf_attr_append(new_dim, 42, (void *) (double []){0.0}, pool);
+	/* user text */
+	ok &= dxf_attr_append(new_dim, 1, (void *) user_text, pool);
 	/* other flags - ?? */
 	ok &= dxf_attr_append(new_dim, 73, (void *) (int []){0}, pool);
 	ok &= dxf_attr_append(new_dim, 74, (void *) (int []){0}, pool);
@@ -2748,7 +2751,6 @@ dxf_node * dxf_new_dim (int color, char *layer, char *ltype, int lw, int paper, 
 	ok &= dxf_attr_append(new_dim, 34, (void *) (double []){0.0}, pool);
 	/* dimension rotation angle (degrees) */
 	ok &= dxf_attr_append(new_dim, 50, (void *) (double []){0.0}, pool);
-	
 	/* dimension sub class -  terminator (ace in the hole) */
 	ok &= dxf_attr_append(new_dim, 100, (void *) subdim_end, pool);
 	

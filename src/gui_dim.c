@@ -20,12 +20,21 @@ int gui_dim_interactive(gui_obj *gui){
 
 int gui_dim_info (gui_obj *gui){
 	if (gui->modal != DIMENSION) return 0;
+	static int fix_angle = 0;
+	static double angle_fixed = 0.0;
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, "Place a dim", NK_TEXT_LEFT);
 	
+	if (gui->step == 0) nk_label(gui->ctx, "Enter start point", NK_TEXT_LEFT);
+	else if (gui->step == 1) nk_label(gui->ctx, "Enter end point", NK_TEXT_LEFT);
+	else nk_label(gui->ctx, "Enter distance", NK_TEXT_LEFT);
+	
+	nk_checkbox_label(gui->ctx, "Fixed angle", &fix_angle);
+	if (fix_angle)
+		angle_fixed = nk_propertyd(gui->ctx, "Angle", -180.0, angle_fixed, 180.0, 1.0, 1.0);
+	
 	if (gui->step == 0){
-		nk_label(gui->ctx, "Enter start point", NK_TEXT_LEFT);
 		
 		gui->free_sel = 0;
 		if (gui->ev & EV_ENTER){
@@ -41,24 +50,26 @@ int gui_dim_info (gui_obj *gui){
 		static int count = 1;
 		char tmp_str[DXF_MAX_CHARS + 1];
 		
-		
-		if (gui->step == 1) nk_label(gui->ctx, "Enter end point", NK_TEXT_LEFT);
-		
-		else nk_label(gui->ctx, "Enter distance", NK_TEXT_LEFT);
-		
 		dxf_node *new_dim = dxf_new_dim (gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 				gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 				0, FRAME_LIFE); /* paper space */
+		
+		double angle;
+		if (fix_angle) angle = angle_fixed * M_PI / 180.0;
+		else angle = atan2((gui->step_y[1] - gui->step_y[0]), (gui->step_x[1] - gui->step_x[0]));
+		double cosine = cos(angle);
+		double sine = sin(angle);
+		
+		double length = cosine*(gui->step_x[1]  - gui->step_x[0]) + sine*(gui->step_y[1] - gui->step_y[0]);
 		
 		dxf_attr_change(new_dim, 13, &gui->step_x[0]);
 		dxf_attr_change(new_dim, 23, &gui->step_y[0]);
 		dxf_attr_change(new_dim, 14, &gui->step_x[1]);
 		dxf_attr_change(new_dim, 24, &gui->step_y[1]);
-		double angle = atan2((gui->step_y[1] - gui->step_y[0]), (gui->step_x[1] - gui->step_x[0]));
-		double length = sqrt(pow(gui->step_y[1] - gui->step_y[0], 2) + pow(gui->step_x[1] - gui->step_x[0], 2));
-		double cosine = cos(angle);
-		double sine = sin(angle);
-
+		
+		//length = fabs(length);
+		dxf_attr_change(new_dim, 42, &length);
+		
 		double dist = 3.0;
 		double dir = 1.0;
 		
@@ -104,10 +115,7 @@ int gui_dim_info (gui_obj *gui){
 				"0", list, &blkrec, &blk, DWG_LIFE))
 			{	
 				dxf_attr_change(blk, 70, (void*)(int[]){1}); /* set block to annonimous */
-				
-				dxf_attr_append(blkrec, 280, (void *) (int []){1}, DWG_LIFE); /* set dimension block to snapable */
-				dxf_attr_append(blkrec, 281, (void *) (int []){0}, DWG_LIFE); /* set dimension block to non scalable */
-				
+					
 				/* atach block to dimension ent */
 				dxf_attr_change(new_dim, 2, (void*)tmp_str);
 				dxf_node *new_ent = dxf_ent_copy(new_dim, DWG_LIFE);

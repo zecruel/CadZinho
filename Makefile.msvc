@@ -10,6 +10,7 @@
 
 CXX=cl
 LD=link
+RC=rc
 
 DIR_O=.\obj
 DIR_BIN=bin
@@ -33,7 +34,7 @@ CXX_BASE_FLAGS = /nologo /W4 -D_WINDOWS -D_WIN32 \
                  -D_USE_MATH_DEFINES -DSKIP_ATTRIBUTE \
                  $(INCLUDES)
                  
-LD_BASE_FLAGS  = /nologo /SUBSYSTEM:CONSOLE 
+LD_BASE_FLAGS  = /nologo
 
 !IFDEF WIN64
 CXX_ARCH_FLAGS = -D_WIN64 -D_AMD64_
@@ -45,10 +46,10 @@ LD_ARCH_FLAGS = /MACHINE:X86
 
 !IFDEF DEBUG
 CXX_OPT_FLAGS = -D_DEBUG /Od /MTd
-LD_OPT_FLAGS  = /DEBUG
+LD_OPT_FLAGS  = /DEBUG /SUBSYSTEM:CONSOLE
 !ELSE
 CXX_OPT_FLAGS = -DNDEBUG /O2 /MT
-LD_OPT_FLAGS  = /DEBUG
+LD_OPT_FLAGS  = /DEBUG /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup
 !ENDIF
 
 CXXFLAGS = $(CXX_BASE_FLAGS) $(CXX_OPT_FLAGS) $(CXX_ARCH_FLAGS)
@@ -58,11 +59,13 @@ all:	$(EXE)
 
 OBJS=\
 	$(DIR_O)\bmp.obj $(DIR_O)\_dirent.obj $(DIR_O)\draw_gl.obj $(DIR_O)\dxf.obj \
-  $(DIR_O)\dxf_attract.obj $(DIR_O)\dxf_copy.obj $(DIR_O)\dxf_create.obj $(DIR_O)\dxf_edit.obj \
+  $(DIR_O)\dxf_attract.obj $(DIR_O)\dxf_copy.obj $(DIR_O)\dxf_create.obj \
+  $(DIR_O)\dxf_dim.obj $(DIR_O)\dxf_edit.obj \
 	$(DIR_O)\dxf_ent.obj $(DIR_O)\dxf_graph.obj $(DIR_O)\dxf_hatch.obj $(DIR_O)\dxf_image.obj \
 	$(DIR_O)\dxf_math.obj $(DIR_O)\dxf_print.obj $(DIR_O)\font.obj $(DIR_O)\graph.obj \
 	$(DIR_O)\gui.obj $(DIR_O)\gui_arc.obj $(DIR_O)\gui_attrib.obj $(DIR_O)\gui_block.obj \
-	$(DIR_O)\gui_circle.obj $(DIR_O)\gui_config.obj $(DIR_O)\gui_dupli.obj \
+	$(DIR_O)\gui_circle.obj $(DIR_O)\gui_config.obj \
+	$(DIR_O)\gui_dim.obj $(DIR_O)\gui_dupli.obj \
 	$(DIR_O)\gui_edit_attr.obj \
 	$(DIR_O)\gui_edit_text.obj $(DIR_O)\gui_ellip.obj $(DIR_O)\gui_explode.obj \
 	$(DIR_O)\gui_file.obj $(DIR_O)\gui_find.obj $(DIR_O)\gui_hatch.obj \
@@ -82,12 +85,11 @@ OBJS=\
 	$(DIR_O)\script.obj $(DIR_O)\shape.obj $(DIR_O)\shp_font.obj \
 	$(DIR_O)\tt_graph.obj $(DIR_O)\util.obj $(DIR_O)\yxml.obj
 
-
-$(EXE): $(OBJS)
-	$(LD) $(LDFLAGS) -OUT:$@ $** $(LIBS)
+$(EXE): $(OBJS) $(DIR_O)\Resources.res
+	$(LD) $(LDFLAGS) -OUT:$@ $(OBJS) $(DIR_O)\Resources.res $(LIBS)
 
 clean:
-	-del /q $(DIR_O)\*.obj $(DIR_O)\*.pdb $(EXE) \
+	-del /q $(DIR_O)\*.obj $(DIR_O)\*.pdb $(DIR_O)\*.res $(EXE) \
 	$(DIR_BIN)\*.map $(DIR_BIN)\*.exp $(DIR_BIN)\*.pdb \
 	$(DIR_BIN)\*.ilk
 
@@ -98,4 +100,5 @@ clean:
 {.}.c{$(DIR_O)}.obj::
 	@$(CXX) $(CXXFLAGS) -c -Fo$(DIR_O)\ $<
 
-
+$(DIR_O)\Resources.res: win32\Resources.rc
+	@$(RC) /nologo -fo$@ $**

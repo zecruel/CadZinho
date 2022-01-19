@@ -108,6 +108,7 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, double len
 	
 	double cosine = cos(rot*M_PI/180.0);
 	double sine = sin(rot*M_PI/180.0);
+	double dir = 1.0;
 	
 	list_node * list = list_new(NULL, FRAME_LIFE);
 	//list_push(list, list_new((void *)curr_graph, FRAME_LIFE)); /* store entity in list */
@@ -120,28 +121,30 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, double len
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
 	/* terminators */
-	obj = dxf_new_line (0.0, 0.0, 0.0, -scale, scale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
+	dir = (length > 0.0) ? 1.0 : -1.0;
+	
+	obj = dxf_new_line (0.0, 0.0, 0.0, -scale*dir, scale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_edit_rot (obj, rot);
 	dxf_edit_move (obj, base_pt[0], base_pt[1], base_pt[2]);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
-	obj = dxf_new_line (0.0, 0.0, 0.0, -scale, -scale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
+	obj = dxf_new_line (0.0, 0.0, 0.0, -scale*dir, -scale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_edit_rot (obj, rot);
 	dxf_edit_move (obj, base_pt[0], base_pt[1], base_pt[2]);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
-	obj = dxf_new_line (-length, 0.0, 0.0, scale-length, scale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
+	obj = dxf_new_line (-length, 0.0, 0.0, scale*dir-length, scale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_edit_rot (obj, rot);
 	dxf_edit_move (obj, base_pt[0], base_pt[1], base_pt[2]);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
-	obj = dxf_new_line (-length, 0.0, 0.0, scale-length, -scale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
+	obj = dxf_new_line (-length, 0.0, 0.0, scale*dir-length, -scale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_edit_rot (obj, rot);
 	dxf_edit_move (obj, base_pt[0], base_pt[1], base_pt[2]);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
 	/* anotation */
-	snprintf (tmp_str, 20, "%f", length * an_scale);
+	snprintf (tmp_str, 20, "%f", fabs(length) * an_scale);
 	obj = dxf_new_mtext (0.0, 0.0, 0.0, 1.0, (char*[]){tmp_str}, 1, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_attr_change(obj, 71, &an_place);
 	dxf_edit_scale (obj, scale, scale, scale);
@@ -150,7 +153,7 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, double len
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
 	/* extension lines */
-	double dir = ((-sine*(base_pt[0]  - pt1[0])+ cosine*(base_pt[1]  - pt1[1])) > 0.0) ? 1.0 : -1.0;
+	dir = ((-sine*(base_pt[0]  - pt1[0])+ cosine*(base_pt[1]  - pt1[1])) > 0.0) ? 1.0 : -1.0;
 	
 	obj = dxf_new_line (base_pt[0], base_pt[1], base_pt[2], pt1[0], pt1[1], pt1[2], 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_edit_move (obj, -scale * sine * 0.5 * dir, scale * cosine * 0.5 * dir, 0.0);

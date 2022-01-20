@@ -752,8 +752,9 @@ dxf_node * dxf_find_obj_descr2(dxf_node * obj, char *name, char *descr){
 	if(obj != NULL){ /* check if obj exist */
 		if (obj->type == DXF_ENT){
 			
-			char name_cpy[DXF_MAX_CHARS], *new_name;
-			char descr_cpy[DXF_MAX_CHARS], *new_descr;
+			char name_cpy[DXF_MAX_CHARS+1], *new_name;
+			char descr_cpy[DXF_MAX_CHARS+1], *new_descr;
+			char test_descr[DXF_MAX_CHARS+1];
 			
 			/* copy strings for secure manipulation */
 			strncpy(name_cpy, name, DXF_MAX_CHARS);
@@ -772,7 +773,6 @@ dxf_node * dxf_find_obj_descr2(dxf_node * obj, char *name, char *descr){
 						descr_attr = dxf_find_attr2(current, 2); /* look for descriptor in group 2 attribute */
 						if (descr_attr){ /* found attribute */
 							/* copy strings for secure manipulation */
-							char test_descr[DXF_MAX_CHARS];
 							strncpy(test_descr, descr_attr->value.s_data, DXF_MAX_CHARS);
 							/* change to upper case */
 							str_upp(test_descr);

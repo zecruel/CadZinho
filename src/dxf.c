@@ -1324,7 +1324,7 @@ int dxf_save (char *path, dxf_drawing *drawing){
 							fprintf(file, "%s\n", current->value.s_data);
 							break;
 						case DXF_FLOAT:
-							fprintf(file, "%f\n", current->value.d_data);
+							fprintf(file, "%g\n", current->value.d_data);
 							break;
 						case DXF_INT:
 							fprintf(file, "%d\n",  current->value.i_data);

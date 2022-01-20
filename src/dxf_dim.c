@@ -23,6 +23,7 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, double sca
 	
 	int flags = 32;
 	int an_place = 5; /* annotation placement (5 = middle center) */
+	int precision = 6; /* 6 digit */
 
 	char user_txt[DXF_MAX_CHARS+1] = "<>";
 	char tmp_str[21] = "";
@@ -146,7 +147,7 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, double sca
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
 	/* anotation */
-	snprintf (tmp_str, 20, "%f", fabs(measure) * an_scale);
+	snprintf (tmp_str, 20, "%.*g", precision, fabs(measure) * an_scale);
 	obj = dxf_new_mtext (0.0, 0.0, 0.0, 1.0, (char*[]){tmp_str}, 1, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_attr_change(obj, 71, &an_place);
 	dxf_edit_scale (obj, scale, scale, scale);

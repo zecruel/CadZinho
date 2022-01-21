@@ -792,7 +792,7 @@ int ltyp_mng (gui_obj *gui){
 			}
 		}
 		
-		/* edit glogal drawing line type scale */
+		/* edit global drawing line type scale */
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 4, (float[]){140, 100, 160,100});
 		nk_label(gui->ctx, "Global Scale Factor:", NK_TEXT_RIGHT);
 		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, ltscale_str, 63, nk_filter_float);

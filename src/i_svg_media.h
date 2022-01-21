@@ -105,6 +105,7 @@ enum svg_list {
     SVG_MIRROR,
     SVG_HATCH,
     SVG_DIM_LINEAR,
+    SVG_DIM_CONFIG,
     SVG_MEDIA_SIZE
 };
 

@@ -9,8 +9,7 @@
 #include "dxf_edit.h"
 
 /* functions */
-list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, double scale, 
-	double an_scale, int an_format, 
+list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, int an_format, 
 	int term_type,
 	int tol_type, double tol_up, double tol_low);
 	

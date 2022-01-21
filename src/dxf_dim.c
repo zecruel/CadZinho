@@ -1,7 +1,7 @@
 #include "dxf_dim.h"
 
-list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, double scale, 
-	double an_scale, int an_format, 
+list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, 
+	int an_format, 
 	int term_type,
 	int tol_type, double tol_up, double tol_low)
 {
@@ -26,7 +26,8 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, double sca
 	int precision = 6; /* 6 digit */
 
 	char user_txt[DXF_MAX_CHARS+1] = "<>";
-	char tmp_str[21] = "";
+	char tmp_str[DXF_MAX_CHARS+1] = "";
+	char result_str[DXF_MAX_CHARS+1] = "";
 	
 	current = ent->obj.content->next;
 	
@@ -95,7 +96,7 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, double sca
 					break;
 				
 				case 101:
-					strncpy(tmp_str, current->value.s_data, 20);
+					strncpy(tmp_str, current->value.s_data, DXF_MAX_CHARS);
 					str_upp(tmp_str);
 					char *tmp = trimwhitespace(tmp_str);
 					if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -126,31 +127,46 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, double sca
 	/* terminators */
 	dir = (measure > 0.0) ? 1.0 : -1.0;
 	
-	obj = dxf_new_line (0.0, 0.0, 0.0, -scale*dir, scale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
+	obj = dxf_new_line (0.0, 0.0, 0.0, -drawing->dimscale*dir, drawing->dimscale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_edit_rot (obj, rot);
 	dxf_edit_move (obj, base_pt[0], base_pt[1], base_pt[2]);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
-	obj = dxf_new_line (0.0, 0.0, 0.0, -scale*dir, -scale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
+	obj = dxf_new_line (0.0, 0.0, 0.0, -drawing->dimscale*dir, -drawing->dimscale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_edit_rot (obj, rot);
 	dxf_edit_move (obj, base_pt[0], base_pt[1], base_pt[2]);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
-	obj = dxf_new_line (-measure, 0.0, 0.0, scale*dir-measure, scale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
+	obj = dxf_new_line (-measure, 0.0, 0.0, drawing->dimscale*dir-measure, drawing->dimscale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_edit_rot (obj, rot);
 	dxf_edit_move (obj, base_pt[0], base_pt[1], base_pt[2]);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
-	obj = dxf_new_line (-measure, 0.0, 0.0, scale*dir-measure, -scale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
+	obj = dxf_new_line (-measure, 0.0, 0.0, drawing->dimscale*dir-measure, -drawing->dimscale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_edit_rot (obj, rot);
 	dxf_edit_move (obj, base_pt[0], base_pt[1], base_pt[2]);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
 	/* anotation */
-	snprintf (tmp_str, 20, "%.*g", precision, fabs(measure) * an_scale);
-	obj = dxf_new_mtext (0.0, 0.0, 0.0, 1.0, (char*[]){tmp_str}, 1, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
+	char *subst = strstr(user_txt, "<>"); /* try to find string "<>"  in user text to replace with measure */
+	if (subst) { /* proceed to replace */
+		int len_front = subst - user_txt;
+		strncpy(result_str, user_txt, len_front); /* prefix */
+		snprintf (tmp_str, DXF_MAX_CHARS, "%.*g", precision, fabs(measure) * drawing->dimlfac); /* measure */
+		strncat(result_str, tmp_str, DXF_MAX_CHARS - len_front); /* prefix + measure */
+		len_front = strlen(result_str);
+		subst += 2;
+		strncat(result_str, subst, DXF_MAX_CHARS - len_front); /* prefix + measure + sufix*/
+	}
+	else if (strlen(user_txt) == 0) { /* if user text  is "", then mesaure will be the annotation */
+		snprintf (result_str, DXF_MAX_CHARS, "%.*g", precision, fabs(measure) * drawing->dimlfac);
+	}
+	else { /* no replace mark - use the entire user text */
+		strncpy(result_str, user_txt, DXF_MAX_CHARS);
+	}
+	obj = dxf_new_mtext (0.0, 0.0, 0.0, 1.0, (char*[]){result_str}, 1, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_attr_change(obj, 71, &an_place);
-	dxf_edit_scale (obj, scale, scale, scale);
+	dxf_edit_scale (obj, drawing->dimscale, drawing->dimscale, drawing->dimscale);
 	dxf_edit_rot (obj, rot);
 	dxf_edit_move (obj, an_pt[0], an_pt[1], an_pt[2]);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
@@ -159,12 +175,12 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, double sca
 	dir = ((-sine*(base_pt[0]  - pt1[0])+ cosine*(base_pt[1]  - pt1[1])) > 0.0) ? 1.0 : -1.0;
 	
 	obj = dxf_new_line (base_pt[0], base_pt[1], base_pt[2], pt1[0], pt1[1], pt1[2], 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
-	dxf_edit_move (obj, -scale * sine * 0.5 * dir, scale * cosine * 0.5 * dir, 0.0);
+	dxf_edit_move (obj, -drawing->dimscale * sine * 0.5 * dir, drawing->dimscale * cosine * 0.5 * dir, 0.0);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
 	obj = dxf_new_line (base_pt[0] - cosine * measure, base_pt[1] - sine * measure, base_pt[2], 
 		pt0[0], pt0[1], pt0[2], 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
-	dxf_edit_move (obj, -scale * sine * 0.5 * dir, scale * cosine * 0.5 * dir, 0.0);
+	dxf_edit_move (obj, -drawing->dimscale * sine * 0.5 * dir, drawing->dimscale * cosine * 0.5 * dir, 0.0);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
 	

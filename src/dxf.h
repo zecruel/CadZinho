@@ -225,6 +225,10 @@ struct Dxf_drawing{
 	
 	int version;
 	
+	double dimlfac;
+	double dimscale;
+	char dimpost [DXF_MAX_CHARS + 1];
+	
 };
 typedef struct Dxf_drawing dxf_drawing;
 

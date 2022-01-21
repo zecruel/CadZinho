@@ -22,8 +22,6 @@ int gui_dim_info (gui_obj *gui){
 	if (gui->modal != DIMENSION) return 0;
 	static int fix_angle = 0;
 	static double angle_fixed = 0.0;
-	static double scale = 1.0;
-	static double an_scale = 1.0;
 	static double dist_fixed = 3.0;
 	static int fix_dist = 0;
 	
@@ -36,9 +34,6 @@ int gui_dim_info (gui_obj *gui){
 		if (fix_dist) nk_label(gui->ctx, "Confirm", NK_TEXT_LEFT);
 		else nk_label(gui->ctx, "Enter distance", NK_TEXT_LEFT);
 	}
-	
-	scale = nk_propertyd(gui->ctx, "Scale", 1e-9, scale, 1.0e9, SMART_STEP(scale), SMART_STEP(scale));
-	an_scale = nk_propertyd(gui->ctx, "an_scale", 1e-9, an_scale, 1.0e9, SMART_STEP(an_scale), SMART_STEP(an_scale));
 	
 	nk_checkbox_label(gui->ctx, "Fixed angle", &fix_angle);
 	if (fix_angle)
@@ -87,9 +82,10 @@ int gui_dim_info (gui_obj *gui){
 		dxf_attr_change(new_dim, 42, &length);
 		angle *= 180.0/M_PI;
 		dxf_attr_change(new_dim, 50, &angle);
+		dxf_attr_change(new_dim, 1, gui->drawing->dimpost);
 		
 		/* distance of dimension from measure points */
-		double dist = 3.0 * scale;
+		double dist = 3.0 * gui->drawing->dimscale;
 		double dir = 1.0;
 		if(fix_dist) dist = dist_fixed; /* user entered distance */
 		else if (gui->step == 2){ /* or calcule from points */
@@ -105,13 +101,13 @@ int gui_dim_info (gui_obj *gui){
 		dxf_attr_change(new_dim, 20, &base_y);
 		
 		/* calcule dimension annotation (text) placement point (outer from perpenticular direction)*/
-		base_x += -length/2.0 * cosine - sine * 1.0 * dir * scale;
-		base_y += -length/2.0 * sine + cosine * 1.0 * dir * scale;
+		base_x += -length/2.0 * cosine - sine * 1.0 * dir * gui->drawing->dimscale;
+		base_y += -length/2.0 * sine + cosine * 1.0 * dir * gui->drawing->dimscale;
 		dxf_attr_change(new_dim, 11, &base_x); /* update dimension entity parameters */
 		dxf_attr_change(new_dim, 21, &base_y);
 		
 		/* create dimension block contents as a list of entities ("render" the dimension "picture") */
-		list_node *list = dxf_dim_linear_make(gui->drawing, new_dim, scale, an_scale, 2, 0, 0, 0.0, 0.0);
+		list_node *list = dxf_dim_linear_make(gui->drawing, new_dim, 2, 0, 0, 0.0, 0.0);
 		
 		/* draw phantom */
 		gui->phanton = dxf_list_parse(gui->drawing, list, 0, FRAME_LIFE);
@@ -159,4 +155,98 @@ int gui_dim_info (gui_obj *gui){
 	}
 	
 	return 1;
+}
+
+int gui_dim_mng (gui_obj *gui){
+	int show_config = 1;
+	int i = 0;
+	gui->next_win_x += gui->next_win_w + 3;
+	//gui->next_win_y += gui->next_win_h + 3;
+	gui->next_win_w = 200;
+	gui->next_win_h = 300;
+	
+	//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "config", NK_WINDOW_CLOSABLE, nk_rect(310, 50, 200, 300))){
+	if (nk_begin(gui->ctx, "Dimension Config", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
+	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
+	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
+		static char dimscale_str[64] = "1.0";
+		static char dimlfac_str[64] = "1.0";
+		nk_flags res;
+		
+		/* edit global dim scale */
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		nk_label(gui->ctx, "Global Scale Factor:", NK_TEXT_LEFT);
+		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, dimscale_str, 63, nk_filter_float);
+		if (!(res & NK_EDIT_ACTIVE)){
+			snprintf(dimscale_str, 63, "%.9g", gui->drawing->dimscale);
+		}
+		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
+			nk_edit_unfocus(gui->ctx);
+			if (strlen(dimscale_str)) /* update parameter value */
+				gui->drawing->dimscale = atof(dimscale_str);
+			snprintf(dimscale_str, 63, "%.9g", gui->drawing->dimscale);
+			/* change in DXF main struct */
+			dxf_node *start = NULL, *end = NULL, *part = NULL;
+			if(dxf_find_head_var(gui->drawing->head, "$DIMSCALE", &start, &end)){
+				/* variable exists */
+				part = dxf_find_attr_i2(start, end, 40, 0);
+				if (part != NULL){
+					part->value.d_data = gui->drawing->dimscale;
+				}
+			}
+			else{
+				dxf_attr_append(gui->drawing->head, 9, "$DIMSCALE", DWG_LIFE);
+				dxf_attr_append(gui->drawing->head, 40, &gui->drawing->dimscale, DWG_LIFE);
+			}
+		}
+		
+		/* edit measure dim scale */
+		nk_label(gui->ctx, "Measure Scale Factor:", NK_TEXT_LEFT);
+		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, dimlfac_str, 63, nk_filter_float);
+		if (!(res & NK_EDIT_ACTIVE)){
+			snprintf(dimlfac_str, 63, "%.9g", gui->drawing->dimlfac);
+		}
+		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
+			nk_edit_unfocus(gui->ctx);
+			if (strlen(dimlfac_str)) /* update parameter value */
+				gui->drawing->dimlfac = atof(dimlfac_str);
+			snprintf(dimlfac_str, 63, "%.9g", gui->drawing->dimlfac);
+			/* change in DXF main struct */
+			dxf_node *start = NULL, *end = NULL, *part = NULL;
+			if(dxf_find_head_var(gui->drawing->head, "$DIMLFAC", &start, &end)){
+				/* variable exists */
+				part = dxf_find_attr_i2(start, end, 40, 0);
+				if (part != NULL){
+					part->value.d_data = gui->drawing->dimlfac;
+				}
+			}
+			else{
+				dxf_attr_append(gui->drawing->head, 9, "$DIMLFAC", DWG_LIFE);
+				dxf_attr_append(gui->drawing->head, 40, &gui->drawing->dimlfac, DWG_LIFE);
+			}
+		}
+		
+		nk_label(gui->ctx, "Annotation text:", NK_TEXT_LEFT);
+		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, gui->drawing->dimpost, DXF_MAX_CHARS, nk_filter_default);
+		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
+			nk_edit_unfocus(gui->ctx);
+			/* change in DXF main struct */
+			dxf_node *start = NULL, *end = NULL, *part = NULL;
+			if(dxf_find_head_var(gui->drawing->head, "$DIMPOST", &start, &end)){
+				/* variable exists */
+				part = dxf_find_attr_i2(start, end, 1, 0);
+				if (part != NULL){
+					strncpy(part->value.s_data, gui->drawing->dimpost, DXF_MAX_CHARS);
+				}
+			}
+			else{
+				dxf_attr_append(gui->drawing->head, 9, "$DIMPOST", DWG_LIFE);
+				dxf_attr_append(gui->drawing->head, 1, &gui->drawing->dimpost, DWG_LIFE);
+			}
+		}
+		
+	} else show_config = 0;
+	nk_end(gui->ctx);
+	
+	return show_config;
 }

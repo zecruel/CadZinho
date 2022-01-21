@@ -982,6 +982,10 @@ int main(int argc, char** argv){
 			gui->show_config = config_win (gui);
 		}
 		
+		if (gui->show_dim_mng){
+			gui->show_dim_mng = gui_dim_mng (gui);
+		}
+		
 		if (progr_win){
 			/* opening */
 			if (nk_begin(gui->ctx, "Progress", nk_rect(200, 200, 400, 40),

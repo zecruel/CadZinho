@@ -360,8 +360,8 @@ int gui_main_win(gui_obj *gui){
 				//printf("Blocks\n");
 				gui->show_blk_mng = 1;
 			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TAGS]))){
-				printf("APPID\n");
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_CONFIG]))){
+				gui->show_dim_mng = 1;
 			}
 			nk_group_end(gui->ctx);
 		}

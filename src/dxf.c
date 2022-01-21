@@ -1679,6 +1679,31 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 			}
 		}
 		
+		drawing->dimscale = 1.0;
+		drawing->dimlfac = 1.0;
+		drawing->dimpost[0] = '<'; drawing->dimpost[1] = '>'; drawing->dimpost[2] = 0;
+		
+		if(dxf_find_head_var(drawing->head, "$DIMSCALE", &start, &end)){
+			part = dxf_find_attr_i2(start, end, 40, 0);
+			if (part != NULL){
+				drawing->dimscale = part->value.d_data;
+			}
+		}
+		
+		if(dxf_find_head_var(drawing->head, "$DIMLFAC", &start, &end)){
+			part = dxf_find_attr_i2(start, end, 40, 0);
+			if (part != NULL){
+				drawing->dimlfac = part->value.d_data;
+			}
+		}
+		
+		if(dxf_find_head_var(drawing->head, "$DIMPOST", &start, &end)){
+			part = dxf_find_attr_i2(start, end, 1, 0);
+			if (part != NULL){
+				strncpy (drawing->dimpost, part->value.s_data, DXF_MAX_CHARS);
+			}
+		}
+		
 		//return drawing;
 		state = INIT;
 		*prog = 100;

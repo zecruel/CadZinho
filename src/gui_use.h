@@ -135,4 +135,6 @@ int gui_dim_interactive(gui_obj *gui);
 
 int gui_dim_info (gui_obj *gui);
 
+int gui_dim_mng (gui_obj *gui);
+
 #endif

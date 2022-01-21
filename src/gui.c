@@ -1631,6 +1631,7 @@ int gui_start(gui_obj *gui){
 	gui->show_tstyles_mng = 0;
 	gui->show_blk_mng = 0;
 	gui->show_ltyp_mng = 0;
+	gui->show_dim_mng = 0;
 	gui->show_config = 0;
 	
 	gui->curr_path[0] = 0;

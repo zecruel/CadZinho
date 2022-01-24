@@ -108,7 +108,10 @@ enum Modal {
 	PROP,
 	TXT_PROP,
 	VERTEX,
-	DIMENSION
+	DIM_LINEAR,
+	DIM_ANGULAR,
+	DIM_RADIUS,
+	DIM_ORDINATE
 };
 
 enum Gui_ev {

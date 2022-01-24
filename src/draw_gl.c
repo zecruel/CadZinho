@@ -859,8 +859,8 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 	gl_ctx->fg[2] = color.b;
 	gl_ctx->fg[3] = color.a;
 	
-	/* check if graph is legible (greater then 5 pixels) */
-	if (xd1 - xd0 < 5 && yd1 - yd0 < 5 && zd1 - zd0 < 5 && current->next != NULL){
+	/* check if graph is legible (greater then 3 pixels) */
+	if (xd1 - xd0 < 3 && yd1 - yd0 < 3 && zd1 - zd0 < 3 && current->next != NULL){
 		/* draw a single triangle if not legible */
 		draw_gl_triang (gl_ctx, (int[]){xd0, yd0, zd0}, (int[]){xd0, yd1, zd0}, (int[]){xd1, yd0, zd0});
 		return 0;

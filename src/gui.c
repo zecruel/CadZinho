@@ -284,7 +284,7 @@ struct gui_glyph * gui_new_glyph (struct gui_font *gfont, int code_p){
 			glyph->y = y0;
 			glyph->w = w;
 			glyph->h = h;
-			glyph->adv = curr_glyph->adv * gfont->font->height;
+			glyph->adv = (double)curr_glyph->adv * (double)gfont->font->height;
 			
 		}
 	}

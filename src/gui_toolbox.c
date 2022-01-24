@@ -179,17 +179,12 @@ int gui_tools_win (gui_obj *gui){
 			nk_layout_row_static(gui->ctx, 28, 28, 6);
 			
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_LINEAR]))){
-				gui->modal = DIMENSION;
+				gui->modal = DIM_LINEAR;
 				gui->step = 0;
 			}
 			
 			/* another line --- temporay */
-			nk_layout_row_static(gui->ctx, 28, 28, 6);
-			
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_LINEAR]))){
-				gui->modal = DIMENSION;
-				gui->step = 0;
-			}
+			nk_layout_row_dynamic(gui->ctx, 28, 1); /*space*/
 		}
 		
 		nk_layout_row_dynamic(gui->ctx, 10, 1); /*space*/

@@ -3,7 +3,7 @@
 
 int gui_dim_interactive(gui_obj *gui){
 	
-	if (gui->modal != DIMENSION) return 0;
+	if (gui->modal != DIM_LINEAR) return 0;
 	
 	if (gui->step == 0){
 		
@@ -19,7 +19,7 @@ int gui_dim_interactive(gui_obj *gui){
 }
 
 int gui_dim_info (gui_obj *gui){
-	if (gui->modal != DIMENSION) return 0;
+	if (gui->modal != DIM_LINEAR) return 0;
 	static int fix_angle = 0;
 	static double angle_fixed = 0.0;
 	static double dist_fixed = 3.0;
@@ -242,6 +242,58 @@ int gui_dim_mng (gui_obj *gui){
 			else{
 				dxf_attr_append(gui->drawing->head, 9, "$DIMPOST", DWG_LIFE);
 				dxf_attr_append(gui->drawing->head, 1, &gui->drawing->dimpost, DWG_LIFE);
+			}
+		}
+		
+		nk_label(gui->ctx, "Annotation text style:", NK_TEXT_LEFT);
+		/* text style combo selection */
+		int num_tstyles = gui->drawing->num_tstyles;
+		dxf_tstyle *t_sty = gui->drawing->text_styles;
+		int h = num_tstyles * 25 + 5;
+		h = (h < 200)? h : 200;
+		if (nk_combo_begin_label(gui->ctx,  gui->drawing->dimtxsty, nk_vec2(220, h))){
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			int j = 0;
+			for (j = 0; j < num_tstyles; j++){
+				if (nk_button_label(gui->ctx, t_sty[j].name)){
+					strncpy(gui->drawing->dimtxsty, t_sty[j].name, DXF_MAX_CHARS); /* select current style */
+					/* change in DXF main struct */
+					dxf_node *start = NULL, *end = NULL, *part = NULL;
+					if(dxf_find_head_var(gui->drawing->head, "$DIMTXSTY", &start, &end)){
+						/* variable exists */
+						part = dxf_find_attr_i2(start, end, 7, 0);
+						if (part != NULL){
+							strncpy(part->value.s_data, gui->drawing->dimtxsty, DXF_MAX_CHARS);
+						}
+					}
+					else{
+						dxf_attr_append(gui->drawing->head, 9, "$DIMTXSTY", DWG_LIFE);
+						dxf_attr_append(gui->drawing->head, 7, &gui->drawing->dimtxsty, DWG_LIFE);
+					}
+					
+					nk_combo_close(gui->ctx);
+					break;
+				}
+			}
+			nk_combo_end(gui->ctx);
+		}
+		
+		nk_label(gui->ctx, "Terminator:", NK_TEXT_LEFT);
+		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, gui->drawing->dimblk, DXF_MAX_CHARS, nk_filter_default);
+		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
+			nk_edit_unfocus(gui->ctx);
+			/* change in DXF main struct */
+			dxf_node *start = NULL, *end = NULL, *part = NULL;
+			if(dxf_find_head_var(gui->drawing->head, "$DIMBLK", &start, &end)){
+				/* variable exists */
+				part = dxf_find_attr_i2(start, end, 1, 0);
+				if (part != NULL){
+					strncpy(part->value.s_data, gui->drawing->dimblk, DXF_MAX_CHARS);
+				}
+			}
+			else{
+				dxf_attr_append(gui->drawing->head, 9, "$DIMBLK", DWG_LIFE);
+				dxf_attr_append(gui->drawing->head, 1, &gui->drawing->dimblk, DWG_LIFE);
 			}
 		}
 		

@@ -2760,3 +2760,48 @@ dxf_node * dxf_new_dim (int color, char *layer, char *ltype, int lw, int paper, 
 
 	return NULL;
 }
+
+dxf_node * dxf_new_solid (double x0, double y0, double z0,
+double x1, double y1, double z1,
+double x2, double y2, double z2,
+int color, char *layer, char *ltype, int lw, int paper, int pool){
+	
+	/* create a new DXF solid */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbEntity";
+	const char *dxf_subclass = "AcDbTrace";
+	int ok = 1;
+	dxf_node * new_solid = dxf_obj_new ("SOLID", pool);
+	
+	ok &= dxf_attr_append(new_solid, 5, (void *) handle, pool);
+	//ok &= dxf_attr_append(new_solid, 330, (void *) handle, pool);
+	ok &= dxf_attr_append(new_solid, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_solid, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(new_solid, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_solid, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(new_solid, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(new_solid, 370, (void *) &lw, pool);
+	
+	ok &= dxf_attr_append(new_solid, 100, (void *) dxf_subclass, pool);
+	
+	ok &= dxf_attr_append(new_solid, 10, (void *) &x0, pool);
+	ok &= dxf_attr_append(new_solid, 20, (void *) &y0, pool);
+	ok &= dxf_attr_append(new_solid, 30, (void *) &z0, pool);
+	
+	ok &= dxf_attr_append(new_solid, 11, (void *) &x1, pool);
+	ok &= dxf_attr_append(new_solid, 21, (void *) &y1, pool);
+	ok &= dxf_attr_append(new_solid, 31, (void *) &z1, pool);
+	
+	ok &= dxf_attr_append(new_solid, 12, (void *) &x2, pool);
+	ok &= dxf_attr_append(new_solid, 22, (void *) &y2, pool);
+	ok &= dxf_attr_append(new_solid, 32, (void *) &z2, pool);
+	
+	ok &= dxf_attr_append(new_solid, 13, (void *) &x2, pool);
+	ok &= dxf_attr_append(new_solid, 23, (void *) &y2, pool);
+	ok &= dxf_attr_append(new_solid, 33, (void *) &z2, pool);
+	if(ok){
+		return new_solid;
+	}
+
+	return NULL;
+}

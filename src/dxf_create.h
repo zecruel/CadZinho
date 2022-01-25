@@ -174,4 +174,10 @@ dxf_node * dxf_new_image (dxf_drawing *drawing,
 	
 dxf_node * dxf_new_dim (int color, char *layer, char *ltype, int lw, int paper, int pool);
 
+dxf_node * dxf_new_solid (double x0, double y0, double z0,
+double x1, double y1, double z1,
+double x2, double y2, double z2,
+int color, char *layer, char *ltype, int lw, int paper, int pool);
+
+
 #endif

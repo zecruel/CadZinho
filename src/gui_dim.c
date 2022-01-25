@@ -163,7 +163,7 @@ int gui_dim_mng (gui_obj *gui){
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
 	gui->next_win_w = 200;
-	gui->next_win_h = 300;
+	gui->next_win_h = 320;
 	
 	//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "config", NK_WINDOW_CLOSABLE, nk_rect(310, 50, 200, 300))){
 	if (nk_begin(gui->ctx, "Dimension Config", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
@@ -228,7 +228,7 @@ int gui_dim_mng (gui_obj *gui){
 		}
 		
 		/* edit decimal places (precision) */
-		nk_layout_row_dynamic(gui->ctx, 20, 2);
+		nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.7, 0.3});
 		nk_label(gui->ctx, "Decimal places:", NK_TEXT_RIGHT);
 		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, dimdec_str, 63, nk_filter_decimal);
 		if (!(res & NK_EDIT_ACTIVE)){
@@ -308,23 +308,34 @@ int gui_dim_mng (gui_obj *gui){
 		}
 		
 		nk_label(gui->ctx, "Terminator:", NK_TEXT_LEFT);
-		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, gui->drawing->dimblk, DXF_MAX_CHARS, nk_filter_default);
-		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
-			nk_edit_unfocus(gui->ctx);
-			/* change in DXF main struct */
-			dxf_node *start = NULL, *end = NULL, *part = NULL;
-			if(dxf_find_head_var(gui->drawing->head, "$DIMBLK", &start, &end)){
-				/* variable exists */
-				part = dxf_find_attr_i2(start, end, 1, 0);
-				if (part != NULL){
-					strncpy(part->value.s_data, gui->drawing->dimblk, DXF_MAX_CHARS);
+		const char *term_typ[] = { "Filled", "Open", "Open30", "Open90", "Closed", "Oblique", "ArchTick", "None"};
+		if (nk_combo_begin_label(gui->ctx,  gui->drawing->dimblk, nk_vec2(150, 150))){
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			int j = 0;
+			for (j = 0; j < 8; j++){
+				if (nk_button_label(gui->ctx, term_typ[j])){
+					strncpy(gui->drawing->dimblk, term_typ[j], DXF_MAX_CHARS); /* select current style */
+					/* change in DXF main struct */
+					dxf_node *start = NULL, *end = NULL, *part = NULL;
+					if(dxf_find_head_var(gui->drawing->head, "$DIMBLK", &start, &end)){
+						/* variable exists */
+						part = dxf_find_attr_i2(start, end, 1, 0);
+						if (part != NULL){
+							strncpy(part->value.s_data, gui->drawing->dimblk, DXF_MAX_CHARS);
+						}
+					}
+					else{
+						dxf_attr_append(gui->drawing->head, 9, "$DIMBLK", DWG_LIFE);
+						dxf_attr_append(gui->drawing->head, 1, &gui->drawing->dimblk, DWG_LIFE);
+					}
+					
+					nk_combo_close(gui->ctx);
+					break;
 				}
 			}
-			else{
-				dxf_attr_append(gui->drawing->head, 9, "$DIMBLK", DWG_LIFE);
-				dxf_attr_append(gui->drawing->head, 1, &gui->drawing->dimblk, DWG_LIFE);
-			}
+			nk_combo_end(gui->ctx);
 		}
+		
 		
 	} else show_config = 0;
 	nk_end(gui->ctx);

@@ -1,10 +1,6 @@
 #include "dxf_dim.h"
 
-list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent, 
-	int an_format, 
-	int term_type,
-	int tol_type, double tol_up, double tol_low)
-{
+list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent){
 	if(!ent) return NULL;
 	if (ent->type != DXF_ENT) return NULL;
 	if (!ent->obj.content) return NULL;
@@ -20,10 +16,11 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent,
 	double pt0[3] = {0.0, 0.0, 0.0};
 	double pt1[3] = {0.0, 0.0, 0.0};
 	double rot = 0.0; /* dimension rotation */
+	/* points to draw terminators */
+	double t1[2], t2[2], t3[2], t4[2], t5[2], t6[2];
 	
 	int flags = 32;
 	int an_place = 5; /* annotation placement (5 = middle center) */
-	int precision = 6; /* 6 digit */
 
 	char user_txt[DXF_MAX_CHARS+1] = "<>";
 	char tmp_str[DXF_MAX_CHARS+1] = "";
@@ -115,8 +112,6 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent,
 	double dir = 1.0;
 	
 	list_node * list = list_new(NULL, FRAME_LIFE);
-	//list_push(list, list_new((void *)curr_graph, FRAME_LIFE)); /* store entity in list */
-	//dxf_edit_scale (dxf_node * obj, double scale_x, double scale_y, double scale_z)
 	
 	/* base line */
 	dxf_node * obj = dxf_new_line (0.0, 0.0, 0.0, -measure, 0.0, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
@@ -126,23 +121,30 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent,
 	
 	/* terminators */
 	dir = (measure > 0.0) ? 1.0 : -1.0;
+	strncpy(tmp_str, drawing->dimblk, DXF_MAX_CHARS); /* preserve original string */
+	str_upp(tmp_str); /*upper case */
 	
-	obj = dxf_new_line (0.0, 0.0, 0.0, -drawing->dimscale*dir, drawing->dimscale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
+	t1[0] = 0.0; t1[1] = 0.0;
+	t2[0] = -drawing->dimscale * dir; t2[1] = drawing->dimscale * 0.25;
+	t3[0] = -measure; t3[1] = 0.0;
+	t4[0] = drawing->dimscale * dir - measure; t4[1] = t2[1];
+	
+	obj = dxf_new_line (t1[0], t1[1], 0.0, t2[0], t2[1], 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_edit_rot (obj, rot);
 	dxf_edit_move (obj, base_pt[0], base_pt[1], base_pt[2]);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
-	obj = dxf_new_line (0.0, 0.0, 0.0, -drawing->dimscale*dir, -drawing->dimscale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
+	obj = dxf_new_line (t1[0], t1[1], 0.0, t2[0], -t2[1], 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_edit_rot (obj, rot);
 	dxf_edit_move (obj, base_pt[0], base_pt[1], base_pt[2]);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
-	obj = dxf_new_line (-measure, 0.0, 0.0, drawing->dimscale*dir-measure, drawing->dimscale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
+	obj = dxf_new_line (t3[0], t3[1], 0.0, t4[0], t4[1], 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_edit_rot (obj, rot);
 	dxf_edit_move (obj, base_pt[0], base_pt[1], base_pt[2]);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	
-	obj = dxf_new_line (-measure, 0.0, 0.0, drawing->dimscale*dir-measure, -drawing->dimscale*0.25, 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
+	obj = dxf_new_line (t3[0], t3[1], 0.0, t4[0], -t4[1], 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_edit_rot (obj, rot);
 	dxf_edit_move (obj, base_pt[0], base_pt[1], base_pt[2]);
 	list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
@@ -152,20 +154,23 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent,
 	if (subst) { /* proceed to replace */
 		int len_front = subst - user_txt;
 		strncpy(result_str, user_txt, len_front); /* prefix */
-		snprintf (tmp_str, DXF_MAX_CHARS, "%.*g", precision, fabs(measure) * drawing->dimlfac); /* measure */
+		snprintf (tmp_str, DXF_MAX_CHARS, "%.*g", drawing->dimdec, fabs(measure) * drawing->dimlfac); /* measure */
 		strncat(result_str, tmp_str, DXF_MAX_CHARS - len_front); /* prefix + measure */
 		len_front = strlen(result_str);
 		subst += 2;
 		strncat(result_str, subst, DXF_MAX_CHARS - len_front); /* prefix + measure + sufix*/
 	}
 	else if (strlen(user_txt) == 0) { /* if user text  is "", then mesaure will be the annotation */
-		snprintf (result_str, DXF_MAX_CHARS, "%.*g", precision, fabs(measure) * drawing->dimlfac);
+		snprintf (result_str, DXF_MAX_CHARS, "%.*g", drawing->dimdec, fabs(measure) * drawing->dimlfac);
 	}
 	else { /* no replace mark - use the entire user text */
 		strncpy(result_str, user_txt, DXF_MAX_CHARS);
 	}
 	obj = dxf_new_mtext (0.0, 0.0, 0.0, 1.0, (char*[]){result_str}, 1, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_attr_change(obj, 71, &an_place);
+	if (dxf_tstyle_idx (drawing, drawing->dimtxsty) >= 0){
+		dxf_attr_change(obj, 7, drawing->dimtxsty);
+	}
 	dxf_edit_scale (obj, drawing->dimscale, drawing->dimscale, drawing->dimscale);
 	dxf_edit_rot (obj, rot);
 	dxf_edit_move (obj, an_pt[0], an_pt[1], an_pt[2]);

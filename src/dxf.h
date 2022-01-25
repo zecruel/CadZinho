@@ -230,6 +230,7 @@ struct Dxf_drawing{
 	char dimpost [DXF_MAX_CHARS + 1];
 	char dimtxsty [DXF_MAX_CHARS + 1];
 	char dimblk [DXF_MAX_CHARS + 1];
+	int dimdec;
 	
 };
 typedef struct Dxf_drawing dxf_drawing;

@@ -107,7 +107,7 @@ int gui_dim_info (gui_obj *gui){
 		dxf_attr_change(new_dim, 21, &base_y);
 		
 		/* create dimension block contents as a list of entities ("render" the dimension "picture") */
-		list_node *list = dxf_dim_linear_make(gui->drawing, new_dim, 2, 0, 0, 0.0, 0.0);
+		list_node *list = dxf_dim_linear_make(gui->drawing, new_dim);
 		
 		/* draw phantom */
 		gui->phanton = dxf_list_parse(gui->drawing, list, 0, FRAME_LIFE);
@@ -171,6 +171,7 @@ int gui_dim_mng (gui_obj *gui){
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		static char dimscale_str[64] = "1.0";
 		static char dimlfac_str[64] = "1.0";
+		static char dimdec_str[64] = "2";
 		nk_flags res;
 		
 		/* edit global dim scale */
@@ -226,6 +227,34 @@ int gui_dim_mng (gui_obj *gui){
 			}
 		}
 		
+		/* edit decimal places (precision) */
+		nk_layout_row_dynamic(gui->ctx, 20, 2);
+		nk_label(gui->ctx, "Decimal places:", NK_TEXT_RIGHT);
+		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, dimdec_str, 63, nk_filter_decimal);
+		if (!(res & NK_EDIT_ACTIVE)){
+			snprintf(dimdec_str, 63, "%d", gui->drawing->dimdec);
+		}
+		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
+			nk_edit_unfocus(gui->ctx);
+			if (strlen(dimdec_str)) /* update parameter value */
+				gui->drawing->dimdec = atoi(dimdec_str);
+			snprintf(dimdec_str, 63, "%d", gui->drawing->dimdec);
+			/* change in DXF main struct */
+			dxf_node *start = NULL, *end = NULL, *part = NULL;
+			if(dxf_find_head_var(gui->drawing->head, "$DIMDEC", &start, &end)){
+				/* variable exists */
+				part = dxf_find_attr_i2(start, end, 70, 0);
+				if (part != NULL){
+					part->value.i_data = gui->drawing->dimdec;
+				}
+			}
+			else{
+				dxf_attr_append(gui->drawing->head, 9, "$DIMDEC", DWG_LIFE);
+				dxf_attr_append(gui->drawing->head, 70, &gui->drawing->dimdec, DWG_LIFE);
+			}
+		}
+		
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Annotation text:", NK_TEXT_LEFT);
 		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, gui->drawing->dimpost, DXF_MAX_CHARS, nk_filter_default);
 		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */

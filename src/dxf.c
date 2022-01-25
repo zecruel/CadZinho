@@ -1684,6 +1684,7 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 		drawing->dimpost[0] = '<'; drawing->dimpost[1] = '>'; drawing->dimpost[2] = 0;
 		strncpy(drawing->dimtxsty, "Standard", DXF_MAX_CHARS);
 		strncpy(drawing->dimblk, "Open", DXF_MAX_CHARS);
+		drawing->dimdec = 2;
 		
 		if(dxf_find_head_var(drawing->head, "$DIMSCALE", &start, &end)){
 			part = dxf_find_attr_i2(start, end, 40, 0);
@@ -1715,6 +1716,13 @@ int dxf_read (dxf_drawing *drawing, char *buf, long fsize, int *prog){
 			part = dxf_find_attr_i2(start, end, 1, 0);
 			if (part != NULL){
 				strncpy (drawing->dimblk, part->value.s_data, DXF_MAX_CHARS);
+			}
+		}
+		
+		if(dxf_find_head_var(drawing->head, "$DIMDEC", &start, &end)){
+			part = dxf_find_attr_i2(start, end, 70, 0);
+			if (part != NULL){
+				drawing->dimdec = part->value.i_data;
 			}
 		}
 		

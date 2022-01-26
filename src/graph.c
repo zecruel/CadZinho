@@ -1144,7 +1144,7 @@ void graph_draw_fix(graph_obj * master, bmp_img * img, double ofs_x, double ofs_
 
 void graph_arc(graph_obj * master, double c_x, double c_y, double c_z, double radius, double ang_start, double ang_end, int sig){
 	if (master){
-		int n = 32; //numero de vertices do polígono regular que aproxima o circulo ->bom numero 
+		int n = 32; /* number of interpolation vertices - good fit */
 		double ang;
 		int steps, i;
 		double x0, y0, x1, y1, step;
@@ -1152,19 +1152,17 @@ void graph_arc(graph_obj * master, double c_x, double c_y, double c_z, double ra
 		ang_start *= M_PI/180;
 		ang_end *= M_PI/180;
 		
-		ang = (ang_end - ang_start) * sig; //angulo do arco
+		ang = (ang_end - ang_start) * sig; /* total angle of arc */
 		if (ang <= 0){ ang = ang + 2*M_PI;}
 		
-		//descobre quantos passos para o laço a seguir
-		//steps = (int) floor(fabs(ang*n/(2*M_PI))); //numero de vertices do arco
+		/* get step increment in loop */
 		step = ang/(double) n;
 		
+		/* first point */
 		x0 = c_x + radius * cos(ang_start);
 		y0 = c_y + radius * sin(ang_start);
 		
-		//printf("Arco, stp = %d, r = %0.2f, ang = %0.2f\n pts = )", steps, radius, ang);
-		
-		//já começa do segundo vértice
+		/* starts loop at second point */
 		for (i = 1; i < n; i++){
 			x1 = c_x + radius * cos(step * i * sig + ang_start);
 			y1 = c_y + radius * sin(step * i * sig + ang_start);
@@ -1175,7 +1173,7 @@ void graph_arc(graph_obj * master, double c_x, double c_y, double c_z, double ra
 			x0=x1;
 			y0=y1;
 		}
-		// o ultimo vertice do arco eh o ponto final, nao calculado no laço
+		/* last point, from end angle */
 		x1 = c_x + radius * cos(ang_end);
 		y1 = c_y + radius * sin(ang_end);
 		line_add(master, x0, y0, c_z, x1, y1, c_z);

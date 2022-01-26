@@ -133,7 +133,9 @@ int gui_vertex_info (gui_obj *gui);
 
 int gui_dim_interactive(gui_obj *gui);
 
-int gui_dim_info (gui_obj *gui);
+int gui_dim_linear_info (gui_obj *gui);
+
+int gui_dim_angular_info (gui_obj *gui);
 
 int gui_dim_mng (gui_obj *gui);
 

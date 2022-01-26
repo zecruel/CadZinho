@@ -182,6 +182,10 @@ int gui_tools_win (gui_obj *gui){
 				gui->modal = DIM_LINEAR;
 				gui->step = 0;
 			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_LINEAR]))){
+				gui->modal = DIM_ANGULAR;
+				gui->step = 0;
+			}
 			
 			/* another line --- temporay */
 			nk_layout_row_dynamic(gui->ctx, 28, 1); /*space*/
@@ -226,7 +230,8 @@ int gui_tools_win (gui_obj *gui){
 			gui_txt_prop_info (gui);
 			gui_vertex_info (gui);
 			
-			gui_dim_info (gui);
+			gui_dim_linear_info (gui);
+			gui_dim_angular_info (gui);
 			
 			/* execute scripts in dynamic mode*/
 			gui_script_dyn(gui);

@@ -2784,7 +2784,7 @@ dxf_node * dxf_new_dim_angular (int color, char *layer, char *ltype, int lw, int
 	ok &= dxf_attr_append(new_dim, 100, (void *) dxf_subclass, pool);
 	/* block name */
 	ok &= dxf_attr_append(new_dim, 2, (void *) empty, pool);
-	/* dim base point */
+	/* first line to measure angle - pt0 */
 	ok &= dxf_attr_append(new_dim, 10, (void *) (double []){0.0}, pool);
 	ok &= dxf_attr_append(new_dim, 20, (void *) (double []){0.0}, pool);
 	ok &= dxf_attr_append(new_dim, 30, (void *) (double []){0.0}, pool);
@@ -2807,19 +2807,18 @@ dxf_node * dxf_new_dim_angular (int color, char *layer, char *ltype, int lw, int
 	ok &= dxf_attr_append(new_dim, 3, (void *) dim_style, pool);
 	/* dimension sub class */
 	ok &= dxf_attr_append(new_dim, 100, (void *) subdim, pool);
-	/* two placement points - "measure" */
+	/* second line */
 	ok &= dxf_attr_append(new_dim, 13, (void *) (double []){0.0}, pool);
 	ok &= dxf_attr_append(new_dim, 23, (void *) (double []){0.0}, pool);
 	ok &= dxf_attr_append(new_dim, 33, (void *) (double []){0.0}, pool);
 	ok &= dxf_attr_append(new_dim, 14, (void *) (double []){0.0}, pool);
 	ok &= dxf_attr_append(new_dim, 24, (void *) (double []){0.0}, pool);
 	ok &= dxf_attr_append(new_dim, 34, (void *) (double []){0.0}, pool);
-	/* dimension center */
+	/* first line to measure angle - pt1 */
 	ok &= dxf_attr_append(new_dim, 15, (void *) (double []){0.0}, pool);
 	ok &= dxf_attr_append(new_dim, 25, (void *) (double []){0.0}, pool);
 	ok &= dxf_attr_append(new_dim, 35, (void *) (double []){0.0}, pool);
-	
-	/* dimension center */
+	/* dim base point */
 	ok &= dxf_attr_append(new_dim, 16, (void *) (double []){0.0}, pool);
 	ok &= dxf_attr_append(new_dim, 26, (void *) (double []){0.0}, pool);
 	ok &= dxf_attr_append(new_dim, 36, (void *) (double []){0.0}, pool);

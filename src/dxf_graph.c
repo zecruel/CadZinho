@@ -1571,10 +1571,10 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 					special = text[str_start + 2];
 					/* verify the action to do */
 					switch (special){
-						/* put the  diameter simbol (unicode D8 Hex) in text*/
+						/* put the  diameter simbol (unicode F8 Hex) in text*/
 						case 'c':
 						case 'C':
-							code_p = 216;
+							code_p = 248;
 							ofs = 3;
 							break;
 						/* put the degrees simbol in text*/
@@ -2021,10 +2021,10 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						special = text[str_start + 2];
 						/* verify the action to do */
 						switch (special){
-							/* put the  diameter simbol (unicode D8 Hex) in text*/
+							/* put the  diameter simbol (unicode F8 Hex) in text*/
 							case 'c':
 							case 'C':
-								code_p = 216;
+								code_p = 248;
 								ofs = 3;
 								break;
 							/* put the degrees simbol in text*/
@@ -2913,10 +2913,10 @@ list_node * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 					special = text[str_start + 2];
 					/* verify the action to do */
 					switch (special){
-						/* put the  diameter simbol (unicode D8 Hex) in text*/
+						/* put the  diameter simbol (unicode F8 Hex) in text*/
 						case 'c':
 						case 'C':
-							code_p = 216;
+							code_p = 248;
 							ofs = 3;
 							break;
 						/* put the degrees simbol in text*/

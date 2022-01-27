@@ -182,7 +182,7 @@ int gui_tools_win (gui_obj *gui){
 				gui->modal = DIM_LINEAR;
 				gui->step = 0;
 			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_LINEAR]))){
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_ANGULAR]))){
 				gui->modal = DIM_ANGULAR;
 				gui->step = 0;
 			}

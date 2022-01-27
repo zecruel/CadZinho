@@ -159,10 +159,10 @@ int gui_dim_linear_info (gui_obj *gui){
 
 int gui_dim_angular_info (gui_obj *gui){
 	if (gui->modal != DIM_ANGULAR) return 0;
-	static int fix_angle = 0;
-	static double angle_fixed = 0.0;
-	static double dist_fixed = 3.0;
+	
+	static double dist_fixed = 6.0;
 	static int fix_dist = 0;
+	static char user_text[DXF_MAX_CHARS+1] = "<>";
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, "Place a Angular Dim", NK_TEXT_LEFT);
@@ -174,10 +174,6 @@ int gui_dim_angular_info (gui_obj *gui){
 		if (fix_dist) nk_label(gui->ctx, "Confirm", NK_TEXT_LEFT);
 		else nk_label(gui->ctx, "Enter distance", NK_TEXT_LEFT);
 	}
-	
-	nk_checkbox_label(gui->ctx, "Fixed angle", &fix_angle);
-	if (fix_angle)
-		angle_fixed = nk_propertyd(gui->ctx, "Angle", -180.0, angle_fixed, 180.0, 1.0, 1.0);
 	
 	nk_checkbox_label(gui->ctx, "Fixed distance", &fix_dist);
 	if (fix_dist)
@@ -216,30 +212,16 @@ int gui_dim_angular_info (gui_obj *gui){
 				0, FRAME_LIFE); /* paper space */
 		
 		/* dimension angle */
-		double angle;
-		if (fix_angle) angle = angle_fixed * M_PI / 180.0; /* user entered angle or */
-		else angle = atan2((gui->step_y[2] + gui->step_y[1])/2.0, (gui->step_x[2] + gui->step_x[1])/2.0); /* calculed from points */
-		double cosine = cos(angle);
-		double sine = sin(angle);
+		double start = atan2((gui->step_y[1] - gui->step_y[0]), (gui->step_x[1] - gui->step_x[0])); /* calculed from points */
+		double end = atan2((gui->step_y[2] - gui->step_y[0]), (gui->step_x[2] - gui->step_x[0])); /* calculed from points */
+		double angle = end - start;
+		if (angle < 0.0) angle += 2 * M_PI;
+		double cosine = cos(angle/2.0 + start);
+		double sine = sin(angle/2.0 + start);
 		
-		/* calcule dimension linear length (measure). It is a polarized distance in base line direction */
-		//double length = cosine*(gui->step_x[2]  - gui->step_x[1]) + sine*(gui->step_y[2] - gui->step_y[1]);
-		
-		/* update dimension entity parameters */
-		dxf_attr_change(new_dim, 13, &gui->step_x[1]);
-		dxf_attr_change(new_dim, 23, &gui->step_y[1]);
-		dxf_attr_change(new_dim, 14, &gui->step_x[2]);
-		dxf_attr_change(new_dim, 24, &gui->step_y[2]);
-		dxf_attr_change(new_dim, 15, &gui->step_x[0]);
-		dxf_attr_change(new_dim, 25, &gui->step_y[0]);
-		
-		//dxf_attr_change(new_dim, 42, &length);
-		angle *= 360.0/M_PI;
-		dxf_attr_change(new_dim, 42, &angle);
-		dxf_attr_change(new_dim, 1, gui->drawing->dimpost);
 		
 		/* distance of dimension from measure points */
-		double dist = 3.0 * gui->drawing->dimscale;
+		double dist = 6.0 * gui->drawing->dimscale;
 		double dir = 1.0;
 		if(fix_dist) dist = dist_fixed; /* user entered distance */
 		else if (gui->step == 3){ /* or calcule from points */
@@ -249,16 +231,38 @@ int gui_dim_angular_info (gui_obj *gui){
 		dir = (dist  > 0.0) ? 1.0 : -1.0;
 		
 		/* obtain dimension base point from distance */
-		double base_x = gui->step_x[0] + (gui->step_x[2] + gui->step_x[1])/2.0*cosine + cosine * dist;
-		double base_y = gui->step_y[0] + (gui->step_y[2] + gui->step_y[1])/2.0*sine + sine * dist;
-		dxf_attr_change(new_dim, 10, &base_x); /* update dimension entity parameters */
-		dxf_attr_change(new_dim, 20, &base_y);
+		double base_x = gui->step_x[0] + cosine * dist;
+		double base_y = gui->step_y[0] + sine * dist;
+		dxf_attr_change(new_dim, 16, &base_x); /* update dimension entity parameters */
+		dxf_attr_change(new_dim, 26, &base_y);
 		
-		/* calcule dimension annotation (text) placement point (outer from perpenticular direction)*/
-		base_x += cosine * gui->drawing->dimscale;
-		base_y += sine * gui->drawing->dimscale;
+		/* calcule dimension annotation (text) placement point */
+		base_x += cosine * 2.0 * gui->drawing->dimscale;
+		base_y += sine * 2.0 * gui->drawing->dimscale;
 		dxf_attr_change(new_dim, 11, &base_x); /* update dimension entity parameters */
 		dxf_attr_change(new_dim, 21, &base_y);
+		
+		/* update dimension entity parameters */
+		dxf_attr_change(new_dim, 13, &gui->step_x[0]);
+		dxf_attr_change(new_dim, 23, &gui->step_y[0]);
+		dxf_attr_change(new_dim, 15, &gui->step_x[0]);
+		dxf_attr_change(new_dim, 25, &gui->step_y[0]);
+		if (dist > 0.0){
+			dxf_attr_change(new_dim, 10, &gui->step_x[1]);
+			dxf_attr_change(new_dim, 20, &gui->step_y[1]);
+			dxf_attr_change(new_dim, 14, &gui->step_x[2]);
+			dxf_attr_change(new_dim, 24, &gui->step_y[2]);
+			angle *= 180.0/M_PI;
+		}
+		else{
+			dxf_attr_change(new_dim, 10, &gui->step_x[2]);
+			dxf_attr_change(new_dim, 20, &gui->step_y[2]);
+			dxf_attr_change(new_dim, 14, &gui->step_x[1]);
+			dxf_attr_change(new_dim, 24, &gui->step_y[1]);
+			angle = (2 * M_PI - angle) * 180.0/M_PI;
+		}
+		dxf_attr_change(new_dim, 42, &angle);
+		dxf_attr_change(new_dim, 1, user_text);
 		
 		/* create dimension block contents as a list of entities ("render" the dimension "picture") */
 		list_node *list = dxf_dim_angular_make(gui->drawing, new_dim);

@@ -538,7 +538,7 @@ list_node * dxf_dim_angular_make(dxf_drawing *drawing, dxf_node * ent){
 	if (subst) { /* proceed to replace */
 		int len_front = subst - user_txt;
 		strncpy(result_str, user_txt, len_front); /* prefix */
-		snprintf (tmp_str, DXF_MAX_CHARS, "%.*f°", dec_places, fabs(measure) * drawing->dimlfac); /* measure */
+		snprintf (tmp_str, DXF_MAX_CHARS, "%.*f°", dec_places, fabs(measure * 180.0/M_PI)); /* measure */
 		strncat(result_str, tmp_str, DXF_MAX_CHARS - len_front); /* prefix + measure */
 		len_front = strlen(result_str);
 		subst += 2;

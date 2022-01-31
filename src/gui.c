@@ -426,6 +426,70 @@ int gui_tab_img (gui_obj *gui, bmp_img *img, int active, int w){
 
 /* ************************************************** */
 
+int gui_create_modal_cur(gui_obj *gui){
+	SDL_Surface *surface;
+	
+	int cur_img[MODAL_SIZE];
+	cur_img[SELECT] = SVG_CURSOR;
+	cur_img[LINE] = SVG_LINE;
+	cur_img[POLYLINE] = SVG_PLINE;
+	cur_img[CIRCLE] = SVG_CIRCLE;
+	cur_img[RECT] = SVG_RECT;
+	cur_img[TEXT] = SVG_TEXT;
+	cur_img[MTEXT] = SVG_I_TEXT;
+	cur_img[ARC] = SVG_ARC;
+	cur_img[DUPLI] = SVG_DUPLI;
+	cur_img[MOVE] = SVG_MOVE;
+	cur_img[SCALE] = SVG_SCALE;
+	cur_img[ROTATE] = SVG_ROT;
+	cur_img[NEW_BLK] = SVG_BLOCK;
+	cur_img[HATCH] = SVG_HATCH;
+	cur_img[INSERT] = SVG_BOOK;
+	cur_img[PASTE] = SVG_PASTE;
+	cur_img[MIRROR] = SVG_MIRROR;
+	cur_img[ED_TEXT] = SVG_TEXT_E;
+	cur_img[ED_ATTR] = SVG_TAG_E;
+	cur_img[SCRIPT] = SVG_CURSOR;
+	cur_img[SPLINE] = SVG_SPLINE;
+	cur_img[ELLIPSE] = SVG_ELIPSE;
+	cur_img[IMAGE] = SVG_IMAGE;
+	cur_img[ADD_ATTRIB] = SVG_TAG;
+	cur_img[ADD_XDATA] = SVG_TAG;
+	cur_img[EXPLODE] = SVG_EXPLODE;
+	cur_img[MEASURE] = SVG_RULER;
+	cur_img[FIND] = SVG_FIND;
+	cur_img[PROP] = SVG_STYLE;
+	cur_img[TXT_PROP] = SVG_TEXT_STY;
+	cur_img[VERTEX] = SVG_EDIT;
+	cur_img[DIM_LINEAR] = SVG_DIM_LINEAR;
+	cur_img[DIM_ANGULAR] = SVG_DIM_ANGULAR;
+	cur_img[DIM_RADIUS] = SVG_DIM_RADIUS;
+	cur_img[DIM_ORDINATE] = SVG_DIM_ORDINATE;
+	int i;
+	for (i = 0; i < MODAL_SIZE; i++){
+		surface = SDL_CreateRGBSurfaceFrom(
+			(void *)gui->svg_bmp[cur_img[i]]->buf,
+			gui->svg_bmp[cur_img[i]]->width,
+			gui->svg_bmp[cur_img[i]]->height,
+			32, gui->svg_bmp[cur_img[i]]->width * 4,
+			0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+			
+		gui->modal_cursor[i] = SDL_CreateColorCursor(surface, 0, 0);
+		SDL_FreeSurface(surface);
+	}
+	
+	return 1;
+}
+
+int gui_free_modal_cur(gui_obj *gui){
+	int i;
+	for (i = 0; i < MODAL_SIZE; i++){
+		SDL_FreeCursor(gui->modal_cursor[i]);
+	}
+	
+	return 1;
+}
+
 int gui_default_modal(gui_obj *gui){
 	if (gui->modal == NEW_BLK)
 		gui->show_blk_mng = 1;

@@ -519,7 +519,10 @@ int main(int argc, char** argv){
 	SDL_FreeSurface(surface);
 
 	
-
+	/* ****************** test cursor ************************** */
+	SDL_Cursor* dflt_cur = SDL_GetDefaultCursor();
+	gui_create_modal_cur(gui);
+	/* ******************************************************* */
 		
 	SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
 	
@@ -590,6 +593,7 @@ int main(int argc, char** argv){
 		
 		//SDL_ShowCursor(SDL_DISABLE);
 		
+		
 		/* get events for Nuklear GUI input */
 		nk_input_begin(gui->ctx);
 		if(SDL_PollEvent(&event)){
@@ -601,10 +605,12 @@ int main(int argc, char** argv){
 		
 		/* ===============================*/
 		if (nk_window_is_any_hovered(gui->ctx)) {
-			SDL_ShowCursor(SDL_ENABLE);
+			//SDL_ShowCursor(SDL_ENABLE);
 			//printf("show\n");
+			SDL_SetCursor(dflt_cur);
 		}
 		else{
+			SDL_SetCursor(gui->modal_cursor[gui->modal]);
 			//SDL_ShowCursor(SDL_DISABLE);
 			
 			if (ev_type != 0){
@@ -1269,28 +1275,32 @@ int main(int argc, char** argv){
 			/* load the clipboard file */
 			file_size = 0;
 			file_buf = load_file_reuse(clip_path, &file_size);
-			
-			/* load and apply the fonts required for clipboard drawing */
-			gui->clip_drwg->font_list = gui->font_list;
-			gui->clip_drwg->dflt_font = get_font_list(gui->font_list, "txt.shx");
-			gui->clip_drwg->dflt_fonts_path = gui->dflt_fonts_path;
-			
-			while (dxf_read (gui->clip_drwg, file_buf->buffer, file_size, &gui->progress) > 0){
-				
+			if (!file_buf) {
+				gui->action = NONE;
 			}
-			
-			
-			/* clear the file buffer */
-			//free(file_buf);
-			manage_buffer(0, BUF_RELEASE);
-			file_buf = NULL;
-			file_size = 0;
-			
-			/* prepare for next steps on paste */
-			gui->modal = PASTE;
-			gui->step = 0;
-			gui->action = NONE;
-			gui->draw = 1;
+			else{
+				/* load and apply the fonts required for clipboard drawing */
+				gui->clip_drwg->font_list = gui->font_list;
+				gui->clip_drwg->dflt_font = get_font_list(gui->font_list, "txt.shx");
+				gui->clip_drwg->dflt_fonts_path = gui->dflt_fonts_path;
+				
+				while (dxf_read (gui->clip_drwg, file_buf->buffer, file_size, &gui->progress) > 0){
+					
+				}
+				
+				
+				/* clear the file buffer */
+				//free(file_buf);
+				manage_buffer(0, BUF_RELEASE);
+				file_buf = NULL;
+				file_size = 0;
+				
+				/* prepare for next steps on paste */
+				gui->modal = PASTE;
+				gui->step = 0;
+				gui->action = NONE;
+				gui->draw = 1;
+			}
 		}
 		else if(gui->action == DELETE){
 			gui->action = NONE;
@@ -1820,7 +1830,7 @@ int main(int argc, char** argv){
 	i_svg_free_bmp(gui->svg_bmp);
 	i_svg_free_curves(gui->svg_curves);
 	
-	
+	gui_free_modal_cur(gui);
 	
 	
 	//dxf_hatch_free(gui->list_pattern.next);

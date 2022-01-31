@@ -111,7 +111,8 @@ enum Modal {
 	DIM_LINEAR,
 	DIM_ANGULAR,
 	DIM_RADIUS,
-	DIM_ORDINATE
+	DIM_ORDINATE,
+	MODAL_SIZE
 };
 
 enum Gui_ev {
@@ -310,6 +311,8 @@ struct Gui_obj {
 	bmp_img *i_trash;
 	bmp_img * attr_vec[15];
 	
+	SDL_Cursor * modal_cursor[MODAL_SIZE];
+	
 	struct nk_style_button b_icon;
 	
 	/* style for toggle buttons (or select buttons) with image */
@@ -456,6 +459,10 @@ NK_API void nk_sdl_shutdown(gui_obj *gui);
 int gui_start(gui_obj *gui);
 
 int gui_tstyle(gui_obj *gui);
+
+int gui_create_modal_cur(gui_obj *gui);
+
+int gui_free_modal_cur(gui_obj *gui);
 
 int gui_default_modal(gui_obj *gui);
 

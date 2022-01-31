@@ -186,6 +186,14 @@ int gui_tools_win (gui_obj *gui){
 				gui->modal = DIM_ANGULAR;
 				gui->step = 0;
 			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_RADIUS]))){
+				gui->modal = DIM_RADIUS;
+				gui->step = 0;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_ORDINATE]))){
+				gui->modal = DIM_ORDINATE;
+				gui->step = 0;
+			}
 			
 			/* another line --- temporay */
 			nk_layout_row_dynamic(gui->ctx, 28, 1); /*space*/

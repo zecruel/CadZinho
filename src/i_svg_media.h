@@ -106,6 +106,8 @@ enum svg_list {
     SVG_HATCH,
     SVG_DIM_LINEAR,
     SVG_DIM_ANGULAR,
+    SVG_DIM_RADIUS,
+    SVG_DIM_ORDINATE,
     SVG_DIM_CONFIG,
     SVG_MEDIA_SIZE
 };

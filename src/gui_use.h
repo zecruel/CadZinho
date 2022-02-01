@@ -137,6 +137,10 @@ int gui_dim_linear_info (gui_obj *gui);
 
 int gui_dim_angular_info (gui_obj *gui);
 
+int gui_dim_radial_info (gui_obj *gui);
+
+int gui_dim_ordinate_info (gui_obj *gui);
+
 int gui_dim_mng (gui_obj *gui);
 
 #endif

@@ -176,6 +176,10 @@ dxf_node * dxf_new_dim (int color, char *layer, char *ltype, int lw, int paper, 
 
 dxf_node * dxf_new_dim_angular (int color, char *layer, char *ltype, int lw, int paper, int pool);
 
+dxf_node * dxf_new_dim_radial (int diameter, int color, char *layer, char *ltype, int lw, int paper, int pool);
+
+dxf_node * dxf_new_dim_ordinate (int color, char *layer, char *ltype, int lw, int paper, int pool);
+
 dxf_node * dxf_new_solid (double x0, double y0, double z0,
 double x1, double y1, double z1,
 double x2, double y2, double z2,

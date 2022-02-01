@@ -2830,6 +2830,135 @@ dxf_node * dxf_new_dim_angular (int color, char *layer, char *ltype, int lw, int
 	return NULL;
 }
 
+dxf_node * dxf_new_dim_radial (int diameter, int color, char *layer, char *ltype, int lw, int paper, int pool){
+	/* create a new DXF DIMENSION */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbEntity";
+	const char *dxf_subclass = "AcDbDimension";
+	const char *subdim_r = "AcDbRadialDimension";
+	const char *subdim_d = "AcDbDiametricDimension";
+	const char *dim_style = "Standard";
+	const char *empty = "";
+	const char *user_text = "<>";
+	int ok = 1;
+	dxf_node * new_dim = dxf_obj_new ("DIMENSION", pool);
+	
+	ok &= dxf_attr_append(new_dim, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_dim, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_dim, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(new_dim, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_dim, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(new_dim, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(new_dim, 370, (void *) &lw, pool);
+	
+	ok &= dxf_attr_append(new_dim, 100, (void *) dxf_subclass, pool);
+	/* block name */
+	ok &= dxf_attr_append(new_dim, 2, (void *) empty, pool);
+	/* first line to measure angle - pt0 */
+	ok &= dxf_attr_append(new_dim, 10, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 20, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 30, (void *) (double []){0.0}, pool);
+	/* annotation point */
+	ok &= dxf_attr_append(new_dim, 11, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 21, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 31, (void *) (double []){0.0}, pool);
+	/* flags */
+	if (diameter)
+		ok &= dxf_attr_append(new_dim, 70, (void *) (int []){35}, pool); /* type - diametric dimension */
+	else
+		ok &= dxf_attr_append(new_dim, 70, (void *) (int []){36}, pool); /* type - radial dimension */
+	ok &= dxf_attr_append(new_dim, 71, (void *) (int []){5}, pool); /* annotation - middle center */
+	/* measure */
+	ok &= dxf_attr_append(new_dim, 42, (void *) (double []){0.0}, pool);
+	/* user text */
+	ok &= dxf_attr_append(new_dim, 1, (void *) user_text, pool);
+	/* other flags - ?? */
+	ok &= dxf_attr_append(new_dim, 73, (void *) (int []){0}, pool);
+	ok &= dxf_attr_append(new_dim, 74, (void *) (int []){0}, pool);
+	ok &= dxf_attr_append(new_dim, 75, (void *) (int []){0}, pool);
+	/* dimension style */
+	ok &= dxf_attr_append(new_dim, 3, (void *) dim_style, pool);
+	/* dimension sub class */
+	if (diameter)
+		ok &= dxf_attr_append(new_dim, 100, (void *) subdim_d, pool);
+	else
+		ok &= dxf_attr_append(new_dim, 100, (void *) subdim_r, pool);
+	/* definition point */
+	ok &= dxf_attr_append(new_dim, 15, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 25, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 35, (void *) (double []){0.0}, pool);
+	/* leader length */
+	ok &= dxf_attr_append(new_dim, 40, (void *) (double []){0.0}, pool);
+	
+	if(ok){
+		return new_dim;
+	}
+
+	return NULL;
+}
+
+dxf_node * dxf_new_dim_ordinate (int color, char *layer, char *ltype, int lw, int paper, int pool){
+	/* create a new DXF DIMENSION */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbEntity";
+	const char *dxf_subclass = "AcDbDimension";
+	const char *subdim = "AcDbOrdinateDimension";
+	const char *dim_style = "Standard";
+	const char *empty = "";
+	const char *user_text = "<>";
+	int ok = 1;
+	dxf_node * new_dim = dxf_obj_new ("DIMENSION", pool);
+	
+	ok &= dxf_attr_append(new_dim, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_dim, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_dim, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(new_dim, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_dim, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(new_dim, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(new_dim, 370, (void *) &lw, pool);
+	
+	ok &= dxf_attr_append(new_dim, 100, (void *) dxf_subclass, pool);
+	/* block name */
+	ok &= dxf_attr_append(new_dim, 2, (void *) empty, pool);
+	/* first line to measure angle - pt0 */
+	ok &= dxf_attr_append(new_dim, 10, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 20, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 30, (void *) (double []){0.0}, pool);
+	/* annotation point */
+	ok &= dxf_attr_append(new_dim, 11, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 21, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 31, (void *) (double []){0.0}, pool);
+	/* flags */
+	ok &= dxf_attr_append(new_dim, 70, (void *) (int []){38}, pool); /* type - ordinate dimension */
+	ok &= dxf_attr_append(new_dim, 71, (void *) (int []){5}, pool); /* annotation - middle center */
+	/* measure */
+	ok &= dxf_attr_append(new_dim, 42, (void *) (double []){0.0}, pool);
+	/* user text */
+	ok &= dxf_attr_append(new_dim, 1, (void *) user_text, pool);
+	/* other flags - ?? */
+	ok &= dxf_attr_append(new_dim, 73, (void *) (int []){0}, pool);
+	ok &= dxf_attr_append(new_dim, 74, (void *) (int []){0}, pool);
+	ok &= dxf_attr_append(new_dim, 75, (void *) (int []){0}, pool);
+	/* dimension style */
+	ok &= dxf_attr_append(new_dim, 3, (void *) dim_style, pool);
+	/* dimension sub class */
+	ok &= dxf_attr_append(new_dim, 100, (void *) subdim, pool);
+	/* feature location point */
+	ok &= dxf_attr_append(new_dim, 13, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 23, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 33, (void *) (double []){0.0}, pool);
+	/* leader end point */
+	ok &= dxf_attr_append(new_dim, 14, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 24, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_dim, 34, (void *) (double []){0.0}, pool);
+	
+	if(ok){
+		return new_dim;
+	}
+
+	return NULL;
+}
+
 dxf_node * dxf_new_solid (double x0, double y0, double z0,
 double x1, double y1, double z1,
 double x2, double y2, double z2,

@@ -240,6 +240,8 @@ int gui_tools_win (gui_obj *gui){
 			
 			gui_dim_linear_info (gui);
 			gui_dim_angular_info (gui);
+			gui_dim_radial_info (gui);
+			gui_dim_ordinate_info (gui);
 			
 			/* execute scripts in dynamic mode*/
 			gui_script_dyn(gui);

@@ -67,8 +67,8 @@ int gui_dim_linear_info (gui_obj *gui){
 		
 		/* create a temporary DIMENSION entity */
 		dxf_node *new_dim = dxf_new_dim (gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-				gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-				0, FRAME_LIFE); /* paper space */
+			gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+			0, FRAME_LIFE); /* paper space */
 		
 		/* dimension angle */
 		double angle;
@@ -223,8 +223,8 @@ int gui_dim_angular_info (gui_obj *gui){
 		
 		/* create a temporary DIMENSION entity */
 		dxf_node *new_dim = dxf_new_dim_angular (gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-				gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-				0, FRAME_LIFE); /* paper space */
+			gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+			0, FRAME_LIFE); /* paper space */
 		
 		/* dimension angle */
 		double start = atan2((gui->step_y[1] - gui->step_y[0]), (gui->step_x[1] - gui->step_x[0])); /* calculed from points */
@@ -336,7 +336,306 @@ int gui_dim_angular_info (gui_obj *gui){
 				new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , DWG_LIFE);
 				
 				/* undo/redo list*/
-				do_add_entry(&gui->list_do, "Linear DIMENSION");
+				do_add_entry(&gui->list_do, "Angular DIMENSION");
+				do_add_item(gui->list_do.current, NULL, blkrec);
+				do_add_item(gui->list_do.current, NULL, blk);
+				do_add_item(gui->list_do.current, NULL, new_ent);
+			}
+			gui->draw_phanton = 0;
+			gui_first_step(gui);
+			
+		}
+		else if (gui->ev & EV_CANCEL){ /* back to first point, if user cancel operation */
+			gui_first_step(gui);
+		}
+	}
+	
+	return 1;
+}
+
+int gui_dim_radial_info (gui_obj *gui){
+	if (gui->modal != DIM_RADIUS) return 0;
+	static int custom_text = 0;
+	static char user_text[DXF_MAX_CHARS+1] = "<>";
+	static int diametric = 0;
+	
+	nk_layout_row_dynamic(gui->ctx, 20, 1);
+	nk_label(gui->ctx, "Place a Dimension:", NK_TEXT_LEFT);
+	
+	nk_layout_row_dynamic(gui->ctx, 20, 2);
+	if (nk_option_label(gui->ctx, "Radial", !diametric)) {
+		diametric = 0;
+	}
+	if (nk_option_label(gui->ctx, "Diametric", diametric)){
+		diametric = 1;
+	}
+	
+	nk_layout_row_dynamic(gui->ctx, 20, 1);
+	if (gui->step == 0){
+		if (diametric) nk_label(gui->ctx, "Enter quadrant point", NK_TEXT_LEFT);
+		else nk_label(gui->ctx, "Enter center point", NK_TEXT_LEFT);
+	}
+	else if (gui->step == 1) {
+		if (diametric) nk_label(gui->ctx, "Enter oposite point", NK_TEXT_LEFT);
+		else nk_label(gui->ctx, "Enter radius point", NK_TEXT_LEFT);
+	}
+	else nk_label(gui->ctx, "Enter location", NK_TEXT_LEFT);
+	
+	nk_checkbox_label(gui->ctx, "Custom Text", &custom_text);
+	if (custom_text)
+		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, user_text, DXF_MAX_CHARS, nk_filter_default);
+	
+	if (gui->step == 0){
+		/* frst point */
+		gui->free_sel = 0;
+		if (gui->ev & EV_ENTER){
+			/* to next point*/
+			gui->step = 1;
+			gui->en_distance = 1;
+			gui_next_step(gui);
+		}
+		else if (gui->ev & EV_CANCEL){
+			gui_default_modal(gui);
+		}
+	} 
+	else {
+		char tmp_str[DXF_MAX_CHARS + 1];
+		
+		/* create a temporary DIMENSION entity */
+		dxf_node *new_dim = dxf_new_dim_radial (diametric, 
+			gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+			gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+			0, FRAME_LIFE); /* paper space */
+		
+		/* calcule dimension annotation (text) placement */
+		double base_x = gui->step_x[0];
+		double base_y = gui->step_y[0];
+		if (gui->step == 2){ /* or calcule from points */
+			base_x = gui->step_x[2];
+			base_y = gui->step_y[2];
+		}
+		
+		/* dimension angle */
+		double angle = atan2((base_y - gui->step_y[1]), (base_x - gui->step_x[1])); /* calculed from points */
+		if (angle < 0.0) angle += 2 * M_PI;
+		double cosine = cos(angle);
+		double sine = sin(angle);
+		
+		/* calcule dimension linear length (measure). It is a polarized distance in base line direction */
+		double length = sqrt(pow(gui->step_x[1]  - gui->step_x[0], 2) + pow(gui->step_y[1] - gui->step_y[0], 2));
+		
+		/* update dimension entity parameters */
+		dxf_attr_change(new_dim, 10, &gui->step_x[0]);
+		dxf_attr_change(new_dim, 20, &gui->step_y[0]);
+		dxf_attr_change(new_dim, 11, &base_x);
+		dxf_attr_change(new_dim, 21, &base_y);
+		dxf_attr_change(new_dim, 15, &gui->step_x[1]);
+		dxf_attr_change(new_dim, 25, &gui->step_y[1]);
+		dxf_attr_change(new_dim, 42, &length);
+		
+		if (custom_text)
+			dxf_attr_change(new_dim, 1, user_text);
+		else
+			dxf_attr_change(new_dim, 1, gui->drawing->dimpost);
+		
+		
+		/* change text justification to improve positioning */
+		if ((angle) < M_PI*0.45)
+			dxf_attr_change(new_dim, 71, (void*)(int[]){4});
+		else if ((angle) < M_PI * 0.55)
+			dxf_attr_change(new_dim, 71, (void*)(int[]){8});
+		else if ((angle) < M_PI * 1.45)
+			dxf_attr_change(new_dim, 71, (void*)(int[]){6});
+		else if ((angle) < M_PI * 1.55)
+			dxf_attr_change(new_dim, 71, (void*)(int[]){2});
+		else
+			dxf_attr_change(new_dim, 71, (void*)(int[]){4});
+		
+		/* create dimension block contents as a list of entities ("render" the dimension "picture") */
+		list_node *list = dxf_dim_radial_make(gui->drawing, new_dim);
+		
+		/* draw phantom */
+		gui->phanton = dxf_list_parse(gui->drawing, list, 0, FRAME_LIFE);
+		gui->element = NULL;
+		gui->draw_phanton = 1;
+		
+		if (gui->step == 1 && gui->ev & EV_ENTER){
+			/* second point - go to confirm */
+			gui->step = 2;
+			gui_next_step(gui);
+		}
+		else if (gui->step == 2 && gui->ev & EV_ENTER){
+			/* confirm - create a new DXF dim */
+			
+			/* first, create the "picture" block */ 
+			int last_dim = dxf_find_last_dim (gui->drawing); /* get last dim number available*/
+			snprintf(tmp_str, DXF_MAX_CHARS, "*D%d", last_dim); /* block name - "*D" + sequential number*/
+			dxf_node *blkrec = NULL, *blk = NULL;
+			if (dxf_new_block (gui->drawing, tmp_str, "",
+				(double []){0.0, 0.0, 0.0},
+				0, "", "", "", "",
+				"0", list, &blkrec, &blk, DWG_LIFE))
+			{	
+				dxf_attr_change(blk, 70, (void*)(int[]){1}); /* set block to annonimous */
+				/* atach block to dimension ent */
+				dxf_attr_change(new_dim, 2, (void*)tmp_str);
+				/* copy temporary dimension to drawing buffer */
+				dxf_node *new_ent = dxf_ent_copy(new_dim, DWG_LIFE);
+				drawing_ent_append(gui->drawing, new_ent);
+				new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , DWG_LIFE);
+				
+				/* undo/redo list*/
+				if (diametric) do_add_entry(&gui->list_do, "Diametric DIMENSION");
+				else do_add_entry(&gui->list_do, "Radial DIMENSION");
+				do_add_item(gui->list_do.current, NULL, blkrec);
+				do_add_item(gui->list_do.current, NULL, blk);
+				do_add_item(gui->list_do.current, NULL, new_ent);
+			}
+			gui->draw_phanton = 0;
+			gui_first_step(gui);
+			
+		}
+		else if (gui->ev & EV_CANCEL){ /* back to first point, if user cancel operation */
+			gui_first_step(gui);
+		}
+	}
+	
+	return 1;
+}
+
+int gui_dim_ordinate_info (gui_obj *gui){
+	if (gui->modal != DIM_ORDINATE) return 0;
+	static int fix_angle = 0;
+	static double angle_fixed = 0.0;
+	static double dist_fixed = 3.0;
+	static int fix_dist = 0;
+	static int custom_text = 0;
+	static char user_text[DXF_MAX_CHARS+1] = "<>";
+	
+	nk_layout_row_dynamic(gui->ctx, 20, 1);
+	nk_label(gui->ctx, "Place a Ordinate Dim", NK_TEXT_LEFT);
+	
+	if (gui->step == 0) nk_label(gui->ctx, "Enter start point", NK_TEXT_LEFT);
+	else if (gui->step == 1) nk_label(gui->ctx, "Enter end point", NK_TEXT_LEFT);
+	else {
+		if (fix_dist) nk_label(gui->ctx, "Confirm", NK_TEXT_LEFT);
+		else nk_label(gui->ctx, "Enter distance", NK_TEXT_LEFT);
+	}
+	
+	nk_checkbox_label(gui->ctx, "Fixed angle", &fix_angle);
+	if (fix_angle)
+		angle_fixed = nk_propertyd(gui->ctx, "Angle", -180.0, angle_fixed, 180.0, 1.0, 1.0);
+	
+	nk_checkbox_label(gui->ctx, "Fixed distance", &fix_dist);
+	if (fix_dist)
+		dist_fixed = nk_propertyd(gui->ctx, "dist_fixed", -1e9, dist_fixed, 1.0e9, SMART_STEP(dist_fixed), SMART_STEP(dist_fixed));
+	
+	nk_checkbox_label(gui->ctx, "Custom Text", &custom_text);
+	if (custom_text)
+		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, user_text, DXF_MAX_CHARS, nk_filter_default);
+	
+	if (gui->step == 0){
+		/* frst point */
+		gui->free_sel = 0;
+		if (gui->ev & EV_ENTER){
+			/* to next point*/
+			gui->step = 1;
+			gui->en_distance = 1;
+			gui_next_step(gui);
+		}
+		else if (gui->ev & EV_CANCEL){
+			gui_default_modal(gui);
+		}
+	} 
+	else {
+		char tmp_str[DXF_MAX_CHARS + 1];
+		
+		/* create a temporary DIMENSION entity */
+		dxf_node *new_dim = dxf_new_dim (gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+				gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+				0, FRAME_LIFE); /* paper space */
+		
+		/* dimension angle */
+		double angle;
+		if (fix_angle) angle = angle_fixed * M_PI / 180.0; /* user entered angle or */
+		else angle = atan2((gui->step_y[1] - gui->step_y[0]), (gui->step_x[1] - gui->step_x[0])); /* calculed from points */
+		double cosine = cos(angle);
+		double sine = sin(angle);
+		
+		/* calcule dimension linear length (measure). It is a polarized distance in base line direction */
+		double length = cosine*(gui->step_x[1]  - gui->step_x[0]) + sine*(gui->step_y[1] - gui->step_y[0]);
+		
+		/* update dimension entity parameters */
+		dxf_attr_change(new_dim, 13, &gui->step_x[0]);
+		dxf_attr_change(new_dim, 23, &gui->step_y[0]);
+		dxf_attr_change(new_dim, 14, &gui->step_x[1]);
+		dxf_attr_change(new_dim, 24, &gui->step_y[1]);
+		dxf_attr_change(new_dim, 42, &length);
+		angle *= 180.0/M_PI;
+		dxf_attr_change(new_dim, 50, &angle);
+		
+		if (custom_text)
+			dxf_attr_change(new_dim, 1, user_text);
+		else
+			dxf_attr_change(new_dim, 1, gui->drawing->dimpost);
+		
+		/* distance of dimension from measure points */
+		double dist = 3.0 * gui->drawing->dimscale;
+		double dir = 1.0;
+		if(fix_dist) dist = dist_fixed; /* user entered distance */
+		else if (gui->step == 2){ /* or calcule from points */
+			/* It is a polarized distance in perpenticular direction from dimension base line*/
+			dist = -sine*(gui->step_x[2]  - gui->step_x[1])+ cosine*(gui->step_y[2] - gui->step_y[1]);
+		}
+		dir = (dist  > 0.0) ? 1.0 : -1.0;
+		
+		/* obtain dimension base point from distance */
+		double base_x = gui->step_x[1] - sine * dist;
+		double base_y = gui->step_y[1] + cosine * dist;
+		dxf_attr_change(new_dim, 10, &base_x); /* update dimension entity parameters */
+		dxf_attr_change(new_dim, 20, &base_y);
+		
+		/* calcule dimension annotation (text) placement point (outer from perpenticular direction)*/
+		base_x += -length/2.0 * cosine - sine * 1.0 * dir * gui->drawing->dimscale;
+		base_y += -length/2.0 * sine + cosine * 1.0 * dir * gui->drawing->dimscale;
+		dxf_attr_change(new_dim, 11, &base_x); /* update dimension entity parameters */
+		dxf_attr_change(new_dim, 21, &base_y);
+		
+		/* create dimension block contents as a list of entities ("render" the dimension "picture") */
+		list_node *list = dxf_dim_linear_make(gui->drawing, new_dim);
+		
+		/* draw phantom */
+		gui->phanton = dxf_list_parse(gui->drawing, list, 0, FRAME_LIFE);
+		gui->element = NULL;
+		gui->draw_phanton = 1;
+		
+		if (gui->step == 1 && gui->ev & EV_ENTER){
+			/* second point - go to confirm */
+			gui->step = 2;
+			gui_next_step(gui);
+		}
+		else if (gui->step == 2 && gui->ev & EV_ENTER){
+			/* confirm - create a new DXF dim */
+			
+			/* first, create the "picture" block */ 
+			int last_dim = dxf_find_last_dim (gui->drawing); /* get last dim number available*/
+			snprintf(tmp_str, DXF_MAX_CHARS, "*D%d", last_dim); /* block name - "*D" + sequential number*/
+			dxf_node *blkrec = NULL, *blk = NULL;
+			if (dxf_new_block (gui->drawing, tmp_str, "",
+				(double []){0.0, 0.0, 0.0},
+				0, "", "", "", "",
+				"0", list, &blkrec, &blk, DWG_LIFE))
+			{	
+				dxf_attr_change(blk, 70, (void*)(int[]){1}); /* set block to annonimous */
+				/* atach block to dimension ent */
+				dxf_attr_change(new_dim, 2, (void*)tmp_str);
+				/* copy temporary dimension to drawing buffer */
+				dxf_node *new_ent = dxf_ent_copy(new_dim, DWG_LIFE);
+				drawing_ent_append(gui->drawing, new_ent);
+				new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , DWG_LIFE);
+				
+				/* undo/redo list*/
+				do_add_entry(&gui->list_do, "Ordinate DIMENSION");
 				do_add_item(gui->list_do.current, NULL, blkrec);
 				do_add_item(gui->list_do.current, NULL, blk);
 				do_add_item(gui->list_do.current, NULL, new_ent);

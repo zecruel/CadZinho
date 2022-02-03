@@ -1821,3 +1821,30 @@ list_node * dxf_edit_expl_poly(dxf_drawing *drawing, dxf_node * ent, int mode){
 	
 	return list;
 }
+
+list_node * dxf_delete_list(list_node *input){
+	if (!input) return NULL;
+	
+	/* list with entitites "deleted" */
+	list_node *out = list_new(NULL, FRAME_LIFE);
+	if(!out) return NULL;
+	
+	dxf_node *obj = NULL;
+	
+	/* sweep input list */
+	list_node *current = input->next;
+	list_node *next = current;
+	while (next){
+		current = next;
+		next = next->next;
+		obj = current->data;
+		if (!obj) continue;
+		if (obj->type != DXF_ENT) continue;
+		
+		
+		dxf_obj_subst(obj, NULL); /* detach objetc from its structure */
+		list_push(out, list_new((void *)obj, FRAME_LIFE)); /* store entity in out list */
+	}
+	
+	return out;
+}

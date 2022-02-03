@@ -41,4 +41,6 @@ list_node * dxf_edit_expl_raw(dxf_drawing *drawing, dxf_node * ent, int mode);
 
 list_node * dxf_edit_expl_poly(dxf_drawing *drawing, dxf_node * ent, int mode);
 
+list_node * dxf_delete_list(list_node *input);
+
 #endif

@@ -1304,12 +1304,14 @@ int main(int argc, char** argv){
 		}
 		else if(gui->action == DELETE){
 			gui->action = NONE;
+			
+			list_node *deleted = dxf_delete_list(gui->sel_list);
 		
-			if (gui->sel_list->next){ /* verify if  has elements in list */
+			if (deleted && deleted->next){ /* verify if  has elements in list */
 				
 				do_add_entry(&gui->list_do, "DELETE");
 				
-				list_node *current = gui->sel_list->next;
+				list_node *current = deleted->next;
 				
 				// starts the content sweep 
 				while (current != NULL){
@@ -1319,12 +1321,6 @@ int main(int argc, char** argv){
 							if (do_add_item(gui->list_do.current, (dxf_node *)current->data, NULL)) {
 								//printf("add item = %d\n", current->data);
 							}
-							
-							// -------------------------------------------
-							//dxf_obj_detach((dxf_node *)current->data);
-							dxf_obj_subst((dxf_node *)current->data, NULL);
-							
-							//---------------------------------------
 						}
 					}
 					current = current->next;

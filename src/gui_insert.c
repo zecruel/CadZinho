@@ -93,6 +93,7 @@ int gui_insert_info (gui_obj *gui){
 		static int show_blk_pp = 0, show_hidden_blks = 0;
 		static char txt[DXF_MAX_CHARS+1] = "";
 		static char descr[DXF_MAX_CHARS+1] = "";
+		dxf_node *blk = NULL, *blk_flag = NULL;
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Place a Insert", NK_TEXT_LEFT);
@@ -107,9 +108,22 @@ int gui_insert_info (gui_obj *gui){
 			nk_layout_row_dynamic(gui->ctx, 20, 2);
 			if (nk_button_label(gui->ctx, "OK")){ /* try go to next step */
 				/* check if block exists */
-				if (dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name)){
-					gui->step = 1;
-					gui_next_step(gui);
+				if (blk = dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name)){
+					/* verify if block is annonimous */
+					blk_flag = dxf_find_attr2(blk, 70);
+					if (blk_flag) {
+						if (blk_flag->value.i_data & 1) {
+							snprintf(gui->log_msg, 63, "Error: Block not allowed");
+						}
+						else{ /* ok to place insert */
+							gui->step = 1;
+							gui_next_step(gui);
+						}
+					}
+					else{ /* ok to place insert */
+						gui->step = 1;
+						gui_next_step(gui);
+					}
 				}
 				else {
 					snprintf(gui->log_msg, 63, "Error: Block not found");

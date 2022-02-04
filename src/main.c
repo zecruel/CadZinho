@@ -1305,7 +1305,7 @@ int main(int argc, char** argv){
 		else if(gui->action == DELETE){
 			gui->action = NONE;
 			
-			list_node *deleted = dxf_delete_list(gui->sel_list);
+			list_node *deleted = dxf_delete_list(gui->drawing, gui->sel_list);
 		
 			if (deleted && deleted->next){ /* verify if  has elements in list */
 				

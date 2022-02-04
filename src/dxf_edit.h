@@ -6,6 +6,7 @@
 #include "graph.h"
 #include "dxf_math.h"
 #include "dxf_ent.h"
+#include "dxf_dim.h"
 
 enum Explode_mode{
 	EXPL_DEFAULT = 0,
@@ -41,6 +42,6 @@ list_node * dxf_edit_expl_raw(dxf_drawing *drawing, dxf_node * ent, int mode);
 
 list_node * dxf_edit_expl_poly(dxf_drawing *drawing, dxf_node * ent, int mode);
 
-list_node * dxf_delete_list(list_node *input);
+list_node * dxf_delete_list(dxf_drawing *drawing, list_node *input);
 
 #endif

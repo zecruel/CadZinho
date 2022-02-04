@@ -19,4 +19,6 @@ list_node * dxf_dim_ordinate_make(dxf_drawing *drawing, dxf_node * ent);
 	
 int dxf_find_last_dim (dxf_drawing *drawing);
 
+int dxf_dim_get_blk (dxf_drawing *drawing, dxf_node * ent, dxf_node **blk, dxf_node **blk_rec);
+
 #endif

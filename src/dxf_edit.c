@@ -1822,7 +1822,8 @@ list_node * dxf_edit_expl_poly(dxf_drawing *drawing, dxf_node * ent, int mode){
 	return list;
 }
 
-list_node * dxf_delete_list(list_node *input){
+list_node * dxf_delete_list(dxf_drawing *drawing, list_node *input){
+	if (!drawing) return NULL;
 	if (!input) return NULL;
 	
 	/* list with entitites "deleted" */
@@ -1841,9 +1842,18 @@ list_node * dxf_delete_list(list_node *input){
 		if (!obj) continue;
 		if (obj->type != DXF_ENT) continue;
 		
-		
-		dxf_obj_subst(obj, NULL); /* detach objetc from its structure */
+		dxf_obj_subst(obj, NULL); /* detach object from its structure */
 		list_push(out, list_new((void *)obj, FRAME_LIFE)); /* store entity in out list */
+		
+		dxf_node *block, *blk_rec;
+		if (dxf_dim_get_blk (drawing, obj, &block, &blk_rec)){
+			dxf_obj_subst(block, NULL); /* detach block from its structure */
+			list_push(out, list_new((void *)block, FRAME_LIFE)); /* store block in out list */
+			
+			if(!blk_rec) continue;
+			dxf_obj_subst(blk_rec, NULL); /* detach block record from its structure */
+			list_push(out, list_new((void *)blk_rec, FRAME_LIFE)); /* store block record entry in out list */
+		}
 	}
 	
 	return out;

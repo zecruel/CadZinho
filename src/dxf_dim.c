@@ -980,3 +980,27 @@ int dxf_find_last_dim (dxf_drawing *drawing){
 	
 	return last;
 }
+
+int dxf_dim_get_blk (dxf_drawing *drawing, dxf_node * ent, dxf_node **blk, dxf_node **blk_rec){
+	/* verify if passed parameters are valid */
+	if(!blk) return 0;
+	if(!blk_rec) return 0;
+	/* init returned values */
+	*blk = NULL;
+	*blk_rec = NULL;
+	/* verify if passed parameters are valid */
+	if(!ent) return 0;
+	if (ent->type != DXF_ENT) return 0;
+	if (!ent->obj.content) return 0;
+	if (strcmp(ent->obj.name, "DIMENSION") != 0) return 0;
+	
+	dxf_node *blk_name = dxf_find_attr2(ent, 2); /* get block name */
+	
+	/* find relative block */
+	if(!blk_name) return 0;
+	*blk = dxf_find_obj_descr2(drawing->blks, "BLOCK", blk_name->value.s_data);
+	if(!*blk) return 0;
+	
+	*blk_rec = dxf_find_obj_descr2(drawing->blks_rec, "BLOCK_RECORD", blk_name->value.s_data);
+	return 1;
+}

@@ -188,6 +188,24 @@ int dxf_edit_move (dxf_node * obj, double of_x, double of_y, double of_z){
 				}
 			}
 			else if (ent_type == DXF_DIMENSION){
+				if (current->value.group == 11){ 
+					current->value.d_data += ofs_x;
+				}
+				if (current->value.group == 21){ 
+					current->value.d_data += ofs_y;
+				}
+				if (current->value.group == 31){ 
+					current->value.d_data += ofs_z;
+				}
+				if (current->value.group == 12){ 
+					current->value.d_data += ofs_x;
+				}
+				if (current->value.group == 22){ 
+					current->value.d_data += ofs_y;
+				}
+				if (current->value.group == 32){ 
+					current->value.d_data += ofs_z;
+				}
 				if (current->value.group == 13){ 
 					current->value.d_data += ofs_x;
 				}
@@ -213,6 +231,15 @@ int dxf_edit_move (dxf_node * obj, double of_x, double of_y, double of_z){
 					current->value.d_data += ofs_y;
 				}
 				if (current->value.group == 35){ 
+					current->value.d_data += ofs_z;
+				}
+				if (current->value.group == 16){ 
+					current->value.d_data += ofs_x;
+				}
+				if (current->value.group == 26){ 
+					current->value.d_data += ofs_y;
+				}
+				if (current->value.group == 36){ 
 					current->value.d_data += ofs_z;
 				}
 			}

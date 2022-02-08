@@ -178,6 +178,27 @@ struct Dxf_tstyle{
 };
 typedef struct Dxf_tstyle dxf_tstyle;
 
+struct Dxf_dimsty{
+	char name[DXF_MAX_CHARS+1];
+	char post[DXF_MAX_CHARS+1]; /* custom text (sufix/prefix) for annotation */
+	char a_type[DXF_MAX_CHARS+1]; /* arrow type */
+	
+	double scale; /* global scale for render */
+	double a_size; /* arrow size */
+	double ext_ofs; /* extension line offset (gap) between measure point */
+	double ext_e; /*extension of extention line :D */
+	double txt_size; /* annotation text size */
+	double an_scale; /* annotation scale - apply to measure */
+	double gap; /* space between text and base line */
+	
+	int dec; /* number of decimal places */
+	int num_el;
+	
+	int tstyle; /* text style (index) */
+	dxf_node *obj;
+};
+typedef struct Dxf_dimsty dxf_dimsty;
+
 struct Dxf_drawing{
 	int pool; /* memory pool location */
 	/* DXF main sections */

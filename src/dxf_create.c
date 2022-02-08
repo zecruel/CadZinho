@@ -3003,3 +3003,72 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 
 	return NULL;
 }
+
+int dxf_new_dim_sty (dxf_drawing *drawing, dxf_dimsty dim_sty){
+	
+	if (!drawing) 
+		return 0; /* error -  not drawing */
+	
+	if ((drawing->t_dimst == NULL) || (drawing->main_struct == NULL)) 
+		return 0; /* error -  not main structure */
+	
+	char name_cpy[DXF_MAX_CHARS], *new_name;
+	strncpy(name_cpy, dim_sty.name, DXF_MAX_CHARS);
+	new_name = trimwhitespace(name_cpy);
+	
+	if (strlen(new_name) == 0) return 0; /* error -  no name */
+	
+	/* verify if not exists */
+	if (dxf_find_obj_descr2(drawing->t_dimst, "DIMSTYLE", new_name) != NULL) 
+		return 0; /* error -  exists dim_style with same name */
+	
+	
+	const char *handle = "0";
+	const char *dxf_class = "AcDbSymbolTableRecord";
+	const char *dxf_subclass = "AcDbDimStyleTableRecord";
+	const char *std_tsty = "13"; /* -->TRICK  -  see the handle in seed file */
+	int int_zero = 0, ok = 0;
+	
+	/* create a new DIMSTYLE */
+	dxf_node * dsty = dxf_obj_new ("DIMSTYLE", drawing->pool);
+	
+	if (dsty) {
+		ok = 1;
+		ok &= dxf_attr_append(dsty, 5, (void *) handle, drawing->pool);
+		ok &= dxf_attr_append(dsty, 100, (void *) dxf_class, drawing->pool);
+		ok &= dxf_attr_append(dsty, 100, (void *) dxf_subclass, drawing->pool);
+		ok &= dxf_attr_append(dsty, 2, (void *) new_name, drawing->pool);
+		ok &= dxf_attr_append(dsty, 70, (void *) &int_zero, drawing->pool);
+		
+		ok &= dxf_attr_append(dsty, 3, (void *) dim_sty.post, drawing->pool);
+		ok &= dxf_attr_append(dsty, 5, (void *) dim_sty.a_type, drawing->pool);
+		ok &= dxf_attr_append(dsty, 40, (void *) &dim_sty.scale, drawing->pool);
+		ok &= dxf_attr_append(dsty, 41, (void *) &dim_sty.a_size, drawing->pool);
+		ok &= dxf_attr_append(dsty, 42, (void *) &dim_sty.ext_ofs, drawing->pool);
+		ok &= dxf_attr_append(dsty, 44, (void *) &dim_sty.ext_e, drawing->pool);
+		ok &= dxf_attr_append(dsty, 140, (void *) &dim_sty.txt_size, drawing->pool);
+		ok &= dxf_attr_append(dsty, 144, (void *) &dim_sty.an_scale, drawing->pool);
+		ok &= dxf_attr_append(dsty, 147, (void *) &dim_sty.gap, drawing->pool);
+		ok &= dxf_attr_append(dsty, 77, (void *) (int []){1}, drawing->pool);
+		ok &= dxf_attr_append(dsty, 271, (void *) &dim_sty.dec, drawing->pool);
+		
+		
+		dxf_node *sty_handle = dxf_find_attr2(drawing->text_styles[dim_sty.tstyle].obj, 5);
+		if (sty_handle){
+			ok &= dxf_attr_append(dsty, 340, (void *) sty_handle->value.s_data, drawing->pool);
+		}
+		else{
+			ok &= dxf_attr_append(dsty, 340, (void *) std_tsty, drawing->pool);
+		}
+		/* get current handle and increment the handle seed*/
+		ok &= ent_handle(drawing, dsty);
+		
+		/* append the layer to correpondent table */
+		dxf_append(drawing->t_dimst, dsty);
+		
+		/* update the layers in drawing  */
+		//dxf_layer_assemb (drawing);
+	}
+	
+	return ok;
+}

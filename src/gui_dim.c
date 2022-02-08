@@ -63,8 +63,12 @@ int gui_dim_linear_info (gui_obj *gui){
 		}
 	} 
 	else {
-		char tmp_str[DXF_MAX_CHARS + 1];
+		dxf_dimsty dim_sty;
+		strncpy(dim_sty.name, "STANDARD", DXF_MAX_CHARS); /* --------- */
+		/*init drawing style */
+		dxf_dim_get_sty(gui->drawing, &dim_sty);
 		
+		char tmp_str[DXF_MAX_CHARS + 1];
 		/* create a temporary DIMENSION entity */
 		dxf_node *new_dim = dxf_new_dim (gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 			gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
@@ -92,10 +96,10 @@ int gui_dim_linear_info (gui_obj *gui){
 		if (custom_text)
 			dxf_attr_change(new_dim, 1, user_text);
 		else
-			dxf_attr_change(new_dim, 1, gui->drawing->dimpost);
+			dxf_attr_change(new_dim, 1, dim_sty.post);
 		
 		/* distance of dimension from measure points */
-		double dist = 3.0 * gui->drawing->dimscale;
+		double dist = 3.0 * dim_sty.scale;
 		double dir = 1.0;
 		if(fix_dist) dist = dist_fixed; /* user entered distance */
 		else if (gui->step == 2){ /* or calcule from points */
@@ -111,8 +115,8 @@ int gui_dim_linear_info (gui_obj *gui){
 		dxf_attr_change(new_dim, 20, &base_y);
 		
 		/* calcule dimension annotation (text) placement point (outer from perpenticular direction)*/
-		base_x += -length/2.0 * cosine - sine * 1.0 * dir * gui->drawing->dimscale;
-		base_y += -length/2.0 * sine + cosine * 1.0 * dir * gui->drawing->dimscale;
+		base_x += -length/2.0 * cosine - sine * (dim_sty.gap + dim_sty.txt_size/2.0) * dir * dim_sty.scale;
+		base_y += -length/2.0 * sine + cosine * (dim_sty.gap + dim_sty.txt_size/2.0) * dir * dim_sty.scale;
 		dxf_attr_change(new_dim, 11, &base_x); /* update dimension entity parameters */
 		dxf_attr_change(new_dim, 21, &base_y);
 		
@@ -236,6 +240,10 @@ int gui_dim_angular_info (gui_obj *gui){
 		}
 	} 
 	else {
+		dxf_dimsty dim_sty;
+		strncpy(dim_sty.name, "STANDARD", DXF_MAX_CHARS); /* --------- */
+		/*init drawing style */
+		dxf_dim_get_sty(gui->drawing, &dim_sty);
 		char tmp_str[DXF_MAX_CHARS + 1];
 		
 		/* create a temporary DIMENSION entity */
@@ -255,7 +263,7 @@ int gui_dim_angular_info (gui_obj *gui){
 		
 		
 		/* distance of dimension from measure points */
-		double dist = 3.0 * gui->drawing->dimscale+
+		double dist = 3.0 * dim_sty.scale+
 			sqrt(pow(gui->step_x[1]  - gui->step_x[0], 2) + pow(gui->step_y[1] - gui->step_y[0], 2));
 		double dir = 1.0;
 		if(fix_dist){
@@ -277,8 +285,8 @@ int gui_dim_angular_info (gui_obj *gui){
 		dxf_attr_change(new_dim, 26, &base_y);
 		
 		/* calcule dimension annotation (text) placement point */
-		base_x += cosine * dir * 0.7 * gui->drawing->dimscale;
-		base_y += sine * dir * 0.7 * gui->drawing->dimscale;
+		base_x += cosine * dir * dim_sty.gap * dim_sty.scale;
+		base_y += sine * dir * dim_sty.gap * dim_sty.scale;
 		dxf_attr_change(new_dim, 11, &base_x); /* update dimension entity parameters */
 		dxf_attr_change(new_dim, 21, &base_y);
 		
@@ -416,6 +424,10 @@ int gui_dim_radial_info (gui_obj *gui){
 		}
 	} 
 	else {
+		dxf_dimsty dim_sty;
+		strncpy(dim_sty.name, "STANDARD", DXF_MAX_CHARS); /* --------- */
+		/*init drawing style */
+		dxf_dim_get_sty(gui->drawing, &dim_sty);
 		char tmp_str[DXF_MAX_CHARS + 1];
 		
 		/* create a temporary DIMENSION entity */
@@ -453,7 +465,7 @@ int gui_dim_radial_info (gui_obj *gui){
 		if (custom_text)
 			dxf_attr_change(new_dim, 1, user_text);
 		else
-			dxf_attr_change(new_dim, 1, gui->drawing->dimpost);
+			dxf_attr_change(new_dim, 1, dim_sty.post);
 		
 		
 		/* change text justification to improve positioning */
@@ -572,6 +584,11 @@ int gui_dim_ordinate_info (gui_obj *gui){
 		}
 	} 
 	else {
+		dxf_dimsty dim_sty;
+		strncpy(dim_sty.name, "STANDARD", DXF_MAX_CHARS); /* --------- */
+		/*init drawing style */
+		dxf_dim_get_sty(gui->drawing, &dim_sty);
+		
 		start = (x_dir) ? gui->step_x[0] : gui->step_y[0];
 		ext = (x_dir) ? gui->step_y[1] : gui->step_x[1];
 		
@@ -601,17 +618,17 @@ int gui_dim_ordinate_info (gui_obj *gui){
 		dxf_attr_change(new_dim, 14, &x);
 		dxf_attr_change(new_dim, 24, &y);
 		dxf_attr_change(new_dim, 42, &length);
-		if (x_dir) dxf_attr_change(new_dim, 70, (void *) (int []){38});
-		else  dxf_attr_change(new_dim, 70, (void *) (int []){102});
+		if (x_dir) dxf_attr_change(new_dim, 70, (void *) (int []){102});
+		else  dxf_attr_change(new_dim, 70, (void *) (int []){38});
 		
 		if (custom_text)
 			dxf_attr_change(new_dim, 1, user_text);
 		else
-			dxf_attr_change(new_dim, 1, gui->drawing->dimpost);
+			dxf_attr_change(new_dim, 1, dim_sty.post);
 		
 		/* calcule dimension annotation (text) placement point (outer from perpenticular direction)*/
-		x += dir * 0.5 * sine * gui->drawing->dimscale;
-		y +=  dir * 0.5 * cosine * gui->drawing->dimscale;
+		x += dir * dim_sty.gap * sine * dim_sty.scale;
+		y +=  dir * dim_sty.gap * cosine * dim_sty.scale;
 		dxf_attr_change(new_dim, 11, &x); /* update dimension entity parameters */
 		dxf_attr_change(new_dim, 21, &y);
 		/* change text justification to improve positioning */

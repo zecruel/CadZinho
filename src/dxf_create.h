@@ -185,5 +185,6 @@ double x1, double y1, double z1,
 double x2, double y2, double z2,
 int color, char *layer, char *ltype, int lw, int paper, int pool);
 
+int dxf_new_dim_sty (dxf_drawing *drawing, dxf_dimsty dim_sty);
 
 #endif

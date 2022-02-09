@@ -1153,7 +1153,7 @@ int dxf_dim_get_sty(dxf_drawing *drawing, dxf_dimsty *dim_sty){
 	
 	current = dsty_obj->obj.content->next;
 	
-	/* get DIMENSION parameters */
+	/* get DIMSTYLE parameters */
 	while (current){
 		if (current->type == DXF_ATTR){ /* DXF attibute */
 			switch (current->value.group){
@@ -1211,4 +1211,137 @@ int dxf_dim_get_sty(dxf_drawing *drawing, dxf_dimsty *dim_sty){
 	}
 	
 	return 1;
+}
+
+int dxf_dim_update_sty(dxf_drawing *drawing, dxf_dimsty *dim_sty){
+	if(!dim_sty) return 0;
+	if (!drawing) return 0;
+	if (!drawing->t_dimst) return 0;
+	
+	dxf_node *dsty_obj;
+	
+	if (!(dsty_obj = dxf_find_obj_descr2(drawing->t_dimst, "DIMSTYLE", dim_sty->name)))
+		return -1; /* not found */
+	
+	//dim_sty->obj = dsty_obj;
+	
+	
+	/* update DIMSTYLE parameters */
+	dxf_attr_change(dsty_obj, 3, dim_sty->post);
+	dxf_attr_change(dsty_obj, 5, dim_sty->a_type);
+	dxf_attr_change(dsty_obj, 40, &dim_sty->scale);
+	dxf_attr_change(dsty_obj, 41, &dim_sty->a_size);
+	dxf_attr_change(dsty_obj, 42, &dim_sty->ext_ofs);
+	dxf_attr_change(dsty_obj, 44, &dim_sty->ext_e);
+	dxf_attr_change(dsty_obj, 140, &dim_sty->txt_size);
+	dxf_attr_change(dsty_obj, 144, &dim_sty->an_scale);
+	dxf_attr_change(dsty_obj, 147, &dim_sty->gap);
+	dxf_attr_change(dsty_obj, 271, &dim_sty->dec);
+	
+	if (dim_sty->tstyle >=0) {
+		dxf_node *tsty_obj = drawing->text_styles[dim_sty->tstyle].obj;
+		tsty_obj = dxf_find_attr2(tsty_obj, 5);
+		if (tsty_obj){
+			dxf_attr_change(dsty_obj, 340, tsty_obj->value.s_data);
+		}
+	}
+	
+	
+	return 1;
+}
+
+int dxf_dimsty_use(dxf_drawing *drawing){
+	/* count dimstyle in use in drawing */
+	if (!drawing) return 0;
+	if (!drawing->t_dimst) return 0;
+	
+	int ok = 0, i;
+	dxf_node *current, *prev, *obj = NULL, *list[2];
+	
+	list[0] = NULL; list[1] = NULL;
+	if (drawing){
+		list[0] = drawing->ents;
+		list[1] = drawing->blks;
+	}
+	else return 0;
+	
+	/* init dimstyles count */
+	current = drawing->t_dimst->obj.content;
+	while (current){ /* sweep elements in section */
+		if (current->type == DXF_ENT){
+			if (strcmp(current->obj.name, "DIMSTYLE") == 0){
+				/* uses DIMSTYLE's layer index to count */
+				current->obj.layer= 0;
+				
+				/* get name of current DIMSTYLE */
+				dxf_node * blk_nm = dxf_find_attr2(current, 2);
+				if (blk_nm){
+					char name[DXF_MAX_CHARS + 1];
+					strncpy(name, blk_nm->value.s_data, DXF_MAX_CHARS);
+					str_upp(name);
+					/* mark used if is a system DIMSTYLE*/
+					if (strcmp(name, "STANDARD") == 0) current->obj.layer= 1;
+				}
+			}
+		}
+		current = current->next; /* go to the next in the list*/
+	}
+	
+	for (i = 0; i< 2; i++){ /* look in BLOCKS and ENTITIES sections */
+		obj = list[i];
+		current = obj;
+		while (current){ /* sweep elements in section */
+			ok = 1;
+			prev = current;
+			if (current->type == DXF_ENT){
+				if (strcmp(current->obj.name, "DIMENSION") == 0){
+					dxf_node *dsty = NULL, *dsty_name = NULL;
+					dsty_name = dxf_find_attr2(current, 3);
+					if(dsty_name) {
+						dsty = dxf_find_obj_descr2(drawing->t_dimst, "DIMSTYLE", dsty_name->value.s_data);
+						if(dsty) {
+							/* uses DIMSTYLE's layer index to count */
+							dsty->obj.layer++;
+						}
+					}
+				}
+				/* search also in sub elements */
+				if (current->obj.content){
+					/* starts the content sweep */
+					current = current->obj.content;
+					continue;
+				}
+			}
+				
+			current = current->next; /* go to the next in the list*/
+			
+			if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
+				current = NULL;
+				break;
+			}
+
+			/* ============================================================= */
+			while (current == NULL){
+				/* end of list sweeping */
+				if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
+					//printf("para\n");
+					current = NULL;
+					break;
+				}
+				/* try to back in structure hierarchy */
+				prev = prev->master;
+				if (prev){ /* up in structure */
+					/* try to continue on previous point in structure */
+					current = prev->next;
+					
+				}
+				else{ /* stop the search if structure ends */
+					current = NULL;
+					break;
+				}
+			}
+		}
+	}
+	
+	return ok;
 }

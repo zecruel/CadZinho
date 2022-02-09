@@ -28,4 +28,8 @@ int dxf_dim_rewrite (dxf_drawing *drawing, dxf_node *ent, dxf_node **blk, dxf_no
 
 int dxf_dim_get_sty(dxf_drawing *drawing, dxf_dimsty *dim_sty);
 
+int dxf_dim_update_sty(dxf_drawing *drawing, dxf_dimsty *dim_sty);
+
+int dxf_dimsty_use(dxf_drawing *drawing);
+
 #endif

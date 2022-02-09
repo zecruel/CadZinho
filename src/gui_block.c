@@ -109,7 +109,7 @@ int gui_blk_mng (gui_obj *gui){
 		struct nk_style_button *sel_type;
 		
 		list_node *blk_g; /*graphic object of current block */
-		dxf_node *blk, *blk_nm; /* current block and its name attribute */
+		dxf_node *blk, *blk_nm, *next; /* current block and its name attribute */
 		int blk_ei; /*extents flag of current block */
 		/* extents and zoom parameters */
 		double blk_x0, blk_y0, blk_x1, blk_y1, z, z_x, z_y, o_x, o_y;
@@ -157,8 +157,9 @@ int gui_blk_mng (gui_obj *gui){
 				nk_layout_row_template_push_static(gui->ctx, 50);
 				nk_layout_row_template_end(gui->ctx);
 				
-				while (blk = dxf_find_obj_i(gui->drawing->blks, "BLOCK", i)){
-				
+				i = 0; next = NULL;
+				blk = dxf_find_obj_nxt(gui->drawing->blks, &next, "BLOCK");
+				while (blk){
 					/* get name of current block */
 					blk_nm = dxf_find_attr2(blk, 2);
 					if (blk_nm){
@@ -193,6 +194,10 @@ int gui_blk_mng (gui_obj *gui){
 					}
 					
 					i++;
+					if (next)
+						blk = dxf_find_obj_nxt(gui->drawing->blks, &next, "BLOCK");
+					else
+						blk = NULL;
 				}
 				nk_group_end(gui->ctx);
 			}

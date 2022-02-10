@@ -291,6 +291,8 @@ int dxf_count_attr(dxf_node * obj, int attr);
 
 //vector_p dxf_find_obj(dxf_node * obj, char *name);
 
+int dxf_count_obj(dxf_node * obj, char *name);
+
 dxf_node * dxf_find_obj_i(dxf_node * obj, char *name, int idx);
 
 //vector_p dxf_find_obj_descr(dxf_node * obj, char *name, char *descr);

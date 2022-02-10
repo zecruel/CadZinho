@@ -3034,7 +3034,7 @@ int dxf_new_dim_sty (dxf_drawing *drawing, dxf_dimsty dim_sty){
 	
 	if (dsty) {
 		ok = 1;
-		ok &= dxf_attr_append(dsty, 5, (void *) handle, drawing->pool);
+		ok &= dxf_attr_append(dsty, 105, (void *) handle, drawing->pool);
 		ok &= dxf_attr_append(dsty, 100, (void *) dxf_class, drawing->pool);
 		ok &= dxf_attr_append(dsty, 100, (void *) dxf_subclass, drawing->pool);
 		ok &= dxf_attr_append(dsty, 2, (void *) new_name, drawing->pool);
@@ -3065,9 +3065,6 @@ int dxf_new_dim_sty (dxf_drawing *drawing, dxf_dimsty dim_sty){
 		
 		/* append the layer to correpondent table */
 		dxf_append(drawing->t_dimst, dsty);
-		
-		/* update the layers in drawing  */
-		//dxf_layer_assemb (drawing);
 	}
 	
 	return ok;

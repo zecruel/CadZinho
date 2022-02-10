@@ -176,7 +176,7 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent){
 	else if (term_typ == OPEN || term_typ == OPEN30 || term_typ == OPEN90 || term_typ == CLOSED){
 		t1[0] = 0.0; t1[1] = 0.0;
 		t2[0] = -dim_sty.scale * dim_sty.a_size * dir;
-		t2[1] = dim_sty.scale * dim_sty.a_size * 0.20;
+		t2[1] = dim_sty.scale * dim_sty.a_size * 0.1667;
 		if (term_typ == OPEN30) t2[1] = dim_sty.scale * dim_sty.a_size * 0.2588;
 		else if (term_typ == OPEN90) t2[1] = dim_sty.scale * dim_sty.a_size * 0.7071;
 		t3[0] = -measure; t3[1] = 0.0;
@@ -239,7 +239,7 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent){
 	else{ /* FILLED */
 		t1[0] = 0.0; t1[1] = 0.0;
 		t2[0] = -dim_sty.scale * dim_sty.a_size * dir;
-		t2[1] = dim_sty.scale * dim_sty.a_size * 0.20;
+		t2[1] = dim_sty.scale * dim_sty.a_size * 0.1667;
 		t3[0] = -measure; t3[1] = 0.0;
 		t4[0] = dim_sty.scale * dim_sty.a_size * dir - measure; t4[1] = t2[1];
 		
@@ -478,8 +478,8 @@ list_node * dxf_dim_angular_make(dxf_drawing *drawing, dxf_node * ent){
 	else if (term_typ == OPEN || term_typ == OPEN30 || term_typ == OPEN90 || term_typ == CLOSED){
 		t1[0] = center[0] + radius * cos(end);
 		t1[1] = center[1] + radius * sin(end);
-		t2[0] = center[0] + (radius+dim_sty.scale * dim_sty.a_size * 0.20) * cos(end - dim_sty.scale * dim_sty.a_size/radius * dir);
-		t2[1] = center[1] + (radius+dim_sty.scale * dim_sty.a_size * 0.20) * sin(end - dim_sty.scale * dim_sty.a_size/radius * dir);
+		t2[0] = center[0] + (radius+dim_sty.scale * dim_sty.a_size * 0.1667) * cos(end - dim_sty.scale * dim_sty.a_size/radius * dir);
+		t2[1] = center[1] + (radius+dim_sty.scale * dim_sty.a_size * 0.1667) * sin(end - dim_sty.scale * dim_sty.a_size/radius * dir);
 		if (term_typ == OPEN30) {
 			t2[0] = center[0] + (radius+dim_sty.scale * dim_sty.a_size * 0.2588) * cos(end - dim_sty.scale * dim_sty.a_size/radius * dir);
 			t2[1] = center[1] + (radius+dim_sty.scale * dim_sty.a_size * 0.2588) * sin(end - dim_sty.scale * dim_sty.a_size/radius * dir);
@@ -488,8 +488,8 @@ list_node * dxf_dim_angular_make(dxf_drawing *drawing, dxf_node * ent){
 			t2[0] = center[0] + (radius+dim_sty.scale * dim_sty.a_size * 0.7071) * cos(end - dim_sty.scale * dim_sty.a_size/radius * dir);
 			t2[1] = center[1] + (radius+dim_sty.scale * dim_sty.a_size * 0.7071) * sin(end - dim_sty.scale * dim_sty.a_size/radius * dir);
 		}
-		t3[0] = center[0] + (radius-dim_sty.scale * dim_sty.a_size * 0.20) * cos(end - dim_sty.scale * dim_sty.a_size/radius * dir);
-		t3[1] = center[1] + (radius-dim_sty.scale * dim_sty.a_size * 0.20) * sin(end - dim_sty.scale * dim_sty.a_size/radius * dir);
+		t3[0] = center[0] + (radius-dim_sty.scale * dim_sty.a_size * 0.1667) * cos(end - dim_sty.scale * dim_sty.a_size/radius * dir);
+		t3[1] = center[1] + (radius-dim_sty.scale * dim_sty.a_size * 0.1667) * sin(end - dim_sty.scale * dim_sty.a_size/radius * dir);
 		if (term_typ == OPEN30) {
 			t3[0] = center[0] + (radius-dim_sty.scale * dim_sty.a_size * 0.2588) * cos(end - dim_sty.scale * dim_sty.a_size/radius * dir);
 			t3[1] = center[1] + (radius-dim_sty.scale * dim_sty.a_size * 0.2588) * sin(end - dim_sty.scale * dim_sty.a_size/radius * dir);
@@ -512,8 +512,8 @@ list_node * dxf_dim_angular_make(dxf_drawing *drawing, dxf_node * ent){
 		
 		t1[0] = center[0] + radius * cos(start);
 		t1[1] = center[1] + radius * sin(start);
-		t2[0] = center[0] + (radius+dim_sty.scale * dim_sty.a_size * 0.20) * cos(start + dim_sty.scale * dim_sty.a_size/radius * dir);
-		t2[1] = center[1] + (radius+dim_sty.scale * dim_sty.a_size * 0.20) * sin(start + dim_sty.scale * dim_sty.a_size/radius * dir);
+		t2[0] = center[0] + (radius+dim_sty.scale * dim_sty.a_size * 0.1667) * cos(start + dim_sty.scale * dim_sty.a_size/radius * dir);
+		t2[1] = center[1] + (radius+dim_sty.scale * dim_sty.a_size * 0.1667) * sin(start + dim_sty.scale * dim_sty.a_size/radius * dir);
 		if (term_typ == OPEN30) {
 			t2[0] = center[0] + (radius+dim_sty.scale * dim_sty.a_size * 0.2588) * cos(start + dim_sty.scale * dim_sty.a_size/radius * dir);
 			t2[1] = center[1] + (radius+dim_sty.scale * dim_sty.a_size * 0.2588) * sin(start + dim_sty.scale * dim_sty.a_size/radius * dir);
@@ -522,8 +522,8 @@ list_node * dxf_dim_angular_make(dxf_drawing *drawing, dxf_node * ent){
 			t2[0] = center[0] + (radius+dim_sty.scale * dim_sty.a_size * 0.7071) * cos(start + dim_sty.scale * dim_sty.a_size/radius * dir);
 			t2[1] = center[1] + (radius+dim_sty.scale * dim_sty.a_size * 0.7071) * sin(start + dim_sty.scale * dim_sty.a_size/radius * dir);
 		}
-		t3[0] = center[0] + (radius-dim_sty.scale * dim_sty.a_size * 0.20) * cos(start + dim_sty.scale * dim_sty.a_size/radius * dir);
-		t3[1] = center[1] + (radius-dim_sty.scale * dim_sty.a_size * 0.20) * sin(start + dim_sty.scale * dim_sty.a_size/radius * dir);
+		t3[0] = center[0] + (radius-dim_sty.scale * dim_sty.a_size * 0.1667) * cos(start + dim_sty.scale * dim_sty.a_size/radius * dir);
+		t3[1] = center[1] + (radius-dim_sty.scale * dim_sty.a_size * 0.1667) * sin(start + dim_sty.scale * dim_sty.a_size/radius * dir);
 		if (term_typ == OPEN30) {
 			t3[0] = center[0] + (radius-dim_sty.scale * dim_sty.a_size * 0.2588) * cos(start + dim_sty.scale * dim_sty.a_size/radius * dir);
 			t3[1] = center[1] + (radius-dim_sty.scale * dim_sty.a_size * 0.2588) * sin(start + dim_sty.scale * dim_sty.a_size/radius * dir);
@@ -567,19 +567,19 @@ list_node * dxf_dim_angular_make(dxf_drawing *drawing, dxf_node * ent){
 	else{ /* FILLED */
 		t1[0] = center[0] + radius * cos(end);
 		t1[1] = center[1] + radius * sin(end);
-		t2[0] = center[0] + (radius+dim_sty.scale * dim_sty.a_size * 0.20) * cos(end - dim_sty.scale * dim_sty.a_size/radius * dir);
-		t2[1] = center[1] + (radius+dim_sty.scale * dim_sty.a_size * 0.20) * sin(end - dim_sty.scale * dim_sty.a_size/radius * dir);
-		t3[0] = center[0] + (radius-dim_sty.scale * dim_sty.a_size * 0.20) * cos(end - dim_sty.scale * dim_sty.a_size/radius * dir);
-		t3[1] = center[1] + (radius-dim_sty.scale * dim_sty.a_size * 0.20) * sin(end - dim_sty.scale * dim_sty.a_size/radius * dir);
+		t2[0] = center[0] + (radius+dim_sty.scale * dim_sty.a_size * 0.1667) * cos(end - dim_sty.scale * dim_sty.a_size/radius * dir);
+		t2[1] = center[1] + (radius+dim_sty.scale * dim_sty.a_size * 0.1667) * sin(end - dim_sty.scale * dim_sty.a_size/radius * dir);
+		t3[0] = center[0] + (radius-dim_sty.scale * dim_sty.a_size * 0.1667) * cos(end - dim_sty.scale * dim_sty.a_size/radius * dir);
+		t3[1] = center[1] + (radius-dim_sty.scale * dim_sty.a_size * 0.1667) * sin(end - dim_sty.scale * dim_sty.a_size/radius * dir);
 		obj = dxf_new_solid (t1[0], t1[1], 0.0, t2[0], t2[1], 0.0, t3[0], t3[1], 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 		list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 		
 		t1[0] = center[0] + radius * cos(start);
 		t1[1] = center[1] + radius * sin(start);
-		t2[0] = center[0] + (radius+dim_sty.scale * dim_sty.a_size * 0.20) * cos(start + dim_sty.scale * dim_sty.a_size/radius * dir);
-		t2[1] = center[1] + (radius+dim_sty.scale * dim_sty.a_size * 0.20) * sin(start + dim_sty.scale * dim_sty.a_size/radius * dir);
-		t3[0] = center[0] + (radius-dim_sty.scale * dim_sty.a_size * 0.20) * cos(start + dim_sty.scale * dim_sty.a_size/radius * dir);
-		t3[1] = center[1] + (radius-dim_sty.scale * dim_sty.a_size * 0.20) * sin(start + dim_sty.scale * dim_sty.a_size/radius * dir);
+		t2[0] = center[0] + (radius+dim_sty.scale * dim_sty.a_size * 0.1667) * cos(start + dim_sty.scale * dim_sty.a_size/radius * dir);
+		t2[1] = center[1] + (radius+dim_sty.scale * dim_sty.a_size * 0.1667) * sin(start + dim_sty.scale * dim_sty.a_size/radius * dir);
+		t3[0] = center[0] + (radius-dim_sty.scale * dim_sty.a_size * 0.1667) * cos(start + dim_sty.scale * dim_sty.a_size/radius * dir);
+		t3[1] = center[1] + (radius-dim_sty.scale * dim_sty.a_size * 0.1667) * sin(start + dim_sty.scale * dim_sty.a_size/radius * dir);
 		obj = dxf_new_solid (t1[0], t1[1], 0.0, t2[0], t2[1], 0.0, t3[0], t3[1], 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 		list_push(list, list_new((void *)obj, FRAME_LIFE)); /* store entity in list */
 	}
@@ -773,7 +773,7 @@ list_node * dxf_dim_radial_make(dxf_drawing *drawing, dxf_node * ent){
 	else if (term_typ == OPEN || term_typ == OPEN30 || term_typ == OPEN90 || term_typ == CLOSED){
 		t1[0] = 0.0; t1[1] = 0.0;
 		t2[0] = dim_sty.scale * dim_sty.a_size;
-		t2[1] = dim_sty.scale * dim_sty.a_size * 0.20;
+		t2[1] = dim_sty.scale * dim_sty.a_size * 0.1667;
 		if (term_typ == OPEN30) t2[1] = dim_sty.scale * dim_sty.a_size * 0.2588;
 		else if (term_typ == OPEN90) t2[1] = dim_sty.scale * dim_sty.a_size * 0.7071;
 		
@@ -813,7 +813,7 @@ list_node * dxf_dim_radial_make(dxf_drawing *drawing, dxf_node * ent){
 	else{ /* FILLED */
 		t1[0] = 0.0; t1[1] = 0.0;
 		t2[0] = dim_sty.scale * dim_sty.a_size;
-		t2[1] = dim_sty.scale * dim_sty.a_size * 0.20;
+		t2[1] = dim_sty.scale * dim_sty.a_size * 0.1667;
 		
 		obj = dxf_new_solid (t1[0], t1[1], 0.0, t2[0], t2[1], 0.0, t2[0], -t2[1], 0.0, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 		dxf_edit_rot (obj, rot);

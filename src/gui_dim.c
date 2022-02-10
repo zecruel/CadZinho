@@ -30,6 +30,46 @@ int gui_dim_linear_info (gui_obj *gui){
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, "Place a Linear Dim", NK_TEXT_LEFT);
 	
+	static char sty_name[DXF_MAX_CHARS+1] = "STANDARD";
+	
+	nk_layout_row_template_begin(gui->ctx, 20);
+	nk_layout_row_template_push_static(gui->ctx, 45);
+	nk_layout_row_template_push_dynamic(gui->ctx);
+	nk_layout_row_template_end(gui->ctx);
+	nk_label(gui->ctx, "Style:", NK_TEXT_LEFT);
+	/* dimension style combo selection */
+	int num_dsty = dxf_count_obj(gui->drawing->t_dimst, "DIMSTYLE");
+	int h = num_dsty * 25 + 5;
+	h = (h < 200)? h : 200;
+	if (nk_combo_begin_label(gui->ctx,  sty_name, nk_vec2(220, h))){
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		
+		dxf_node *dsty, *dsty_nm, *next = NULL;
+		/* sweep DIMSTYLE table */
+		dsty = dxf_find_obj_nxt(gui->drawing->t_dimst, &next, "DIMSTYLE");
+		while (dsty){
+			/* get name of current dimstyle */
+			dsty_nm = dxf_find_attr2(dsty, 2);
+			if (dsty_nm){
+				/* dimstyle name */
+				if (nk_button_label(gui->ctx, dsty_nm->value.s_data)){
+					/* select current dimstyle */
+					strncpy(sty_name, dsty_nm->value.s_data, DXF_MAX_CHARS);
+					
+					nk_combo_close(gui->ctx);
+					break;
+				}
+			}
+			if (next)
+				dsty = dxf_find_obj_nxt(gui->drawing->t_dimst, &next, "DIMSTYLE");
+			else
+				dsty = NULL;
+		}
+		
+		nk_combo_end(gui->ctx);
+	}
+	
+	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	if (gui->step == 0) nk_label(gui->ctx, "Enter start point", NK_TEXT_LEFT);
 	else if (gui->step == 1) nk_label(gui->ctx, "Enter end point", NK_TEXT_LEFT);
 	else {
@@ -64,7 +104,7 @@ int gui_dim_linear_info (gui_obj *gui){
 	} 
 	else {
 		dxf_dimsty dim_sty;
-		strncpy(dim_sty.name, "STANDARD", DXF_MAX_CHARS); /* --------- */
+		strncpy(dim_sty.name, sty_name, DXF_MAX_CHARS);
 		/*init drawing style */
 		dxf_dim_get_sty(gui->drawing, &dim_sty);
 		
@@ -85,6 +125,7 @@ int gui_dim_linear_info (gui_obj *gui){
 		double length = cosine*(gui->step_x[1]  - gui->step_x[0]) + sine*(gui->step_y[1] - gui->step_y[0]);
 		
 		/* update dimension entity parameters */
+		dxf_attr_change(new_dim, 3, dim_sty.name);
 		dxf_attr_change(new_dim, 13, &gui->step_x[0]);
 		dxf_attr_change(new_dim, 23, &gui->step_y[0]);
 		dxf_attr_change(new_dim, 14, &gui->step_x[1]);
@@ -99,7 +140,7 @@ int gui_dim_linear_info (gui_obj *gui){
 			dxf_attr_change(new_dim, 1, dim_sty.post);
 		
 		/* distance of dimension from measure points */
-		double dist = 3.0 * dim_sty.scale;
+		double dist = 3.0;
 		double dir = 1.0;
 		if(fix_dist) dist = dist_fixed; /* user entered distance */
 		else if (gui->step == 2){ /* or calcule from points */
@@ -182,6 +223,46 @@ int gui_dim_angular_info (gui_obj *gui){
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, "Place a Angular Dim", NK_TEXT_LEFT);
 	
+	static char sty_name[DXF_MAX_CHARS+1] = "STANDARD";
+	
+	nk_layout_row_template_begin(gui->ctx, 20);
+	nk_layout_row_template_push_static(gui->ctx, 45);
+	nk_layout_row_template_push_dynamic(gui->ctx);
+	nk_layout_row_template_end(gui->ctx);
+	nk_label(gui->ctx, "Style:", NK_TEXT_LEFT);
+	/* dimension style combo selection */
+	int num_dsty = dxf_count_obj(gui->drawing->t_dimst, "DIMSTYLE");
+	int h = num_dsty * 25 + 5;
+	h = (h < 200)? h : 200;
+	if (nk_combo_begin_label(gui->ctx,  sty_name, nk_vec2(220, h))){
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		
+		dxf_node *dsty, *dsty_nm, *next = NULL;
+		/* sweep DIMSTYLE table */
+		dsty = dxf_find_obj_nxt(gui->drawing->t_dimst, &next, "DIMSTYLE");
+		while (dsty){
+			/* get name of current dimstyle */
+			dsty_nm = dxf_find_attr2(dsty, 2);
+			if (dsty_nm){
+				/* dimstyle name */
+				if (nk_button_label(gui->ctx, dsty_nm->value.s_data)){
+					/* select current dimstyle */
+					strncpy(sty_name, dsty_nm->value.s_data, DXF_MAX_CHARS);
+					
+					nk_combo_close(gui->ctx);
+					break;
+				}
+			}
+			if (next)
+				dsty = dxf_find_obj_nxt(gui->drawing->t_dimst, &next, "DIMSTYLE");
+			else
+				dsty = NULL;
+		}
+		
+		nk_combo_end(gui->ctx);
+	}
+	
+	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	if (gui->step == 0) nk_label(gui->ctx, "Enter center point", NK_TEXT_LEFT);
 	else if (gui->step == 1) nk_label(gui->ctx, "Enter start point", NK_TEXT_LEFT);
 	else if (gui->step == 2) nk_label(gui->ctx, "Enter end point", NK_TEXT_LEFT);
@@ -241,7 +322,7 @@ int gui_dim_angular_info (gui_obj *gui){
 	} 
 	else {
 		dxf_dimsty dim_sty;
-		strncpy(dim_sty.name, "STANDARD", DXF_MAX_CHARS); /* --------- */
+		strncpy(dim_sty.name, sty_name, DXF_MAX_CHARS);
 		/*init drawing style */
 		dxf_dim_get_sty(gui->drawing, &dim_sty);
 		char tmp_str[DXF_MAX_CHARS + 1];
@@ -250,6 +331,8 @@ int gui_dim_angular_info (gui_obj *gui){
 		dxf_node *new_dim = dxf_new_dim_angular (gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 			gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 			0, FRAME_LIFE); /* paper space */
+		
+		dxf_attr_change(new_dim, 3, dim_sty.name);
 		
 		/* dimension angle */
 		double start = atan2((gui->step_y[1] - gui->step_y[0]), (gui->step_x[1] - gui->step_x[0])); /* calculed from points */
@@ -263,7 +346,7 @@ int gui_dim_angular_info (gui_obj *gui){
 		
 		
 		/* distance of dimension from measure points */
-		double dist = 3.0 * dim_sty.scale+
+		double dist = 3.0 +
 			sqrt(pow(gui->step_x[1]  - gui->step_x[0], 2) + pow(gui->step_y[1] - gui->step_y[0], 2));
 		double dir = 1.0;
 		if(fix_dist){
@@ -395,6 +478,45 @@ int gui_dim_radial_info (gui_obj *gui){
 		diametric = 1;
 	}
 	
+	static char sty_name[DXF_MAX_CHARS+1] = "STANDARD";
+	
+	nk_layout_row_template_begin(gui->ctx, 20);
+	nk_layout_row_template_push_static(gui->ctx, 45);
+	nk_layout_row_template_push_dynamic(gui->ctx);
+	nk_layout_row_template_end(gui->ctx);
+	nk_label(gui->ctx, "Style:", NK_TEXT_LEFT);
+	/* dimension style combo selection */
+	int num_dsty = dxf_count_obj(gui->drawing->t_dimst, "DIMSTYLE");
+	int h = num_dsty * 25 + 5;
+	h = (h < 200)? h : 200;
+	if (nk_combo_begin_label(gui->ctx,  sty_name, nk_vec2(220, h))){
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		
+		dxf_node *dsty, *dsty_nm, *next = NULL;
+		/* sweep DIMSTYLE table */
+		dsty = dxf_find_obj_nxt(gui->drawing->t_dimst, &next, "DIMSTYLE");
+		while (dsty){
+			/* get name of current dimstyle */
+			dsty_nm = dxf_find_attr2(dsty, 2);
+			if (dsty_nm){
+				/* dimstyle name */
+				if (nk_button_label(gui->ctx, dsty_nm->value.s_data)){
+					/* select current dimstyle */
+					strncpy(sty_name, dsty_nm->value.s_data, DXF_MAX_CHARS);
+					
+					nk_combo_close(gui->ctx);
+					break;
+				}
+			}
+			if (next)
+				dsty = dxf_find_obj_nxt(gui->drawing->t_dimst, &next, "DIMSTYLE");
+			else
+				dsty = NULL;
+		}
+		
+		nk_combo_end(gui->ctx);
+	}
+	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	if (gui->step == 0){
 		if (diametric) nk_label(gui->ctx, "Enter quadrant point", NK_TEXT_LEFT);
@@ -425,7 +547,7 @@ int gui_dim_radial_info (gui_obj *gui){
 	} 
 	else {
 		dxf_dimsty dim_sty;
-		strncpy(dim_sty.name, "STANDARD", DXF_MAX_CHARS); /* --------- */
+		strncpy(dim_sty.name, sty_name, DXF_MAX_CHARS);
 		/*init drawing style */
 		dxf_dim_get_sty(gui->drawing, &dim_sty);
 		char tmp_str[DXF_MAX_CHARS + 1];
@@ -454,6 +576,7 @@ int gui_dim_radial_info (gui_obj *gui){
 		double length = sqrt(pow(gui->step_x[1]  - gui->step_x[0], 2) + pow(gui->step_y[1] - gui->step_y[0], 2));
 		
 		/* update dimension entity parameters */
+		dxf_attr_change(new_dim, 3, dim_sty.name);
 		dxf_attr_change(new_dim, 10, &gui->step_x[0]);
 		dxf_attr_change(new_dim, 20, &gui->step_y[0]);
 		dxf_attr_change(new_dim, 11, &base_x);
@@ -543,6 +666,48 @@ int gui_dim_ordinate_info (gui_obj *gui){
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, "Place a Ordinate Dim", NK_TEXT_LEFT);
 	
+	static char sty_name[DXF_MAX_CHARS+1] = "STANDARD";
+	
+	nk_layout_row_template_begin(gui->ctx, 20);
+	nk_layout_row_template_push_static(gui->ctx, 45);
+	nk_layout_row_template_push_dynamic(gui->ctx);
+	nk_layout_row_template_end(gui->ctx);
+	nk_label(gui->ctx, "Style:", NK_TEXT_LEFT);
+	/* dimension style combo selection */
+	int num_dsty = dxf_count_obj(gui->drawing->t_dimst, "DIMSTYLE");
+	int h = num_dsty * 25 + 5;
+	h = (h < 200)? h : 200;
+	if (nk_combo_begin_label(gui->ctx,  sty_name, nk_vec2(220, h))){
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		
+		dxf_node *dsty, *dsty_nm, *next = NULL;
+		/* sweep DIMSTYLE table */
+		dsty = dxf_find_obj_nxt(gui->drawing->t_dimst, &next, "DIMSTYLE");
+		while (dsty){
+			/* get name of current dimstyle */
+			dsty_nm = dxf_find_attr2(dsty, 2);
+			if (dsty_nm){
+				/* dimstyle name */
+				if (nk_button_label(gui->ctx, dsty_nm->value.s_data)){
+					/* select current dimstyle */
+					strncpy(sty_name, dsty_nm->value.s_data, DXF_MAX_CHARS);
+					
+					/* go to first step, if user change the style */
+					gui_first_step(gui);
+					
+					nk_combo_close(gui->ctx);
+					break;
+				}
+			}
+			if (next)
+				dsty = dxf_find_obj_nxt(gui->drawing->t_dimst, &next, "DIMSTYLE");
+			else
+				dsty = NULL;
+		}
+		
+		nk_combo_end(gui->ctx);
+	}
+	
 	/* ordinate direction */
 	nk_layout_row_dynamic(gui->ctx, 20, 2);
 	if (nk_option_label(gui->ctx, "X", x_dir)) {
@@ -585,7 +750,7 @@ int gui_dim_ordinate_info (gui_obj *gui){
 	} 
 	else {
 		dxf_dimsty dim_sty;
-		strncpy(dim_sty.name, "STANDARD", DXF_MAX_CHARS); /* --------- */
+		strncpy(dim_sty.name, sty_name, DXF_MAX_CHARS);
 		/*init drawing style */
 		dxf_dim_get_sty(gui->drawing, &dim_sty);
 		
@@ -611,6 +776,7 @@ int gui_dim_ordinate_info (gui_obj *gui){
 		length = cosine*(gui->step_x[2]  - start) + sine*(gui->step_y[2] - start);
 		
 		/* update dimension entity parameters */
+		dxf_attr_change(new_dim, 3, dim_sty.name);
 		dxf_attr_change(new_dim, 10, &gui->step_x[0]);
 		dxf_attr_change(new_dim, 20, &gui->step_y[0]);
 		dxf_attr_change(new_dim, 13, &gui->step_x[2]);
@@ -694,8 +860,11 @@ int gui_dim_mng (gui_obj *gui){
 	if (nk_begin(gui->ctx, "Dimension Style Manager", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
-		static int dsty_i = -1;
+		static int dsty_i = -1, show_name = 0;
 		struct nk_style_button *sel_type;
+		static char new_name[DXF_MAX_CHARS+1] = "";
+		
+		dxf_dimsty_use(gui->drawing); /* update DIMSTYLEs in use */
 		
 		//nk_layout_row_dynamic(gui->ctx, 420, 2);
 		nk_layout_row_template_begin(gui->ctx, 420);
@@ -732,8 +901,6 @@ int gui_dim_mng (gui_obj *gui){
 				
 				dxf_node *dsty, *dsty_nm, *next = NULL;
 				
-				dxf_dimsty_use(gui->drawing); /* update DIMSTYLEs in use */
-				
 				/* sweep DIMSTYLE table */
 				i = 0; next = NULL;
 				dsty = dxf_find_obj_nxt(gui->drawing->t_dimst, &next, "DIMSTYLE");
@@ -767,10 +934,25 @@ int gui_dim_mng (gui_obj *gui){
 			nk_layout_row_dynamic(gui->ctx, 10, 1);
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			if (nk_button_label(gui->ctx, "Create")){
-				
+				show_name = 1;
+				new_name[0] = 0;
 			}
 			if (nk_button_label(gui->ctx, "Delete")){
-				
+				dxf_node *dsty = NULL;
+				if (dsty_i >= 0)
+					dsty = dxf_find_obj_i(gui->drawing->t_dimst, "DIMSTYLE", dsty_i);
+				if (dsty){
+					if (dsty->obj.layer > 0){
+						snprintf(gui->log_msg, 63, "Error: Don't remove DIMSTYLE in use");
+					}
+					else{
+						/* remove layer from main structure */
+						do_add_entry(&gui->list_do, "Remove DIMSTYLE");
+						do_add_item(gui->list_do.current, dsty, NULL);
+						dxf_obj_subst(dsty, NULL);
+						dsty_i = -1;
+					}
+				}
 			}
 			nk_group_end(gui->ctx);
 		}
@@ -993,6 +1175,47 @@ int gui_dim_mng (gui_obj *gui){
 			}
 			nk_group_end(gui->ctx);
 		}
+		
+		/* popup to entering new DIMSTYLE name */
+		if ((show_name)){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Dim Style Name", NK_WINDOW_CLOSABLE, nk_rect(10, 20, 220, 100))){
+				
+				/* get name */
+				nk_layout_row_dynamic(gui->ctx, 20, 1);
+				nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, new_name, DXF_MAX_CHARS, nk_filter_default);
+				
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				if (nk_button_label(gui->ctx, "OK")){
+					dxf_dimsty dim_sty;
+					strncpy(dim_sty.name, new_name, DXF_MAX_CHARS);
+					if (dxf_dim_get_sty(gui->drawing, &dim_sty) != -1){
+						/* fail to  create, commonly name already exists */
+						snprintf(gui->log_msg, 63, "Error: DIMSTYLE already exists");
+					}
+					else {
+						/* create and attach in drawing main structure */
+						dxf_new_dim_sty (gui->drawing, dim_sty);
+						
+						nk_popup_close(gui->ctx);
+						show_name = 0;
+						dsty_i = -1;
+					}
+					
+				}
+			/* ------------ cancel or close window ---------------- */
+				if (nk_button_label(gui->ctx, "Cancel")){
+					nk_popup_close(gui->ctx);
+					show_name = 0;
+					dsty_i = -1;
+				}
+				nk_popup_end(gui->ctx);
+			} else {
+				show_name = 0;
+				dsty_i = -1;
+			}
+		}
+		
 	} else show_config = 0;
 	nk_end(gui->ctx);
 	

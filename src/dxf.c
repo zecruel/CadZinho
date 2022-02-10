@@ -674,6 +674,25 @@ dxf_node * dxf_find_obj2(dxf_node * obj, char *name){
 	return NULL;
 }
 
+int dxf_count_obj(dxf_node * obj, char *name){
+	dxf_node *current;
+	int count = 0;
+	if(obj != NULL){ /* check if exist */
+		if (obj->type == DXF_ENT){
+			current = obj->obj.content->next;
+			while (current){
+				if (current->type == DXF_ENT){
+					if(strcmp(current->obj.name, name) == 0){
+						count++;
+					}
+				}
+				current = current->next;
+			}
+		}
+	}
+	return count;
+}
+
 dxf_node * dxf_find_obj_i(dxf_node * obj, char *name, int idx){
 	/* return the match of  index (idx) */
 	/* if the idx is zero, will return the first occurency. If is negative, will return the last occurency.*/
@@ -2275,9 +2294,9 @@ int ent_handle(dxf_drawing *drawing, dxf_node *element){
 			/* change element handle */
 			if (handle){
 				int typ = dxf_ident_ent_type(element);
-				if (typ == DXF_DIMENSION || typ == DXF_DIMSTYLE)
+				if (typ == DXF_DIMSTYLE)
 					ok = dxf_attr_change(element, 105, hdl_str);
-				//else
+				else
 					ok = dxf_attr_change(element, 5, hdl_str);
 			}
 		}

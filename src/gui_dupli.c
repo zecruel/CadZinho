@@ -60,6 +60,13 @@ int gui_dupli_interactive(gui_obj *gui){
 								
 								do_add_item(gui->list_do.current, NULL, new_ent);
 								
+								/* for DIMENSIONS - make the block "picture" */
+								dxf_node *blk, *blk_rec;
+								if ( dxf_dim_make_blk (gui->drawing, new_ent, &blk, &blk_rec)){
+									do_add_item(gui->list_do.current, NULL, blk);
+									do_add_item(gui->list_do.current, NULL, blk_rec);
+								}
+								
 								current->data = new_ent;
 							}
 						}

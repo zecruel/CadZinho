@@ -108,10 +108,26 @@ int gui_rotate_interactive(gui_obj *gui){
 							if(!gui->keep_orig){ /* add the new entity in drawing, replacing the old one  */
 								dxf_obj_subst((dxf_node *)current->data, new_ent);
 								do_add_item(gui->list_do.current, (dxf_node *)current->data, new_ent);
+								
+								/* for DIMENSIONS - remake the block "picture" */
+								dxf_node *blk, *blk_rec, *blk_old, *blk_rec_old;
+								if ( dxf_dim_rewrite (gui->drawing, new_ent, &blk, &blk_rec, &blk_old, &blk_rec_old)){
+									do_add_item(gui->list_do.current, blk_old, NULL);
+									do_add_item(gui->list_do.current, blk_rec_old, NULL);
+									do_add_item(gui->list_do.current, NULL, blk);
+									do_add_item(gui->list_do.current, NULL, blk_rec);
+								}
 							}
 							else{ /* maintains the original entity*/
 								drawing_ent_append(gui->drawing, new_ent);
 								do_add_item(gui->list_do.current, NULL, new_ent);
+								
+								/* for DIMENSIONS - make the block "picture" */
+								dxf_node *blk, *blk_rec;
+								if ( dxf_dim_make_blk (gui->drawing, new_ent, &blk, &blk_rec)){
+									do_add_item(gui->list_do.current, NULL, blk);
+									do_add_item(gui->list_do.current, NULL, blk_rec);
+								}
 							}
 							
 							current->data = new_ent; /* replancing in selection list */

@@ -24,6 +24,8 @@ int dxf_find_last_dim (dxf_drawing *drawing);
 
 int dxf_dim_get_blk (dxf_drawing *drawing, dxf_node * ent, dxf_node **blk, dxf_node **blk_rec);
 
+int dxf_dim_make_blk (dxf_drawing *drawing, dxf_node * ent, dxf_node **blk, dxf_node **blk_rec);
+
 int dxf_dim_rewrite (dxf_drawing *drawing, dxf_node *ent, dxf_node **blk, dxf_node **blk_rec, dxf_node **blk_old, dxf_node **blk_rec_old);
 
 int dxf_dim_get_sty(dxf_drawing *drawing, dxf_dimsty *dim_sty);

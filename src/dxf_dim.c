@@ -1054,6 +1054,8 @@ int dxf_find_last_dim (dxf_drawing *drawing){
 
 int dxf_dim_get_blk (dxf_drawing *drawing, dxf_node * ent, dxf_node **blk, dxf_node **blk_rec){
 	/* verify if passed parameters are valid */
+	if (!drawing) return 0;
+	if (!drawing->blks) return 0;
 	if(!blk) return 0;
 	if(!blk_rec) return 0;
 	/* init returned values */
@@ -1076,15 +1078,15 @@ int dxf_dim_get_blk (dxf_drawing *drawing, dxf_node * ent, dxf_node **blk, dxf_n
 	return 1;
 }
 
-int dxf_dim_rewrite (dxf_drawing *drawing, dxf_node *ent, dxf_node **blk, dxf_node **blk_rec, dxf_node **blk_old, dxf_node **blk_rec_old){
+int dxf_dim_make_blk (dxf_drawing *drawing, dxf_node * ent, dxf_node **blk, dxf_node **blk_rec){
 	/* verify if passed parameters are valid */
+	if (!drawing) return 0;
+	if (!drawing->blks) return 0;
 	if(!blk) return 0;
 	if(!blk_rec) return 0;
 	/* init returned values */
 	*blk = NULL;
 	*blk_rec = NULL;
-	*blk_old = NULL;
-	*blk_rec_old = NULL;
 	/* verify if passed parameters are valid */
 	if(!ent) return 0;
 	if (ent->type != DXF_ENT) return 0;
@@ -1094,17 +1096,6 @@ int dxf_dim_rewrite (dxf_drawing *drawing, dxf_node *ent, dxf_node **blk, dxf_no
 	/* create dimension block contents as a list of entities ("render" the dimension "picture") */
 	list_node *list = dxf_dim_make(drawing, ent);
 	if(!list) return 0;
-	
-	dxf_node *blk_name = dxf_find_attr2(ent, 2); /* get block name */
-	
-	/* find relative block */
-	if(!blk_name) return 0;
-	*blk_old = dxf_find_obj_descr2(drawing->blks, "BLOCK", blk_name->value.s_data);
-	if(!*blk_old) return 0;
-	dxf_obj_subst(*blk_old, NULL); /* detach block from its structure */
-	
-	*blk_rec_old = dxf_find_obj_descr2(drawing->blks_rec, "BLOCK_RECORD", blk_name->value.s_data);
-	if(*blk_rec_old) dxf_obj_subst(*blk_rec_old, NULL); /* detach block record from its structure */
 	
 	char tmp_str[DXF_MAX_CHARS + 1];
 	int last_dim = dxf_find_last_dim (drawing); /* get last dim number available*/
@@ -1123,6 +1114,38 @@ int dxf_dim_rewrite (dxf_drawing *drawing, dxf_node *ent, dxf_node **blk, dxf_no
 	}
 	
 	return 0;
+}
+
+int dxf_dim_rewrite (dxf_drawing *drawing, dxf_node *ent, dxf_node **blk, dxf_node **blk_rec, dxf_node **blk_old, dxf_node **blk_rec_old){
+	/* verify if passed parameters are valid */
+	if (!drawing) return 0;
+	if (!drawing->blks) return 0;
+	if(!blk) return 0;
+	if(!blk_rec) return 0;
+	/* init returned values */
+	*blk = NULL;
+	*blk_rec = NULL;
+	*blk_old = NULL;
+	*blk_rec_old = NULL;
+	/* verify if passed parameters are valid */
+	if(!ent) return 0;
+	if (ent->type != DXF_ENT) return 0;
+	if (!ent->obj.content) return 0;
+	if (strcmp(ent->obj.name, "DIMENSION") != 0) return 0;
+	
+	dxf_node *blk_name = dxf_find_attr2(ent, 2); /* get block name */
+	
+	/* find relative block */
+	if(!blk_name) return 0;
+	*blk_old = dxf_find_obj_descr2(drawing->blks, "BLOCK", blk_name->value.s_data);
+	if(!*blk_old) return 0;
+	dxf_obj_subst(*blk_old, NULL); /* detach block from its structure */
+	
+	*blk_rec_old = dxf_find_obj_descr2(drawing->blks_rec, "BLOCK_RECORD", blk_name->value.s_data);
+	if(*blk_rec_old) dxf_obj_subst(*blk_rec_old, NULL); /* detach block record from its structure */
+	
+	return dxf_dim_make_blk (drawing, ent, blk, blk_rec);
+	
 }
 
 int dxf_dim_get_sty(dxf_drawing *drawing, dxf_dimsty *dim_sty){

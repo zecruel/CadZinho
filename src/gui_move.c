@@ -62,6 +62,7 @@ int gui_move_interactive(gui_obj *gui){
 								
 								do_add_item(gui->list_do.current, (dxf_node *)current->data, new_ent);
 								
+								/* for DIMENSIONS - remake the block "picture" */
 								dxf_node *blk, *blk_rec, *blk_old, *blk_rec_old;
 								if ( dxf_dim_rewrite (gui->drawing, new_ent, &blk, &blk_rec, &blk_old, &blk_rec_old)){
 									do_add_item(gui->list_do.current, blk_old, NULL);

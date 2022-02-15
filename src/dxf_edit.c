@@ -400,6 +400,41 @@ int dxf_edit_scale (dxf_node * obj, double scale_x, double scale_y, double scale
 		}
 	}
 	
+	if ((ent_type == DXF_DIMENSION) && (obj->obj.content)){
+		dxf_node *flag = dxf_find_attr2(obj, 70);
+		if (flag){
+			if ((flag->value.i_data & 7) < 2){ /* check if is a linear dimension */
+				double rot = 0.0;
+				dxf_node *rot_attr = dxf_find_attr2(obj, 50);
+				if (rot_attr){
+					rot = rot_attr->value.d_data * M_PI/180.0;
+				}
+				double scale = sqrt(pow(scale_x * cos(rot), 2) + pow(scale_y *  sin(rot), 2));
+				
+				dxf_node *meas_attr = dxf_find_attr2(obj, 42);
+				if (meas_attr){
+					meas_attr->value.d_data *= scale;
+				}
+			}
+			else if ((flag->value.i_data & 7) == 3 || (flag->value.i_data & 7) == 4){ /* check if is a radial dimension */
+				
+				dxf_node *meas_attr = dxf_find_attr2(obj, 42);
+				if (meas_attr){
+					meas_attr->value.d_data *= scale_x;
+				}
+			}
+			else if ((flag->value.i_data & 7) == 6){ /* check if is a ordinate dimension */
+				int x_dir = (flag->value.i_data & 64) ? 1 : 0;
+				
+				dxf_node *meas_attr = dxf_find_attr2(obj, 42);
+				if (meas_attr){
+					if (x_dir) meas_attr->value.d_data *= scale_x;
+					else meas_attr->value.d_data *= scale_y;
+				}
+			}
+		}
+	}
+	
 	while (current){
 		ret = 1;
 		prev = current;
@@ -776,6 +811,10 @@ int dxf_edit_rot (dxf_node * obj, double ang){
 					y->value.d_data = y_new;
 				}
 			}
+		}
+		dxf_node *rot_attr = dxf_find_attr_i2(current, stop, 50, 0);
+		if (rot_attr){
+			rot_attr->value.d_data += ang;
 		}
 	}
 	if (ent_type == DXF_CIRCLE || ent_type == DXF_TEXT ||
@@ -1184,6 +1223,20 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 		}
 	}
 	else if (ent_type == DXF_DIMENSION){
+		/* text alingment */
+		x = dxf_find_attr_i2(current, stop, 71, 0);
+		if (x){
+			int t_alin = x->value.i_data;
+			int t_alin_v[10] = {0, 3, 3, 3, 2, 2, 2, 1, 1, 1};
+			int t_alin_h[10] = {0, 0, 1, 2, 0, 1, 2, 0, 1, 2};
+			int t_al_v = t_alin_v[t_alin], t_al_h = t_alin_h[t_alin];
+			
+			if(fabs(rad) < M_PI/2) t_al_h = 2 - t_al_h;
+			else	t_al_v = 4 - t_al_v;
+			
+			
+			x->value.i_data = (3 - t_al_v) * 3 + t_al_h +1;
+		}
 		for (j = 1; j < 7; j++){
 			//for (i = 0; x = dxf_find_attr_i(obj, 10, i); i++){
 			//	y = dxf_find_attr_i(obj, 20, i);
@@ -1200,6 +1253,21 @@ int dxf_edit_mirror (dxf_node * obj, double x0, double y0, double x1, double y1)
 				}
 			}
 		}
+		
+		x = dxf_find_attr_i2(current, stop, 50, 0);
+		if (x){
+			double angle = atan2(dy, dx) * 180/M_PI;
+			angle = ang_adjust_360(angle);
+			
+			angle = -(x->value.d_data - angle) + angle;
+			angle = ang_adjust_360(angle);
+			x->value.d_data = angle;
+		}
+		/*
+		x = dxf_find_attr_i2(current, stop, 42, 0);
+		if (x){
+			x->value.d_data *= -1.0;
+		}*/
 	}
 	if (ent_type == DXF_CIRCLE || ent_type == DXF_MTEXT ||
 	ent_type == DXF_INSERT){

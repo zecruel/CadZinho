@@ -31,6 +31,8 @@
 #include "nanosvg.h"
 #include "nanosvgrast.h"
 
+#include "strpool.h"
+
 #include "shp_font.h"
 #include "ltype.h"
 #include "hatch_pat.h"
@@ -376,13 +378,13 @@ struct Gui_obj {
 	int show_config;
 	
 	
-	char curr_path[PATH_MAX_CHARS];
+	char curr_path[PATH_MAX_CHARS+1];
 	char base_dir[DXF_MAX_CHARS + 1];
 	char dwg_file[DXF_MAX_CHARS + 1];
 	char dwg_dir[DXF_MAX_CHARS + 1];
 	char pref_path[DXF_MAX_CHARS + 1];
 	
-	char drwg_hist[DRWG_HIST_MAX][DXF_MAX_CHARS];
+	char drwg_hist[DRWG_HIST_MAX][DXF_MAX_CHARS+1];
 	int drwg_hist_size;
 	int drwg_hist_pos;
 	int drwg_hist_wr;
@@ -391,6 +393,7 @@ struct Gui_obj {
 	char drwg_recent[DRWG_RECENT_MAX][DXF_MAX_CHARS+1];
 	int drwg_rcnt_size;
 	int drwg_rcnt_pos;
+	list_node *recent_drwg;
 	
 	struct nk_text_edit text_edit;
 	struct nk_text_edit debug_edit;
@@ -413,6 +416,8 @@ struct Gui_obj {
 	
 	float drwg_view[4][4];
 	float drwg_view_i[4][4];
+	
+	strpool_t file_pool;
 	
 };
 typedef struct Gui_obj gui_obj;

@@ -82,7 +82,7 @@ list_node * list_new (void *data, int pool){
 }
 
 int list_push(list_node * list, list_node * new_node){
-	
+	/* append in tail */
 	if (list && new_node){
 		new_node->prev = list->end;
 		new_node->next = NULL;
@@ -91,6 +91,25 @@ int list_push(list_node * list, list_node * new_node){
 		if (new_node->prev){
 			new_node->prev->next = new_node;
 		}
+		
+		return 1; /* return success */
+	}
+	return 0; /* return fail */
+}
+
+int list_insert(list_node * list, list_node * new_node){
+	/* appen in head */
+	if (list && new_node){
+		new_node->prev = list;
+		new_node->next = list->next;
+		if (new_node->next){
+			new_node->next->prev = new_node;
+		}
+		new_node->end = new_node;
+		if (list->end == list){
+			list->end = new_node;
+		}
+		list->next = new_node;
 		
 		return 1; /* return success */
 	}

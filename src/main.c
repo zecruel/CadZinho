@@ -55,6 +55,9 @@
 #define NANOSVGRAST_IMPLEMENTATION
 #include "nanosvgrast.h"
 
+#define  STRPOOL_IMPLEMENTATION
+#include "strpool.h"
+
 #ifdef __linux__
 #define OS_LINUX
 #elif defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
@@ -265,8 +268,16 @@ int main(int argc, char** argv){
 	/* -------------------------------------------------------------------------- */
 	
 	/* try to change working dir from last opened drawing */
+	#if(0)
 	if (strlen(get_dir(gui->drwg_recent[gui->drwg_rcnt_size - 1])) > 0){
 		dir_change(get_dir(gui->drwg_recent[gui->drwg_rcnt_size - 1]));
+	}
+	#endif
+	if(gui->recent_drwg->next) {
+		if (gui->recent_drwg->next->data){
+			STRPOOL_U64 str_a = (STRPOOL_U64) gui->recent_drwg->next->data;
+			dir_change(get_dir((char*)strpool_cstr( &gui->file_pool, str_a)));
+		}
 	}
 	/* ------------------------------------------------------------------------*/
 	
@@ -1114,6 +1125,7 @@ int main(int argc, char** argv){
 					gui->hist_new = 0;
 					
 					/* put file path in recent file list */
+					#if(0)
 					strncpy (gui->drwg_recent[gui->drwg_rcnt_pos], gui->curr_path , DXF_MAX_CHARS);
 					if (gui->drwg_rcnt_pos < DRWG_RECENT_MAX - 1)
 						gui->drwg_rcnt_pos++;
@@ -1121,6 +1133,14 @@ int main(int argc, char** argv){
 					
 					if (gui->drwg_rcnt_size < DRWG_RECENT_MAX)
 						gui->drwg_rcnt_size++;
+					#endif
+					STRPOOL_U64 str_a = strpool_inject( &gui->file_pool, gui->curr_path , (int) strlen(gui->curr_path ) );
+					/* verify if file was previously loaded */
+					list_node *prev = list_find_data(gui->recent_drwg, (void *)str_a);
+					if (prev){
+						list_remove(gui->recent_drwg, prev);
+					}
+					list_insert(gui->recent_drwg, list_new((void *)str_a, PRG_LIFE));
 					
 				}
 				if (open_prg >= 0){

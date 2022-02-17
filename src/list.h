@@ -45,6 +45,8 @@ list_node * list_new (void *data, int pool);
 
 int list_push(list_node * list, list_node * new_node);
 
+int list_insert(list_node * list, list_node * new_node);
+
 list_node *list_pop(list_node * list);
 
 list_node *list_find_data(list_node * list, void *data);

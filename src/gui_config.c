@@ -338,6 +338,7 @@ int gui_save_init (char *fname, gui_obj *gui){
 	fprintf(file, "win_height = %d\n", gui->win_h);
 	
 	fprintf(file, "recent = {\n");
+	#if(0)
 	for (i = 1; i <= gui->drwg_rcnt_size; i++){
 		/* get position in array, considering as circular buffer */
 		int pos = (gui->drwg_rcnt_pos - i);
@@ -345,6 +346,20 @@ int gui_save_init (char *fname, gui_obj *gui){
 		fprintf(file, "    \"");
 		path_escape(gui->drwg_recent[pos], file);
 		fprintf(file, "\",\n");
+	}
+	#endif
+	i = 0;
+	list_node *rcnt_curr = gui->recent_drwg->next;
+	while (rcnt_curr != NULL && i < DRWG_RECENT_MAX){
+		if (rcnt_curr->data){
+			STRPOOL_U64 str_a = (STRPOOL_U64) rcnt_curr->data;
+			char *rcnt_file = (char *) strpool_cstr( &gui->file_pool, str_a);
+			fprintf(file, "    \"");
+			path_escape(rcnt_file, file);
+			fprintf(file, "\",\n");
+		}
+		rcnt_curr = rcnt_curr->next;
+		i++;
 	}
 	fprintf(file, "}\n");
 	
@@ -399,6 +414,19 @@ int gui_get_ini (lua_State *L) {
 	/* -------------------- load list of recent drawing files  -------------------*/
 	lua_getglobal(L, "recent");
 	if (lua_istable(L, -1)){
+		/* iterate over table */
+		lua_pushnil(L);  /* first key */
+		while (lua_next(L, -2) != 0) { /* table index are shifted*/
+			/* uses 'key' (at index -2) and 'value' (at index -1) */
+			if (lua_isstring(L, -1)){
+				STRPOOL_U64 str_a = strpool_inject( &gui->file_pool, lua_tostring(L, -1) , (int) strlen(lua_tostring(L, -1) ) );
+				list_push(gui->recent_drwg, list_new((void *)str_a, PRG_LIFE));
+			}
+			/* removes 'value'; keeps 'key' for next iteration */
+			lua_pop(L, 1);
+		}
+		
+		#if(0)
 		int len = lua_rawlen(L, -1);
 		int i;
 		
@@ -413,11 +441,11 @@ int gui_get_ini (lua_State *L) {
 				
 				if (gui->drwg_rcnt_size < DRWG_RECENT_MAX)
 					gui->drwg_rcnt_size++;
-				
 			}
 			
 			lua_pop(L, 1);
 		}
+		#endif
 	}
 	lua_pop(L, 1);
 	

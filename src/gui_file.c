@@ -504,6 +504,7 @@ int gui_file_open (gui_obj *gui, enum files_types filters[], int num_filters, ch
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Recent:", NK_TEXT_CENTERED);
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
+		#if(0)
 		for (i = 1; i <= gui->drwg_rcnt_size; i++){
 			/* get position in array, considering as circular buffer */
 			int pos = (gui->drwg_rcnt_pos - i);
@@ -513,6 +514,21 @@ int gui_file_open (gui_obj *gui, enum files_types filters[], int num_filters, ch
 			if (nk_button_label(gui->ctx, file)) {
 				strncpy(gui->curr_path, gui->drwg_recent[pos], PATH_MAX_CHARS);
 			}
+		}
+		#endif
+		
+		i = 0;
+		list_node *rcnt_curr = gui->recent_drwg->next;
+		while (rcnt_curr != NULL && i < DRWG_RECENT_MAX){
+			if (rcnt_curr->data){
+				STRPOOL_U64 str_a = (STRPOOL_U64) rcnt_curr->data;
+				char *file = (char *) strpool_cstr( &gui->file_pool, str_a);
+				if (nk_button_label(gui->ctx, get_filename(file))) {
+					strncpy(gui->curr_path, file, PATH_MAX_CHARS);
+				}
+			}
+			rcnt_curr = rcnt_curr->next;
+			i++;
 		}
 		
 	} else {

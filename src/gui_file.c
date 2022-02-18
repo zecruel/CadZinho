@@ -465,14 +465,12 @@ int file_pop (gui_obj *gui, enum files_types filters[], int num_filters, char *i
 	return show_app_file;
 }
 
-int gui_file_open (gui_obj *gui, enum files_types filters[], int num_filters, char *init_dir){
-//int file_pop (gui_obj *gui, enum files_types filters[], int num_filters, char *init_dir){
-	/* simple popup for entering file name/path */
+int gui_file_open (gui_obj *gui, char *init_dir){
+	/* window for open drawing files */
 	
 	int show_app_file = 1, i;
-	/*static struct nk_rect s = {20, 200, 400, 150};
-	if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "File", NK_WINDOW_CLOSABLE, s)){*/
-	if (nk_begin(gui->ctx, "Open file", nk_rect(20, 100, 400, 300),
+	
+	if (nk_begin(gui->ctx, "Open Drawing", nk_rect(20, 100, 400, 300),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
@@ -490,46 +488,77 @@ int gui_file_open (gui_obj *gui, enum files_types filters[], int num_filters, ch
 		}
 		if (nk_button_label(gui->ctx, "Explore")) {
 			/* option for internal file explorer */
-			int i;
 			
 			/* update file extension filter */
-			for (i = 0; i < num_filters; i++){
-				gui->file_filter_types[i] = filter_types[filters[i]];
-				gui->file_filter_descr[i] = filter_descr[filters[i]];
-			}
-			gui->file_filter_count = num_filters;
+			gui->file_filter_types[0] = filter_types[FILE_DXF];
+			gui->file_filter_descr[0] = filter_descr[FILE_DXF];
+			gui->file_filter_types[1] = filter_types[FILE_ALL];
+			gui->file_filter_descr[1] = filter_descr[FILE_ALL];
+			gui->file_filter_count = 2;
+			
 			gui->show_file_br = 1;
 		}
 		
+		/* recent files */
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, "Recent:", NK_TEXT_CENTERED);
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
-		#if(0)
-		for (i = 1; i <= gui->drwg_rcnt_size; i++){
-			/* get position in array, considering as circular buffer */
-			int pos = (gui->drwg_rcnt_pos - i);
-			if (pos < 0) pos = DRWG_RECENT_MAX + pos;
-			char *file = get_filename( gui->drwg_recent[pos] );
-			
-			if (nk_button_label(gui->ctx, file)) {
-				strncpy(gui->curr_path, gui->drwg_recent[pos], PATH_MAX_CHARS);
-			}
-		}
-		#endif
-		
 		i = 0;
 		list_node *rcnt_curr = gui->recent_drwg->next;
-		while (rcnt_curr != NULL && i < DRWG_RECENT_MAX){
+		while (rcnt_curr != NULL && i < DRWG_RECENT_MAX){ /* sweep the list */
 			if (rcnt_curr->data){
-				STRPOOL_U64 str_a = (STRPOOL_U64) rcnt_curr->data;
-				char *file = (char *) strpool_cstr( &gui->file_pool, str_a);
+				STRPOOL_U64 str_a = (STRPOOL_U64) rcnt_curr->data; /* str key in pool */
+				char *file = (char *) strpool_cstr( &gui->file_pool, str_a); /* get string */
 				if (nk_button_label(gui->ctx, get_filename(file))) {
+					/* use selected file path */
 					strncpy(gui->curr_path, file, PATH_MAX_CHARS);
 				}
 			}
 			rcnt_curr = rcnt_curr->next;
 			i++;
 		}
+		
+	} else {
+		show_app_file = 0;
+		gui->show_file_br = 0;
+	}
+	nk_end(gui->ctx);
+	return show_app_file;
+}
+
+int gui_file_save (gui_obj *gui, char *init_dir){
+	/* window for open drawing files */	
+	int show_app_file = 1, i;
+	
+	if (nk_begin(gui->ctx, "Save Drawing", nk_rect(20, 100, 400, 150),
+	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
+	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		nk_label(gui->ctx, "File to Save on:", NK_TEXT_CENTERED);
+		
+		/* user can type the file name/path, or paste text, or drop from system navigator */
+		nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
+		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_path, PATH_MAX_CHARS, nk_filter_default);
+		
+		nk_layout_row_dynamic(gui->ctx, 20, 2);
+		if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
+			//nk_popup_close(gui->ctx);
+			show_app_file = 2;
+			gui->show_file_br = 0;
+		}
+		if (nk_button_label(gui->ctx, "Explore")) {
+			/* option for internal file explorer */
+			
+			/* update file extension filter */
+			gui->file_filter_types[0] = filter_types[FILE_DXF];
+			gui->file_filter_descr[0] = filter_descr[FILE_DXF];
+			gui->file_filter_types[1] = filter_types[FILE_ALL];
+			gui->file_filter_descr[1] = filter_descr[FILE_ALL];
+			gui->file_filter_count = 2;
+			
+			gui->show_file_br = 1;
+		}
+		
 		
 	} else {
 		show_app_file = 0;

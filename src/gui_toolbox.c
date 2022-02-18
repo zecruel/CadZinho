@@ -255,6 +255,7 @@ int gui_tools_win (gui_obj *gui){
 
 int gui_main_win(gui_obj *gui){
 	int i;
+	static int show_save = 0, show_open = 0;
 	
 	if (nk_begin(gui->ctx, "Main", nk_rect(2, 2, gui->win_w - 4, 6 + 4 + ICON_SIZE + 4 + 6 + 4 + ICON_SIZE + 4 + 6 + 8),
 	NK_WINDOW_BORDER)){
@@ -287,7 +288,8 @@ int gui_main_win(gui_obj *gui){
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_OPEN]))){
 				gui->action = FILE_OPEN;
-				gui->show_app_file = 1;
+				//gui->show_app_file = 1;
+				show_open = 1;
 				
 				gui->curr_path[0] = 0;
 				
@@ -296,12 +298,14 @@ int gui_main_win(gui_obj *gui){
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SAVE]))){
 				gui->action = FILE_SAVE;
-				gui->show_app_file = 1;
+				//gui->show_app_file = 1;
+				show_save = 1;
 				gui->path_ok = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPORT]))){
 				gui->action = EXPORT;
-				gui->show_app_file = 1;
+				//gui->show_app_file = 1;
+				show_save = 1;
 				gui->path_ok = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CLOSE]))){
@@ -619,10 +623,8 @@ int gui_main_win(gui_obj *gui){
 	} // *** test
 	nk_end(gui->ctx); //***test
 		if (gui->show_app_file){
-			enum files_types filters[2] = {FILE_DXF, FILE_ALL};
-			char path[20];
 			//gui->show_app_file = file_pop (gui, filters, 2, NULL); // *** test
-			gui->show_app_file = gui_file_open (gui, filters, 2, NULL);  // *** test
+			gui->show_app_file = gui_file_open (gui, NULL);  // *** test
 			if (gui->show_app_file == 2){
 					//if (strlen(file_path) > 4){
 						gui->path_ok = 1;
@@ -634,6 +636,24 @@ int gui_main_win(gui_obj *gui){
 	//} // *** test
 	//nk_end(gui->ctx); // *** test
 	
+	if (show_open){
+		show_open = gui_file_open (gui, NULL);  // *** test
+		if (show_open == 2){
+			gui->path_ok = 1;
+			
+			show_open = 0;
+		}
+	}
+	
+	if (show_save){
+		show_save = gui_file_save (gui, NULL);  // *** test
+		if (show_save == 2){
+			gui->path_ok = 1;
+			
+			show_save = 0;
+		}
+	}
+		
 	
 	return 1;
 	

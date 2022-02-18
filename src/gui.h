@@ -390,10 +390,8 @@ struct Gui_obj {
 	int drwg_hist_wr;
 	int drwg_hist_head;
 	
-	char drwg_recent[DRWG_RECENT_MAX][DXF_MAX_CHARS+1];
-	int drwg_rcnt_size;
-	int drwg_rcnt_pos;
 	list_node *recent_drwg;
+	strpool_t file_pool;
 	
 	struct nk_text_edit text_edit;
 	struct nk_text_edit debug_edit;
@@ -416,8 +414,6 @@ struct Gui_obj {
 	
 	float drwg_view[4][4];
 	float drwg_view_i[4][4];
-	
-	strpool_t file_pool;
 	
 };
 typedef struct Gui_obj gui_obj;

@@ -337,25 +337,16 @@ int gui_save_init (char *fname, gui_obj *gui){
 	fprintf(file, "win_width = %d\n", gui->win_w);
 	fprintf(file, "win_height = %d\n", gui->win_h);
 	
+	/* save recent files */
 	fprintf(file, "recent = {\n");
-	#if(0)
-	for (i = 1; i <= gui->drwg_rcnt_size; i++){
-		/* get position in array, considering as circular buffer */
-		int pos = (gui->drwg_rcnt_pos - i);
-		if (pos < 0) pos = DRWG_RECENT_MAX + pos;
-		fprintf(file, "    \"");
-		path_escape(gui->drwg_recent[pos], file);
-		fprintf(file, "\",\n");
-	}
-	#endif
 	i = 0;
 	list_node *rcnt_curr = gui->recent_drwg->next;
-	while (rcnt_curr != NULL && i < DRWG_RECENT_MAX){
+	while (rcnt_curr != NULL && i < DRWG_RECENT_MAX){ /* sweep the list */
 		if (rcnt_curr->data){
-			STRPOOL_U64 str_a = (STRPOOL_U64) rcnt_curr->data;
-			char *rcnt_file = (char *) strpool_cstr( &gui->file_pool, str_a);
+			STRPOOL_U64 str_a = (STRPOOL_U64) rcnt_curr->data;  /* str key in pool */
+			char *rcnt_file = (char *) strpool_cstr( &gui->file_pool, str_a); /* get string */
 			fprintf(file, "    \"");
-			path_escape(rcnt_file, file);
+			path_escape(rcnt_file, file); /* escape especial '\' character used in Windows */
 			fprintf(file, "\",\n");
 		}
 		rcnt_curr = rcnt_curr->next;
@@ -433,14 +424,8 @@ int gui_get_ini (lua_State *L) {
 		for (i = len; i > 0; i--){ /* iterate over table in reverse order */
 			lua_rawgeti(L, -1, i); 
 			if (lua_isstring(L, -1)){
-				/* put file path in recent file list */
-				strncpy (gui->drwg_recent[gui->drwg_rcnt_pos], lua_tostring(L, -1) , DXF_MAX_CHARS);
-				if (gui->drwg_rcnt_pos < DRWG_RECENT_MAX - 1)
-					gui->drwg_rcnt_pos++;
-				else gui->drwg_rcnt_pos = 0; /* circular buffer */
-				
-				if (gui->drwg_rcnt_size < DRWG_RECENT_MAX)
-					gui->drwg_rcnt_size++;
+				STRPOOL_U64 str_a = strpool_inject( &gui->file_pool, lua_tostring(L, -1) , (int) strlen(lua_tostring(L, -1) ) );
+				list_push(gui->recent_drwg, list_new((void *)str_a, PRG_LIFE));
 			}
 			
 			lua_pop(L, 1);

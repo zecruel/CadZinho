@@ -1125,21 +1125,14 @@ int main(int argc, char** argv){
 					gui->hist_new = 0;
 					
 					/* put file path in recent file list */
-					#if(0)
-					strncpy (gui->drwg_recent[gui->drwg_rcnt_pos], gui->curr_path , DXF_MAX_CHARS);
-					if (gui->drwg_rcnt_pos < DRWG_RECENT_MAX - 1)
-						gui->drwg_rcnt_pos++;
-					else gui->drwg_rcnt_pos = 0; /* circular buffer */
-					
-					if (gui->drwg_rcnt_size < DRWG_RECENT_MAX)
-						gui->drwg_rcnt_size++;
-					#endif
 					STRPOOL_U64 str_a = strpool_inject( &gui->file_pool, gui->curr_path , (int) strlen(gui->curr_path ) );
 					/* verify if file was previously loaded */
 					list_node *prev = list_find_data(gui->recent_drwg, (void *)str_a);
 					if (prev){
+						/* remove repeated file form list */
 						list_remove(gui->recent_drwg, prev);
 					}
+					/* put newest file in head of list */
 					list_insert(gui->recent_drwg, list_new((void *)str_a, PRG_LIFE));
 					
 				}

@@ -1788,11 +1788,15 @@ int gui_start(gui_obj *gui){
 	gui->drwg_hist_head = 0;
 	
 	/* ----------- init recent drawing files ------------------- */
-	for (i = 0; i < DRWG_RECENT_MAX; i++)
-		gui->drwg_recent[i][0] = 0;
-	gui->drwg_rcnt_size = 0;
-	gui->drwg_rcnt_pos = 0;
 	gui->recent_drwg = list_new(NULL, PRG_LIFE);
+	/*init file pool */
+	strpool_config_t str_pool_conf = strpool_default_config;
+        //str_pool_conf.ignore_case = true;
+	str_pool_conf.counter_bits = 16;
+	str_pool_conf.index_bits = 16;
+        strpool_init( &gui->file_pool, &str_pool_conf );
+	
+	
 	
 	gui->num_brk_pts = 0;
 	
@@ -1837,14 +1841,6 @@ int gui_start(gui_obj *gui){
 	gui->drwg_view_i[3][2] = 0.0;
 	gui->drwg_view_i[3][3] = 1.0;
 	
-	/*init file pool */
-	strpool_config_t str_pool_conf = strpool_default_config;
-        //str_pool_conf.ignore_case = true;
-	str_pool_conf.counter_bits = 16;
-	str_pool_conf.index_bits = 16;
-	
-
-        strpool_init( &gui->file_pool, &str_pool_conf );
 	
 	return 1;
 }

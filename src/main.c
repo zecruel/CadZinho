@@ -268,15 +268,11 @@ int main(int argc, char** argv){
 	/* -------------------------------------------------------------------------- */
 	
 	/* try to change working dir from last opened drawing */
-	#if(0)
-	if (strlen(get_dir(gui->drwg_recent[gui->drwg_rcnt_size - 1])) > 0){
-		dir_change(get_dir(gui->drwg_recent[gui->drwg_rcnt_size - 1]));
-	}
-	#endif
 	if(gui->recent_drwg->next) {
 		if (gui->recent_drwg->next->data){
 			STRPOOL_U64 str_a = (STRPOOL_U64) gui->recent_drwg->next->data;
 			dir_change(get_dir((char*)strpool_cstr( &gui->file_pool, str_a)));
+			strncpy (gui->dwg_dir, get_dir((char*)strpool_cstr( &gui->file_pool, str_a)) , DXF_MAX_CHARS);
 		}
 	}
 	/* ------------------------------------------------------------------------*/
@@ -832,7 +828,7 @@ int main(int argc, char** argv){
 						/* open file */
 						gui->action = FILE_OPEN;
 						gui->path_ok = 1;
-						gui->hist_new = 1; /* not change history entries */
+						gui->hist_new = 1; /* add to history entries */
 						
 						SDL_free(dropped_filedir);    // Free dropped_filedir memory
 						}
@@ -1106,34 +1102,7 @@ int main(int argc, char** argv){
 				
 				/* add file to history */
 				if (gui->hist_new && open_prg >= 0){
-					/* get position in array, considering as circular buffer */
-					int pos = (gui->drwg_hist_wr + gui->drwg_hist_head) % DRWG_HIST_MAX;
-					/* put file path in history */
-					strncpy (gui->drwg_hist[pos], gui->curr_path , DXF_MAX_CHARS);
-					/* history buffer is full -> change the head of buffer to overwrite first entry */
-					if(gui->drwg_hist_wr >= DRWG_HIST_MAX) gui->drwg_hist_head++;
-					/* adjust circular buffer head */
-					gui->drwg_hist_head %= DRWG_HIST_MAX;
-					
-					/* adjust buffer parameters to next entries */
-					if (gui->drwg_hist_pos < gui->drwg_hist_size && gui->drwg_hist_pos < DRWG_HIST_MAX - 1)
-						gui->drwg_hist_pos ++; /* position */
-					if (gui->drwg_hist_wr < DRWG_HIST_MAX){
-						gui->drwg_hist_wr ++; /* size */
-						gui->drwg_hist_size = gui->drwg_hist_wr; /* next write position */
-					}
-					gui->hist_new = 0;
-					
-					/* put file path in recent file list */
-					STRPOOL_U64 str_a = strpool_inject( &gui->file_pool, gui->curr_path , (int) strlen(gui->curr_path ) );
-					/* verify if file was previously loaded */
-					list_node *prev = list_find_data(gui->recent_drwg, (void *)str_a);
-					if (prev){
-						/* remove repeated file form list */
-						list_remove(gui->recent_drwg, prev);
-					}
-					/* put newest file in head of list */
-					list_insert(gui->recent_drwg, list_new((void *)str_a, PRG_LIFE));
+					gui_hist_add (gui);
 					
 				}
 				if (open_prg >= 0){
@@ -1154,14 +1123,15 @@ int main(int argc, char** argv){
 			
 			if (gui->drawing->main_struct != NULL){
 				//dxf_ent_print_f (gui->drawing->main_struct, url);
-				dxf_save (gui->curr_path, gui->drawing);
-				
-				strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
-				strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
-				
-				char title[DXF_MAX_CHARS] = "CadZinho - ";
-				strncat (title, gui->dwg_file, DXF_MAX_CHARS);
-				SDL_SetWindowTitle(window, title);
+				if (dxf_save (gui->curr_path, gui->drawing)){
+					gui_hist_add (gui);
+					strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
+					strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
+					
+					char title[DXF_MAX_CHARS] = "CadZinho - ";
+					strncat (title, gui->dwg_file, DXF_MAX_CHARS);
+					SDL_SetWindowTitle(window, title);
+				}
 			}
 		}
 		else if((gui->action == EXPORT) && (gui->path_ok)) {

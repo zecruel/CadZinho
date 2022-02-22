@@ -25,4 +25,6 @@ int gui_file_open (gui_obj *gui, char *init_dir);
 
 int gui_file_save (gui_obj *gui, char *init_dir);
 
+int gui_hist_add (gui_obj *gui);
+
 #endif

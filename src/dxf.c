@@ -1272,6 +1272,8 @@ int dxf_tstyle_idx (dxf_drawing *drawing, char *name){
 }
 
 int dxf_save (char *path, dxf_drawing *drawing){
+	if (!drawing) return 0;
+	if (drawing->main_struct == NULL) return 0;
 	
 	FILE *file;
 	list_node *stack, *item ;
@@ -1283,79 +1285,79 @@ int dxf_save (char *path, dxf_drawing *drawing){
 	stack = list_new(NULL, ONE_TIME);
 	
 	ret_success = 0;
-	if (drawing){
-		file = fopen(path, "w"); /* open the file */
-		
-		
-		if ((file != NULL) && (drawing->main_struct != NULL)){
-			current = drawing->main_struct->obj.content->next;
-			while ((current != NULL) || (stack_size > 0)){
-				if (current == NULL){ /* end of list sweeping */
-					/* try to up in the structure hierarchy */
-					item = list_pop(stack);
-					if (item){
-						stack_size--;
-						current = (dxf_node *)item->data;
+	
+	file = fopen(path, "w"); /* open the file */
+	
+	
+	if (file != NULL){
+		current = drawing->main_struct->obj.content->next;
+		while ((current != NULL) || (stack_size > 0)){
+			if (current == NULL){ /* end of list sweeping */
+				/* try to up in the structure hierarchy */
+				item = list_pop(stack);
+				if (item){
+					stack_size--;
+					current = (dxf_node *)item->data;
+				}
+				//current = stack_pop (&stack);
+				if (current){
+					/* write the end of complex entities, acording its type */
+					if(strcmp(current->obj.name, "SECTION") == 0){
+						fprintf(file, "0\nENDSEC\n");
 					}
-					//current = stack_pop (&stack);
-					if (current){
-						/* write the end of complex entities, acording its type */
-						if(strcmp(current->obj.name, "SECTION") == 0){
-							fprintf(file, "0\nENDSEC\n");
-						}
-						else if(strcmp(current->obj.name, "TABLE") == 0){
-							fprintf(file, "0\nENDTAB\n");
-						}
-						/*
-						else if(strcmp(current->obj.name, "BLOCK") == 0){
-							fprintf(file, "0\nENDBLK\n");
-						}
-						else{
-							attr = dxf_find_attr(current, 66); /* look for entities folow flag
-							if (attr.data){ /* if flag is found and 
-								if(((dxf_node **) attr.data)[0]->value.i_data != 0){ /* its value is non zero 
-									fprintf(file, "0\nSEQEND\n");
-								}
-								free(attr.data);
+					else if(strcmp(current->obj.name, "TABLE") == 0){
+						fprintf(file, "0\nENDTAB\n");
+					}
+					/*
+					else if(strcmp(current->obj.name, "BLOCK") == 0){
+						fprintf(file, "0\nENDBLK\n");
+					}
+					else{
+						attr = dxf_find_attr(current, 66); /* look for entities folow flag
+						if (attr.data){ /* if flag is found and 
+							if(((dxf_node **) attr.data)[0]->value.i_data != 0){ /* its value is non zero 
+								fprintf(file, "0\nSEQEND\n");
 							}
-						}*/
-						current = current->next; /* go to the next in the list */
-					}
-				}
-				else if (current->type == DXF_ENT){ /* DXF entity */
-					/* down in the structure hierarchy */
-					list_push(stack, list_new((void *)current, ONE_TIME));
-					stack_size++;
-					//stack_push (&stack, current);
-					if (current->obj.name){
-						fprintf(file, "0\n%s\n", current->obj.name); /* write the start of entity */
-					}
-					if (current->obj.content){
-						/* starts the content sweep */
-						current = current->obj.content->next;
-					}
-				}
-				else if (current->type == DXF_ATTR){ /* DXF attribute */
-					fprintf(file, "%d\n",  current->value.group); /* write the DFX group */
-					/* write the value of attribute, acording its type */
-					switch (current->value.t_data) {
-						case DXF_STR:
-							fprintf(file, "%s\n", current->value.s_data);
-							break;
-						case DXF_FLOAT:
-							fprintf(file, "%g\n", current->value.d_data);
-							break;
-						case DXF_INT:
-							fprintf(file, "%d\n",  current->value.i_data);
-					}
+							free(attr.data);
+						}
+					}*/
 					current = current->next; /* go to the next in the list */
 				}
 			}
-			ret_success = 1; /* return success */
+			else if (current->type == DXF_ENT){ /* DXF entity */
+				/* down in the structure hierarchy */
+				list_push(stack, list_new((void *)current, ONE_TIME));
+				stack_size++;
+				//stack_push (&stack, current);
+				if (current->obj.name){
+					fprintf(file, "0\n%s\n", current->obj.name); /* write the start of entity */
+				}
+				if (current->obj.content){
+					/* starts the content sweep */
+					current = current->obj.content->next;
+				}
+			}
+			else if (current->type == DXF_ATTR){ /* DXF attribute */
+				fprintf(file, "%d\n",  current->value.group); /* write the DFX group */
+				/* write the value of attribute, acording its type */
+				switch (current->value.t_data) {
+					case DXF_STR:
+						fprintf(file, "%s\n", current->value.s_data);
+						break;
+					case DXF_FLOAT:
+						fprintf(file, "%g\n", current->value.d_data);
+						break;
+					case DXF_INT:
+						fprintf(file, "%d\n",  current->value.i_data);
+				}
+				current = current->next; /* go to the next in the list */
+			}
 		}
-		list_mem_pool(ZERO_LIST, ONE_TIME);
+		ret_success = 1; /* return success */
 		fclose(file);
 	}
+	list_mem_pool(ZERO_LIST, ONE_TIME);
+	
 	return ret_success;
 }
 

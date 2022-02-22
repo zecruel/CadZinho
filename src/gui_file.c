@@ -529,22 +529,61 @@ int gui_file_open (gui_obj *gui, char *init_dir){
 int gui_file_save (gui_obj *gui, char *init_dir){
 	/* window for open drawing files */	
 	int show_app_file = 1, i;
+	static int init = 0, overwrite = 0;
+	static char file[DXF_MAX_CHARS+1], dir[PATH_MAX_CHARS+1];
 	
-	if (nk_begin(gui->ctx, "Save Drawing", nk_rect(20, 100, 400, 150),
+	if (!init){
+		/* change to initial directory, if it has passed */
+		//if (init_dir) dir_change(init_dir);
+		
+		/* change directory to current drawing */
+		dir_change(gui->dwg_dir);
+		strncpy (dir, gui->dwg_dir, PATH_MAX_CHARS);
+		strncpy (file, gui->dwg_file, DXF_MAX_CHARS);
+		init = 1;
+	}
+	
+	if (gui->show_file_br == 2){
+		/* update dir and file with returned path from browser window */
+		strncpy (dir, get_dir(gui->curr_path) , PATH_MAX_CHARS);
+		strncpy (file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
+		gui->show_file_br = 0;
+	}
+	
+	if (nk_begin(gui->ctx, "Save Drawing", nk_rect(20, 100, 400, 200),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
+		/* show current directory */
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		nk_label_colored(gui->ctx, "Current directory:", NK_TEXT_LEFT, nk_rgb(255,255,0));
+		nk_label(gui->ctx, dir, NK_TEXT_LEFT); /* show current directory */
+		
 		nk_label(gui->ctx, "File to Save on:", NK_TEXT_CENTERED);
 		
 		/* user can type the file name/path, or paste text, or drop from system navigator */
 		nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
-		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_path, PATH_MAX_CHARS, nk_filter_default);
+		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, file, PATH_MAX_CHARS, nk_filter_default);
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
-			//nk_popup_close(gui->ctx);
-			show_app_file = 2;
-			gui->show_file_br = 0;
+			if (strlen(file)){
+				/* put "dir" and "file" strings in current path */
+				char full_path[PATH_MAX_CHARS+1];
+				strncpy (full_path, dir, PATH_MAX_CHARS);
+				strncat (full_path, file, PATH_MAX_CHARS - strlen(dir));
+				
+				if (file_exists(full_path)){
+					overwrite = 1;
+				}
+				else {
+					strncpy (gui->curr_path, full_path, PATH_MAX_CHARS);
+					/* close window */
+					show_app_file = 2;
+					gui->show_file_br = 0;
+					init = 0;
+					overwrite = 0;
+				}
+			}
 		}
 		if (nk_button_label(gui->ctx, "Explore")) {
 			/* option for internal file explorer */
@@ -559,11 +598,76 @@ int gui_file_save (gui_obj *gui, char *init_dir){
 			gui->show_file_br = 1;
 		}
 		
-		
+		if (overwrite){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Save", NK_WINDOW_CLOSABLE, nk_rect(20, 20, 200, 100))){
+				nk_layout_row_dynamic(gui->ctx, 20, 1);
+				nk_label(gui->ctx, "Over write existing file?", NK_TEXT_CENTERED);
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
+					/* put "dir" and "file" strings in current path */
+					char full_path[PATH_MAX_CHARS+1];
+					strncpy (full_path, dir, PATH_MAX_CHARS);
+					strncat (full_path, file, PATH_MAX_CHARS - strlen(dir));
+					strncpy (gui->curr_path, full_path, PATH_MAX_CHARS);
+					/* close window */
+					show_app_file = 2;
+					gui->show_file_br = 0;
+					init = 0;
+					overwrite = 0;
+					nk_popup_close(gui->ctx);
+				}
+				if (nk_button_label(gui->ctx, "Cancel")) {
+					overwrite = 0;
+					nk_popup_close(gui->ctx);
+				}
+				
+				nk_popup_end(gui->ctx);
+			}
+			else {
+				overwrite = 0;
+			}
+		}
 	} else {
+		/* close window */
 		show_app_file = 0;
 		gui->show_file_br = 0;
+		init = 0;
+		overwrite = 0;
 	}
 	nk_end(gui->ctx);
 	return show_app_file;
+}
+
+int gui_hist_add (gui_obj *gui){ /* add file to history */
+	
+	/* get position in array, considering as circular buffer */
+	int pos = (gui->drwg_hist_wr + gui->drwg_hist_head) % DRWG_HIST_MAX;
+	/* put file path in history */
+	strncpy (gui->drwg_hist[pos], gui->curr_path , DXF_MAX_CHARS);
+	/* history buffer is full -> change the head of buffer to overwrite first entry */
+	if(gui->drwg_hist_wr >= DRWG_HIST_MAX) gui->drwg_hist_head++;
+	/* adjust circular buffer head */
+	gui->drwg_hist_head %= DRWG_HIST_MAX;
+	
+	/* adjust buffer parameters to next entries */
+	if (gui->drwg_hist_pos < gui->drwg_hist_size && gui->drwg_hist_pos < DRWG_HIST_MAX - 1)
+		gui->drwg_hist_pos ++; /* position */
+	if (gui->drwg_hist_wr < DRWG_HIST_MAX){
+		gui->drwg_hist_wr ++; /* size */
+		gui->drwg_hist_size = gui->drwg_hist_wr; /* next write position */
+	}
+	gui->hist_new = 0;
+	
+	/* put file path in recent file list */
+	STRPOOL_U64 str_a = strpool_inject( &gui->file_pool, gui->curr_path , (int) strlen(gui->curr_path ) );
+	/* verify if file was previously loaded */
+	list_node *prev = list_find_data(gui->recent_drwg, (void *)str_a);
+	if (prev){
+		/* remove repeated file form list */
+		list_remove(gui->recent_drwg, prev);
+	}
+	/* put newest file in head of list */
+	list_insert(gui->recent_drwg, list_new((void *)str_a, PRG_LIFE));
+	
+	return 1;
 }

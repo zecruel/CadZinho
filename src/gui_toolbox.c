@@ -597,26 +597,38 @@ int gui_main_win(gui_obj *gui){
 		if (gui->show_app_about){
 			/* About Cadzinho */
 			const char* site = "https://github.com/zecruel/CadZinho";
-			static struct nk_rect s = {20, 100, 400, 150};
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "About", NK_WINDOW_CLOSABLE, s)){
-				nk_layout_row_dynamic(gui->ctx, 50, 2);
-				nk_label(gui->ctx, "CadZinho", NK_TEXT_RIGHT);
+			static struct nk_rect s = {250, 150, 400, 210};
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "About", NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, s)){
+				nk_layout_space_begin(gui->ctx, NK_STATIC, 50, 2);
+				nk_layout_space_push(gui->ctx, nk_rect(100, 0, 48, 48));
 				nk_image(gui->ctx, nk_image_ptr(gui->i_cz48));
-				//nk_layout_row_dynamic(gui->ctx, 165, 1);
-				//nk_image(gui->ctx, i_cz);
-				nk_layout_row_begin(gui->ctx, NK_DYNAMIC, 20, 2);
-				nk_layout_row_push(gui->ctx, 0.7f);
-				nk_label(gui->ctx, "By Ezequiel Rabelo de Aguiar", NK_TEXT_RIGHT);
-				nk_layout_row_push(gui->ctx, 0.3f);
+				
+				nk_layout_space_push(gui->ctx, nk_rect(150, 10, 150, 30));
+				nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_HUGE])); /* change font to huge*/
+				nk_label(gui->ctx, "CadZinho", NK_TEXT_CENTERED);
+				nk_style_pop_font(gui->ctx); /* return to the default font*/
+				nk_layout_space_end(gui->ctx);
+				
+				nk_layout_space_begin(gui->ctx, NK_STATIC, 40, 2);
+				nk_layout_space_push(gui->ctx, nk_rect(80, 2, 200, 24));
+				nk_label(gui->ctx, "By Ezequiel Rabelo de Aguiar", NK_TEXT_LEFT);
+				
+				nk_layout_space_push(gui->ctx, nk_rect(290, 0, 24, 24));
 				nk_image(gui->ctx, nk_image_ptr(gui->svg_bmp[SVG_BRAZIL]));
-				nk_layout_row_end(gui->ctx);
+				nk_layout_space_end(gui->ctx);
+				
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				nk_label(gui->ctx, "CadZinho is licensed under the MIT License.",  NK_TEXT_LEFT);
+				nk_label(gui->ctx, "CadZinho is licensed under the MIT License.",  NK_TEXT_CENTERED);
 				if (nk_button_label(gui->ctx, site)){
 					opener(site);
 				}
+				nk_layout_row_dynamic(gui->ctx, 20, 4);
+				nk_label(gui->ctx, "Build for: ",  NK_TEXT_RIGHT);
 				nk_label(gui->ctx, operating_system(),  NK_TEXT_LEFT);
+				nk_label(gui->ctx, "Version: ",  NK_TEXT_RIGHT);
+				nk_label(gui->ctx, CZ_VERSION,  NK_TEXT_LEFT);
 				nk_popup_end(gui->ctx);
+				
 			} else gui->show_app_about = nk_false;
 		}
 		

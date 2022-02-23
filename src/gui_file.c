@@ -470,7 +470,7 @@ int gui_file_open (gui_obj *gui, char *init_dir){
 	
 	int show_app_file = 1, i;
 	
-	if (nk_begin(gui->ctx, "Open Drawing", nk_rect(20, 100, 400, 300),
+	if (nk_begin(gui->ctx, "Open Drawing", nk_rect(250, 150, 400, 300),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
@@ -550,7 +550,7 @@ int gui_file_save (gui_obj *gui, char *init_dir){
 		gui->show_file_br = 0;
 	}
 	
-	if (nk_begin(gui->ctx, "Save Drawing", nk_rect(20, 100, 400, 200),
+	if (nk_begin(gui->ctx, "Save Drawing", nk_rect(250, 150, 400, 180),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		/* show current directory */
@@ -599,9 +599,14 @@ int gui_file_save (gui_obj *gui, char *init_dir){
 		}
 		
 		if (overwrite){
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Save", NK_WINDOW_CLOSABLE, nk_rect(20, 20, 200, 100))){
-				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				nk_label(gui->ctx, "Over write existing file?", NK_TEXT_CENTERED);
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Existing File", NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, nk_rect(30, 100, 300, 100))){
+				//nk_layout_row_dynamic(gui->ctx, 20, 2);
+				nk_layout_row_template_begin(gui->ctx, 23);
+				nk_layout_row_template_push_static(gui->ctx, 24);
+				nk_layout_row_template_push_dynamic(gui->ctx);
+				nk_layout_row_template_end(gui->ctx);
+				nk_image(gui->ctx, nk_image_ptr(gui->svg_bmp[SVG_WARNING]));
+				nk_label(gui->ctx, "Over write existing file?", NK_TEXT_LEFT);
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
 					/* put "dir" and "file" strings in current path */

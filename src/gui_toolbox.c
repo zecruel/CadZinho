@@ -263,7 +263,7 @@ int gui_main_win(gui_obj *gui){
 		nk_layout_row_begin(gui->ctx, NK_STATIC, ICON_SIZE + 12, 8);
 		
 		/* file tools*/
-		nk_layout_row_push(gui->ctx, 6*(ICON_SIZE + 4 + 4) + 13);
+		nk_layout_row_push(gui->ctx, 5*(ICON_SIZE + 4 + 4) + 13);
 		if (nk_group_begin(gui->ctx, "file", NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
 			
@@ -302,19 +302,17 @@ int gui_main_win(gui_obj *gui){
 				show_save = 1;
 				gui->path_ok = 0;
 			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPORT]))){
-				gui->action = EXPORT;
-				//gui->show_app_file = 1;
-				show_save = 1;
-				gui->path_ok = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CLOSE]))){
-				printf("CLOSE\n");
-			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PRINT]))){
 				//printf("PRINT\n");
 				//print_pdf(gui->drawing);
 				gui->show_print = 1;
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPORT]))){
+				//gui->action = EXPORT;
+				//gui->show_app_file = 1;
+				//show_save = 1;
+				//gui->path_ok = 0;
+				gui->show_export = 1;
 			}
 			
 			nk_group_end(gui->ctx);

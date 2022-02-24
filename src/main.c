@@ -25,6 +25,7 @@
 #include "gui_use.h"
 #include "gui_file.h"
 #include "gui_print.h"
+#include "gui_export.h"
 #include "gui_config.h"
 #include "gui_script.h"
 
@@ -982,7 +983,9 @@ int main(int argc, char** argv){
 		if (gui->show_print){
 			gui->show_print = print_win(gui);
 		}
-		
+		if (gui->show_export){
+			gui->show_export = export_win(gui);
+		}
 		if (gui->show_blk_mng){
 			gui->show_blk_mng = gui_blk_mng (gui);
 		}

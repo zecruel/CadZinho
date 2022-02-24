@@ -366,6 +366,7 @@ struct Gui_obj {
 	int show_info;
 	int show_script;
 	int show_print;
+	int show_export;
 	
 	int progress;
 	int hist_new;

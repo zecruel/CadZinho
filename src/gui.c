@@ -1687,7 +1687,8 @@ int gui_start(gui_obj *gui){
 	gui->path_ok = 0;
 	gui->show_info = 0;
 	gui->show_script = 0;
-	gui->show_print= 0;
+	gui->show_print = 0;
+	gui->show_export = 0;
 	
 	gui->progress = 0;
 	gui->hist_new = 0;

@@ -139,6 +139,13 @@ int export_win (gui_obj *gui){
 			/* call corresponding  function, based on output format */
 			if (out_fmt == EXPORT_HPGL)
 				ret = export_hpgl(gui->drawing, param, sel_file);
+			else if (out_fmt == EXPORT_GCODE){
+				strncpy(param.init, "G21 G90 S1600 F7.0 M03\n G00 z-1.0\n", DXF_MAX_CHARS);
+				strncpy(param.move, "G00 z-1.0\n", DXF_MAX_CHARS);
+				strncpy(param.stroke, "G01 z1.0\n", DXF_MAX_CHARS);
+				strncpy(param.end, "G00 z-1.0\n M05", DXF_MAX_CHARS);
+				ret = export_gcode(gui->drawing, param, sel_file);
+			}
 			/* verify success or fail*/
 			if (ret)
 				snprintf(gui->log_msg, 63, "Export: Created export output succesfully");

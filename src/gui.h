@@ -231,6 +231,7 @@ struct Gui_obj {
 	char *extra_lin;
 	
 	dxf_drawing *drawing;
+	int changed;
 	dxf_node *element, *near_el;
 	
 	list_node *near_list;
@@ -359,6 +360,9 @@ struct Gui_obj {
 	char const * file_filter_descr[20];
 	int file_filter_count;
 	int filter_idx;
+	
+	int show_open;
+	int show_save;
 	
 	int show_app_about;
 	int show_app_file;

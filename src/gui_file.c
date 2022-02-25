@@ -121,7 +121,7 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 	if (gui->filter_idx >= num_ext) gui->filter_idx = 0;
 	
 	
-	if (nk_begin(gui->ctx, "File explorer", nk_rect(450, 100, 600, 510),
+	if (nk_begin(gui->ctx, "File explorer", nk_rect(550, 100, 600, 510),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		/* read the workind directory */
@@ -469,22 +469,77 @@ int gui_file_open (gui_obj *gui, char *init_dir){
 	/* window for open drawing files */
 	
 	int show_app_file = 1, i;
+	static int discard_changes = 0, init = 0;
+	static char file[DXF_MAX_CHARS+1], dir[PATH_MAX_CHARS+1];
 	
-	if (nk_begin(gui->ctx, "Open Drawing", nk_rect(250, 150, 400, 300),
+	if (!init){
+		/* change to initial directory, if it has passed */
+		//if (init_dir) dir_change(init_dir);
+		
+		/* change directory to current drawing */
+		dir_change(gui->dwg_dir);
+		strncpy (dir, gui->dwg_dir, PATH_MAX_CHARS);
+		//strncpy (file, gui->dwg_file, DXF_MAX_CHARS);
+		file[0] = 0;
+		init = 1;
+	}
+	if (gui->show_file_br == 2){
+		/* update dir and file with returned path from browser window */
+		strncpy (dir, get_dir(gui->curr_path) , PATH_MAX_CHARS);
+		strncpy (file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
+		gui->show_file_br = 0;
+	}
+	
+	if (nk_begin(gui->ctx, "Open Drawing", nk_rect(200, 150, 400, 350),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
+		nk_flags res;
+		
+		/* show current directory */
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		nk_label_colored(gui->ctx, "Current directory:", NK_TEXT_LEFT, nk_rgb(255,255,0));
+		nk_label(gui->ctx, dir, NK_TEXT_LEFT); /* show current directory */
+		
 		nk_label(gui->ctx, "File to Open:", NK_TEXT_CENTERED);
 		
 		/* user can type the file name/path, or paste text, or drop from system navigator */
 		nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
-		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_path, PATH_MAX_CHARS, nk_filter_default);
+		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, file, PATH_MAX_CHARS, nk_filter_default);
+		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){
+			/* probably, user change parameter string */
+			/* then verify if entered a full path and adjust the strings */
+			char *curr_dir = get_dir(file);
+			if (strlen(curr_dir)){
+				char no_dir[3];
+				no_dir[0] = '.';
+				no_dir[1] = DIR_SEPARATOR;
+				no_dir[2] = 0;
+				if (strcmp(curr_dir, no_dir) != 0){ /* verify if change in directory */
+					strncpy (dir, curr_dir, DXF_MAX_CHARS);
+					strncpy (file, get_filename(file) , DXF_MAX_CHARS);
+				}
+			}
+		}
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
-			//nk_popup_close(gui->ctx);
-			show_app_file = 2;
-			gui->show_file_br = 0;
+			if (strlen(file)){
+				if (gui->changed){
+					discard_changes = 1;
+				}
+				else{
+					/* put "dir" and "file" strings in current path */
+					char full_path[PATH_MAX_CHARS+1];
+					strncpy (full_path, dir, PATH_MAX_CHARS);
+					strncat (full_path, file, PATH_MAX_CHARS - strlen(dir));
+					strncpy (gui->curr_path, full_path, PATH_MAX_CHARS);
+					/* close window */
+					show_app_file = 2;
+					gui->show_file_br = 0;
+					discard_changes = 0;
+					init = 0;
+				}
+			}
 		}
 		if (nk_button_label(gui->ctx, "Explore")) {
 			/* option for internal file explorer */
@@ -508,26 +563,65 @@ int gui_file_open (gui_obj *gui, char *init_dir){
 		while (rcnt_curr != NULL && i < DRWG_RECENT_MAX){ /* sweep the list */
 			if (rcnt_curr->data){
 				STRPOOL_U64 str_a = (STRPOOL_U64) rcnt_curr->data; /* str key in pool */
-				char *file = (char *) strpool_cstr( &gui->file_pool, str_a); /* get string */
-				if (nk_button_label(gui->ctx, get_filename(file))) {
+				char *rcnt_file = (char *) strpool_cstr( &gui->file_pool, str_a); /* get string */
+				if (nk_button_label(gui->ctx, get_filename(rcnt_file))) {
 					/* use selected file path */
-					strncpy(gui->curr_path, file, PATH_MAX_CHARS);
+					//strncpy(gui->curr_path, rcnt_file, PATH_MAX_CHARS);
+					strncpy (dir, get_dir(rcnt_file) , DXF_MAX_CHARS);
+					strncpy (file, get_filename(rcnt_file) , DXF_MAX_CHARS);
 				}
 			}
 			rcnt_curr = rcnt_curr->next;
 			i++;
 		}
 		
+		if (discard_changes){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Discard changes", NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, nk_rect(30, 100, 300, 100))){
+				//nk_layout_row_dynamic(gui->ctx, 20, 2);
+				nk_layout_row_template_begin(gui->ctx, 23);
+				nk_layout_row_template_push_static(gui->ctx, 24);
+				nk_layout_row_template_push_dynamic(gui->ctx);
+				nk_layout_row_template_end(gui->ctx);
+				nk_image(gui->ctx, nk_image_ptr(gui->svg_bmp[SVG_WARNING]));
+				nk_label(gui->ctx, "Discard changes in current drawing?", NK_TEXT_LEFT);
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
+					/* put "dir" and "file" strings in current path */
+					char full_path[PATH_MAX_CHARS+1];
+					strncpy (full_path, dir, PATH_MAX_CHARS);
+					strncat (full_path, file, PATH_MAX_CHARS - strlen(dir));
+					strncpy (gui->curr_path, full_path, PATH_MAX_CHARS);
+					/* close window */
+					show_app_file = 2;
+					gui->show_file_br = 0;
+					init = 0;
+					discard_changes = 0;
+					nk_popup_close(gui->ctx);
+				}
+				if (nk_button_label(gui->ctx, "Cancel")) {
+					discard_changes = 0;
+					nk_popup_close(gui->ctx);
+				}
+				
+				nk_popup_end(gui->ctx);
+			}
+			else {
+				discard_changes = 0;
+			}
+		}
+		
 	} else {
 		show_app_file = 0;
 		gui->show_file_br = 0;
+		discard_changes = 0;
+		init = 0;
 	}
 	nk_end(gui->ctx);
 	return show_app_file;
 }
 
 int gui_file_save (gui_obj *gui, char *init_dir){
-	/* window for open drawing files */	
+	/* window for save drawing files */	
 	int show_app_file = 1, i;
 	static int init = 0, overwrite = 0;
 	static char file[DXF_MAX_CHARS+1], dir[PATH_MAX_CHARS+1];
@@ -550,9 +644,11 @@ int gui_file_save (gui_obj *gui, char *init_dir){
 		gui->show_file_br = 0;
 	}
 	
-	if (nk_begin(gui->ctx, "Save Drawing", nk_rect(250, 150, 400, 180),
+	if (nk_begin(gui->ctx, "Save Drawing", nk_rect(200, 150, 400, 180),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
+		nk_flags res;
+		
 		/* show current directory */
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label_colored(gui->ctx, "Current directory:", NK_TEXT_LEFT, nk_rgb(255,255,0));
@@ -562,7 +658,22 @@ int gui_file_save (gui_obj *gui, char *init_dir){
 		
 		/* user can type the file name/path, or paste text, or drop from system navigator */
 		nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
-		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, file, PATH_MAX_CHARS, nk_filter_default);
+		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, file, PATH_MAX_CHARS, nk_filter_default);
+		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){
+			/* probably, user change parameter string */
+			/* then verify if entered a full path and adjust the strings */
+			char *curr_dir = get_dir(file);
+			if (strlen(curr_dir)){
+				char no_dir[3];
+				no_dir[0] = '.';
+				no_dir[1] = DIR_SEPARATOR;
+				no_dir[2] = 0;
+				if (strcmp(curr_dir, no_dir) != 0){ /* verify if change in directory */
+					strncpy (dir, curr_dir, DXF_MAX_CHARS);
+					strncpy (file, get_filename(file) , DXF_MAX_CHARS);
+				}
+			}
+		}
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {

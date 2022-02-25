@@ -255,7 +255,6 @@ int gui_tools_win (gui_obj *gui){
 
 int gui_main_win(gui_obj *gui){
 	int i;
-	static int show_save = 0, show_open = 0;
 	
 	if (nk_begin(gui->ctx, "Main", nk_rect(2, 2, gui->win_w - 4, 6 + 4 + ICON_SIZE + 4 + 6 + 4 + ICON_SIZE + 4 + 6 + 8),
 	NK_WINDOW_BORDER)){
@@ -289,7 +288,7 @@ int gui_main_win(gui_obj *gui){
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_OPEN]))){
 				gui->action = FILE_OPEN;
 				//gui->show_app_file = 1;
-				show_open = 1;
+				gui->show_open = 1;
 				
 				gui->curr_path[0] = 0;
 				
@@ -299,7 +298,7 @@ int gui_main_win(gui_obj *gui){
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SAVE]))){
 				gui->action = FILE_SAVE;
 				//gui->show_app_file = 1;
-				show_save = 1;
+				gui->show_save = 1;
 				gui->path_ok = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PRINT]))){
@@ -630,39 +629,9 @@ int gui_main_win(gui_obj *gui){
 			} else gui->show_app_about = nk_false;
 		}
 		
-	} // *** test
-	nk_end(gui->ctx); //***test
-		if (gui->show_app_file){
-			//gui->show_app_file = file_pop (gui, filters, 2, NULL); // *** test
-			gui->show_app_file = gui_file_open (gui, NULL);  // *** test
-			if (gui->show_app_file == 2){
-					//if (strlen(file_path) > 4){
-						gui->path_ok = 1;
-					//}
-				
-				gui->show_app_file = 0;
-			}
-		}
-	//} // *** test
-	//nk_end(gui->ctx); // *** test
+	} 
+	nk_end(gui->ctx);
 	
-	if (show_open){
-		show_open = gui_file_open (gui, NULL);  // *** test
-		if (show_open == 2){
-			gui->path_ok = 1;
-			
-			show_open = 0;
-		}
-	}
-	
-	if (show_save){
-		show_save = gui_file_save (gui, NULL);  // *** test
-		if (show_save == 2){
-			gui->path_ok = 1;
-			
-			show_save = 0;
-		}
-	}
 		
 	
 	return 1;

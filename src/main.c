@@ -123,7 +123,8 @@ int main(int argc, char** argv){
 	gui_obj *gui = malloc(sizeof(gui_obj));
 	gui_start(gui);
 	
-	
+	struct do_entry *save_pt;
+	int update_title = 0, changed = 0;
 	
 	
 #ifdef _MSC_VER
@@ -387,6 +388,7 @@ int main(int argc, char** argv){
 	/* initialize the undo/redo list */
 	//struct do_list gui->list_do;
 	init_do_list(&gui->list_do);
+	save_pt = gui->list_do.current;
 		
 	/* init Nuklear GUI */
 	
@@ -824,13 +826,14 @@ int main(int argc, char** argv){
 					case (SDL_DROPFILE): {      // In case if dropped file
 						/* get file path -> drop event has previously proccessed and string was moved to clipboard !!!*/
 						char *dropped_filedir = SDL_GetClipboardText(); 
-						strncpy (gui->curr_path, dropped_filedir, DXF_MAX_CHARS);
-						//printf("File: %s\n", gui->curr_path);
-						/* open file */
-						gui->action = FILE_OPEN;
-						gui->path_ok = 1;
-						gui->hist_new = 1; /* add to history entries */
-						
+						if (!gui->show_open && !gui->show_save && !gui->changed){
+							strncpy (gui->curr_path, dropped_filedir, DXF_MAX_CHARS);
+							//printf("File: %s\n", gui->curr_path);
+							/* open file */
+							gui->action = FILE_OPEN;
+							gui->path_ok = 1;
+							gui->hist_new = 1; /* add to history entries */
+						}
 						SDL_free(dropped_filedir);    // Free dropped_filedir memory
 						}
 						break;
@@ -935,6 +938,27 @@ int main(int argc, char** argv){
 		if (gui->keyEnter) gui->ev |= EV_LOCK_AX;
 		if (ctrlDown) gui->ev |= EV_ADD;
 		
+		/* verify if drawing was changed */
+		gui->changed = 0;
+		if (save_pt != gui->list_do.current){
+			gui->changed = 1;
+		}
+		
+		/* == Window title == */
+		if (update_title || changed != gui->changed){
+			/* update window title, for changes in drawing file name or during drawing editing */
+			char title[DXF_MAX_CHARS] = "CadZinho - ";
+			strncat (title, gui->dwg_file, DXF_MAX_CHARS - strlen(title));
+			if (gui->changed){ /* if current drawing was changed, put "(*)" to indicate modifications */
+				strncat (title, " (*)", DXF_MAX_CHARS - strlen(title));
+			}
+			
+			SDL_SetWindowTitle(window, title);
+			update_title = 0;
+		}
+		
+		changed = gui->changed;
+		
 		gui->next_win_h = 6 + 4 + ICON_SIZE + 4 + 6 + 4 + ICON_SIZE + 4 + 6 + 8;
 		gui->next_win_x = 2;
 		gui->next_win_y = 2;
@@ -957,6 +981,25 @@ int main(int argc, char** argv){
 		
 		gui_tools_win (gui);
 		gui_main_win (gui);
+		
+		
+		if (gui->show_open){
+			gui->show_open = gui_file_open (gui, NULL);  // *** test
+			if (gui->show_open == 2){
+				gui->path_ok = 1;
+				
+				gui->show_open = 0;
+			}
+		}
+		
+		if (gui->show_save){
+			gui->show_save = gui_file_save (gui, NULL);  // *** test
+			if (gui->show_save == 2){
+				gui->path_ok = 1;
+				
+				gui->show_save = 0;
+			}
+		}
 		
 		
 /* ==============================================================
@@ -1077,7 +1120,6 @@ int main(int argc, char** argv){
 		
 		if((gui->action == FILE_OPEN) && (gui->path_ok)) {
 			gui->action = NONE; gui->path_ok = 0;
-			
 			file_buf = load_file_reuse(gui->curr_path, &file_size);
 			
 			if (file_buf){
@@ -1109,12 +1151,15 @@ int main(int argc, char** argv){
 					
 				}
 				if (open_prg >= 0){
+					do_mem_pool(ZERO_DO_ITEM);
+					do_mem_pool(ZERO_DO_ENTRY);
+					init_do_list(&gui->list_do);
+					save_pt = gui->list_do.current;
+	
 					strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
 					strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
 					
-					char title[DXF_MAX_CHARS] = "CadZinho - ";
-					strncat (title, gui->dwg_file, DXF_MAX_CHARS);
-					SDL_SetWindowTitle(window, title);
+					update_title = 1;
 				}
 			}
 			else {
@@ -1131,9 +1176,8 @@ int main(int argc, char** argv){
 					strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
 					strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
 					
-					char title[DXF_MAX_CHARS] = "CadZinho - ";
-					strncat (title, gui->dwg_file, DXF_MAX_CHARS);
-					SDL_SetWindowTitle(window, title);
+					save_pt = gui->list_do.current;
+					update_title = 1;
 				}
 			}
 		}
@@ -1273,7 +1317,6 @@ int main(int argc, char** argv){
 				while (dxf_read (gui->clip_drwg, file_buf->buffer, file_size, &gui->progress) > 0){
 					
 				}
-				
 				
 				/* clear the file buffer */
 				//free(file_buf);

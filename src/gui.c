@@ -1641,6 +1641,7 @@ int gui_start(gui_obj *gui){
 	gui->sel_list = NULL;
 	gui->phanton = NULL;
 	//gui->list_do;
+	gui->changed = 0;
 	gui->font_list = NULL;
 	
 	
@@ -1682,6 +1683,8 @@ int gui_start(gui_obj *gui){
 	
 	gui->dflt_fonts_path[0] = 0;
 	
+	gui->show_open = 0;
+	gui->show_save = 0;
 	gui->show_app_about = 0;
 	gui->show_app_file = 0;
 	gui->path_ok = 0;

@@ -151,6 +151,9 @@ int gui_get_conf (lua_State *L) {
 		else if (strcmp(theme, "purple") == 0){
 			gui->theme = THEME_PURPLE;
 		}
+		else if (strcmp(theme, "dracula") == 0){
+			gui->theme = THEME_DRACULA;
+		}
 		else if (strcmp(theme, "default") == 0){
 			gui->theme = THEME_DEFAULT;
 		}

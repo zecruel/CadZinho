@@ -186,6 +186,7 @@ enum theme {THEME_BLACK,
 	THEME_GREEN,
 	THEME_BROWN,
 	THEME_PURPLE,
+	THEME_DRACULA,
 	THEME_DEFAULT};
 	
 enum Cursor_type{

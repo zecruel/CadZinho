@@ -734,6 +734,36 @@ void set_style(gui_obj *gui, enum theme theme){
 		table[NK_COLOR_SCROLLBAR_CURSOR_ACTIVE] = nk_rgba(93, 58, 121, 255);
 		table[NK_COLOR_TAB_HEADER] = nk_rgba(83, 48, 111, 255);
 		nk_style_from_table(gui->ctx, table);
+	} else if (theme == THEME_DRACULA) {
+		table[NK_COLOR_TEXT] = nk_rgba(248, 248, 242, 255);
+		table[NK_COLOR_WINDOW] = nk_rgba(68, 71, 90, 255);
+		table[NK_COLOR_HEADER] = nk_rgba(40, 42, 54, 255);
+		table[NK_COLOR_BORDER] = nk_rgba(0, 0, 0, 255);
+		table[NK_COLOR_BUTTON] = nk_rgba(98, 114, 164, 255);
+		table[NK_COLOR_BUTTON_HOVER] = nk_rgba(255, 121, 198, 255);
+		table[NK_COLOR_BUTTON_ACTIVE] = nk_rgba(255, 85, 85, 255);
+		table[NK_COLOR_TOGGLE] = nk_rgba(40, 42, 54, 255);
+		table[NK_COLOR_TOGGLE_HOVER] = nk_rgba(98, 114, 164, 255);
+		table[NK_COLOR_TOGGLE_CURSOR] = nk_rgba(255, 85, 85, 255);
+		table[NK_COLOR_SELECT] = nk_rgba(98, 114, 164, 255);
+		table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(255, 85, 85, 255);
+		table[NK_COLOR_SLIDER] = nk_rgba(40, 42, 54, 255);
+		table[NK_COLOR_SLIDER_CURSOR] = nk_rgba(98, 114, 164, 255);
+		table[NK_COLOR_SLIDER_CURSOR_HOVER] = nk_rgba(255, 121, 198, 255);
+		table[NK_COLOR_SLIDER_CURSOR_ACTIVE] = nk_rgba(255, 85, 85, 255);
+		table[NK_COLOR_PROPERTY] = nk_rgba(40, 42, 54, 255);
+		table[NK_COLOR_EDIT] = nk_rgba(40, 42, 54, 255);
+		table[NK_COLOR_EDIT_CURSOR] = nk_rgba(255, 184, 108, 255);
+		table[NK_COLOR_COMBO] = nk_rgba(40, 42, 54, 255);
+		table[NK_COLOR_CHART] = nk_rgba(40, 42, 54, 255);
+		table[NK_COLOR_CHART_COLOR] = nk_rgba(68, 71, 90, 255);
+		table[NK_COLOR_CHART_COLOR_HIGHLIGHT] = nk_rgba(255, 184, 108, 255);
+		table[NK_COLOR_SCROLLBAR] = nk_rgba(40, 42, 54, 255);
+		table[NK_COLOR_SCROLLBAR_CURSOR] = nk_rgba(98, 114, 164, 255);
+		table[NK_COLOR_SCROLLBAR_CURSOR_HOVER] = nk_rgba(255, 121, 198, 255);
+		table[NK_COLOR_SCROLLBAR_CURSOR_ACTIVE] = nk_rgba(255, 85, 85, 255);
+		table[NK_COLOR_TAB_HEADER] = nk_rgba(255, 85, 85, 255);
+		nk_style_from_table(gui->ctx, table);
 	/*} else if (theme == THEME_TEST) {
 		
 		nk_style_from_table(gui->ctx, table);*/

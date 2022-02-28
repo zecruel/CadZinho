@@ -255,6 +255,7 @@ int gui_tools_win (gui_obj *gui){
 
 int gui_main_win(gui_obj *gui){
 	int i;
+	static int discard_changes = 0;
 	
 	if (nk_begin(gui->ctx, "Main", nk_rect(2, 2, gui->win_w - 4, 6 + 4 + ICON_SIZE + 4 + 6 + 4 + ICON_SIZE + 4 + 6 + 8),
 	NK_WINDOW_BORDER)){
@@ -267,23 +268,12 @@ int gui_main_win(gui_obj *gui){
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
 			
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEW]))){
-				char *seed = try_load_dflt("seed.dxf", (char *)dxf_seed_2007);
-	
-				while (dxf_read (gui->drawing, seed, strlen(seed), &gui->progress) > 0){
-					
+				if (gui->changed){
+					discard_changes = 1;
 				}
-				
-				free(seed);
-				seed = NULL;
-				
-				gui->layer_idx = dxf_lay_idx (gui->drawing, "0");
-				gui->ltypes_idx = dxf_ltype_idx (gui->drawing, "BYLAYER");
-				gui->t_sty_idx = dxf_tstyle_idx (gui->drawing, "STANDARD");
-				gui->color_idx = 256;
-				gui->lw_idx = DXF_LW_LEN;
-				gui->curr_path[0] = 0;
-				gui->drwg_hist_pos ++;
-				sel_list_clear (gui);
+				else{
+					gui->action = FILE_NEW;
+				}
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_OPEN]))){
 				gui->action = FILE_OPEN;
@@ -627,6 +617,33 @@ int gui_main_win(gui_obj *gui){
 				nk_popup_end(gui->ctx);
 				
 			} else gui->show_app_about = nk_false;
+		}
+		
+		if (discard_changes){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Discard changes", NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, nk_rect(200, 100, 300, 100))){
+				//nk_layout_row_dynamic(gui->ctx, 20, 2);
+				nk_layout_row_template_begin(gui->ctx, 23);
+				nk_layout_row_template_push_static(gui->ctx, 24);
+				nk_layout_row_template_push_dynamic(gui->ctx);
+				nk_layout_row_template_end(gui->ctx);
+				nk_image(gui->ctx, nk_image_ptr(gui->svg_bmp[SVG_WARNING]));
+				nk_label(gui->ctx, "Discard changes in current drawing?", NK_TEXT_LEFT);
+				nk_layout_row_dynamic(gui->ctx, 20, 2);
+				if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
+					gui->action = FILE_NEW;
+					discard_changes = 0;
+					nk_popup_close(gui->ctx);
+				}
+				if (nk_button_label(gui->ctx, "Cancel")) {
+					discard_changes = 0;
+					nk_popup_close(gui->ctx);
+				}
+				
+				nk_popup_end(gui->ctx);
+			}
+			else {
+				discard_changes = 0;
+			}
 		}
 		
 	} 

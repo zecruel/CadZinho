@@ -60,14 +60,14 @@ all:	$(EXE)
 OBJS=\
 	$(DIR_O)\bmp.obj $(DIR_O)\_dirent.obj $(DIR_O)\draw_gl.obj $(DIR_O)\dxf.obj \
   $(DIR_O)\dxf_attract.obj $(DIR_O)\dxf_copy.obj $(DIR_O)\dxf_create.obj \
-  $(DIR_O)\dxf_dim.obj $(DIR_O)\dxf_edit.obj \
-	$(DIR_O)\dxf_ent.obj $(DIR_O)\dxf_graph.obj $(DIR_O)\dxf_hatch.obj $(DIR_O)\dxf_image.obj \
+  $(DIR_O)\dxf_dim.obj $(DIR_O)\dxf_edit.obj $(DIR_O)\dxf_ent.obj \
+	$(DIR_O)\dxf_export.obj $(DIR_O)\dxf_graph.obj $(DIR_O)\dxf_hatch.obj $(DIR_O)\dxf_image.obj \
 	$(DIR_O)\dxf_math.obj $(DIR_O)\dxf_print.obj $(DIR_O)\font.obj $(DIR_O)\graph.obj \
 	$(DIR_O)\gui.obj $(DIR_O)\gui_arc.obj $(DIR_O)\gui_attrib.obj $(DIR_O)\gui_block.obj \
 	$(DIR_O)\gui_circle.obj $(DIR_O)\gui_config.obj \
 	$(DIR_O)\gui_dim.obj $(DIR_O)\gui_dupli.obj \
-	$(DIR_O)\gui_edit_attr.obj \
-	$(DIR_O)\gui_edit_text.obj $(DIR_O)\gui_ellip.obj $(DIR_O)\gui_explode.obj \
+	$(DIR_O)\gui_edit_attr.obj $(DIR_O)\gui_edit_text.obj \
+	$(DIR_O)\gui_ellip.obj $(DIR_O)\gui_explode.obj $(DIR_O)\gui_export.obj \
 	$(DIR_O)\gui_file.obj $(DIR_O)\gui_find.obj $(DIR_O)\gui_hatch.obj \
 	$(DIR_O)\gui_image.obj $(DIR_O)\gui_info.obj $(DIR_O)\gui_insert.obj \
 	$(DIR_O)\gui_lay.obj $(DIR_O)\gui_line.obj $(DIR_O)\gui_ltype.obj \

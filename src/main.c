@@ -1117,8 +1117,38 @@ int main(int argc, char** argv){
 		
 		
 		/*===============================*/
-		
-		if((gui->action == FILE_OPEN) && (gui->path_ok)) {
+		if(gui->action == FILE_NEW) {
+			gui->action = NONE;
+			do_mem_pool(ZERO_DO_ITEM);
+			do_mem_pool(ZERO_DO_ENTRY);
+			init_do_list(&gui->list_do);
+			save_pt = gui->list_do.current;
+			
+			/* load and apply the fonts required for drawing */
+			gui->drawing->font_list = gui->font_list;
+			gui->drawing->dflt_font = get_font_list(gui->font_list, "txt.shx");
+			gui->drawing->dflt_fonts_path = gui->dflt_fonts_path;
+			
+			while (dxf_read (gui->drawing, gui->seed, strlen(gui->seed), &gui->progress) > 0){
+				
+			}
+			
+			gui->layer_idx = dxf_lay_idx (gui->drawing, "0");
+			gui->ltypes_idx = dxf_ltype_idx (gui->drawing, "BYLAYER");
+			gui->t_sty_idx = dxf_tstyle_idx (gui->drawing, "STANDARD");
+			gui->color_idx = 256;
+			gui->lw_idx = DXF_LW_LEN;
+			gui->curr_path[0] = 0;
+			gui->drwg_hist_pos ++;
+			sel_list_clear (gui);
+
+			//strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
+			//strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
+			gui->dwg_file[0] = 0;
+			
+			update_title = 1;
+		}
+		else if((gui->action == FILE_OPEN) && (gui->path_ok)) {
 			gui->action = NONE; gui->path_ok = 0;
 			file_buf = load_file_reuse(gui->curr_path, &file_size);
 			

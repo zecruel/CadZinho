@@ -53,6 +53,7 @@
 
 enum Action {
 	NONE,
+	FILE_NEW,
 	FILE_OPEN,
 	FILE_SAVE,
 	EXPORT,

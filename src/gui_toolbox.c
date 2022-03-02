@@ -255,7 +255,6 @@ int gui_tools_win (gui_obj *gui){
 
 int gui_main_win(gui_obj *gui){
 	int i;
-	static int discard_changes = 0;
 	
 	if (nk_begin(gui->ctx, "Main", nk_rect(2, 2, gui->win_w - 4, 6 + 4 + ICON_SIZE + 4 + 6 + 4 + ICON_SIZE + 4 + 6 + 8),
 	NK_WINDOW_BORDER)){
@@ -269,10 +268,13 @@ int gui_main_win(gui_obj *gui){
 			
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEW]))){
 				if (gui->changed){
-					discard_changes = 1;
+					gui->discard_changes = 1;
+					gui->desired_action = FILE_NEW;
+					gui->hist_action = HIST_NONE;
 				}
 				else{
 					gui->action = FILE_NEW;
+					gui->hist_new = 0; /* not add to history entries */
 				}
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_OPEN]))){
@@ -619,7 +621,7 @@ int gui_main_win(gui_obj *gui){
 			} else gui->show_app_about = nk_false;
 		}
 		
-		if (discard_changes){
+		if (gui->discard_changes){
 			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Discard changes", NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, nk_rect(200, 100, 300, 100))){
 				//nk_layout_row_dynamic(gui->ctx, 20, 2);
 				nk_layout_row_template_begin(gui->ctx, 23);
@@ -630,19 +632,44 @@ int gui_main_win(gui_obj *gui){
 				nk_label(gui->ctx, "Discard changes in current drawing?", NK_TEXT_LEFT);
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
-					gui->action = FILE_NEW;
-					discard_changes = 0;
+					gui->action = gui->desired_action;
+					gui->discard_changes = 0;
+					gui->desired_action = NONE;
+					if (gui->hist_action == HIST_PREV){
+						/* get previous position in history, considering as circular buffer */
+						int pos = (gui->drwg_hist_pos - 1 + gui->drwg_hist_head) % DRWG_HIST_MAX;
+						/* update position */
+						gui->drwg_hist_pos --;
+						gui->drwg_hist_wr = gui->drwg_hist_pos + 1; /* next write position */
+						gui->hist_new = 0; /* not change history entries */
+					}
+					else if (gui->hist_action == HIST_NEXT){
+						/* get next position in history, considering as circular buffer */
+						int pos = (gui->drwg_hist_pos + 1 + gui->drwg_hist_head) % DRWG_HIST_MAX;
+						/* update position */
+						gui->drwg_hist_pos ++;
+						gui->drwg_hist_wr = gui->drwg_hist_pos + 1; /* next write position */
+						gui->hist_new = 0; /* not change history entries */
+					}
+					else if (gui->hist_action == HIST_ADD){
+						gui->hist_new = 1;
+					}
+					gui->hist_action = HIST_NONE;
 					nk_popup_close(gui->ctx);
 				}
 				if (nk_button_label(gui->ctx, "Cancel")) {
-					discard_changes = 0;
+					gui->discard_changes = 0;
+					gui->desired_action = NONE;
+					gui->path_ok = 0;
+					gui->hist_new = 0;
+					gui->hist_action = HIST_NONE;
 					nk_popup_close(gui->ctx);
 				}
 				
 				nk_popup_end(gui->ctx);
 			}
 			else {
-				discard_changes = 0;
+				gui->discard_changes = 0;
 			}
 		}
 		
@@ -762,13 +789,21 @@ int gui_bottom_win (gui_obj *gui){
 					/* get path from history */
 					gui->curr_path[0] = 0;
 					strncpy (gui->curr_path, gui->drwg_hist[pos], DXF_MAX_CHARS);
-					/* update position */
-					gui->drwg_hist_pos --;
-					gui->drwg_hist_wr = gui->drwg_hist_pos + 1; /* next write position */
-					/* open file in history */
-					gui->action = FILE_OPEN;
 					gui->path_ok = 1;
-					gui->hist_new = 0; /* not change history entries */
+					
+					/* open file */
+					if (gui->changed){
+						gui->discard_changes = 1;
+						gui->desired_action = FILE_OPEN;
+						gui->hist_action = HIST_PREV;
+					}
+					else{
+						/* update position */
+						gui->drwg_hist_pos --;
+						gui->drwg_hist_wr = gui->drwg_hist_pos + 1; /* next write position */
+						gui->hist_new = 0; /* not change history entries */
+						gui->action = FILE_OPEN;
+					}
 				}
 				
 			}
@@ -780,13 +815,21 @@ int gui_bottom_win (gui_obj *gui){
 					/* get path from history */
 					gui->curr_path[0] = 0;
 					strncpy (gui->curr_path, gui->drwg_hist[pos], DXF_MAX_CHARS);
-					/* update position */
-					gui->drwg_hist_pos ++;
-					gui->drwg_hist_wr = gui->drwg_hist_pos + 1; /* next write position */
-					/* open file in history */
-					gui->action = FILE_OPEN;
 					gui->path_ok = 1;
-					gui->hist_new = 0; /* not change history entries */
+					
+					if (gui->changed){
+						gui->discard_changes = 1;
+						gui->desired_action = FILE_OPEN;
+						gui->hist_action = HIST_NEXT;
+					}
+					else{
+						/* update position */
+						gui->drwg_hist_pos ++;
+						gui->drwg_hist_wr = gui->drwg_hist_pos + 1; /* next write position */
+						gui->hist_new = 0; /* not change history entries */
+						gui->action = FILE_OPEN;
+					}
+
 				}
 			}
 			

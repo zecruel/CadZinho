@@ -197,6 +197,13 @@ enum Cursor_type{
 	CURSOR_CIRCLE
 };
 
+enum Hist_action {
+	HIST_NONE,
+	HIST_ADD,
+	HIST_PREV,
+	HIST_NEXT
+};
+
 struct gui_glyph{
 	int code_p, x, y, w, h;
 	double adv;
@@ -422,6 +429,9 @@ struct Gui_obj {
 	float drwg_view[4][4];
 	float drwg_view_i[4][4];
 	
+	int discard_changes;
+	enum Action desired_action;
+	enum Hist_action hist_action;
 };
 typedef struct Gui_obj gui_obj;
 

@@ -823,16 +823,23 @@ int main(int argc, char** argv){
 						gui->draw = 1;
 						break;
 					
-					case (SDL_DROPFILE): {      // In case if dropped file
+					case (SDL_DROPFILE): {      /* In case if dropped file */
 						/* get file path -> drop event has previously proccessed and string was moved to clipboard !!!*/
 						char *dropped_filedir = SDL_GetClipboardText(); 
-						if (!gui->show_open && !gui->show_save && !gui->changed){
+						if (!gui->show_open && !gui->show_save){
 							strncpy (gui->curr_path, dropped_filedir, DXF_MAX_CHARS);
-							//printf("File: %s\n", gui->curr_path);
-							/* open file */
-							gui->action = FILE_OPEN;
 							gui->path_ok = 1;
-							gui->hist_new = 1; /* add to history entries */
+							/* open file */
+							if (gui->changed){
+								gui->discard_changes = 1;
+								gui->desired_action = FILE_OPEN;
+								gui->hist_action = HIST_ADD;
+							}
+							else{
+								gui->action = FILE_OPEN;
+								gui->hist_new = 1; /* add to history entries */
+							}
+							
 						}
 						SDL_free(dropped_filedir);    // Free dropped_filedir memory
 						}

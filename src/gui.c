@@ -1875,6 +1875,9 @@ int gui_start(gui_obj *gui){
 	gui->drwg_view_i[3][2] = 0.0;
 	gui->drwg_view_i[3][3] = 1.0;
 	
+	gui->discard_changes = 0;
+	gui->desired_action = NONE;
+	gui->hist_action = HIST_NONE;
 	
 	return 1;
 }

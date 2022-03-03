@@ -25,6 +25,7 @@ struct export_param{
 	char end[DXF_MAX_CHARS+1];
 	char move[DXF_MAX_CHARS+1];
 	char stroke[DXF_MAX_CHARS+1];
+	double feed;
 	enum export_fmt out_fmt;
 };
 

@@ -10,10 +10,17 @@ int export_win (gui_obj *gui){
 	static char tmp_str[64];
 	static int out_fmt = EXPORT_HPGL;
 	
+	static double gcode_feed = 1.0;
+	static char gcode_init[DXF_MAX_CHARS+1] = "G21 G90 S1600 M03 G00 z1.0";
+	static char gcode_end[DXF_MAX_CHARS+1] = "G00 z1.0 M05";
+	static char gcode_move[DXF_MAX_CHARS+1] = "G00 z1.0";
+	static char gcode_stroke[DXF_MAX_CHARS+1] = "G00 z-1.0";
+	static char gcode_feed_str[64] = "1.00";
+	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
 	gui->next_win_w = 500;
-	gui->next_win_h = 250;
+	gui->next_win_h = 340;
 	
 	/* export window */
 	if (nk_begin(gui->ctx, "Export", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
@@ -41,39 +48,76 @@ int export_win (gui_obj *gui){
 		param.ofs_x = ofs_x;
 		param.ofs_y = ofs_y;
 		
-		/* adjust drawing position and scale on print area */
-		
-		nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 70});
-		
-		/* customize x axis origin of export area (left lower corner) in drawing */
-		nk_label(gui->ctx, "Origin X:", NK_TEXT_RIGHT);
-		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, ofs_x_str, 63, nk_filter_float);
-		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
-			nk_edit_unfocus(gui->ctx);
-			if (strlen(ofs_x_str)) /* update parameter value */
-				ofs_x = atof(ofs_x_str);
-			snprintf(ofs_x_str, 63, "%.9g", ofs_x);
+		nk_layout_row(gui->ctx, NK_STATIC, 180, 2, (float[]){160, 310});
+		if (nk_group_begin(gui->ctx, "Position and scale", NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)) {
+			
+			/* adjust drawing position and scale factor */
+			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 70});
+			
+			/* customize x axis origin of export area (left lower corner) in drawing */
+			nk_label(gui->ctx, "Origin X:", NK_TEXT_RIGHT);
+			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, ofs_x_str, 63, nk_filter_float);
+			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
+				nk_edit_unfocus(gui->ctx);
+				if (strlen(ofs_x_str)) /* update parameter value */
+					ofs_x = atof(ofs_x_str);
+				snprintf(ofs_x_str, 63, "%.9g", ofs_x);
+			}
+			
+			/* customize x axis origin of export area (left lower corner) in drawing */
+			nk_label(gui->ctx, "Origin Y:", NK_TEXT_RIGHT);
+			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, ofs_y_str, 63, nk_filter_float);
+			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
+				nk_edit_unfocus(gui->ctx);
+				if (strlen(ofs_y_str)) /* update parameter value */
+					ofs_y = atof(ofs_y_str);
+				snprintf(ofs_y_str, 63, "%.9g", ofs_y);
+			}
+			
+			/* customize drawing scale in export area ( [drawing unit]/[export unit] factor) */
+			nk_label(gui->ctx, "Scale:", NK_TEXT_RIGHT);
+			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, scale_str, 63, nk_filter_float);
+			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
+				nk_edit_unfocus(gui->ctx);
+				if (strlen(scale_str)) /* update parameter value */
+					scale = atof(scale_str);
+				snprintf(scale_str, 63, "%.9g", scale);
+			}
+			nk_group_end(gui->ctx);
+		}
+		if (nk_group_begin(gui->ctx, "Driver specific", NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)) {
+			if (out_fmt == EXPORT_GCODE){
+				nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){50, 220});
+				/* feed rate */
+				nk_label(gui->ctx, "Feed:", NK_TEXT_RIGHT);
+				res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, gcode_feed_str, 63, nk_filter_float);
+				if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
+					nk_edit_unfocus(gui->ctx);
+					if (strlen(gcode_feed_str)) /* update parameter value */
+						gcode_feed = atof(gcode_feed_str);
+					snprintf(gcode_feed_str, 63, "%.9g", gcode_feed);
+				}
+				
+				/* init  command*/
+				nk_label(gui->ctx, "Init:", NK_TEXT_RIGHT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, gcode_init, DXF_MAX_CHARS, nk_filter_default);
+				
+				/* end command */
+				nk_label(gui->ctx, "End:", NK_TEXT_RIGHT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, gcode_end, DXF_MAX_CHARS, nk_filter_default);
+				
+				/* command before move */
+				nk_label(gui->ctx, "Move:", NK_TEXT_RIGHT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, gcode_move, DXF_MAX_CHARS, nk_filter_default);
+				
+				/* command before stroke */
+				nk_label(gui->ctx, "Stroke:", NK_TEXT_RIGHT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, gcode_stroke, DXF_MAX_CHARS, nk_filter_default);
+			}
+			nk_group_end(gui->ctx);
 		}
 		
-		/* customize x axis origin of export area (left lower corner) in drawing */
-		nk_label(gui->ctx, "Origin Y:", NK_TEXT_RIGHT);
-		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, ofs_y_str, 63, nk_filter_float);
-		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
-			nk_edit_unfocus(gui->ctx);
-			if (strlen(ofs_y_str)) /* update parameter value */
-				ofs_y = atof(ofs_y_str);
-			snprintf(ofs_y_str, 63, "%.9g", ofs_y);
-		}
-		
-		/* customize drawing scale in export area ( [drawing unit]/[export unit] factor) */
-		nk_label(gui->ctx, "Scale:", NK_TEXT_RIGHT);
-		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, scale_str, 63, nk_filter_float);
-		if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
-			nk_edit_unfocus(gui->ctx);
-			if (strlen(scale_str)) /* update parameter value */
-				scale = atof(scale_str);
-			snprintf(scale_str, 63, "%.9g", scale);
-		}
+		nk_layout_row_dynamic(gui->ctx, 10, 1);
 		
 		/* choose output file format */
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){120, 270});
@@ -140,10 +184,11 @@ int export_win (gui_obj *gui){
 			if (out_fmt == EXPORT_HPGL)
 				ret = export_hpgl(gui->drawing, param, sel_file);
 			else if (out_fmt == EXPORT_GCODE){
-				strncpy(param.init, "G21 G90 S1600 F7.0 M03\n G00 z-1.0\n", DXF_MAX_CHARS);
-				strncpy(param.move, "G00 z-1.0\n", DXF_MAX_CHARS);
-				strncpy(param.stroke, "G01 z1.0\n", DXF_MAX_CHARS);
-				strncpy(param.end, "G00 z-1.0\n M05", DXF_MAX_CHARS);
+				param.feed = gcode_feed;
+				strncpy(param.init, gcode_init, DXF_MAX_CHARS);
+				strncpy(param.move, gcode_move, DXF_MAX_CHARS);
+				strncpy(param.stroke, gcode_stroke, DXF_MAX_CHARS);
+				strncpy(param.end, gcode_end, DXF_MAX_CHARS);
 				ret = export_gcode(gui->drawing, param, sel_file);
 			}
 			/* verify success or fail*/

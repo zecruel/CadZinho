@@ -13,8 +13,8 @@ void export_graph_hpgl(graph_obj * master, FILE *file, struct export_param param
 	){
 		int x0, y0, x1, y1;
 		line_node *current = master->list->next;
-		int prev_x, prev_y;
-		int init = 0;
+		static int prev_x, prev_y;
+		static int init = 0;
 		
 		
 		while(current){ /* draw the lines - sweep the list content */
@@ -142,9 +142,8 @@ void export_graph_gcode(graph_obj * master, FILE *file, struct export_param para
 	){
 		double x0, y0, x1, y1;
 		line_node *current = master->list->next;
-		double prev_x, prev_y;
-		int init = 0;
-		
+		static double prev_x, prev_y;
+		static int init = 0;
 		
 		while(current){ /* draw the lines - sweep the list content */
 			
@@ -158,7 +157,7 @@ void export_graph_gcode(graph_obj * master, FILE *file, struct export_param para
 				/* move to first point */
 				fprintf(file, "%s\n", param.move);
 				fprintf(file, "G00 X%g Y%g\n", x0, y0);
-				fprintf(file, "%s\nG01 ", param.stroke);
+				fprintf(file, "%s\nG01 F%g\n", param.stroke, param.feed);
 				prev_x = x0;
 				prev_y = y0;
 				init = 1;
@@ -167,7 +166,7 @@ void export_graph_gcode(graph_obj * master, FILE *file, struct export_param para
 			else if (((x0 != prev_x)||(y0 != prev_y))){
 				fprintf(file, "%s\n", param.move);
 				fprintf(file, "G00 X%g Y%g\n", x0, y0);
-				fprintf(file, "%s\nG01 ", param.stroke);
+				fprintf(file, "%s\nG01 F%g\n", param.stroke, param.feed);
 			}
 
 			fprintf(file, "X%g Y%g\n", x1, y1);
@@ -226,7 +225,7 @@ int export_ents_gcode(dxf_drawing *drawing, FILE *file , struct export_param par
 					if (!init){
 						/* gcode header */
 						if (strlen(param.init)){
-							fprintf(file, param.init);
+							fprintf(file, "%s\n", param.init);
 						}
 						init = 1;
 					}
@@ -239,7 +238,7 @@ int export_ents_gcode(dxf_drawing *drawing, FILE *file , struct export_param par
 		/* end the gcode file */
 		if (init) {
 			if (strlen(param.end)){
-				fprintf(file, param.end);
+				fprintf(file, "%s\n", param.end);
 			}
 		}
 	}

@@ -607,7 +607,17 @@ int main(int argc, char** argv){
 		/* get events for Nuklear GUI input */
 		nk_input_begin(gui->ctx);
 		if(SDL_PollEvent(&event)){
-			if (event.type == SDL_QUIT) quit = 1;
+			if (event.type == SDL_QUIT) {
+				//quit = 1;
+				if (gui->changed){
+					gui->discard_changes = 1;
+					gui->desired_action = EXIT;
+					gui->hist_action = HIST_NONE;
+				}
+				else{
+					quit = 1;
+				}
+			}
 			nk_sdl_handle_event(gui, window, &event);
 			ev_type = event.type;
 		}
@@ -1124,7 +1134,10 @@ int main(int argc, char** argv){
 		
 		
 		/*===============================*/
-		if(gui->action == FILE_NEW) {
+		if(gui->action == EXIT) {
+			quit = 1;
+		}
+		else if(gui->action == FILE_NEW) {
 			gui->action = NONE;
 			do_mem_pool(ZERO_DO_ITEM);
 			do_mem_pool(ZERO_DO_ENTRY);

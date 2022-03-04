@@ -867,13 +867,11 @@ int gui_dim_mng (gui_obj *gui){
 		dxf_dimsty_use(gui->drawing); /* update DIMSTYLEs in use */
 		
 		//nk_layout_row_dynamic(gui->ctx, 420, 2);
-		nk_layout_row_template_begin(gui->ctx, 420);
+		nk_layout_row_template_begin(gui->ctx, 430);
 		nk_layout_row_template_push_dynamic(gui->ctx);
 		nk_layout_row_template_push_static(gui->ctx, 200);
 		nk_layout_row_template_end(gui->ctx);
-		if (nk_group_begin(gui->ctx, "dimsty_list", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			nk_label(gui->ctx, "Dimension styles:", NK_TEXT_LEFT);
+		if (nk_group_begin(gui->ctx, "List of styles", NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)) {
 			
 			nk_layout_row_dynamic(gui->ctx, 32, 1);
 			if (nk_group_begin(gui->ctx, "dimsty_head", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
@@ -956,7 +954,7 @@ int gui_dim_mng (gui_obj *gui){
 			}
 			nk_group_end(gui->ctx);
 		}
-		if (nk_group_begin(gui->ctx, "dimsty_par", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, "Selected parameters", NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)) {
 			static char dimscale_str[64] = "1";
 			static char dimlfac_str[64] = "1";
 			static char dimdec_str[64] = "2";

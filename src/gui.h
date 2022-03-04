@@ -115,6 +115,7 @@ enum Modal {
 	DIM_ANGULAR,
 	DIM_RADIUS,
 	DIM_ORDINATE,
+	ZOOM,
 	MODAL_SIZE
 };
 

@@ -243,6 +243,8 @@ int gui_tools_win (gui_obj *gui){
 			gui_dim_radial_info (gui);
 			gui_dim_ordinate_info (gui);
 			
+			gui_zoom_info (gui);
+			
 			/* execute scripts in dynamic mode*/
 			gui_script_dyn(gui);
 			
@@ -259,11 +261,11 @@ int gui_main_win(gui_obj *gui){
 	if (nk_begin(gui->ctx, "Main", nk_rect(2, 2, gui->win_w - 4, 6 + 4 + ICON_SIZE + 4 + 6 + 4 + ICON_SIZE + 4 + 6 + 8),
 	NK_WINDOW_BORDER)){
 		/* first line */
-		nk_layout_row_begin(gui->ctx, NK_STATIC, ICON_SIZE + 12, 8);
+		nk_layout_row_begin(gui->ctx, NK_STATIC, ICON_SIZE + 12, 9);
 		
 		/* file tools*/
-		nk_layout_row_push(gui->ctx, 5*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "file", NK_WINDOW_NO_SCROLLBAR)) {
+		nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
+		if (nk_group_begin(gui->ctx, "_file", NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
 			
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEW]))){
@@ -293,16 +295,16 @@ int gui_main_win(gui_obj *gui){
 				gui->show_save = 1;
 				gui->path_ok = 0;
 			}
+			nk_group_end(gui->ctx);
+		}
+		/* print/export tools*/
+		nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
+		if (nk_group_begin(gui->ctx, "_print", NK_WINDOW_NO_SCROLLBAR)) {
+			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PRINT]))){
-				//printf("PRINT\n");
-				//print_pdf(gui->drawing);
 				gui->show_print = 1;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPORT]))){
-				//gui->action = EXPORT;
-				//gui->show_app_file = 1;
-				//show_save = 1;
-				//gui->path_ok = 0;
 				gui->show_export = 1;
 			}
 			
@@ -311,7 +313,7 @@ int gui_main_win(gui_obj *gui){
 		
 		/* clipboard tools*/
 		nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "clipboard", NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, "_clipboard", NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
 			
 			
@@ -331,7 +333,7 @@ int gui_main_win(gui_obj *gui){
 		
 		/* undo/redo tools*/
 		nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "undo-redo", NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, "_undo-redo", NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_UNDO]))){
 				gui->action = UNDO;
@@ -344,7 +346,7 @@ int gui_main_win(gui_obj *gui){
 		
 		/* managers*/
 		nk_layout_row_push(gui->ctx, 5*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "managers", NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, "_managers", NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LAYERS]))){
 				//printf("Layers\n");
@@ -371,7 +373,7 @@ int gui_main_win(gui_obj *gui){
 		
 		/* zoom tools*/
 		nk_layout_row_push(gui->ctx, 5*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "zoom", NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, "_zoom", NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_P]))){
 				gui->action = VIEW_ZOOM_P;
@@ -380,7 +382,9 @@ int gui_main_win(gui_obj *gui){
 				gui->action = VIEW_ZOOM_M;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_W]))){
-				gui->action = VIEW_ZOOM_W;
+				//gui->action = VIEW_ZOOM_W;
+				gui->modal = ZOOM;
+				gui->step = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_A]))){
 				gui->action = VIEW_ZOOM_EXT;
@@ -393,7 +397,7 @@ int gui_main_win(gui_obj *gui){
 		
 		/* pan tools*/
 		nk_layout_row_push(gui->ctx, 4*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "pan", NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, "_pan", NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_UP]))){
 				gui->action = VIEW_PAN_U;
@@ -412,11 +416,10 @@ int gui_main_win(gui_obj *gui){
 		
 		/* config tools*/
 		nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "config", NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, "_config", NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_INFO]))){
 				gui->show_info = 1;
-				//printf("Info\n");
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TOOL]))){
 				//printf("Tools\n");
@@ -442,11 +445,10 @@ int gui_main_win(gui_obj *gui){
 		
 		/* config tools*/
 		nk_layout_row_push(gui->ctx, 1*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "help", NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, "_help", NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_HELP]))){
 				gui->show_app_about = 1;
-				//printf("HELP\n");
 			}
 			nk_group_end(gui->ctx);
 		}
@@ -460,7 +462,7 @@ int gui_main_win(gui_obj *gui){
 		static char text[64];
 		int text_len;
 		nk_layout_row_push(gui->ctx, 1000);
-		if (nk_group_begin(gui->ctx, "Prop", NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, "_Prop", NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 20);
 			
 			/*layer*/

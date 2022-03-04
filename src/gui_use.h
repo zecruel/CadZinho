@@ -143,4 +143,6 @@ int gui_dim_ordinate_info (gui_obj *gui);
 
 int gui_dim_mng (gui_obj *gui);
 
+int gui_zoom_info (gui_obj *gui);
+
 #endif

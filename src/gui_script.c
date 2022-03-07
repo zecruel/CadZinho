@@ -170,6 +170,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"get_attrib_i", script_get_attrib_i},
 		{"get_attribs", script_get_attribs},
 		{"get_points", script_get_points},
+		{"get_bound", script_get_bound},
 		{"get_ext", script_get_ext},
 		{"get_blk_ents", script_get_blk_ents},
 		{"get_all", script_get_all},
@@ -508,7 +509,7 @@ int script_win (gui_obj *gui){
 		init = 1;
 	}
 	
-	if (nk_begin(gui->ctx, "Script", nk_rect(gui->win_w - 404, gui->win_h - 470, 400, 380),
+	if (nk_begin(gui->ctx, "Script", nk_rect(215, 100, 400, 380),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		struct nk_style_button *sel_type;

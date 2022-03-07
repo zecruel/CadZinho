@@ -46,6 +46,7 @@ int script_count_attrib (lua_State *L);
 int script_get_attrib_i (lua_State *L);
 int script_get_attribs (lua_State *L);
 int script_get_points (lua_State *L);
+int script_get_bound (lua_State *L);
 int script_get_ext (lua_State *L);
 int script_get_blk_ents (lua_State *L);
 int script_get_all (lua_State *L);

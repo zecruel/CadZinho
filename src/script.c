@@ -639,7 +639,7 @@ int script_get_attribs (lua_State *L) {
 
 /* get points of an entity */
 /* given parameters:
-	- DXF INSERT entity, as userdata
+	- DXF entity, as userdata
 returns:
 	- success, table with coordinates
 	- nil if not a entity
@@ -994,6 +994,95 @@ int script_get_points (lua_State *L) {
 			}
 		}
 	}
+	return 1;
+}
+
+/* get rectangle boundary points of an entity */
+/* given parameters:
+	- DXF entity, as userdata
+returns:
+	- success, table with coordinates
+	- nil if not a entity
+*/
+int script_get_bound (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	struct ent_lua *ent_obj;
+	
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "get_bound: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	list_node *vec_graph = dxf_graph_parse(gui->drawing, ent, 0, FRAME_LIFE);
+	if (!vec_graph){
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	/* extents parameters */
+	int ei; /*extents flag of current block */
+	double x0, y0, z0, x1, y1, z1;
+	
+	/* get extents parameters of current block*/
+	graph_list_ext(vec_graph, &ei, &x0, &y0, &z0, &x1, &y1, &z1);
+	if (!ei) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	lua_newtable(L); /*main returned table */
+	lua_pushstring(L, "low"); /* lower left corner */
+	
+	lua_newtable(L); /* table to store point coordinates */
+	lua_pushstring(L, "x");
+	lua_pushnumber(L, x0);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "y");
+	lua_pushnumber(L, y0);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "z");
+	lua_pushnumber(L, z0);
+	lua_rawset(L, -3);
+	
+	lua_rawset(L, -3);  /* set main table at key `low' */
+	
+	lua_pushstring(L, "up"); /* up right corner */
+	
+	lua_newtable(L); /* table to store point coordinates */
+	lua_pushstring(L, "x");
+	lua_pushnumber(L, x1);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "y");
+	lua_pushnumber(L, y1);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "z");
+	lua_pushnumber(L, z1);
+	lua_rawset(L, -3);
+	
+	lua_rawset(L, -3);  /* set main table at key `up' */
+	
 	return 1;
 }
 

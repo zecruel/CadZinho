@@ -404,6 +404,120 @@ int script_get_blk_name (lua_State *L) {
 	return 1;
 }
 
+/* get the parameters (point, scales, rotation) of a INSERT entity */
+/* given parameters:
+	- DXF INSERT entity, as userdata
+returns:
+	- success, table with params
+	- nil if not a INSERT
+*/
+int script_get_ins_data (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	struct ent_lua *ent_obj;
+	
+	/* verify passed arguments */
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "get_blk_name: incorrect argument type");
+		lua_error(L);
+	}
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	/* verify if it is a INSERT ent */
+	if (!( (strcmp(ent->obj.name, "INSERT") == 0) || (strcmp(ent->obj.name, "DIMENSION") == 0) )) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	double x = 0.0, y = 0.0, z = 0.0, sx = 1.0, sy = 1.0, sz = 1.0, rot = 0.0;
+	
+	dxf_node *current = ent->obj.content->next;
+	while (current){
+		if (current->type == DXF_ATTR){ /* DXF attibute */
+			switch (current->value.group){
+				case 10:
+					x = current->value.d_data;
+					break;
+				case 20:
+					y = current->value.d_data;
+					break;
+				case 30:
+					z = current->value.d_data;
+					break;
+				case 41:
+					sx = current->value.d_data;
+					break;
+				case 42:
+					sy = current->value.d_data;
+					break;
+				case 43:
+					sz = current->value.d_data;
+					break;
+				case 50:
+					rot = current->value.d_data;
+					break;
+			}
+		}
+		current = current->next; /* go to the next in the list */
+	}
+	lua_newtable(L); /*main returned table */
+	lua_pushstring(L, "pt"); /* insert point */
+	
+	lua_newtable(L); /* table to store point coordinates */
+	lua_pushstring(L, "x");
+	lua_pushnumber(L, x);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "y");
+	lua_pushnumber(L, y);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "z");
+	lua_pushnumber(L, z);
+	lua_rawset(L, -3);
+	
+	lua_rawset(L, -3);  /* set main table at key `pt' */
+	
+	lua_pushstring(L, "scale"); /* insert point */
+	
+	lua_newtable(L); /* table to store scale factors */
+	lua_pushstring(L, "x");
+	lua_pushnumber(L, sx);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "y");
+	lua_pushnumber(L, sy);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "z");
+	lua_pushnumber(L, sz);
+	lua_rawset(L, -3);
+	
+	lua_rawset(L, -3);  /* set main table at key `scale' */
+	
+	lua_pushstring(L, "rot");
+	lua_pushnumber(L, rot);
+	lua_rawset(L, -3);  /* set main table at key `rot' */
+	
+	
+	return 1;
+}
+
 /* get the number  of  ATTRIB in a INSERT entity */
 /* given parameters:
 	- DXF INSERT entity, as userdata
@@ -4452,5 +4566,71 @@ int script_fs_script_path(lua_State *L) {
 		strncpy(curr_path, script->path, PATH_MAX_CHARS);
 	
 	lua_pushstring(L, curr_path); /* return success or fail */
+	return 1;
+}
+
+/* ------------- Misc ------*/
+/* Get a unique ID */
+/* given parameters:
+	- none
+returns:
+	- ID, as string
+*/
+int script_unique_id (lua_State *L) {
+	
+	int n = rand(); /* random number */
+	static int c = 0; /* internal counter */
+	time_t t;
+	time(&t); /* get current time */
+	
+	/* compose a ID with current time, a internal counter and a random number */
+	long long id;
+	id = (long long) (t << 32) | (c << 16) | n;
+	
+	c++; /* increment counter for next call */
+	
+	char out[21];
+	snprintf(out, 20, "%016llX", id); /* string showing a 64-bit hexadecimal number */
+	
+	lua_pushstring(L, out); /* return success or fail */
+	return 1;
+}
+
+/* try to locate the last numbered block, match name starting with mark chars */
+/* given parameters:
+	- mark, as string
+returns:
+	- last available number
+*/
+int script_last_blk (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "last_blk: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_isstring(L, 1)) {
+		lua_pushliteral(L, "last_blk: incorrect argument type");
+		lua_error(L);
+	}
+	
+	char mark[3];
+	strncpy(mark, (char *) lua_tostring(L, 1), 2);
+	
+	int last = dxf_find_last_blk (gui->drawing, mark);
+	
+	lua_pushinteger(L, last);
 	return 1;
 }

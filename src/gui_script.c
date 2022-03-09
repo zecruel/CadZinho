@@ -166,6 +166,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"get_sel", script_get_sel},
 		{"get_ent_typ", script_get_ent_typ},
 		{"get_blk_name", script_get_blk_name},
+		{"get_ins_data", script_get_ins_data},
 		{"count_attrib", script_count_attrib},
 		{"get_attrib_i", script_get_attrib_i},
 		{"get_attribs", script_get_attribs},
@@ -210,6 +211,8 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"start_dynamic", script_start_dynamic},
 		{"stop_dynamic", script_stop_dynamic},
 		{"ent_draw", script_ent_draw},
+		{"unique_id", script_unique_id},
+		{"last_blk", script_last_blk},
 		{NULL, NULL}
 	};
 	luaL_newlib(T, cz_lib);

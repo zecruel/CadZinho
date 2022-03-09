@@ -2568,3 +2568,43 @@ void dxf_xref_assemb (dxf_drawing *drawing){
 		if (!nxt_blk) break; /* end of BLOCKSs in table */
 	}
 }
+
+int dxf_find_last_blk (dxf_drawing *drawing, char mark[3]){
+	/* try to locate the last numbered block, match name starting with mark chars */
+	if (!drawing) return 0;
+	if (!drawing->blks) return 0;
+	char test_descr[DXF_MAX_CHARS+1];
+	
+	dxf_node *current, *descr_attr;
+	int last = 1;
+	int curr_num;
+	
+	/* sweep blocks list contents */
+	current = drawing->blks->obj.content->next;
+	while (current){
+		if (current->type == DXF_ENT){ /* look for dxf entities */
+			if(strcmp(current->obj.name, "BLOCK") == 0){ /* match blocks */
+				descr_attr = dxf_find_attr2(current, 2); /* look for descriptor in group 2 attribute */
+				if (descr_attr){ /* found attribute */
+					/* copy strings for secure manipulation */
+					strncpy(test_descr, descr_attr->value.s_data, DXF_MAX_CHARS);
+					/* change to upper case */
+					str_upp(test_descr);
+					/* look for Block name starting by mark chars*/
+					if (strlen(test_descr) > 2){
+						if (test_descr[0] == mark[0] && test_descr[1] == mark[1]){
+							/* convert the remain string to number */
+							curr_num = atoi(test_descr+2);
+							if (curr_num >= last){ /* update the last with greater number */
+								last = curr_num + 1;
+							}
+						}
+					}
+				}
+			}
+		}
+		current = current->next;
+	}
+	
+	return last;
+}

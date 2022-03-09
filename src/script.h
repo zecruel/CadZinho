@@ -42,6 +42,7 @@ int script_ent_write (lua_State *L);
 
 int script_get_ent_typ (lua_State *L);
 int script_get_blk_name (lua_State *L);
+int script_get_ins_data (lua_State *L);
 int script_count_attrib (lua_State *L);
 int script_get_attrib_i (lua_State *L);
 int script_get_attribs (lua_State *L);
@@ -102,5 +103,8 @@ int script_fs_dir (lua_State *L);
 int script_fs_chdir (lua_State *L);
 int script_fs_cwd (lua_State *L);
 int script_fs_script_path(lua_State *L);
+
+int script_unique_id (lua_State *L);
+int script_last_blk (lua_State *L);
 
 #endif

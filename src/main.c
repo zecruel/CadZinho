@@ -135,7 +135,10 @@ int main(int argc, char** argv){
 #endif
 	int i, ok;
 	
-	
+	time_t t;
+	/* Intializes random number generator */
+	srand((unsigned) time(&t));
+
 	
 	SDL_Rect win_r, display_r;
 	

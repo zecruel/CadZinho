@@ -1145,14 +1145,14 @@ int script_get_bound (lua_State *L) {
 		lua_pushnil(L); /* return fail */
 		return 1;
 	}
-	list_node *vec_graph = dxf_graph_parse(gui->drawing, ent, 0, FRAME_LIFE);
+	list_node *vec_graph = dxf_graph_parse(ent_obj->drawing, ent, 0, FRAME_LIFE);
 	if (!vec_graph){
 		lua_pushnil(L); /* return fail */
 		return 1;
 	}
 	
 	/* extents parameters */
-	int ei; /*extents flag of current block */
+	int ei = 0; /*extents flag of current block */
 	double x0, y0, z0, x1, y1, z1;
 	
 	/* get extents parameters of current block*/
@@ -1431,6 +1431,169 @@ int script_get_all (lua_State *L) {
 		}
 		current = current->next;
 	}
+	
+	return 1;
+}
+
+/* get the parameters (text, point, scales, rotation) of a TEXT entity */
+/* given parameters:
+	- DXF TEXT entity, as userdata
+returns:
+	- success, table with params
+	- nil if not a TEXT
+*/
+int script_get_text_data (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	struct ent_lua *ent_obj;
+	
+	/* verify passed arguments */
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "get_text_data: incorrect argument type");
+		lua_error(L);
+	}
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	/* verify if it is a TEXT ent */
+	if (!( (strcmp(ent->obj.name, "TEXT") == 0) 
+		//|| (strcmp(ent->obj.name, "MTEXT") == 0) 
+	)) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	double x = 0.0, y = 0.0, z = 0.0, sx = 1.0, sy = 1.0, sz = 1.0, rot = 0.0, size = 1.0;
+	char text[DXF_MAX_CHARS+1] = "";
+	char t_style[DXF_MAX_CHARS+1] = "";
+	char tmp_str[DXF_MAX_CHARS+1] = "";
+	int alin_v = 0, alin_h = 0;
+	
+	dxf_node *current = ent->obj.content->next;
+	while (current){
+		if (current->type == DXF_ATTR){ /* DXF attibute */
+			switch (current->value.group){
+				case 1:
+					strncpy(text, current->value.s_data, DXF_MAX_CHARS);
+					break;
+				case 7:
+					strncpy(t_style, current->value.s_data, DXF_MAX_CHARS);
+					break;
+				case 10:
+					x = current->value.d_data;
+					break;
+				case 20:
+					y = current->value.d_data;
+					break;
+				case 30:
+					z = current->value.d_data;
+					break;
+				case 40:
+					size = current->value.d_data;
+					break;
+				case 41:
+					sx = current->value.d_data;
+					break;
+				case 50:
+					rot = current->value.d_data;
+					break;
+				case 72:
+					alin_h = current->value.i_data;
+					break;
+				case 73:
+					alin_v = current->value.i_data;
+					break;
+				case 101:
+					strncpy(tmp_str, current->value.s_data, DXF_MAX_CHARS);
+					str_upp(tmp_str);
+					char *tmp = trimwhitespace(tmp_str);
+					if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+						current = NULL;
+						continue;
+					}
+			}
+		}
+		current = current->next; /* go to the next in the list */
+	}
+	lua_newtable(L); /*main returned table */
+	
+	lua_pushstring(L, "pt"); /* insert point */
+	lua_newtable(L); /* table to store point coordinates */
+	lua_pushstring(L, "x");
+	lua_pushnumber(L, x);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "y");
+	lua_pushnumber(L, y);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "z");
+	lua_pushnumber(L, z);
+	lua_rawset(L, -3);
+	
+	lua_rawset(L, -3);  /* set main table at key `pt' */
+	
+	lua_pushstring(L, "scale"); /* scale */
+	lua_newtable(L); /* table to store scale factors */
+	lua_pushstring(L, "x");
+	lua_pushnumber(L, sx);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "y");
+	lua_pushnumber(L, sy);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "z");
+	lua_pushnumber(L, sz);
+	lua_rawset(L, -3);
+	
+	lua_rawset(L, -3);  /* set main table at key `scale' */
+	
+	lua_pushstring(L, "rot");
+	lua_pushnumber(L, rot);
+	lua_rawset(L, -3);  /* set main table at key `rot' */
+	
+	lua_pushstring(L, "size");
+	lua_pushnumber(L, size);
+	lua_rawset(L, -3);  /* set main table at key `size' */
+	
+	lua_pushstring(L, "text");
+	lua_pushstring(L, text);
+	lua_rawset(L, -3);  /* set main table at key `text' */
+	
+	lua_pushstring(L, "style");
+	lua_pushstring(L, t_style);
+	lua_rawset(L, -3);  /* set main table at key `style' */
+	
+	const char *al_v[] = {"BASE LINE", "BOTTOM", "MIDDLE", "TOP"};
+	const char *al_h[] = {"LEFT", "CENTER", "RIGHT", "ALIGNED", "MIDDLE", "FIT"};
+	
+	lua_pushstring(L, "align"); /* alignment */
+	lua_newtable(L); /* table to store alignment data */
+	lua_pushstring(L, "h");
+	lua_pushstring(L, al_h[alin_h]);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "v");
+	lua_pushstring(L, al_v[alin_v]);
+	lua_rawset(L, -3);
+	
+	lua_rawset(L, -3);  /* set main table at key `scale' */
+	
 	
 	return 1;
 }

@@ -51,6 +51,7 @@ int script_get_bound (lua_State *L);
 int script_get_ext (lua_State *L);
 int script_get_blk_ents (lua_State *L);
 int script_get_all (lua_State *L);
+int script_get_text_data (lua_State *L);
 
 int script_edit_attr (lua_State *L);
 int script_add_ext (lua_State *L);

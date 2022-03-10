@@ -583,9 +583,9 @@ int gui_file_open (gui_obj *gui, char *init_dir){
 				nk_layout_row_template_push_dynamic(gui->ctx);
 				nk_layout_row_template_end(gui->ctx);
 				nk_image(gui->ctx, nk_image_ptr(gui->svg_bmp[SVG_WARNING]));
-				nk_label(gui->ctx, "Discard changes in current drawing?", NK_TEXT_LEFT);
+				nk_label(gui->ctx, "Changes in drawing will be lost", NK_TEXT_LEFT);
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
+				if ((nk_button_label(gui->ctx, "Discard")) && (gui->show_file_br != 1)) {
 					/* put "dir" and "file" strings in current path */
 					char full_path[PATH_MAX_CHARS+1];
 					strncpy (full_path, dir, PATH_MAX_CHARS);

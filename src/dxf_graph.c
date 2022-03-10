@@ -1420,8 +1420,8 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 		double t_pos_x, t_pos_y, t_center_x = 0, t_center_y = 0, t_base_x = 0, t_base_y = 0;
 		double t_scale_x = 1, t_scale_y = 1, txt_w, txt_h;
 		
-		char text[DXF_MAX_CHARS], t_style[DXF_MAX_CHARS];
-		char tmp_str[DXF_MAX_CHARS];
+		char text[DXF_MAX_CHARS+1], t_style[DXF_MAX_CHARS+1];
+		char tmp_str[DXF_MAX_CHARS+1];
 		char *pos_st, *pos_curr, *pos_tmp, special;
 		
 		int fnt_idx, i, paper = 0;
@@ -1449,10 +1449,10 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 			if (current->type == DXF_ATTR){ /* DXF attibute */
 				switch (current->value.group){
 					case 1:
-						strcpy(text, current->value.s_data);
+						strncpy(text, current->value.s_data, DXF_MAX_CHARS);
 						break;
 					case 7:
-						strcpy(t_style, current->value.s_data);
+						strncpy(t_style, current->value.s_data, DXF_MAX_CHARS);
 						break;
 					case 10:
 						pt1_x = current->value.d_data;
@@ -1517,7 +1517,7 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 						extru_z = current->value.d_data;
 						break;
 					case 101:
-						strcpy(tmp_str, current->value.s_data);
+						strncpy(tmp_str, current->value.s_data, DXF_MAX_CHARS);
 						str_upp(tmp_str);
 						char *tmp = trimwhitespace(tmp_str);
 						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -1796,9 +1796,9 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		double t_scale_x = 1, t_scale_y = 1, txt_w, txt_h;
 		double rect_w = 0.0;
 		
-		char text[DXF_MAX_CHARS], t_style[DXF_MAX_CHARS];
-		char tmp_str[DXF_MAX_CHARS];
-		char layer[DXF_MAX_CHARS];
+		char text[DXF_MAX_CHARS+1], t_style[DXF_MAX_CHARS+1];
+		char tmp_str[DXF_MAX_CHARS+1];
+		char layer[DXF_MAX_CHARS+1];
 		char *pos_st, *pos_curr, *pos_tmp, special;
 		
 		int fnt_idx, i, paper = 0;
@@ -1868,10 +1868,10 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						num_str++;
 						break;
 					case 7:
-						strcpy(t_style, current->value.s_data);
+						strncpy(t_style, current->value.s_data, DXF_MAX_CHARS);
 						break;
 					case 8:
-						strcpy(layer, current->value.s_data);
+						strncpy(layer, current->value.s_data, DXF_MAX_CHARS);
 						str_upp(layer);
 						break;
 					case 10:
@@ -1929,7 +1929,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						extru_z = current->value.d_data;
 						break;
 					case 101:
-						strcpy(tmp_str, current->value.s_data);
+						strncpy(tmp_str, current->value.s_data, DXF_MAX_CHARS);
 						str_upp(tmp_str);
 						char *tmp = trimwhitespace(tmp_str);
 						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -2002,7 +2002,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				if (!current) continue;
 				ofs = 0;
 				str_start = 0;
-				strcpy(text, current->value.s_data);
+				strncpy(text, current->value.s_data, DXF_MAX_CHARS);
 				txt_len = strlen(text);
 				
 				/*sweep the string, decoding utf8 or ascii (cp1252)*/

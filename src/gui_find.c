@@ -585,9 +585,10 @@ int gui_find_info (gui_obj *gui){
 		"			if n == idx then\n"
 		"				ret_st = start\n"
 		"				ret_end = end_str\n"
+		"				break\n"
 		"			end\n"
 		"		end\n"
-		"	until start == nil\n"
+		"	until not start\n"
 		"	return n, ret_st, ret_end\n"
 		"end\n";
 		luaL_dostring(L, f);

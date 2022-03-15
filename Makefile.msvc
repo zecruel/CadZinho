@@ -77,7 +77,7 @@ OBJS=\
 	$(DIR_O)\gui_rotate.obj $(DIR_O)\gui_scale.obj $(DIR_O)\gui_script.obj \
 	$(DIR_O)\gui_select.obj $(DIR_O)\gui_spline.obj $(DIR_O)\gui_text.obj \
 	$(DIR_O)\gui_toolbox.obj $(DIR_O)\gui_tstyle.obj $(DIR_O)\gui_txt_prop.obj \
-	$(DIR_O)\gui_vertex.obj $(DIR_O)\gui_xy.obj \
+	$(DIR_O)\gui_vertex.obj $(DIR_O)\gui_xy.obj $(DIR_O)\gui_zoom.obj \
 	$(DIR_O)\hatch_pat.obj \
 	$(DIR_O)\i_svg_media.obj $(DIR_O)\list.obj $(DIR_O)\ltype.obj \
 	$(DIR_O)\main.obj \

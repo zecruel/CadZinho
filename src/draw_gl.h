@@ -9,8 +9,14 @@
 #include <GL/glew.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
- #include <GL/glu.h>
- #include <GL/gl.h>
+
+#ifdef PLATFORM_Darwin
+  #include <OpenGL/glu.h>
+  #include <OpenGL/gl.h>
+#else
+  #include <GL/glu.h>
+  #include <GL/gl.h>
+#endif
  
  #include "bmp.h"
  #include "graph.h"

@@ -91,6 +91,7 @@
  */
 
 #define _POSIX_SOURCE /* For localtime_r */
+#define _C99_SOURCE /* For snprintf and vsnprintf on macOS */
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>

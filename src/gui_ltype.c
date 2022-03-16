@@ -1,4 +1,5 @@
 #include "gui_ltype.h"
+#include "graph.h"
 static int ltype_cpy (dxf_ltype *dest, dxf_ltype *src, double scale){
 	/* deep copy a line type structure and apply a scale factor in dash information */
 	if (dest == NULL || src == NULL) return 0;

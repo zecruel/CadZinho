@@ -1837,14 +1837,16 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 					dxf_node * next_vert = NULL;
 					if(dxf_lwpline_get_pt(current, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge)){
 						//printf("%0.f,%0.2f  -  %d\n",pt2_x, pt2_y, next_vert);
+						transform(&pt2_x, &pt2_y, ins_stack[ins_stack_pos]);
 						/* transform coordinates, according insert space */
 						while (next_vert){
-							transform(&pt2_x, &pt2_y, ins_stack[ins_stack_pos]);
+							
 							pt1_x = pt2_x; pt1_y = pt2_y; prev_bulge = bulge;
 							
 							if(!dxf_lwpline_get_pt(current, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge)){
 								break;
 							}
+							transform(&pt2_x, &pt2_y, ins_stack[ins_stack_pos]);
 							
 							if (fabs(prev_bulge) < TOL){ /* segment is a straight line*/
 								if (found = dxf_line_attract (pt1_x, pt1_y, pt2_x, pt2_y, type, pos_x, pos_y, ref_x, ref_y, sensi, ret_x, ret_y, &init_dist, &min_dist)){
@@ -2000,7 +2002,12 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 					/* save current entity for future process */
 					ins_stack_pos++;
 					ins_stack[ins_stack_pos].ins_ent = blk;
-					ins_stack[ins_stack_pos].prev = prev;
+					if (current == NULL) {
+						ins_stack[ins_stack_pos].prev = insert_ent;
+					}
+					else {
+						ins_stack[ins_stack_pos].prev = prev;
+					}
 					
 					if (ins_stack_pos > 1){
 						ins_stack[ins_stack_pos].ofs_x = pt1_x + ins_stack[ins_stack_pos - 1].ofs_x;
@@ -2057,6 +2064,7 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 						/* now, current is the block */
 						/* starts the content sweep */
 						current = blk->obj.content->next;
+						prev = current;
 						continue;
 					}
 					printf("Error: empty block\n");
@@ -2073,16 +2081,11 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 			/* ============================================================= */
 			while (current == NULL){
 				/* end of list sweeping */
-				if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
-					//printf("para\n");
-					current = NULL;
-					break;
-				}
 				/* try to back in structure hierarchy */
 				prev = prev->master;
 				if (prev){ /* up in structure */
 					/* try to continue on previous point in structure */
-					current = prev->next;
+					//current = prev->next;
 					if (prev == ins_stack[ins_stack_pos].ins_ent){/* back on initial entity */
 						if (ins_stack_pos < 1){
 							/* stop the search if back on initial entity */
@@ -2094,12 +2097,16 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 							ins_stack_pos--;
 							//prev = ins_stack[ins_stack_pos].ins_ent;
 							//printf("retorna %d\n", ins_stack_pos);
-							current = prev;
+							current = prev->next;
 						}
 					}
 					
 				}
 				else{ /* stop the search if structure ends */
+					current = NULL;
+					break;
+				}
+				if (prev == obj){ /* stop the search if back on initial entity */
 					current = NULL;
 					break;
 				}

@@ -1551,6 +1551,250 @@ int *init_dist, double *min_dist){
 	return ret;
 }
 
+int dxf_ins_attract(dxf_node *ent, enum attract_type type,
+double pos_x, double pos_y, double sensi, 
+double *ret_x, double *ret_y,
+int *init_dist, double *min_dist){
+	
+	/* generic attactor */
+	int ret = ATRC_NONE;
+	
+	if (!ent) return ret;
+	if (ent->type != DXF_ENT) return ret;
+	
+	
+	if(type & ATRC_INS){ /* if type of attractor is flaged as endpoint */
+		dxf_node *current = NULL;
+		int pt = 0;
+		double x = 0.0, y = 0.0, z = 0.0;
+		
+		double dist = 0.0;
+		
+		if (ent->obj.content){
+			current = ent->obj.content->next;
+		}
+		while (current){
+			/* get the vertex coordinate set */
+			if (current->value.group == 10){ /* x coordinate - start set */
+				x = current->value.d_data;
+				
+				if ((current->next) && /* next should be the y coordinate */
+					(current->next->type == DXF_ATTR) &&
+					(current->next->value.group == 20))
+				{
+					current = current->next; /* update position in list */
+					y = current->value.d_data;
+					pt = 1; /* flag as valid point */
+					
+					/* get z coordinate - optional */
+					z = 0.0;
+					if ((current->next) && 
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 30))
+					{
+						current = current->next; /* update position in list */
+						z = current->value.d_data;
+					}
+				}
+			}
+			/* get the vertex coordinate set */
+			if (current->value.group == 11){ /* x coordinate - start set */
+				x = current->value.d_data;
+				
+				if ((current->next) && /* next should be the y coordinate */
+					(current->next->type == DXF_ATTR) &&
+					(current->next->value.group == 21))
+				{
+					current = current->next; /* update position in list */
+					y = current->value.d_data;
+					pt = 1; /* flag as valid point */
+					
+					/* get z coordinate - optional */
+					z = 0.0;
+					if ((current->next) && 
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 31))
+					{
+						current = current->next; /* update position in list */
+						z = current->value.d_data;
+					}
+				}
+			}
+			
+			/* get the vertex coordinate set */
+			if (current->value.group == 12){ /* x coordinate - start set */
+				x = current->value.d_data;
+				
+				if ((current->next) && /* next should be the y coordinate */
+					(current->next->type == DXF_ATTR) &&
+					(current->next->value.group == 22))
+				{
+					current = current->next; /* update position in list */
+					y = current->value.d_data;
+					pt = 1; /* flag as valid point */
+					
+					/* get z coordinate - optional */
+					z = 0.0;
+					if ((current->next) && 
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 32))
+					{
+						current = current->next; /* update position in list */
+						z = current->value.d_data;
+					}
+				}
+			}
+			
+			/* get the vertex coordinate set */
+			if (current->value.group == 13){ /* x coordinate - start set */
+				x = current->value.d_data;
+				
+				if ((current->next) && /* next should be the y coordinate */
+					(current->next->type == DXF_ATTR) &&
+					(current->next->value.group == 23))
+				{
+					current = current->next; /* update position in list */
+					y = current->value.d_data;
+					pt = 1; /* flag as valid point */
+					
+					/* get z coordinate - optional */
+					z = 0.0;
+					if ((current->next) && 
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 33))
+					{
+						current = current->next; /* update position in list */
+						z = current->value.d_data;
+					}
+				}
+			}
+			
+			
+			/* get the vertex coordinate set */
+			if (current->value.group == 14){ /* x coordinate - start set */
+				x = current->value.d_data;
+				
+				if ((current->next) && /* next should be the y coordinate */
+					(current->next->type == DXF_ATTR) &&
+					(current->next->value.group == 24))
+				{
+					current = current->next; /* update position in list */
+					y = current->value.d_data;
+					pt = 1; /* flag as valid point */
+					
+					/* get z coordinate - optional */
+					z = 0.0;
+					if ((current->next) && 
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 34))
+					{
+						current = current->next; /* update position in list */
+						z = current->value.d_data;
+					}
+				}
+			}
+			
+			
+			/* get the vertex coordinate set */
+			if (current->value.group == 15){ /* x coordinate - start set */
+				x = current->value.d_data;
+				
+				if ((current->next) && /* next should be the y coordinate */
+					(current->next->type == DXF_ATTR) &&
+					(current->next->value.group == 25))
+				{
+					current = current->next; /* update position in list */
+					y = current->value.d_data;
+					pt = 1; /* flag as valid point */
+					
+					/* get z coordinate - optional */
+					z = 0.0;
+					if ((current->next) && 
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 35))
+					{
+						current = current->next; /* update position in list */
+						z = current->value.d_data;
+					}
+				}
+			}
+			
+			/* get the vertex coordinate set */
+			if (current->value.group == 16){ /* x coordinate - start set */
+				x = current->value.d_data;
+				
+				if ((current->next) && /* next should be the y coordinate */
+					(current->next->type == DXF_ATTR) &&
+					(current->next->value.group == 26))
+				{
+					current = current->next; /* update position in list */
+					y = current->value.d_data;
+					pt = 1; /* flag as valid point */
+					
+					/* get z coordinate - optional */
+					z = 0.0;
+					if ((current->next) && 
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 36))
+					{
+						current = current->next; /* update position in list */
+						z = current->value.d_data;
+					}
+				}
+			}
+			
+			/* get the vertex coordinate set */
+			if (current->value.group == 17){ /* x coordinate - start set */
+				x = current->value.d_data;
+				
+				if ((current->next) && /* next should be the y coordinate */
+					(current->next->type == DXF_ATTR) &&
+					(current->next->value.group == 27))
+				{
+					current = current->next; /* update position in list */
+					y = current->value.d_data;
+					pt = 1; /* flag as valid point */
+					
+					/* get z coordinate - optional */
+					z = 0.0;
+					if ((current->next) && 
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 37))
+					{
+						current = current->next; /* update position in list */
+						z = current->value.d_data;
+					}
+				}
+			}
+			
+			if (pt){
+				pt = 0;
+				
+				dist = sqrt( pow(x - pos_x, 2) + pow(y - pos_y, 2) );
+				
+				if (dist < sensi) {
+					if (*init_dist == 0){
+						*init_dist = 1;
+						*min_dist = dist;
+						*ret_x = x;
+						*ret_y = y;
+						ret = ATRC_INS;
+					}
+					else if (dist < *min_dist){
+						*min_dist = dist;
+						*ret_x = x;
+						*ret_y = y;
+						ret = ATRC_INS;
+					}
+				}
+			}
+			current = current->next; /* go to the next in the list */
+			
+		}
+	}
+	return ret;
+}
+
 int seg_inter(struct inter_obj obj1, struct inter_obj obj2,
 double *ret_x, double *ret_y){
 	if ((obj1.type == DXF_LINE) && (obj2.type == DXF_LINE)){
@@ -2130,6 +2374,11 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 				}
 				else if (ent_type == DXF_DIMENSION){
 					if (found = dxf_dim_attract(current, type, pos_x, pos_y, sensi, ret_x, ret_y, &init_dist, &min_dist)){
+						ret = found;
+					}
+				}
+				else{ /* generic attractor - considers an insert point */
+					if (found = dxf_ins_attract(current, type, pos_x, pos_y, sensi, ret_x, ret_y, &init_dist, &min_dist)){
 						ret = found;
 					}
 				}

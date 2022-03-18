@@ -1644,7 +1644,7 @@ int gui_start(gui_obj *gui){
 	gui->modal = SELECT;
 	gui->prev_modal = SELECT;
 	gui->ev = EV_NONE;
-	gui->curr_attr_t = ATRC_END|ATRC_MID|ATRC_QUAD;
+	gui->curr_attr_t = ATRC_END|ATRC_MID|ATRC_QUAD|ATRC_INS|ATRC_NODE;
 	
 	gui->background = gray;
 	gui->hilite = hilite;
@@ -2405,6 +2405,30 @@ void gui_draw_vert_gl(gui_obj *gui, dxf_node *obj){
 			}
 			else if (ent_type == DXF_DIMENSION){
 				/* get the vertex coordinate set */
+				if (current->value.group == 11){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 21))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 31))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+				
+				/* get the vertex coordinate set */
 				if (current->value.group == 13){ /* x coordinate - start set */
 					x = current->value.d_data;
 					
@@ -2471,6 +2495,30 @@ void gui_draw_vert_gl(gui_obj *gui, dxf_node *obj){
 						if ((current->next) && 
 							(current->next->type == DXF_ATTR) &&
 							(current->next->value.group == 35))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+				
+				/* get the vertex coordinate set */
+				if (current->value.group == 16){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 26))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 36))
 						{
 							current = current->next; /* update position in list */
 							z = current->value.d_data;

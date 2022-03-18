@@ -711,6 +711,31 @@ int dxf_get_near_vert(dxf_node *obj, double pt_x, double pt_y, double clearance)
 			}
 			else if (ent_type == DXF_DIMENSION){
 				/* get the vertex coordinate set */
+				if (current->value.group == 11){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 21))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 31))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+				
+				
+				/* get the vertex coordinate set */
 				if (current->value.group == 13){ /* x coordinate - start set */
 					x = current->value.d_data;
 					
@@ -777,6 +802,30 @@ int dxf_get_near_vert(dxf_node *obj, double pt_x, double pt_y, double clearance)
 						if ((current->next) && 
 							(current->next->type == DXF_ATTR) &&
 							(current->next->value.group == 35))
+						{
+							current = current->next; /* update position in list */
+							z = current->value.d_data;
+						}
+					}
+				}
+				
+				/* get the vertex coordinate set */
+				if (current->value.group == 16){ /* x coordinate - start set */
+					x = current->value.d_data;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 26))
+					{
+						current = current->next; /* update position in list */
+						y = current->value.d_data;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = 0.0;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 36))
 						{
 							current = current->next; /* update position in list */
 							z = current->value.d_data;
@@ -1051,6 +1100,30 @@ int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** ver
 			}
 			else if (ent_type == DXF_DIMENSION){
 				/* get the vertex coordinate set */
+				if (current->value.group == 11){ /* x coordinate - start set */
+					x = current;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 21))
+					{
+						current = current->next; /* update position in list */
+						y = current;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = NULL;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 31))
+						{
+							current = current->next; /* update position in list */
+							z = current;
+						}
+					}
+				}
+				
+				/* get the vertex coordinate set */
 				if (current->value.group == 13){ /* x coordinate - start set */
 					x = current;
 					
@@ -1117,6 +1190,30 @@ int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** ver
 						if ((current->next) && 
 							(current->next->type == DXF_ATTR) &&
 							(current->next->value.group == 35))
+						{
+							current = current->next; /* update position in list */
+							z = current;
+						}
+					}
+				}
+				
+				/* get the vertex coordinate set */
+				if (current->value.group == 16){ /* x coordinate - start set */
+					x = current;
+					
+					if ((current->next) && /* next should be the y coordinate */
+						(current->next->type == DXF_ATTR) &&
+						(current->next->value.group == 26))
+					{
+						current = current->next; /* update position in list */
+						y = current;
+						pt = 1; /* flag as valid point */
+						
+						/* get z coordinate - optional */
+						z = NULL;
+						if ((current->next) && 
+							(current->next->type == DXF_ATTR) &&
+							(current->next->value.group == 36))
 						{
 							current = current->next; /* update position in list */
 							z = current;

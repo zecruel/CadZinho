@@ -157,6 +157,8 @@ int main(int argc, char** argv){
 	char *pref_path = NULL;  // guaranteed to be assigned only if kgflags_parse succeeds
 	kgflags_string("pref", NULL, "Preferences directory.", false, (const char **) &pref_path);
 	kgflags_parse(argc, argv);
+	//int kgflags_get_non_flag_args_count(void);
+	const char * arg_file = kgflags_get_non_flag_arg(0);
 	
 	if (pref_path){
 		strncpy(gui->pref_path, dir_full(pref_path), DXF_MAX_CHARS);
@@ -598,6 +600,17 @@ int main(int argc, char** argv){
 	
 	//graph_obj * hers = hershey_test (PRG_LIFE);
 	/*===================== teste ===============*/
+	
+	/* open file passed in command line arg */
+	
+	if (arg_file){
+		if (strcmp(get_ext((char *) arg_file), "dxf") == 0){
+			gui->action = FILE_OPEN;
+			gui->path_ok = 1;
+			strncpy(gui->curr_path, arg_file, PATH_MAX_CHARS);
+			gui->hist_new = 1;
+		}
+	}
 	
 	/* main loop */
 	while (quit == 0){

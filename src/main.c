@@ -274,16 +274,6 @@ int main(int argc, char** argv){
 	
 	/* -------------------------------------------------------------------------- */
 	
-	/* try to change working dir from last opened drawing */
-	if(gui->recent_drwg->next) {
-		if (gui->recent_drwg->next->data){
-			STRPOOL_U64 str_a = (STRPOOL_U64) gui->recent_drwg->next->data;
-			dir_change(get_dir((char*)strpool_cstr( &gui->file_pool, str_a)));
-			strncpy (gui->dwg_dir, get_dir((char*)strpool_cstr( &gui->file_pool, str_a)) , DXF_MAX_CHARS);
-		}
-	}
-	/* ------------------------------------------------------------------------*/
-	
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
@@ -601,16 +591,21 @@ int main(int argc, char** argv){
 	//graph_obj * hers = hershey_test (PRG_LIFE);
 	/*===================== teste ===============*/
 	
-	/* open file passed in command line arg */
-	
-	if (arg_file){
-		if (strcmp(get_ext((char *) arg_file), "dxf") == 0){
-			gui->action = FILE_OPEN;
-			gui->path_ok = 1;
-			strncpy(gui->curr_path, arg_file, PATH_MAX_CHARS);
-			gui->hist_new = 1;
+	/* try to open file passed in command line arg */
+	if (strcmp(get_ext((char *) arg_file), "dxf") == 0){
+		gui->action = FILE_OPEN;
+		gui->path_ok = 1;
+		strncpy(gui->curr_path, arg_file, PATH_MAX_CHARS);
+		gui->hist_new = 1;
+	}
+	else if(gui->recent_drwg->next) { /* try to change working dir from last opened drawing */
+		if (gui->recent_drwg->next->data){
+			STRPOOL_U64 str_a = (STRPOOL_U64) gui->recent_drwg->next->data;
+			dir_change(get_dir((char*)strpool_cstr( &gui->file_pool, str_a)));
+			strncpy (gui->dwg_dir, get_dir((char*)strpool_cstr( &gui->file_pool, str_a)) , DXF_MAX_CHARS);
 		}
 	}
+	/* ------------------------------------------------------------------------*/
 	
 	/* main loop */
 	while (quit == 0){
@@ -1596,12 +1591,12 @@ int main(int argc, char** argv){
 			gui->user_flag_x = 0;
 			gui->user_flag_y = 0;
 			//printf("change tool\n");
-			
+			/*
 			if (gui->prev_modal == SCRIPT){
 				gui->lua_script[0].active = 0;
 				gui->lua_script[0].dynamic = 0;
 			}
-			
+			*/
 			gui->prev_modal = gui->modal;
 		}
 		

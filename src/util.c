@@ -82,6 +82,10 @@ char *get_ext(char *path){
 	char *ret = NULL;
 	int i;
 	
+	if(!path){
+		buf[0] = 0;
+		return buf;
+	}
 	
 	strncpy(buf, path, PATH_MAX_CHARS);
 	ret = strrchr(buf, '.');

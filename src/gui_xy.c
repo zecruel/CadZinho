@@ -3,6 +3,7 @@
 int gui_update_pos(gui_obj *gui){
 	double rect_pt1[2], rect_pt2[2];
 	double cursor_x = 0.0, cursor_y = 0.0;
+	double ref_x = 0.0, ref_y = 0.0;
 	
 	/* if user hit the enter key during a drawing operation, toggle axis lock */
 	if ((gui->modal != SELECT) && (gui->step > 0) && (gui->ev & EV_LOCK_AX)
@@ -42,10 +43,18 @@ int gui_update_pos(gui_obj *gui){
 			gui->step_y[gui->step] = (double) gui->mouse_y/gui->zoom + gui->ofs_y;
 			gui->near_attr = ATRC_NONE;
 			
+			if (gui->step > 0) {
+				ref_x = gui->step_x[gui->step - 1];
+				ref_y = gui->step_y[gui->step - 1];
+			} else {
+				ref_x = gui->step_x[gui->step];
+				ref_y = gui->step_y[gui->step];
+			}
+			
 			if (!gui->free_sel){
 				/* update current position by the attractor of near element */
 				if (gui->near_attr = dxf_ent_attract(gui->drawing, gui->near_el, gui->curr_attr_t,
-				gui->step_x[gui->step], gui->step_y[gui->step], gui->step_x[gui->step], gui->step_y[gui->step],
+				gui->step_x[gui->step], gui->step_y[gui->step], ref_x, ref_y,
 				(double) 20/gui->zoom, &gui->near_x , &gui->near_y)){
 					gui->step_x[gui->step] = gui->near_x;
 					gui->step_y[gui->step] = gui->near_y;

@@ -1224,7 +1224,7 @@ graph_obj * dxf_spline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 	
 	dxf_node *attr;
 	dxf_node *curr_pt = NULL;
-	dxf_node *next_pt = NULL;
+	dxf_node *nxt_attr = NULL;
 	dxf_node *curr_knot = NULL;
 	
 	/* verify if entity is drawable, depending its model or paper space */
@@ -1261,10 +1261,17 @@ graph_obj * dxf_spline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 	
 	/* initialize the knots vector with first values in curve*/
 	for (i = 0; i< 20; i++) knots[i] = 0.0;
-	curr_knot = dxf_find_attr_i2(start, NULL, 40, 0);
+	nxt_attr = NULL;
+	curr_knot = dxf_find_attr_nxt(ent, &nxt_attr, 40);
+	if (nxt_attr){
+		if (nxt_attr->value.group != 40) curr_knot = NULL;
+	}
 	for (i = 0;  (i < num_knots) && (curr_knot); i++){
 		knots[i] = curr_knot->value.d_data;
-		curr_knot = dxf_find_attr_i2(curr_knot, NULL, 40, 1);
+		curr_knot = curr_knot->next;
+		if (curr_knot){
+			if (curr_knot->value.group != 40) curr_knot = NULL;
+		}
 	}
 	
 	/* add a small value in each knot to prevent equality */
@@ -1281,21 +1288,32 @@ graph_obj * dxf_spline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 	}
 	
 	/* initialize the points and weights vectors with first values in curve*/
-	curr_pt = dxf_find_attr_i2(start, NULL, 10, 0);
-	next_pt = dxf_find_attr_i2(start, NULL, 10, 1);
+	nxt_attr = NULL;
+	curr_pt = dxf_find_attr_nxt(ent, &nxt_attr, 10);
 	for (i = 0; (i < num_pts) && (curr_pt); i++){
 		px[i] = curr_pt->value.d_data;
 		py[i] = 0.0; pz[i] = 0.0; w[i] = 1.0;
-		
-		attr = dxf_find_attr_i2(curr_pt, next_pt, 20, 0);
-		if (attr) py[i] = attr->value.d_data;
-		attr = dxf_find_attr_i2(curr_pt, next_pt, 30, 0);
-		if (attr) pz[i] = attr->value.d_data;
-		attr = dxf_find_attr_i2(curr_pt, next_pt, 41, 0);
-		if (attr) w[i] = attr->value.d_data;
-		
-		curr_pt = next_pt;
-		next_pt = dxf_find_attr_i2(curr_pt, NULL, 10, 1);
+		curr_pt = curr_pt->next;
+		if (curr_pt){
+			if (curr_pt->value.group == 20){
+				py[i] = curr_pt->value.d_data;
+				curr_pt = curr_pt->next;
+			}
+			else curr_pt = NULL;
+			if (curr_pt){
+				if (curr_pt->value.group == 30){
+					pz[i] = curr_pt->value.d_data;
+					curr_pt = curr_pt->next;
+				}
+				else curr_pt = NULL;
+				if (curr_pt){
+					if (curr_pt->value.group == 41){
+						w[i] = curr_pt->value.d_data;
+						curr_pt = curr_pt->next;
+					}
+				}
+			}
+		}
 	}
 	
 	/* iterate over control points to interpolate full curve */
@@ -1367,7 +1385,11 @@ graph_obj * dxf_spline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 		if (curr_knot){ /* fill the last vector element with next knot value */
 			knots[num_knots - 1] = curr_knot->value.d_data + knot_jump;
 			knot_jump += step * 1e-5;
-			curr_knot = dxf_find_attr_i2(curr_knot, NULL, 40, 1);
+			
+			curr_knot = curr_knot->next;
+			if (curr_knot){
+				if (curr_knot->value.group != 40) curr_knot = NULL;
+			}
 		}
 		/* shift the points and weigths vectors */
 		for (i = 0;  i < num_pts - 1; i++){
@@ -1379,17 +1401,29 @@ graph_obj * dxf_spline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 		if (curr_pt){
 			/* fill the last vector element with next values */
 			px[num_pts - 1] = curr_pt->value.d_data;
-			py[num_pts - 1] = 0.0; pz[i] = 0.0; w[i] = 1.0;
+			py[num_pts - 1] = 0.0; pz[num_pts - 1] = 0.0; w[num_pts - 1] = 1.0;
 			
-			attr = dxf_find_attr_i2(curr_pt, next_pt, 20, 0);
-			if (attr) py[num_pts - 1] = attr->value.d_data;
-			attr = dxf_find_attr_i2(curr_pt, next_pt, 30, 0);
-			if (attr) pz[num_pts - 1] = attr->value.d_data;
-			attr = dxf_find_attr_i2(curr_pt, next_pt, 41, 0);
-			if (attr) w[num_pts - 1] = attr->value.d_data;
-			
-			curr_pt = next_pt;
-			next_pt = dxf_find_attr_i2(curr_pt, NULL, 10, 1);
+			curr_pt = curr_pt->next;
+			if (curr_pt){
+				if (curr_pt->value.group == 20){
+					py[num_pts - 1] = curr_pt->value.d_data;
+					curr_pt = curr_pt->next;
+				}
+				else curr_pt = NULL;
+				if (curr_pt){
+					if (curr_pt->value.group == 30){
+						pz[num_pts - 1] = curr_pt->value.d_data;
+						curr_pt = curr_pt->next;
+					}
+					else curr_pt = NULL;
+					if (curr_pt){
+						if (curr_pt->value.group == 41){
+							w[num_pts - 1] = curr_pt->value.d_data;
+							curr_pt = curr_pt->next;
+						}
+					}
+				}
+			}
 		}
 		
 	}

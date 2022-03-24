@@ -134,74 +134,94 @@ int gui_hatch_interactive(gui_obj *gui){
 			}
 		}
 		else{
-			if (gui->ev & EV_ENTER){
-				struct h_pattern *curr_h;// = &(gui->list_pattern);
-				struct h_family *curr_fam = gui->hatch_fam.next;
-				int i = 0;
-				
-				double rot = 0.0, scale = 1.0;
-				
-				if(gui->h_type == HATCH_USER) { /* user definied simple pattern */
-					strncpy(gui->list_pattern.name, "USER_DEF", DXF_MAX_CHARS);
-					curr_h = &(gui->list_pattern);
-					rot = 0.0;
-					scale = 1.0;
-				}
-				else if(gui->h_type == HATCH_SOLID) { /* solid pattern */
-					strncpy(gui->list_pattern.name, "SOLID", DXF_MAX_CHARS);
-					curr_h = &(gui->list_pattern);
-					rot = 0.0;
-					scale = 1.0;
-				}
-				else{ /* pattern from library */
-					
-					/* get current family */
-					curr_h = NULL;
-					i = 0;
-					while (curr_fam){
-						if (gui->hatch_fam_idx == i){
-							curr_h = curr_fam->list->next;
-							break;
-						}
-						
-						i++;
-						curr_fam = curr_fam->next;
-					}
-					
-					/* get current hatch pattern */
-					i = 0;
-					while ((curr_h) && (i < gui->hatch_idx)){
-						i++;
-						curr_h = curr_h->next;
-					}
-					/* optional rotation and scale */
-					rot = gui->patt_ang;
-					scale = gui->patt_scale;
-				}
-				
-				/* make DXF HATCH entity */
-				dxf_node *new_hatch_el = dxf_new_hatch2 (curr_h, gui->sel_list,
-				gui->h_type == HATCH_SOLID, gui->hatch_assoc,
-				0, 0, /* style, type */
-				rot, scale,
-				gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-				gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-				0, DWG_LIFE); /* paper space */
-				
-				if (new_hatch_el){
-					/* parse entity */
-					new_hatch_el->obj.graphics = dxf_graph_parse(gui->drawing, new_hatch_el, 0 , 0);
-					/* and append to drawing */
-					drawing_ent_append(gui->drawing, new_hatch_el);
-					/* add to the undo/redo list*/
-					do_add_entry(&gui->list_do, "HATCH");
-					do_add_item(gui->list_do.current, NULL, new_hatch_el);
-				}
+			if (gui->step == 0) {
+				/* try to go to next step */
+				gui->step = 1;
+				gui->free_sel = 0;
 			}
-			else if (gui->ev & EV_CANCEL){
-				gui_default_modal(gui);
+			/* verify if elements in selection list */
+			if (gui->step == 1 && (!gui->sel_list->next || (gui->ev & EV_ADD))){
+				/* if selection list is empty, back to first step */
+				gui->step = 0;
+				gui->free_sel = 1;
 			}
 			
+			if (gui->step == 0){
+				/* in first step, select the elements to proccess*/
+				gui->en_distance = 0;
+				gui->sel_ent_filter = ~DXF_NONE;
+				gui_simple_select(gui);
+			}
+			else if (gui->step == 1){
+				
+				if (gui->ev & EV_ENTER){
+					struct h_pattern *curr_h;// = &(gui->list_pattern);
+					struct h_family *curr_fam = gui->hatch_fam.next;
+					int i = 0;
+					
+					double rot = 0.0, scale = 1.0;
+					
+					if(gui->h_type == HATCH_USER) { /* user definied simple pattern */
+						strncpy(gui->list_pattern.name, "USER_DEF", DXF_MAX_CHARS);
+						curr_h = &(gui->list_pattern);
+						rot = 0.0;
+						scale = 1.0;
+					}
+					else if(gui->h_type == HATCH_SOLID) { /* solid pattern */
+						strncpy(gui->list_pattern.name, "SOLID", DXF_MAX_CHARS);
+						curr_h = &(gui->list_pattern);
+						rot = 0.0;
+						scale = 1.0;
+					}
+					else{ /* pattern from library */
+						
+						/* get current family */
+						curr_h = NULL;
+						i = 0;
+						while (curr_fam){
+							if (gui->hatch_fam_idx == i){
+								curr_h = curr_fam->list->next;
+								break;
+							}
+							
+							i++;
+							curr_fam = curr_fam->next;
+						}
+						
+						/* get current hatch pattern */
+						i = 0;
+						while ((curr_h) && (i < gui->hatch_idx)){
+							i++;
+							curr_h = curr_h->next;
+						}
+						/* optional rotation and scale */
+						rot = gui->patt_ang;
+						scale = gui->patt_scale;
+					}
+					
+					/* make DXF HATCH entity */
+					dxf_node *new_hatch_el = dxf_new_hatch2 (curr_h, gui->sel_list,
+					gui->h_type == HATCH_SOLID, gui->hatch_assoc,
+					0, 0, /* style, type */
+					rot, scale,
+					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+					0, DWG_LIFE); /* paper space */
+					
+					if (new_hatch_el){
+						/* parse entity */
+						new_hatch_el->obj.graphics = dxf_graph_parse(gui->drawing, new_hatch_el, 0 , 0);
+						/* and append to drawing */
+						drawing_ent_append(gui->drawing, new_hatch_el);
+						/* add to the undo/redo list*/
+						do_add_entry(&gui->list_do, "HATCH");
+						do_add_item(gui->list_do.current, NULL, new_hatch_el);
+					}
+				}
+				else if (gui->ev & EV_CANCEL){
+					gui_default_modal(gui);
+				}
+			}
 		}
 	}
 	return 1;
@@ -328,9 +348,26 @@ int gui_hatch_info (gui_obj *gui){
 		/* associative flag for Hatch*/
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_checkbox_label(gui->ctx, "Associative", &gui->hatch_assoc);
-		nk_checkbox_label(gui->ctx, "Selection", &gui->hatch_sel);
+		//nk_checkbox_label(gui->ctx, "Selection", &gui->hatch_sel);
+		/* Selection mode option - Points or Selection */
+		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
+		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 3);
+		nk_layout_row_push(gui->ctx, 45);
+		nk_label(gui->ctx, "Mode:", NK_TEXT_LEFT);
+		if (gui_tab (gui, "Points", gui->hatch_sel == 0)) {
+			gui->hatch_sel = 0;
+			gui->step = 0;
+		}
+		if (gui_tab (gui, "Selection", gui->hatch_sel == 1)) {
+			gui->hatch_sel = 1;
+			gui->step = 0;
+		}
+		nk_style_pop_vec2(gui->ctx);
+		nk_layout_row_end(gui->ctx);
 		
+		nk_layout_row_dynamic(gui->ctx, 10, 1);
 		/*messages for user in iteractive mode*/
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		if (!gui->hatch_sel){
 			if (gui->step == 0){
 				nk_label(gui->ctx, "Enter first point", NK_TEXT_LEFT);
@@ -338,8 +375,12 @@ int gui_hatch_info (gui_obj *gui){
 				nk_label(gui->ctx, "Enter next point", NK_TEXT_LEFT);
 			}
 		}
-		else
-			nk_label(gui->ctx, "Confirm", NK_TEXT_LEFT);
+		else{
+			if (gui->step == 0){
+				nk_label(gui->ctx, "Select/Add element", NK_TEXT_LEFT);
+			}
+			else	nk_label(gui->ctx, "Confirm", NK_TEXT_LEFT);
+		}
 		
 		if (show_pat_pp){
 			/* selection pattern popup window */
@@ -539,7 +580,7 @@ int gui_hatch_info (gui_obj *gui){
 					patt_scale = nk_propertyd(gui->ctx, "#Scale", 1e-9, patt_scale, 1e9, SMART_STEP(patt_scale), SMART_STEP(patt_scale));
 					patt_rot = nk_propertyd(gui->ctx, "#Rotation", 0.00, patt_rot, 360.0, 0.1, 0.1);
 					
-					if (nk_button_label(gui->ctx, "Select")){ /*done the selection*/
+					if (nk_button_label(gui->ctx, "Choose")){ /*done the selection*/
 						/* update  the main parameters */
 						gui->hatch_idx = patt_idx;
 						gui->patt_scale = patt_scale;
@@ -555,8 +596,24 @@ int gui_hatch_info (gui_obj *gui){
 		}
 		if (show_pat_file){
 			/* Load other pattern libraries */
-			static char pat_path[DXF_MAX_CHARS];
-			static int pat_path_len = 0;
+			static char pat_path[PATH_MAX_CHARS+1];
+			
+			/* supported file format */
+			static const char *ext_type[] = {
+				"PAT",
+				"*"
+			};
+			static const char *ext_descr[] = {
+				"Hatch Pattern Library (.pat)",
+				"All files (*)"
+			};
+			#define FILTER_COUNT 2
+			
+			if (gui->show_file_br == 2){
+				/* update string with returned path from browser window */
+				strncpy (pat_path, gui->curr_path , PATH_MAX_CHARS);
+				gui->show_file_br = 0;
+			}
 			
 			static struct nk_rect s = {20, 100, 400, 150};
 			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Add pattern family", NK_WINDOW_CLOSABLE, s)){
@@ -564,11 +621,9 @@ int gui_hatch_info (gui_obj *gui){
 				nk_label(gui->ctx, "File to Open:", NK_TEXT_CENTERED);
 				/* get the file path */
 				nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
-				nk_edit_string(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, pat_path, &pat_path_len, DXF_MAX_CHARS, nk_filter_default);
-				
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, pat_path, PATH_MAX_CHARS, nk_filter_default);
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				if (nk_button_label(gui->ctx, "OK")) {
-					pat_path[pat_path_len] = 0; /* terminate string */
 					/* check if filename extension is ".pat" */
 					char *ext = get_ext(pat_path);
 					if (strcmp(ext, "pat") == 0){
@@ -582,12 +637,21 @@ int gui_hatch_info (gui_obj *gui){
 						show_pat_file = nk_false; /*close the window*/
 					}
 					
-					pat_path_len = 0;
+				}
+				if (nk_button_label(gui->ctx, "Explore")) {
+					for (i = 0; i < FILTER_COUNT; i++){
+						gui->file_filter_types[i] = ext_type[i];
+						gui->file_filter_descr[i] = ext_descr[i];
+					}
+					gui->file_filter_count = FILTER_COUNT;
+					gui->filter_idx = 0;
+					
+					gui->show_file_br = 1;
+					gui->curr_path[0] = 0;
 				}
 				nk_popup_end(gui->ctx);
 			} else {
 				show_pat_file = nk_false;
-				pat_path_len = 0;
 			}
 		}
 	}

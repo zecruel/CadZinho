@@ -47,86 +47,72 @@ bmp_color dxf_get_color (int curr_color, int lay_color, int ins_color){
 }
 
 int dxf_ent_get_ltype(dxf_drawing *drawing, dxf_node * ent, int ins_ltype){
-	int ltype_default = dxf_ltype_idx(drawing, "Continuous");
-	int ltype = ltype_default, by_layer = 0;
-	if((ent) && (drawing)){
-		dxf_node *ltype_obj, *layer_obj;
-		char ltype_name[DXF_MAX_CHARS], *new_name;
+	/*int ltype_default = dxf_ltype_idx(drawing, "Continuous");*/
+	int ltype = -1, by_layer = 0;
+	if(!ent || !drawing) return -1;
+	
+	dxf_node *ltype_obj, *layer_obj;
+	char ltype_name[DXF_MAX_CHARS], *new_name;
+	
+	if (ltype_obj = dxf_find_attr2(ent, 6)){
+		strncpy(ltype_name, ltype_obj->value.s_data, DXF_MAX_CHARS);
 		
-		if (ltype_obj = dxf_find_attr2(ent, 6)){
-			strncpy(ltype_name, ltype_obj->value.s_data, DXF_MAX_CHARS);
-			
-			/* remove trailing spaces */
-			new_name = trimwhitespace(ltype_name);
-			/* change to upper case */
-			str_upp(new_name);
-			
-			if (strcmp(new_name, "BYBLOCK") == 0){
-				ltype = ins_ltype;
-			}
-			else if (strcmp(new_name, "BYLAYER") == 0){
-				by_layer = 1;
-			}
-			else{
-				ltype = dxf_ltype_idx(drawing, new_name);
-			}
-			
-		} else by_layer = 1;
+		/* remove trailing spaces */
+		new_name = trimwhitespace(ltype_name);
+		/* change to upper case */
+		str_upp(new_name);
 		
-		if (by_layer){ /* ltype is by layer */
-			if (layer_obj = dxf_find_attr2(ent, 8)){
-				char layer[DXF_MAX_CHARS];
-				strncpy(layer, layer_obj->value.s_data, DXF_MAX_CHARS);
-				str_upp(layer);
-				
-				/* find the layer index */
-				int lay_idx = dxf_lay_idx(drawing, layer);
-				ltype = dxf_ltype_idx(drawing, drawing->layers[lay_idx].ltype);
-			}
-			else ltype = ltype_default; /* fail to find layer ltype*/
+		if (strcmp(new_name, "BYBLOCK") == 0){
+			ltype = ins_ltype;
 		}
-		if ((ltype == 0) || (ltype >= drawing->num_ltypes)) 
-			ltype = ltype_default; /* invalid  ltype*/
+		else if (strcmp(new_name, "BYLAYER") == 0){
+			by_layer = 1;
+		}
+		else{
+			ltype = dxf_ltype_idx(drawing, new_name);
+		}
+		
+	} else by_layer = 1;
+	
+	if (by_layer){ /* ltype is by layer */
+		if (layer_obj = dxf_find_attr2(ent, 8)){
+			char layer[DXF_MAX_CHARS];
+			strncpy(layer, layer_obj->value.s_data, DXF_MAX_CHARS);
+			str_upp(layer);
+			
+			/* find the layer index */
+			int lay_idx = dxf_lay_idx(drawing, layer);
+			ltype = dxf_ltype_idx(drawing, drawing->layers[lay_idx].ltype);
+		}
+		else ltype = -1; /* fail to find layer ltype*/
 	}
+	if ((ltype == 0) || (ltype >= drawing->num_ltypes)) 
+		ltype = -1; /* invalid  ltype*/
+	
 	return ltype;
 }
 
 int change_ltype (dxf_drawing *drawing, graph_obj * graph, int ltype_idx, double scale){
 	/* change the graph line pattern */
-	if((graph) && (drawing)){
-		int i;
-		graph->patt_size = drawing->ltypes[ltype_idx].size;
-		graph->flags &= ~(CMPLX_PAT);
-		for (i = 0; i < drawing->ltypes[ltype_idx].size; i++){
-			graph->pattern[i] = drawing->ltypes[ltype_idx].dashes[i].dash * drawing->ltscale * scale;
-			graph->cmplx_pat[i] = NULL;
-			
-			/* ---------- complex line types ------------------- */
-			struct tfont *font = NULL;
-			if ( drawing->ltypes[ltype_idx].dashes[i].type == LTYP_SHAPE){
-				graph->flags |= CMPLX_PAT;
-				font = drawing->text_styles[drawing->ltypes[ltype_idx].dashes[i].sty_i].font;
-				double w;
-				graph_obj *cplx_g = font_parse_cp(font, drawing->ltypes[ltype_idx].dashes[i].num, 0, graph->pool_idx, &w);
-				if (cplx_g){
-					graph->cmplx_pat[i] = list_new (NULL, graph->pool_idx);
-					list_push(graph->cmplx_pat[i], list_new ((void *) cplx_g, graph->pool_idx));
-					
-					graph_list_modify(graph->cmplx_pat[i],
-						drawing->ltypes[ltype_idx].dashes[i].ofs_x * drawing->ltscale * scale,
-						drawing->ltypes[ltype_idx].dashes[i].ofs_y * drawing->ltscale * scale,
-						drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
-						drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
-						drawing->ltypes[ltype_idx].dashes[i].rot);
-				}
-				
-			}
-			if ( drawing->ltypes[ltype_idx].dashes[i].type == LTYP_STRING){
-				graph->flags |= CMPLX_PAT;
-				font = drawing->text_styles[drawing->ltypes[ltype_idx].dashes[i].sty_i].font;
-				double w;
+	if(!graph || !drawing || ltype_idx < 0) return 0;
+	
+	int i;
+	graph->patt_size = drawing->ltypes[ltype_idx].size;
+	graph->flags &= ~(CMPLX_PAT);
+	for (i = 0; i < drawing->ltypes[ltype_idx].size; i++){
+		graph->pattern[i] = drawing->ltypes[ltype_idx].dashes[i].dash * drawing->ltscale * scale;
+		graph->cmplx_pat[i] = NULL;
+		
+		/* ---------- complex line types ------------------- */
+		struct tfont *font = NULL;
+		if ( drawing->ltypes[ltype_idx].dashes[i].type == LTYP_SHAPE){
+			graph->flags |= CMPLX_PAT;
+			font = drawing->text_styles[drawing->ltypes[ltype_idx].dashes[i].sty_i].font;
+			double w;
+			graph_obj *cplx_g = font_parse_cp(font, drawing->ltypes[ltype_idx].dashes[i].num, 0, graph->pool_idx, &w);
+			if (cplx_g){
 				graph->cmplx_pat[i] = list_new (NULL, graph->pool_idx);
-				font_parse_str(font, graph->cmplx_pat[i], graph->pool_idx, drawing->ltypes[ltype_idx].dashes[i].str, &w, 0);
+				list_push(graph->cmplx_pat[i], list_new ((void *) cplx_g, graph->pool_idx));
 				
 				graph_list_modify(graph->cmplx_pat[i],
 					drawing->ltypes[ltype_idx].dashes[i].ofs_x * drawing->ltscale * scale,
@@ -135,10 +121,26 @@ int change_ltype (dxf_drawing *drawing, graph_obj * graph, int ltype_idx, double
 					drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
 					drawing->ltypes[ltype_idx].dashes[i].rot);
 			}
+			
 		}
-		return 1;
+		if ( drawing->ltypes[ltype_idx].dashes[i].type == LTYP_STRING){
+			graph->flags |= CMPLX_PAT;
+			font = drawing->text_styles[drawing->ltypes[ltype_idx].dashes[i].sty_i].font;
+			double w;
+			graph->cmplx_pat[i] = list_new (NULL, graph->pool_idx);
+			font_parse_str(font, graph->cmplx_pat[i], graph->pool_idx, drawing->ltypes[ltype_idx].dashes[i].str, &w, 0);
+			
+			graph_list_modify(graph->cmplx_pat[i],
+				drawing->ltypes[ltype_idx].dashes[i].ofs_x * drawing->ltscale * scale,
+				drawing->ltypes[ltype_idx].dashes[i].ofs_y * drawing->ltscale * scale,
+				drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
+				drawing->ltypes[ltype_idx].dashes[i].scale * drawing->ltscale * scale,
+				drawing->ltypes[ltype_idx].dashes[i].rot);
+		}
 	}
-	return 0;
+	return 1;
+	
+	
 }
 
 int change_ltype2 (dxf_drawing *drawing, graph_obj * graph, dxf_ltype ltype, double scale){
@@ -3374,11 +3376,21 @@ graph_obj * dxf_3dface_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 	}
 }
 
-int proc_obj_graph(dxf_drawing *drawing, dxf_node * ent, graph_obj * graph, struct ins_save ins){
-	if ((drawing) && (ent) && (graph)){
-		dxf_node *layer_obj, *ltscale_obj;
-		double ltscale = 1.0;
-		
+enum Bypass {
+	OBJ_NONE = 0,
+	OBJ_LAYER = 1,
+	OBJ_COLOR = 2,
+	OBJ_LTYPE = 4,
+	OBJ_LW = 8
+};
+
+int proc_obj_graph(dxf_drawing *drawing, dxf_node * ent, graph_obj * graph, struct ins_save ins, enum Bypass bypass){
+	if (!drawing || !ent || !graph) return 0;
+	
+	dxf_node *layer_obj, *ltscale_obj;
+	double ltscale = 1.0;
+	
+	if (!(bypass & OBJ_LAYER)){
 		if (layer_obj = dxf_find_attr2(ent, 8)){
 			char layer[DXF_MAX_CHARS];
 			strncpy(layer, layer_obj->value.s_data, DXF_MAX_CHARS);
@@ -3387,14 +3399,19 @@ int proc_obj_graph(dxf_drawing *drawing, dxf_node * ent, graph_obj * graph, stru
 			/* find the layer index */
 			ent->obj.layer = dxf_lay_idx(drawing, layer);
 		}
-		
+	}
+	if (!(bypass & OBJ_COLOR)){
 		graph->color = dxf_colors[dxf_ent_get_color(drawing, ent, ins.color)];
-		
+	}
+	
+	if (!(bypass & OBJ_LTYPE)){
 		if (ltscale_obj = dxf_find_attr2(ent, 48)) ltscale = ltscale_obj->value.d_data;
 		
 		int ltype = dxf_ent_get_ltype(drawing, ent, ins.ltype);
 		change_ltype (drawing, graph, ltype, ltscale);
-		
+	}
+	
+	if (!(bypass & OBJ_LW)){
 		/*change tickness */
 		int lw = dxf_ent_get_lw(drawing, ent, ins.lw);
 		//graph->tick = 0;
@@ -3403,8 +3420,8 @@ int proc_obj_graph(dxf_drawing *drawing, dxf_node * ent, graph_obj * graph, stru
 			//graph->thick_const = 1;
 			graph->flags |= THICK_CONST;
 		}
-		
 	}
+	return 1;
 	
 }
 
@@ -3488,7 +3505,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					
 					/* store the graph in the return vector */
 					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_NONE);
 					mod_idx++;
 				}
 				
@@ -3506,7 +3523,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 							curr_graph = (graph_obj *)curr_node->data;
 							/* store the graph in the return vector */
 							list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_LTYPE);
 							mod_idx++;
 						}
 						curr_node = curr_node->next;
@@ -3522,7 +3539,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				if (curr_graph){
 					/* store the graph in the return vector */
 					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_NONE);
 					mod_idx++;
 				}
 				
@@ -3533,7 +3550,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				if (curr_graph){
 					/* store the graph in the return vector */
 					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_NONE);
 					mod_idx++;
 				}
 				
@@ -3552,7 +3569,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 							curr_graph = (graph_obj *)curr_node->data;
 							/* store the graph in the return vector */
 							list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_NONE);
 							mod_idx++;
 						}
 						curr_node = curr_node->next;
@@ -3575,7 +3592,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 							curr_graph = (graph_obj *)curr_node->data;
 							/* store the graph in the return vector */
 							list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_LTYPE);
 							mod_idx++;
 						}
 						curr_node = curr_node->next;
@@ -3599,7 +3616,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				if (curr_graph){
 					/* store the graph in the return vector */
 					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_LTYPE|OBJ_LW);
 					mod_idx++;
 				}
 				
@@ -3611,7 +3628,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				if (curr_graph){
 					/* store the graph in the return vector */
 					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_LTYPE|OBJ_LW);
 					mod_idx++;
 				}
 				
@@ -3623,7 +3640,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				if (curr_graph){
 					/* store the graph in the return vector */
 					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_NONE);
 					mod_idx++;
 				}
 			}
@@ -3633,7 +3650,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				if (curr_graph){
 					/* store the graph in the return vector */
 					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_NONE);
 					mod_idx++;
 				}
 			}
@@ -3649,7 +3666,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					while (curr_node != NULL){
 						if (curr_node->data){
 							curr_graph = (graph_obj *)curr_node->data;
-							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos+1]);
+							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos+1], OBJ_LTYPE);
 						}
 						curr_node = curr_node->next;
 					}
@@ -3675,7 +3692,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					while (curr_node != NULL){
 						if (curr_node->data){
 							curr_graph = (graph_obj *)curr_node->data;
-							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos+1]);
+							proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos+1], OBJ_LTYPE);
 						}
 						curr_node = curr_node->next;
 					}
@@ -3715,7 +3732,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				if (curr_graph){
 					/* store the graph in the return vector */
 					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_NONE);
 					mod_idx++;
 				}
 				
@@ -3733,7 +3750,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 							curr_graph = (graph_obj *)curr_node->data;
 							/* store the graph in the return vector */
 							list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-							//proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+							//proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_NONE);
 							mod_idx++;
 						}
 						curr_node = curr_node->next;
@@ -3749,7 +3766,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 						
 					/* store the graph in the return vector */
 					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-					//proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos]);
+					//proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_NONE);
 					mod_idx++;
 				}
 				

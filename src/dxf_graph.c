@@ -4557,8 +4557,6 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 		
 		int num_cpts, order, num_ret, prev_num_cpts, prev_order;
 		double weight = 1.0;
-		double ctrl_pts[3 * MAX_SPLINE_PTS], ret[3 * MAX_SPLINE_PTS];
-		double weights[MAX_SPLINE_PTS];
 
 		int count =0;
 		
@@ -4578,6 +4576,8 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 		
 		current = ent;
 		
+		dxf_node * spline = NULL; /* dumb entity to parse SPLINE */
+		
 		
 		while (current){
 			
@@ -4586,22 +4586,36 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 					case 10:
 						pt1_x = current->value.d_data;
 						pt1 = 1; /* set flag */
+						if (edge_type == EDGE_SPLINE){
+							dxf_attr_append(spline, 10, (void *) &pt1_x, FRAME_LIFE);
+						}
 						break;
 					case 11:
 						pt2_x = current->value.d_data; 
 						break;
 					case 20:
-						pt1_y = current->value.d_data; 
+						pt1_y = current->value.d_data;
+						if (edge_type == EDGE_SPLINE){
+							dxf_attr_append(spline, 20, (void *) &pt1_y, FRAME_LIFE);
+							dxf_attr_append(spline, 30, (void *)(double[]){0.0}, FRAME_LIFE);
+						}
 						break;
 					case 21:
 						pt2_y = current->value.d_data; 
 						break;
 					case 40:
 						radius = current->value.d_data;
+						if (edge_type == EDGE_SPLINE){
+							dxf_attr_append(spline, 40, (void *) &radius, FRAME_LIFE);
+						}
+						
 						break;
 					case 42:
 						bulge = current->value.d_data;
 						weight = current->value.d_data;
+						if (edge_type == EDGE_SPLINE){
+							dxf_attr_append(spline, 41, (void *) &weight, FRAME_LIFE);
+						}
 						break;
 					case 50:
 						start_ang = current->value.d_data;
@@ -4612,6 +4626,10 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 					case 72:
 						if (!(bound_type & 2)){
 							edge_type = current->value.i_data;
+							if (edge_type == EDGE_SPLINE){
+								spline = dxf_obj_new ("SPLINE", FRAME_LIFE);
+							}
+							
 							curr_edge++;
 						}
 						break;
@@ -4630,9 +4648,21 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 						break;
 					case 94:
 						order = current->value.i_data;
+						if (edge_type == EDGE_SPLINE){
+							dxf_attr_append(spline, 71, (void *) &order, FRAME_LIFE);
+						}
+						break;
+					case 95:
+						num_cpts = current->value.i_data;
+						if (edge_type == EDGE_SPLINE){
+							dxf_attr_append(spline, 72, (void *) &num_cpts, FRAME_LIFE);
+						}
 						break;
 					case 96:
 						num_cpts = current->value.i_data;
+						if (edge_type == EDGE_SPLINE){
+							dxf_attr_append(spline, 73, (void *) &num_cpts, FRAME_LIFE);
+						}
 						break;
 					case 101:
 						strcpy(tmp_str, current->value.s_data);
@@ -4657,7 +4687,6 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 				if (prev_edge_type == EDGE_POLY){
 					/* last vertex */
 					if((first > 1) && (*curr_graph != NULL)){
-						//printf("(%0.2f, %0.2f)-(%0.2f, %0.2f)\n", prev_x, prev_y, curr_x, pt1_y);
 						if (prev_bulge == 0){
 							line_add(*curr_graph, prev_x, prev_y, 0.0, curr_x, pt1_y, 0.0);
 						}
@@ -4715,35 +4744,9 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 					}
 				}
 				else if (prev_edge_type == EDGE_SPLINE){
-					
-					if((first > 0) && (*curr_graph != NULL) && (count < MAX_SPLINE_PTS)){
-						ctrl_pts[count*3+1] = curr_x;
-						ctrl_pts[count*3+2] = pt1_y;
-						ctrl_pts[count*3+3] = 0.0;
-						weights[count+1] = weight;
-						count++;
-					}
-					if ((*curr_graph) && ((count + prev_order)*5 < MAX_SPLINE_PTS)){
-						int i;
-						num_ret = (prev_num_cpts + prev_order)*5; /* num pts on curve */
-						
-						for(i = 1; i <= 3*num_ret; i++){
-							ret[i] = 0.0;
-						}
-						
-						rbspline(prev_num_cpts, prev_order+1, num_ret, ctrl_pts, weights, ret);
-						
-						prev_x = ret[1];
-						prev_y = ret[2];
-						//prev_z = ret[3];
-						
-						for(i =4 ; i <= 3*num_ret; i = i+3){
-							line_add(*curr_graph, prev_x, prev_y, 0.0, ret[i], ret[i+1], 0.0);
-							prev_x = ret[i];
-							prev_y = ret[i+1];
-							//prev_z = ret[i+2];
-							/*printf(" %f %f %f \n",ret[i],ret[i+1],ret[i+2]);*/
-						}
+					graph_obj *spline_g = dxf_spline_parse(NULL, spline, 0, FRAME_LIFE);
+					if (spline_g && *curr_graph){
+						graph_merge(*curr_graph, spline_g);
 					}
 				}
 				
@@ -4835,36 +4838,11 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 					}
 				}
 				else if (prev_edge_type == EDGE_SPLINE){
-					
-					if((first > 0) && (*curr_graph != NULL) && (count < MAX_SPLINE_PTS)){
-						ctrl_pts[count*3+1] = curr_x;
-						ctrl_pts[count*3+2] = pt1_y;
-						ctrl_pts[count*3+3] = 0.0;
-						weights[count+1] = weight;
-						count++;
-					}
-					if ((prev_edge != curr_edge) && (*curr_graph) && ((count + prev_order)*5 < MAX_SPLINE_PTS)){
-						int i;
-						num_ret = (prev_num_cpts + prev_order)*5; /* num pts on curve */
-						
-						for(i = 1; i <= 3*num_ret; i++){
-							ret[i] = 0.0;
+					if (prev_edge != curr_edge){
+						graph_obj *spline_g = dxf_spline_parse(NULL, spline, 0, FRAME_LIFE);
+						if (spline_g && *curr_graph){
+							graph_merge(*curr_graph, spline_g);
 						}
-						
-						rbspline(prev_num_cpts, prev_order+1, num_ret, ctrl_pts, weights, ret);
-						
-						prev_x = ret[1];
-						prev_y = ret[2];
-						//prev_z = ret[3];
-						
-						for(i =4 ; i <= 3*num_ret; i = i+3){
-							line_add(*curr_graph, prev_x, prev_y, 0.0, ret[i], ret[i+1], 0.0);
-							prev_x = ret[i];
-							prev_y = ret[i+1];
-							//prev_z = ret[i+2];
-							/*printf(" %f %f %f \n",ret[i],ret[i+1],ret[i+2]);*/
-						}
-						count = 0;
 					}
 				}
 				

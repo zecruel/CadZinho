@@ -10,7 +10,6 @@
 #include "list.h"
 #include "dxf_math.h"
 
-#define MAX_SPLINE_PTS 10000
 #define GRAPH_POOL_PAGES 1000
 
 enum graph_pool_action{
@@ -121,12 +120,6 @@ void graph_modify(graph_obj * master, double ofs_x, double ofs_y, double scale_x
 void graph_rot(graph_obj * master, double base_x, double base_y, double rot);
 
 void graph_mod_axis(graph_obj * master, double normal[3] , double elev);
-
-void knot(int n, int c, int x[]);
-
-void rbasis(int c, double t, int npts, int x[], double h[], double r[]);
-
-void rbspline(int npts, int k, int p1, double b[], double h[], double p[]);
 
 //int graph_list_draw(list_node *list, bmp_img * img, double ofs_x, double ofs_y, double scale);
 int graph_list_draw(list_node *list, bmp_img * img, struct draw_param param);

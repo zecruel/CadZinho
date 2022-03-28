@@ -37,4 +37,6 @@ struct h_family * dxf_hatch_family(char *name, char* descr, char *buf);
 struct h_family * dxf_hatch_family_file(char *name, char *path);
 int dxf_h_fam_free (struct h_family *fam);
 
+int dxf_hatch_bound (dxf_node *hatch, list_node *list);
+
 #endif

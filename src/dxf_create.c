@@ -1878,87 +1878,11 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	/* associativity flag */
 	ok &= dxf_attr_append(hatch, 71, (void *) &assoc, pool);
 	
-	/* number of boundary loops */
-	
-	list_node *current = bound_list->next;
-	while (current != NULL){
-		if (current->data){
-			obj = (dxf_node *)current->data;
-			if (dxf_ident_ent_type(obj) == DXF_LWPOLYLINE)
-				loops++; /* increment loops if is a polyline */
-		}
-		current = current->next;
-	}
-	if (loops <= 0) ok = 0; /* error if no valid loops*/
-	
+	/* make boundaries */
 	ok &= dxf_attr_append(hatch, 91, (void *) &loops, pool);
-	
-	
-	/*============== bondaries =============*/
-	current = bound_list->next;
-	while (current != NULL){
-		if (current->data){
-			obj = (dxf_node *)current->data;
-			if (dxf_ident_ent_type(obj) == DXF_LWPOLYLINE){
-				/* boundary type */
-				ok &= dxf_attr_append(hatch, 92, (void *) (int[]){2}, pool); /* polyline*/
-				ok &= dxf_attr_append(hatch, 72, (void *) (int[]){1}, pool); /* has bulge*/
-				
-				int closed = 0, num_vert = 0;
-				
-				dxf_node *closed_o = dxf_find_attr_i(obj, 70, 0);
-				if (closed_o) closed = closed_o->value.i_data & 1;
-				
-				dxf_node *num_vert_o = dxf_find_attr_i(obj, 90, 0);
-				if (num_vert_o) num_vert = num_vert_o->value.i_data;
-				
-				ok &= dxf_attr_append(hatch, 73, (void *) &closed, pool);
-				ok &= dxf_attr_append(hatch, 93, (void *) &num_vert, pool);
-				
-				dxf_node *curr_attr = obj->obj.content->next;
-				double x = 0, y = 0, bulge = 0, prev_x = 0;
-				int vert = 0, first = 0;
-				while (curr_attr){
-					switch (curr_attr->value.group){
-						case 10:
-							x = curr_attr->value.d_data;
-							vert = 1; /* set flag */
-							break;
-						case 20:
-							y = curr_attr->value.d_data;
-							break;
-						case 42:
-							bulge = curr_attr->value.d_data;
-							break;
-					}
-					
-					if (vert){
-						if (!first) first = 1;
-						else{
-							ok &= dxf_attr_append(hatch, 10, (void *) &prev_x, pool);
-							ok &= dxf_attr_append(hatch, 20, (void *) &y, pool);
-							ok &= dxf_attr_append(hatch, 42, (void *) &bulge, pool);
-						}
-						prev_x = x;
-						bulge = 0; vert = 0;
-					}
-					
-					//x = 0; y = 0; bulge = 0; vert = 0;
-					curr_attr = curr_attr->next;
-				}
-				/* last vertex */
-				ok &= dxf_attr_append(hatch, 10, (void *) &prev_x, pool);
-				ok &= dxf_attr_append(hatch, 20, (void *) &y, pool);
-				ok &= dxf_attr_append(hatch, 42, (void *) &bulge, pool);
-				
-				/* number of source boundary objects - ?? */
-				ok &= dxf_attr_append(hatch, 97, (void *) &int_zero, pool);
-			}
-		}
-		current = current->next; /* go to next */
-	}
-	
-	/*===================================*/
+	loops = dxf_hatch_bound (hatch, bound_list); 
+	if (!loops) return NULL; /* error - no valid (closed paths) bounds */
+	dxf_attr_change(hatch, 91, &loops); /* number of boundary loops */
 	
 	/* hatch style */
 	ok &= dxf_attr_append(hatch, 75, (void *) &style, pool);

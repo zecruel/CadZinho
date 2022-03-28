@@ -5,7 +5,7 @@ int gui_hatch_interactive(gui_obj *gui){
 	/* Initially, uses a lwpolyline (without bulge) as bondary. */
 	if (gui->modal == HATCH){
 		static dxf_node *new_el;
-		if (!gui->hatch_sel){	
+		if (!gui->hatch_sel){
 			if (gui->step == 0){
 				gui->free_sel = 0;
 				if (gui->ev & EV_ENTER){

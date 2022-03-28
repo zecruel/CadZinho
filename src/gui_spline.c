@@ -13,11 +13,11 @@ int gui_spline_interactive(gui_obj *gui){
 				/* create a new DXF spline */
 				new_el = (dxf_node *) dxf_new_lwpolyline (
 					gui->step_x[gui->step], gui->step_y[gui->step], 0.0, /* pt1, */
-					0.0,//gui->bulge, /* bulge */
+					0.0, /* bulge */
 					7, "0", /* color, layer */
 					"Continuous", 0, /* line type, line weight */
 					0, ONE_TIME); /* paper space */
-				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge, DWG_LIFE);
+				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, 0.0, DWG_LIFE);
 				gui->step = 1;
 				gui->en_distance = 1;
 				gui->draw_tmp = 1;

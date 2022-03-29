@@ -1,4 +1,5 @@
 #include "dxf_hatch.h"
+#define TOL 1.0e-9
 
 int dxf_parse_patt(char *buf, struct h_pattern *ret){
 	static char *line, *cur_line, *next_line, line_buf[DXF_MAX_CHARS];
@@ -229,19 +230,39 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list){
 	int loops = 0, ok = 1, pool = 0;
 	
 	pool = hatch->obj.pool;
-	/*============== bondaries =============*/
+	
+	/* create a list to store entitites candidates to form a closed path */
+	list_node * test = list_new(NULL, FRAME_LIFE);
+	
+	/* ======= first get single closed entities =============*/
 	list_node *current = list->next;
 	while (current != NULL){
 		if (current->data){
 			obj = (dxf_node *)current->data;
 			int type = dxf_ident_ent_type(obj);
 			if (type == DXF_LWPOLYLINE){
-				int closed = 0, num_vert = 0;
+				int closed = 0, num_vert = 0, coincident = 0;
 				
 				dxf_node *closed_o = dxf_find_attr_i(obj, 70, 0);
 				if (closed_o) closed = closed_o->value.i_data & 1;
 				
-				if (closed){
+				if (!closed){ /* verify if first and last points are coincident */
+					dxf_node * vert_x, * vert_y, * vert_z, * bulge;
+					double x0, y0, x1, y1;
+					if (dxf_get_vert_idx(obj, 0, &vert_x, &vert_y, &vert_z, &bulge)){ /* get first vertex */
+						x0 = vert_x->value.d_data;
+						y0 = vert_y->value.d_data;
+						if (dxf_get_vert_idx(obj, -1, &vert_x, &vert_y, &vert_z, &bulge) > 1){ /* get last vertex */
+							x1 = vert_x->value.d_data;
+							y1 = vert_y->value.d_data;
+							if (fabs(x0 - x1) < TOL && fabs(y0 - y1) < TOL){
+								coincident = 1; /* is "closed" */
+							}
+						}
+					}
+				}
+				
+				if (closed || coincident){
 					
 					/* boundary type */
 					ok &= dxf_attr_append(hatch, 92, (void *) (int[]){2}, pool); /* polyline*/
@@ -296,8 +317,10 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list){
 					
 					if(ok) loops++;
 				}
-				
-				list_remove(list, current); /* remove from list - processed entity */
+				else{
+					/* store ent in candidates list, to later perform more tests */
+					list_push(test, list_new((void *)obj, FRAME_LIFE));
+				}
 			}
 			else if (type == DXF_CIRCLE){
 				/* boundary type */
@@ -328,7 +351,7 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list){
 				ok &= dxf_attr_append(hatch, 40, (void *) &radius, pool);
 				/* start angle = 0 */
 				ok &= dxf_attr_append(hatch, 50, (void *) (double[]){0.0}, pool);
-				/* end angle = 0 */
+				/* end angle = 360 */
 				ok &= dxf_attr_append(hatch, 51, (void *) (double[]){360.0}, pool);
 				/* counterclockwise flag */
 				ok &= dxf_attr_append(hatch, 73, (void *) (int[]){0}, pool);
@@ -337,8 +360,6 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list){
 				ok &= dxf_attr_append(hatch, 97, (void *) (int[]){0}, pool);
 				
 				if(ok) loops++;
-				
-				list_remove(list, current);  /* remove from list - processed entity */
 			}
 			else if (type == DXF_ELLIPSE){
 				dxf_node *curr_attr = obj->obj.content->next;
@@ -372,7 +393,7 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list){
 					curr_attr = curr_attr->next;
 				}
 				
-				if (fabs(start) < 1e-9 && fabs(end - 2 * M_PI) < 1e-9) { /* full ellipse */
+				if (fabs(start) < 0.01 && fabs(end - 2 * M_PI) < 0.01) { /* full ellipse */
 					/* boundary type */
 					ok &= dxf_attr_append(hatch, 92, (void *) (int[]){1}, pool); /* not polyline*/
 					ok &= dxf_attr_append(hatch, 93, (void *) (int[]){1}, pool); /* number of edges = 1*/
@@ -398,15 +419,104 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list){
 					
 					if(ok) loops++;
 				}
-				list_remove(list, current);  /* remove from list - processed entity */
+				else{
+					
+					/* store ent in candidates list, to later perform more tests */
+					list_push(test, list_new((void *)obj, FRAME_LIFE));
+				}
+			}
+			else if (type == DXF_ARC){
+				dxf_node *curr_attr = obj->obj.content->next;
+				double x0 = 0.0, y0 = 0.0, radius = 0.0;
+				double start = 0.0, end = 0.0;
+				while (curr_attr){
+					switch (curr_attr->value.group){
+						case 10:
+							x0 = curr_attr->value.d_data;
+							break;
+						case 20:
+							y0 = curr_attr->value.d_data;
+							break;
+						case 40:
+							radius = curr_attr->value.d_data;
+							break;
+						case 50:
+							start = curr_attr->value.d_data;
+							break;
+						case 51:
+							end = curr_attr->value.d_data;
+							break;
+					}
+					curr_attr = curr_attr->next;
+				}
+				
+				if (fabs(start) < 0.01 && ( fabs(end) < TOL || fabs(end - 360.0) < 0.01 ) ) { /* full circle */
+					/* boundary type */
+					ok &= dxf_attr_append(hatch, 92, (void *) (int[]){1}, pool); /* not polyline*/
+					ok &= dxf_attr_append(hatch, 93, (void *) (int[]){1}, pool); /* number of edges = 1*/
+					ok &= dxf_attr_append(hatch, 72, (void *) (int[]){2}, pool); /* circular arc*/
+					
+					dxf_node *curr_attr = obj->obj.content->next;
+					double x = 0.0, y = 0.0, radius = 0.0;
+					while (curr_attr){
+						switch (curr_attr->value.group){
+							case 10:
+								x = curr_attr->value.d_data;
+								break;
+							case 20:
+								y = curr_attr->value.d_data;
+								break;
+							case 40:
+								radius = curr_attr->value.d_data;
+								break;
+						}
+						curr_attr = curr_attr->next;
+					}
+					/* center */
+					ok &= dxf_attr_append(hatch, 10, (void *) &x, pool);
+					ok &= dxf_attr_append(hatch, 20, (void *) &y, pool);
+					/* radius */
+					ok &= dxf_attr_append(hatch, 40, (void *) &radius, pool);
+					/* start angle = 0 */
+					ok &= dxf_attr_append(hatch, 50, (void *) (double[]){0.0}, pool);
+					/* end angle = 360 */
+					ok &= dxf_attr_append(hatch, 51, (void *) (double[]){360.0}, pool);
+					/* counterclockwise flag */
+					ok &= dxf_attr_append(hatch, 73, (void *) (int[]){0}, pool);
+					
+					/* number of source boundary objects - ?? */
+					ok &= dxf_attr_append(hatch, 97, (void *) (int[]){0}, pool);
+					
+					if(ok) loops++;
+				}
+				else{
+					
+					/* store ent in candidates list, to later perform more tests */
+					list_push(test, list_new((void *)obj, FRAME_LIFE));
+				}
 			}
 			else if (type == DXF_SPLINE){
-				int flags = 0;
+				int flags = 0, coincident = 0;
 				
 				dxf_node *tmp = dxf_find_attr_i(obj, 70, 0);
 				if (tmp) flags = tmp->value.i_data;
 				
-				if (flags  & 1){ /* closed spline */
+				if (!(flags  & 1)){ /* verify if first and last points are coincident */
+					dxf_node * vert_x, * vert_y, * vert_z, * bulge;
+					double x0, y0, x1, y1;
+					if (dxf_get_vert_idx(obj, 0, &vert_x, &vert_y, &vert_z, &bulge)){ /* get first vertex */
+						x0 = vert_x->value.d_data;
+						y0 = vert_y->value.d_data;
+						if (dxf_get_vert_idx(obj, -1, &vert_x, &vert_y, &vert_z, &bulge) > 1){ /* get last vertex */
+							x1 = vert_x->value.d_data;
+							y1 = vert_y->value.d_data;
+							if (fabs(x0 - x1) < TOL && fabs(y0 - y1) < TOL){
+								coincident = 1; /* is "closed" */
+							}
+						}
+					}
+				}
+				if (flags  & 1 || coincident){ /* closed spline */
 					int degree = 3, rational = 0, periodic = 0, knots = 0, ctrl = 0;
 					periodic = (flags & 2) ? 1 : 0;
 					rational = (flags & 4) ? 1 : 0;
@@ -459,17 +569,44 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list){
 					
 					if(ok) loops++;
 				}
-				
-				list_remove(list, current); /* remove from list - processed entity */
+				else{
+					
+					/* store ent in candidates list, to later perform more tests */
+					list_push(test, list_new((void *)obj, FRAME_LIFE));
+				}
 			}
-			else{
-				list_remove(list, current);  /* remove from list - not supported entity */
+			else if (type == DXF_TEXT){
+				int ini = 0;
+				double x0, y0, z0;
+				double x1, y1, z1;
+				if (obj->obj.graphics){
+					graph_list_ext(obj->obj.graphics, &ini, &x0, &y0, &z0, &x1, &y1, &z1);
+					
+					/* boundary type */
+					ok &= dxf_attr_append(hatch, 92, (void *) (int[]){2}, pool); /* polyline*/
+					ok &= dxf_attr_append(hatch, 72, (void *) (int[]){0}, pool); /* has bulge*/
+					ok &= dxf_attr_append(hatch, 73, (void *) (int[]){1}, pool);
+					ok &= dxf_attr_append(hatch, 93, (void *) (int[]){4}, pool);
+					
+					ok &= dxf_attr_append(hatch, 10, (void *) &x0, pool);
+					ok &= dxf_attr_append(hatch, 20, (void *) &y0, pool);
+					ok &= dxf_attr_append(hatch, 10, (void *) &x1, pool);
+					ok &= dxf_attr_append(hatch, 20, (void *) &y0, pool);
+					ok &= dxf_attr_append(hatch, 10, (void *) &x1, pool);
+					ok &= dxf_attr_append(hatch, 20, (void *) &y1, pool);
+					ok &= dxf_attr_append(hatch, 10, (void *) &x0, pool);
+					ok &= dxf_attr_append(hatch, 20, (void *) &y1, pool);
+					
+					
+					/* number of source boundary objects - ?? */
+					ok &= dxf_attr_append(hatch, 97, (void *) (int[]){0}, pool);
+					
+					if(ok) loops++;
+				}
 			}
 		}
-		else{
-			list_remove(list, current);  /* remove from list - invalid data */
-		}
-		current = list->next; /*reinit list sweep */
+		
+		current = current->next; /* next in main list */
 	}
 	
 	/*===================================*/

@@ -2,6 +2,8 @@
 #define _DXF_HACTH_LIB
 
 #include "dxf.h"
+#include "dxf_ent.h"
+#include "dxf_graph.h"
 
 struct hatch_line {
 	double ang, ox, oy, dx, dy;

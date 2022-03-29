@@ -933,6 +933,14 @@ int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** ver
 	
 	while (current){
 		prev = current;
+		if (pt){ /* reset previous values */
+			pt = 0;
+			x = NULL;
+			y = NULL;
+			z = NULL;
+			bulge = NULL;
+		}
+		
 		if (current->type == DXF_ENT){
 			/*
 			point[0] = of_x;
@@ -1223,8 +1231,6 @@ int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** ver
 			}
 		}
 		if (pt){
-			pt = 0;
-			
 			if( vert_count == idx){
 				*vert_x = x;
 				*vert_y = y;
@@ -1266,6 +1272,15 @@ int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** ver
 				break;
 			}
 		}
+	}
+	
+	if (pt && idx == -1){ /* return last valid point */
+		*vert_x = x;
+		*vert_y = y;
+		*vert_z = z;
+		*vert_b = bulge;
+		
+		return vert_count - 1; /* and its index */
 	}
 	
 	return 0;

@@ -202,6 +202,7 @@ int gui_hatch_interactive(gui_obj *gui){
 					/* make DXF HATCH entity */
 					dxf_node *new_hatch_el = dxf_new_hatch2 (curr_h, gui->sel_list,
 					gui->h_type == HATCH_SOLID, gui->hatch_assoc,
+					gui->hatch_t_box, /* option to make text box boundary */
 					0, 0, /* style, type */
 					rot, scale,
 					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
@@ -346,8 +347,9 @@ int gui_hatch_info (gui_obj *gui){
 			nk_group_end(gui->ctx);
 		}
 		/* associative flag for Hatch*/
-		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.65f, 0.35f});
 		nk_checkbox_label(gui->ctx, "Associative", &gui->hatch_assoc);
+		if (gui->hatch_sel) nk_checkbox_label(gui->ctx, "Text", &gui->hatch_t_box);
 		//nk_checkbox_label(gui->ctx, "Selection", &gui->hatch_sel);
 		/* Selection mode option - Points or Selection */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));

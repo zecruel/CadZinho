@@ -1834,7 +1834,7 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 }
 
 dxf_node * dxf_new_hatch2 (struct h_pattern *pattern, list_node *bound_list,
-int solid, int assoc,
+int solid, int assoc, int t_box,
 int style, /* 0 = normal odd, 1 = outer, 2 = ignore */
 int type, /* 0 = user, 1 = predefined, 2 =custom */
 double rot, double scale,
@@ -1880,7 +1880,7 @@ int color, char *layer, char *ltype, int lw, int paper, int pool){
 	
 	/* make boundaries */
 	ok &= dxf_attr_append(hatch, 91, (void *) &loops, pool);
-	loops = dxf_hatch_bound (hatch, bound_list); 
+	loops = dxf_hatch_bound (hatch, bound_list, t_box); 
 	if (!loops) return NULL; /* error - no valid (closed paths) bounds */
 	dxf_attr_change(hatch, 91, &loops); /* number of boundary loops */
 	

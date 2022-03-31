@@ -1682,6 +1682,7 @@ int gui_start(gui_obj *gui){
 	gui->hatch_fam_idx = 0;
 	gui->hatch_idx = 0;
 	gui->hatch_assoc = 0;
+	gui->hatch_t_box = 0;
 	gui->h_type = HATCH_USER;
 	
 	gui->user_patt.ang = 45.0;

@@ -286,7 +286,7 @@ struct Gui_obj {
 	
 	int text2tag, hide_tag;
 	
-	int hatch_fam_idx, hatch_idx, h_type, hatch_assoc;
+	int hatch_fam_idx, hatch_idx, h_type, hatch_assoc, hatch_t_box;
 	int hatch_sel;
 	
 	int keep_orig;

@@ -253,7 +253,7 @@ static int test_connect(dxf_node *ent_a, dxf_node *ent_b){
 static int dxf_hatch_edge(dxf_node *hatch, dxf_node *ent){
 	if (!hatch) return 0;
 	if (!ent) return 0;
-	int ok = 1, pool = 0;
+	int ok = 1, pool = 0, num_edges = 1;
 	
 	pool = hatch->obj.pool;
 	int type = dxf_ident_ent_type(ent);
@@ -431,8 +431,156 @@ static int dxf_hatch_edge(dxf_node *hatch, dxf_node *ent){
 		/* counterclockwise flag */
 		ok &= dxf_attr_append(hatch, 73, (void *) (int[]){0}, pool);
 	}
+	else if (type == DXF_LWPOLYLINE){
+		/* polyline will exploded in single lines and arcs */
+		dxf_node *curr_attr = ent->obj.content->next;
+		double x = 0.0, y = 0.0, prev_x = 0.0;
+		double next_b = 0.0, bulge = 0.0;
+		double x0 = 0.0, y0 = 0.0;
+		int vert = 0, num_vert = 0;
+		
+		num_edges = 0;
+		
+		while (curr_attr){
+			switch (curr_attr->value.group){
+				case 10:
+					x = curr_attr->value.d_data;
+					vert = 1; /* set flag */
+					break;
+				case 20:
+					y = curr_attr->value.d_data;
+					break;
+				case 42:
+					next_b = curr_attr->value.d_data;
+					break;
+			}
+			
+			if (vert){
+				if (num_vert > 1){
+					if (fabs(bulge) > TOL){ /*bulge is non zero*/
+						double theta, alfa, d;
+						double radius, ang_c, ang_start, ang_end;
+						double center_x, center_y;
+						int ccw;
+						
+						
+						theta = 2 * atan(bulge);
+						alfa = atan2(y - y0, prev_x - x0);
+						d = sqrt( (y - y0) * (y - y0) + (prev_x - x0) * (prev_x - x0) ) / 2;
+						radius = d * (bulge * bulge + 1) / (2 * bulge);
+						
+						ang_c = M_PI + (alfa - M_PI / 2 - theta);
+						center_x = radius * cos(ang_c) + x0;
+						center_y = radius * sin(ang_c) + y0;
+						
+						/* get start and end angles from input coordinates */
+						ang_start = atan2(y0 - center_y, x0 - center_x);
+						ang_end = atan2(y - center_y, prev_x - center_x);
+						
+						ccw = 1;
+						if (bulge < 0){
+							ang_start += M_PI;
+							ang_end += M_PI;
+							ccw = 0;
+						}
+						/* change angles to degrees */
+						ang_start *= 180.0 / M_PI;
+						ang_end *= 180.0 / M_PI;
+						/* add an arc */
+						/* edge type - circular arc */
+						ok &= dxf_attr_append(hatch, 72, (void *) (int[]){2}, pool);
+						/* center */
+						ok &= dxf_attr_append(hatch, 10, (void *) &center_x, pool);
+						ok &= dxf_attr_append(hatch, 20, (void *) &center_y, pool);
+						/* radius */
+						ok &= dxf_attr_append(hatch, 40, (void *) &radius, pool);
+						/* start angle */
+						ok &= dxf_attr_append(hatch, 50, (void *) &ang_start, pool);
+						/* end angle */
+						ok &= dxf_attr_append(hatch, 51, (void *) &ang_end, pool);
+						/* counterclockwise flag */
+						ok &= dxf_attr_append(hatch, 73, (void *) &ccw, pool);
+					}
+					else{ /* add a line */
+						/* edge type - line */
+						ok &= dxf_attr_append(hatch, 72, (void *) (int[]){1}, pool);
+						/* first point */
+						ok &= dxf_attr_append(hatch, 10, (void *) &x0, pool);
+						ok &= dxf_attr_append(hatch, 20, (void *) &y0, pool);
+						/* end point */
+						ok &= dxf_attr_append(hatch, 11, (void *) &prev_x, pool);
+						ok &= dxf_attr_append(hatch, 21, (void *) &y, pool);
+					}
+					num_edges++;
+				}
+				x0 = prev_x;
+				y0 = y;
+				prev_x = x;
+				bulge = next_b;
+				next_b = 0;
+				vert = 0;
+				num_vert++;
+			}
+			curr_attr = curr_attr->next;
+		}
+		/* last vertex */
+		if (fabs(bulge) > TOL){ /*bulge is non zero*/
+			double theta, alfa, d, radius, ang_c, ang_start, ang_end, center_x, center_y;
+			int ccw;
+			
+			
+			theta = 2 * atan(bulge);
+			alfa = atan2(y - y0, prev_x - x0);
+			d = sqrt( (y - y0) * (y - y0) + (prev_x - x0) * (prev_x - x0) ) / 2;
+			radius = d * (bulge * bulge + 1) / (2 * bulge);
+			
+			ang_c = M_PI + (alfa - M_PI / 2 - theta);
+			center_x = radius * cos(ang_c) + x0;
+			center_y = radius * sin(ang_c) + y0;
+			
+			/* get start and end angles from input coordinates */
+			ang_start = atan2(y0 - center_y, x0 - center_x);
+			ang_end = atan2(y - center_y, prev_x - center_x);
+			
+			ccw = 1;
+			if (bulge < 0){
+				ang_start += M_PI;
+				ang_end += M_PI;
+				ccw = 0;
+			}
+			/* change angles to degrees */
+			ang_start *= 180/M_PI;
+			ang_end *= 180/M_PI;
+			/* add an arc */
+			/* edge type - circular arc */
+			ok &= dxf_attr_append(hatch, 72, (void *) (int[]){2}, pool);
+			/* center */
+			ok &= dxf_attr_append(hatch, 10, (void *) &center_x, pool);
+			ok &= dxf_attr_append(hatch, 20, (void *) &center_y, pool);
+			/* radius */
+			ok &= dxf_attr_append(hatch, 40, (void *) &radius, pool);
+			/* start angle */
+			ok &= dxf_attr_append(hatch, 50, (void *) &ang_start, pool);
+			/* end angle */
+			ok &= dxf_attr_append(hatch, 51, (void *) &ang_end, pool);
+			/* counterclockwise flag */
+			ok &= dxf_attr_append(hatch, 73, (void *) &ccw, pool);
+		}
+		else{ /* add a line */
+			/* edge type - line */
+			ok &= dxf_attr_append(hatch, 72, (void *) (int[]){1}, pool);
+			/* first point */
+			ok &= dxf_attr_append(hatch, 10, (void *) &x0, pool);
+			ok &= dxf_attr_append(hatch, 20, (void *) &y0, pool);
+			/* end point */
+			ok &= dxf_attr_append(hatch, 11, (void *) &prev_x, pool);
+			ok &= dxf_attr_append(hatch, 21, (void *) &y, pool);
+		}
+		num_edges++;
+	}
 	else ok = 0;
 	
+	if (ok) return num_edges;
 	return ok;
 }
 
@@ -533,7 +681,7 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list, int t_box){
 				}
 				else{
 					/* store ent in candidates list, to later perform more tests */
-					//list_push(test, list_new((void *)obj, FRAME_LIFE));
+					list_push(test, list_new((void *)obj, FRAME_LIFE));
 				}
 			}
 			else if (type == DXF_CIRCLE){
@@ -774,12 +922,19 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list, int t_box){
 		if (loop_closed){ /* make the hatch boundary */
 			/* boundary type */
 			ok &= dxf_attr_append(hatch, 92, (void *) (int[]){1}, pool); /* not polyline*/
-			ok &= dxf_attr_append(hatch, 93, (void *) &num_el, pool); /* number of edges */
+			ok &= dxf_attr_append(hatch, 93, (void *) (int[]){0}, pool); /* number of edges */
 			
+			num_el = 0;
 			comp_a = loop_cand->next;
 			while (comp_a){ /* write each entity as edge */
-				ok &= dxf_hatch_edge(hatch, (dxf_node *)comp_a->data);
+				num_el += dxf_hatch_edge(hatch, (dxf_node *)comp_a->data);
 				comp_a = comp_a->next;
+			}
+			
+			/* update edges number */
+			dxf_node *edges_o = dxf_find_attr_i(hatch, 93, -1);
+			if(ok && edges_o){
+				edges_o->value.i_data = num_el;
 			}
 			
 			/* number of source boundary objects - ?? */

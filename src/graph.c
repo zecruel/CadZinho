@@ -1200,7 +1200,7 @@ void graph_arc_bulge(graph_obj * master,
 		center_x = radius*cos(ang_c) + pt1_x;
 		center_y = radius*sin(ang_c) + pt1_y;
 		
-		//angulo inicial e final obtidos das coordenadas iniciais
+		/* get start and end angles from input coordinates */
 		ang_start = atan2(pt1_y-center_y,pt1_x-center_x);
 		ang_end = atan2(pt2_y-center_y,pt2_x-center_x);
 		
@@ -1210,11 +1210,10 @@ void graph_arc_bulge(graph_obj * master,
 			ang_end += M_PI;
 			sig = -1;
 		}
-		//converte para garus
+		/* change angles to degrees */
 		ang_start *= 180/M_PI;
 		ang_end *= 180/M_PI;
 		
-		//arco(entidade, camada, center, radius, ang_start, ang_end, cor, esp, sig);
 		graph_arc(master, center_x, center_y, pt1_z, radius, ang_start, ang_end, sig);
 	}
 	else{

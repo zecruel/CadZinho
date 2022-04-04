@@ -224,30 +224,46 @@ int dxf_h_fam_free (struct h_family *fam){
 
 static int test_connect(dxf_node *ent_a, dxf_node *ent_b){
 	dxf_node * vert_x, * vert_y, * vert_z, * bulge;
-	int i, j;
-	double x0, y0, x1, y1;
+	int i, j, idx = 0;
+	double x_a[2], y_a[2], x_b[2], y_b[2];
 	
-	for (i = 0; i > -2; i--){
-		for (j = 0; j > -2; j--){
-			/* get i vertex of ent_a */
-			if (dxf_get_vert_idx(ent_a, i, &vert_x, &vert_y, &vert_z, &bulge)){
-				x0 = vert_x->value.d_data;
-				y0 = vert_y->value.d_data;
-				/* get j vertex of ent_b */
-				if (dxf_get_vert_idx(ent_b, j, &vert_x, &vert_y, &vert_z, &bulge)){
-					x1 = vert_x->value.d_data;
-					y1 = vert_y->value.d_data;
-					if (fabs(x0 - x1) < TOL && fabs(y0 - y1) < TOL){
-						/* is coincident */
-						return 1;
-					}
-				}
+	/* get vertices of ent_a */
+	int type = dxf_ident_ent_type(ent_a);
+	if (type == DXF_LINE || type == DXF_LWPOLYLINE || type == DXF_SPLINE){
+		if (dxf_get_vert_idx(ent_a, 0, &vert_x, &vert_y, &vert_z, &bulge)){
+			x_a[0] = vert_x->value.d_data;
+			y_a[0] = vert_y->value.d_data;
+		}
+		if (dxf_get_vert_idx(ent_a, -1, &vert_x, &vert_y, &vert_z, &bulge)){
+			x_a[1] = vert_x->value.d_data;
+			y_a[1] = vert_y->value.d_data;
+		}
+	}
+	else return 0;
+	/* get vertices of ent_b */
+	type = dxf_ident_ent_type(ent_b);
+	if (type == DXF_LINE || type == DXF_LWPOLYLINE || type == DXF_SPLINE){
+		if (dxf_get_vert_idx(ent_b, 0, &vert_x, &vert_y, &vert_z, &bulge)){
+			x_b[0] = vert_x->value.d_data;
+			y_b[0] = vert_y->value.d_data;
+		}
+		if (dxf_get_vert_idx(ent_b, -1, &vert_x, &vert_y, &vert_z, &bulge)){
+			x_b[1] = vert_x->value.d_data;
+			y_b[1] = vert_y->value.d_data;
+		}
+	}
+	else return 0;
+	
+	for (i = 0; i < 2; i++){
+		for (j = 0; j < 2; j++){
+			if (fabs(x_a[i] - x_b[j]) < TOL && fabs(y_a[i] - y_b[j]) < TOL){
+				/* is coincident */
+				idx += i + 1; /* return vertex index of ent_a */
 			}
 		}
 	}
 	
-	
-	return 0;
+	return idx;
 }
 
 static int dxf_hatch_edge(dxf_node *hatch, dxf_node *ent){
@@ -463,7 +479,6 @@ static int dxf_hatch_edge(dxf_node *hatch, dxf_node *ent){
 						double center_x, center_y;
 						int ccw;
 						
-						
 						theta = 2 * atan(bulge);
 						alfa = atan2(y - y0, prev_x - x0);
 						d = sqrt( (y - y0) * (y - y0) + (prev_x - x0) * (prev_x - x0) ) / 2;
@@ -473,14 +488,14 @@ static int dxf_hatch_edge(dxf_node *hatch, dxf_node *ent){
 						center_x = radius * cos(ang_c) + x0;
 						center_y = radius * sin(ang_c) + y0;
 						
-						/* get start and end angles from input coordinates */
+						/* get start angle from input coordinates */
 						ang_start = atan2(y0 - center_y, x0 - center_x);
-						ang_end = atan2(y - center_y, prev_x - center_x);
-						
+						ang_end = ang_start + 2 * theta;
 						ccw = 1;
-						if (bulge < 0){
-							ang_start += M_PI;
-							ang_end += M_PI;
+						if (radius < 0.0){
+							radius *= -1.0;
+							ang_start *= -1.0;
+							ang_end *= -1.0;
 							ccw = 0;
 						}
 						/* change angles to degrees */
@@ -528,7 +543,6 @@ static int dxf_hatch_edge(dxf_node *hatch, dxf_node *ent){
 			double theta, alfa, d, radius, ang_c, ang_start, ang_end, center_x, center_y;
 			int ccw;
 			
-			
 			theta = 2 * atan(bulge);
 			alfa = atan2(y - y0, prev_x - x0);
 			d = sqrt( (y - y0) * (y - y0) + (prev_x - x0) * (prev_x - x0) ) / 2;
@@ -538,14 +552,15 @@ static int dxf_hatch_edge(dxf_node *hatch, dxf_node *ent){
 			center_x = radius * cos(ang_c) + x0;
 			center_y = radius * sin(ang_c) + y0;
 			
-			/* get start and end angles from input coordinates */
+			/* get start angle from input coordinates */
 			ang_start = atan2(y0 - center_y, x0 - center_x);
-			ang_end = atan2(y - center_y, prev_x - center_x);
+			ang_end = ang_start + 2 * theta;
 			
 			ccw = 1;
-			if (bulge < 0){
-				ang_start += M_PI;
-				ang_end += M_PI;
+			if (radius < 0.0){
+				radius *= -1.0;
+				ang_start *= -1.0;
+				ang_end *= -1.0;
 				ccw = 0;
 			}
 			/* change angles to degrees */
@@ -741,7 +756,7 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list, int t_box){
 				else{
 					
 					/* store ent in candidates list, to later perform more tests */
-					//list_push(test, list_new((void *)obj, FRAME_LIFE));
+					list_push(test, list_new((void *)obj, FRAME_LIFE));
 				}
 			}
 			else if (type == DXF_ARC){
@@ -783,7 +798,7 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list, int t_box){
 				else{
 					
 					/* store ent in candidates list, to later perform more tests */
-					//list_push(test, list_new((void *)obj, FRAME_LIFE));
+					list_push(test, list_new((void *)obj, FRAME_LIFE));
 				}
 			}
 			else if (type == DXF_SPLINE){
@@ -872,6 +887,7 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list, int t_box){
 	list_node * loop_cand; /* list to store loop ents */
 	int loop_closed = 0; /* indicate success in look for closed loop */
 	int num_el = 0; /* elements in loop */
+	int idx, first = 0;
 	
 	/* sweep test list */
 	current = test->next;
@@ -885,25 +901,39 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list, int t_box){
 				dxf_node *ent_a = (dxf_node *)comp_a->data;
 				dxf_node *ent_b = (dxf_node *)comp_b->data;
 				
-				if ( test_connect(ent_a, ent_b)){
+				if ( idx = test_connect(ent_b, ent_a) ){
 					/* ents are connected */
 					list_node *next = comp_b->next;
 					comp_b = comp_a; /* change the pivot */
 					/* store ent in list */
 					list_push(loop_cand, list_new((void *) ent_a, FRAME_LIFE));
+					if (num_el == 0){
+						first = idx;
+						if (idx > 2){
+							/* entities are double connected -> loop is closed */
+							list_push(loop_cand, list_new((void *) ent_b, FRAME_LIFE));
+							num_el = 2; /* store ents in list */
+							loop_closed = 1; /* success -> exit sweeping */
+							break;
+						}
+					}
 					num_el++;
+						
 					/* go to next in test list */
 					if (comp_a != next) comp_a = next;
 					else comp_a = comp_a->next;
 					
 				}
-				else if (num_el > 1){
-					if ( test_connect(ent_a, obj)){
-						/* connections reach to start entity -> loop is closed */
-						list_push(loop_cand, list_new((void *) ent_a, FRAME_LIFE));
-						num_el++; /* store ent in list */
-						loop_closed = 1; /* success -> exit sweeping */
-						break;
+				else if (num_el > 0){
+					if (idx = test_connect(obj, ent_a) ){
+						if ( idx != first ){
+							/* connections reach to start entity -> loop is closed */
+							list_push(loop_cand, list_new((void *) ent_a, FRAME_LIFE));
+							num_el++; /* store ent in list */
+							loop_closed = 1; /* success -> exit sweeping */
+							break;
+						}
+						else comp_a = comp_a->next;
 					}
 					else comp_a = comp_a->next;
 				}
@@ -911,12 +941,14 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list, int t_box){
 			}
 			else comp_a = comp_a->next;
 		}
-		if (num_el > 1 && !loop_closed){ /* test last entity */
-			if ( test_connect((dxf_node *)comp_b->data, obj)){
-				/* connections reach to start entity -> loop is closed */
-				list_push(loop_cand, list_new(obj, FRAME_LIFE));
-				num_el++;
-				loop_closed = 1;
+		if (num_el > 0 && !loop_closed){ /* test last entity */
+			if ( idx = test_connect(obj, (dxf_node *)comp_b->data) ){
+				if ( idx != first ){
+					/* connections reach to start entity -> loop is closed */
+					list_push(loop_cand, list_new(obj, FRAME_LIFE));
+					num_el++;
+					loop_closed = 1;
+				}
 			}
 		}
 		if (loop_closed){ /* make the hatch boundary */

@@ -70,6 +70,8 @@ int gui_hatch_interactive(gui_obj *gui);
 
 int gui_hatch_info (gui_obj *gui);
 
+int gui_hatch_mng (gui_obj *gui);
+
 int gui_mtext_interactive(gui_obj *gui);
 
 int gui_mtext_info (gui_obj *gui);

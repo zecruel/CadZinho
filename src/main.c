@@ -1073,6 +1073,10 @@ int main(int argc, char** argv){
 			gui->show_dim_mng = gui_dim_mng (gui);
 		}
 		
+		if (gui->show_hatch_mng){
+			gui->show_hatch_mng = gui_hatch_mng (gui);
+		}
+		
 		if (progr_win){
 			/* opening */
 			if (nk_begin(gui->ctx, "Progress", nk_rect(200, 200, 400, 40),

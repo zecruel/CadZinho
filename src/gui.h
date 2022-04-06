@@ -390,6 +390,7 @@ struct Gui_obj {
 	int show_blk_mng;
 	int show_ltyp_mng;
 	int show_dim_mng;
+	int show_hatch_mng;
 	int show_config;
 	
 	

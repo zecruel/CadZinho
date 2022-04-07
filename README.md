@@ -6,6 +6,8 @@
 ![issues](https://img.shields.io/github/issues/zecruel/CadZinho)
 ![licence](https://img.shields.io/github/license/zecruel/CadZinho)
 
+![logo](/logo.png)
+
 Minimalist computer aided design (CAD) software
 (SDL 2.0 and OpenGL 3.2 port)
 

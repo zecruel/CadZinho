@@ -489,26 +489,29 @@ int gui_hatch_mng (gui_obj *gui){
 			curr_h = curr_h->next;
 		}
 		
-		/* calcule the ideal scale for preview */
+		/* calcule the ideal (almost) scale for preview */
 		struct hatch_line *curr_l = NULL;
 		if (curr_h){
 			max = 0.0;
-			double patt_len = 0.0;
+			double spc = 0.0;
 			
 			if (patt_idx != last_idx){
 				curr_l = curr_h->lines;
 				while (curr_l){
+					spc = sqrt(curr_l->dx *curr_l->dx + curr_l->dy * curr_l->dy);
 					if (curr_l->num_dash < 2)
-						max = (max > sqrt(curr_l->dx*curr_l->dx + curr_l->dy*curr_l->dy))? max : sqrt(curr_l->dx*curr_l->dx + curr_l->dy*curr_l->dy);
+						max = (max > spc) ? max : spc;
 					else
-						max = (max > sqrt(curr_l->dx*curr_l->dx + curr_l->dy*curr_l->dy)/curr_l->num_dash)? max : sqrt(curr_l->dx*curr_l->dx + curr_l->dy*curr_l->dy)/curr_l->num_dash;
+						max = (max > spc / curr_l->num_dash) ? max : spc / curr_l->num_dash;
+				
 					curr_l = curr_l->next;
 				}
 				
 				if (max > 0.0) patt_scale = 1/max;
 				else patt_scale = 1.0;
 				
-				if (curr_h->num_lines > 1) patt_scale *= sqrt(curr_h->num_lines);
+				//if (curr_h->num_lines > 1) patt_scale *= sqrt(curr_h->num_lines);
+				if (curr_h->num_lines > 1) patt_scale *= 1.0 + (double) curr_h->num_lines / 10.0;
 				
 				patt_rot = 0.0;
 				

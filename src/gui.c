@@ -1639,6 +1639,7 @@ int gui_start(gui_obj *gui){
 	gui->hide_tag = 0;
 	gui->en_distance = 0;
 	gui->entry_relative = 1;
+	gui->rect_polar = 0;
 	
 	gui->action = NONE;
 	gui->modal = SELECT;

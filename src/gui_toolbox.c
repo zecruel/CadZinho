@@ -662,7 +662,7 @@ int gui_bottom_win (gui_obj *gui){
 	{
 		char text[64];
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 55, 5);
-		nk_layout_row_push(gui->ctx, 380);
+		nk_layout_row_push(gui->ctx, 420);
 		
 		/* interface to the user visualize and enter coordinates and distances*/
 		gui_xy(gui);

@@ -64,19 +64,40 @@ int gui_update_pos(gui_obj *gui){
 		
 		/* compute the next point coordinates by axis distances entry */
 		if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000)){
-			/* verify if an axis is locked during a drawing operation */
-			if (gui->lock_ax_y != 0){
-				gui->step_x[gui->step] = gui->step_x[gui->step - 1];
+			if (!gui->rect_polar){
+				/* verify if an axis is locked during a drawing operation */
+				if (gui->lock_ax_y != 0){
+					gui->step_x[gui->step] = gui->step_x[gui->step - 1];
+				}
+				if (gui->lock_ax_x != 0){
+					gui->step_y[gui->step] = gui->step_y[gui->step - 1];
+				}
+				/* check the user entry */
+				if (gui->user_flag_x){
+					gui->step_x[gui->step] = gui->step_x[gui->step - 1] + gui->user_x;
+				}
+				if (gui->user_flag_y){
+					gui->step_y[gui->step] = gui->step_y[gui->step - 1] + gui->user_y;
+				}
 			}
-			if (gui->lock_ax_x != 0){
-				gui->step_y[gui->step] = gui->step_y[gui->step - 1];
-			}
-			/* check the user entry */
-			if (gui->user_flag_x){
-				gui->step_x[gui->step] = gui->step_x[gui->step - 1] + gui->user_x;
-			}
-			if (gui->user_flag_y){
-				gui->step_y[gui->step] = gui->step_y[gui->step - 1] + gui->user_y;
+			else {
+				double dx = (double) gui->mouse_x/gui->zoom + gui->ofs_x - gui->step_x[gui->step - 1];
+				double dy = (double) gui->mouse_y/gui->zoom + gui->ofs_y - gui->step_y[gui->step - 1];
+				double dist = sqrt( dx * dx + dy * dy);
+				double angle = atan2(dy, dx);
+				/* check the user entry */
+				if (gui->user_flag_x){
+					dist = gui->user_x;
+				}
+				if (gui->user_flag_y){
+					angle = gui->user_y * M_PI / 180.0;
+				}
+				if (gui->user_flag_x || gui->user_flag_y){
+					dx = dist * cos(angle);
+					dy = dist * sin(angle);
+					gui->step_x[gui->step] = gui->step_x[gui->step - 1] + dx;
+					gui->step_y[gui->step] = gui->step_y[gui->step - 1] + dy;
+				}
 			}
 		}
 		if ((!gui->entry_relative) && (gui->step >= 0) && (gui->step < 1000)){
@@ -100,17 +121,33 @@ int gui_xy(gui_obj *gui){
 	/* flags to verify which coordinate is predominant */
 	int flag_x = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) >= fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
 	int flag_y = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) < fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
+	int space = 120;
+	
+	double dist = 0.0, angle = 0.0, dx = 0.0, dy = 0.0;
+	if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000)){
+		dx = gui->step_x[gui->step] - gui->step_x[gui->step - 1];
+		dy = gui->step_y[gui->step] - gui->step_y[gui->step - 1];
+		dist = sqrt( dx * dx + dy * dy);
+		angle = atan2(dy, dx) * 180.0 / M_PI;
+	}
 	
 	if (nk_group_begin(gui->ctx, "coord", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 10);
-		nk_layout_row_push(gui->ctx, 20);
-		/* X distance */
-		/* hilite coordinate, if coord is predominant during a drawing operation*/
-		if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000) && (flag_x)){
-			nk_label_colored(gui->ctx, "X=", NK_TEXT_RIGHT, nk_rgb(255,255,0));
-		}
-		else {
-			nk_label(gui->ctx, "X=", NK_TEXT_RIGHT);
+		if (!gui->rect_polar){
+			nk_layout_row_push(gui->ctx, 20);
+			/* X distance */
+			/* hilite coordinate, if coord is predominant during a drawing operation*/
+			if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000) && (flag_x)){
+				nk_label_colored(gui->ctx, "X=", NK_TEXT_RIGHT, nk_rgb(255,255,0));
+			}
+			else {
+				nk_label(gui->ctx, "X=", NK_TEXT_RIGHT);
+			}
+			space = 120;
+		} else {
+			nk_layout_row_push(gui->ctx, 40);
+			nk_label(gui->ctx, "dist=", NK_TEXT_RIGHT);
+			space = 100;
 		}
 		/* verify if the user initiate a number entry during a drawing operation */
 		if (((gui->en_distance)||(!gui->entry_relative)) && (gui->user_number) && (gui->step >= 0) && (gui->step < 1000) &&
@@ -121,7 +158,7 @@ int gui_xy(gui_obj *gui){
 			nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
 		}
 		
-		nk_layout_row_push(gui->ctx, 120);
+		nk_layout_row_push(gui->ctx, space);
 		/* edit to visualize or enter distance */
 		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, user_str_x, 63, nk_filter_float);
 		if (res & NK_EDIT_ACTIVE){ /* enter mode */
@@ -140,8 +177,13 @@ int gui_xy(gui_obj *gui){
 			if ((!gui->entry_relative) && (gui->step >= 0) && (gui->step < 1000)){
 				snprintf(user_str_x, 63, "%f", gui->step_x[gui->step]);
 			}
-			else if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000)){
-				snprintf(user_str_x, 63, "%f", gui->step_x[gui->step] - gui->step_x[gui->step - 1]);
+			else if (gui->en_distance){
+				if (!gui->rect_polar){
+					snprintf(user_str_x, 63, "%f", dx);
+				}
+				else{
+					snprintf(user_str_x, 63, "%f", dist);
+				}
 			}
 			else {
 				snprintf(user_str_x, 63, "%f", 0.0);
@@ -151,15 +193,19 @@ int gui_xy(gui_obj *gui){
 			nk_edit_unfocus(gui->ctx);
 			gui->keyEnter = 0;
 		}
-		
-		nk_layout_row_push(gui->ctx, 20);
-		/* Y distance */
-		/* hilite coordinate, if coord is predominant during a drawing operation*/
-		if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000) && (flag_y)){
-			nk_label_colored(gui->ctx, "Y=", NK_TEXT_RIGHT, nk_rgb(255,255,0));
-		}
-		else {
-			nk_label(gui->ctx, "Y=", NK_TEXT_RIGHT);
+		if (!gui->rect_polar){
+			nk_layout_row_push(gui->ctx, 20);
+			/* Y distance */
+			/* hilite coordinate, if coord is predominant during a drawing operation*/
+			if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000) && (flag_y)){
+				nk_label_colored(gui->ctx, "Y=", NK_TEXT_RIGHT, nk_rgb(255,255,0));
+			}
+			else {
+				nk_label(gui->ctx, "Y=", NK_TEXT_RIGHT);
+			}
+		} else {
+			nk_layout_row_push(gui->ctx, 40);
+			nk_label(gui->ctx, "ang=", NK_TEXT_RIGHT);
 		}
 		/* verify if the user initiate a number entry during a drawing operation */
 		if (((gui->en_distance)||(!gui->entry_relative)) && (gui->user_number) && (gui->step >= 0) && (gui->step < 1000) &&
@@ -170,7 +216,7 @@ int gui_xy(gui_obj *gui){
 			nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
 		}
 		
-		nk_layout_row_push(gui->ctx, 120);
+		nk_layout_row_push(gui->ctx, space);
 		/* edit to visualize or enter distance */
 		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, user_str_y, 63, nk_filter_float);
 		if (res & NK_EDIT_ACTIVE){ /* enter mode */
@@ -189,8 +235,13 @@ int gui_xy(gui_obj *gui){
 			if ((!gui->entry_relative) && (gui->step >= 0) && (gui->step < 1000)){
 				snprintf(user_str_y, 63, "%f", gui->step_y[gui->step]);
 			}
-			else if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000)){
-				snprintf(user_str_y, 63, "%f", gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
+			else if (gui->en_distance){
+				if (!gui->rect_polar){
+					snprintf(user_str_y, 63, "%f", dy);
+				}
+				else{
+					snprintf(user_str_y, 63, "%f", angle);
+				}
 			}
 			else {
 				snprintf(user_str_y, 63, "%f", 0.0);
@@ -201,13 +252,14 @@ int gui_xy(gui_obj *gui){
 			gui->keyEnter = 0;
 		}
 		
-		/* select if entry mode is in absolute coordinates or relative distance*/
-		nk_layout_row_push(gui->ctx, 70);
-		if (gui->entry_relative){
-			nk_selectable_label(gui->ctx, "Relative", NK_TEXT_CENTERED, &gui->entry_relative);
-			flag_x = 1;
+		/* select if entry mode is in rectangular (X,Y) or polar (dist, angle)*/
+		nk_layout_row_push(gui->ctx, 100);
+		if (gui->rect_polar){
+			gui->en_distance = 1; /* in polar mode, always enable distance */
+			gui->entry_relative = 1;
+			nk_selectable_label(gui->ctx, "Polar", NK_TEXT_CENTERED, &gui->rect_polar);
 		}
-		else nk_selectable_label(gui->ctx, "Absolute", NK_TEXT_CENTERED, &gui->entry_relative);
+		else nk_selectable_label(gui->ctx, "Rectangular", NK_TEXT_CENTERED, &gui->rect_polar);
 		nk_layout_row_end(gui->ctx);
 		
 		/* view coordinates of mouse in drawing units */
@@ -219,7 +271,9 @@ int gui_xy(gui_obj *gui){
 		
 		nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
 	
-		nk_layout_row_dynamic(gui->ctx, 17, 1);
+		//nk_layout_row_dynamic(gui->ctx, 17, 1);
+		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 3);
+		nk_layout_row_push(gui->ctx, 292);
 		text_len = snprintf(text, 63, "(%f,  %f)", pos_x, pos_y);
 		nk_label(gui->ctx, text, NK_TEXT_CENTERED);
 		
@@ -282,6 +336,18 @@ int gui_xy(gui_obj *gui){
 		#endif
 		
 		nk_style_pop_font(gui->ctx); /* return to the default font*/
+		
+		/* select if entry mode is in absolute coordinates or relative distance*/
+		if (!gui->rect_polar){
+			nk_layout_row_push(gui->ctx, 100);
+			if (gui->entry_relative){
+				nk_selectable_label(gui->ctx, "Relative", NK_TEXT_CENTERED, &gui->entry_relative);
+				flag_x = 1;
+			}
+			else nk_selectable_label(gui->ctx, "Absolute", NK_TEXT_CENTERED, &gui->entry_relative);
+		}
+		
+		nk_layout_row_end(gui->ctx);
 		
 		nk_group_end(gui->ctx);
 	}

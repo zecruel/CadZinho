@@ -307,6 +307,7 @@ struct Gui_obj {
 	
 	int en_distance; /* enable distance entry */
 	int entry_relative;
+	int rect_polar; /* mode rectangular / polar to enter coordinates or distances */
 	
 	enum Action action;
 	enum Modal modal, prev_modal;

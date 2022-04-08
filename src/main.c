@@ -133,7 +133,7 @@ int main(int argc, char** argv){
 #else
 	//setlocale(LC_ALL,""); //seta a localidade como a current do computador para aceitar acentuacao
 #endif
-	int i, ok;
+	int i, ok, key_space = 0;
 	
 	time_t t;
 	/* Intializes random number generator */
@@ -881,6 +881,9 @@ int main(int argc, char** argv){
 						if ((key == SDLK_RETURN) || (key == SDLK_RETURN2)){
 							gui->keyEnter = 1;
 						}
+						else if (key == SDLK_SPACE){
+							key_space = 1;
+						}
 						else if (key == SDLK_UP){
 							gui->action = VIEW_PAN_U;
 							//printf("%d\n", SDL_GetKeyFromName("x"));
@@ -963,7 +966,7 @@ int main(int argc, char** argv){
 		if (MouseMotion) gui->ev |= EV_MOTION;
 		if (leftMouseButtonClick) gui->ev |= EV_ENTER;
 		if (rightMouseButtonClick) gui->ev |= EV_CANCEL;
-		if (gui->keyEnter) gui->ev |= EV_LOCK_AX;
+		if (key_space) gui->ev |= EV_LOCK_AX;
 		if (ctrlDown) gui->ev |= EV_ADD;
 		
 		/* verify if drawing was changed */
@@ -1843,6 +1846,7 @@ int main(int argc, char** argv){
 		rightMouseButtonClick = 0;
 		MouseMotion = 0;
 		gui->keyEnter = 0;
+		key_space = 0;
 		gui->ev = EV_NONE;
 		
 		//graph_mem_pool(ZERO_GRAPH, 2);

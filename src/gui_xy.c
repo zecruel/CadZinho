@@ -87,12 +87,13 @@ int gui_update_pos(gui_obj *gui){
 				double angle = atan2(dy, dx);
 				/* check the user entry */
 				if (gui->user_flag_x){
-					dist = gui->user_x;
+					dist = gui->user_x; /* distance in x param */
 				}
 				if (gui->user_flag_y){
-					angle = gui->user_y * M_PI / 180.0;
+					angle = gui->user_y * M_PI / 180.0; /* angle in y param  - degrees*/
 				}
 				if (gui->user_flag_x || gui->user_flag_y){
+					/* calcule next coordinate pair from distance and/or angle entered */
 					dx = dist * cos(angle);
 					dy = dist * sin(angle);
 					gui->step_x[gui->step] = gui->step_x[gui->step - 1] + dx;
@@ -119,8 +120,20 @@ int gui_xy(gui_obj *gui){
 	/* interface to the user visualize and enter coordinates and distances*/
 	nk_flags res;
 	/* flags to verify which coordinate is predominant */
-	int flag_x = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) >= fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
-	int flag_y = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) < fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
+	static int flag_x = 0;
+	static int flag_y = 0;
+	
+	if (gui->step == 0){
+		flag_x = 1;
+		flag_y = 0;
+	}
+	else if (!gui->rect_polar && !gui->user_flag_x && !gui->user_flag_y ){
+		flag_x = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) >= fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
+		flag_y = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) < fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
+	}
+	
+	
+	
 	int space = 120;
 	
 	double dist = 0.0, angle = 0.0, dx = 0.0, dy = 0.0;
@@ -146,7 +159,7 @@ int gui_xy(gui_obj *gui){
 			space = 120;
 		} else {
 			nk_layout_row_push(gui->ctx, 40);
-			nk_label(gui->ctx, "dist=", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, "len=", NK_TEXT_RIGHT);
 			space = 100;
 		}
 		/* verify if the user initiate a number entry during a drawing operation */
@@ -179,9 +192,11 @@ int gui_xy(gui_obj *gui){
 			}
 			else if (gui->en_distance){
 				if (!gui->rect_polar){
+					/* rectangular mode - delta x */
 					snprintf(user_str_x, 63, "%f", dx);
 				}
 				else{
+					/* polar mode - distance */
 					snprintf(user_str_x, 63, "%f", dist);
 				}
 			}
@@ -192,6 +207,8 @@ int gui_xy(gui_obj *gui){
 		if (res & NK_EDIT_COMMITED){ /* finish the enter mode */
 			nk_edit_unfocus(gui->ctx);
 			gui->keyEnter = 0;
+			flag_x = 0;
+			flag_y = 1;
 		}
 		if (!gui->rect_polar){
 			nk_layout_row_push(gui->ctx, 20);
@@ -237,9 +254,11 @@ int gui_xy(gui_obj *gui){
 			}
 			else if (gui->en_distance){
 				if (!gui->rect_polar){
+					/* rectangular mode - delta y */
 					snprintf(user_str_y, 63, "%f", dy);
 				}
 				else{
+					/* polar mode - angle in degrees */
 					snprintf(user_str_y, 63, "%f", angle);
 				}
 			}
@@ -250,6 +269,8 @@ int gui_xy(gui_obj *gui){
 		if (res & NK_EDIT_COMMITED){ /* finish the enter mode */
 			nk_edit_unfocus(gui->ctx);
 			gui->keyEnter = 0;
+			flag_x = 1;
+			flag_y = 0;
 		}
 		
 		/* select if entry mode is in rectangular (X,Y) or polar (dist, angle)*/
@@ -257,9 +278,20 @@ int gui_xy(gui_obj *gui){
 		if (gui->rect_polar){
 			gui->en_distance = 1; /* in polar mode, always enable distance */
 			gui->entry_relative = 1;
-			nk_selectable_label(gui->ctx, "Polar", NK_TEXT_CENTERED, &gui->rect_polar);
+			//nk_selectable_label(gui->ctx, "Polar", NK_TEXT_CENTERED, &gui->rect_polar);
+			if(gui_selectable (gui, "Polar", gui->rect_polar)){
+				gui->rect_polar = 0;
+				gui->user_flag_x = 0;
+				gui->user_flag_y = 0;
+			}
 		}
-		else nk_selectable_label(gui->ctx, "Rectangular", NK_TEXT_CENTERED, &gui->rect_polar);
+		else if(gui_selectable (gui, "Rectangular", gui->rect_polar)){
+			gui->rect_polar = 1;
+			gui->user_flag_x = 0;
+			gui->user_flag_y = 0;
+			flag_x = 1;
+			flag_y = 0;
+		}
 		nk_layout_row_end(gui->ctx);
 		
 		/* view coordinates of mouse in drawing units */
@@ -341,10 +373,13 @@ int gui_xy(gui_obj *gui){
 		if (!gui->rect_polar){
 			nk_layout_row_push(gui->ctx, 100);
 			if (gui->entry_relative){
-				nk_selectable_label(gui->ctx, "Relative", NK_TEXT_CENTERED, &gui->entry_relative);
-				flag_x = 1;
+				if(gui_selectable (gui, "Relative", gui->entry_relative)){
+					gui->entry_relative = 0;
+				}
 			}
-			else nk_selectable_label(gui->ctx, "Absolute", NK_TEXT_CENTERED, &gui->entry_relative);
+			else if(gui_selectable (gui, "Absolute", gui->entry_relative)){
+				gui->entry_relative = 1;
+			}
 		}
 		
 		nk_layout_row_end(gui->ctx);

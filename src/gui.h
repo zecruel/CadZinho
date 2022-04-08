@@ -454,6 +454,7 @@ void gui_scr_centralize(gui_obj *gui, double x, double y);
 
 void sel_list_clear (gui_obj *gui);
 
+int gui_selectable (gui_obj *gui, const char *title, int active);
 int gui_tab (gui_obj *gui, const char *title, int active);
 int gui_tab_img (gui_obj *gui, bmp_img *img, int active, int w);
 

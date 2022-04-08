@@ -393,6 +393,18 @@ float gui_str_width(nk_handle handle, float height, const char *text, int len){
 }
 /* ************************************************************* */
 
+int gui_selectable (gui_obj *gui, const char *title, int active){
+	struct nk_style_button *sel_type;
+	
+	/* verify if active or not */
+	sel_type = &gui->b_icon_unsel;
+	if (active) sel_type = &gui->b_icon_sel;
+	/* do the button */
+	int r = nk_button_label_styled(gui->ctx, sel_type, title);
+	
+	return r;
+}
+
 int gui_tab (gui_obj *gui, const char *title, int active){
 	const struct nk_user_font *f = gui->ctx->style.font;
 	struct nk_style_button *sel_type;

@@ -449,7 +449,7 @@ int gui_create_modal_cur(gui_obj *gui){
 	cur_img[RECT] = SVG_RECT;
 	cur_img[TEXT] = SVG_TEXT;
 	cur_img[MTEXT] = SVG_I_TEXT;
-	cur_img[ARC] = SVG_ARC;
+	cur_img[POINT] = SVG_POINT;
 	cur_img[DUPLI] = SVG_DUPLI;
 	cur_img[MOVE] = SVG_MOVE;
 	cur_img[SCALE] = SVG_SCALE;
@@ -1770,6 +1770,8 @@ int gui_start(gui_obj *gui){
 	gui->rot_mode = ROT_ANGLE;
 	
 	gui->expl_mode = EXPL_INS;
+	
+	gui->circle_mode = CIRCLE_FULL;
 	
 	gui->el_mode = EL_FULL;
 	gui->o_view = O_TOP;

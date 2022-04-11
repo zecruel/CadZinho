@@ -1673,7 +1673,7 @@ int main(int argc, char** argv){
 		gui_ed_text_interactive(gui);
 		gui_script_interactive(gui);
 		gui_spline_interactive(gui);
-		gui_arc_interactive(gui);
+		//gui_arc_interactive(gui);
 		gui_ellip_interactive(gui);
 		gui_image_interactive(gui);
 		

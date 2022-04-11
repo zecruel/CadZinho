@@ -78,8 +78,8 @@ int gui_tools_win (gui_obj *gui){
 				gui->modal = ELLIPSE;
 				gui->step = 0;
 			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ARC]))){
-				gui->modal = ARC;
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_POINT]))){
+				//gui->modal = ARC;
 				gui->step = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SPLINE]))){
@@ -185,6 +185,9 @@ int gui_tools_win (gui_obj *gui){
 				gui->modal = DIM_ORDINATE;
 				gui->step = 0;
 			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_CONFIG]))){
+				gui->show_dim_mng = 1;
+			}
 			
 			/* another line --- temporay */
 			nk_layout_row_dynamic(gui->ctx, 28, 1); /*space*/
@@ -216,7 +219,7 @@ int gui_tools_win (gui_obj *gui){
 			gui_paste_info (gui);
 			gui_ed_text_info (gui);
 			gui_spline_info (gui);
-			gui_arc_info (gui);
+			//gui_arc_info (gui);
 			gui_ellip_info (gui);
 			gui_image_info (gui);
 			
@@ -336,7 +339,7 @@ int gui_main_win(gui_obj *gui){
 		}
 		
 		/* managers*/
-		nk_layout_row_push(gui->ctx, 5*(ICON_SIZE + 4 + 4) + 13);
+		nk_layout_row_push(gui->ctx, 4*(ICON_SIZE + 4 + 4) + 13);
 		if (nk_group_begin(gui->ctx, "_managers", NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LAYERS]))){
@@ -350,9 +353,6 @@ int gui_main_win(gui_obj *gui){
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PUZZLE]))){
 				gui->show_blk_mng = 1;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_CONFIG]))){
-				gui->show_dim_mng = 1;
 			}
 			nk_group_end(gui->ctx);
 		}

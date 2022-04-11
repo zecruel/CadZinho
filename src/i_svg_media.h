@@ -109,6 +109,7 @@ enum svg_list {
     SVG_DIM_RADIUS,
     SVG_DIM_ORDINATE,
     SVG_DIM_CONFIG,
+    SVG_POINT,
     SVG_MEDIA_SIZE
 };
 

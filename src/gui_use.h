@@ -89,9 +89,9 @@ int gui_spline_interactive(gui_obj *gui);
 
 int gui_spline_info (gui_obj *gui);
 
-int gui_arc_interactive(gui_obj *gui);
+//int gui_arc_interactive(gui_obj *gui);
 
-int gui_arc_info (gui_obj *gui);
+//int gui_arc_info (gui_obj *gui);
 
 int gui_ellip_interactive(gui_obj *gui);
 

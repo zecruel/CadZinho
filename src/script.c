@@ -3623,8 +3623,8 @@ int script_set_modal (lua_State *L) {
 		lua_pushboolean(L, 1); /* return success */
 		return 1;
 	}
-	else if (strcmp(new_modal, "ARC") == 0){
-		gui->modal = ARC;
+	else if (strcmp(new_modal, "POINT") == 0){
+		gui->modal = POINT;
 		gui->step = 0;
 		lua_pushboolean(L, 1); /* return success */
 		return 1;

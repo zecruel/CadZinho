@@ -552,6 +552,10 @@ char * svg_data[] = {
 	"<path stroke-width=\"3.6\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M83.39 61.58 L63.09 73.28 \"/>"
 	"<path stroke-width=\"3.6\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M83.39 47.39 L83.39 95.8 \"/>"
 	"</svg>"},
+	
+	[SVG_POINT] = (char[]){"<svg width=\"24\" height=\"24\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\">"
+	"  <rect id=\"point1\" stroke-width=\"2\" stroke=\"#f9f9f9\" fill=\"none\" stroke-dasharray=\"null\" stroke-linejoin=\"null\" stroke-linecap=\"null\" x=\"8.3263\" y=\"8.3263\" width=\"3.82462\" height=\"3.75509\"/>"
+	"</svg>"},
 
 };
 

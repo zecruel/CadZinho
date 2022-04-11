@@ -87,7 +87,7 @@ enum Modal {
 	RECT,
 	TEXT,
 	MTEXT,
-	ARC,
+	POINT, /*ARC, */
 	DUPLI,
 	MOVE,
 	SCALE,
@@ -152,6 +152,11 @@ enum Sel_type {
 enum Spline_mode {
 	SP_CTRL,
 	SP_FIT
+};
+
+enum Circle_mode{
+	CIRCLE_FULL,
+	CIRCLE_ARC
 };
 
 enum Ellipse_mode{
@@ -299,6 +304,8 @@ struct Gui_obj {
 	enum Rotate_mode rot_mode;
 	
 	enum Explode_mode expl_mode;
+	
+	enum Circle_mode circle_mode;
 	
 	enum Ellipse_mode el_mode;
 	enum Ortho_view o_view;

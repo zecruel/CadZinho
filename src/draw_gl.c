@@ -37,6 +37,8 @@ int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
 	static int init = 0;
 	
 	if (!init && !clear){ /* init OpenGL */
+		//printf("%s\n", glGetString(GL_VERSION) );
+		
 		/* buffer setup */
 		GLsizei vs = sizeof(struct Vertex);
 		size_t vp = offsetof(struct Vertex, pos);
@@ -1099,10 +1101,14 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 							if (xd0 != xd1 || yd0 != yd1 || zd0 != zd1){
 								draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
 							} else { /* draw a dot */
-								int t = thick;
-								if (t < 1) t = 1;
-								draw_gl_quad (gl_ctx, (int []){xd0, yd0 + t, zd0}, (int []){xd0, yd0, zd0}, 
-									(int []){xd0 + t, yd0 + t, zd0}, (int []){xd0 + t, yd0, zd0});
+								float t = thick, tx, ty;
+								if (t < 2.0) t = 2.0;
+								tx = t * 0.5 * cosine;
+								ty = t * 0.5 * sine;
+								draw_gl_quad (gl_ctx, (int []){p1x - tx - ty + 0.5, p1y + tx - ty, zd0}, 
+									(int []){p1x - tx + ty, p1y - tx - ty, zd0}, 
+									(int []){p1x + tx - ty, p1y + tx + ty, zd0},
+									(int []){p1x + tx + ty, p1y - tx + ty, zd0});
 							}
 						}
 					}
@@ -1125,10 +1131,14 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 							if (xd0 != xd1 || yd0 != yd1 || zd0 != zd1){
 								draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
 							} else { /* draw a dot */
-								int t = thick;
-								if (t < 1) t = 1;
-								draw_gl_quad (gl_ctx, (int []){xd0, yd0 + t, zd0}, (int []){xd0, yd0, zd0}, 
-									(int []){xd0 + t, yd0 + t, zd0}, (int []){xd0 + t, yd0, zd0});
+								float t = thick, tx, ty;
+								if (t < 2.0) t = 2.0;
+								tx = t * 0.5 * cosine;
+								ty = t * 0.5 * sine;
+								draw_gl_quad (gl_ctx, (int []){p1x - tx - ty, p1y + tx - ty, zd0}, 
+									(int []){p1x - tx + ty, p1y - tx - ty, zd0}, 
+									(int []){p1x + tx - ty, p1y + tx + ty, zd0},
+									(int []){p1x + tx + ty, p1y - tx + ty, zd0});
 							}
 						}
 						p1x = p2x;
@@ -1218,7 +1228,15 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 				
 				if (master->pattern[0] >= 0.0)
 					//bmp_line_norm(img, x0, y0, x1, y1, -sine, cosine);
-					draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
+					//draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
+					if (xd0 != xd1 || yd0 != yd1 || zd0 != zd1){
+						draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
+					} else { /* draw a dot */
+						int t = thick * 0.5 + 0.5;
+						if (t < 1) t = 1;
+						draw_gl_quad (gl_ctx, (int []){xd0 - t, yd0 + t, zd0}, (int []){xd0 - t, yd0 - t, zd0}, 
+							(int []){xd0 + t, yd0 + t, zd0}, (int []){xd0 + t, yd0 - t, zd0});
+					}
 				
 				current = current->next; /* go to next */
 			}

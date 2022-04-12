@@ -9,6 +9,8 @@ extern bmp_color dxf_colors[];
 
 int dxf_hatch_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx);
 
+graph_obj * dxf_point_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx);
+
 int dxf_ent_get_color(dxf_drawing *drawing, dxf_node * ent, int ins_color){
 	int color = 7;
 	if((ent) && (drawing)){
@@ -3707,7 +3709,16 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			}
 			else if (strcmp(current->obj.name, "POINT") == 0){
 				ent_type = DXF_POINT;
+				curr_graph = dxf_point_parse(drawing, current, p_space, pool_idx);
+				if (curr_graph){
+					
+					/* store the graph in the return vector */
+					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
+					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_NONE);
+					mod_idx++;
+				}
 				
+			
 				
 			}
 			
@@ -5267,6 +5278,62 @@ graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						curr_graph->v[2] = v_z;
 					}
 				}
+			}
+			
+			return curr_graph;
+		}
+	}
+	return NULL;
+}
+
+
+graph_obj * dxf_point_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int pool_idx){
+	if(ent){
+		dxf_node *current = NULL;
+		double pt1_x = 0, pt1_y = 0, pt1_z = 0;
+		char tmp_str[20];
+		
+		/*flags*/
+		int paper = 0;
+		
+		if (ent->type == DXF_ENT){
+			if (ent->obj.content){
+				current = ent->obj.content->next;
+				//printf("%s\n", ent->obj.name);
+			}
+		}
+		while (current){
+			if (current->type == DXF_ATTR){ /* DXF attibute */
+				switch (current->value.group){
+					case 10:
+						pt1_x = current->value.d_data;
+						break;
+					case 20:
+						pt1_y = current->value.d_data;
+						break;
+					case 30:
+						pt1_z = current->value.d_data;
+						break;
+					case 67:
+						paper = current->value.i_data;
+						break;
+					case 101:
+						strcpy(tmp_str, current->value.s_data);
+						str_upp(tmp_str);
+						char *tmp = trimwhitespace(tmp_str);
+						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
+							current = NULL;
+							continue;
+						}
+				}
+			}
+			current = current->next; /* go to the next in the list */
+		}
+		if (((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))){
+			graph_obj *curr_graph = graph_new(pool_idx);
+			
+			if (curr_graph){
+				line_add(curr_graph, pt1_x, pt1_y, pt1_z, pt1_x, pt1_y, pt1_z);
 			}
 			
 			return curr_graph;

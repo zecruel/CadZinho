@@ -2993,3 +2993,37 @@ int dxf_new_dim_sty (dxf_drawing *drawing, dxf_dimsty dim_sty){
 	
 	return ok;
 }
+
+dxf_node * dxf_new_point (double x0, double y0, double z0,
+int color, char *layer, char *ltype, int lw, int paper, int pool){
+	
+	/* create a new DXF POINT */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbEntity";
+	const char *dxf_subclass = "AcDbPoint";
+	int ok = 1;
+	dxf_node * new_point = dxf_obj_new ("POINT", pool);
+	
+	ok &= dxf_attr_append(new_point, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_point, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_point, 67, (void *) &paper, pool);
+	ok &= dxf_attr_append(new_point, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_point, 6, (void *) ltype, pool);
+	ok &= dxf_attr_append(new_point, 62, (void *) &color, pool);
+	ok &= dxf_attr_append(new_point, 370, (void *) &lw, pool);
+	
+	ok &= dxf_attr_append(new_point, 100, (void *) dxf_subclass, pool);
+	
+	ok &= dxf_attr_append(new_point, 10, (void *) &x0, pool);
+	ok &= dxf_attr_append(new_point, 20, (void *) &y0, pool);
+	ok &= dxf_attr_append(new_point, 30, (void *) &z0, pool);
+	ok &= dxf_attr_append(new_point, 210, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_point, 220, (void *) (double []){0.0}, pool);
+	ok &= dxf_attr_append(new_point, 230, (void *) (double []){1.0}, pool);
+	
+	if(ok){
+		return new_point;
+	}
+
+	return NULL;
+}

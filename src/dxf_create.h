@@ -187,4 +187,7 @@ int color, char *layer, char *ltype, int lw, int paper, int pool);
 
 int dxf_new_dim_sty (dxf_drawing *drawing, dxf_dimsty dim_sty);
 
+dxf_node * dxf_new_point (double x0, double y0, double z0,
+int color, char *layer, char *ltype, int lw, int paper, int pool);
+
 #endif

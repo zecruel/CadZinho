@@ -79,7 +79,7 @@ int gui_tools_win (gui_obj *gui){
 				gui->step = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_POINT]))){
-				//gui->modal = ARC;
+				gui->modal = POINT;
 				gui->step = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SPLINE]))){
@@ -219,7 +219,7 @@ int gui_tools_win (gui_obj *gui){
 			gui_paste_info (gui);
 			gui_ed_text_info (gui);
 			gui_spline_info (gui);
-			//gui_arc_info (gui);
+			gui_point_info (gui);
 			gui_ellip_info (gui);
 			gui_image_info (gui);
 			

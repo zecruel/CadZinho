@@ -13,11 +13,26 @@ int gui_update_pos(gui_obj *gui){
 			/* release the lock, if previously active */
 			gui->lock_ax_x = 0;
 			gui->lock_ax_y = 0;
+			if (gui->rect_polar){
+				gui->user_flag_y = 0;
+			}
 		}
 		else{
-			/* activate the lock according coordinate is predominant */
-			gui->lock_ax_x = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) >= fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
-			gui->lock_ax_y = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) < fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
+			if (!gui->rect_polar){
+				/* activate the lock according coordinate is predominant */
+				gui->lock_ax_x = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) >= fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
+				gui->lock_ax_y = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) < fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
+			}
+			else {
+				double dx = (double) gui->mouse_x/gui->zoom + gui->ofs_x - gui->step_x[gui->step - 1];
+				double dy = (double) gui->mouse_y/gui->zoom + gui->ofs_y - gui->step_y[gui->step - 1];
+				double angle = atan2(dy, dx) * 6.0 / M_PI;
+				angle = round(angle) * M_PI / 6.0;
+				gui->user_y = angle * 180.0 / M_PI;
+				
+				gui->lock_ax_y = 1;
+				gui->user_flag_y = 1;
+			}
 		}
 	}
 	

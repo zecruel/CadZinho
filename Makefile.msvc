@@ -63,7 +63,7 @@ OBJS=\
   $(DIR_O)\dxf_dim.obj $(DIR_O)\dxf_edit.obj $(DIR_O)\dxf_ent.obj \
 	$(DIR_O)\dxf_export.obj $(DIR_O)\dxf_graph.obj $(DIR_O)\dxf_hatch.obj $(DIR_O)\dxf_image.obj \
 	$(DIR_O)\dxf_math.obj $(DIR_O)\dxf_print.obj $(DIR_O)\font.obj $(DIR_O)\graph.obj \
-	$(DIR_O)\gui.obj $(DIR_O)\gui_arc.obj $(DIR_O)\gui_attrib.obj $(DIR_O)\gui_block.obj \
+	$(DIR_O)\gui.obj $(DIR_O)\gui_attrib.obj $(DIR_O)\gui_block.obj \
 	$(DIR_O)\gui_circle.obj $(DIR_O)\gui_config.obj \
 	$(DIR_O)\gui_dim.obj $(DIR_O)\gui_dupli.obj \
 	$(DIR_O)\gui_edit_attr.obj $(DIR_O)\gui_edit_text.obj \
@@ -73,6 +73,7 @@ OBJS=\
 	$(DIR_O)\gui_lay.obj $(DIR_O)\gui_line.obj $(DIR_O)\gui_ltype.obj \
 	$(DIR_O)\gui_measure.obj $(DIR_O)\gui_mirror.obj $(DIR_O)\gui_move.obj \
 	$(DIR_O)\gui_mtext.obj $(DIR_O)\gui_paste.obj $(DIR_O)\gui_pline.obj \
+	$(DIR_O)\gui_point.obj \
 	$(DIR_O)\gui_print.obj $(DIR_O)\gui_prop.obj $(DIR_O)\gui_rect.obj \
 	$(DIR_O)\gui_rotate.obj $(DIR_O)\gui_scale.obj $(DIR_O)\gui_script.obj \
 	$(DIR_O)\gui_select.obj $(DIR_O)\gui_spline.obj $(DIR_O)\gui_text.obj \

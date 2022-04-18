@@ -6,8 +6,11 @@ int gui_ellip_interactive(gui_obj *gui){
 	static double start = 0.0, end = 0.0;
 	static double ratio = 1.0, major = 0.0;
 	static double rot = 0.0, sine = 0.0, cosine = 1.0;
+	static double step1_x, step1_y;
 	
 	static dxf_node *new_el;
+	
+	
 	if (gui->step == 0){
 		gui->free_sel = 0;
 		
@@ -16,8 +19,8 @@ int gui_ellip_interactive(gui_obj *gui){
 			/* accept point */
 			if (gui->el_mode == EL_ISO_CIRCLE || gui->el_mode == EL_ISO_ARC){
 				gui->step = 2;
-				gui->step_x[2] = gui->step_x[0];
-				gui->step_y[2] = gui->step_y[0];
+				gui->step_x[1] = gui->step_x[0];
+				gui->step_y[1] = gui->step_y[0];
 			} else gui->step = 1;
 			gui->step_x[gui->step] = gui->step_x[gui->step - 1];
 			gui->step_y[gui->step] = gui->step_y[gui->step - 1];
@@ -30,8 +33,10 @@ int gui_ellip_interactive(gui_obj *gui){
 		}
 	}
 	else if (gui->step == 1){
+		step1_x = gui->step_x[1];
+		step1_y = gui->step_y[1];
 		/* define ellipse's major axis */
-		major = sqrt(pow((gui->step_x[1] - gui->step_x[0]), 2) + pow((gui->step_y[1] - gui->step_y[0]), 2));
+		major = sqrt(pow((step1_x - gui->step_x[0]), 2) + pow((step1_y - gui->step_y[0]), 2));
 		if (major == 0.0) return 0;
 		
 		/* draw a line to helps user to see axis size and direction */
@@ -46,7 +51,7 @@ int gui_ellip_interactive(gui_obj *gui){
 			graph->pattern[1] = -10 / gui->zoom;
 			
 			line_add(graph, gui->step_x[0], gui->step_y[0], 0,
-				gui->step_x[1], gui->step_y[1], 0);
+				step1_x, step1_y, 0);
 			list_node * new_node = list_new(graph, FRAME_LIFE);
 			list_push(gui->phanton, new_node);
 		}
@@ -99,8 +104,8 @@ int gui_ellip_interactive(gui_obj *gui){
 				y = -y;
 			}
 			
-			gui->step_x[1] = x * major + gui->step_x[0];
-			gui->step_y[1] = y * major + gui->step_y[0];
+			step1_x = x * major + gui->step_x[0];
+			step1_y = y * major + gui->step_y[0];
 		} else {
 			ratio = sqrt(pow((gui->step_x[2] - gui->step_x[0]), 2) + pow((gui->step_y[2] - gui->step_y[0]), 2))/major;
 			if (ratio > 1.0) ratio = 1.0; /* limits the minor axis to major axis maximum size*/
@@ -117,15 +122,15 @@ int gui_ellip_interactive(gui_obj *gui){
 			graph->pattern[1] = -10 / gui->zoom;
 			/* major axis */
 			line_add(graph, gui->step_x[0], gui->step_y[0], 0,
-				gui->step_x[1], gui->step_y[1], 0);
+				step1_x, step1_y, 0);
 			/* minor axis */
-			double x = gui->step_x[0] - ratio * (gui->step_y[1] - gui->step_y[0]);
-			double y = gui->step_y[0] + ratio * (gui->step_x[1] - gui->step_x[0]);
+			double x = gui->step_x[0] - ratio * (step1_y - gui->step_y[0]);
+			double y = gui->step_y[0] + ratio * (step1_x - gui->step_x[0]);
 			line_add(graph, gui->step_x[0], gui->step_y[0], 0,
 				x, y, 0);
 			/* ellipse */
 			graph_ellipse(graph, gui->step_x[0], gui->step_y[0], 0.0,
-				gui->step_x[1] - gui->step_x[0], gui->step_y[1] - gui->step_y[0], 0.0,
+				step1_x - gui->step_x[0], step1_y - gui->step_y[0], 0.0,
 				ratio, 0.0, 2*M_PI);
 			
 			list_node * new_node = list_new(graph, FRAME_LIFE);
@@ -152,7 +157,7 @@ int gui_ellip_interactive(gui_obj *gui){
 		/* Define the start parameter in elliptical arcs */
 		
 		/* rotation constants */
-		rot = atan2((gui->step_y[1] - gui->step_y[0]), (gui->step_x[1] - gui->step_x[0]));
+		rot = atan2((step1_y - gui->step_y[0]), (step1_x - gui->step_x[0]));
 		angle_range(&rot);
 		cosine = cos(rot);
 		sine = sin(rot);
@@ -178,7 +183,7 @@ int gui_ellip_interactive(gui_obj *gui){
 			
 			/* major axis*/
 			line_add(graph, gui->step_x[0], gui->step_y[0], 0,
-				gui->step_x[1], gui->step_y[1], 0);
+				step1_x, step1_y, 0);
 			/* line to view start angle */
 			double x = gui->step_x[0] + a*cos(t)*cosine - b*sin(t)*sine;
 			double y = gui->step_y[0] + a*cos(t)*sine + b*sin(t)*cosine;
@@ -186,7 +191,7 @@ int gui_ellip_interactive(gui_obj *gui){
 				x, y, 0);
 			/* ellipse */
 			graph_ellipse(graph, gui->step_x[0], gui->step_y[0], 0.0,
-				gui->step_x[1] - gui->step_x[0], gui->step_y[1] - gui->step_y[0], 0.0,
+				step1_x - gui->step_x[0], step1_y - gui->step_y[0], 0.0,
 				ratio, 0.0, 2*M_PI);
 			list_node * new_node = list_new(graph, FRAME_LIFE);
 			list_push(gui->phanton, new_node);
@@ -231,7 +236,7 @@ int gui_ellip_interactive(gui_obj *gui){
 			graph->pattern[1] = -10 / gui->zoom;
 			/* major axis */
 			line_add(graph, gui->step_x[0], gui->step_y[0], 0,
-				gui->step_x[1], gui->step_y[1], 0);
+				step1_x, step1_y, 0);
 			/* line to view end angle */
 			double x = gui->step_x[0] + a*cos(t)*cosine - b*sin(t)*sine;
 			double y = gui->step_y[0] + a*cos(t)*sine + b*sin(t)*cosine;
@@ -239,7 +244,7 @@ int gui_ellip_interactive(gui_obj *gui){
 				x, y, 0);
 			/*ellipse */
 			graph_ellipse(graph, gui->step_x[0], gui->step_y[0], 0.0,
-				gui->step_x[1] - gui->step_x[0], gui->step_y[1] - gui->step_y[0], 0.0,
+				step1_x - gui->step_x[0], step1_y - gui->step_y[0], 0.0,
 				ratio, t, start);
 			list_node * new_node = list_new(graph, FRAME_LIFE);
 			list_push(gui->phanton, new_node);
@@ -249,7 +254,7 @@ int gui_ellip_interactive(gui_obj *gui){
 		if (graph){
 			gui->draw_phanton = 1;
 			graph_ellipse(graph, gui->step_x[0], gui->step_y[0], 0.0,
-				gui->step_x[1] - gui->step_x[0], gui->step_y[1] - gui->step_y[0], 0.0,
+				step1_x - gui->step_x[0], step1_y - gui->step_y[0], 0.0,
 				ratio, start, t);
 			list_node * new_node = list_new(graph, FRAME_LIFE);
 			list_push(gui->phanton, new_node);
@@ -271,7 +276,7 @@ int gui_ellip_interactive(gui_obj *gui){
 	else{
 		/* create a new DXF ellipse */
 		new_el = (dxf_node *) dxf_new_ellipse (gui->step_x[0], gui->step_y[0], 0.0,
-			gui->step_x[1] - gui->step_x[0], gui->step_y[1] - gui->step_y[0], 0.0,
+			step1_x - gui->step_x[0], step1_y - gui->step_y[0], 0.0,
 			ratio, start, end,
 			gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 			gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */

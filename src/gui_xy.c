@@ -106,6 +106,10 @@ int gui_update_pos(gui_obj *gui){
 				}
 				if (gui->user_flag_y){
 					angle = gui->user_y * M_PI / 180.0; /* angle in y param  - degrees*/
+					if (!gui->user_flag_x){
+						dist = fabs(cos(angle) * (gui->step_x[gui->step] - gui->step_x[gui->step - 1]) +
+							sin(angle) * (gui->step_y[gui->step] - gui->step_y[gui->step - 1]));
+					}
 				}
 				if (gui->user_flag_x || gui->user_flag_y){
 					/* calcule next coordinate pair from distance and/or angle entered */
@@ -142,7 +146,7 @@ int gui_xy(gui_obj *gui){
 		flag_x = 1;
 		flag_y = 0;
 	}
-	else if (!gui->rect_polar && !gui->user_flag_x && !gui->user_flag_y ){
+	else if (!gui->rect_polar){
 		flag_x = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) >= fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
 		flag_y = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) < fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
 	}

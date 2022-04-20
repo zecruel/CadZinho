@@ -16,3 +16,9 @@ Try it: https://github.com/zecruel/CadZinho/releases/
 ![Screen shot](/screenshot.png)
 
 ![view](/view.gif)
+
+Demo:
+
+
+https://user-images.githubusercontent.com/17029180/164306370-d19051df-65f4-42a6-9c86-94a550b7e13a.mp4
+

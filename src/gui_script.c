@@ -286,6 +286,41 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	luaL_newlib(T, fs_lib);
 	lua_setglobal(T, "fs");
 	
+	
+	static const struct luaL_Reg sqlite_meths[] = {
+		{"exec", script_sqlite_exec},
+		{"row", script_sqlite_row},
+		{"col", script_sqlite_col},
+		{"tcol", script_sqlite_tcol},
+		{"rows", script_sqlite_rows},
+		{"cols", script_sqlite_cols},
+		{"changes", script_sqlite_changes},
+		{"close",  script_sqlite_close},
+		{"__gc", script_sqlite_close},
+		{NULL, NULL}
+	};
+	static const struct luaL_Reg sqlite_funcs[] = {
+		{"open", script_sqlite_open},
+		{NULL, NULL}
+	};
+	luaL_newlib(T, sqlite_funcs);
+	lua_setglobal(T, "sqlite");
+	
+	/* create a new type of lua userdata to represent a Sqlite database */
+	/* create metatable */
+	luaL_newmetatable(T, "Sqlite_db");
+	/* metatable.__index = metatable */
+	lua_pushvalue(T, -1);
+	lua_setfield(T, -2, "__index");
+	/* register methods */
+	luaL_setfuncs(T, sqlite_meths, 0);
+	
+	/* create a new type of lua userdata to represent a Sqlite statement */
+	/* create metatable */
+	luaL_newmetatable(T, "Sqlite_stmt");
+	lua_pushcfunction(T, script_sqlite_stmt_gc);
+	lua_setfield(T, -2, "__gc");
+	
 	/* adjust package path for "require" in script file*/
 	luaL_Buffer b;  /* to store parcial strings */
 	luaL_buffinit(T, &b); /* init the Lua buffer */

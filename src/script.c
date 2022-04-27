@@ -4257,7 +4257,7 @@ int script_miniz_open (lua_State *L) {
 	return 1;
 }
 
-/* close a previouly opened compressed file (zip) to read content */
+/* close a previouly opened compressed file (zip) */
 /* given parameters:
 	- a Zip object (this function is called as method inside object)
 returns:
@@ -4729,6 +4729,288 @@ int script_fs_script_path(lua_State *L) {
 		strncpy(curr_path, script->path, PATH_MAX_CHARS);
 	
 	lua_pushstring(L, curr_path); /* return success or fail */
+	return 1;
+}
+
+/*========== lazy sqlite =====================*/
+/* Adapted from https://github.com/katlogic/lsqlite */
+
+struct script_sqlite_db {
+	sqlite3 *db;
+	sqlite3_stmt *stmt;
+	int curr_step;
+	int changes;
+};
+
+/* Push one row column value at `idx` to the stack. */
+static void push_field(lua_State *L, struct sqlite3_stmt *row, int idx){
+	switch (sqlite3_column_type(row, idx)) {
+		case SQLITE_INTEGER:
+			lua_pushinteger(L, sqlite3_column_int64(row, idx));
+			return;
+		case SQLITE_FLOAT:
+			lua_pushnumber(L, sqlite3_column_double(row, idx));
+			return;
+		case SQLITE_TEXT:
+		case SQLITE_BLOB: {
+			const char *p = sqlite3_column_blob(row, idx);
+			if (!p) lua_pushnil(L); else
+				lua_pushlstring(L, p, sqlite3_column_bytes(row, idx));
+			return;
+		}
+		case SQLITE_NULL:
+			lua_pushnil(L);
+			return;
+		default:
+			lua_pushnil(L);
+			return;
+	}
+}
+
+/* Push all columns of a row on the stack. Returns number of columns. */
+static int push_fields(lua_State *L, sqlite3_stmt *row){
+	int i, n = sqlite3_data_count(row);
+	for (i = 0; i < n; i++)
+		push_field(L, row, i);
+	return n;
+}
+
+/* Set columns as named keys/values in table `tab`. */
+static void set_fields(lua_State *L, sqlite3_stmt *row){
+	int i, n = sqlite3_data_count(row);
+	for (i = 0; i < n; i++) {
+		push_field(L, row, i);
+		lua_setfield(L, -2, sqlite3_column_name(row, i));
+	}
+}
+
+static int col_iter(lua_State *L){
+	sqlite3_stmt *stmt = *(sqlite3_stmt **)lua_touserdata(L, lua_upvalueindex(1));
+	int err = sqlite3_step(stmt);
+	if (err == SQLITE_ROW) {
+		lua_newtable(L);
+		//lua_createtable(L, 0, sqlite3_data_count(stmt)+1);
+		set_fields(L, stmt);
+		return 1;
+	}
+	
+	return 0;
+	
+}
+
+static int row_iter(lua_State *L){
+	sqlite3_stmt *stmt = *(sqlite3_stmt **)lua_touserdata(L, lua_upvalueindex(1));
+	int err = sqlite3_step(stmt);
+	if (err == SQLITE_ROW) {
+		return push_fields(L, stmt)+1;
+	}
+	
+	return 0;
+	
+}
+
+int script_sqlite_exec(lua_State *L){
+	
+	struct script_sqlite_db * db;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "exec: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( db =  luaL_checkudata(L, 1, "Sqlite_db") )) { /* the Sqlite_db object is a Lua userdata type*/
+		lua_pushliteral(L, "exec: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* check if it is not closed */
+	luaL_argcheck(L, db->db != NULL, 1, "database is closed");
+	
+	luaL_argcheck(L, lua_isstring(L, 2), 2, "string expected");
+	
+	sqlite3_prepare_v2(db->db, lua_tostring(L, 2), -1, &db->stmt, NULL);
+	
+	int err;
+	
+	while (err = sqlite3_step(db->stmt) != SQLITE_DONE) {
+		if (err ==  SQLITE_ERROR) break;
+	}
+	
+	sqlite3_finalize(db->stmt);
+	
+	if (err == SQLITE_DONE || err == SQLITE_OK) {
+		int prev = db->changes;
+		db->changes = sqlite3_total_changes(db->db);
+		lua_pushinteger(L, db->changes - prev);
+		return 1;
+		
+	} else {
+		luaL_error(L, "Error in Sql: %s", sqlite3_errmsg(db->db));
+	}
+	
+	lua_pushnil(L); /* return fail */
+	return 1;
+}
+
+int script_sqlite_stmt_gc(lua_State *L){
+	sqlite3_stmt *stmt = *(sqlite3_stmt **)lua_touserdata(L, 1);
+	sqlite3_finalize(stmt);
+	return 0;
+}
+
+int script_sqlite_row(lua_State *L){
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+int script_sqlite_col(lua_State *L){
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+int script_sqlite_tcol(lua_State *L){
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+int script_sqlite_changes(lua_State *L){
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+int script_sqlite_cols(lua_State *L){
+	struct script_sqlite_db * db;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "close: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( db =  luaL_checkudata(L, 1, "Sqlite_db") )) { /* the Sqlite_db object is a Lua userdata type*/
+		lua_pushliteral(L, "close: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* check if it is not closed */
+	luaL_argcheck(L, db->db != NULL, 1, "database is closed");
+	
+	luaL_argcheck(L, lua_isstring(L, 2), 2, "string expected");
+	
+	sqlite3_stmt **stmt = (sqlite3_stmt **) lua_newuserdata(L, sizeof(sqlite3_stmt *));
+	*stmt = NULL; /* init*/
+	
+	/* set its metatable */
+	luaL_getmetatable(L, "Sqlite_stmt");
+	lua_setmetatable(L, -2);
+	
+	sqlite3_prepare_v2(db->db, lua_tostring(L, 2), -1, stmt, NULL);
+	if (*stmt == NULL) luaL_error(L, "SQL error in statement");
+	
+	
+	lua_pushcclosure(L, col_iter, 1);
+	return 1;
+}
+int script_sqlite_rows(lua_State *L){
+	struct script_sqlite_db * db;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "close: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( db =  luaL_checkudata(L, 1, "Sqlite_db") )) { /* the Sqlite_db object is a Lua userdata type*/
+		lua_pushliteral(L, "close: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* check if it is not closed */
+	luaL_argcheck(L, db->db != NULL, 1, "database is closed");
+	
+	luaL_argcheck(L, lua_isstring(L, 2), 2, "string expected");
+	
+	sqlite3_stmt **stmt = (sqlite3_stmt **) lua_newuserdata(L, sizeof(sqlite3_stmt *));
+	*stmt = NULL; /* init*/
+	
+	/* set its metatable */
+	luaL_getmetatable(L, "Sqlite_stmt");
+	lua_setmetatable(L, -2);
+	
+	sqlite3_prepare_v2(db->db, lua_tostring(L, 2), -1, stmt, NULL);
+	if (*stmt == NULL) luaL_error(L, "SQL error in statement");
+	
+	
+	lua_pushcclosure(L, row_iter, 1);
+	return 1;
+}
+
+/* open a sqlite database and init statement */
+/* given parameters:
+	- sqlite database (file path), as string
+returns:
+	- a Sqlite_db object (use methods to manipulate), or nil if fail
+*/
+int script_sqlite_open(lua_State *L){
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "open: invalid number of arguments");
+		lua_error(L);
+	}
+	luaL_argcheck(L, lua_isstring(L, 1), 1, "string expected");
+	
+	struct script_sqlite_db * db;
+	
+	/* create a userdata object */
+	db = (struct script_sqlite_db *) lua_newuserdatauv(L, sizeof(struct script_sqlite_db), 0); 
+	luaL_getmetatable(L, "Sqlite_db");
+	lua_setmetatable(L, -2);
+	
+	sqlite3_open(lua_tostring(L, 1), &(db->db));
+
+	if (db->db == NULL){
+		lua_pop(L, 1);
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	/* init statement */
+	db->stmt = NULL;
+	db->curr_step = SQLITE_DONE;
+	db->changes = 0;
+	
+	return 1;
+}
+
+/* close a previouly opened sqlite database */
+/* given parameters:
+	- a Sqlite_db object (this function is called as method inside object)
+returns:
+	- a boolean indicating success or fail
+*/
+int script_sqlite_close(lua_State *L){
+	
+	struct script_sqlite_db * db;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "close: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( db =  luaL_checkudata(L, 1, "Sqlite_db") )) { /* the Sqlite_db object is a Lua userdata type*/
+		lua_pushliteral(L, "close: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* check if it is not closed */
+	luaL_argcheck(L, db->db != NULL, 1, "database is closed");
+	
+	//sqlite3_finalize(db->stmt);
+
+	sqlite3_close_v2(db->db);
+	
+	db->db = NULL;
+	
+	lua_pushboolean(L, 1); /* return success */
 	return 1;
 }
 

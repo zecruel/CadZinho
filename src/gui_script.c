@@ -289,9 +289,6 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	
 	static const struct luaL_Reg sqlite_meths[] = {
 		{"exec", script_sqlite_exec},
-		{"row", script_sqlite_row},
-		{"col", script_sqlite_col},
-		{"tcol", script_sqlite_tcol},
 		{"rows", script_sqlite_rows},
 		{"cols", script_sqlite_cols},
 		{"changes", script_sqlite_changes},

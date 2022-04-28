@@ -4735,12 +4735,12 @@ int script_fs_script_path(lua_State *L) {
 /*========== lazy sqlite =====================*/
 /* Adapted from https://github.com/katlogic/lsqlite */
 
-struct script_sqlite_db {
+struct script_sqlite_db { /* sqlite db user object */
 	sqlite3 *db;
-	sqlite3_stmt *stmt;
-	int curr_step;
 	int changes;
 };
+
+/* -------------- Auxiliary functions --------------- */
 
 /* Push one row column value at `idx` to the stack. */
 static void push_field(lua_State *L, struct sqlite3_stmt *row, int idx){
@@ -4784,31 +4784,49 @@ static void set_fields(lua_State *L, sqlite3_stmt *row){
 	}
 }
 
+/* Perform a single step in db statement.
+Return a table with pairs key/values (column name is key) */
 static int col_iter(lua_State *L){
+	/* get current statement (upvalue) */
 	sqlite3_stmt *stmt = *(sqlite3_stmt **)lua_touserdata(L, lua_upvalueindex(1));
+	
 	int err = sqlite3_step(stmt);
 	if (err == SQLITE_ROW) {
 		lua_newtable(L);
-		//lua_createtable(L, 0, sqlite3_data_count(stmt)+1);
 		set_fields(L, stmt);
 		return 1;
 	}
 	
+	/* end - no more steps to perform */
 	return 0;
 	
 }
 
+/* Perform a single step in db statement.
+Return columns values */
 static int row_iter(lua_State *L){
+	/* get current statement (upvalue) */
 	sqlite3_stmt *stmt = *(sqlite3_stmt **)lua_touserdata(L, lua_upvalueindex(1));
+	
 	int err = sqlite3_step(stmt);
 	if (err == SQLITE_ROW) {
-		return push_fields(L, stmt)+1;
+		return push_fields(L, stmt);
 	}
 	
+	/* end - no more steps to perform */
 	return 0;
 	
 }
 
+/*------------ binding functions to library ---------- */
+
+/* full execution of a sqlite statement in database (usually SQL modify operations that do not return values)*/
+/* given parameters:
+	- a Sqlite_db object (this function is called as method inside object)
+	- a SQL statement, as text string
+returns:
+	- current number of changes in db, as number
+*/
 int script_sqlite_exec(lua_State *L){
 	
 	struct script_sqlite_db * db;
@@ -4829,17 +4847,21 @@ int script_sqlite_exec(lua_State *L){
 	
 	luaL_argcheck(L, lua_isstring(L, 2), 2, "string expected");
 	
-	sqlite3_prepare_v2(db->db, lua_tostring(L, 2), -1, &db->stmt, NULL);
+	sqlite3_stmt *stmt;
+	
+	/* sqlite full statement cycle - prepare/step(s)/finalize */
+	sqlite3_prepare_v2(db->db, lua_tostring(L, 2), -1, &stmt, NULL);
 	
 	int err;
 	
-	while (err = sqlite3_step(db->stmt) != SQLITE_DONE) {
+	while (err = sqlite3_step(stmt) != SQLITE_DONE) {
 		if (err ==  SQLITE_ERROR) break;
 	}
 	
-	sqlite3_finalize(db->stmt);
+	sqlite3_finalize(stmt);
 	
 	if (err == SQLITE_DONE || err == SQLITE_OK) {
+		/* return number of current changes */
 		int prev = db->changes;
 		db->changes = sqlite3_total_changes(db->db);
 		lua_pushinteger(L, db->changes - prev);
@@ -4853,28 +4875,48 @@ int script_sqlite_exec(lua_State *L){
 	return 1;
 }
 
+/* garbage colector function for statements in iterators */
 int script_sqlite_stmt_gc(lua_State *L){
 	sqlite3_stmt *stmt = *(sqlite3_stmt **)lua_touserdata(L, 1);
 	sqlite3_finalize(stmt);
 	return 0;
 }
 
-int script_sqlite_row(lua_State *L){
-	lua_pushboolean(L, 1); /* return success */
-	return 1;
-}
-int script_sqlite_col(lua_State *L){
-	lua_pushboolean(L, 1); /* return success */
-	return 1;
-}
-int script_sqlite_tcol(lua_State *L){
-	lua_pushboolean(L, 1); /* return success */
-	return 1;
-}
+/* return total changes in database */
+/* given parameters:
+	- a Sqlite_db object (this function is called as method inside object)
+returns:
+	- total number of changes in db, as number
+*/
 int script_sqlite_changes(lua_State *L){
-	lua_pushboolean(L, 1); /* return success */
+	struct script_sqlite_db * db;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "changes: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( db =  luaL_checkudata(L, 1, "Sqlite_db") )) { /* the Sqlite_db object is a Lua userdata type*/
+		lua_pushliteral(L, "changes: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* check if it is not closed */
+	luaL_argcheck(L, db->db != NULL, 1, "database is closed");
+	
+	db->changes = sqlite3_total_changes(db->db);
+	lua_pushinteger(L, db->changes);
 	return 1;
 }
+
+/* for tab in db:cols()    -    iterator producer */
+/* given parameters:
+	- a Sqlite_db object (this function is called as method inside object)
+	- a SQL statement, as text string
+returns:
+	- table with key/values (column name is key), per row
+*/
 int script_sqlite_cols(lua_State *L){
 	struct script_sqlite_db * db;
 	
@@ -4894,20 +4936,28 @@ int script_sqlite_cols(lua_State *L){
 	
 	luaL_argcheck(L, lua_isstring(L, 2), 2, "string expected");
 	
+	/* create a Sqlite_stmt object */
 	sqlite3_stmt **stmt = (sqlite3_stmt **) lua_newuserdata(L, sizeof(sqlite3_stmt *));
-	*stmt = NULL; /* init*/
-	
-	/* set its metatable */
 	luaL_getmetatable(L, "Sqlite_stmt");
 	lua_setmetatable(L, -2);
 	
+	/* init statement */
+	*stmt = NULL;
 	sqlite3_prepare_v2(db->db, lua_tostring(L, 2), -1, stmt, NULL);
 	if (*stmt == NULL) luaL_error(L, "SQL error in statement");
 	
-	
+	/* return iterator */
 	lua_pushcclosure(L, col_iter, 1);
 	return 1;
 }
+
+/* for col1,col2.. in db:rows()    -  iterator producer*/
+/* given parameters:
+	- a Sqlite_db object (this function is called as method inside object)
+	- a SQL statement, as text string
+returns:
+	- independent columns values, per row
+*/
 int script_sqlite_rows(lua_State *L){
 	struct script_sqlite_db * db;
 	
@@ -4927,22 +4977,22 @@ int script_sqlite_rows(lua_State *L){
 	
 	luaL_argcheck(L, lua_isstring(L, 2), 2, "string expected");
 	
+	/* create a Sqlite_stmt object */
 	sqlite3_stmt **stmt = (sqlite3_stmt **) lua_newuserdata(L, sizeof(sqlite3_stmt *));
-	*stmt = NULL; /* init*/
-	
-	/* set its metatable */
 	luaL_getmetatable(L, "Sqlite_stmt");
 	lua_setmetatable(L, -2);
 	
+	/* init statement */
+	*stmt = NULL;
 	sqlite3_prepare_v2(db->db, lua_tostring(L, 2), -1, stmt, NULL);
 	if (*stmt == NULL) luaL_error(L, "SQL error in statement");
 	
-	
+	/* return iterator */
 	lua_pushcclosure(L, row_iter, 1);
 	return 1;
 }
 
-/* open a sqlite database and init statement */
+/* open a sqlite database */
 /* given parameters:
 	- sqlite database (file path), as string
 returns:
@@ -4964,17 +5014,13 @@ int script_sqlite_open(lua_State *L){
 	luaL_getmetatable(L, "Sqlite_db");
 	lua_setmetatable(L, -2);
 	
+	/* init database */
 	sqlite3_open(lua_tostring(L, 1), &(db->db));
-
 	if (db->db == NULL){
 		lua_pop(L, 1);
 		lua_pushnil(L); /* return fail */
 		return 1;
 	}
-	
-	/* init statement */
-	db->stmt = NULL;
-	db->curr_step = SQLITE_DONE;
 	db->changes = 0;
 	
 	return 1;
@@ -5003,11 +5049,9 @@ int script_sqlite_close(lua_State *L){
 	
 	/* check if it is not closed */
 	luaL_argcheck(L, db->db != NULL, 1, "database is closed");
-	
-	//sqlite3_finalize(db->stmt);
 
+	/* close database */
 	sqlite3_close_v2(db->db);
-	
 	db->db = NULL;
 	
 	lua_pushboolean(L, 1); /* return success */

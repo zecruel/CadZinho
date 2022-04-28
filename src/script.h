@@ -115,9 +115,6 @@ int script_last_blk (lua_State *L);
 
 int script_sqlite_exec(lua_State *L);
 int script_sqlite_stmt_gc(lua_State *L);
-int script_sqlite_row(lua_State *L);
-int script_sqlite_col(lua_State *L);
-int script_sqlite_tcol(lua_State *L);
 int script_sqlite_changes(lua_State *L);
 int script_sqlite_cols(lua_State *L);
 int script_sqlite_rows(lua_State *L);

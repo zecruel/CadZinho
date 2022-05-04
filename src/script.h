@@ -15,6 +15,8 @@ struct script_obj{
 	int active;
 	int dynamic;
 	int do_init;
+	int n_results;
+	int wait_gui_resume;
 	char path[DXF_MAX_CHARS];
 	clock_t time;
 	double timeout;
@@ -31,6 +33,14 @@ struct ent_lua { /* DXF entity object, in Lua userdata */
 	dxf_node *orig_ent;
 	int sel;
 	dxf_drawing *drawing;
+};
+
+enum script_yield_reason {
+	YIELD_NONE,
+	YIELD_DRWG_OPEN,
+	YIELD_DRWG_SAVE,
+	YIELD_DRWG_PRINT,
+	YIELD_GUI_REFRESH
 };
 
 #include "gui.h"
@@ -79,6 +89,7 @@ int script_set_style (lua_State *L);
 int script_set_lw (lua_State *L);
 int script_set_modal (lua_State *L) ;
 int script_new_appid (lua_State *L);
+int script_open_drwg (lua_State *L);
 
 int script_start_dynamic (lua_State *L);
 int script_stop_dynamic (lua_State *L);

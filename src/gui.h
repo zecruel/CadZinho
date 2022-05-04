@@ -429,6 +429,8 @@ struct Gui_obj {
 	char curr_script[PATH_MAX_CHARS];
 	struct script_brk_pt brk_pts[BRK_PTS_MAX];
 	int num_brk_pts;
+	int script_resume_reason;
+	int script_resume;
 	
 	char image_path[DXF_MAX_CHARS];
 	

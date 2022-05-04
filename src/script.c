@@ -3852,6 +3852,78 @@ int script_new_appid (lua_State *L) {
 	return 1;
 }
 
+/* open drawing */
+/* given parameters:
+	- file path, as string
+returns:
+	- boolean, success or fail
+*/
+int script_open_drwg (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "open_drwg: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 1)) { /* arguments types */
+		lua_pushliteral(L, "open_drwg: incorrect argument type");
+		lua_error(L);
+	}
+	
+	char curr_path[PATH_MAX_CHARS+1];
+	strncpy(curr_path, lua_tostring(L, 1), PATH_MAX_CHARS); /* preserve original string */
+	
+	if (strlen(curr_path) < 1){
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	if (!file_exists(curr_path)){
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	gui->action = FILE_OPEN;
+	gui->path_ok = 1;
+	gui->hist_new = 1;
+	strncpy(gui->curr_path, curr_path, PATH_MAX_CHARS); 
+	
+	
+	if (gui->script_resume_reason != YIELD_NONE || gui->script_resume){
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	script->wait_gui_resume = 1;
+	
+	gui->script_resume_reason = YIELD_DRWG_OPEN;
+	
+	if (lua_isyieldable(L)){
+		return lua_yield (L, 0); //I am puzzled why this doesn't work
+	}
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+	
+}
 
 /* ========= dynamic mode functions =========== */
 

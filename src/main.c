@@ -1145,6 +1145,11 @@ int main(int argc, char** argv){
 				wait_open = 0;
 				progr_end = 1;
 				sel_list_clear (gui);
+				
+				if (gui->script_resume_reason == YIELD_DRWG_OPEN){
+					gui->script_resume_reason = YIELD_NONE;
+					gui->script_resume = 1;
+				}
 			}
 			
 		}

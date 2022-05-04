@@ -134,6 +134,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	script->active = 0;
 	script->dynamic = 0;
 	script->do_init = 0;
+	script->wait_gui_resume = 0;
 	strncpy(script->path, fname, DXF_MAX_CHARS - 1);
 	
 	script->timeout = 10.0; /* default timeout value */
@@ -202,6 +203,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"set_lw", script_set_lw},
 		{"set_modal", script_set_modal},
 		{"new_appid", script_new_appid},
+		{"open_drwg", script_open_drwg},
 		
 		{"win_show", script_win_show},
 		{"win_close", script_win_close},
@@ -420,8 +422,8 @@ int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 		//do_add_entry(&gui->list_do, "SCRIPT");
 		
 		lua_getglobal(script->T, "cz_main_func");
-		int n_results = 0; /* for Lua 5.4*/
-		script->status = lua_resume(script->T, NULL, 0, &n_results); /* start thread */
+		script->n_results = 0; /* for Lua 5.4*/
+		script->status = lua_resume(script->T, NULL, 0, &script->n_results); /* start thread */
 		if (script->status != LUA_OK && script->status != LUA_YIELD){
 			/* execution error */
 			snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(script->T, -1));
@@ -491,8 +493,9 @@ int gui_script_exec_file (lua_State *L) {
 		if (gui->lua_script[i].L != NULL && gui->lua_script[i].T != NULL ){
 			if (strcmp (gui->lua_script[i].path, path) == 0){
 				gui->lua_script[i].time = clock();
-				static int n_results = 0; /* for Lua 5.4*/
-				gui->lua_script[i].status = lua_resume(gui->lua_script[i].T, NULL, 0, &n_results);
+				//lua_getglobal(script->T, "cz_main_func");
+				gui->lua_script[i].n_results = 0; /* for Lua 5.4*/
+				gui->lua_script[i].status = lua_resume(gui->lua_script[i].T, NULL, 0, &gui->lua_script[i].n_results);
 				lua_pushboolean(L, 1); /* return success */
 				return 1;
 			}
@@ -615,8 +618,8 @@ int script_win (gui_obj *gui){
 				if (nk_button_symbol(gui->ctx, NK_SYMBOL_TRIANGLE_RIGHT)){
 					if (gui->lua_script[0].status == LUA_YIELD){
 						gui->lua_script[0].time = clock();
-						static int n_results = 0; /* for Lua 5.4*/
-						gui->lua_script[0].status = lua_resume(gui->lua_script[0].T, NULL, 0, &n_results);
+						gui->lua_script[0].n_results = 0; /* for Lua 5.4*/
+						gui->lua_script[0].status = lua_resume(gui->lua_script[0].T, NULL, 0, &gui->lua_script[0].n_results);
 						if (gui->lua_script[0].status != LUA_YIELD && gui->lua_script[0].status != LUA_OK){
 							/* execution error */
 							char msg[DXF_MAX_CHARS];
@@ -854,7 +857,9 @@ int gui_script_interactive(gui_obj *gui){
 	for (i = 0; i < MAX_SCRIPTS; i++){ /* sweep script slots and execute each valid */
 		/* window functions */
 		if (gui->lua_script[i].L != NULL && gui->lua_script[i].T != NULL){
-			if (strlen(gui->lua_script[i].win) > 0 && gui->lua_script[i].active){
+			if (strlen(gui->lua_script[i].win) > 0 && gui->lua_script[i].active &&
+				!gui->lua_script[i].wait_gui_resume)
+			{
 				int win;
 				
 				/* different windows names, according its index, to prevent crashes in nuklear */
@@ -911,6 +916,24 @@ int gui_script_interactive(gui_obj *gui){
 				gui->lua_script[i].win[0] = 0;
 				gui->lua_script[i].dyn_func[0] = 0;
 			}
+			
+			/* resume script waiting gui condition */
+			if (gui->script_resume && gui->lua_script[i].status == LUA_YIELD &&
+				gui->lua_script[i].wait_gui_resume)
+			{
+				
+				gui->lua_script[i].wait_gui_resume = 0;
+				gui->script_resume =  0;
+				gui->lua_script[i].time = clock();
+				gui->lua_script[i].n_results = 0; /* for Lua 5.4*/
+				gui->lua_script[i].status = lua_resume(gui->lua_script[i].T, NULL, 0, &gui->lua_script[i].n_results); /* start thread */
+			}
+			if (strlen(gui->lua_script[i].win) > 0 && gui->lua_script[i].active &&
+				gui->script_resume && gui->lua_script[i].wait_gui_resume)
+			{
+				gui->lua_script[i].wait_gui_resume = 0;
+				gui->script_resume =  0;
+			}	
 		}
 	}
 	return 1;

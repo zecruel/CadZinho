@@ -1851,6 +1851,8 @@ int gui_start(gui_obj *gui){
 	
 	
 	gui->num_brk_pts = 0;
+	gui->script_resume_reason = YIELD_NONE;
+	gui->script_resume = 0;
 	
 	memset(gui->blank_tex, 0, 4*20*600);
 	

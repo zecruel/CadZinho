@@ -3917,7 +3917,7 @@ int script_open_drwg (lua_State *L) {
 	gui->script_resume_reason = YIELD_DRWG_OPEN;
 	
 	if (lua_isyieldable(L)){
-		return lua_yield (L, 0); //I am puzzled why this doesn't work
+		return lua_yield (L, 1); //I am puzzled why this doesn't work
 	}
 	
 	lua_pushboolean(L, 1); /* return success */

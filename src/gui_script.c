@@ -851,6 +851,10 @@ int script_win (gui_obj *gui){
 	return show_script;
 }
 
+/*int script_win_k (lua_State *L, int status, lua_KContext ctx) {
+	return status;
+}*/
+
 int gui_script_interactive(gui_obj *gui){
 	static int i;
 	
@@ -858,7 +862,7 @@ int gui_script_interactive(gui_obj *gui){
 		/* window functions */
 		if (gui->lua_script[i].L != NULL && gui->lua_script[i].T != NULL){
 			if (strlen(gui->lua_script[i].win) > 0 && gui->lua_script[i].active &&
-				!gui->lua_script[i].wait_gui_resume)
+				gui->lua_script[i].status != LUA_YIELD)//!gui->lua_script[i].wait_gui_resume)
 			{
 				int win;
 				
@@ -873,9 +877,16 @@ int gui_script_interactive(gui_obj *gui){
 					NK_WINDOW_SCALABLE|
 					NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE))
 				{
+					int n = lua_gettop(gui->lua_script[i].T);
+					if (n){
+						lua_pop(gui->lua_script[i].T, n);
+					}
 					lua_getglobal(gui->lua_script[i].T, gui->lua_script[i].win);
 					gui->lua_script[i].time = clock();
-					gui->lua_script[i].status = lua_pcall(gui->lua_script[i].T, 0, 0, 0);
+					//gui->lua_script[i].status = lua_pcallk(gui->lua_script[i].T, 0, 0, 0, &gui->lua_script[i], &script_win_k);
+					
+					gui->lua_script[i].n_results = 0; /* for Lua 5.4*/
+					gui->lua_script[i].status = lua_resume(gui->lua_script[i].T, NULL, 0, &gui->lua_script[i].n_results); /* start thread */
 				}
 				nk_end(gui->ctx); /* not allow user to ends windows, to prevent nuklear crashes */
 				
@@ -928,12 +939,13 @@ int gui_script_interactive(gui_obj *gui){
 				gui->lua_script[i].n_results = 0; /* for Lua 5.4*/
 				gui->lua_script[i].status = lua_resume(gui->lua_script[i].T, NULL, 0, &gui->lua_script[i].n_results); /* start thread */
 			}
+			/*
 			if (strlen(gui->lua_script[i].win) > 0 && gui->lua_script[i].active &&
 				gui->script_resume && gui->lua_script[i].wait_gui_resume)
 			{
 				gui->lua_script[i].wait_gui_resume = 0;
 				gui->script_resume =  0;
-			}	
+			}	*/
 		}
 	}
 	return 1;

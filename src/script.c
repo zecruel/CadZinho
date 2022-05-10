@@ -3852,9 +3852,32 @@ int script_new_appid (lua_State *L) {
 	return 1;
 }
 
+
+int script_open_drwg_k (lua_State *L, int status, lua_KContext ctx) {
+	/* continuation function for open drawing */
+	
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/*verify if action is finished with errors */
+	if (script->wait_gui_resume > 0){
+		lua_pushboolean(L, 1); /* return success */
+	}
+	else {
+		lua_pushboolean(L, 0); /* return fail */
+	}
+	
+	script->wait_gui_resume = 0; /*clear current script flag */
+	return 1;
+}
+
 /* open drawing */
 /* given parameters:
 	- file path, as string
+	- don't add file to history, as boolean (optional)
 returns:
 	- boolean, success or fail
 */
@@ -3882,29 +3905,24 @@ int script_open_drwg (lua_State *L) {
 		lua_error(L);
 	}
 	
+	if (gui->script_resume_reason != YIELD_NONE || 
+		gui->script_resume ||
+		!lua_isyieldable(L)
+	){
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
 	char curr_path[PATH_MAX_CHARS+1];
 	strncpy(curr_path, lua_tostring(L, 1), PATH_MAX_CHARS); /* preserve original string */
 	
-	if (strlen(curr_path) < 1){
-		lua_pushboolean(L, 0); /* return fail */
-		return 1;
-	}
-	
-	if (!file_exists(curr_path)){
-		lua_pushboolean(L, 0); /* return fail */
-		return 1;
-	}
-	
+	/* send open drawing command to main loop */
+	gui->script_resume_reason = YIELD_DRWG_OPEN;
 	gui->action = FILE_OPEN;
 	gui->path_ok = 1;
-	gui->hist_new = 1;
-	strncpy(gui->curr_path, curr_path, PATH_MAX_CHARS); 
+	strncpy(gui->curr_path, curr_path, PATH_MAX_CHARS);
 	
-	
-	if (gui->script_resume_reason != YIELD_NONE || gui->script_resume){
-		lua_pushboolean(L, 0); /* return fail */
-		return 1;
-	}
+	gui->hist_new = !lua_toboolean(L, 2);
 	
 	/* get script object from Lua instance */
 	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
@@ -3912,16 +3930,11 @@ int script_open_drwg (lua_State *L) {
 	struct script_obj *script = lua_touserdata (L, -1);
 	lua_pop(L, 1);
 	
-	script->wait_gui_resume = 1;
+	script->wait_gui_resume = 1; /* current script flag, indicating wait for response */
 	
-	gui->script_resume_reason = YIELD_DRWG_OPEN;
-	
-	if (lua_isyieldable(L)){
-		return lua_yield (L, 1); //I am puzzled why this doesn't work
-	}
-	
-	lua_pushboolean(L, 1); /* return success */
-	return 1;
+	/* pause script until gui response */
+	lua_yieldk(L, 0, 0, &script_open_drwg_k);
+	return 0;
 	
 }
 

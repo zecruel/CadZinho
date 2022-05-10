@@ -933,19 +933,12 @@ int gui_script_interactive(gui_obj *gui){
 				gui->lua_script[i].wait_gui_resume)
 			{
 				
-				gui->lua_script[i].wait_gui_resume = 0;
+				gui->lua_script[i].wait_gui_resume = gui->script_resume;
 				gui->script_resume =  0;
 				gui->lua_script[i].time = clock();
 				gui->lua_script[i].n_results = 0; /* for Lua 5.4*/
 				gui->lua_script[i].status = lua_resume(gui->lua_script[i].T, NULL, 0, &gui->lua_script[i].n_results); /* start thread */
 			}
-			/*
-			if (strlen(gui->lua_script[i].win) > 0 && gui->lua_script[i].active &&
-				gui->script_resume && gui->lua_script[i].wait_gui_resume)
-			{
-				gui->lua_script[i].wait_gui_resume = 0;
-				gui->script_resume =  0;
-			}	*/
 		}
 	}
 	return 1;

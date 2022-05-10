@@ -1149,6 +1149,7 @@ int main(int argc, char** argv){
 				if (gui->script_resume_reason == YIELD_DRWG_OPEN){
 					gui->script_resume_reason = YIELD_NONE;
 					gui->script_resume = 1;
+					if(open_prg < 0) gui->script_resume = -1;
 				}
 			}
 			
@@ -1237,6 +1238,10 @@ int main(int argc, char** argv){
 			}
 			else {
 				snprintf(gui->log_msg, 63, "Error in opening drawing: Not file");
+				if (gui->script_resume_reason == YIELD_DRWG_OPEN){
+					gui->script_resume_reason = YIELD_NONE;
+					gui->script_resume = -1;
+				}
 			}
 		}
 		else if((gui->action == FILE_SAVE) && (gui->path_ok)){

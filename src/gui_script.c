@@ -204,6 +204,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"set_modal", script_set_modal},
 		{"new_appid", script_new_appid},
 		{"open_drwg", script_open_drwg},
+		{"save_drwg", script_save_drwg},
 		
 		{"win_show", script_win_show},
 		{"win_close", script_win_close},

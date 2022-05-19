@@ -90,6 +90,8 @@ int script_set_lw (lua_State *L);
 int script_set_modal (lua_State *L) ;
 int script_new_appid (lua_State *L);
 int script_open_drwg (lua_State *L);
+int script_save_drwg (lua_State *L);
+
 
 int script_start_dynamic (lua_State *L);
 int script_stop_dynamic (lua_State *L);

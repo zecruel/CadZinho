@@ -3880,6 +3880,8 @@ int script_open_drwg_k (lua_State *L, int status, lua_KContext ctx) {
 	- don't add file to history, as boolean (optional)
 returns:
 	- boolean, success or fail
+
+Warning: Unsaved changes in current drawing will be lost.
 */
 int script_open_drwg (lua_State *L) {
 	/* get gui object from Lua instance */
@@ -3934,6 +3936,93 @@ int script_open_drwg (lua_State *L) {
 	
 	/* pause script until gui response */
 	lua_yieldk(L, 0, 0, &script_open_drwg_k);
+	return 0;
+	
+}
+
+int script_save_drwg_k (lua_State *L, int status, lua_KContext ctx) {
+	/* continuation function for open drawing */
+	
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/*verify if action is finished with errors */
+	if (script->wait_gui_resume > 0){
+		lua_pushboolean(L, 1); /* return success */
+	}
+	else {
+		lua_pushboolean(L, 0); /* return fail */
+	}
+	
+	script->wait_gui_resume = 0; /*clear current script flag */
+	return 1;
+}
+
+/* save drawing */
+/* given parameters:
+	- file path, as string
+	- don't add file to history, as boolean (optional)
+returns:
+	- boolean, success or fail
+
+Warning: If the file exists, it will be overwritten
+*/
+int script_save_drwg (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "save_drwg: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 1)) { /* arguments types */
+		lua_pushliteral(L, "save_drwg: incorrect argument type");
+		lua_error(L);
+	}
+	
+	if (gui->script_resume_reason != YIELD_NONE || 
+		gui->script_resume ||
+		!lua_isyieldable(L)
+	){
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	char curr_path[PATH_MAX_CHARS+1];
+	strncpy(curr_path, lua_tostring(L, 1), PATH_MAX_CHARS); /* preserve original string */
+	
+	/* send open drawing command to main loop */
+	gui->script_resume_reason = YIELD_DRWG_SAVE;
+	gui->action = FILE_SAVE;
+	gui->path_ok = 1;
+	strncpy(gui->curr_path, curr_path, PATH_MAX_CHARS);
+	
+	gui->hist_new = !lua_toboolean(L, 2);
+	
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	script->wait_gui_resume = 1; /* current script flag, indicating wait for response */
+	
+	/* pause script until gui response */
+	lua_yieldk(L, 0, 0, &script_save_drwg_k);
 	return 0;
 	
 }

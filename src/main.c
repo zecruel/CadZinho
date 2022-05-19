@@ -1091,7 +1091,7 @@ int main(int argc, char** argv){
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				text_len = snprintf(text, 63, "Opening...");
 				nk_label(gui->ctx, text, NK_TEXT_LEFT);
-				nk_progress(gui->ctx, (nk_size *)&gui->progress, 100, NK_FIXED);
+				nk_prog(gui->ctx, (nk_size)gui->progress, 100, NK_FIXED);
 				//nk_popup_end(gui->ctx);
 				nk_end(gui->ctx);
 			}
@@ -1246,18 +1246,30 @@ int main(int argc, char** argv){
 		}
 		else if((gui->action == FILE_SAVE) && (gui->path_ok)){
 			gui->action = NONE; gui->path_ok = 0;
-			
-			if (gui->drawing->main_struct != NULL){
-				//dxf_ent_print_f (gui->drawing->main_struct, url);
-				if (dxf_save (gui->curr_path, gui->drawing)){
+		
+		
+			if (dxf_save (gui->curr_path, gui->drawing)){
+				strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
+				strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
+				
+				save_pt = gui->list_do.current;
+				update_title = 1;
+				if (gui->hist_new){
 					gui_hist_add (gui);
-					strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
-					strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
-					
-					save_pt = gui->list_do.current;
-					update_title = 1;
+				}
+				if (gui->script_resume_reason == YIELD_DRWG_SAVE){
+					gui->script_resume_reason = YIELD_NONE;
+					gui->script_resume = 1;
 				}
 			}
+			else {
+				snprintf(gui->log_msg, 63, "Error in saving drawing");
+				if (gui->script_resume_reason == YIELD_DRWG_SAVE){
+					gui->script_resume_reason = YIELD_NONE;
+					gui->script_resume = -1;
+				}
+			}
+		
 		}
 		else if((gui->action == EXPORT) && (gui->path_ok)) {
 			gui->action = NONE; gui->path_ok = 0;

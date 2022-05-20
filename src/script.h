@@ -37,6 +37,7 @@ struct ent_lua { /* DXF entity object, in Lua userdata */
 
 enum script_yield_reason {
 	YIELD_NONE,
+	YIELD_DRWG_NEW,
 	YIELD_DRWG_OPEN,
 	YIELD_DRWG_SAVE,
 	YIELD_DRWG_PRINT,
@@ -89,9 +90,12 @@ int script_set_style (lua_State *L);
 int script_set_lw (lua_State *L);
 int script_set_modal (lua_State *L) ;
 int script_new_appid (lua_State *L);
+
+int script_new_drwg (lua_State *L) ;
 int script_open_drwg (lua_State *L);
 int script_save_drwg (lua_State *L);
 
+int script_gui_refresh (lua_State *L);
 
 int script_start_dynamic (lua_State *L);
 int script_stop_dynamic (lua_State *L);

@@ -117,6 +117,8 @@ int main(int argc, char** argv){
 	int macro_timer = 0;
 	macro[0] = 0;
 	
+	int refresh_timer = 0;
+	
 	char function_key[20];
 	function_key[0] = 0;
 	
@@ -1191,6 +1193,11 @@ int main(int argc, char** argv){
 			gui->dwg_file[0] = 0;
 			
 			update_title = 1;
+			
+			if (gui->script_resume_reason == YIELD_DRWG_NEW){
+				gui->script_resume_reason = YIELD_NONE;
+				gui->script_resume = 1;
+			}
 		}
 		else if((gui->action == FILE_OPEN) && (gui->path_ok)) {
 			gui->action = NONE; gui->path_ok = 0;
@@ -1900,6 +1907,17 @@ int main(int argc, char** argv){
 		}
 		
 		function_key[0] = 0;
+		
+		if (gui->script_resume_reason == YIELD_GUI_REFRESH){
+			if (refresh_timer < 3){
+				refresh_timer++;
+			} else {
+				refresh_timer = 0;
+				gui->script_resume_reason = YIELD_NONE;
+				gui->script_resume = 1;
+			}
+		}
+		
 	}
 	
 	/* safe quit */

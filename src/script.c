@@ -1598,6 +1598,33 @@ int script_get_text_data (lua_State *L) {
 	return 1;
 }
 
+
+/* get the current drawing path (dir and filename) */
+/* given parameters:
+	- none
+returns:
+	- filename as string (blank if not a saved drawing)
+	- dir as string
+*/
+int script_get_drwg_path (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	lua_pushstring (L, gui->dwg_file);
+	lua_pushstring (L, gui->dwg_dir);
+	
+	return 2;
+}
+
 /* ========= entity modification functions =========== */
 
 /* edit data (tag, value and hidden flag)  of  a ATTRIB in a INSERT entity */

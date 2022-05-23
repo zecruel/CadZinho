@@ -177,6 +177,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"get_blk_ents", script_get_blk_ents},
 		{"get_all", script_get_all},
 		{"get_text_data", script_get_text_data},
+		{"get_drwg_path", script_get_drwg_path},
 		
 		{"edit_attr", script_edit_attr},
 		{"add_ext", script_add_ext},

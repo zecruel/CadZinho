@@ -4316,7 +4316,18 @@ int script_ent_draw (lua_State *L) {
 }
 
 /* ========= gui functions =========== */
+/* using Nuklear immediate GUI functions */
 
+
+/* show a user window */
+/* given parameters:
+	- Lua function name (to call in main loop), as string
+	- window title, as string
+	- x, y position (left up corner) as numbers
+	- width, height as numbers
+returns:
+	- boolean, success or fail
+*/
 int script_win_show (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -4380,6 +4391,12 @@ int script_win_show (lua_State *L) {
 	return 1;
 }
 
+/* close a user window */
+/* given parameters:
+	- none (this call close the window inside current thread)
+returns:
+	- none
+*/
 int script_win_close (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -4410,6 +4427,13 @@ int script_win_close (lua_State *L) {
 	return 0;
 }
 
+/* layout the GUI objects in window */
+/* given parameters:
+	- line height as number
+	- number of columns as number
+returns:
+	- none
+*/
 int script_nk_layout (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -4442,6 +4466,12 @@ int script_nk_layout (lua_State *L) {
 	return 0;
 }
 
+/* GUI button object */
+/* given parameters:
+	- Button text, as string
+returns:
+	- button pressed, as boolean,
+*/
 int script_nk_button (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -4468,11 +4498,17 @@ int script_nk_button (lua_State *L) {
 	
 	int ret = nk_button_label(gui->ctx, lua_tostring(L, 1));
 	
-	if (ret) lua_pushboolean(L, 1); /* return success */
-	else lua_pushboolean(L, 0); /* return fail */
+	lua_pushboolean(L, ret); /* return button status */
+	
 	return 1;
 }
 
+/* GUI label object */
+/* given parameters:
+	- label text, as string
+returns:
+	- none
+*/
 int script_nk_label (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -4503,6 +4539,12 @@ int script_nk_label (lua_State *L) {
 	return 0;
 }
 
+/* GUI edit object (text entry) */
+/* given parameters:
+	- Text to modify (by reference), as table with a "value" named field
+returns:
+	- none
+*/
 int script_nk_edit (lua_State *L) {
 	/* get gui object from Lua instance */
 	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
@@ -4538,6 +4580,226 @@ int script_nk_edit (lua_State *L) {
 	nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, buff, DXF_MAX_CHARS, nk_filter_default);
 	lua_pushstring(L, buff);
 	lua_setfield(L, -2, "value");
+	lua_pop(L, 1);
+	
+	return 0;
+}
+
+/* GUI integer property object (number entry) */
+/* given parameters:
+	- name, as string
+	- current value, as integer
+	- min, as integer (optional)
+	- max, as integer (optional)
+	- step, as integer (optional)
+returns:
+	- new current value, as integer number
+*/
+int script_nk_propertyi (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "nk_propertyi: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_isstring(L, 1)) {
+		lua_pushliteral(L, "nk_propertyi: incorrect argument type");
+		lua_error(L);
+	}
+	
+	if (!lua_isnumber(L, 2)) {
+		lua_pushliteral(L, "nk_propertyi: incorrect argument type");
+		lua_error(L);
+	}
+	
+	int val = lua_tointeger(L, 2);
+	
+	/* get min, if exist*/
+	int min = INT_MIN;
+	if (lua_isinteger(L, 3)) {
+		min = lua_tointeger(L, 3);
+	}
+	
+	/* get max, if exist*/
+	int max = INT_MAX;
+	if (lua_isinteger(L, 4)) {
+		max = lua_tointeger(L, 4);
+	}
+	
+	/* get max, if exist*/
+	int step = 1;
+	if (lua_isinteger(L, 5)) {
+		step = lua_tointeger(L, 5);
+	}
+	
+	int ret = nk_propertyi(gui->ctx, lua_tostring(L, 1), min, val, max, step, (float) step);
+	
+	lua_pushinteger(L, ret); /* return value */
+	
+	return 1;
+}
+
+/* GUI property object (number entry - double) */
+/* given parameters:
+	- name, as string
+	- current value, as number
+	- min, as number (optional)
+	- max, as number (optional)
+	- step, as number (optional)
+returns:
+	- new current value, as integer number
+*/
+int script_nk_propertyd (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "nk_propertyd: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_isstring(L, 1)) {
+		lua_pushliteral(L, "nk_propertyd: incorrect argument type");
+		lua_error(L);
+	}
+	
+	if (!lua_isnumber(L, 2)) {
+		lua_pushliteral(L, "nk_propertyd: incorrect argument type");
+		lua_error(L);
+	}
+	
+	double val = lua_tonumber(L, 2);
+	
+	/* get min, if exist*/
+	double min = LONG_MIN;
+	if (lua_isnumber(L, 3)) {
+		min = lua_tonumber(L, 3);
+	}
+	
+	/* get max, if exist*/
+	double max = LONG_MAX;
+	if (lua_isnumber(L, 4)) {
+		max = lua_tonumber(L, 4);
+	}
+	
+	/* get max, if exist*/
+	double step = SMART_STEP(val);
+	if (lua_isnumber(L, 5)) {
+		step = lua_tonumber(L, 5);
+	}
+	
+	double ret = nk_propertyd(gui->ctx, lua_tostring(L, 1), min, val, max, step, (float) step);
+	
+	lua_pushnumber(L, ret); /* return value */
+	
+	return 1;
+}
+
+/* GUI combo object (list selectable) */
+/* given parameters:
+	- item list (by reference), as table with one named field "value"
+	- box width, as number (optional)
+	- box height, as number (optional)
+returns:
+	- none (current selected item index is updated in table "value" key)
+*/
+int script_nk_combo (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "nk_combo: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_istable(L, 1)) {
+		lua_pushliteral(L, "nk_combo: incorrect argument type");
+		lua_error(L);
+	}
+	lua_getfield(L, 1, "value");
+	if (!lua_isinteger(L, -1)){
+		lua_pushliteral(L, "nk_combo: incorrect argument type");
+		lua_error(L);
+	}
+	int idx = lua_tointeger(L, -1);
+	lua_pop(L, 1);
+	
+	int items = lua_rawlen(L, 1); /* get number of numbered items in table */
+	
+	if (items < 1){ /* no items */
+		return 0;
+	}
+	
+	if (idx > items) idx = 1; /* assert select item */
+	
+	/* get box width, if exist*/
+	int bw = 150;
+	if (lua_isnumber(L, 2)) {
+		bw = lua_tonumber(L, 2);
+	}
+	
+	/* get box heigth, if exist*/
+	int bh = 150;
+	if (lua_isnumber(L, 3)) {
+		bh = lua_tonumber(L, 3);
+	}
+	
+	int i;
+	/* assert height of combo box */
+	int h = items * 25 + 5;
+	h = (h < bh) ? h : bh;
+	
+	lua_geti(L, 1, idx); /* current item selected */
+	if(nk_combo_begin_label(gui->ctx, lua_tostring(L, -1), nk_vec2(bw, h))){
+		/* show each item */
+		nk_layout_row_dynamic(gui->ctx, 20, 1);
+		for (i = 1; i<= items; i++){
+			lua_geti(L, 1, i);
+			if (nk_combo_item_label(gui->ctx, lua_tostring(L, -1), NK_TEXT_LEFT)){
+				idx = i; /* select item */
+			}
+			lua_pop(L, 1);
+		}
+		
+		nk_combo_end(gui->ctx);
+	}
+	lua_pop(L, 1);
+	
+	/* update "value" in table */
+	lua_pushinteger(L, idx);
+	lua_setfield(L, 1, "value");
 	lua_pop(L, 1);
 	
 	return 0;

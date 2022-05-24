@@ -108,6 +108,9 @@ int script_nk_layout (lua_State *L);
 int script_nk_button (lua_State *L);
 int script_nk_label (lua_State *L);
 int script_nk_edit (lua_State *L);
+int script_nk_propertyi (lua_State *L);
+int script_nk_propertyd (lua_State *L);
+int script_nk_combo (lua_State *L);
 
 int script_miniz_open (lua_State *L);
 int script_miniz_close (lua_State *L);

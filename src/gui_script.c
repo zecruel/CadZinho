@@ -217,6 +217,10 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"nk_button", script_nk_button},
 		{"nk_label", script_nk_label},
 		{"nk_edit", script_nk_edit},
+		{"nk_propertyi", script_nk_propertyi},
+		{"nk_propertyd", script_nk_propertyd},
+		{"nk_combo", script_nk_combo},
+		
 		{"start_dynamic", script_start_dynamic},
 		{"stop_dynamic", script_stop_dynamic},
 		{"ent_draw", script_ent_draw},

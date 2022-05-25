@@ -4638,7 +4638,7 @@ int script_nk_propertyi (lua_State *L) {
 		max = lua_tointeger(L, 4);
 	}
 	
-	/* get max, if exist*/
+	/* get step, if exist*/
 	int step = 1;
 	if (lua_isinteger(L, 5)) {
 		step = lua_tointeger(L, 5);
@@ -4704,7 +4704,7 @@ int script_nk_propertyd (lua_State *L) {
 		max = lua_tonumber(L, 4);
 	}
 	
-	/* get max, if exist*/
+	/* get step, if exist*/
 	double step = SMART_STEP(val);
 	if (lua_isnumber(L, 5)) {
 		step = lua_tonumber(L, 5);
@@ -4805,6 +4805,130 @@ int script_nk_combo (lua_State *L) {
 	return 0;
 }
 
+
+/* GUI integer slide object (kind of number entry) */
+/* given parameters:
+	- current value, as integer
+	- min, as integer
+	- max, as integer
+	- step, as integer (optional)
+returns:
+	- new current value, as integer number
+*/
+int script_nk_slide_i (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 3){
+		lua_pushliteral(L, "nk_slide_i: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_isnumber(L, 1)) {
+		lua_pushliteral(L, "nk_slide_i: incorrect argument type");
+		lua_error(L);
+	}
+	
+	if (!lua_isnumber(L, 2)) {
+		lua_pushliteral(L, "nk_slide_i: incorrect argument type");
+		lua_error(L);
+	}
+	
+	if (!lua_isnumber(L, 3)) {
+		lua_pushliteral(L, "nk_slide_i: incorrect argument type");
+		lua_error(L);
+	}
+	
+	int val = lua_tointeger(L, 1);
+	
+	/* get min, max*/
+	int min = lua_tointeger(L, 2);
+	int max = lua_tointeger(L, 3);
+	
+	/* get step, if exist*/
+	int step = 1;
+	if (lua_isinteger(L, 4)) {
+		step = lua_tointeger(L, 4);
+	}
+	
+	int ret = nk_slide_int(gui->ctx, min, val, max, step);
+	
+	lua_pushinteger(L, ret); /* return value */
+	
+	return 1;
+}
+
+/* GUI float slide object (kind of number entry) */
+/* given parameters:
+	- current value, as number
+	- min, as number
+	- max, as number
+	- step, as number (optional)
+returns:
+	- new current value, as number
+*/
+int script_nk_slide_f (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 3){
+		lua_pushliteral(L, "nk_slide_f: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_isnumber(L, 1)) {
+		lua_pushliteral(L, "nk_slide_f: incorrect argument type");
+		lua_error(L);
+	}
+	
+	if (!lua_isnumber(L, 2)) {
+		lua_pushliteral(L, "nk_slide_f: incorrect argument type");
+		lua_error(L);
+	}
+	
+	if (!lua_isnumber(L, 3)) {
+		lua_pushliteral(L, "nk_slide_f: incorrect argument type");
+		lua_error(L);
+	}
+	
+	float val = lua_tonumber(L, 1);
+	
+	/* get min, max*/
+	float min = lua_tonumber(L, 2);
+	float max = lua_tonumber(L, 3);
+	
+	/* get step, if exist*/
+	float step = 1;
+	if (lua_isnumber(L, 4)) {
+		step = lua_tonumber(L, 4);
+	}
+	
+	float ret = nk_slide_float(gui->ctx, min, val, max, step);
+	
+	lua_pushnumber(L, ret); /* return value */
+	
+	return 1;
+}
 
 /* ========= MINIZ ===============================================*/
 

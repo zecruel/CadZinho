@@ -111,6 +111,8 @@ int script_nk_edit (lua_State *L);
 int script_nk_propertyi (lua_State *L);
 int script_nk_propertyd (lua_State *L);
 int script_nk_combo (lua_State *L);
+int script_nk_slide_i (lua_State *L);
+int script_nk_slide_f (lua_State *L);
 
 int script_miniz_open (lua_State *L);
 int script_miniz_close (lua_State *L);

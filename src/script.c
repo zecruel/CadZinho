@@ -4461,6 +4461,8 @@ int script_nk_layout (lua_State *L) {
 		}
 	}
 	
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
 	nk_layout_row_dynamic(gui->ctx, lua_tonumber(L, 1), lua_tonumber(L, 2));
 	
 	return 0;
@@ -4495,6 +4497,8 @@ int script_nk_button (lua_State *L) {
 		lua_pushliteral(L, "nk_button: incorrect argument type");
 		lua_error(L);
 	}
+	
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
 	
 	int ret = nk_button_label(gui->ctx, lua_tostring(L, 1));
 	
@@ -4535,6 +4539,8 @@ int script_nk_label (lua_State *L) {
 	}
 	*/
 	
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
 	nk_label(gui->ctx, lua_tostring(L, 1), NK_TEXT_LEFT);
 	return 0;
 }
@@ -4543,7 +4549,7 @@ int script_nk_label (lua_State *L) {
 /* given parameters:
 	- Text to modify (by reference), as table with a "value" named field
 returns:
-	- none
+	- none (text is updated in passed table "value" key)
 */
 int script_nk_edit (lua_State *L) {
 	/* get gui object from Lua instance */
@@ -4573,6 +4579,9 @@ int script_nk_edit (lua_State *L) {
 		lua_pushliteral(L, "nk_edit: incorrect argument type");
 		lua_error(L);
 	}
+	
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
 	const char *value = lua_tostring(L, -1);
 	lua_pop(L, 1);
 	char buff[DXF_MAX_CHARS];
@@ -4588,12 +4597,12 @@ int script_nk_edit (lua_State *L) {
 /* GUI integer property object (number entry) */
 /* given parameters:
 	- name, as string
-	- current value, as integer
+	- number to modify (by reference), as table with a "value" named field (integer)
 	- min, as integer (optional - default=negative large number)
 	- max, as integer (optional - default=positive large number)
 	- step, as integer (optional - default=1)
 returns:
-	- new current value, as integer number
+	- none (number is updated in passed table "value" key)
 */
 int script_nk_propertyi (lua_State *L) {
 	/* get gui object from Lua instance */
@@ -4619,12 +4628,20 @@ int script_nk_propertyi (lua_State *L) {
 		lua_error(L);
 	}
 	
-	if (!lua_isnumber(L, 2)) {
+	if (!lua_istable(L, 2)) {
+		lua_pushliteral(L, "nk_propertyi: incorrect argument type");
+		lua_error(L);
+	}
+	lua_getfield(L, 2, "value");
+	if (!lua_isnumber(L, -1)) {
 		lua_pushliteral(L, "nk_propertyi: incorrect argument type");
 		lua_error(L);
 	}
 	
-	int val = lua_tointeger(L, 2);
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
+	int val = lua_tointeger(L, -1);
+	lua_pop(L, 1);
 	
 	/* get min, if exist*/
 	int min = INT_MIN;
@@ -4647,19 +4664,21 @@ int script_nk_propertyi (lua_State *L) {
 	int ret = nk_propertyi(gui->ctx, lua_tostring(L, 1), min, val, max, step, (float) step);
 	
 	lua_pushinteger(L, ret); /* return value */
+	lua_setfield(L, 2, "value");
+	lua_pop(L, 1);
 	
-	return 1;
+	return 0;
 }
 
 /* GUI property object (number entry - double) */
 /* given parameters:
 	- name, as string
-	- current value, as number
+	- number to modify (by reference), as table with a "value" named field (number)
 	- min, as number (optional - default=negative large number)
 	- max, as number (optional - default=positive large number)
 	- step, as number (optional - default=proportional to current value)
 returns:
-	- new current value, as integer number
+	- none (number is updated in passed table "value" key)
 */
 int script_nk_propertyd (lua_State *L) {
 	/* get gui object from Lua instance */
@@ -4685,12 +4704,20 @@ int script_nk_propertyd (lua_State *L) {
 		lua_error(L);
 	}
 	
-	if (!lua_isnumber(L, 2)) {
+	if (!lua_istable(L, 2)) {
+		lua_pushliteral(L, "nk_propertyd: incorrect argument type");
+		lua_error(L);
+	}
+	lua_getfield(L, 2, "value");
+	if (!lua_isnumber(L, -1)) {
 		lua_pushliteral(L, "nk_propertyd: incorrect argument type");
 		lua_error(L);
 	}
 	
-	double val = lua_tonumber(L, 2);
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
+	double val = lua_tonumber(L, -1);
+	lua_pop(L, 1);
 	
 	/* get min, if exist*/
 	double min = LONG_MIN;
@@ -4713,8 +4740,10 @@ int script_nk_propertyd (lua_State *L) {
 	double ret = nk_propertyd(gui->ctx, lua_tostring(L, 1), min, val, max, step, (float) step);
 	
 	lua_pushnumber(L, ret); /* return value */
+	lua_setfield(L, 2, "value");
+	lua_pop(L, 1);
 	
-	return 1;
+	return 0;
 }
 
 /* GUI combo object (list selectable) */
@@ -4723,7 +4752,7 @@ int script_nk_propertyd (lua_State *L) {
 	- box width, as number (optional - default=150)
 	- box height, as number (optional - default=150)
 returns:
-	- none (current selected item index is updated in table "value" key)
+	- none (current selected item index is updated in passed table "value" key)
 */
 int script_nk_combo (lua_State *L) {
 	/* get gui object from Lua instance */
@@ -4753,6 +4782,9 @@ int script_nk_combo (lua_State *L) {
 		lua_pushliteral(L, "nk_combo: incorrect argument type");
 		lua_error(L);
 	}
+	
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
 	int idx = lua_tointeger(L, -1);
 	lua_pop(L, 1);
 	
@@ -4808,12 +4840,12 @@ int script_nk_combo (lua_State *L) {
 
 /* GUI integer slide object (kind of number entry) */
 /* given parameters:
-	- current value, as integer
+	- number to modify (by reference), as table with a "value" named field (integer)
 	- min, as integer
 	- max, as integer
 	- step, as integer (optional - default=1)
 returns:
-	- new current value, as integer number
+	- none (number is updated in passed table "value" key)
 */
 int script_nk_slide_i (lua_State *L) {
 	/* get gui object from Lua instance */
@@ -4834,7 +4866,12 @@ int script_nk_slide_i (lua_State *L) {
 		lua_error(L);
 	}
 	
-	if (!lua_isnumber(L, 1)) {
+	if (!lua_istable(L, 1)) {
+		lua_pushliteral(L, "nk_slide_i: incorrect argument type");
+		lua_error(L);
+	}
+	lua_getfield(L, 1, "value");
+	if (!lua_isnumber(L, -1)) {
 		lua_pushliteral(L, "nk_slide_i: incorrect argument type");
 		lua_error(L);
 	}
@@ -4849,7 +4886,10 @@ int script_nk_slide_i (lua_State *L) {
 		lua_error(L);
 	}
 	
-	int val = lua_tointeger(L, 1);
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
+	int val = lua_tointeger(L, -1);
+	lua_pop(L, 1);
 	
 	/* get min, max*/
 	int min = lua_tointeger(L, 2);
@@ -4864,18 +4904,20 @@ int script_nk_slide_i (lua_State *L) {
 	int ret = nk_slide_int(gui->ctx, min, val, max, step);
 	
 	lua_pushinteger(L, ret); /* return value */
+	lua_setfield(L, 1, "value");
+	lua_pop(L, 1);
 	
-	return 1;
+	return 0;
 }
 
 /* GUI float slide object (kind of number entry) */
 /* given parameters:
-	- current value, as number
+	- number to modify (by reference), as table with a "value" named field (number)
 	- min, as number
 	- max, as number
 	- step, as number (optional - default=1)
 returns:
-	- new current value, as number
+	- none (number is updated in passed table "value" key)
 */
 int script_nk_slide_f (lua_State *L) {
 	/* get gui object from Lua instance */
@@ -4896,7 +4938,12 @@ int script_nk_slide_f (lua_State *L) {
 		lua_error(L);
 	}
 	
-	if (!lua_isnumber(L, 1)) {
+	if (!lua_istable(L, 1)) {
+		lua_pushliteral(L, "nk_slide_f: incorrect argument type");
+		lua_error(L);
+	}
+	lua_getfield(L, 1, "value");
+	if (!lua_isnumber(L, -1)) {
 		lua_pushliteral(L, "nk_slide_f: incorrect argument type");
 		lua_error(L);
 	}
@@ -4911,7 +4958,10 @@ int script_nk_slide_f (lua_State *L) {
 		lua_error(L);
 	}
 	
-	float val = lua_tonumber(L, 1);
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
+	float val = lua_tonumber(L, -1);
+	lua_pop(L, 1);
 	
 	/* get min, max*/
 	float min = lua_tonumber(L, 2);
@@ -4926,15 +4976,17 @@ int script_nk_slide_f (lua_State *L) {
 	float ret = nk_slide_float(gui->ctx, min, val, max, step);
 	
 	lua_pushnumber(L, ret); /* return value */
+	lua_setfield(L, 1, "value");
+	lua_pop(L, 1);
 	
-	return 1;
+	return 0;
 }
 
 /* GUI option object (list selectable) */
 /* given parameters:
 	- item list (by reference), as table with one named field "value"
 returns:
-	- none (current selected item index is updated in table "value" key)
+	- none (current selected item index is updated in passed table "value" key)
 */
 int script_nk_option (lua_State *L) {
 	/* get gui object from Lua instance */
@@ -4964,6 +5016,9 @@ int script_nk_option (lua_State *L) {
 		lua_pushliteral(L, "nk_option: incorrect argument type");
 		lua_error(L);
 	}
+	
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
 	int idx = lua_tointeger(L, -1);
 	lua_pop(L, 1);
 	
@@ -4995,9 +5050,9 @@ int script_nk_option (lua_State *L) {
 /* GUI integer check object (boolean entry) */
 /* given parameters:
 	- name, as string
-	- current value, as boolean
+	- value to modify (by reference), as table with a "value" named field (boolean)
 returns:
-	- new current value, as boolean
+	- none (boolean is updated in passed table "value" key)
 */
 int script_nk_check (lua_State *L) {
 	/* get gui object from Lua instance */
@@ -5023,19 +5078,298 @@ int script_nk_check (lua_State *L) {
 		lua_error(L);
 	}
 	
-	if (!lua_isboolean(L, 2)) {
+	
+	if (!lua_istable(L, 2)) {
+		lua_pushliteral(L, "nk_slide_i: incorrect argument type");
+		lua_error(L);
+	}
+	lua_getfield(L, 2, "value");
+	if (!lua_isboolean(L, -1)) {
 		lua_pushliteral(L, "nk_check: incorrect argument type");
 		lua_error(L);
 	}
 	
-	int val = lua_toboolean(L, 2);
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
+	int val = lua_toboolean(L, -1);
+	lua_pop(L, 1);
 	
 	val = nk_check_label(gui->ctx, lua_tostring(L, 1), val);
 	
 	lua_pushboolean(L, val); /* return value */
+	lua_setfield(L, 2, "value");
+	lua_pop(L, 1);
+	
+	return 0;
+}
+
+/* begin a GUI group */
+/* given parameters:
+	- name, as string
+	- show title flag (optional, default=false)
+	- show border flag (optional, default=false)
+	- scrollbars flag (optional, default=false)
+returns:
+	- boolean, `true` if visible and fillable with widgets or `false` otherwise
+*/
+int script_nk_group_begin (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	if (!script){ /* error in script object access */
+		lua_pushstring(L, "Auto check: no access to CadZinho script object");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "nk_group: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_isstring(L, 1)) {
+		lua_pushliteral(L, "nk_group: incorrect argument type");
+		lua_error(L);
+	}
+	
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
+	//char id[32];
+	//snprintf(id, 31, "script_gr_%d%d", script->groups, rand() % 100);
+	//snprintf(id, 31, "script_gr_%d", script->groups);
+	
+	nk_flags flags =  0;
+	if (lua_toboolean(L, 2)) flags |= NK_WINDOW_TITLE;
+	if (lua_toboolean(L, 3)) flags |= NK_WINDOW_BORDER;
+	if (!lua_toboolean(L, 4)) flags |= NK_WINDOW_NO_SCROLLBAR;
+	
+	//int ret = nk_group_begin_titled(gui->ctx, (const char *)id, (const char *)lua_tostring(L, 1), flags);
+	int ret = nk_group_begin(gui->ctx, (const char *)lua_tostring(L, 1), flags);
+	
+	
+	if (ret) script->groups ++;
+	
+	lua_pushboolean(L, ret); /* return value */
 	
 	return 1;
 }
+
+/* end a GUI group */
+/* given parameters:
+	- none (this call ends current group)
+returns:
+	- none
+*/
+int script_nk_group_end (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	if (!script){ /* error in script object access */
+		lua_pushstring(L, "Auto check: no access to CadZinho script object");
+		lua_error(L);
+	}
+	
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
+	if (script->groups > 0){ /* check if exists pending nk_group */
+		nk_group_end(gui->ctx);
+		script->groups --;
+	}
+	return 0;
+}
+
+/* GUI tab obj object (kind of container with tabs id) */
+/* given parameters:
+	- name, as string
+	- tab list (by reference), as table with one named field "value"
+returns:
+	- boolean, `true` if visible and fillable with widgets or `false` otherwise
+	  (current selected tab index is updated in passed table "value" key)
+*/
+int script_nk_tab_begin (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "nk_tab: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_isstring(L, 1)) {
+		lua_pushliteral(L, "nk_tab: incorrect argument type");
+		lua_error(L);
+	}
+	
+	if (!lua_istable(L, 2)) {
+		lua_pushliteral(L, "nk_tab: incorrect argument type");
+		lua_error(L);
+	}
+	lua_getfield(L, 2, "value");
+	if (!lua_isinteger(L, -1)){
+		lua_pushliteral(L, "nk_tab: incorrect argument type");
+		lua_error(L);
+	}
+	int idx = lua_tointeger(L, -1);
+	lua_pop(L, 1);
+	
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	if (!script){ /* error in script object access */
+		lua_pushstring(L, "Auto check: no access to CadZinho script object");
+		lua_error(L);
+	}
+	
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
+	
+	
+	int items = lua_rawlen(L, 2); /* get number of numbered items in table */
+	
+	if (items < 1){ /* no items */
+		return 0;
+	}
+	
+	if (idx > items) idx = 1; /* assert select item */
+	
+	int i;
+	
+	float h = nk_widget_height(gui->ctx);
+	
+	if (h < 40.0){
+		/* there is not enough space to draw*/
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	nk_flags flags =  NK_WINDOW_NO_SCROLLBAR;
+	
+	char id[DXF_MAX_CHARS+1];
+	snprintf(id, DXF_MAX_CHARS, "%s%d", lua_tostring(L, 1), script->groups);
+	int ret = nk_group_begin(gui->ctx, (const char *)id, flags);
+	if(!ret){
+		/* not able to get widgets*/
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	script->groups ++;
+	
+	/* show tabs - header */
+	nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
+	nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 100); /* until 100 tabs */
+	for (i = 1; i<= items; i++){
+		lua_geti(L, 2, i);
+		if (gui_tab (gui, lua_tostring(L, -1), idx == i)) idx = i; /* select item */
+		lua_pop(L, 1);
+	}
+	nk_style_pop_vec2(gui->ctx);
+	nk_layout_row_end(gui->ctx);
+	
+	/* update "value" in table */
+	lua_pushinteger(L, idx);
+	lua_setfield(L, 2, "value");
+	lua_pop(L, 1);
+	
+	nk_layout_row_dynamic(gui->ctx, h-35, 1); /* space to widgets*/
+	flags =  NK_WINDOW_BORDER;
+	snprintf(id, DXF_MAX_CHARS, "%s%d", lua_tostring(L, 1), script->groups);
+	ret = nk_group_begin(gui->ctx, (const char *)id, flags);
+	
+	if (ret) script->groups ++;
+	
+	lua_pushboolean(L, ret); /* return value */
+	
+	return 1;
+}
+
+/* end a GUI tab */
+/* given parameters:
+	- none (this call ends current tab)
+returns:
+	- none
+*/
+int script_nk_tab_end (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	if (!script){ /* error in script object access */
+		lua_pushstring(L, "Auto check: no access to CadZinho script object");
+		lua_error(L);
+	}
+	
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
+	if (script->groups > 0){ /* check if exists pending nk_group */
+		nk_group_end(gui->ctx);
+		script->groups --;
+	}
+	
+	if (script->groups > 0){ /* check if exists pending nk_group - yes: twice*/
+		nk_group_end(gui->ctx);
+		script->groups --;
+	}
+	return 0;
+}
+
+
 /* ========= MINIZ ===============================================*/
 
 

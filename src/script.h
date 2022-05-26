@@ -23,7 +23,7 @@ struct script_obj{
 	
 	char win[DXF_MAX_CHARS];
 	char win_title[DXF_MAX_CHARS];
-	int win_x, win_y, win_w, win_h;
+	int win_x, win_y, win_w, win_h, groups;
 	
 	char dyn_func[DXF_MAX_CHARS];
 };
@@ -115,6 +115,10 @@ int script_nk_slide_i (lua_State *L);
 int script_nk_slide_f (lua_State *L);
 int script_nk_option (lua_State *L);
 int script_nk_check (lua_State *L);
+int script_nk_group_begin (lua_State *L);
+int script_nk_group_end (lua_State *L);
+int script_nk_tab_begin (lua_State *L);
+int script_nk_tab_end (lua_State *L);
 
 int script_miniz_open (lua_State *L);
 int script_miniz_close (lua_State *L);

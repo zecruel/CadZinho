@@ -135,6 +135,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	script->dynamic = 0;
 	script->do_init = 0;
 	script->wait_gui_resume = 0;
+	script->groups = 0;
 	strncpy(script->path, fname, DXF_MAX_CHARS - 1);
 	
 	script->timeout = 10.0; /* default timeout value */
@@ -224,6 +225,10 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"nk_slide_f", script_nk_slide_f},
 		{"nk_option", script_nk_option},
 		{"nk_check", script_nk_check},
+		{"nk_group_begin", script_nk_group_begin},
+		{"nk_group_end", script_nk_group_end},
+		{"nk_tab_begin", script_nk_tab_begin},
+		{"nk_tab_end", script_nk_tab_end},
 		
 		{"start_dynamic", script_start_dynamic},
 		{"stop_dynamic", script_stop_dynamic},
@@ -870,7 +875,7 @@ int script_win (gui_obj *gui){
 }*/
 
 int gui_script_interactive(gui_obj *gui){
-	static int i;
+	static int i, j;
 	
 	for (i = 0; i < MAX_SCRIPTS; i++){ /* sweep script slots and execute each valid */
 		/* window functions */
@@ -901,6 +906,12 @@ int gui_script_interactive(gui_obj *gui){
 					
 					gui->lua_script[i].n_results = 0; /* for Lua 5.4*/
 					gui->lua_script[i].status = lua_resume(gui->lua_script[i].T, NULL, 0, &gui->lua_script[i].n_results); /* start thread */
+					
+					/* close pending nk_groups, to prevent nuklear crashes */
+					for (j = 0; j < gui->lua_script[i].groups; j++){
+						nk_group_end(gui->ctx);
+					}
+					gui->lua_script[i].groups = 0;
 				}
 				nk_end(gui->ctx); /* not allow user to ends windows, to prevent nuklear crashes */
 				
@@ -968,7 +979,7 @@ int gui_script_dyn(gui_obj *gui){
 		return 0;
 	}
 	
-	static int i;
+	static int i, j;
 	for (i = 0; i < MAX_SCRIPTS; i++){ /* sweep script slots and execute each valid */
 		
 		/* dynamic functions */
@@ -998,6 +1009,12 @@ int gui_script_dyn(gui_obj *gui){
 			
 			/*finally call the function */
 			gui->lua_script[i].status = lua_pcall(gui->lua_script[i].T, 1, 0, 0);
+			
+			/* close pending nk_groups, to prevent nuklear crashes */
+			for (j = 0; j < gui->lua_script[i].groups; j++){
+				nk_group_end(gui->ctx);
+			}
+			gui->lua_script[i].groups = 0;
 			
 			if(gui->phanton) gui->draw_phanton = 1;
 			

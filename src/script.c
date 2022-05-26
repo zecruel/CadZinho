@@ -4589,9 +4589,9 @@ int script_nk_edit (lua_State *L) {
 /* given parameters:
 	- name, as string
 	- current value, as integer
-	- min, as integer (optional)
-	- max, as integer (optional)
-	- step, as integer (optional)
+	- min, as integer (optional - default=negative large number)
+	- max, as integer (optional - default=positive large number)
+	- step, as integer (optional - default=1)
 returns:
 	- new current value, as integer number
 */
@@ -4655,9 +4655,9 @@ int script_nk_propertyi (lua_State *L) {
 /* given parameters:
 	- name, as string
 	- current value, as number
-	- min, as number (optional)
-	- max, as number (optional)
-	- step, as number (optional)
+	- min, as number (optional - default=negative large number)
+	- max, as number (optional - default=positive large number)
+	- step, as number (optional - default=proportional to current value)
 returns:
 	- new current value, as integer number
 */
@@ -4720,8 +4720,8 @@ int script_nk_propertyd (lua_State *L) {
 /* GUI combo object (list selectable) */
 /* given parameters:
 	- item list (by reference), as table with one named field "value"
-	- box width, as number (optional)
-	- box height, as number (optional)
+	- box width, as number (optional - default=150)
+	- box height, as number (optional - default=150)
 returns:
 	- none (current selected item index is updated in table "value" key)
 */
@@ -4811,7 +4811,7 @@ int script_nk_combo (lua_State *L) {
 	- current value, as integer
 	- min, as integer
 	- max, as integer
-	- step, as integer (optional)
+	- step, as integer (optional - default=1)
 returns:
 	- new current value, as integer number
 */
@@ -4873,7 +4873,7 @@ int script_nk_slide_i (lua_State *L) {
 	- current value, as number
 	- min, as number
 	- max, as number
-	- step, as number (optional)
+	- step, as number (optional - default=1)
 returns:
 	- new current value, as number
 */
@@ -4930,6 +4930,112 @@ int script_nk_slide_f (lua_State *L) {
 	return 1;
 }
 
+/* GUI option object (list selectable) */
+/* given parameters:
+	- item list (by reference), as table with one named field "value"
+returns:
+	- none (current selected item index is updated in table "value" key)
+*/
+int script_nk_option (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "nk_option: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_istable(L, 1)) {
+		lua_pushliteral(L, "nk_option: incorrect argument type");
+		lua_error(L);
+	}
+	lua_getfield(L, 1, "value");
+	if (!lua_isinteger(L, -1)){
+		lua_pushliteral(L, "nk_option: incorrect argument type");
+		lua_error(L);
+	}
+	int idx = lua_tointeger(L, -1);
+	lua_pop(L, 1);
+	
+	int items = lua_rawlen(L, 1); /* get number of numbered items in table */
+	
+	if (items < 1){ /* no items */
+		return 0;
+	}
+	
+	if (idx > items) idx = 1; /* assert select item */
+	
+	int i;
+	
+	/* show each item */
+	for (i = 1; i<= items; i++){
+		lua_geti(L, 1, i);
+		if (nk_option_label(gui->ctx, lua_tostring(L, -1), idx == i)) idx = i; /* select item */
+		lua_pop(L, 1);
+	}
+	
+	/* update "value" in table */
+	lua_pushinteger(L, idx);
+	lua_setfield(L, 1, "value");
+	lua_pop(L, 1);
+	
+	return 0;
+}
+
+/* GUI integer check object (boolean entry) */
+/* given parameters:
+	- name, as string
+	- current value, as boolean
+returns:
+	- new current value, as boolean
+*/
+int script_nk_check (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "nk_check: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_isstring(L, 1)) {
+		lua_pushliteral(L, "nk_check: incorrect argument type");
+		lua_error(L);
+	}
+	
+	if (!lua_isboolean(L, 2)) {
+		lua_pushliteral(L, "nk_check: incorrect argument type");
+		lua_error(L);
+	}
+	
+	int val = lua_toboolean(L, 2);
+	
+	val = nk_check_label(gui->ctx, lua_tostring(L, 1), val);
+	
+	lua_pushboolean(L, val); /* return value */
+	
+	return 1;
+}
 /* ========= MINIZ ===============================================*/
 
 

@@ -222,6 +222,8 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"nk_combo", script_nk_combo},
 		{"nk_slide_i", script_nk_slide_i},
 		{"nk_slide_f", script_nk_slide_f},
+		{"nk_option", script_nk_option},
+		{"nk_check", script_nk_check},
 		
 		{"start_dynamic", script_start_dynamic},
 		{"stop_dynamic", script_stop_dynamic},

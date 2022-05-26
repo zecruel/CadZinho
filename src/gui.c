@@ -1117,7 +1117,10 @@ int nk_gl_render(gui_obj *gui) {
 		else if  (cmd->type == NK_COMMAND_SCISSOR) {
 			const struct nk_command_scissor *s =(const struct nk_command_scissor*)cmd;
 			draw_gl (gl_ctx, 1); /* force draw previous commands and cleanup */
-			glScissor((GLint)s->x, (GLint)(gl_ctx->win_h - s->y - s->h), (GLsizei)s->w, (GLsizei)s->h);
+			glScissor((GLint)(s->x - 1), 
+				(GLint)(gl_ctx->win_h - s->y - s->h), 
+				(GLsizei)(s->w),
+				(GLsizei)(s->h + 1) );
 			glEnable(GL_SCISSOR_TEST);
 		}
 		

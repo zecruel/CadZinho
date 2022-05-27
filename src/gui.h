@@ -431,6 +431,7 @@ struct Gui_obj {
 	int num_brk_pts;
 	int script_resume_reason;
 	int script_resume;
+	struct script_thread script_wait_t;
 	
 	char image_path[DXF_MAX_CHARS];
 	

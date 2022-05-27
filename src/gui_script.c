@@ -134,7 +134,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	script->active = 0;
 	script->dynamic = 0;
 	script->do_init = 0;
-	script->wait_gui_resume = 0;
+	//script->wait_gui_resume = 0;
 	script->groups = 0;
 	strncpy(script->path, fname, DXF_MAX_CHARS - 1);
 	
@@ -881,7 +881,7 @@ int gui_script_interactive(gui_obj *gui){
 		/* window functions */
 		if (gui->lua_script[i].L != NULL && gui->lua_script[i].T != NULL){
 			if (strlen(gui->lua_script[i].win) > 0 && gui->lua_script[i].active &&
-				gui->lua_script[i].status != LUA_YIELD)//!gui->lua_script[i].wait_gui_resume)
+				gui->lua_script[i].status != LUA_YIELD)
 			{
 				int win;
 				
@@ -953,7 +953,7 @@ int gui_script_interactive(gui_obj *gui){
 				gui->lua_script[i].dyn_func[0] = 0;
 			}
 			
-			/* resume script waiting gui condition */
+			/* resume script waiting gui condition 
 			if (gui->script_resume && gui->lua_script[i].status == LUA_YIELD &&
 				gui->lua_script[i].wait_gui_resume)
 			{
@@ -961,11 +961,35 @@ int gui_script_interactive(gui_obj *gui){
 				gui->lua_script[i].wait_gui_resume = gui->script_resume;
 				gui->script_resume =  0;
 				gui->lua_script[i].time = clock();
-				gui->lua_script[i].n_results = 0; /* for Lua 5.4*/
-				gui->lua_script[i].status = lua_resume(gui->lua_script[i].T, NULL, 0, &gui->lua_script[i].n_results); /* start thread */
+				gui->lua_script[i].n_results = 0;
+				gui->lua_script[i].status = lua_resume(gui->lua_script[i].T, NULL, 0, &gui->lua_script[i].n_results);
 			}
+			*/
 		}
 	}
+	
+	if (gui->script_resume && gui->script_wait_t.wait_gui_resume)
+	{
+		/* get script object from Lua instance */
+		lua_pushstring(gui->script_wait_t.T, "cz_script"); /* is indexed as  "cz_script" */
+		lua_gettable(gui->script_wait_t.T, LUA_REGISTRYINDEX); 
+		struct script_obj *script = lua_touserdata (gui->script_wait_t.T, -1);
+		lua_pop(gui->script_wait_t.T, 1);
+		
+		gui->script_wait_t.wait_gui_resume = gui->script_resume;
+		gui->script_resume =  0;
+		
+		if (gui->script_wait_t.T == script->T){
+			script->time = clock();
+			script->n_results = 0;
+			script->status = lua_resume(gui->script_wait_t.T, NULL, 0, &script->n_results);
+		}
+		else {
+			int n_results = 0;
+			lua_resume(gui->script_wait_t.T, NULL, 0, &n_results);
+		}
+	}
+	
 	return 1;
 }
 

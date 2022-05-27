@@ -59,7 +59,6 @@ void print_lua_stack(lua_State * L){
 	}
 }
 
-
 /* --------Lua functions------- */
 
 /* set timeout variable */
@@ -3883,21 +3882,27 @@ int script_new_appid (lua_State *L) {
 int script_new_drwg_k (lua_State *L, int status, lua_KContext ctx) {
 	/* continuation function for new drawing */
 	
-	/* get script object from Lua instance */
-	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
 	lua_gettable(L, LUA_REGISTRYINDEX); 
-	struct script_obj *script = lua_touserdata (L, -1);
+	gui_obj *gui = lua_touserdata (L, -1);
 	lua_pop(L, 1);
 	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
 	/*verify if action is finished with errors */
-	if (script->wait_gui_resume > 0){
+	if (gui->script_wait_t.wait_gui_resume > 0){
 		lua_pushboolean(L, 1); /* return success */
 	}
 	else {
 		lua_pushboolean(L, 0); /* return fail */
 	}
 	
-	script->wait_gui_resume = 0; /*clear current script flag */
+	gui->script_wait_t.wait_gui_resume = 0; /*clear current script flag */
 	return 1;
 }
 
@@ -3935,14 +3940,10 @@ int script_new_drwg (lua_State *L) {
 	gui->action = FILE_NEW;
 	
 	gui->hist_new = 0;
-	
-	/* get script object from Lua instance */
-	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
-	lua_gettable(L, LUA_REGISTRYINDEX); 
-	struct script_obj *script = lua_touserdata (L, -1);
-	lua_pop(L, 1);
-	
-	script->wait_gui_resume = 1; /* current script flag, indicating wait for response */
+		
+	/* current script flag, indicating wait for response */
+	gui->script_wait_t.wait_gui_resume = 1;
+	gui->script_wait_t.T = L;
 	
 	/* pause script until gui response */
 	lua_yieldk(L, 0, 0, &script_new_drwg_k);
@@ -3953,21 +3954,27 @@ int script_new_drwg (lua_State *L) {
 int script_open_drwg_k (lua_State *L, int status, lua_KContext ctx) {
 	/* continuation function for open drawing */
 	
-	/* get script object from Lua instance */
-	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
 	lua_gettable(L, LUA_REGISTRYINDEX); 
-	struct script_obj *script = lua_touserdata (L, -1);
+	gui_obj *gui = lua_touserdata (L, -1);
 	lua_pop(L, 1);
 	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
 	/*verify if action is finished with errors */
-	if (script->wait_gui_resume > 0){
+	if (gui->script_wait_t.wait_gui_resume > 0){
 		lua_pushboolean(L, 1); /* return success */
 	}
 	else {
 		lua_pushboolean(L, 0); /* return fail */
 	}
 	
-	script->wait_gui_resume = 0; /*clear current script flag */
+	gui->script_wait_t.wait_gui_resume = 0; /*clear current script flag */
 	return 1;
 }
 
@@ -4023,13 +4030,9 @@ int script_open_drwg (lua_State *L) {
 	
 	gui->hist_new = !lua_toboolean(L, 2);
 	
-	/* get script object from Lua instance */
-	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
-	lua_gettable(L, LUA_REGISTRYINDEX); 
-	struct script_obj *script = lua_touserdata (L, -1);
-	lua_pop(L, 1);
-	
-	script->wait_gui_resume = 1; /* current script flag, indicating wait for response */
+	/* current script flag, indicating wait for response */
+	gui->script_wait_t.wait_gui_resume = 1;
+	gui->script_wait_t.T = L;
 	
 	/* pause script until gui response */
 	lua_yieldk(L, 0, 0, &script_open_drwg_k);
@@ -4040,21 +4043,27 @@ int script_open_drwg (lua_State *L) {
 int script_save_drwg_k (lua_State *L, int status, lua_KContext ctx) {
 	/* continuation function for save drawing */
 	
-	/* get script object from Lua instance */
-	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
 	lua_gettable(L, LUA_REGISTRYINDEX); 
-	struct script_obj *script = lua_touserdata (L, -1);
+	gui_obj *gui = lua_touserdata (L, -1);
 	lua_pop(L, 1);
 	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
 	/*verify if action is finished with errors */
-	if (script->wait_gui_resume > 0){
+	if (gui->script_wait_t.wait_gui_resume > 0){
 		lua_pushboolean(L, 1); /* return success */
 	}
 	else {
 		lua_pushboolean(L, 0); /* return fail */
 	}
 	
-	script->wait_gui_resume = 0; /*clear current script flag */
+	gui->script_wait_t.wait_gui_resume = 0; /*clear current script flag */
 	return 1;
 }
 
@@ -4110,13 +4119,9 @@ int script_save_drwg (lua_State *L) {
 	
 	gui->hist_new = !lua_toboolean(L, 2);
 	
-	/* get script object from Lua instance */
-	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
-	lua_gettable(L, LUA_REGISTRYINDEX); 
-	struct script_obj *script = lua_touserdata (L, -1);
-	lua_pop(L, 1);
-	
-	script->wait_gui_resume = 1; /* current script flag, indicating wait for response */
+	/* current script flag, indicating wait for response */
+	gui->script_wait_t.wait_gui_resume = 1;
+	gui->script_wait_t.T = L;
 	
 	/* pause script until gui response */
 	lua_yieldk(L, 0, 0, &script_save_drwg_k);
@@ -4129,21 +4134,27 @@ int script_save_drwg (lua_State *L) {
 int script_gui_refresh_k (lua_State *L, int status, lua_KContext ctx) {
 	/* continuation function for gui refresh */
 	
-	/* get script object from Lua instance */
-	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
 	lua_gettable(L, LUA_REGISTRYINDEX); 
-	struct script_obj *script = lua_touserdata (L, -1);
+	gui_obj *gui = lua_touserdata (L, -1);
 	lua_pop(L, 1);
 	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
 	/*verify if action is finished with errors */
-	if (script->wait_gui_resume > 0){
+	if (gui->script_wait_t.wait_gui_resume > 0){
 		lua_pushboolean(L, 1); /* return success */
 	}
 	else {
 		lua_pushboolean(L, 0); /* return fail */
 	}
 	
-	script->wait_gui_resume = 0; /*clear current script flag */
+	gui->script_wait_t.wait_gui_resume = 0; /*clear current script flag */
 	return 1;
 }
 
@@ -4174,15 +4185,12 @@ int script_gui_refresh (lua_State *L) {
 		return 1;
 	}
 	
-	/* get script object from Lua instance */
-	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
-	lua_gettable(L, LUA_REGISTRYINDEX); 
-	struct script_obj *script = lua_touserdata (L, -1);
-	lua_pop(L, 1);
+	/* current script flag, indicating wait for response */
+	gui->script_wait_t.wait_gui_resume = 1;
+	gui->script_wait_t.T = L;
 	
 	/* pause script until gui response */
 	gui->script_resume_reason = YIELD_GUI_REFRESH;
-	script->wait_gui_resume = 1; /* current script flag, indicating wait for response */
 	lua_yieldk(L, 0, 0, &script_gui_refresh_k);
 	return 0;
 	
@@ -5298,7 +5306,7 @@ int script_nk_tab_begin (lua_State *L) {
 	script->groups ++;
 	
 	/* show tabs - header */
-	nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
+	nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
 	nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 100); /* until 100 tabs */
 	for (i = 1; i<= items; i++){
 		lua_geti(L, 2, i);
@@ -5313,7 +5321,7 @@ int script_nk_tab_begin (lua_State *L) {
 	lua_setfield(L, 2, "value");
 	lua_pop(L, 1);
 	
-	nk_layout_row_dynamic(gui->ctx, h-35, 1); /* space to widgets*/
+	nk_layout_row_dynamic(gui->ctx, h - 26, 1); /* space to widgets*/
 	flags =  NK_WINDOW_BORDER;
 	snprintf(id, DXF_MAX_CHARS, "%s%d", lua_tostring(L, 1), script->groups);
 	ret = nk_group_begin(gui->ctx, (const char *)id, flags);

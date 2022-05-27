@@ -16,7 +16,7 @@ struct script_obj{
 	int dynamic;
 	int do_init;
 	int n_results;
-	int wait_gui_resume;
+	//int wait_gui_resume;
 	char path[DXF_MAX_CHARS];
 	clock_t time;
 	double timeout;
@@ -26,6 +26,11 @@ struct script_obj{
 	int win_x, win_y, win_w, win_h, groups;
 	
 	char dyn_func[DXF_MAX_CHARS];
+};
+
+struct script_thread{
+	lua_State *T; /* thread for execution */
+	int wait_gui_resume;
 };
 
 struct ent_lua { /* DXF entity object, in Lua userdata */

@@ -674,7 +674,7 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	struct Mem_buffer *mem2 = manage_buffer(cmp_len, BUF_GET, 3);
 	if (!mem2) {
 		//free(buf);
-		manage_buffer(0, BUF_FREE, 2);
+		manage_buffer(0, BUF_RELEASE, 2);
 		return 0;
 	}
 	
@@ -684,9 +684,9 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	cmp_status = compress(pCmp, &cmp_len, (const unsigned char *)buf.data, src_len);
 	if (cmp_status != Z_OK){
 		//free(pCmp);
-		manage_buffer(0, BUF_FREE, 3);
+		manage_buffer(0, BUF_RELEASE, 3);
 		//free(buf);
-		manage_buffer(0, BUF_FREE, 2);
+		manage_buffer(0, BUF_RELEASE, 2);
 		return 0;
 	}
 	/*-------------------------*/
@@ -743,9 +743,9 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	/* clear and safe quit */
 	pdf_destroy(pdf);
 	//free(pCmp);
-	manage_buffer(0, BUF_FREE, 3);
+	manage_buffer(0, BUF_RELEASE, 3);
 	//free(buf);
-	manage_buffer(0, BUF_FREE, 2);
+	manage_buffer(0, BUF_RELEASE, 2);
 	if (e) return 0; /* error in file creation */
 	
 	return 1;

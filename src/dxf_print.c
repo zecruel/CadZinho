@@ -636,9 +636,14 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	if (!drawing) return 0;
 	
 	/* buffer to hold the pdf commands from drawing convertion */
-	struct txt_buf *buf = malloc(sizeof(struct txt_buf));
-	if (!buf) return 0;
-	buf->pos = 0; /* init buffer */
+	//struct txt_buf *buf = malloc(sizeof(struct txt_buf));
+	static struct txt_buf buf;
+	struct Mem_buffer *mem1 = manage_buffer(PDF_BUF_SIZE + 1, BUF_GET, 2);
+	if (!mem1) return 0;
+	buf.data = mem1->buffer;
+	//if (!buf) return 0;
+	
+	buf.pos = 0; /* init buffer */
 	
 	/* resolution -> multiplier factor over integer units in pdf */
 	param.resolution = 20;
@@ -657,23 +662,31 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	param.scale *= mul;
 	
 	/* fill buffer with pdf drawing commands */
-	print_ents_pdf(drawing, buf, param);
+	print_ents_pdf(drawing, &buf, param);
 	
 	/* -------------- compress the command buffer stream (deflate algorithm)*/
 	int cmp_status;
-	long src_len = strlen(buf->data);
+	long src_len = strlen(buf.data);
 	long cmp_len = compressBound(src_len);
 	/* Allocate buffers to hold compressed and uncompressed data. */
-	mz_uint8 *pCmp = (mz_uint8 *)malloc((size_t)cmp_len);
-	if (!pCmp) {
-		free(buf);
+	//mz_uint8 *pCmp = (mz_uint8 *)malloc((size_t)cmp_len);
+	//if (!pCmp) {
+	struct Mem_buffer *mem2 = manage_buffer(cmp_len, BUF_GET, 3);
+	if (!mem2) {
+		//free(buf);
+		manage_buffer(0, BUF_FREE, 2);
 		return 0;
 	}
+	
+	mz_uint8 *pCmp = (mz_uint8 *) mem2->buffer;
+	
 	/* Compress buffer string. */
-	cmp_status = compress(pCmp, &cmp_len, (const unsigned char *)buf->data, src_len);
+	cmp_status = compress(pCmp, &cmp_len, (const unsigned char *)buf.data, src_len);
 	if (cmp_status != Z_OK){
-		free(pCmp);
-		free(buf);
+		//free(pCmp);
+		manage_buffer(0, BUF_FREE, 3);
+		//free(buf);
+		manage_buffer(0, BUF_FREE, 2);
 		return 0;
 	}
 	/*-------------------------*/
@@ -729,8 +742,10 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 	
 	/* clear and safe quit */
 	pdf_destroy(pdf);
-	free(pCmp);
-	free(buf);
+	//free(pCmp);
+	manage_buffer(0, BUF_FREE, 3);
+	//free(buf);
+	manage_buffer(0, BUF_FREE, 2);
 	if (e) return 0; /* error in file creation */
 	
 	return 1;

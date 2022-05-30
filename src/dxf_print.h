@@ -15,7 +15,8 @@
 
 struct txt_buf{
 	long pos;
-	char data[PDF_BUF_SIZE];
+	//char data[PDF_BUF_SIZE];
+	char *data;
 };
 
 enum print_unit{

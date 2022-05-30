@@ -200,7 +200,7 @@ struct h_family * dxf_hatch_family_file(char *name, char *path){
 	
 	ret = dxf_hatch_family(name, path, buf->buffer);
 	//free(buf);
-	manage_buffer(0, BUF_RELEASE);
+	manage_buffer(0, BUF_RELEASE, 0);
 	
 	return ret;
 }

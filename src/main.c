@@ -1131,7 +1131,7 @@ int main(int argc, char** argv){
 			
 			if(open_prg <= 0){
 				//free(file_buf);
-				manage_buffer(0, BUF_RELEASE);
+				manage_buffer(0, BUF_RELEASE, 0);
 				file_buf = NULL;
 				file_size = 0;
 				low_proc = 1;
@@ -1417,7 +1417,7 @@ int main(int argc, char** argv){
 				
 				/* clear the file buffer */
 				//free(file_buf);
-				manage_buffer(0, BUF_RELEASE);
+				manage_buffer(0, BUF_RELEASE, 0);
 				file_buf = NULL;
 				file_size = 0;
 				
@@ -1980,7 +1980,10 @@ int main(int argc, char** argv){
 	free(gui->drawing);
 	free(aux_mtx1);
 	nk_sdl_shutdown(gui);
-	manage_buffer(0, BUF_FREE);
+	manage_buffer(0, BUF_FREE, 0);
+	manage_buffer(0, BUF_FREE, 1);
+	manage_buffer(0, BUF_FREE, 2);
+	manage_buffer(0, BUF_FREE, 3);
 	
 	/*-------------------------------- macro script clean-up--------------------- */
 	if (macro_script.L){

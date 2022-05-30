@@ -1258,7 +1258,7 @@ int dxf_new_blk_file (dxf_drawing *drawing, char *name, char *descr,
 	
 	if ( ok < 0 ) { /* error on load */
 		/* clear the file buffer */
-		manage_buffer(0, BUF_RELEASE);
+		manage_buffer(0, BUF_RELEASE, 0);
 		file_buf = NULL;
 		file_size = 0;
 		free(tmp_drwg);
@@ -1283,7 +1283,7 @@ int dxf_new_blk_file (dxf_drawing *drawing, char *name, char *descr,
 	if (ok) dxf_attr_change(*block, 4, (void *)descr);
 	
 	/* clear the file buffer */
-	manage_buffer(0, BUF_RELEASE);
+	manage_buffer(0, BUF_RELEASE, 0);
 	file_buf = NULL;
 	file_size = 0;
 	

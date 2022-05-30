@@ -2492,7 +2492,7 @@ dxf_drawing * dxf_xref_list(dxf_drawing *drawing, char *xref_path){
 	}
 	
 	/* clear the file buffer */
-	manage_buffer(0, BUF_RELEASE);
+	manage_buffer(0, BUF_RELEASE, 0);
 	file_buf = NULL;
 	file_size = 0;
 	

@@ -166,7 +166,7 @@ struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 		struct Mem_buffer *buf = load_file_reuse(full_path, &fsize);
 		shp_typ * shp_tfont = shp_font_load(buf->buffer);
 		//if (buf) free(buf);
-		manage_buffer(0, BUF_RELEASE);
+		manage_buffer(0, BUF_RELEASE, 0);
 		if (shp_tfont){
 			/* alloc the structures */
 			font = malloc(sizeof(struct tfont));

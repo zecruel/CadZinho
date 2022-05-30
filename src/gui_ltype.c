@@ -1047,7 +1047,7 @@ int ltyp_mng (gui_obj *gui){
 								lib = load_lin_buf(gui->drawing, (char *)buf->buffer, &n_lib);
 							}
 							
-							manage_buffer(0, BUF_RELEASE); /* release buffer */
+							manage_buffer(0, BUF_RELEASE, 0); /* release buffer */
 						}
 					}
 					

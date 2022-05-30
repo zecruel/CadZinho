@@ -851,7 +851,7 @@ list_node * dxf_pline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 	else{ /* parse as a 3D mesh polyface*/
 		
 		/* store vertices cordinates in a buffer */
-		struct Mem_buffer *buf = manage_buffer(num_verts * 3 * sizeof(double), BUF_GET);
+		struct Mem_buffer *buf = manage_buffer(num_verts * 3 * sizeof(double), BUF_GET, 1);
 		if (!buf) return NULL;
 		double *verts_data = (double *) buf->buffer;
 		
@@ -964,7 +964,7 @@ list_node * dxf_pline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		}
 		
 		/* release the vertex buffer */
-		manage_buffer(0, BUF_RELEASE);
+		manage_buffer(0, BUF_RELEASE, 1);
 	}
 	
 	return graph;

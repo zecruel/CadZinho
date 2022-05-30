@@ -261,6 +261,7 @@ char *str_replace(char *orig, char *rep, char *with) {
 	return result;
 }
 
+/*
 struct Mem_buffer * manage_buffer (long size, enum buffer_action action){
 	static struct Mem_buffer buf = {.buffer = NULL, .size = 0, .used = 0};
 	
@@ -303,6 +304,57 @@ struct Mem_buffer * manage_buffer (long size, enum buffer_action action){
 	
 	
 	return &buf;
+}*/
+
+struct Mem_buffer * manage_buffer (long size, enum buffer_action action, int idx){
+	static struct Mem_buffer buf[4] = {
+		{.buffer = NULL, .size = 0, .used = 0},
+		{.buffer = NULL, .size = 0, .used = 0},
+		{.buffer = NULL, .size = 0, .used = 0},
+		{.buffer = NULL, .size = 0, .used = 0},
+	};
+	
+	if (idx < 0 && idx > 3) return NULL;
+	
+	if (action == BUF_GET){
+		if (size <= 0) return NULL;
+		if (buf[idx].used != 0) return NULL;
+		
+		if (buf[idx].buffer == NULL){
+			if (buf[idx].buffer = malloc (size)){
+				buf[idx].size = size;
+			}
+			else {
+				buf[idx].size = 0;
+				buf[idx].used = 0;
+				return NULL;
+			}
+		}
+		else if (size > buf[idx].size){
+			if (buf[idx].buffer = realloc (buf[idx].buffer, size)){
+				buf[idx].size = size;
+			}
+			else {
+				buf[idx].size = 0;
+				buf[idx].used = 0;
+				return NULL;
+			}
+		}
+		buf[idx].used = 1;
+	}
+	else if (action == BUF_RELEASE){
+		buf[idx].used = 0;
+	}
+	else if (action == BUF_FREE){
+		if (buf[idx].buffer != NULL) free(buf[idx].buffer);
+		buf[idx].buffer = NULL;
+		buf[idx].size = 0;
+		buf[idx].used = 0;
+		return NULL;
+	}
+	
+	
+	return &buf[idx];
 }
 
 struct Mem_buffer *  load_file_reuse(char *path, long *fsize){
@@ -320,7 +372,7 @@ struct Mem_buffer *  load_file_reuse(char *path, long *fsize){
 	//printf("file size = %d\n", fsize);
 	
 	//char *buf = malloc(*fsize + 1);
-	struct Mem_buffer *buf = manage_buffer(*fsize + 1, BUF_GET);
+	struct Mem_buffer *buf = manage_buffer(*fsize + 1, BUF_GET, 0);
 	if (!buf || !buf->buffer){
 		*fsize = 0;
 		fclose(file);

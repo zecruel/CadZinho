@@ -6,6 +6,7 @@
 #include "lualib.h"
 
 #include "dxf.h"
+#include "dxf_print.h"
 #include <time.h>
 
 struct script_obj{
@@ -100,6 +101,7 @@ int script_new_appid (lua_State *L);
 int script_new_drwg (lua_State *L) ;
 int script_open_drwg (lua_State *L);
 int script_save_drwg (lua_State *L);
+int script_print_drwg (lua_State *L);
 
 int script_gui_refresh (lua_State *L);
 

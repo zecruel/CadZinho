@@ -209,6 +209,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"new_drwg", script_new_drwg},
 		{"open_drwg", script_open_drwg},
 		{"save_drwg", script_save_drwg},
+		{"print_drwg", script_print_drwg},
 		
 		{"gui_refresh", script_gui_refresh},
 		

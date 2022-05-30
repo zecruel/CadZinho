@@ -4129,7 +4129,149 @@ int script_save_drwg (lua_State *L) {
 	
 }
 
-
+/* generate a printable file from current drawing */
+/* given parameters:
+	- output path, as string (file extension will determine the format)
+	- page width, as number
+	- page height, as number
+	- drawing scale, as number (optional - default=fit all)
+	- drawing offset x, as number (optional - default=centralize)
+	- drawing offset y, as number (optional - default=centralize)
+returns:
+	- Success/fail, as boolean 
+*/
+int script_print_drwg (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 3){
+		lua_pushliteral(L, "print_drwg: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_isstring(L, 1)) {
+		lua_pushliteral(L, "print_drwg: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isnumber(L, 2)) {
+		lua_pushliteral(L, "print_drwg: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isnumber(L, 3)) {
+		lua_pushliteral(L, "print_drwg: incorrect argument type");
+		lua_error(L);
+	}
+	
+	static struct print_param param;
+	
+	char path[PATH_MAX_CHARS+1];
+	strncpy(path, lua_tostring(L, 1), PATH_MAX_CHARS); /* preserve original string */
+	
+	param.out_fmt = PRT_NONE;
+	
+	char *fmt = get_ext(path);
+	str_upp(fmt);
+	
+	if(strcmp(fmt, "PDF") == 0) param.out_fmt = PRT_PDF;
+	else if(strcmp(fmt, "SVG") == 0) param.out_fmt = PRT_SVG;
+	else if(strcmp(fmt, "PS") == 0) param.out_fmt = PRT_PS;
+	else if(strcmp(fmt, "PNG") == 0) param.out_fmt = PRT_PNG;
+	else if(strcmp(fmt, "JPG") == 0) param.out_fmt = PRT_JPG;
+	else if(strcmp(fmt, "BMP") == 0) param.out_fmt = PRT_BMP;
+	else {
+		lua_pushboolean (L, 0); /* fail */
+		return 1;
+	}
+	
+	double page_w = lua_tonumber(L, 2);
+	double page_h = lua_tonumber(L, 3);
+	
+	double ofs_x, ofs_y, scale;
+	double min_x, min_y, min_z, max_x, max_y, max_z;
+	double zoom_x, zoom_y;
+	
+	/* get scale, if exist*/
+	if (lua_isnumber(L, 4)) {
+		scale = lua_tonumber(L, 4);
+		/* get ofset x, if exist*/
+		if (lua_isnumber(L, 5)) {
+			ofs_x = lua_tonumber(L, 5);
+			/* get ofset y, if exist*/
+			if (lua_isnumber(L, 6)) {
+				ofs_y = lua_tonumber(L, 6);
+			}
+			else {
+				/* get drawing extents */
+				dxf_ents_ext(gui->drawing, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
+				ofs_y = min_y - (fabs((max_y - min_y) * scale - page_h)/2) / scale;
+			}
+		}
+		else{
+			/* get drawing extents */
+			dxf_ents_ext(gui->drawing, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
+			ofs_x = min_x - (fabs((max_x - min_x) * scale - page_w)/2) / scale;
+			ofs_y = min_y - (fabs((max_y - min_y) * scale - page_h)/2) / scale;
+		}
+	}
+	else {
+		/* get drawing extents */
+		dxf_ents_ext(gui->drawing, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
+		
+		/* get the better scale to fit in width or height */
+		zoom_x = fabs(max_x - min_x)/page_w;
+		zoom_y = fabs(max_y - min_y)/page_h;
+		scale = (zoom_x > zoom_y) ? zoom_x : zoom_y;
+		scale = 1/scale;
+		
+		/* get origin */
+		ofs_x = min_x - (fabs((max_x - min_x) * scale - page_w)/2) / scale;
+		ofs_y = min_y - (fabs((max_y - min_y) * scale - page_h)/2) / scale;
+	}
+	
+	param.w = page_w;
+	param.h = page_h;
+	param.scale = scale;
+	param.ofs_x = ofs_x;
+	param.ofs_y = ofs_y;
+	param.mono = 0;
+	param.unit = PRT_MM;
+	
+	/* basic colors */
+	bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
+	bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
+	/* default substitution list (display white -> print black) */
+	bmp_color list[] = { white, };
+	bmp_color subst[] = { black, };
+	param.list = list;
+	param.subst = subst;
+	param.len = 1;
+	
+	int ret = 0;
+	if (param.out_fmt == PRT_PDF)
+		ret = print_pdf(gui->drawing, param, path);
+	else if (param.out_fmt == PRT_SVG)
+		ret = print_svg(gui->drawing, param, path);
+	else if (param.out_fmt == PRT_PNG ||
+		param.out_fmt == PRT_JPG ||
+		param.out_fmt == PRT_BMP)
+		ret = print_img(gui->drawing, param, path);
+	else if (param.out_fmt == PRT_PS)
+		ret = print_ps(gui->drawing, param, path);
+	/* verify success or fail*/
+	lua_pushboolean (L, ret);
+	
+	return 1;
+}
 
 int script_gui_refresh_k (lua_State *L, int status, lua_KContext ctx) {
 	/* continuation function for gui refresh */

@@ -4134,6 +4134,7 @@ int script_save_drwg (lua_State *L) {
 	- output path, as string (file extension will determine the format)
 	- page width, as number
 	- page height, as number
+	- units, as string ("mm", "in", "px", optional - default="mm")
 	- drawing scale, as number (optional - default=fit all)
 	- drawing offset x, as number (optional - default=centralize)
 	- drawing offset y, as number (optional - default=centralize)
@@ -4200,15 +4201,34 @@ int script_print_drwg (lua_State *L) {
 	double min_x, min_y, min_z, max_x, max_y, max_z;
 	double zoom_x, zoom_y;
 	
+	int unit = PRT_MM;
+	/* get units, if exist*/
+	if (lua_isstring(L, 4)) {
+		char un[10];
+		strncpy(un, lua_tostring(L, 4), 9);
+		str_upp(un);
+		char *new_un = trimwhitespace(un);
+		
+		if (strcmp(new_un, "MM") == 0){
+			unit = PRT_MM;
+		}
+		else if (strcmp(new_un, "IN") == 0){
+			unit = PRT_IN;
+		}
+		else if (strcmp(new_un, "PX") == 0){
+			unit = PRT_PX;
+		}
+	}
+	
 	/* get scale, if exist*/
-	if (lua_isnumber(L, 4)) {
-		scale = lua_tonumber(L, 4);
+	if (lua_isnumber(L, 5)) {
+		scale = lua_tonumber(L, 5);
 		/* get ofset x, if exist*/
-		if (lua_isnumber(L, 5)) {
-			ofs_x = lua_tonumber(L, 5);
+		if (lua_isnumber(L, 6)) {
+			ofs_x = lua_tonumber(L, 6);
 			/* get ofset y, if exist*/
-			if (lua_isnumber(L, 6)) {
-				ofs_y = lua_tonumber(L, 6);
+			if (lua_isnumber(L, 7)) {
+				ofs_y = lua_tonumber(L, 7);
 			}
 			else {
 				/* get drawing extents */
@@ -4244,7 +4264,7 @@ int script_print_drwg (lua_State *L) {
 	param.ofs_x = ofs_x;
 	param.ofs_y = ofs_y;
 	param.mono = 0;
-	param.unit = PRT_MM;
+	param.unit = unit;
 	
 	/* basic colors */
 	bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
@@ -4272,6 +4292,11 @@ int script_print_drwg (lua_State *L) {
 	
 	return 1;
 }
+
+struct script_pdf{
+	struct pdf_doc *pdf;
+	struct print_param param;
+};
 
 int script_gui_refresh_k (lua_State *L, int status, lua_KContext ctx) {
 	/* continuation function for gui refresh */

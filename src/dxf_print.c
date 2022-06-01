@@ -697,7 +697,7 @@ int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest){
 		.creator = "CadZinho",
 		.producer = "CadZinho",
 		.title = "Print Drawing",
-		.author = "Ze Cruel",
+		.author = "",
 		.subject = "Print Drawing",
 		.date = ""
 	};

@@ -59,6 +59,10 @@ struct print_param{
 	enum print_fmt out_fmt;
 };
 
+void print_img_pdf(struct pdf_doc *pdf, bmp_img *img);
+
+int print_ents_pdf(dxf_drawing *drawing, struct txt_buf *buf , struct print_param param);
+
 int print_pdf(dxf_drawing *drawing, struct print_param param, char *dest);
 
 int print_svg(dxf_drawing *drawing, struct print_param param, char *dest);

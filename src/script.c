@@ -4222,7 +4222,7 @@ int script_print_drwg (lua_State *L) {
 	
 	/* get scale, if exist*/
 	if (lua_isnumber(L, 5)) {
-		scale = lua_tonumber(L, 5);
+		scale = fabs(lua_tonumber(L, 5));
 		/* get ofset x, if exist*/
 		if (lua_isnumber(L, 6)) {
 			ofs_x = lua_tonumber(L, 6);
@@ -4297,6 +4297,351 @@ struct script_pdf{
 	struct pdf_doc *pdf;
 	struct print_param param;
 };
+
+/* start a new pdf file */
+/* given parameters:
+	- page width, as number
+	- page height, as number
+	- units, as string ("mm", "in", "px", optional - default="mm")
+	- drawing scale, as number (optional - default=fit all)
+	- drawing offset x, as number (optional - default=centralize)
+	- drawing offset y, as number (optional - default=centralize)
+returns:
+	- a pdf object, or nil if fail
+*/
+int script_pdf_new(lua_State *L){
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "pdf_new: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!lua_isnumber(L, 1)) {
+		lua_pushliteral(L, "pdf_new: incorrect argument type");
+		lua_error(L);
+	}
+	if (!lua_isnumber(L, 2)) {
+		lua_pushliteral(L, "pdf_new: incorrect argument type");
+		lua_error(L);
+	}
+	
+	struct script_pdf *pdf;
+	
+	/* create a userdata object */
+	pdf = (struct script_pdf *) lua_newuserdatauv(L, sizeof(struct script_pdf), 0); 
+	luaL_getmetatable(L, "cz_pdf_obj");
+	lua_setmetatable(L, -2);
+	
+	/* init */
+	/* resolution -> multiplier factor over integer units in pdf */
+	pdf->param.resolution = 20;
+	pdf->param.out_fmt = PRT_PDF;
+	pdf->param.w = lua_tonumber(L, 1);
+	pdf->param.h = lua_tonumber(L, 2);
+		
+	pdf->param.unit = PRT_MM;
+	/* get units, if exist*/
+	if (lua_isstring(L, 3)) {
+		char un[10];
+		strncpy(un, lua_tostring(L, 3), 9);
+		str_upp(un);
+		char *new_un = trimwhitespace(un);
+		
+		if (strcmp(new_un, "MM") == 0){
+			pdf->param.unit = PRT_MM;
+		}
+		else if (strcmp(new_un, "IN") == 0){
+			pdf->param.unit = PRT_IN;
+		}
+		else if (strcmp(new_un, "PX") == 0){
+			pdf->param.unit = PRT_PX;
+		}
+	}
+	
+	pdf->param.scale = -1;
+	pdf->param.ofs_x = NAN;
+	pdf->param.ofs_y = NAN;
+	/* get scale, if exist*/
+	if (lua_isnumber(L, 4)) {
+		pdf->param.scale = fabs(lua_tonumber(L, 4));
+		/* get ofset x, if exist*/
+		if (lua_isnumber(L, 5)) {
+			pdf->param.ofs_x = lua_tonumber(L, 5);
+			/* get ofset y, if exist*/
+			if (lua_isnumber(L, 6)) {
+				pdf->param.ofs_y = lua_tonumber(L, 6);
+			}
+		}
+	}
+	pdf->param.mono = 0;
+	
+	/*--------------- assemble the pdf structure to a file */
+	/* pdf info header */
+	struct pdf_info info = {
+		.creator = "CadZinho",
+		.producer = "CadZinho",
+		.title = "Batch Print",
+		.author = "",
+		.subject = "Batch Print",
+		.date = ""
+	};
+	/* pdf main struct */
+	pdf->pdf = pdf_create((int)pdf->param.w, (int)pdf->param.h, &info);
+	
+	return 1;
+}
+
+/* print current drawing and add page to a pdf objet */
+/* given parameters:
+	- a pdf object (this function is called as method inside object)
+returns:
+	- a boolean indicating success or fail
+*/
+int script_pdf_page(lua_State *L){
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	struct script_pdf *pdf;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "page: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( pdf =  luaL_checkudata(L, 1, "cz_pdf_obj") )) { /* the pdf object is a Lua userdata type*/
+		lua_pushliteral(L, "page: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* check if it is not closed */
+	luaL_argcheck(L, pdf->pdf != NULL, 1, "pdf is closed");
+
+	
+	
+	/* buffer to hold the pdf commands from drawing convertion */
+	static struct txt_buf buf;
+	struct Mem_buffer *mem1 = manage_buffer(PDF_BUF_SIZE + 1, BUF_GET, 2);
+	if (!mem1) {
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	buf.data = mem1->buffer;
+	
+	buf.pos = 0; /* init buffer */
+	
+	static struct print_param param;
+	double page_w = pdf->param.w;
+	double page_h = pdf->param.h;
+	
+	double ofs_x, ofs_y, scale;
+	double min_x, min_y, min_z, max_x, max_y, max_z;
+	double zoom_x, zoom_y;
+	
+	/* get scale, if exist*/
+	if (pdf->param.scale > 0) {
+		scale = pdf->param.scale;
+		/* get ofset x, if exist*/
+		if (!isnan(pdf->param.ofs_x)) {
+			ofs_x = pdf->param.ofs_x;
+			/* get ofset y, if exist*/
+			if (!isnan(pdf->param.ofs_y)) {
+				ofs_y = pdf->param.ofs_y;
+			}
+			else {
+				/* get drawing extents */
+				dxf_ents_ext(gui->drawing, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
+				ofs_y = min_y - (fabs((max_y - min_y) * scale - page_h)/2) / scale;
+			}
+		}
+		else{
+			/* get drawing extents */
+			dxf_ents_ext(gui->drawing, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
+			ofs_x = min_x - (fabs((max_x - min_x) * scale - page_w)/2) / scale;
+			ofs_y = min_y - (fabs((max_y - min_y) * scale - page_h)/2) / scale;
+		}
+	}
+	else {
+		/* get drawing extents */
+		dxf_ents_ext(gui->drawing, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
+		
+		/* get the better scale to fit in width or height */
+		zoom_x = fabs(max_x - min_x)/page_w;
+		zoom_y = fabs(max_y - min_y)/page_h;
+		scale = (zoom_x > zoom_y) ? zoom_x : zoom_y;
+		scale = 1/scale;
+		
+		/* get origin */
+		ofs_x = min_x - (fabs((max_x - min_x) * scale - page_w)/2) / scale;
+		ofs_y = min_y - (fabs((max_y - min_y) * scale - page_h)/2) / scale;
+	}
+	
+	param.w = page_w;
+	param.h = page_h;
+	param.scale = scale;
+	param.ofs_x = ofs_x;
+	param.ofs_y = ofs_y;
+	param.mono = pdf->param.mono;
+	param.unit = pdf->param.unit;
+	
+	
+	/* basic colors */
+	bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
+	bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
+	/* default substitution list (display white -> print black) */
+	bmp_color list[] = { white, };
+	bmp_color subst[] = { black, };
+	param.list = list;
+	param.subst = subst;
+	param.len = 1;
+	
+	/* multiplier to fit pdf parameters in final output units */
+	double mul = 1.0;
+	if (param.unit == PRT_MM)
+		mul = 72.0 / 25.4;
+	else if (param.unit == PRT_IN)
+		mul = 72.0;
+	else if (param.unit == PRT_PX)
+		mul = 72.0/96.0;
+	
+	param.w = mul * param.w + 0.5;
+	param.h = mul * param.h + 0.5;
+	param.scale *= mul;
+	
+	
+	/* fill buffer with pdf drawing commands */
+	print_ents_pdf(gui->drawing, &buf, param);
+	
+	/* -------------- compress the command buffer stream (deflate algorithm)*/
+	int cmp_status;
+	long src_len = strlen(buf.data);
+	long cmp_len = compressBound(src_len);
+	/* Allocate buffers to hold compressed and uncompressed data. */
+	struct Mem_buffer *mem2 = manage_buffer(cmp_len, BUF_GET, 3);
+	if (!mem2) {
+		manage_buffer(0, BUF_RELEASE, 2);
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	
+	mz_uint8 *pCmp = (mz_uint8 *) mem2->buffer;
+	
+	/* Compress buffer string. */
+	cmp_status = compress(pCmp, &cmp_len, (const unsigned char *)buf.data, src_len);
+	if (cmp_status != Z_OK){
+		manage_buffer(0, BUF_RELEASE, 3);
+		manage_buffer(0, BUF_RELEASE, 2);
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	/*-------------------------*/
+	
+	/* add  the drawing images in pdf */
+	if (gui->drawing->img_list != NULL){
+		
+		list_node *list = gui->drawing->img_list;
+		
+		struct dxf_img_def * img_def;
+		bmp_img * img;
+		
+		list_node *current = list->next;
+		while (current != NULL){ /* sweep the image list */
+			if (current->data){
+				img_def = (struct dxf_img_def *)current->data;
+				img = img_def->img;
+				if (img){
+					/* convert and append image data*/
+					print_img_pdf(pdf->pdf, img);
+				}
+			}
+			current = current->next;
+		}
+	}
+	/*---------------------*/
+	
+	/* add a page to pdf file */
+	struct pdf_object *page = pdf_append_page(pdf->pdf);
+	
+	/* add the print object to pdf page */
+	//pdf_add_stream(pdf, page, buf->data); /* non compressed stream */
+	pdf_add_stream_zip(pdf->pdf, page, pCmp, cmp_len); /* compressed stream */
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+
+/* save a pdf object to file */
+/* given parameters:
+	- a pdf object (this function is called as method inside object)
+	- path to file, as string
+returns:
+	- a boolean indicating success or fail
+*/
+int script_pdf_save (lua_State *L) {
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "save: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	struct script_pdf *pdf;
+	
+	if (!( pdf =  luaL_checkudata(L, 1, "cz_pdf_obj") )) { /* the pdf object is a Lua userdata type*/
+		lua_pushliteral(L, "save: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* check if it is not closed */
+	luaL_argcheck(L, pdf->pdf != NULL, 1, "pdf is closed");
+	luaL_argcheck(L, lua_isstring(L, 2), 2, "string expected");
+	
+	/* save pdf file */ 
+	int e = pdf_save(pdf->pdf, lua_tostring(L, 2));
+	
+	lua_pushboolean(L, !e); /* return success or fail */
+	return 1;
+}
+
+/* close a previouly opened pdf object */
+/* given parameters:
+	- a pdf object (this function is called as method inside object)
+returns:
+	- a boolean indicating success or fail
+*/
+int script_pdf_close(lua_State *L){
+	
+	struct script_pdf *pdf;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "close: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!( pdf =  luaL_checkudata(L, 1, "cz_pdf_obj") )) { /* the pdf object is a Lua userdata type*/
+		lua_pushliteral(L, "close: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* check if it is not closed */
+	luaL_argcheck(L, pdf->pdf != NULL, 1, "pdf is closed");
+
+	/* close pdf */
+	pdf_destroy(pdf->pdf);
+	pdf->pdf = NULL;
+	
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
 
 int script_gui_refresh_k (lua_State *L, int status, lua_KContext ctx) {
 	/* continuation function for gui refresh */

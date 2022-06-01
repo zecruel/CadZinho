@@ -103,6 +103,11 @@ int script_open_drwg (lua_State *L);
 int script_save_drwg (lua_State *L);
 int script_print_drwg (lua_State *L);
 
+int script_pdf_new(lua_State *L);
+int script_pdf_page(lua_State *L);
+int script_pdf_save (lua_State *L);
+int script_pdf_close(lua_State *L);
+
 int script_gui_refresh (lua_State *L);
 
 int script_start_dynamic (lua_State *L);

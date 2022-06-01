@@ -236,6 +236,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"ent_draw", script_ent_draw},
 		{"unique_id", script_unique_id},
 		{"last_blk", script_last_blk},
+		{"pdf_new", script_pdf_new},
 		{NULL, NULL}
 	};
 	luaL_newlib(T, cz_lib);
@@ -251,6 +252,17 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	lua_setfield(T, -2, "__index");
 	luaL_setfuncs(T, methods, 0);
 	
+	static const struct luaL_Reg pdf_meths[] = {
+		{"close", script_pdf_close},
+		{"page", script_pdf_page},
+		{"save", script_pdf_save},
+		{"__gc", script_pdf_close},
+		{NULL, NULL}
+	};
+	luaL_newmetatable(T, "cz_pdf_obj");
+	lua_pushvalue(T, -1); /*  */
+	lua_setfield(T, -2, "__index");
+	luaL_setfuncs(T, pdf_meths, 0);
 	
 	static const struct luaL_Reg miniz_meths[] = {
 		{"read", script_miniz_read},

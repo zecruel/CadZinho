@@ -4339,6 +4339,7 @@ int script_pdf_new(lua_State *L){
 	pdf->param.h = lua_tonumber(L, 2);
 		
 	pdf->param.unit = PRT_MM;
+	double mul = 72.0 / 25.4; /* multiplier to fit pdf parameters in final output units */
 	/* get units, if exist*/
 	if (lua_isstring(L, 3)) {
 		char un[10];
@@ -4348,12 +4349,15 @@ int script_pdf_new(lua_State *L){
 		
 		if (strcmp(new_un, "MM") == 0){
 			pdf->param.unit = PRT_MM;
+			mul = 72.0 / 25.4;
 		}
 		else if (strcmp(new_un, "IN") == 0){
 			pdf->param.unit = PRT_IN;
+			mul = 72.0;
 		}
 		else if (strcmp(new_un, "PX") == 0){
 			pdf->param.unit = PRT_PX;
+			mul = 72.0/96.0;
 		}
 	}
 	
@@ -4385,7 +4389,7 @@ int script_pdf_new(lua_State *L){
 		.date = ""
 	};
 	/* pdf main struct */
-	pdf->pdf = pdf_create((int)pdf->param.w, (int)pdf->param.h, &info);
+	pdf->pdf = pdf_create((int)(mul * pdf->param.w + 0.5), (int)(mul * pdf->param.h + 0.5), &info);
 	
 	return 1;
 }
@@ -4503,6 +4507,9 @@ int script_pdf_page(lua_State *L){
 	param.subst = subst;
 	param.len = 1;
 	
+	/* resolution -> multiplier factor over integer units in pdf */
+	param.resolution = 20;
+	
 	/* multiplier to fit pdf parameters in final output units */
 	double mul = 1.0;
 	if (param.unit == PRT_MM)
@@ -4573,6 +4580,9 @@ int script_pdf_page(lua_State *L){
 	/* add the print object to pdf page */
 	//pdf_add_stream(pdf, page, buf->data); /* non compressed stream */
 	pdf_add_stream_zip(pdf->pdf, page, pCmp, cmp_len); /* compressed stream */
+	
+	manage_buffer(0, BUF_RELEASE, 3);
+	manage_buffer(0, BUF_RELEASE, 2);
 	
 	lua_pushboolean(L, 1); /* return success */
 	return 1;

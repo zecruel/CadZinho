@@ -1505,9 +1505,17 @@ nk_sdl_handle_event(gui_obj *gui, SDL_Window *win, SDL_Event *evt)
 		
 		SDL_free(dropped_filedir);    // Free dropped_filedir memory
 		
+		nk_input_key(ctx, NK_KEY_TEXT_SELECT_ALL, 1);
+		SDL_Delay(10);
+		nk_input_key(ctx, NK_KEY_TEXT_SELECT_ALL, 0);
+		
 		nk_input_key(ctx, NK_KEY_PASTE, 1);
-		SDL_Delay(50);
+		SDL_Delay(10);
 		nk_input_key(ctx, NK_KEY_PASTE, 0);
+		
+		nk_input_key(ctx, NK_KEY_ENTER, 1);
+		SDL_Delay(10);
+		nk_input_key(ctx, NK_KEY_ENTER, 0);
 		
 		return 1;
 	}

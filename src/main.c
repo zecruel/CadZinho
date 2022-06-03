@@ -845,7 +845,7 @@ int main(int argc, char** argv){
 						gui->ofs_y += ((double) gui->mouse_y)*(1/gui->prev_zoom - 1/gui->zoom);
 						gui->draw = 1;
 						break;
-					
+					#if(0)
 					case (SDL_DROPFILE): {      /* In case if dropped file */
 						/* get file path -> drop event has previously proccessed and string was moved to clipboard !!!*/
 						char *dropped_filedir = SDL_GetClipboardText(); 
@@ -867,6 +867,7 @@ int main(int argc, char** argv){
 						SDL_free(dropped_filedir);    // Free dropped_filedir memory
 						}
 						break;
+					#endif
 					case SDL_KEYDOWN: {
 						SDL_Keycode key = event.key.keysym.sym;
 						SDL_Keymod mod = event.key.keysym.mod;

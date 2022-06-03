@@ -4397,6 +4397,13 @@ int script_pdf_new(lua_State *L){
 /* print current drawing and add page to a pdf objet */
 /* given parameters:
 	- a pdf object (this function is called as method inside object)
+	optional parameters (default = params in pdf object)
+	- page width, as number
+	- page height, as number
+	- units, as string 
+	- drawing scale, as number
+	- drawing offset x, as number
+	- drawing offset y, as number
 returns:
 	- a boolean indicating success or fail
 */
@@ -4450,17 +4457,55 @@ int script_pdf_page(lua_State *L){
 	double min_x, min_y, min_z, max_x, max_y, max_z;
 	double zoom_x, zoom_y;
 	
+	/* get page size, if exist*/
+	if (lua_isnumber(L, 2) && lua_isnumber(L, 3)) {
+		page_w = lua_tonumber(L, 2);
+		page_h = lua_tonumber(L, 3);
+	}
+		
+	int unit = pdf->param.unit;
+	double mul = 72.0 / 25.4; /* multiplier to fit pdf parameters in final output units */
+	/* get units, if exist*/
+	if (lua_isstring(L, 4)) {
+		char un[10];
+		strncpy(un, lua_tostring(L, 4), 9);
+		str_upp(un);
+		char *new_un = trimwhitespace(un);
+		
+		if (strcmp(new_un, "MM") == 0){
+			unit = PRT_MM;
+			mul = 72.0 / 25.4;
+		}
+		else if (strcmp(new_un, "IN") == 0){
+			unit = PRT_IN;
+			mul = 72.0;
+		}
+		else if (strcmp(new_un, "PX") == 0){
+			unit = PRT_PX;
+			mul = 72.0/96.0;
+		}
+	}
+	
+	scale = pdf->param.scale;
+	ofs_x = pdf->param.ofs_x;
+	ofs_y = pdf->param.ofs_y;
 	/* get scale, if exist*/
-	if (pdf->param.scale > 0) {
-		scale = pdf->param.scale;
+	if (lua_isnumber(L, 5)) {
+		scale = fabs(lua_tonumber(L, 5));
 		/* get ofset x, if exist*/
-		if (!isnan(pdf->param.ofs_x)) {
-			ofs_x = pdf->param.ofs_x;
+		if (lua_isnumber(L, 6)) {
+			ofs_x = lua_tonumber(L, 6);
 			/* get ofset y, if exist*/
-			if (!isnan(pdf->param.ofs_y)) {
-				ofs_y = pdf->param.ofs_y;
+			if (lua_isnumber(L, 7)) {
+				ofs_y = lua_tonumber(L, 7);
 			}
-			else {
+		}
+	}
+	
+	/* get scale, if exist*/
+	if (scale > 0) {
+		if (!isnan(ofs_x)) {
+			if (isnan(ofs_y)){
 				/* get drawing extents */
 				dxf_ents_ext(gui->drawing, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
 				ofs_y = min_y - (fabs((max_y - min_y) * scale - page_h)/2) / scale;
@@ -4494,7 +4539,7 @@ int script_pdf_page(lua_State *L){
 	param.ofs_x = ofs_x;
 	param.ofs_y = ofs_y;
 	param.mono = pdf->param.mono;
-	param.unit = pdf->param.unit;
+	param.unit = unit;
 	
 	
 	/* basic colors */
@@ -4511,14 +4556,6 @@ int script_pdf_page(lua_State *L){
 	param.resolution = 20;
 	
 	/* multiplier to fit pdf parameters in final output units */
-	double mul = 1.0;
-	if (param.unit == PRT_MM)
-		mul = 72.0 / 25.4;
-	else if (param.unit == PRT_IN)
-		mul = 72.0;
-	else if (param.unit == PRT_PX)
-		mul = 72.0/96.0;
-	
 	param.w = mul * param.w + 0.5;
 	param.h = mul * param.h + 0.5;
 	param.scale *= mul;
@@ -4576,6 +4613,8 @@ int script_pdf_page(lua_State *L){
 	
 	/* add a page to pdf file */
 	struct pdf_object *page = pdf_append_page(pdf->pdf);
+	
+	pdf_page_set_size(pdf->pdf, page, param.w, param.h);
 	
 	/* add the print object to pdf page */
 	//pdf_add_stream(pdf, page, buf->data); /* non compressed stream */
@@ -5079,7 +5118,7 @@ int script_nk_label (lua_State *L) {
 /* given parameters:
 	- Text to modify (by reference), as table with a "value" named field
 returns:
-	- none (text is updated in passed table "value" key)
+	- Enter signal, as boolean (text is updated in passed table "value" key)
 */
 int script_nk_edit (lua_State *L) {
 	/* get gui object from Lua instance */
@@ -5114,14 +5153,17 @@ int script_nk_edit (lua_State *L) {
 	
 	const char *value = lua_tostring(L, -1);
 	lua_pop(L, 1);
-	char buff[DXF_MAX_CHARS];
+	char buff[DXF_MAX_CHARS+1];
 	strncpy(buff, value, DXF_MAX_CHARS);
-	nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, buff, DXF_MAX_CHARS, nk_filter_default);
+	nk_flags res = nk_edit_string_zero_terminated(gui->ctx, 
+		NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD,
+		buff, DXF_MAX_CHARS, nk_filter_default);
 	lua_pushstring(L, buff);
 	lua_setfield(L, -2, "value");
 	lua_pop(L, 1);
 	
-	return 0;
+	lua_pushboolean(L, res & NK_EDIT_COMMITED); /* return ENTER signal */
+	return 1;
 }
 
 /* GUI integer property object (number entry) */

@@ -4,6 +4,7 @@ unit = {value = 1, "MM", "IN", "PX"}
 page_w = {value = 297}
 page_h = {value = 210}
 single = {value = false}
+single_path = {value = "output.pdf"}
 list = {}
 
 function GetFileName(url)
@@ -12,6 +13,35 @@ end
 
 function GetFileExtension(url)
   return url:match("^.+(%..+)$")
+end
+
+
+function do_print()
+	local single_out = fmt.value == 1 and single.value
+	local pdf = nil
+	
+	if single_out then -- single output
+		pdf = cadzinho.pdf_new(page_w.value, page_h.value, unit[unit.value])
+	end
+
+	for f, sel in pairs(list) do
+		-- open drawing
+		cadzinho.open_drwg(f)
+		if single_out then -- single output
+			pdf:page() -- add a page
+		else
+			-- replace file extension to choosen output format
+			out = string.gsub(f, "(%..+)$", "."..string.lower(fmt[fmt.value]))
+			-- print file
+			cadzinho.print_drwg(out, page_w.value, page_h.value, unit[unit.value])
+		end
+		
+	end
+	
+	if single_out then -- single output
+		pdf:save(single_path.value)
+		pdf:close()
+	end
 end
 
 function bprint_win()
@@ -49,11 +79,22 @@ function bprint_win()
 		cadzinho.nk_group_end()
 	end
 	
+	
+	if fmt.value == 1 then -- PDF output
+		cadzinho.nk_layout(20, 2)
+		cadzinho.nk_check("Single", single)
+		if single.value then
+			cadzinho.nk_label("Out path:")
+			cadzinho.nk_layout(20, 1)
+			cadzinho.nk_edit(single_path)
+		end
+	end
+	
 	cadzinho.nk_layout(20, 1)
-	cadzinho.nk_check("Single", single)
 	if cadzinho.nk_button("Generate") then
-		
+		co = coroutine.create(do_print)
+		coroutine.resume(co)
 	end
 end
 
-cadzinho.win_show("bprint_win", "Batch Print", 200,200,400,400)
+cadzinho.win_show("bprint_win", "Batch Print", 500,100,400,400)

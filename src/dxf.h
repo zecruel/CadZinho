@@ -364,6 +364,6 @@ int dxf_xref_clear_list(dxf_drawing *drawing);
 
 void dxf_xref_assemb (dxf_drawing *drawing);
 
-int dxf_find_last_blk (dxf_drawing *drawing, char mark[3]);
+int dxf_find_last_blk (dxf_drawing *drawing, char *mark);
 
 #endif

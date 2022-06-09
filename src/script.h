@@ -127,6 +127,8 @@ int script_nk_slide_i (lua_State *L);
 int script_nk_slide_f (lua_State *L);
 int script_nk_option (lua_State *L);
 int script_nk_check (lua_State *L);
+int script_nk_selectable (lua_State *L);
+int script_nk_progress (lua_State *L);
 int script_nk_group_begin (lua_State *L);
 int script_nk_group_end (lua_State *L);
 int script_nk_tab_begin (lua_State *L);

@@ -2569,10 +2569,15 @@ void dxf_xref_assemb (dxf_drawing *drawing){
 	}
 }
 
-int dxf_find_last_blk (dxf_drawing *drawing, char mark[3]){
+int dxf_find_last_blk (dxf_drawing *drawing, char *mark){
 	/* try to locate the last numbered block, match name starting with mark chars */
 	if (!drawing) return 0;
 	if (!drawing->blks) return 0;
+	if (!mark) return 0;
+	
+	int len = 0;
+	if (len = strlen(mark) == 0) return 0;
+	
 	char test_descr[DXF_MAX_CHARS+1];
 	
 	dxf_node *current, *descr_attr;
@@ -2591,10 +2596,10 @@ int dxf_find_last_blk (dxf_drawing *drawing, char mark[3]){
 					/* change to upper case */
 					str_upp(test_descr);
 					/* look for Block name starting by mark chars*/
-					if (strlen(test_descr) > 2){
-						if (test_descr[0] == mark[0] && test_descr[1] == mark[1]){
+					if (strlen(test_descr) > len){
+						if (strncmp(test_descr, mark, len) == 0){
 							/* convert the remain string to number */
-							curr_num = atoi(test_descr+2);
+							curr_num = atoi(test_descr+len);
 							if (curr_num >= last){ /* update the last with greater number */
 								last = curr_num + 1;
 							}

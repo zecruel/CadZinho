@@ -5652,7 +5652,7 @@ int script_nk_check (lua_State *L) {
 	
 	
 	if (!lua_istable(L, 2)) {
-		lua_pushliteral(L, "nk_slide_i: incorrect argument type");
+		lua_pushliteral(L, "nk_check: incorrect argument type");
 		lua_error(L);
 	}
 	lua_getfield(L, 2, "value");
@@ -5671,6 +5671,110 @@ int script_nk_check (lua_State *L) {
 	lua_pushboolean(L, val); /* return value */
 	lua_setfield(L, 2, "value");
 	lua_pop(L, 1);
+	
+	return 0;
+}
+
+/* GUI selectable object */
+/* given parameters:
+	- Label, as string
+	- value to modify (by reference), as table with a "value" named field (boolean)
+returns:
+	- none (boolean is updated in passed table "value" key)
+*/
+int script_nk_selectable (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "nk_selectable: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_isstring(L, 1)) {
+		lua_pushliteral(L, "nk_selectable: incorrect argument type");
+		lua_error(L);
+	}
+	
+	
+	if (!lua_istable(L, 2)) {
+		lua_pushliteral(L, "nk_selectable: incorrect argument type");
+		lua_error(L);
+	}
+	lua_getfield(L, 2, "value");
+	if (!lua_isboolean(L, -1)) {
+		lua_pushliteral(L, "nk_selectable: incorrect argument type");
+		lua_error(L);
+	}
+	
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
+	int val = lua_toboolean(L, -1);
+	lua_pop(L, 1);
+	
+	val = nk_select_label(gui->ctx, lua_tostring(L, 1), NK_TEXT_LEFT, val);
+	
+	lua_pushboolean(L, val); /* return value */
+	lua_setfield(L, 2, "value");
+	lua_pop(L, 1);
+	
+	return 0;
+}
+
+/* GUI progress bar object */
+/* given parameters:
+	- current value, as integer
+	- max, as integer
+returns:
+	- none 
+*/
+int script_nk_progress (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushliteral(L, "nk_progress: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	if (!lua_isnumber(L, 1)) {
+		lua_pushliteral(L, "nk_progress: incorrect argument type");
+		lua_error(L);
+	}
+	
+	if (!lua_isnumber(L, 2)) {
+		lua_pushliteral(L, "nk_progress: incorrect argument type");
+		lua_error(L);
+	}
+	
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
+	int val = lua_tointeger(L, 1);
+	
+	/* get max*/
+	int max = lua_tointeger(L, 2);
+	
+	nk_prog(gui->ctx, val, max, 0);
 	
 	return 0;
 }
@@ -6848,10 +6952,7 @@ int script_last_blk (lua_State *L) {
 		lua_error(L);
 	}
 	
-	char mark[3];
-	strncpy(mark, (char *) lua_tostring(L, 1), 2);
-	
-	int last = dxf_find_last_blk (gui->drawing, mark);
+	int last = dxf_find_last_blk (gui->drawing, (char *) lua_tostring(L, 1));
 	
 	lua_pushinteger(L, last);
 	return 1;

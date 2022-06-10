@@ -214,6 +214,30 @@ int script_get_sel (lua_State *L) {
 	return 1;
 }
 
+/* clear selected entities in drawing */
+/* given parameters:
+	- none
+returns:
+	- none
+*/
+int script_clear_sel (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	sel_list_clear (gui);
+	
+	return 0;
+}
+
 /* modify a DXF entity in current drawing */
 /* given parameters:
 	- DXF entity, as userdata

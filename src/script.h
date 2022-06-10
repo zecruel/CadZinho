@@ -55,6 +55,7 @@ enum script_yield_reason {
 int set_timeout (lua_State *L);
 int debug_print (lua_State *L);
 int script_get_sel (lua_State *L);
+int script_clear_sel (lua_State *L);
 int script_ent_write (lua_State *L);
 
 int script_get_ent_typ (lua_State *L);

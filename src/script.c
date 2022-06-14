@@ -2887,7 +2887,7 @@ int script_new_text (lua_State *L) {
 	- default value for tags, as string (optional) - default is "?"
 	- x, y, z, as number (optional) - reference point (zero) for block. If not given, minimal coordinates of elements is used.
 returns:
-	- block entry, as userdata
+	- success, as boolean
 Notes:
 	- This function will append the created block to drawing's Block section.
 	No actions are requiried after this.
@@ -3095,9 +3095,10 @@ int script_new_block (lua_State *L) {
 		}
 		do_add_item(gui->list_do.current, NULL, blkrec);
 		do_add_item(gui->list_do.current, NULL, blk);
-		lua_pushlightuserdata(L, (void *) blk); /* return success */
+		//lua_pushlightuserdata(L, (void *) blk); /* return success */
+		lua_pushboolean(L, 1); /* return success */
 	}
-	else lua_pushnil(L); /* return fail */
+	else lua_pushboolean(L, 0);  /* return fail */
 	return 1;
 }
 
@@ -3113,7 +3114,7 @@ int script_new_block (lua_State *L) {
 	- default value for tags, as string (optional) - default is "?"
 	- x, y, z, as number (optional) - reference point (zero) for block. If not given, minimal coordinates of elements is used.
 returns:
-	- block entry, as userdata
+	- success, as boolean
 Notes:
 	- This function will append the created block to drawing's Block section.
 	No actions are requiried after this.
@@ -3306,9 +3307,129 @@ int script_new_block_file (lua_State *L) {
 		}
 		do_add_item(gui->list_do.current, NULL, blkrec);
 		do_add_item(gui->list_do.current, NULL, blk);
-		lua_pushlightuserdata(L, (void *) blk); /* return success */
+		//lua_pushlightuserdata(L, (void *) blk); /* return success */
+		lua_pushboolean(L, 1); /* return success */
 	}
-	else lua_pushnil(L); /* return fail */
+	else lua_pushboolean(L, 0);  /* return fail */
+	return 1;
+}
+
+/* create a INSERT DXF entity */
+/* given parameters:
+	- Block name, as string
+	- placement x, y, as numbers
+	- scale x, y, as numbers (optional)
+	- rotation in degrees, as number (optional)
+returns:
+	- DXF entity, as userdata
+Notes:
+	- The returned data is for one shot use in Lua script, because
+	the alocated memory is valid in single iteration of main loop.
+	It is assumed that soon afterwards it will be appended or drawn.
+*/
+int script_new_insert (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 3){
+		lua_pushliteral(L, "new_insert: invalid number of arguments");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 1)) { /* arguments types */
+		lua_pushliteral(L, "new_insert: incorrect argument type");
+		lua_error(L);
+	}
+	int i;
+	for (i = 2; i <= 3; i++) { /* arguments types */
+		if (!lua_isnumber(L, i)) {
+			lua_pushliteral(L, "new_insert: incorrect argument type");
+			lua_error(L);
+		}
+	}
+	
+	char *name = lua_tostring(L, 1);
+	
+	/* try to find corresponding block, by name */
+	if (!dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", name)){
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	double x = lua_tonumber(L, 2);
+	double y = lua_tonumber(L, 3);
+	
+	/* new INSERT entity */
+	
+	dxf_node * new_el = (dxf_node *) dxf_new_insert ( name,
+		x, y, 0.0, /* placement point */
+		gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
+		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+		0, FRAME_LIFE); /* paper space */
+		
+	if (!new_el) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	/* get x scale, if exist*/
+	double scale_x = 1.0;
+	if (lua_isnumber(L, 4)) {
+		scale_x = lua_tonumber(L, 4);
+	}
+	/* get y scale, if exist*/
+	double scale_y = 1.0;
+	if (lua_isnumber(L, 5)) {
+		scale_y = lua_tonumber(L, 5);
+	}
+	/* get rotation, if exist*/
+	double rot = 0.0;
+	if (lua_isnumber(L, 6)) {
+		rot = lua_tonumber(L, 6);
+	}
+	
+	/* update scale and rotation parameters in insert entity */
+	dxf_attr_change(new_el, 41, &scale_x);
+	dxf_attr_change(new_el, 42, &scale_y);
+	dxf_attr_change(new_el, 43, &scale_x);//
+	if (rot <= 0.0) rot = 360.0 - rot;
+	rot = fmod(rot, 360.0);
+	dxf_attr_change(new_el, 50, &rot);
+	
+	
+	/* convert block's ATTDEF to ATTRIBUTES*/
+	dxf_node *blk = dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", name);
+	dxf_node *attdef, *attrib, *nxt_attdef = NULL;
+	/* get attdef */
+	while (attdef = dxf_find_obj_nxt(blk, &nxt_attdef, "ATTDEF")){
+		/* convert and append to insert with translate, rotation and scale */
+		attrib = dxf_attrib_cpy(attdef, x, y, 0.0, scale_x, rot, FRAME_LIFE);
+		ent_handle(gui->drawing, attrib);
+		dxf_insert_append(gui->drawing, new_el, attrib, FRAME_LIFE);
+		
+		if (!nxt_attdef) break;
+	}
+	
+	
+	/* return success */
+	struct ent_lua *ent = (struct ent_lua *) lua_newuserdatauv(L, sizeof(struct ent_lua), 0);  /* create a userdata object */
+	ent->curr_ent = new_el;
+	ent->orig_ent = NULL;
+	ent->sel = 0;
+	
+	ent->drawing = gui->drawing;
+	
+	luaL_getmetatable(L, "cz_ent_obj");
+	lua_setmetatable(L, -2);
 	return 1;
 }
 

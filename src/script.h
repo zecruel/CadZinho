@@ -87,7 +87,8 @@ int script_new_circle (lua_State *L);
 int script_new_hatch (lua_State *L);
 int script_new_text (lua_State *L);
 int script_new_block (lua_State *L);
-int script_new_block_file (lua_State *L) ;
+int script_new_block_file (lua_State *L);
+int script_new_insert (lua_State *L);
 
 int script_get_dwg_appids (lua_State *L);
 

@@ -196,6 +196,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"new_text", script_new_text},
 		{"new_block", script_new_block},
 		{"new_block_file", script_new_block_file},
+		{"new_insert", script_new_insert},
 		
 		{"get_dwg_appids", script_get_dwg_appids},
 		
@@ -1039,8 +1040,19 @@ int gui_script_dyn(gui_obj *gui){
 			/* pass events */
 			if (gui->ev & EV_CANCEL)
 				lua_pushliteral(gui->lua_script[i].T, "cancel");
-			else if (gui->ev & EV_ENTER)
+			else if (gui->ev & EV_ENTER){
 				lua_pushliteral(gui->lua_script[i].T, "enter");
+				if (gui->step == 0){
+					gui->step = 1;
+					gui->en_distance = 1;
+					gui_next_step(gui);
+				}
+				else {
+					gui->step_x[0] = gui->step_x[1];
+					gui->step_y[0] = gui->step_y[1];
+					gui_next_step(gui);
+				}
+			}
 			else if (gui->ev & EV_MOTION)
 				lua_pushliteral(gui->lua_script[i].T, "motion");
 			else

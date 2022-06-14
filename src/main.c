@@ -1610,32 +1610,7 @@ int main(int argc, char** argv){
 		
 		/**********************************/
 		
-		if (gui->prev_modal != gui->modal){
-			
-			gui->en_distance = 0;
-			gui->draw_tmp = 0;
-			gui->element = NULL;
-			gui->draw = 1;
-			gui->step = 0;
-			gui->draw_phanton = 0;
-			if (gui->phanton){
-				//free(gui->phanton->data);
-				//free(gui->phanton);
-				gui->phanton = NULL;
-			}
-			gui->lock_ax_x = 0;
-			gui->lock_ax_y = 0;
-			gui->user_flag_x = 0;
-			gui->user_flag_y = 0;
-			//printf("change tool\n");
-			/*
-			if (gui->prev_modal == SCRIPT){
-				gui->lua_script[0].active = 0;
-				gui->lua_script[0].dynamic = 0;
-			}
-			*/
-			gui->prev_modal = gui->modal;
-		}
+		
 		
 		/*-------------------------------- macro script --------------------- */
 		if ( macro_script.active && strlen(macro) > 0 ){
@@ -1717,6 +1692,33 @@ int main(int argc, char** argv){
 		gui_vertex_interactive(gui);
 		
 		gui_dim_interactive(gui);
+		
+		if (gui->prev_modal != gui->modal){
+			
+			gui->en_distance = 0;
+			gui->draw_tmp = 0;
+			gui->element = NULL;
+			gui->draw = 1;
+			gui->step = 0;
+			gui->draw_phanton = 0;
+			if (gui->phanton){
+				//free(gui->phanton->data);
+				//free(gui->phanton);
+				gui->phanton = NULL;
+			}
+			gui->lock_ax_x = 0;
+			gui->lock_ax_y = 0;
+			gui->user_flag_x = 0;
+			gui->user_flag_y = 0;
+			//printf("change tool\n");
+			/*
+			if (gui->prev_modal == SCRIPT){
+				gui->lua_script[0].active = 0;
+				gui->lua_script[0].dynamic = 0;
+			}
+			*/
+			gui->prev_modal = gui->modal;
+		}
 		
 		/* window file browser */
 		if (gui->show_file_br == 1){			

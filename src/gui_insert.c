@@ -36,16 +36,15 @@ int gui_insert_interactive(gui_obj *gui){
 				
 				/* convert block's ATTDEF to ATTRIBUTES*/
 				dxf_node *blk = dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name);
-				dxf_node *attdef, *attrib;
-				i = 0;
+				dxf_node *attdef, *attrib, *nxt_attdef = NULL;
 				/* get attdef */
-				while (attdef = dxf_find_obj_i(blk, "ATTDEF", i)){
+				while (attdef = dxf_find_obj_nxt(blk, &nxt_attdef, "ATTDEF")){
 					/* convert and append to insert with translate, rotation and scale */
 					attrib = dxf_attrib_cpy(attdef, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->scale_x, gui->angle, DWG_LIFE);
 					ent_handle(gui->drawing, attrib);
 					dxf_insert_append(gui->drawing, new_el, attrib, DWG_LIFE);
 					
-					i++;
+					if (!nxt_attdef) break;
 				}
 				
 				/* append to drawing */

@@ -238,6 +238,34 @@ int script_clear_sel (lua_State *L) {
 	return 0;
 }
 
+/* enable select mode */
+/* given parameters:
+	- none
+returns:
+	- none
+*/
+int script_enable_sel (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	gui->step = 0;
+	gui->free_sel = 1;
+	gui->en_distance = 0;
+	gui->sel_ent_filter = ~DXF_NONE;
+	gui_simple_select(gui);
+	
+	return 0;
+}
+
 /* modify a DXF entity in current drawing */
 /* given parameters:
 	- DXF entity, as userdata

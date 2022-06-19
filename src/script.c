@@ -6645,7 +6645,7 @@ int script_fs_dir (lua_State *L) {
 		}
 	}
 	
-	DIR *d;
+	DIR *d, *subdir;
 	d = opendir(path);
 	if (d == NULL)
 	{
@@ -6655,10 +6655,39 @@ int script_fs_dir (lua_State *L) {
 	
 	int i;
 	struct dirent *entry;
+	i = 0;
 	lua_newtable(L);
-	for (i=1; (entry = readdir(d)) != NULL; i++) {
-		lua_pushstring(L, entry->d_name);
-		lua_rawseti(L, -2, i);
+	while (entry = readdir(d)) {
+		/* verify if current item is a subdir */
+		subdir = opendir(entry->d_name);
+		if (subdir != NULL){ /* a subdir */
+			if (!(strcmp(entry->d_name, ".") == 0) &&
+			    !(strcmp(entry->d_name, "..") == 0)){ /* don't show current and parent dir information */
+				i++;
+				lua_newtable(L); /* table to store data */
+				lua_pushstring(L, "name");
+				lua_pushstring(L, entry->d_name);
+				lua_rawset(L, -3);
+				
+				lua_pushstring(L, "is_dir");
+				lua_pushboolean(L, 1);
+				lua_rawset(L, -3);
+				
+				lua_rawseti(L, -2, i); /*store in main table */
+			}
+		} else {
+			i++;
+			lua_newtable(L); /* table to store data */
+			lua_pushstring(L, "name");
+			lua_pushstring(L, entry->d_name);
+			lua_rawset(L, -3);
+			
+			lua_pushstring(L, "is_dir");
+			lua_pushboolean(L, 0);
+			lua_rawset(L, -3);
+			
+			lua_rawseti(L, -2, i); /*store in main table */
+		}
 	}
 	closedir(d);
 	return 1;

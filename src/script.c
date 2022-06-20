@@ -234,6 +234,9 @@ int script_clear_sel (lua_State *L) {
 	}
 	
 	sel_list_clear (gui);
+	gui->draw = 1;
+	gui->draw_phanton = 0;
+	gui->element = NULL;
 	
 	return 0;
 }

@@ -411,6 +411,120 @@ int script_get_ent_typ (lua_State *L) {
 	return 1;
 }
 
+/* get the parameters (center point, radius) of a CIRCLE entity */
+/* given parameters:
+	- DXF CIRCLE entity, as userdata
+returns:
+	- success, table with params
+	- nil if not a CIRCLES
+*/
+int script_get_circle_data (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	struct ent_lua *ent_obj;
+	
+	/* verify passed arguments */
+	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "get_circle_data: incorrect argument type");
+		lua_error(L);
+	}
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	/* verify if it is a CIRCLE ent */
+	if (strcmp(ent->obj.name, "CIRCLE") != 0) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	double x = 0.0, y = 0.0, z = 0.0, ex = 1.0, ey = 1.0, ez = 1.0, r = 0.0;
+	
+	dxf_node *current = ent->obj.content->next;
+	while (current){
+		if (current->type == DXF_ATTR){ /* DXF attibute */
+			switch (current->value.group){
+				case 10:
+					x = current->value.d_data;
+					break;
+				case 20:
+					y = current->value.d_data;
+					break;
+				case 30:
+					z = current->value.d_data;
+					break;
+				case 210:
+					ex = current->value.d_data;
+					break;
+				case 220:
+					ey = current->value.d_data;
+					break;
+				case 230:
+					ez = current->value.d_data;
+					break;
+				case 40:
+					r = current->value.d_data;
+					break;
+			}
+		}
+		current = current->next; /* go to the next in the list */
+	}
+	lua_newtable(L); /*main returned table */
+	lua_pushstring(L, "center"); /* center point */
+	
+	lua_newtable(L); /* table to store point coordinates */
+	lua_pushstring(L, "x");
+	lua_pushnumber(L, x);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "y");
+	lua_pushnumber(L, y);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "z");
+	lua_pushnumber(L, z);
+	lua_rawset(L, -3);
+	
+	lua_rawset(L, -3);  /* set main table at key `center' */
+	
+	lua_pushstring(L, "extru"); /* extrusion vector */
+	
+	lua_newtable(L); /* table to store factors */
+	lua_pushstring(L, "x");
+	lua_pushnumber(L, ex);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "y");
+	lua_pushnumber(L, ey);
+	lua_rawset(L, -3);
+	
+	lua_pushstring(L, "z");
+	lua_pushnumber(L, ez);
+	lua_rawset(L, -3);
+	
+	lua_rawset(L, -3);  /* set main table at key `extru' */
+	
+	lua_pushstring(L, "radius");
+	lua_pushnumber(L, r);
+	lua_rawset(L, -3);  /* set main table at key `radius' */
+	
+	
+	return 1;
+}
+
 /* get the block name in a INSERT entity */
 /* given parameters:
 	- DXF INSERT entity, as userdata
@@ -482,7 +596,7 @@ int script_get_ins_data (lua_State *L) {
 	
 	/* verify passed arguments */
 	if (!( ent_obj =  luaL_checkudata(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
-		lua_pushliteral(L, "get_blk_name: incorrect argument type");
+		lua_pushliteral(L, "get_ins_data: incorrect argument type");
 		lua_error(L);
 	}
 	/* get entity */

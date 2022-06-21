@@ -169,6 +169,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"clear_sel", script_clear_sel},
 		{"enable_sel", script_enable_sel},
 		{"get_ent_typ", script_get_ent_typ},
+		{"get_circle_data", script_get_circle_data},
 		{"get_blk_name", script_get_blk_name},
 		{"get_ins_data", script_get_ins_data},
 		{"count_attrib", script_count_attrib},

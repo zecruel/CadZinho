@@ -1,21 +1,27 @@
-name: C/C++ CI
+name: build CadZinho for windows
 
 on:
   push:
     branches: [ "opengl" ]
-  pull_request:
-    branches: [ "opengl" ]
 
 jobs:
   build:
-
+    defaults:
+      run:
+        shell: msys2 {0}
     runs-on: windows-latest
 
     steps:
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
+      with:
+          update: true
+          install: >-
+            base-devel
+            git
+            mingw-w64-SDL2
+            mingw-w64-x86_64-glew
+            mingw-w64-lua
     - uses: actions/checkout@v3
-    - name: Dependencies in MSYS
-      run: pacman -Ss mingw-w64-SDL2 mingw-w64-x86_64-glew mingw-w64-lua
     - name: make
       run: make

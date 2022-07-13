@@ -15,10 +15,7 @@ jobs:
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
     - uses: actions/checkout@v3
-    - name: Download SDL2
-      uses: albin-johansson/download-sdl2@latest
-      with:
-        sources_destination: .
-        binaries_destination: bin
+    - name: Dependencies in MSYS
+      run: pacman -Ss mingw-w64-SDL2 mingw-w64-x86_64-glew mingw-w64-lua
     - name: make
       run: make

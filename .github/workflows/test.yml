@@ -1,0 +1,24 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "opengl" ]
+  pull_request:
+    branches: [ "opengl" ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+    - uses: actions/checkout@v3
+    - name: Download SDL2
+      uses: albin-johansson/download-sdl2@latest
+      with:
+        sources_destination: .
+        binaries_destination: bin
+    - name: make
+      run: make

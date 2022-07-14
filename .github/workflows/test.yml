@@ -24,4 +24,4 @@ jobs:
             mingw64/mingw-w64-x86_64-lua
     - uses: actions/checkout@v3
     - name: make
-      run: ls
+      run: ls -R

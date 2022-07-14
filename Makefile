@@ -18,7 +18,7 @@ else
 endif
 
 LINKER_FLAGS = `sdl2-config --cflags --libs` -llua -lm $(OPENGL_LIBS) -lGLEW
-INCLUDE_PATHS = -I. -I./src/ -I/usr/include/SDL2 $(EXTRA_INCLUDE_PATHS)
+INCLUDE_PATHS = -I. -I./src/ -I/usr/include/SDL2 -I/mingw64/include $(EXTRA_INCLUDE_PATHS)
 LIBRARY_PATHS = -L/usr/lib -L.
 EXE=cadzinho
 

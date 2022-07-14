@@ -18,11 +18,6 @@ jobs:
           update: true
           install: >-
             mingw-w64-x86_64-toolchain
-            #base-devel
-            #git
-            #gcc
-            make
-            #mingw64/mingw-w64-x86_64-headers-git
             mingw64/mingw-w64-x86_64-SDL2
             mingw64/mingw-w64-x86_64-glew
             mingw64/mingw-w64-x86_64-lua

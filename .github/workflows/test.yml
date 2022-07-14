@@ -19,9 +19,11 @@ jobs:
           install: >-
             base-devel
             git
+            gcc
+            make
             mingw64/mingw-w64-x86_64-SDL2
             mingw64/mingw-w64-x86_64-glew
             mingw64/mingw-w64-x86_64-lua
     - uses: actions/checkout@v3
     - name: make
-      run: ls -R
+      run: make

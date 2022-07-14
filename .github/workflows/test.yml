@@ -34,8 +34,6 @@ jobs:
         name: CadZinho
         path: cadzinho.exe
         retention-days: 5
-    - name: excecute
-      run: ./cadzinho.exe
     - name: Sleep for 30 seconds
       run: Start-Sleep -s 30
       shell: powershell

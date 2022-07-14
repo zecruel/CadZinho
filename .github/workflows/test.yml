@@ -1,11 +1,9 @@
 name: build CadZinho for windows
 
-on:
-  push:
-    branches: [ "opengl" ]
+on: workflow_dispatch
 
 jobs:
-  build:
+  windows-build:
     defaults:
       run:
         shell: msys2 {0}
@@ -33,17 +31,4 @@ jobs:
       with:
         name: CadZinho
         path: cadzinho.exe
-        retention-days: 5
-    - name: Sleep for 30 seconds
-      run: Start-Sleep -s 30
-      shell: powershell
-    - name: Create a desktop screenshot
-      uses: OrbitalOwen/desktop-screenshot-action@0.1
-      with:
-        file-name: screenshot.jpg
-    - name: Upload the screenshot
-      uses: actions/upload-artifact@v3
-      with:
-        name: CadZinho
-        path: screenshot.jpg
         retention-days: 5

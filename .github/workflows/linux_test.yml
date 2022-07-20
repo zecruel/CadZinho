@@ -29,7 +29,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: configure
-      run: brew install sdl2 lua glew
+      run: brew install sdl2 lua glfw3 glew
     - name: get make file
       run: cp linux/Makefile ./Makefile
     - name: make

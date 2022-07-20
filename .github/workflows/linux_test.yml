@@ -15,3 +15,9 @@ jobs:
       run: cp linux/Makefile ./Makefile
     - name: make
       run: make
+    - name: Upload the result
+      uses: actions/upload-artifact@v3
+      with:
+        name: cz-linux
+        path: cadzinho
+        retention-days: 5

@@ -1,0 +1,17 @@
+name: Cadzinho CI
+
+on: workflow_dispatch
+
+jobs:
+  linux-build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: configure
+      run: apt-get install --yes libsdl2-dev libglvnd-dev libglew-dev lua5.2
+    - name: get make file
+      run: cp linux/Makefile ./Makefile
+    - name: make
+      run: make

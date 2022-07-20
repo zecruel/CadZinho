@@ -21,3 +21,22 @@ jobs:
         name: cz-linux
         path: cadzinho
         retention-days: 5
+        
+  macos-build:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: configure
+      run: brew install sdl2 lua glew
+    - name: get make file
+      run: cp linux/Makefile ./Makefile
+    - name: make
+      run: make
+    - name: Upload the result
+      uses: actions/upload-artifact@v3
+      with:
+        name: cz-macos
+        path: cadzinho
+        retention-days: 5

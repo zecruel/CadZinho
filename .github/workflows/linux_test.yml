@@ -26,7 +26,7 @@ jobs:
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
-        name: cz-linux
+        name: uploads
         path: cadzinho
         retention-days: 5
         
@@ -38,6 +38,14 @@ jobs:
     - uses: actions/checkout@v3
     - name: configure
       run: brew install sdl2 lua mesa-glu glew
+    - name: download lua source
+      run: curl -R -O http://www.lua.org/ftp/lua-5.4.4.tar.gz
+    - name: extract lua
+      run: tar zxf lua-5.4.4.tar.gz
+    - name: remove main in lua
+      run: rm lua-5.4.4/src/lua.c lua-5.4.4/src/luac.c
+    - name: copy lua sources 
+      run: cp lua-5.4.4/src/* ./src/
     - name: get make file
       run: cp linux/Makefile ./Makefile
     - name: make
@@ -45,6 +53,14 @@ jobs:
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
-        name: cz-macos
+        name: uploads
         path: cadzinho
         retention-days: 5
+    - run: ./cadzinho
+    - uses: OrbitalOwen/desktop-screenshot-action@0.1
+    - uses: actions/upload-artifact@v3
+      with:
+        name: uploads
+        path: screenshot.jpg
+        retention-days: 5
+    

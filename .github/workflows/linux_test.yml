@@ -23,11 +23,13 @@ jobs:
       run: cp linux/Makefile ./Makefile
     - name: make
       run: make
+    - name: create archive
+      run: zip linux cadzinho
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
         name: uploads
-        path: cadzinho
+        path: linux.zip
         retention-days: 5
         
   macos-build:
@@ -50,17 +52,60 @@ jobs:
       run: cp linux/Makefile ./Makefile
     - name: make
       run: make
+    - name: create archive
+      run: zip macos cadzinho
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
         name: uploads
-        path: cadzinho
+        path: macos.zip
         retention-days: 5
-    - run: ./cadzinho
-    - uses: OrbitalOwen/desktop-screenshot-action@0.1
-    - uses: actions/upload-artifact@v3
+  
+  windows-build:
+    defaults:
+      run:
+        shell: msys2 {0}
+    runs-on: windows-latest
+
+    steps:
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+          update: true
+          install: >-
+            base-devel
+            git
+            gcc
+            make
+            mingw-w64-x86_64-toolchain
+            mingw64/mingw-w64-x86_64-SDL2
+            mingw64/mingw-w64-x86_64-glew
+            mingw64/mingw-w64-x86_64-lua
+    - uses: actions/checkout@v3
+    - name: make
+      run: make
+    - name: create archive
+      run: Compress-Archive cadzinho.exe windows.zip
+      shell: powershell
+    - name: Upload the result
+      uses: actions/upload-artifact@v3
       with:
         name: uploads
-        path: screenshot.jpg
+        path: windows.zip
         retention-days: 5
-    
+  release:
+    needs: [linux-build, macos-build, windows-build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: uploads
+      - uses: softprops/action-gh-release@v0.1.14
+        with:
+          tag_name: 0.2.0
+          draft: true
+          files: |
+            linux.zip
+            macos.zip
+            windows.zip

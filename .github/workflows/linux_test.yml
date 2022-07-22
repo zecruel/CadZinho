@@ -10,7 +10,15 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: configure
-      run: sudo apt-get install --yes libsdl2-dev libglvnd-dev libglew-dev liblua5.4-dev
+      run: sudo apt-get install --yes libsdl2-dev libglvnd-dev libglew-dev
+    - name: download lua source
+      run: curl -R -O http://www.lua.org/ftp/lua-5.4.4.tar.gz
+    - name: extract lua
+      run: tar zxf lua-5.4.4.tar.gz
+    - name: remove main in lua
+      run: rm lua-5.4.4/src/lua.c lua-5.4.4/src/luac.c
+    - name: copy lua sources 
+      run: cp lua-5.4.4/src/* ./src/
     - name: get make file
       run: cp linux/Makefile ./Makefile
     - name: make

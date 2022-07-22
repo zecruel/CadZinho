@@ -1,4 +1,4 @@
-name: Cadzinho CI
+name: CadZinho CI
 
 on: workflow_dispatch
 
@@ -84,8 +84,14 @@ jobs:
     - uses: actions/checkout@v3
     - name: make
       run: make
+    - run: |
+        mkdir out
+        cp cadzinho.exe out/
+        cp /mingw64/bin/SDL2.dll out/
+        cp /mingw64/bin/glew32.dll out/
+        cp /mingw64/bin/lua54.dll out/
     - name: create archive
-      run: Compress-Archive cadzinho.exe windows.zip
+      run: Compress-Archive out windows.zip
       shell: powershell
     - name: Upload the result
       uses: actions/upload-artifact@v3

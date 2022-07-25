@@ -62,7 +62,7 @@ jobs:
         retention-days: 5
     - run: go get github.com/machinebox/appify
     - run: cp linux/icon_256.png ./icon.png
-    - run: appify -name "CadZinho" -icon ./icon.png ./cadzinho
+    - run: go appify -name "CadZinho" -icon ./icon.png ./cadzinho
     - run: ls
   
   windows-build:

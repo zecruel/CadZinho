@@ -60,6 +60,10 @@ jobs:
         name: uploads
         path: macos.zip
         retention-days: 5
+    - run: go get github.com/machinebox/appify
+    - run: cp linux/icon_256.png ./icon.png
+    - run: appify -name "CadZinho" -icon ./icon.png ./cadzinho
+    - run: ls
   
   windows-build:
     defaults:
@@ -85,13 +89,13 @@ jobs:
     - name: make
       run: make
     - run: |
-        mkdir out
-        cp cadzinho.exe out/
-        cp /mingw64/bin/SDL2.dll out/
-        cp /mingw64/bin/glew32.dll out/
-        cp /mingw64/bin/lua54.dll out/
+        mkdir CadZinho
+        cp cadzinho.exe CadZinho/
+        cp /mingw64/bin/SDL2.dll CadZinho/
+        cp /mingw64/bin/glew32.dll CadZinho/
+        cp /mingw64/bin/lua54.dll CadZinho/
     - name: create archive
-      run: Compress-Archive out windows.zip
+      run: Compress-Archive CadZinho windows.zip
       shell: powershell
     - name: Upload the result
       uses: actions/upload-artifact@v3

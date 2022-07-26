@@ -39,7 +39,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: configure
-      run: brew install sdl2 lua mesa-glu glew
+      run: brew install sdl2 lua mesa-glu dylibbundler
     - name: download lua source
       run: curl -R -O http://www.lua.org/ftp/lua-5.4.4.tar.gz
     - name: extract lua
@@ -52,17 +52,17 @@ jobs:
       run: cp linux/Makefile ./Makefile
     - name: make
       run: make
+    - run: cp ./cadzinho ./macos/CadZinho.app/Contents/MacOS/cadzinho
+    - name: fix dependencies
+      run: dylibbundler -od -b -x ./macos/CadZinho.app/Contents/MacOS/cadzinho -d ./macos/CadZinho.app/Contents/libs/
     - name: create archive
-      run: zip macos cadzinho
+      run: zip -r macos ./macos/CadZinho.app/
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
         name: uploads
         path: macos.zip
         retention-days: 5
-    - run: go get github.com/machinebox/appify
-    - run: cp linux/icon_256.png ./icon.png
-    - run: go appify -name "CadZinho" -icon ./icon.png ./cadzinho
     - run: ls
   
   windows-build:

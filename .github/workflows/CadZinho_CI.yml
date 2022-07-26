@@ -38,7 +38,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - run: ls -R macos
     - name: configure
       run: brew install sdl2 lua mesa-glu glew dylibbundler
     - name: download lua source
@@ -53,7 +52,8 @@ jobs:
       run: cp linux/Makefile ./Makefile
     - name: make
       run: make
-    - run: cp ./cadzinho ./macos/CadZinho.app/Contents/MacOS/
+    - run: mkdir ./macos/CadZinho.app/Contents/MacOS
+    - run: cp ./cadzinho ./macos/CadZinho.app/Contents/MacOS/cadzinho
     - name: fix dependencies
       run: dylibbundler -od -b -x ./macos/CadZinho.app/Contents/MacOS/cadzinho -d ./macos/CadZinho.app/Contents/libs/
     - name: create archive

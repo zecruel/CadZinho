@@ -38,6 +38,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - run: ls
     - name: configure
       run: brew install sdl2 lua mesa-glu glew dylibbundler
     - name: download lua source

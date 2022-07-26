@@ -39,7 +39,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: configure
-      run: brew install sdl2 lua mesa-glu dylibbundler
+      run: brew install sdl2 lua mesa-glu glew dylibbundler
     - name: download lua source
       run: curl -R -O http://www.lua.org/ftp/lua-5.4.4.tar.gz
     - name: extract lua

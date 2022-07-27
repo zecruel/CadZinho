@@ -1,6 +1,7 @@
 SRC_PATH=./src/
 CC=gcc
-COMPILER_FLAGS = -g -c
+#COMPILER_FLAGS = -g -c
+COMPILER_FLAGS = -c
 LINKER_FLAGS = `pkg-config --libs sdl2` -lm -lGL -lGLU -lGLEW
 INCLUDE_PATHS = -I. -I./src/ `pkg-config --cflags sdl2`
 LIBRARY_PATHS = -L/usr/lib -L.

@@ -71,7 +71,6 @@ jobs:
         name: uploads
         path: macos/macos.zip
         retention-days: 5
-    - run: ls
   
   windows-build:
     defaults:
@@ -95,8 +94,8 @@ jobs:
             mingw64/mingw-w64-x86_64-glew
             mingw64/mingw-w64-x86_64-lua
     - uses: actions/checkout@v3
-    - name: get make file
-      run: cp windows/Makefile ./Makefile
+    - name: get make file and resources
+      run: cp windows/* ./
     - name: make
       run: make
     - run: |

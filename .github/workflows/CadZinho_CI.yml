@@ -24,12 +24,12 @@ jobs:
     - name: make
       run: make
     - run: |
-        mkdir ./linux/usr/bin
-        cp ./cadzinho ./linux/usr/bin/cadzinho
+        mkdir ./linux/CadZinho/bin
+        cp ./cadzinho ./linux/CadZinho/bin/cadzinho
     - name: create archive
       run: |
         cd linux
-        zip -r linux usr
+        zip -r linux CadZinho
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:

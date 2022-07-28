@@ -23,8 +23,13 @@ jobs:
       run: cp linux/Makefile ./Makefile
     - name: make
       run: make
+    - run: |
+        mkdir ./linux/usr/bin
+        cp ./cadzinho ./linux/usr/bin/cadzinho
+        rm ./linux/Makefile
+        cd linux
     - name: create archive
-      run: zip linux cadzinho
+      run: zip -r linux *
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
@@ -49,7 +54,7 @@ jobs:
     - name: copy lua sources 
       run: cp lua-5.4.4/src/* ./src/
     - name: get make file
-      run: cp linux/Makefile ./Makefile
+      run: cp macos/Makefile ./Makefile
     - name: make
       run: make
     - run: mkdir ./macos/CadZinho.app/Contents/MacOS
@@ -57,7 +62,9 @@ jobs:
     - name: fix dependencies
       run: dylibbundler -od -b -x ./macos/CadZinho.app/Contents/MacOS/cadzinho -d ./macos/CadZinho.app/Contents/libs/
     - name: create archive
-      run: zip -r macos ./macos/CadZinho.app/
+      run: |
+        cd macos
+        zip -r macos ./CadZinho.app/
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
@@ -82,22 +89,25 @@ jobs:
             git
             gcc
             make
+            p7zip
             mingw-w64-x86_64-toolchain
             mingw64/mingw-w64-x86_64-SDL2
             mingw64/mingw-w64-x86_64-glew
             mingw64/mingw-w64-x86_64-lua
     - uses: actions/checkout@v3
+    - name: get make file
+      run: cp windows/Makefile ./Makefile
     - name: make
       run: make
     - run: |
         mkdir CadZinho
         cp cadzinho.exe CadZinho/
+        cp windows/cadzinho.ico CadZinho/
         cp /mingw64/bin/SDL2.dll CadZinho/
         cp /mingw64/bin/glew32.dll CadZinho/
         cp /mingw64/bin/lua54.dll CadZinho/
     - name: create archive
-      run: Compress-Archive CadZinho windows.zip
-      shell: powershell
+      run: 7z a windows.zip CadZinho
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:

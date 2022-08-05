@@ -2290,7 +2290,7 @@ int ent_handle(dxf_drawing *drawing, dxf_node *element){
 				/* convert back to hexadecimal string, to write in element */
 				snprintf(hdl_str, DXF_MAX_CHARS, "%X", handle);
 				/* increment value of seed and write back */
-				snprintf(drawing->hand_seed->value.s_data, DXF_MAX_CHARS, "%X", handle + 1);
+				snprintf(drawing->hand_seed->value.s_data, DXF_MAX_CHARS, "%lX", handle + 1);
 			}
 			
 			/* change element handle */

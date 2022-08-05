@@ -574,7 +574,7 @@ int dxf_cpy_ltyp_drwg(dxf_drawing *source, dxf_drawing *dest){
 							/* copy STYLE obj to destination drawing */
 							sty_id = dxf_cpy_style (dest, style);
 							/* update pointer in linetype to new obj */
-							snprintf(sty_obj->value.s_data, DXF_MAX_CHARS, "%X", sty_id);
+							snprintf(sty_obj->value.s_data, DXF_MAX_CHARS, "%lX", sty_id);
 						}
 					}
 				}

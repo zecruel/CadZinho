@@ -355,7 +355,7 @@ struct Gui_obj {
 	char h_fam_name[DXF_MAX_CHARS];
 	char h_fam_descr[DXF_MAX_CHARS];
 	
-	char dflt_fonts_path[5 * DXF_MAX_CHARS];
+	char dflt_fonts_path[5 * DXF_MAX_CHARS+1];
 	
 	list_node * sel_list;
 	list_node *phanton;

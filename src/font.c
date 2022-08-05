@@ -88,7 +88,7 @@ struct tfont * add_font_list(list_node *list, char *path, char *opt_dirs){
 		/* if file not found */
 		if (opt_dirs){ /* try to explore optional font directories */
 			char dirs[DXF_MAX_CHARS];
-			char try_path[DXF_MAX_CHARS] = "";
+			char try_path[DXF_MAX_CHARS+1] = "";
 			/* font directories are in single string, separated by system mark */
 			char s[2] = {PATH_SEPARATOR, 0};
 			char *token;

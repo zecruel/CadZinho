@@ -1278,7 +1278,13 @@ int dxf_new_blk_file (dxf_drawing *drawing, char *name, char *descr,
 		&tmp_rec, &tmp_blk, FRAME_LIFE);
 	
 	if (ok) ok = dxf_block_cpy(tmp_drwg, drawing, tmp_blk, block_rec, block);
-	
+	if (ok){
+		/* copy missing layers, styles, linetypes ad appids*/
+		dxf_cpy_lay_drwg(tmp_drwg, drawing);
+		dxf_cpy_sty_drwg(tmp_drwg, drawing);
+		dxf_cpy_ltyp_drwg(tmp_drwg, drawing);
+		dxf_cpy_appid_drwg(tmp_drwg, drawing);
+	}	
 	/* change the block description */
 	if (ok) dxf_attr_change(*block, 4, (void *)descr);
 	

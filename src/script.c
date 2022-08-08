@@ -3436,6 +3436,8 @@ int script_new_block_file (lua_State *L) {
 		&blkrec, &blk, DWG_LIFE);
 	
 	if (ok) {
+		gui_tstyle(gui); /* add additional fonts to main list, if required */
+		
 		/* add to undo/redo list*/
 		if (!script->do_init){
 			char msg[DXF_MAX_CHARS];

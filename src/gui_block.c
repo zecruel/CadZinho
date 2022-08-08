@@ -528,6 +528,8 @@ int gui_blk_mng (gui_obj *gui){
 								"0", path, &blkrec, &blk_new, DWG_LIFE);
 						}
 						if (ok){
+							gui_tstyle(gui); /* add additional fonts to main list, if required */
+							
 							do_add_entry(&gui->list_do, "NEW BLOCK"); /* undo/redo list*/
 							do_add_item(gui->list_do.current, NULL, blkrec); /* undo/redo list*/
 							do_add_item(gui->list_do.current, NULL, blk_new); /* undo/redo list*/

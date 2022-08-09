@@ -586,7 +586,7 @@ int script_win (gui_obj *gui){
 		init = 1;
 	}
 	
-	if (nk_begin(gui->ctx, "Script", nk_rect(215, 100, 400, 380),
+	if (nk_begin(gui->ctx, "Script", nk_rect(215, 88, 400, 380),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		struct nk_style_button *sel_type;

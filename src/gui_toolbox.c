@@ -41,7 +41,7 @@ int gui_tools_win (gui_obj *gui){
 		
 		nk_layout_row_dynamic(gui->ctx, 10, 1); /*space*/
 			
-		/* Selection mode option - toggle, add or remove */
+		/* Tools collections - Place, Modify and Dimensions */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
 		if (gui_tab (gui, "Place", tool_grp == GRP_PLACE)) tool_grp = GRP_PLACE;
@@ -252,7 +252,7 @@ int gui_tools_win (gui_obj *gui){
 int gui_main_win(gui_obj *gui){
 	int i;
 	
-	if (nk_begin(gui->ctx, "Main", nk_rect(2, 2, gui->win_w - 4, 6 + 4 + ICON_SIZE + 4 + 6 + 4 + ICON_SIZE + 4 + 6 + 8),
+	if (nk_begin(gui->ctx, "Main", nk_rect(2, 2, gui->win_w - 4, 83),
 	NK_WINDOW_BORDER)){
 		/* first line */
 		nk_layout_row_begin(gui->ctx, NK_STATIC, ICON_SIZE + 12, 9);
@@ -401,12 +401,12 @@ int gui_main_win(gui_obj *gui){
 		}
 		
 		/* config tools*/
-		nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
+		nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
 		if (nk_group_begin(gui->ctx, "_config", NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_INFO]))){
+			/*if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_INFO]))){
 				gui->show_info = 1;
-			}
+			}*/
 			/*
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TOOL]))){
 				//printf("Tools\n");
@@ -437,121 +437,116 @@ int gui_main_win(gui_obj *gui){
 		nk_layout_row_end(gui->ctx);
 		/*------------ end first line --------------*/
 		
+		//nk_layout_row_dynamic(gui->ctx, 5, 1); /* only a blank space */
+		
 		/* second line */
-		nk_layout_row_begin(gui->ctx, NK_STATIC, ICON_SIZE + 4, ICON_SIZE + 4);
+		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 8);
 		
 		static char text[64];
 		int text_len;
-		nk_layout_row_push(gui->ctx, 1000);
-		if (nk_group_begin(gui->ctx, "_Prop", NK_WINDOW_NO_SCROLLBAR)) {
-			nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 20);
 			
-			/*layer*/
-			nk_layout_row_push(gui->ctx, 60);
-			nk_label(gui->ctx, "Layer: ", NK_TEXT_RIGHT);
-			nk_layout_row_push(gui->ctx, 200);
-			layer_prop(gui);
-			
-			
-			/*color picker */
-			int c_idx = gui->color_idx;
+		/*layer*/
+		nk_layout_row_push(gui->ctx, 60);
+		nk_label(gui->ctx, "Layer: ", NK_TEXT_RIGHT);
+		nk_layout_row_push(gui->ctx, 200);
+		layer_prop(gui);
+		
+		
+		/*color picker */
+		int c_idx = gui->color_idx;
+		if (c_idx >255){
+			c_idx = gui->drawing->layers[gui->layer_idx].color;
 			if (c_idx >255){
-				c_idx = gui->drawing->layers[gui->layer_idx].color;
-				if (c_idx >255){
-					c_idx = 0;
-				}
+				c_idx = 0;
 			}
-			/* fill the tiny bitmap with selected color*/
-			bmp_fill(gui->color_img, dxf_colors[c_idx]);
+		}
+		/* fill the tiny bitmap with selected color*/
+		bmp_fill(gui->color_img, dxf_colors[c_idx]);
+		
+		/* print the name (number) of color */
+		if (gui->color_idx == 0){
+			text_len = snprintf(text, 63, "%s", "ByB");
+		}
+		else if (gui->color_idx < 256){
+			text_len = snprintf(text, 63, "%d", gui->color_idx);
+		}
+		else{
+			text_len = snprintf(text, 63, "%s", "ByL");
+		}
+		nk_layout_row_push(gui->ctx, 70);
+		nk_label(gui->ctx, "Color: ", NK_TEXT_RIGHT);
+		nk_layout_row_push(gui->ctx, 70);
+		if (nk_combo_begin_image_label(gui->ctx, text, nk_image_ptr(gui->color_img), nk_vec2(215,320))){
+			nk_layout_row_dynamic(gui->ctx, 20, 2);
+			if (nk_button_label(gui->ctx, "By Layer")){
+				gui->color_idx = 256;
+				gui->action = COLOR_CHANGE;
+				nk_combo_close(gui->ctx);
+			}
+			if (nk_button_label(gui->ctx, "By Block")){
+				gui->color_idx = 0;
+				gui->action = COLOR_CHANGE;
+				nk_combo_close(gui->ctx);
+			}
+			nk_layout_row_static(gui->ctx, 15, 15, 10);
+			nk_label(gui->ctx, " ", NK_TEXT_RIGHT); /* for padding color alingment */
 			
-			/* print the name (number) of color */
-			if (gui->color_idx == 0){
-				text_len = snprintf(text, 63, "%s", "ByB");
-			}
-			else if (gui->color_idx < 256){
-				text_len = snprintf(text, 63, "%d", gui->color_idx);
-			}
-			else{
-				text_len = snprintf(text, 63, "%s", "ByL");
-			}
-			nk_layout_row_push(gui->ctx, 70);
-			nk_label(gui->ctx, "Color: ", NK_TEXT_RIGHT);
-			nk_layout_row_push(gui->ctx, 70);
-			if (nk_combo_begin_image_label(gui->ctx, text, nk_image_ptr(gui->color_img), nk_vec2(215,320))){
-				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				if (nk_button_label(gui->ctx, "By Layer")){
-					gui->color_idx = 256;
+			for (i = 1; i < 256; i++){
+				struct nk_color b_color = {
+					.r = dxf_colors[i].r,
+					.g = dxf_colors[i].g,
+					.b = dxf_colors[i].b,
+					.a = dxf_colors[i].a
+				};
+				if(nk_button_color(gui->ctx, b_color)){
+					gui->color_idx = i;
 					gui->action = COLOR_CHANGE;
 					nk_combo_close(gui->ctx);
+					break;
 				}
-				if (nk_button_label(gui->ctx, "By Block")){
-					gui->color_idx = 0;
-					gui->action = COLOR_CHANGE;
-					nk_combo_close(gui->ctx);
-				}
-				nk_layout_row_static(gui->ctx, 15, 15, 10);
-				nk_label(gui->ctx, " ", NK_TEXT_RIGHT); /* for padding color alingment */
-				
-				for (i = 1; i < 256; i++){
-					struct nk_color b_color = {
-						.r = dxf_colors[i].r,
-						.g = dxf_colors[i].g,
-						.b = dxf_colors[i].b,
-						.a = dxf_colors[i].a
-					};
-					if(nk_button_color(gui->ctx, b_color)){
-						gui->color_idx = i;
-						gui->action = COLOR_CHANGE;
-						nk_combo_close(gui->ctx);
-						break;
-					}
-				}
-				
-				nk_combo_end(gui->ctx);
 			}
 			
-			/*line type*/
-			nk_layout_row_push(gui->ctx, 100);
-			nk_label(gui->ctx, "Line type: ", NK_TEXT_RIGHT);
-			nk_layout_row_push(gui->ctx, 200);
-			ltype_prop(gui);
-			
-			/* line weight */
-			nk_layout_row_push(gui->ctx, 120);
-			nk_label(gui->ctx, "Line weight: ", NK_TEXT_RIGHT);
-			nk_layout_row_push(gui->ctx, 120);
-			
-			if (nk_combo_begin_label(gui->ctx, dxf_lw_descr[gui->lw_idx], nk_vec2(200,300))){
-				nk_layout_row_dynamic(gui->ctx, 25, 2);
-				if (nk_button_label(gui->ctx, "By Layer")){
-					gui->lw_idx = DXF_LW_LEN;
+			nk_combo_end(gui->ctx);
+		}
+		
+		/*line type*/
+		nk_layout_row_push(gui->ctx, 100);
+		nk_label(gui->ctx, "Line type: ", NK_TEXT_RIGHT);
+		nk_layout_row_push(gui->ctx, 200);
+		ltype_prop(gui);
+		
+		/* line weight */
+		nk_layout_row_push(gui->ctx, 120);
+		nk_label(gui->ctx, "Line weight: ", NK_TEXT_RIGHT);
+		nk_layout_row_push(gui->ctx, 120);
+		
+		if (nk_combo_begin_label(gui->ctx, dxf_lw_descr[gui->lw_idx], nk_vec2(200,300))){
+			nk_layout_row_dynamic(gui->ctx, 25, 2);
+			if (nk_button_label(gui->ctx, "By Layer")){
+				gui->lw_idx = DXF_LW_LEN;
+				gui->action = LW_CHANGE;
+				nk_combo_close(gui->ctx);
+			}
+			if (nk_button_label(gui->ctx, "By Block")){
+				gui->lw_idx = DXF_LW_LEN + 1;
+				gui->action = LW_CHANGE;
+				nk_combo_close(gui->ctx);
+			}
+			nk_layout_row_dynamic(gui->ctx, 17, 1);
+			for (i = 0; i < DXF_LW_LEN; i++){
+				if (nk_button_label(gui->ctx, dxf_lw_descr[i])){
+					gui->lw_idx = i;
 					gui->action = LW_CHANGE;
 					nk_combo_close(gui->ctx);
+					break;
 				}
-				if (nk_button_label(gui->ctx, "By Block")){
-					gui->lw_idx = DXF_LW_LEN + 1;
-					gui->action = LW_CHANGE;
-					nk_combo_close(gui->ctx);
-				}
-				nk_layout_row_dynamic(gui->ctx, 17, 1);
-				for (i = 0; i < DXF_LW_LEN; i++){
-					if (nk_button_label(gui->ctx, dxf_lw_descr[i])){
-						gui->lw_idx = i;
-						gui->action = LW_CHANGE;
-						nk_combo_close(gui->ctx);
-						break;
-					}
-				}
-				
-				nk_combo_end(gui->ctx);
 			}
 			
-			nk_layout_row_end(gui->ctx);
-			
-			nk_group_end(gui->ctx);
+			nk_combo_end(gui->ctx);
 		}
 		
 		nk_layout_row_end(gui->ctx);
+		
 		/*------------ end second line --------------*/
 		
 		if (gui->show_app_about){

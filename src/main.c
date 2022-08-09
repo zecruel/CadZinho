@@ -993,7 +993,7 @@ int main(int argc, char** argv){
 		
 		changed = gui->changed;
 		
-		gui->next_win_h = 6 + 4 + ICON_SIZE + 4 + 6 + 4 + ICON_SIZE + 4 + 6 + 8;
+		gui->next_win_h = 83;
 		gui->next_win_x = 2;
 		gui->next_win_y = 2;
 		

@@ -443,170 +443,210 @@ int gui_get_ini (lua_State *L) {
 int config_win (gui_obj *gui){
 	int show_config = 1;
 	int i = 0;
-	gui->next_win_x += gui->next_win_w + 3;
-	//gui->next_win_y += gui->next_win_h + 3;
-	gui->next_win_w = 200;
-	gui->next_win_h = 300;
+	
+	static enum Cfg_group {
+			GRP_PREF,
+			GRP_3D,
+			GRP_INFO,
+	} cfg_grp = GRP_PREF;
 	
 	//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "config", NK_WINDOW_CLOSABLE, nk_rect(310, 50, 200, 300))){
-	if (nk_begin(gui->ctx, "Config", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
+	if (nk_begin(gui->ctx, "Config", nk_rect(418, 88, 400, 300),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
-		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Pref Path:", NK_TEXT_LEFT);
-		if (nk_button_label(gui->ctx, "Open dir")){
-			if(gui->pref_path) opener(gui->pref_path);
-			else {
-				
+		/* Config groups - Preferences, Raw info, 3D view */
+		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
+		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
+		if (gui_tab (gui, "Preferences", cfg_grp == GRP_PREF)) cfg_grp = GRP_PREF;
+		if (gui_tab (gui, "Info", cfg_grp == GRP_INFO)) cfg_grp = GRP_INFO;
+		if (gui_tab (gui, "3D", cfg_grp == GRP_3D)) cfg_grp = GRP_3D;
+		nk_style_pop_vec2(gui->ctx);
+		nk_layout_row_end(gui->ctx);
+		
+		if(cfg_grp == GRP_PREF){
+			
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			nk_label(gui->ctx, "Preferences folder:", NK_TEXT_LEFT);
+			nk_edit_string_zero_terminated(gui->ctx, 
+				NK_EDIT_READ_ONLY,
+				gui->pref_path, DXF_MAX_CHARS, nk_filter_default);
+			nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.3, 0.7});
+			if (nk_button_label(gui->ctx, "Copy")){
+				SDL_SetClipboardText(gui->pref_path);
 			}
-		}
-		if (nk_button_label(gui->ctx, "Open config")){
-			/* full path of config file */
-			char config_path[DXF_MAX_CHARS + 1];
-			config_path[0] = 0;
-			strncpy(config_path, gui->pref_path, DXF_MAX_CHARS);
-			strncat(config_path, "config.lua", DXF_MAX_CHARS);
-			opener(config_path);
-		}
-		if (nk_button_label(gui->ctx, "Reload config")){
-			gui_list_font_free (gui->ui_font_list);
-			gui->ui_font_list = gui_new_font (NULL);
-			
-			if (gui->seed) free(gui->seed);
-			if (gui->dflt_pat) free(gui->dflt_pat);
-			if (gui->dflt_lin) free(gui->dflt_lin);
-			if (gui->extra_lin) free(gui->extra_lin);
-			
-			gui->seed = NULL;
-			gui->dflt_pat = NULL;
-			gui->dflt_lin = NULL;
-			gui->extra_lin = NULL;
-			
-			gui_load_conf (gui);
-			set_style(gui, gui->theme);
-			
-			{
-				double font_size = 0.8;
-				for (i = 0; i < FONT_NUM_SIZE; i++){
-					gui->alt_font_sizes[i] = gui->ui_font;
-					gui->alt_font_sizes[i].height = font_size * gui->ui_font.height;
-					font_size += 0.2;
+			if (nk_button_label(gui->ctx, "Open folder")){
+				opener(gui->pref_path);
+			}
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			nk_label(gui->ctx, "Config File:", NK_TEXT_LEFT);
+			if (nk_button_label(gui->ctx, "Open file")){
+				/* full path of config file */
+				char config_path[DXF_MAX_CHARS + 1];
+				config_path[0] = 0;
+				strncpy(config_path, gui->pref_path, DXF_MAX_CHARS);
+				strncat(config_path, "config.lua", DXF_MAX_CHARS);
+				opener(config_path);
+			}
+			if (nk_button_label(gui->ctx, "Reload config")){
+				gui_list_font_free (gui->ui_font_list);
+				gui->ui_font_list = gui_new_font (NULL);
+				
+				if (gui->seed) free(gui->seed);
+				if (gui->dflt_pat) free(gui->dflt_pat);
+				if (gui->dflt_lin) free(gui->dflt_lin);
+				if (gui->extra_lin) free(gui->extra_lin);
+				
+				gui->seed = NULL;
+				gui->dflt_pat = NULL;
+				gui->dflt_lin = NULL;
+				gui->extra_lin = NULL;
+				
+				gui_load_conf (gui);
+				set_style(gui, gui->theme);
+				
+				{
+					double font_size = 0.8;
+					for (i = 0; i < FONT_NUM_SIZE; i++){
+						gui->alt_font_sizes[i] = gui->ui_font;
+						gui->alt_font_sizes[i].height = font_size * gui->ui_font.height;
+						font_size += 0.2;
+					}
 				}
 			}
 		}
-		
-		nk_property_float(gui->ctx, "#Alpha", -180.0, &gui->alpha, 180.0f, 1.0f, 1.0);
-		nk_property_float(gui->ctx, "#Beta", -180.0, &gui->beta, 180.0f, 1.0f, 1.0);
-		nk_property_float(gui->ctx, "#Gamma", -180.0, &gui->gamma, 180.0f, 1.0f, 1.0);
-		/*nk_slider_float(gui->ctx, -180.0, &gui->alpha, 180.0f, 0.1f);
-		nk_slider_float(gui->ctx, -180.0, &gui->beta, 180.0f, 0.1f);
-		nk_slider_float(gui->ctx, -180.0, &gui->gamma, 180.0f, 0.1f);*/
-		
-		nk_layout_row_dynamic(gui->ctx, 20, 3);
-		if (nk_button_label(gui->ctx, "Top")){
-			gui->alpha = 0.0;
-			gui->beta = 0.0;
-			gui->gamma = 0.0;
+		else if(cfg_grp == GRP_INFO){
+			nk_layout_row_dynamic(gui->ctx, 60, 1);
+			
+			nk_label_wrap(gui->ctx, "The following window is used to visualize "
+				"the raw parameters of the selected elements, according to "
+				"the DXF specification. It is useful for advanced users to debug "
+				"current file entities");
+			
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			if (nk_button_label(gui->ctx, "Open Info Window")){
+				gui->show_info = 1;
+			}
+			
 		}
-		if (nk_button_label(gui->ctx, "Front")){
-			gui->alpha = 0.0;
-			gui->beta = 0.0;
-			gui->gamma = 90.0;
+		else if(cfg_grp == GRP_3D){
+			
+			nk_layout_row_dynamic(gui->ctx, 60, 1);
+			
+			nk_label_wrap(gui->ctx, "This is a experimental 3D view mode. To return to default 2D view, choose \"Top\" or set all angles to 0");
+			
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			nk_property_float(gui->ctx, "#Alpha", -180.0, &gui->alpha, 180.0f, 1.0f, 1.0);
+			nk_property_float(gui->ctx, "#Beta", -180.0, &gui->beta, 180.0f, 1.0f, 1.0);
+			nk_property_float(gui->ctx, "#Gamma", -180.0, &gui->gamma, 180.0f, 1.0f, 1.0);
+			/*nk_slider_float(gui->ctx, -180.0, &gui->alpha, 180.0f, 0.1f);
+			nk_slider_float(gui->ctx, -180.0, &gui->beta, 180.0f, 0.1f);
+			nk_slider_float(gui->ctx, -180.0, &gui->gamma, 180.0f, 0.1f);*/
+			
+			nk_layout_row_dynamic(gui->ctx, 20, 3);
+			if (nk_button_label(gui->ctx, "Top")){
+				gui->alpha = 0.0;
+				gui->beta = 0.0;
+				gui->gamma = 0.0;
+			}
+			if (nk_button_label(gui->ctx, "Front")){
+				gui->alpha = 0.0;
+				gui->beta = 0.0;
+				gui->gamma = 90.0;
+			}
+			if (nk_button_label(gui->ctx, "Right")){
+				gui->alpha = 90.0;
+				gui->beta = 0.0;
+				gui->gamma = 90.0;
+			}
+			if (nk_button_label(gui->ctx, "Bottom")){
+				gui->alpha = 0.0;
+				gui->beta = 0.0;
+				gui->gamma = 180.0;
+			}
+			if (nk_button_label(gui->ctx, "Rear")){
+				gui->alpha = 180.0;
+				gui->beta = 0.0;
+				gui->gamma = 90.0;
+			}
+			if (nk_button_label(gui->ctx, "Left")){
+				gui->alpha = -90.0;
+				gui->beta = 0.0;
+				gui->gamma = 90.0;
+			}
+			if (nk_button_label(gui->ctx, "Iso")){
+				gui->alpha = 45.0;
+				gui->beta = 0.0;
+				gui->gamma = 90.0 - 35.264;
+			}
+			
+			double sin_alpha, cos_alpha, sin_beta, cos_beta, sin_gamma, cos_gamma;
+			
+			sin_alpha = sin(gui->alpha * M_PI / 180.0);
+			cos_alpha = cos(gui->alpha * M_PI / 180.0);
+			sin_beta = sin(gui->beta * M_PI / 180.0);
+			cos_beta = cos(gui->beta * M_PI / 180.0);
+			sin_gamma = sin(gui->gamma * M_PI / 180.0);
+			cos_gamma = cos(gui->gamma * M_PI / 180.0);
+			
+			float mat_a[4][4], mat_b[4][4], res[4][4];
+			
+			mat_a[0][0] = 1.0;
+			mat_a[0][1] = 0.0;
+			mat_a[0][2] = 0.0;
+			mat_a[0][3] = 0.0;
+			mat_a[1][0] = 0.0;
+			mat_a[1][1] = 1.0;
+			mat_a[1][2] = 0.0;
+			mat_a[1][3] = 0.0;
+			mat_a[2][0] = 0.0;
+			mat_a[2][1] = 0.0;
+			mat_a[2][2] = 1.0;
+			mat_a[2][3] = 0.0;
+			mat_a[3][0] = -((float)gui->win_w)/2.0;
+			mat_a[3][1] = -((float)gui->win_h)/2.0;
+			mat_a[3][2] = 0.0;
+			mat_a[3][3] = 1.0;
+			
+			mat_b[0][0] = cos_alpha*cos_beta;
+			mat_b[0][1] = cos_alpha*sin_beta*sin_gamma - sin_alpha*cos_gamma;
+			mat_b[0][2] = cos_alpha*sin_beta*cos_gamma + sin_alpha*sin_gamma;
+			mat_b[0][3] = 0.0;
+			mat_b[1][0] = sin_alpha*cos_beta;
+			mat_b[1][1] = sin_alpha*sin_beta*sin_gamma + cos_alpha*cos_gamma;
+			mat_b[1][2] = sin_alpha*sin_beta*cos_gamma - cos_alpha*sin_gamma;
+			mat_b[1][3] = 0.0;
+			mat_b[2][0] = -sin_beta;
+			mat_b[2][1] = cos_beta*sin_gamma;
+			mat_b[2][2] = cos_beta*cos_gamma;
+			mat_b[2][3] = 0.0;
+			mat_b[3][0] = 0.0;
+			mat_b[3][1] = 0.0;
+			mat_b[3][2] = 0.0;
+			mat_b[3][3] = 1.0;
+			
+			matrix4_mul(mat_b[0], mat_a[0], res[0]);
+			
+			mat_b[0][0] = 1.0;
+			mat_b[0][1] = 0.0;
+			mat_b[0][2] = 0.0;
+			mat_b[0][3] = 0.0;
+			mat_b[1][0] = 0.0;
+			mat_b[1][1] = 1.0;
+			mat_b[1][2] = 0.0;
+			mat_b[1][3] = 0.0;
+			mat_b[2][0] = 0.0;
+			mat_b[2][1] = 0.0;
+			mat_b[2][2] = 1.0;
+			mat_b[2][3] = 0.0;
+			mat_b[3][0] = ((float)gui->win_w)/2.0;
+			mat_b[3][1] = ((float)gui->win_h)/2.0;
+			mat_b[3][2] = 0.0;
+			mat_b[3][3] = 1.0;
+			
+			matrix4_mul(mat_b[0], res[0], gui->drwg_view[0]);
+			
+			invert_4matrix(gui->drwg_view[0], gui->drwg_view_i[0]);
 		}
-		if (nk_button_label(gui->ctx, "Right")){
-			gui->alpha = 90.0;
-			gui->beta = 0.0;
-			gui->gamma = 90.0;
-		}
-		if (nk_button_label(gui->ctx, "Bottom")){
-			gui->alpha = 0.0;
-			gui->beta = 0.0;
-			gui->gamma = 180.0;
-		}
-		if (nk_button_label(gui->ctx, "Rear")){
-			gui->alpha = 180.0;
-			gui->beta = 0.0;
-			gui->gamma = 90.0;
-		}
-		if (nk_button_label(gui->ctx, "Left")){
-			gui->alpha = -90.0;
-			gui->beta = 0.0;
-			gui->gamma = 90.0;
-		}
-		if (nk_button_label(gui->ctx, "Iso")){
-			gui->alpha = 45.0;
-			gui->beta = 0.0;
-			gui->gamma = 90.0 - 35.264;
-		}
-		
-		double sin_alpha, cos_alpha, sin_beta, cos_beta, sin_gamma, cos_gamma;
-		
-		sin_alpha = sin(gui->alpha * M_PI / 180.0);
-		cos_alpha = cos(gui->alpha * M_PI / 180.0);
-		sin_beta = sin(gui->beta * M_PI / 180.0);
-		cos_beta = cos(gui->beta * M_PI / 180.0);
-		sin_gamma = sin(gui->gamma * M_PI / 180.0);
-		cos_gamma = cos(gui->gamma * M_PI / 180.0);
-		
-		float mat_a[4][4], mat_b[4][4], res[4][4];
-		
-		mat_a[0][0] = 1.0;
-		mat_a[0][1] = 0.0;
-		mat_a[0][2] = 0.0;
-		mat_a[0][3] = 0.0;
-		mat_a[1][0] = 0.0;
-		mat_a[1][1] = 1.0;
-		mat_a[1][2] = 0.0;
-		mat_a[1][3] = 0.0;
-		mat_a[2][0] = 0.0;
-		mat_a[2][1] = 0.0;
-		mat_a[2][2] = 1.0;
-		mat_a[2][3] = 0.0;
-		mat_a[3][0] = -((float)gui->win_w)/2.0;
-		mat_a[3][1] = -((float)gui->win_h)/2.0;
-		mat_a[3][2] = 0.0;
-		mat_a[3][3] = 1.0;
-		
-		mat_b[0][0] = cos_alpha*cos_beta;
-		mat_b[0][1] = cos_alpha*sin_beta*sin_gamma - sin_alpha*cos_gamma;
-		mat_b[0][2] = cos_alpha*sin_beta*cos_gamma + sin_alpha*sin_gamma;
-		mat_b[0][3] = 0.0;
-		mat_b[1][0] = sin_alpha*cos_beta;
-		mat_b[1][1] = sin_alpha*sin_beta*sin_gamma + cos_alpha*cos_gamma;
-		mat_b[1][2] = sin_alpha*sin_beta*cos_gamma - cos_alpha*sin_gamma;
-		mat_b[1][3] = 0.0;
-		mat_b[2][0] = -sin_beta;
-		mat_b[2][1] = cos_beta*sin_gamma;
-		mat_b[2][2] = cos_beta*cos_gamma;
-		mat_b[2][3] = 0.0;
-		mat_b[3][0] = 0.0;
-		mat_b[3][1] = 0.0;
-		mat_b[3][2] = 0.0;
-		mat_b[3][3] = 1.0;
-		
-		matrix4_mul(mat_b[0], mat_a[0], res[0]);
-		
-		mat_b[0][0] = 1.0;
-		mat_b[0][1] = 0.0;
-		mat_b[0][2] = 0.0;
-		mat_b[0][3] = 0.0;
-		mat_b[1][0] = 0.0;
-		mat_b[1][1] = 1.0;
-		mat_b[1][2] = 0.0;
-		mat_b[1][3] = 0.0;
-		mat_b[2][0] = 0.0;
-		mat_b[2][1] = 0.0;
-		mat_b[2][2] = 1.0;
-		mat_b[2][3] = 0.0;
-		mat_b[3][0] = ((float)gui->win_w)/2.0;
-		mat_b[3][1] = ((float)gui->win_h)/2.0;
-		mat_b[3][2] = 0.0;
-		mat_b[3][3] = 1.0;
-		
-		matrix4_mul(mat_b[0], res[0], gui->drwg_view[0]);
-		
-		invert_4matrix(gui->drwg_view[0], gui->drwg_view_i[0]);
-		
 	} else show_config = 0;
 	nk_end(gui->ctx);
 	

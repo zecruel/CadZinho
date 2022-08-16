@@ -38,6 +38,9 @@ int gui_tools_win (gui_obj *gui){
 			gui->modal = PROP;
 			gui->step = 0;
 		}
+		if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TOOL]))){
+			gui->show_add_tools = 1;
+		}
 		
 		nk_layout_row_dynamic(gui->ctx, 10, 1); /*space*/
 			

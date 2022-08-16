@@ -129,12 +129,12 @@ int main(int argc, char** argv){
 	int update_title = 0, changed = 0;
 	
 	
-#ifdef _MSC_VER
+//#ifdef _MSC_VER
   //let msvcrt do the charset convensions
-  setlocale(LC_ALL, ".UTF-8");
-#else
+  setlocale(LC_ALL, "C.UTF-8");
+//#else
 	//setlocale(LC_ALL,""); //seta a localidade como a current do computador para aceitar acentuacao
-#endif
+//#endif
 	int i, ok, key_space = 0;
 	
 	time_t t;
@@ -570,6 +570,32 @@ int main(int argc, char** argv){
 	
 	if (gui_script_init (gui, &func_keys_script, func_keys_path, NULL) == 1){
 		func_keys_script.active = 1;
+	}
+	
+	/*-------------------------------- Additional tools script --------------------- */
+	
+	/* full path of macro file */
+	char add_tools_path[DXF_MAX_CHARS + 1];
+	add_tools_path[0] = 0;
+	snprintf(add_tools_path, DXF_MAX_CHARS, "%sadditional_tools.lua", gui->pref_path);
+	
+	//miss_file (macro_path, (char*)macro_dflt_file);
+	
+	if (gui_script_init (gui, &gui->add_tools_script, add_tools_path, NULL) == 1){
+		gui->add_tools_script.active = 1;
+		gui->add_tools_script.time = clock();
+		gui->add_tools_script.timeout = 1.0; /* default timeout value */
+		gui->add_tools_script.do_init = 0;
+		
+		//print_lua_stack(gui->add_tools_script.T);
+		
+		lua_getglobal(gui->add_tools_script.T, "cz_main_func");
+		int n_results = 0; /* for Lua 5.4*/
+		gui->add_tools_script.status = lua_resume(gui->add_tools_script.T, NULL, 0, &n_results); /* start thread */
+		if (gui->add_tools_script.status != LUA_OK){
+			gui->add_tools_script.active = 0;
+			
+		}
 	}
 	
 	/*===================== teste ===============*/
@@ -1081,6 +1107,10 @@ int main(int argc, char** argv){
 		
 		if (gui->show_hatch_mng){
 			gui->show_hatch_mng = gui_hatch_mng (gui);
+		}
+		
+		if (gui->show_add_tools){ /* Additional tools window */
+			gui->show_add_tools = gui_add_tools_win (gui);
 		}
 		
 		if (progr_win){

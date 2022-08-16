@@ -145,4 +145,6 @@ int gui_zoom_info (gui_obj *gui);
 
 int gui_point_info (gui_obj *gui);
 
+int gui_add_tools_win (gui_obj *gui);
+
 #endif

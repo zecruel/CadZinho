@@ -407,6 +407,11 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	/* load lua script file */
 	if (fname){
 		script->status = luaL_loadfile(T, (const char *) fname);
+		if ( script->status == LUA_ERRFILE ) { /* try to look in pref folder */
+			char new_path[PATH_MAX_CHARS+1] = "";
+			snprintf(new_path, PATH_MAX_CHARS, "%sscript%c%s", gui->pref_path, DIR_SEPARATOR, fname);
+			script->status = luaL_loadfile(T, (const char *) new_path);
+		}
 		if ( script->status == LUA_ERRFILE && alt_chunk) {
 			lua_pop(T, 1); /* pop error message from Lua stack */
 			script->status = luaL_loadstring(T, (const char *) alt_chunk);
@@ -484,6 +489,42 @@ int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	
 }
 
+int gui_script_exec_file_slot (gui_obj *gui, char *path) {
+	int i;
+	struct script_obj *gui_script = NULL;
+	
+	/*verify if same script file is already running */
+	for (i = 0; i < MAX_SCRIPTS; i++){
+		if (gui->lua_script[i].L != NULL && gui->lua_script[i].T != NULL ){
+			if (strcmp (gui->lua_script[i].path, path) == 0){
+				gui->lua_script[i].time = clock();
+				//lua_getglobal(script->T, "cz_main_func");
+				gui->lua_script[i].n_results = 0; /* for Lua 5.4*/
+				gui->lua_script[i].status = lua_resume(gui->lua_script[i].T, NULL, 0, &gui->lua_script[i].n_results);
+				/* return success */
+				return 1;
+			}
+		}
+	}
+	
+	/*try to find a available gui script slot */
+	for (i = 1; i < MAX_SCRIPTS; i++){ /* start from 1 index (0 index is reserved) */
+		if (gui->lua_script[i].L == NULL && gui->lua_script[i].T == NULL ){
+			/* success */
+			gui_script = &gui->lua_script[i];
+			break;
+		}
+	}
+	if (!gui_script){
+		/* return fail */
+		return 0;
+	}
+	
+	/* run script from file */
+	gui_script_run (gui, gui_script, path);
+	return 1;
+}
+
 /* execute a lua script file */
 /* A new Lua state is created and apended in main execution list 
 given parameters:
@@ -521,42 +562,11 @@ int gui_script_exec_file (lua_State *L) {
 		lua_error(L);
 	}
 	
-	int i;
-	struct script_obj *gui_script = NULL;
 	char path[DXF_MAX_CHARS + 1];
 	strncpy(path, lua_tostring(L, 1), DXF_MAX_CHARS);
 	
-	/*verify if same script file is already running */
-	for (i = 0; i < MAX_SCRIPTS; i++){
-		if (gui->lua_script[i].L != NULL && gui->lua_script[i].T != NULL ){
-			if (strcmp (gui->lua_script[i].path, path) == 0){
-				gui->lua_script[i].time = clock();
-				//lua_getglobal(script->T, "cz_main_func");
-				gui->lua_script[i].n_results = 0; /* for Lua 5.4*/
-				gui->lua_script[i].status = lua_resume(gui->lua_script[i].T, NULL, 0, &gui->lua_script[i].n_results);
-				lua_pushboolean(L, 1); /* return success */
-				return 1;
-			}
-		}
-	}
-	
-	/*try to find a available gui script slot */
-	for (i = 1; i < MAX_SCRIPTS; i++){ /* start from 1 index (0 index is reserved) */
-		if (gui->lua_script[i].L == NULL && gui->lua_script[i].T == NULL ){
-			/* success */
-			gui_script = &gui->lua_script[i];
-			break;
-		}
-	}
-	if (!gui_script){
-		lua_pushboolean(L, 0); /* return fail */
-		return 1;
-	}
-	
-	/* run script from file */
-	gui_script_run (gui, gui_script, path);
-	
-	lua_pushboolean(L, 1); /* return success */
+	lua_pushboolean(L, /* return success or fail*/
+		gui_script_exec_file_slot (gui, path) );
 	return 1;
 }
 

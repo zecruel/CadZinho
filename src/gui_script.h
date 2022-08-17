@@ -10,6 +10,8 @@ int gui_script_interactive(gui_obj *gui);
 
 int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char *alt_chunk);
 
+int gui_script_exec_file_slot (gui_obj *gui, char *path);
+
 int gui_script_exec_file (lua_State *L);
 
 int gui_script_dyn(gui_obj *gui);

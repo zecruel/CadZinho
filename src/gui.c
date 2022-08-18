@@ -1759,7 +1759,7 @@ int gui_start(gui_obj *gui){
 	gui->show_dim_mng = 0;
 	gui->show_hatch_mng = 0;
 	gui->show_config = 0;
-	gui->show_add_tools = 0;
+	gui->show_plugins = 0;
 	
 	gui->curr_path[0] = 0;
 	gui->base_dir[0] = 0;
@@ -1809,8 +1809,8 @@ int gui_start(gui_obj *gui){
 		*/
 	}
 	
-	memset (&gui->add_tools_script, 0, sizeof(struct script_obj));
-	gui->add_tools_script.timeout = 10.0;
+	memset (&gui->plugins_script, 0, sizeof(struct script_obj));
+	gui->plugins_script.timeout = 1.0;
 	
 	//strncpy(gui->curr_script, "D:\\documentos\\cadzinho\\lua\\test.lua", MAX_PATH_LEN - 1);
 	gui->curr_script[0] = 0;

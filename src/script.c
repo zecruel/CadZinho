@@ -3504,7 +3504,7 @@ int script_new_insert (lua_State *L) {
 		}
 	}
 	
-	char *name = lua_tostring(L, 1);
+	char *name = (char *) lua_tostring(L, 1);
 	
 	/* try to find corresponding block, by name */
 	if (!dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", name)){

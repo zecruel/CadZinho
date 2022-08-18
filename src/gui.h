@@ -400,7 +400,7 @@ struct Gui_obj {
 	int show_dim_mng;
 	int show_hatch_mng;
 	int show_config;
-	int show_add_tools;
+	int show_plugins;
 	
 	
 	char curr_path[PATH_MAX_CHARS+1];
@@ -434,7 +434,7 @@ struct Gui_obj {
 	int script_resume;
 	struct script_thread script_wait_t;
 	
-	struct script_obj add_tools_script;
+	struct script_obj plugins_script;
 	
 	char image_path[DXF_MAX_CHARS];
 	

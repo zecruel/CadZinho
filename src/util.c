@@ -35,7 +35,7 @@ char *get_filename(char *path){
 	/* Get the filename with extension from path string.
 	This function does not modify the original string,
 	but the return string must be used imediatly */
-	static char buf[PATH_MAX_CHARS];
+	static char buf[PATH_MAX_CHARS+1];
 	char *ret = NULL;
 	
 	strncpy(buf, path, PATH_MAX_CHARS);
@@ -54,7 +54,7 @@ char *get_dir(char *path){
 	/* Get the directory from path string.
 	This function does not modify the original string,
 	but the return string must be used imediatly */
-	static char buf[PATH_MAX_CHARS];
+	static char buf[PATH_MAX_CHARS+1];
 	char *ret = NULL;
 	
 	strncpy(buf, path, PATH_MAX_CHARS);
@@ -78,7 +78,7 @@ char *get_ext(char *path){
 	This function does not modify the original string,
 	but the return string must be used imediatly.
 	Return string is in lower case*/
-	static char buf[PATH_MAX_CHARS];
+	static char buf[PATH_MAX_CHARS+1];
 	char *ret = NULL;
 	int i;
 	
@@ -117,6 +117,31 @@ void strip_ext(char *filename){
 			filename[pos] = 0;
 		}
 	}
+}
+
+char *escape_path(char *path){
+	/* Escape windows paths with backslash
+	This function does not modify the original string,
+	but the return string must be used imediatly */
+	static char buf[PATH_MAX_CHARS+1];
+	char curr;
+	int i, idx;
+	
+	idx = 0;
+	for(i = 0; i < PATH_MAX_CHARS+1; i++){
+		curr = path[i];
+		
+		if (curr == '\\'){
+			buf[idx] = curr;
+			idx++;
+		}
+		buf[idx] = curr;
+		idx++;
+		if (!curr) break; /* end string */
+		if (idx >= PATH_MAX_CHARS - 1) break; /* buffer limit */
+	}
+	buf[idx] = 0; /* terminate buffer string */
+	return buf;
 }
 
 int file_exists(char *fname){
@@ -541,27 +566,69 @@ const char * dflt_fonts_dir (){
 
 	/* Hanlde macOS */
 	if (!strcmp(platform, "macOS")) {
-		return "/Library/Fonts/";
+		return "/Library/Fonts/:/System/Library/Fonts/";
 	}
 	/* Handle Windows */
 	else if (!strcmp(platform, "win32") || !strcmp(platform, "win64")) {
 		char *windir = getenv("WINDIR");
 		if (windir){
-			static char fntdir[PATH_MAX_CHARS] = "";
-			strncat(fntdir, windir, PATH_MAX_CHARS - 1);
-			strncat(fntdir, "\\Fonts\\", PATH_MAX_CHARS - 1 - strlen(fntdir));
+			static char fntdir[PATH_MAX_CHARS+1] = "";
+			strncat(fntdir, windir, PATH_MAX_CHARS);
+			strncat(fntdir, "\\Fonts\\", PATH_MAX_CHARS - strlen(fntdir));
 			return fntdir;
 		}
 		return "C:\\Windows\\Fonts\\";
 	}
 	/* Handle Linux, Unix, etc */
+	else if (!strcmp(platform, "linux")){
+		char *home = getenv("HOME");
+		if (home){
+			static char fntdir[PATH_MAX_CHARS+1] = "";
+			strncat(fntdir, home, PATH_MAX_CHARS);
+			int len = PATH_MAX_CHARS - strlen(fntdir);
+			if (len > 0) strncat(fntdir, "/.local/share/fonts/:", len);
+			len = PATH_MAX_CHARS - strlen(fntdir);
+			if (len > 0) strncat(fntdir, home, len);
+			len = PATH_MAX_CHARS - strlen(fntdir);
+			if (len > 0) strncat(fntdir, "/.local/share/fonts/TTF/:", len);
+			len = PATH_MAX_CHARS - strlen(fntdir);
+			if (len > 0) strncat(fntdir, "/usr/share/fonts/:/usr/share/fonts/TTF/", len);
+			
+			return fntdir;
+		}
+		return "/usr/share/fonts/:/usr/share/fonts/TTF/";
+	}
+	/* Handle Unix and others */
 	else if (!strcmp(platform, "unix")
-	|| !strcmp(platform, "linux") 
 	|| !strcmp(platform, "freeBSD") 
 	|| !strcmp(platform, "other")) {
 		return "/usr/share/fonts/";
 	}
-	return NULL;
+	return "/usr/share/fonts/";
+}
+
+const char * plat_dflt_font (){
+	const char *platform = operating_system();
+
+	/* Hanlde macOS */
+	if (!strcmp(platform, "macOS")) {
+		return "SF-Pro.ttf";
+	}
+	/* Handle Windows */
+	else if (!strcmp(platform, "win32") || !strcmp(platform, "win64")) {
+		return "arial.ttf";
+	}
+	/* Handle Linux, Unix, etc */
+	else if (!strcmp(platform, "linux")){
+		return "Vera.ttf";
+	}
+	/* Handle Unix and others */
+	else if (!strcmp(platform, "unix")
+	|| !strcmp(platform, "freeBSD") 
+	|| !strcmp(platform, "other")) {
+		return "Vera.ttf";
+	}
+	return "Vera.ttf";
 }
 
 int is_arabic(int cp){ /* verify if unicode code point is an arabic letter */

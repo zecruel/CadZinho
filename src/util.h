@@ -63,6 +63,8 @@ char *get_ext(char *path);
 
 void strip_ext(char *filename);
 
+char *escape_path(char *path);
+
 int file_exists(char *fname);
 
 int utf8_to_codepoint(char *utf8_s, int *uni_c);
@@ -86,6 +88,8 @@ const char * operating_system();
 int opener(const char *url);
 
 const char * dflt_fonts_dir ();
+
+const char * plat_dflt_font ();
 
 int contextual_codepoint (int prev, int curr, int next);
 

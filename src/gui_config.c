@@ -2,25 +2,22 @@
 #include "gui_script.h"
 
 const char* gui_dflt_conf() {
+	static char buf[8192];
+	
 	static const char *conf = "-- CadZinho enviroment configuration file\n"
 	"-- This file is writen in Lua language\n"
 	"-- NOTE1: The purpose of this script file is load global initial parameters. Don't expect script features to fully work.\n"
 	"-- NOTE2: For Windows, strings with path dir separator '\\' must be escaped, eg. \"C:\\\\mydir\\\\myfile.lua\"\n\n"
 	"-- Paths to look for font files. Each path is separeted by \";\" or \":\", according system default\n"
-	#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)|| defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-		"font_path = \"C:\\\\Windows\\\\Fonts\\\\\"\n\n"
-	#elif __APPLE__ || __MACH__
-		"font_path = \"/Library/Fonts/\"\n\n"
-	#else
-		"font_path = \"/usr/share/fonts/\"\n\n"
-	#endif
+	"font_path = \"%s\"\n\n"
 	"-- List of fonts to be loaded at startup (especify only file name, without path)\n"
 	"fonts = {\n"
 	"    \"romans.shx\",\n" 
-	"    \"txt.shx\"\n"
+	"    \"txt.shx\",\n"
+	"    \"%s\"\n"
 	"}\n\n"
 	"-- Font to use in user interface (must be preloaded). File and size in pts\n"
-	"ui_font = {\"txt.shx\", 10}\n\n"
+	"ui_font = {\"%s\", 10}\n\n"
 	"-- Interface theme - green (default), black, white, red, blue, dark, brown or purple\n"
 	"theme = \"green\"\n\n"
 	"-- Background color - RGB components, integer values from 0 to 255\n"
@@ -29,7 +26,14 @@ const char* gui_dflt_conf() {
 	"hilite = { r=255, g=0, b=255 }\n\n"
 	"-- Drawing cursor type - cross (default), square, x or circle\n"
 	"cursor = \"cross\"\n\n";
-	return conf;
+	
+	char * fonts_path = escape_path(dflt_fonts_dir ());
+	
+	const char* font = plat_dflt_font ();
+	
+	snprintf(buf, 8191, conf, fonts_path, font, font);
+	
+	return buf;
 }
 
 int gui_load_conf (gui_obj *gui){

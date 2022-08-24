@@ -24,21 +24,23 @@ jobs:
       run: cp ./lua-5.4.4/src/* ./src/
     - name: download glew
       uses: suisei-cn/actions-download-file@v1.0.1
-      id: downloadfileglew  # Remember to give an ID if you need the output filename
       with:
         url: "https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip"
         target: .
-          #run: curl -R -O https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip
-    - name: Unzip runtime binaries archive
+    - name: Unzip glew
       shell: cmd
       run: |
         7z x -y glew-2.2.0-win32.zip
     - name: Download SDL2
-      uses: albin-johansson/download-sdl2@latest
+      uses: suisei-cn/actions-download-file@v1.0.1
       with:
-        sources_destination: .
-        binaries_destination: .
+        url: "https://github.com/libsdl-org/SDL/releases/download/release-2.24.0/SDL2-devel-2.24.0-VC.zip"
+        target: .
+    - name: Unzip SDL2
+      shell: cmd
+      run: |
+        7z x -y SDL2-devel-2.24.0-VC.zip
     - run: ls
     - uses: ilammy/msvc-dev-cmd@v1
-    - name: Build something requiring CL.EXE
+    - name: Build using CL.EXE
       run: nmake -f Makefile.msvc

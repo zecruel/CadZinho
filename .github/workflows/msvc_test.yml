@@ -40,7 +40,10 @@ jobs:
       shell: cmd
       run: |
         7z x -y SDL2-devel-2.24.0-VC.zip
-    - run: ls
+    - run: |
+        mkdir ./glew-2.2.0/include/SDL2
+        mkdir ./CadZinho
+        cp ./SDL2-2.24.0/include/* ./glew-2.2.0/include/SDL2/
     - uses: ilammy/msvc-dev-cmd@v1
     - name: Build using CL.EXE
       run: nmake -f Makefile.msvc

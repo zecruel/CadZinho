@@ -1,0 +1,31 @@
+name: MSVC test
+
+on: workflow_dispatch
+
+jobs:
+  msvc-build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: download lua source
+      run: curl -R -O http://www.lua.org/ftp/lua-5.4.4.tar.gz
+    - name: extract lua
+      run: tar zxf lua-5.4.4.tar.gz
+    - name: remove main in lua
+      run: rm lua-5.4.4/src/lua.c lua-5.4.4/src/luac.c
+    - name: copy lua sources 
+      run: cp lua-5.4.4/src/* ./src/
+    - name: download glew
+      run: curl -R -O https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip
+    - name: Download SDL2
+      uses: albin-johansson/download-sdl2@latest
+      with:
+        sources_destination: .
+        binaries_destination: bin
+    - run: ls
+    - uses: ilammy/msvc-dev-cmd@v1
+    - name: Build something requiring CL.EXE
+      run: nmake -f Makefile.msvc

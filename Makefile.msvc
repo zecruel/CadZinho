@@ -58,11 +58,10 @@ LDFLAGS  = $(LD_BASE_FLAGS) $(LD_OPT_FLAGS) $(LD_ARCH_FLAGS)
 
 all:	$(EXE)
 
-OBJS=$(patsubst src\%.c,obj\%.obj,$(.\src\*.c))
 
-
-$(EXE): $(OBJS) $(DIR_O)\cz.res
-	$(LD) $(LDFLAGS) -OUT:$@ $(OBJS) $(DIR_O)\cz.res $(LIBS)
+$(EXE): src\*.c $(DIR_O)\cz.res
+	@$(MAKE) $(**:.c=.obj)
+	$(LD) $(LDFLAGS) -OUT:$@ $(**:.c=.obj) $(DIR_O)\cz.res $(LIBS)
 
 clean:
 	-del /q $(DIR_O)\*.obj $(DIR_O)\*.pdb $(DIR_O)\*.res $(EXE) \
@@ -71,10 +70,8 @@ clean:
 
 # Define how to build all the objects
 
-{src}.c{$(DIR_O)}.obj::
-	@$(CXX) $(CXXFLAGS) -c -Fo$(DIR_O)\ $<
-{.}.c{$(DIR_O)}.obj::
-	@$(CXX) $(CXXFLAGS) -c -Fo$(DIR_O)\ $<
+.c.obj::
+	@$(CXX) $(CXXFLAGS) -c -Fo\ $<
 
 $(DIR_O)\cz.res: windows\cz.rc
 	@$(RC) /nologo -fo$@ $**

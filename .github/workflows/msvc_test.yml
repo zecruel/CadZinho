@@ -15,11 +15,19 @@ jobs:
     - name: extract lua
       run: tar zxf lua-5.4.4.tar.gz
     - name: remove main in lua
-      run: rm lua-5.4.4/src/lua.c lua-5.4.4/src/luac.c
+      shell: cmd
+      run: |
+        cd lua-5.4.4\src
+        del lua.c 
+        del luac.c
     - name: copy lua sources 
-      run: cp lua-5.4.4/src/* ./src/
+      run: cp ./lua-5.4.4/src/* ./src/
     - name: download glew
       run: curl -R -O https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip
+    - name: Unzip runtime binaries archive
+      shell: cmd
+      run: |
+        7z x -y glew-2.2.0-win32.zip
     - name: Download SDL2
       uses: albin-johansson/download-sdl2@latest
       with:

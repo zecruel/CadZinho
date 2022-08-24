@@ -58,8 +58,8 @@ LDFLAGS  = $(LD_BASE_FLAGS) $(LD_OPT_FLAGS) $(LD_ARCH_FLAGS)
 
 all:	$(EXE)
 
-SRC=$(wildcard .\src\*.c)
-OBJS=$(subst .\src, .\obj, $(SRC:.c=.obj))
+OBJS=$(patsubst src\%.c,obj\%.obj,$(.\src\*.c))
+
 
 $(EXE): $(OBJS) $(DIR_O)\cz.res
 	$(LD) $(LDFLAGS) -OUT:$@ $(OBJS) $(DIR_O)\cz.res $(LIBS)

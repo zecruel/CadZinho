@@ -22,7 +22,7 @@ EXE=$(DIR_BIN)\cadzinho.exe
 #   at http://libsdl.org/download-2.0.php
 # for lua and glew, you should build them yourself
 # just modify the following directories
-INCLUDES = -I $(ZSDK)/include -I ./glew-2.2.0/include/ -I ./SDL2-2.0.16/include/
+INCLUDES = -I $(ZSDK)/include -I ./glew-2.2.0/include/ -I ./SDL2-2.24.0/include/
 LIBRARIES = ./glew-2.2.0/lib/x64/glew.lib \
             ./SDL2-2.24.0/lib/x64/SDL2.lib ./SDL2-2.24.0/lib/x64/SDL2main.lib
 

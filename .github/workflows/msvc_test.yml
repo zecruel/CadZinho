@@ -23,7 +23,13 @@ jobs:
     - name: copy lua sources 
       run: cp ./lua-5.4.4/src/* ./src/
     - name: download glew
-      run: curl -R -O https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip
+      uses: Legion2/download-release-action@v2.1.0
+      with:
+        repository: nigels-com/glew
+        tag: 'glew-2.2.0'
+        path: downloads
+        file: glew-2.2.0-win32.zip
+      #run: curl -R -O https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip
     - name: Unzip runtime binaries archive
       shell: cmd
       run: |

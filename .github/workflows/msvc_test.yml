@@ -37,7 +37,7 @@ jobs:
       uses: albin-johansson/download-sdl2@latest
       with:
         sources_destination: .
-        binaries_destination: bin
+        binaries_destination: .
     - run: ls
     - uses: ilammy/msvc-dev-cmd@v1
     - name: Build something requiring CL.EXE

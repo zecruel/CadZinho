@@ -257,6 +257,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	lua_pushvalue(T, -1); /*  */
 	lua_setfield(T, -2, "__index");
 	luaL_setfuncs(T, methods, 0);
+	lua_pop( T, 1);
 	
 	static const struct luaL_Reg pdf_meths[] = {
 		{"close", script_pdf_close},
@@ -269,6 +270,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	lua_pushvalue(T, -1); /*  */
 	lua_setfield(T, -2, "__index");
 	luaL_setfuncs(T, pdf_meths, 0);
+	lua_pop( T, 1);
 	
 	static const struct luaL_Reg miniz_meths[] = {
 		{"read", script_miniz_read},
@@ -292,6 +294,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	lua_setfield(T, -2, "__index");
 	/* register methods */
 	luaL_setfuncs(T, miniz_meths, 0);
+	lua_pop( T, 1);
 	
 	static const struct luaL_Reg yxml_meths[] = {
 		{"read", script_yxml_read},
@@ -314,6 +317,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	lua_setfield(T, -2, "__index");
 	/* register methods */
 	luaL_setfuncs(T, yxml_meths, 0);
+	lua_pop( T, 1);
 	
 	/* add functions in cadzinho object*/
 	static const luaL_Reg fs_lib[] = {
@@ -325,7 +329,6 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	};
 	luaL_newlib(T, fs_lib);
 	lua_setglobal(T, "fs");
-	
 	
 	static const struct luaL_Reg sqlite_meths[] = {
 		{"exec", script_sqlite_exec},
@@ -351,12 +354,14 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	lua_setfield(T, -2, "__index");
 	/* register methods */
 	luaL_setfuncs(T, sqlite_meths, 0);
+	lua_pop( T, 1);
 	
 	/* create a new type of lua userdata to represent a Sqlite statement */
 	/* create metatable */
 	luaL_newmetatable(T, "Sqlite_stmt");
 	lua_pushcfunction(T, script_sqlite_stmt_gc);
 	lua_setfield(T, -2, "__gc");
+	lua_pop( T, 1);
 	
 	/* adjust package path for "require" in script file*/
 	luaL_Buffer b;  /* to store parcial strings */
@@ -397,9 +402,9 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	luaL_pushresult(&b); /* finalize string and put on Lua stack  - new package path */
 	
 	lua_getglobal( T, "package");
-	lua_insert( T, 4 ); /* setup stack  for next operation*/
+	lua_insert( T, 1 ); /* setup stack  for next operation*/
 	lua_setfield( T, -2, "path"); 
-	lua_pop( T, 4 ); /* get rid of package table from top of stack */
+	lua_pop( T, 1); /* get rid of package table from top of stack */
 	
 	/* hook function to breakpoints and  timeout verification*/
 	lua_sethook(T, script_check, LUA_MASKCOUNT|LUA_MASKLINE, 500);

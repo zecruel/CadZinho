@@ -417,6 +417,11 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 			snprintf(new_path, PATH_MAX_CHARS, "%sscript%c%s", gui->pref_path, DIR_SEPARATOR, fname);
 			script->status = luaL_loadfile(T, (const char *) new_path);
 		}
+		if ( script->status == LUA_ERRFILE ) { /* try to look in base folder (executable dir)*/
+			char new_path[PATH_MAX_CHARS+1] = "";
+			snprintf(new_path, PATH_MAX_CHARS, "%sscript%c%s", gui->base_dir, DIR_SEPARATOR, fname);
+			script->status = luaL_loadfile(T, (const char *) new_path);
+		}
 		if ( script->status == LUA_ERRFILE && alt_chunk) {
 			lua_pop(T, 1); /* pop error message from Lua stack */
 			script->status = luaL_loadstring(T, (const char *) alt_chunk);

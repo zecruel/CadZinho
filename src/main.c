@@ -35,7 +35,7 @@
 #include <stdlib.h> 
 #include <math.h>
 #include <ctype.h>
-//#include <locale.h>
+#include <locale.h>
 
 
 #include "lua.h"
@@ -129,12 +129,7 @@ int main(int argc, char** argv){
 	int update_title = 0, changed = 0;
 	
 	
-//#ifdef _MSC_VER
-  //let msvcrt do the charset convensions
   setlocale(LC_ALL, "C.UTF-8");
-//#else
-	//setlocale(LC_ALL,""); //seta a localidade como a current do computador para aceitar acentuacao
-//#endif
 	int i, ok, key_space = 0;
 	
 	time_t t;
@@ -187,10 +182,6 @@ int main(int argc, char** argv){
 	}
 	else {
 		char new_path[PATH_MAX_CHARS+1];
-		/* script path */
-		new_path[0] = 0;
-		snprintf(new_path, PATH_MAX_CHARS, "%sscript%c", gui->pref_path, DIR_SEPARATOR);
-		dir_miss (new_path);
 		
 		/* resources path and seed file*/
 		new_path[0] = 0;
@@ -223,6 +214,40 @@ int main(int argc, char** argv){
 		new_path[0] = 0;
 		snprintf(new_path, PATH_MAX_CHARS, "%sres%cpat%cdefault.pat", gui->pref_path, DIR_SEPARATOR, DIR_SEPARATOR);
 		miss_file (new_path, (char *)h_pattern_lib_dflt());
+
+		/* plugins, script path and files */
+		new_path[0] = 0;
+		snprintf(new_path, PATH_MAX_CHARS, "%sscript%c", gui->pref_path, DIR_SEPARATOR);
+		if (!dir_check (new_path)){
+      if (dir_make (new_path)){
+        new_path[0] = 0;
+		    snprintf(new_path, PATH_MAX_CHARS,
+            "%sscript%creg_poly_plugin.lua", gui->pref_path,
+            DIR_SEPARATOR);
+		    miss_file (new_path, (char *)plugin_rpoly_file);
+        new_path[0] = 0;
+		    snprintf(new_path, PATH_MAX_CHARS,
+            "%sscript%cbatch_print_plugin.lua", gui->pref_path,
+            DIR_SEPARATOR);
+		    miss_file (new_path, (char *)plugin_bprint_file);
+        new_path[0] = 0;
+		    snprintf(new_path, PATH_MAX_CHARS,
+            "%sscript%ccatenary_plugin.lua", gui->pref_path,
+            DIR_SEPARATOR);
+		    miss_file (new_path, (char *)plugin_catenary_file);
+        new_path[0] = 0;
+		    snprintf(new_path, PATH_MAX_CHARS,
+            "%sscript%chyperbolic.lua", gui->pref_path,
+            DIR_SEPARATOR);
+		    miss_file (new_path, (char *)plugin_hyper_file);
+        new_path[0] = 0;
+		    snprintf(new_path, PATH_MAX_CHARS,
+            "%splugins.lua", gui->pref_path);
+		    miss_file (new_path, (char *)plugins_dflt_file);
+
+      }
+    }
+
 	}
 	
 	/* full path of clipboard file */

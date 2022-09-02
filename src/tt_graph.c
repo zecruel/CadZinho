@@ -85,6 +85,26 @@ int tt_load_font (char *path, stbtt_fontinfo *font, double *scale, double *asc, 
 	return ok;
 }
 
+int tt_load_font_buf (char *ttf_buffer, stbtt_fontinfo *font, double *scale, double *asc, double *desc, double *lgap){
+/* Load a truetype type font from buffer. Return the font metrics to unit size.*/
+
+	if (!ttf_buffer) return 0;
+	
+	/* init font */
+	if (!stbtt_InitFont(font, ttf_buffer, stbtt_GetFontOffsetForIndex(ttf_buffer,0)))
+		return 0;
+	
+	/* get and calcule font metrics for unit size*/
+	int ascent, descent, lineGap;
+	stbtt_GetFontVMetrics(font, &ascent, &descent, &lineGap);
+	*scale = 1.0/(double) (ascent + descent + lineGap);
+	*asc = *scale * ascent;
+	*desc = *scale * descent;
+	*lgap = *scale * lineGap;
+	
+	return 1;
+}
+
 struct tt_glyph * tt_get_glyph (struct tt_font * font, int code_point){
 /* Init and parse a glyph form a code point (UTF). */
 	struct tt_glyph *main_str = NULL;
@@ -122,6 +142,7 @@ struct tt_font * tt_init (char *path){
 		/* alloc the structures*/
 		main_str = malloc(sizeof(struct tt_font));
 		if(!main_str) return NULL;
+		main_str->internal = 0;
 		
 		main_str->info = malloc(sizeof(stbtt_fontinfo));
 		if(!main_str->info){
@@ -175,6 +196,69 @@ struct tt_font * tt_init (char *path){
 	return main_str;
 }
 
+struct tt_font * tt_init_buf (char *buf){
+/*Init the font structure from buffer. For speed, the most useful glyphs are parsed too*/
+	
+	struct tt_font *main_str = NULL;
+	if (!buf) return NULL;
+
+	/* alloc the structures*/
+	main_str = malloc(sizeof(struct tt_font));
+	if(!main_str) return NULL;
+	main_str->internal = 1;
+	
+	main_str->info = malloc(sizeof(stbtt_fontinfo));
+	if(!main_str->info){
+		free(main_str);
+		return NULL;
+	}
+	/* load font info*/
+	if(!tt_load_font_buf(buf, main_str->info, &(main_str->scale), &(main_str->ascent), &(main_str->descent), &(main_str->line_gap))){
+		free(main_str->info);
+		free(main_str);
+		return NULL;
+	}
+	
+	/* For speed, parse the most useful glyphs (in english) and add to list */
+	if(main_str->list = tt_get_glyph (main_str, 0)){
+		main_str->end = main_str->list;
+		int i;
+		struct tt_glyph *curr_glyph = NULL, *prev_glyph = main_str->list;
+		
+		for (i = 32; i < 127; i++){
+			curr_glyph = tt_get_glyph (main_str, i);
+			if(curr_glyph){
+				prev_glyph->next = curr_glyph;
+				prev_glyph = curr_glyph;
+				main_str->end = curr_glyph;
+			}
+			else break;
+		}
+		/* For speed, parse the most useful glyphs (latin) and add to list */
+		for (i = 160; i < 256; i++){
+			curr_glyph = tt_get_glyph (main_str, i);
+			if(curr_glyph){
+				prev_glyph->next = curr_glyph;
+				prev_glyph = curr_glyph;
+				main_str->end = curr_glyph;
+			}
+			else break;
+		}
+		/* For speed, parse the most useful glyphs (greek) and add to list */
+		/*for (i = 913; i < 970; i++){
+			curr_glyph = tt_get_glyph (main_str, i);
+			if(curr_glyph){
+				prev_glyph->next = curr_glyph;
+				prev_glyph = curr_glyph;
+				main_str->end = curr_glyph;
+			}
+			else break;
+		}*/
+	}
+	
+	return main_str;
+}
+
 void tt_font_free(struct tt_font * font){
 /* free memory of font*/
 	if(font){
@@ -189,7 +273,8 @@ void tt_font_free(struct tt_font * font){
 		}
 		/* free the font info*/
 		if(font->info){
-			free(font->info->data);
+			if(!font->internal)
+				free(font->info->data);
 			free(font->info);
 		}
 		/* last, free the main struct */

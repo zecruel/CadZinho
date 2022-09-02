@@ -14,10 +14,11 @@ const char* gui_dflt_conf() {
 	"fonts = {\n"
 	"    \"romans.shx\",\n" 
 	"    \"txt.shx\",\n"
+	"    \"Cadman_Roman.ttf\",\n"
 	"    \"%s\"\n"
 	"}\n\n"
 	"-- Font to use in user interface (must be preloaded). File and size in pts\n"
-	"ui_font = {\"%s\", 10}\n\n"
+	"ui_font = {\"%s\", 11}\n\n"
 	"-- Interface theme - green (default), black, white, red, blue, dark, brown or purple\n"
 	"theme = \"green\"\n\n"
 	"-- Background color - RGB components, integer values from 0 to 255\n"
@@ -31,7 +32,7 @@ const char* gui_dflt_conf() {
 	
 	const char* font = plat_dflt_font ();
 	
-	snprintf(buf, 8191, conf, fonts_path, font, font);
+	snprintf(buf, 8191, conf, fonts_path, font, "Cadman_Roman.ttf");
 	
 	return buf;
 }
@@ -206,12 +207,12 @@ int gui_get_conf (lua_State *L) {
 		if (lua_isstring(L, -1)){
 			struct tfont *ui_font = get_font_list(gui->font_list, (char *)lua_tostring(L, -1));
 			if (!ui_font) { /* default font, if fail to find in list*/
-				ui_font = get_font_list(gui->font_list, "txt.shx");
+				ui_font = get_font_list(gui->font_list, "Cadman_Roman.ttf");
 			}
 			gui->ui_font.userdata = nk_handle_ptr(ui_font);
 		}
 		else{ /* default value, if not definied in file*/
-			struct tfont *ui_font = get_font_list(gui->font_list, "txt.shx");
+			struct tfont *ui_font = get_font_list(gui->font_list, "Cadman_Roman.ttf");
 			gui->ui_font.userdata = nk_handle_ptr(ui_font);
 		}
 		lua_pop(L, 1);
@@ -223,15 +224,15 @@ int gui_get_conf (lua_State *L) {
 			gui->ui_font.height = lua_tonumber(L, -1);
 		}
 		else{/* default value, if not definied in file*/
-			gui->ui_font.height = 10.0;
+			gui->ui_font.height = 11.0;
 		}
 		lua_pop(L, 1);		
 		
 	}
 	else { /* default font, if not definied in file*/
-		struct tfont *ui_font = get_font_list(gui->font_list, "txt.shx");
+		struct tfont *ui_font = get_font_list(gui->font_list, "Cadman_Roman.ttf");
 		gui->ui_font.userdata = nk_handle_ptr(ui_font);
-		gui->ui_font.height = 10.0;
+		gui->ui_font.height = 11.0;
 	}
 	lua_pop(L, 1);
 	

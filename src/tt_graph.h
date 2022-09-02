@@ -19,6 +19,7 @@ struct tt_font{
 	char *name;
 	stbtt_fontinfo *info;
 	double scale, ascent, descent, line_gap;
+	int internal;
 	
 	struct tt_glyph *list, *end;
 };
@@ -28,6 +29,8 @@ struct tt_glyph * tt_find_cp (struct tt_font * font, int code_point);
 struct tt_glyph * tt_get_glyph (struct tt_font * font, int code_point);
 
 struct tt_font * tt_init (char *path);
+
+struct tt_font * tt_init_buf (char *buf);
 
 void tt_font_free(struct tt_font * font);
 

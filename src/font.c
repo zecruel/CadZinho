@@ -300,6 +300,52 @@ struct tfont * add_shp_font_list(list_node *list, char *name, char *buf){
 
 }
 
+struct tfont * add_ttf_font_list(list_node *list, char *name, char *buf){
+/* add to list a shape font from string*/
+	if (list == NULL) return NULL;
+	if (buf == NULL) return NULL;
+	if (name == NULL) return NULL;
+	
+	struct tfont * font = NULL;
+	
+	font = get_font_list(list, name); /* verify if font was previously loaded */
+	if (font) return font;
+	
+	struct tt_font * tt_tfont =  tt_init_buf (buf);
+	if (tt_tfont){
+		/* alloc the structures */
+		font = malloc(sizeof(struct tfont));
+		if (font == NULL) {
+			/* fail in allocation*/
+			tt_font_free(tt_tfont);
+			return NULL;
+		}
+		strncpy(font->path, "internal", DXF_MAX_CHARS);
+		strncpy(font->name, name, DXF_MAX_CHARS);
+		font->type = FONT_TT;
+		font->backwards = 0;
+		font->data = tt_tfont;
+		
+		font->above = fabs(tt_tfont->ascent);
+		font->below = fabs(tt_tfont->descent);
+		
+		font->std_size = 12.0;
+		font->unicode = 1;
+		/* add to list */
+		list_node *new_node = list_new ((void *)font, PRG_LIFE);
+		if (new_node == NULL) {
+			/* fail to add in list*/
+			tt_font_free(tt_tfont);
+			free(font);
+			return NULL;
+		}
+		list_push(list, new_node);
+	}
+	
+	return font;
+
+}
+
 int free_font_list(list_node *list){
 /* free fonts in list */
 	if (list == NULL) return 0;

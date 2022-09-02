@@ -1,4 +1,5 @@
 #include "gui.h"
+#include "cadman_font.h"
 
 void gui_scr_coord (gui_obj *gui, int scr_x, int scr_y, double *x, double *y){
 	*x = (double) scr_x / gui->zoom + gui->ofs_x;
@@ -1834,6 +1835,9 @@ int gui_start(gui_obj *gui){
 	add_shp_font_list(gui->font_list, "scripts.shx", (char *) shp_font_scripts());
 	add_shp_font_list(gui->font_list, "simplex.shx", (char *) shp_font_simplex());
 	add_shp_font_list(gui->font_list, "txt.shx", (char *) shp_font_txt());
+	
+	/* load the great Cadman Roman font for GUI usage*/
+	add_ttf_font_list (gui->font_list, "Cadman_Roman.ttf", (char *)Cadman_Nerd_Font_Complete_ttf);
 	
 	/* set "txt.shx" as default font (substitute other missing fonts) */
 	gui->dflt_font = get_font_list(gui->font_list, "txt.shx");

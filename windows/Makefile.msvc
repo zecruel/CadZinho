@@ -1,0 +1,85 @@
+# Make file for CadZinho on Windows Visual C++ version
+# Yuguo Zhang <Exaybachay@126.com>
+# This makefile is for using Visual C++ with nmake.
+# Usage for Microsoft:
+#     nmake -f Makefile.msvc
+# For debug versions define DEBUG on the command line:
+#     nmake DEBUG=1 -f Makefile.msvc
+# For x86_64 versions define WIN64 on the command line:
+#     nmake WIN64=1 -f Makefile.msvc
+#
+# Modified by Zecruel, to build with GitHub Actions - sep/2022
+
+CXX=cl
+LD=link
+RC=rc
+
+DIR_O=.\obj
+DIR_BIN=.
+
+EXE=$(DIR_BIN)\cadzinho.exe
+# 
+# CadZinho depends on lua 5.4, libsdl 2 and glew
+# for SDL2 and glew, fetch the runtime binaries and development libraries \
+#   at https://github.com/libsdl-org/SDL/releases/download/release-2.24.0/SDL2-devel-2.24.0-VC.zip
+#   and https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip
+# for lua, it will build directly from sources at http://www.lua.org/ftp/lua-5.4.4.tar.gz
+
+INCLUDES = -I $(ZSDK)/include -I ./glew-2.2.0/include/ -I ./SDL2-2.24.0/include/
+LIBRARIES = ./glew-2.2.0/lib/Release/x64/glew32.lib \
+            ./SDL2-2.24.0/lib/x64/SDL2.lib ./SDL2-2.24.0/lib/x64/SDL2main.lib
+
+LIBS=$(LIBRARIES) opengl32.lib Shell32.lib
+
+CXX_BASE_FLAGS = /nologo /W4 -D_WINDOWS -D_WIN32 \
+                 -D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1 -D_CRT_SECURE_NO_DEPRECATE=1 -D_SCL_SECURE_NO_WARNINGS=1 \
+                 /Zi /GR /EHa /Zc:wchar_t /Fd$(DIR_O)/ \
+                 -D_USE_MATH_DEFINES -DSKIP_ATTRIBUTE \
+                 $(INCLUDES)
+                 
+LD_BASE_FLAGS  = /nologo
+
+!IFDEF WIN64
+CXX_ARCH_FLAGS = -D_WIN64 -D_AMD64_
+LD_ARCH_FLAGS = /MACHINE:X64
+!ELSE
+CXX_ARCH_FLAGS = -D_X86_=1
+LD_ARCH_FLAGS = /MACHINE:X86
+!ENDIF
+
+!IFDEF DEBUG
+CXX_OPT_FLAGS = -D_DEBUG /Od /MTd
+LD_OPT_FLAGS  = /DEBUG /SUBSYSTEM:CONSOLE
+!ELSE
+CXX_OPT_FLAGS = -DNDEBUG /O2 /MT
+LD_OPT_FLAGS  = /DEBUG /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup
+!ENDIF
+
+CXXFLAGS = $(CXX_BASE_FLAGS) $(CXX_OPT_FLAGS) $(CXX_ARCH_FLAGS)
+LDFLAGS  = $(LD_BASE_FLAGS) $(LD_OPT_FLAGS) $(LD_ARCH_FLAGS)
+
+all:	$(EXE)
+
+!if [bash -c "echo C_SOURCES = ./src/*.c" >sources.mak]
+!error Failed to generate source list
+!endif
+!include sources.mak
+OBJS=$(subst ./src/,$(DIR_O)\,$(patsubst %.c,%.obj,$(C_SOURCES)))
+
+$(EXE): $(OBJS) $(DIR_O)\cz.res
+	$(LD) $(LDFLAGS) -OUT:$@ $(OBJS) $(DIR_O)\cz.res $(LIBS)
+
+clean:
+	-del /q $(DIR_O)\*.obj $(DIR_O)\*.pdb $(DIR_O)\*.res $(EXE) \
+	$(DIR_BIN)\*.map $(DIR_BIN)\*.exp $(DIR_BIN)\*.pdb \
+	$(DIR_BIN)\*.ilk
+
+# Define how to build all the objects
+
+{src}.c{$(DIR_O)}.obj::
+	@$(CXX) $(CXXFLAGS) -c -Fo$(DIR_O)\ $<
+{.}.c{$(DIR_O)}.obj::
+	@$(CXX) $(CXXFLAGS) -c -Fo$(DIR_O)\ $<
+
+$(DIR_O)\cz.res: windows\cz.rc
+	@$(RC) /nologo -fo$@ $**

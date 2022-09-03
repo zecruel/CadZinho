@@ -13,18 +13,19 @@ LD=link
 RC=rc
 
 DIR_O=.\obj
-DIR_BIN=CadZinho
+DIR_BIN=bin
 
-EXE=$(DIR_BIN)\cadzinho.exe
+EXE=$(DIR_BIN)\CadZinho.exe
 # 
 # CadZinho depends on lua 5.4, libsdl 2 and glew
 # for libsdl, you can fetch the runtime binaries and development libraries \
 #   at http://libsdl.org/download-2.0.php
 # for lua and glew, you should build them yourself
 # just modify the following directories
-INCLUDES = -I $(ZSDK)/include -I ./glew-2.2.0/include/ -I ./SDL2-2.24.0/include/
-LIBRARIES = ./glew-2.2.0/lib/Release/x64/glew32.lib \
-            ./SDL2-2.24.0/lib/x64/SDL2.lib ./SDL2-2.24.0/lib/x64/SDL2main.lib
+INCLUDES = -I $(ZSDK)/include -I $(ZSDK)/include/lua -I $(ZSDK)/include/SDL2
+LIBRARIES = $(ZSDK)/lib/x64/lua.lib $(ZSDK)/lib/x64/glew.lib \
+            $(ZSDK)/lib/x64/SDL2.lib $(ZSDK)/lib/x64/SDL2main.lib \
+            $(ZSDK)/lib/x64/sqlite3.lib
 
 LIBS=$(LIBRARIES) opengl32.lib Shell32.lib
 
@@ -57,11 +58,34 @@ LDFLAGS  = $(LD_BASE_FLAGS) $(LD_OPT_FLAGS) $(LD_ARCH_FLAGS)
 
 all:	$(EXE)
 
-!if [bash -c "echo C_SOURCES = ./src/*.c" >sources.mak]
-!error Failed to generate source list
-!endif
-!include sources.mak
-OBJS=$(subst ./src/,$(DIR_O)\,$(patsubst %.c,%.obj,$(C_SOURCES)))
+OBJS=\
+	$(DIR_O)\bmp.obj $(DIR_O)\_dirent.obj $(DIR_O)\draw_gl.obj $(DIR_O)\dxf.obj \
+  $(DIR_O)\dxf_attract.obj $(DIR_O)\dxf_copy.obj $(DIR_O)\dxf_create.obj \
+  $(DIR_O)\dxf_dim.obj $(DIR_O)\dxf_edit.obj $(DIR_O)\dxf_ent.obj \
+	$(DIR_O)\dxf_export.obj $(DIR_O)\dxf_graph.obj $(DIR_O)\dxf_hatch.obj $(DIR_O)\dxf_image.obj \
+	$(DIR_O)\dxf_math.obj $(DIR_O)\dxf_print.obj $(DIR_O)\font.obj $(DIR_O)\graph.obj \
+	$(DIR_O)\gui.obj $(DIR_O)\gui_attrib.obj $(DIR_O)\gui_block.obj \
+	$(DIR_O)\gui_circle.obj $(DIR_O)\gui_config.obj \
+	$(DIR_O)\gui_dim.obj $(DIR_O)\gui_dupli.obj \
+	$(DIR_O)\gui_edit_attr.obj $(DIR_O)\gui_edit_text.obj \
+	$(DIR_O)\gui_ellip.obj $(DIR_O)\gui_explode.obj $(DIR_O)\gui_export.obj \
+	$(DIR_O)\gui_file.obj $(DIR_O)\gui_find.obj $(DIR_O)\gui_hatch.obj \
+	$(DIR_O)\gui_image.obj $(DIR_O)\gui_info.obj $(DIR_O)\gui_insert.obj \
+	$(DIR_O)\gui_lay.obj $(DIR_O)\gui_line.obj $(DIR_O)\gui_ltype.obj \
+	$(DIR_O)\gui_measure.obj $(DIR_O)\gui_mirror.obj $(DIR_O)\gui_move.obj \
+	$(DIR_O)\gui_mtext.obj $(DIR_O)\gui_paste.obj $(DIR_O)\gui_pline.obj \
+	$(DIR_O)\gui_plugins.obj $(DIR_O)\gui_point.obj \
+	$(DIR_O)\gui_print.obj $(DIR_O)\gui_prop.obj $(DIR_O)\gui_rect.obj \
+	$(DIR_O)\gui_rotate.obj $(DIR_O)\gui_scale.obj $(DIR_O)\gui_script.obj \
+	$(DIR_O)\gui_select.obj $(DIR_O)\gui_spline.obj $(DIR_O)\gui_text.obj \
+	$(DIR_O)\gui_toolbox.obj $(DIR_O)\gui_tstyle.obj $(DIR_O)\gui_txt_prop.obj \
+	$(DIR_O)\gui_vertex.obj $(DIR_O)\gui_xy.obj $(DIR_O)\gui_zoom.obj \
+	$(DIR_O)\hatch_pat.obj \
+	$(DIR_O)\i_svg_media.obj $(DIR_O)\list.obj $(DIR_O)\ltype.obj \
+	$(DIR_O)\main.obj \
+	$(DIR_O)\miniz.obj $(DIR_O)\pdfgen.obj $(DIR_O)\rref.obj \
+	$(DIR_O)\script.obj $(DIR_O)\shape.obj $(DIR_O)\shp_font.obj \
+	$(DIR_O)\tt_graph.obj $(DIR_O)\util.obj $(DIR_O)\yxml.obj
 
 $(EXE): $(OBJS) $(DIR_O)\cz.res
 	$(LD) $(LDFLAGS) -OUT:$@ $(OBJS) $(DIR_O)\cz.res $(LIBS)

@@ -5,7 +5,7 @@ on: workflow_dispatch
 jobs:
   linux-build:
 
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
@@ -92,8 +92,19 @@ jobs:
             mingw-w64-x86_64-toolchain
             mingw64/mingw-w64-x86_64-SDL2
             mingw64/mingw-w64-x86_64-glew
-            mingw64/mingw-w64-x86_64-lua
     - uses: actions/checkout@v3
+    - name: download lua source
+      run: curl -R -O http://www.lua.org/ftp/lua-5.4.4.tar.gz
+    - name: extract lua
+      run: tar zxf lua-5.4.4.tar.gz
+    - name: remove main in lua
+      shell: cmd
+      run: |
+        cd lua-5.4.4\src
+        del lua.c 
+        del luac.c
+    - name: copy lua sources 
+      run: cp ./lua-5.4.4/src/* ./src/
     - name: get make file and resources
       run: cp windows/* ./
     - name: make
@@ -104,7 +115,6 @@ jobs:
         cp windows/cadzinho.ico CadZinho/
         cp /mingw64/bin/SDL2.dll CadZinho/
         cp /mingw64/bin/glew32.dll CadZinho/
-        cp /mingw64/bin/lua54.dll CadZinho/
     - name: create archive
       run: 7z a windows.zip CadZinho
     - name: Upload the result
@@ -113,8 +123,68 @@ jobs:
         name: uploads
         path: windows.zip
         retention-days: 5
+  msvc-build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: download lua source
+      run: curl -R -O http://www.lua.org/ftp/lua-5.4.4.tar.gz
+    - name: extract lua
+      run: tar zxf lua-5.4.4.tar.gz
+    - name: remove main in lua
+      shell: cmd
+      run: |
+        cd lua-5.4.4\src
+        del lua.c 
+        del luac.c
+    - name: copy lua sources 
+      run: cp ./lua-5.4.4/src/* ./src/
+    - name: download glew
+      uses: suisei-cn/actions-download-file@v1.0.1
+      with:
+        url: "https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip"
+        target: .
+    - name: Unzip glew
+      shell: cmd
+      run: |
+        7z x -y glew-2.2.0-win32.zip
+    - name: Download SDL2
+      uses: suisei-cn/actions-download-file@v1.0.1
+      with:
+        url: "https://github.com/libsdl-org/SDL/releases/download/release-2.24.0/SDL2-devel-2.24.0-VC.zip"
+        target: .
+    - name: Unzip SDL2
+      shell: cmd
+      run: |
+        7z x -y SDL2-devel-2.24.0-VC.zip
+    - run: |
+        mkdir ./glew-2.2.0/include/SDL2
+        mkdir ./CadZinho
+        cp ./SDL2-2.24.0/include/* ./glew-2.2.0/include/SDL2/
+    - name: get make file and resources
+      run: cp windows/* ./
+
+    - uses: ilammy/msvc-dev-cmd@v1
+    - name: Build using CL.EXE
+      run: nmake WIN64=1 -f Makefile.msvc
+    - run: |
+        cp windows/cadzinho.ico CadZinho/
+        cp ./SDL2-2.24.0/lib/x64/SDL2.dll CadZinho/
+        cp ./glew-2.2.0/bin/Release/x64/glew32.dll CadZinho/
+        cp ./cadzinho.exe CadZinho/
+    - name: create archive
+      run: 7z a windows_msvc.zip CadZinho
+    - name: Upload the result
+      uses: actions/upload-artifact@v3
+      with:
+        name: uploads
+        path: windows_msvc.zip
+        retention-days: 5
   release:
-    needs: [linux-build, macos-build, windows-build]
+    needs: [linux-build, macos-build, windows-build, msvc-build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -129,3 +199,5 @@ jobs:
             linux.zip
             macos.zip
             windows.zip
+            windows_msvc.zip
+

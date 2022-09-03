@@ -1,7 +1,7 @@
 SRC_PATH=./src/
 CC=gcc
 #COMPILER_FLAGS = -g -c
-COMPILER_FLAGS = -c
+COMPILER_FLAGS = -c -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
 LINKER_FLAGS = `pkg-config --libs sdl2` -lm -lGL -lGLU -lGLEW
 INCLUDE_PATHS = -I. -I./src/ `pkg-config --cflags sdl2`
 LIBRARY_PATHS = -L/usr/lib -L.

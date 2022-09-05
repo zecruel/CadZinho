@@ -49,11 +49,11 @@ jobs:
     - name: create archive
       run: |
         ls
-        zip -r linux CadZinho-x86_64.AppImage
+        zip -r linux CadZinho-x86_64.AppImage LICENSE
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
         name: uploads
-        path: linux/linux.zip
+        path: linux.zip
         retention-days: 5
         

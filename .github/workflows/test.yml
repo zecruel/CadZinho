@@ -1,0 +1,58 @@
+name: Compile test
+
+on: workflow_dispatch
+
+jobs:
+  linux-build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: configure
+      run: sudo apt-get install --yes libsdl2-dev libglvnd-dev libglew-dev
+    - name: download lua source
+      run: curl -R -O http://www.lua.org/ftp/lua-5.4.4.tar.gz
+    - name: extract lua
+      run: tar zxf lua-5.4.4.tar.gz
+    - name: remove main in lua
+      run: rm lua-5.4.4/src/lua.c lua-5.4.4/src/luac.c
+    - name: copy lua sources 
+      run: cp lua-5.4.4/src/* ./src/
+    - name: get make file
+      run: cp linux/Makefile ./Makefile
+    - name: make
+      run: make
+    - name: download AppImageTool
+      uses: suisei-cn/actions-download-file@v1.0.1
+      with:
+        url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+        target: .
+    - name: download AppImage asset
+      uses: suisei-cn/actions-download-file@v1.0.1
+      with:
+        url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64"
+        target: .
+    - name: configure AppImageKit
+      run: |
+        mkdir CadZinho.AppDir
+        mkdir CadZinho.AppDir/usr/
+        mkdir CadZinho.AppDir/usr/lib
+        mkdir CadZinho.AppDir/usr/bin
+        mv AppRun-x86_64 CadZinho.AppDir/AppRun
+        cp ./linux/cadzinho.desktop ./CadZinho.AppDir
+        cp ./linux/cadzinho.png ./CadZinho.AppDir
+        cp ./cadzinho ./CadZinho.AppDir/usr/bin
+        cp $(ldd cadzinho | grep -o '\W/[^ ]*') ./CadZinho.AppDir/usr/lib
+        chmod u+x ./appimagetool-x86_64
+        ./appimagetool-x86_64 CadZinho.AppDir
+    - name: create archive
+      run: |
+        zip -r linux CadZinho.AppImage
+    - name: Upload the result
+      uses: actions/upload-artifact@v3
+      with:
+        name: uploads
+        path: linux/linux.zip
+        retention-days: 5
+        

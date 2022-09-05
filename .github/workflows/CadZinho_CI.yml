@@ -23,18 +23,37 @@ jobs:
       run: cp linux/Makefile ./Makefile
     - name: make
       run: make
-    - run: |
-        mkdir ./linux/CadZinho/bin
-        cp ./cadzinho ./linux/CadZinho/bin/cadzinho
+    - name: download AppImageTool
+      uses: suisei-cn/actions-download-file@v1.0.1
+      with:
+        url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+        target: .
+    - name: download AppImage asset
+      uses: suisei-cn/actions-download-file@v1.0.1
+      with:
+        url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64"
+        target: .
+    - name: configure AppImageKit
+      run: |
+        mkdir CadZinho.AppDir
+        mkdir CadZinho.AppDir/usr/
+        mkdir CadZinho.AppDir/usr/lib
+        mkdir CadZinho.AppDir/usr/bin
+        mv AppRun-x86_64 CadZinho.AppDir/AppRun
+        cp ./linux/cadzinho.desktop ./CadZinho.AppDir
+        cp ./linux/cadzinho.png ./CadZinho.AppDir
+        cp ./cadzinho ./CadZinho.AppDir/usr/bin
+        cp $(ldd cadzinho | grep -o '\W/[^ ]*') ./CadZinho.AppDir/usr/lib
+        chmod u+x ./appimagetool-x86_64.AppImage
+        ./appimagetool-x86_64.AppImage CadZinho.AppDir
     - name: create archive
       run: |
-        cd linux
-        zip -r linux CadZinho
+        zip -r linux CadZinho-x86_64.AppImage LICENSE
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
         name: uploads
-        path: linux/linux.zip
+        path: linux.zip
         retention-days: 5
         
   macos-build:
@@ -63,8 +82,9 @@ jobs:
       run: dylibbundler -od -b -x ./macos/CadZinho.app/Contents/MacOS/cadzinho -d ./macos/CadZinho.app/Contents/libs/
     - name: create archive
       run: |
+        cp LICENSE macos
         cd macos
-        zip -r macos ./CadZinho.app/
+        zip -r macos ./CadZinho.app/ LICENSE
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
@@ -115,6 +135,7 @@ jobs:
         cp windows/cadzinho.ico CadZinho/
         cp /mingw64/bin/SDL2.dll CadZinho/
         cp /mingw64/bin/glew32.dll CadZinho/
+        cp LICENSE CadZinho/
     - name: create archive
       run: 7z a windows.zip CadZinho
     - name: Upload the result
@@ -175,6 +196,7 @@ jobs:
         cp ./SDL2-2.24.0/lib/x64/SDL2.dll CadZinho/
         cp ./glew-2.2.0/bin/Release/x64/glew32.dll CadZinho/
         cp ./cadzinho.exe CadZinho/
+        cp LICENSE CadZinho/
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho
     - name: Upload the result

@@ -49,7 +49,7 @@ jobs:
     - name: create archive
       run: |
         ls
-        zip -r linux CadZinho-x86_64.AppImage LICENSE
+        zip -r linux CadZinho.AppDir CadZinho-x86_64.AppImage LICENSE
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:

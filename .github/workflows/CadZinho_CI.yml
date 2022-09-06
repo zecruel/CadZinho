@@ -40,6 +40,7 @@ jobs:
         mkdir CadZinho.AppDir/usr/lib
         mkdir CadZinho.AppDir/usr/bin
         mv AppRun-x86_64 CadZinho.AppDir/AppRun
+        chmod u+x ./CadZinho.AppDir/AppRun
         cp ./linux/cadzinho.desktop ./CadZinho.AppDir
         cp ./linux/cadzinho.png ./CadZinho.AppDir
         cp ./cadzinho ./CadZinho.AppDir/usr/bin

@@ -44,8 +44,7 @@ jobs:
         cp ./linux/cadzinho.desktop ./CadZinho.AppDir
         cp ./linux/cadzinho.png ./CadZinho.AppDir
         cp ./cadzinho ./CadZinho.AppDir/usr/bin
-        cp /usr/lib/libGLEW* ./CadZinho.AppDir/usr/lib
-        cp /usr/lib/libSDL2* ./CadZinho.AppDir/usr/lib
+        cp $(ldd cadzinho | grep -o '\W/[^ ]*' | grep 'SDL2\|GLEW') ./CadZinho.AppDir/usr/lib
         chmod u+x ./appimagetool-x86_64.AppImage
         ./appimagetool-x86_64.AppImage CadZinho.AppDir
     - name: create archive

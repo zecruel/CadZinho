@@ -1,6 +1,11 @@
-CadZinho - by Ezequiel Rabelo de Aguiar - lincenced under MIT license (see below)
+================================================================================
+
+CadZinho - by Ezequiel Rabelo de Aguiar - licensed under MIT license (see below)
+
+================================================================================
 
 This project incorporates components from projects listed below:
+----------------------------------------------------------------
 
 Nuklear immediate mode UI - by Micha Mettke - MIT license (https://github.com/Immediate-Mode-UI/Nuklear)
 stb libraries - by Sean Barrett - MIT license (https://github.com/nothings/stb)
@@ -9,10 +14,19 @@ GLEW - Modified BSD License (https://github.com/nigels-com/glew)
 Lua programming laguage -  by PUC Rio - MIT license (https://www.lua.org/)
 OpenGL - by Khronos Group - MIT license (https://www.opengl.org/)
 Cadman font - by Paul J. Miller - SIL license (https://pauljmiller.wordpress.com/2018/06/12/munson-cadman/)
-Dirent - by Toni Ronkko - MIT license(https://github.com/tronkko/dirent)
+SHP fonts - by Autodesk - Autodesk license
+PDFGen - by Andre Renaud - Public domain license (https://github.com/AndreRenaud/PDFGen)
+Dirent - by Toni Ronkko - MIT license (https://github.com/tronkko/dirent)
 kgflags - by Krzysztof Gabis - MIT license (http://github.com/kgabis/kgflags/)
 nanosvg - by Mikko Mononen - zlib license (https://github.com/memononen/nanosvg)
 miniz - MIT license (https://github.com/richgel999/miniz)
+strpool - by Mattias Gustavsson - MIT license (https://github.com/mattiasgustavsson/libs)
+yxml - by Yoran Heling - MIT license (https://dev.yorhel.nl/yxml)
+SQLite - Public domain license (https://www.sqlite.org/index.html)
+
+
+
+
 
 ======================================================
 MIT License
@@ -26,7 +40,8 @@ Dirent - Copyright (C) 1998-2019 Toni Ronkko
 kgflags - Copyright (c) 2020 Krzysztof Gabis
 miniz - Copyright 2013-2014 RAD Game Tools and Valve Software
         Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC
-
+strpool - Copyright (c) 2015 Mattias Gustavsson
+yxml - Copyright (c) 2013-2014 Yoran Heling
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -196,3 +211,17 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
+
+=================================================================
+SHP fonts
+Copyright 1996 by Autodesk, Inc.
+
+Permission to use, copy, modify, and distribute this software for
+any purpose and without fee is hereby granted, provided that the
+above copyright notice appears in all copies and that the restricted
+rights notice below appear in all supporting documentation.
+
+Use, duplication, or disclosure by the U.S. Government is subject
+to restrictions set forth in FAR 52.227-19 (Commercial Computer 
+Software - Restricted Rights) and DFAR 252.227-7013(c)(1)(ii)
+(Rights in Technical Data and Computer Software), as applicable.

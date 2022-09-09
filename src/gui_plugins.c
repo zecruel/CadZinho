@@ -42,6 +42,10 @@ int gui_plugins_win (gui_obj *gui){
 								gui_script_exec_file_slot (gui, script_file);
 							}
 						}
+            /* if no caption, use script file name */
+            else if (nk_button_label(gui->ctx, script_file)){
+							gui_script_exec_file_slot (gui, script_file);
+						}
 						lua_pop(L, 1);
 					}
 					lua_pop(L, 1);

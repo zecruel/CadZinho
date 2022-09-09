@@ -272,8 +272,10 @@ int print_win (gui_obj *gui){
 			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, scale_str, 63, nk_filter_float);
 			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 				nk_edit_unfocus(gui->ctx);
-				if (strlen(scale_str)) /* update parameter value */
-					scale = atof(scale_str);
+				if (strlen(scale_str)) { 
+					double try_s = fabs( atof(scale_str));
+          if (try_s > 1.0e-15) scale = try_s; /* update parameter value */
+        }
 				snprintf(scale_str, 63, "%.9g", scale);
 			}
 			
@@ -310,7 +312,8 @@ int print_win (gui_obj *gui){
 				zoom_x = fabs(max_x - min_x)/page_w;
 				zoom_y = fabs(max_y - min_y)/page_h;
 				scale = (zoom_x > zoom_y) ? zoom_x : zoom_y;
-				scale = 1/scale;
+        if (fabs(scale) < 1.0e-15) scale = 1.0;
+				scale = fabs(1/scale);
 				
 				/* get origin */
 				ofs_x = min_x - (fabs((max_x - min_x) * scale - page_w)/2) / scale;
@@ -330,7 +333,10 @@ int print_win (gui_obj *gui){
 				/* get drawing extents */
 				dxf_ents_ext(gui->drawing, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
 				
-				scale = atof(scale_str);
+				if (strlen(scale_str)) { 
+					double try_s = fabs( atof(scale_str));
+          if (try_s > 1.0e-15) scale = try_s; /* update parameter value */
+        }
 				
 				/* get origin */
 				ofs_x = min_x - (fabs((max_x - min_x) * scale - page_w)/2) / scale;
@@ -438,6 +444,7 @@ int print_win (gui_obj *gui){
 			else
 				snprintf(gui->log_msg, 63, "Print Error");
 		}
+    if (fabs(scale) < 1.0e-15) scale = 1.0; /* prevent zero division */
 		/* draw print preview image */
 		if (update){
 			update = 0;
@@ -445,7 +452,7 @@ int print_win (gui_obj *gui){
 			double z_x = page_w/gui->preview_img->width;
 			double z_y = page_h/gui->preview_img->height;
 			double z = (z_x > z_y) ? z_x : z_y;
-			if (z <= 0.0) z =1.0;
+			if (z <= 1.0e-15) z = 1.0;
 			else z = 1/z;
 				
 			int w = (int)(page_w * z);

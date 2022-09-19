@@ -366,12 +366,11 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	/* adjust package path for "require" in script file*/
 	luaL_Buffer b;  /* to store parcial strings */
 	luaL_buffinit(T, &b); /* init the Lua buffer */
-	luaL_addstring(&b, gui->base_dir);
-	luaL_addstring(&b, "script");
+	
+	luaL_addstring(&b, ".");
 	luaL_addchar(&b, DIR_SEPARATOR);
 	luaL_addstring(&b, "?.lua;");
-	luaL_addstring(&b, gui->base_dir);
-	luaL_addstring(&b, "script");
+	luaL_addstring(&b, ".");
 	luaL_addchar(&b, DIR_SEPARATOR);
 	luaL_addstring(&b, "?");
 	luaL_addchar(&b, DIR_SEPARATOR);
@@ -390,10 +389,12 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		luaL_addstring(&b, "init.lua;");
 	}
 	
-	luaL_addstring(&b, ".");
+	luaL_addstring(&b, gui->base_dir);
+	luaL_addstring(&b, "script");
 	luaL_addchar(&b, DIR_SEPARATOR);
 	luaL_addstring(&b, "?.lua;");
-	luaL_addstring(&b, ".");
+	luaL_addstring(&b, gui->base_dir);
+	luaL_addstring(&b, "script");
 	luaL_addchar(&b, DIR_SEPARATOR);
 	luaL_addstring(&b, "?");
 	luaL_addchar(&b, DIR_SEPARATOR);

@@ -49,7 +49,7 @@ jobs:
         ./appimagetool-x86_64.AppImage CadZinho.AppDir
     - name: create archive
       run: |
-        zip -r linux CadZinho-x86_64.AppImage LICENSE
+        zip -r linux CadZinho-x86_64.AppImage LICENSE.txt
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
@@ -85,7 +85,7 @@ jobs:
       run: |
         cp LICENSE macos
         cd macos
-        zip -r macos ./CadZinho.app/ LICENSE
+        zip -r macos ./CadZinho.app/ LICENSE.txt
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
@@ -136,7 +136,7 @@ jobs:
         cp windows/cadzinho.ico CadZinho/
         cp /mingw64/bin/SDL2.dll CadZinho/
         cp /mingw64/bin/glew32.dll CadZinho/
-        cp LICENSE CadZinho/
+        cp LICENSE.txt CadZinho/
     - name: create archive
       run: 7z a windows.zip CadZinho
     - name: Upload the result
@@ -197,7 +197,7 @@ jobs:
         cp ./SDL2-2.24.0/lib/x64/SDL2.dll CadZinho/
         cp ./glew-2.2.0/bin/Release/x64/glew32.dll CadZinho/
         cp ./cadzinho.exe CadZinho/
-        cp LICENSE CadZinho/
+        cp LICENSE.txt CadZinho/
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho
     - name: Upload the result

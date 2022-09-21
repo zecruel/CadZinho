@@ -14,6 +14,7 @@ GLEW - Modified BSD License (https://github.com/nigels-com/glew)
 Lua programming laguage -  by PUC Rio - MIT license (https://www.lua.org/)
 OpenGL - by Khronos Group - MIT license (https://www.opengl.org/)
 Cadman font - by Paul J. Miller - SIL license (https://pauljmiller.wordpress.com/2018/06/12/munson-cadman/)
+Nerd Fonts - by Ryan L McIntyre - MIT license (https://github.com/ryanoasis/nerd-fonts)
 SHP fonts - by Autodesk - Autodesk license
 PDFGen - by Andre Renaud - Public domain license (https://github.com/AndreRenaud/PDFGen)
 Dirent - by Toni Ronkko - MIT license (https://github.com/tronkko/dirent)
@@ -42,6 +43,7 @@ miniz - Copyright 2013-2014 RAD Game Tools and Valve Software
         Copyright 2010-2014 Rich Geldreich and Tenacious Software LLC
 strpool - Copyright (c) 2015 Mattias Gustavsson
 yxml - Copyright (c) 2013-2014 Yoran Heling
+Nerd Fonts - Copyright (c) 2014 Ryan L McIntyre
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

@@ -6751,6 +6751,7 @@ int script_fs_dir (lua_State *L) {
 	
 	char path[PATH_MAX_CHARS+1];
 	path[0] = '.'; path[1] = 0;
+  char sub_path[PATH_MAX_CHARS+1];
 	
 	/* verify passed arguments */
 	int n = lua_gettop(L);    /* number of arguments */
@@ -6771,6 +6772,11 @@ int script_fs_dir (lua_State *L) {
 		lua_pushnil(L); /* return fail */
 		return 1;
 	}
+
+  /* make sure directory path terminates with separator character */
+  if (path[strlen(path) - 1] != DIR_SEPARATOR){
+    snprintf(path, PATH_MAX_CHARS, "%s%c", lua_tostring(L, 1), DIR_SEPARATOR);
+  }
 	
 	int i;
 	struct dirent *entry;
@@ -6778,7 +6784,8 @@ int script_fs_dir (lua_State *L) {
 	lua_newtable(L);
 	while (entry = readdir(d)) {
 		/* verify if current item is a subdir */
-		subdir = opendir(entry->d_name);
+    snprintf(sub_path, PATH_MAX_CHARS, "%s%s", path, entry->d_name);
+		subdir = opendir(sub_path);
 		if (subdir != NULL){ /* a subdir */
 			if (!(strcmp(entry->d_name, ".") == 0) &&
 			    !(strcmp(entry->d_name, "..") == 0)){ /* don't show current and parent dir information */

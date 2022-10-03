@@ -5,7 +5,7 @@ on: workflow_dispatch
 jobs:
   linux-build:
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v3
@@ -40,16 +40,16 @@ jobs:
         mkdir CadZinho.AppDir/usr/lib
         mkdir CadZinho.AppDir/usr/bin
         mv AppRun-x86_64 CadZinho.AppDir/AppRun
+        chmod u+x ./CadZinho.AppDir/AppRun
         cp ./linux/cadzinho.desktop ./CadZinho.AppDir
         cp ./linux/cadzinho.png ./CadZinho.AppDir
         cp ./cadzinho ./CadZinho.AppDir/usr/bin
-        cp $(ldd cadzinho | grep -o '\W/[^ ]*') ./CadZinho.AppDir/usr/lib
+        cp $(ldd cadzinho | grep -o '\W/[^ ]*' | grep 'SDL2\|GLEW') ./CadZinho.AppDir/usr/lib
         chmod u+x ./appimagetool-x86_64.AppImage
         ./appimagetool-x86_64.AppImage CadZinho.AppDir
     - name: create archive
       run: |
-        ls
-        zip -r linux CadZinho.AppDir CadZinho-x86_64.AppImage LICENSE
+        zip -r linux CadZinho-x86_64.AppImage LICENSE.txt
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:

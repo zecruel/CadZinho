@@ -23,37 +23,17 @@ jobs:
       run: cp linux/Makefile ./Makefile
     - name: make
       run: make
-    - name: download AppImageTool
-      uses: suisei-cn/actions-download-file@v1.0.1
-      with:
-        url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
-        target: .
-    - name: download AppImage asset
-      uses: suisei-cn/actions-download-file@v1.0.1
-      with:
-        url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64"
-        target: .
-    - name: configure AppImageKit
-      run: |
-        mkdir CadZinho.AppDir
-        mkdir CadZinho.AppDir/usr/
-        mkdir CadZinho.AppDir/usr/lib
-        mkdir CadZinho.AppDir/usr/bin
-        mv AppRun-x86_64 CadZinho.AppDir/AppRun
-        chmod u+x ./CadZinho.AppDir/AppRun
-        cp ./linux/cadzinho.desktop ./CadZinho.AppDir
-        cp ./linux/cadzinho.png ./CadZinho.AppDir
-        cp ./cadzinho ./CadZinho.AppDir/usr/bin
-        cp $(ldd cadzinho | grep -o '\W/[^ ]*' | grep 'SDL2\|GLEW') ./CadZinho.AppDir/usr/lib
-        chmod u+x ./appimagetool-x86_64.AppImage
-        ./appimagetool-x86_64.AppImage CadZinho.AppDir
+    - run: |
+        mkdir ./linux/CadZinho/bin
+        cp ./cadzinho ./linux/CadZinho/bin/cadzinho
     - name: create archive
       run: |
-        zip -r linux CadZinho-x86_64.AppImage LICENSE.txt
+        cd linux
+        zip -r linux CadZinho
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
         name: uploads
-        path: linux.zip
+        path: linux/linux.zip
         retention-days: 5
         

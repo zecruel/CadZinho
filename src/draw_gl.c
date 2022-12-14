@@ -215,6 +215,15 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[3], int p1[3], int thick){
 	if (!gl_ctx->verts) return 0;
 	if (!gl_ctx->elems) return 0;
 	
+	/* check if elements buffer is full,
+	and draw waiting elements to clear buffer if necessary */
+	draw_gl (gl_ctx, 0);
+	if (gl_ctx->elems == NULL){
+		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	}
+	/* */
+	
 	if (thick <= 0) thick = 1; /* one pixel as minimal thickness */
 	
 	/* get polar parameters of line */
@@ -319,6 +328,15 @@ int draw_gl_quad (struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3]
 	if (!gl_ctx->verts) return 0;
 	if (!gl_ctx->elems) return 0;
 	
+	/* check if elements buffer is full,
+	and draw waiting elements to clear buffer if necessary */
+	draw_gl (gl_ctx, 0);
+	if (gl_ctx->elems == NULL){
+		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	}
+	/* */
+	
 	/* orientation in drawing area */
 	float flip_y = (gl_ctx->flip_y) ? -1.0 : 1.0;
 	
@@ -393,6 +411,15 @@ int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int z, int w, int h){
 	if (!gl_ctx) return 0;
 	if (!gl_ctx->verts) return 0;
 	if (!gl_ctx->elems) return 0;
+	
+	/* check if elements buffer is full,
+	and draw waiting elements to clear buffer if necessary */
+	draw_gl (gl_ctx, 0);
+	if (gl_ctx->elems == NULL){
+		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	}
+	/* */
 	
 	/* orientation in drawing area */
 	float flip_y = (gl_ctx->flip_y) ? -1.0 : 1.0;
@@ -486,6 +513,15 @@ int draw_gl_triang (struct ogl *gl_ctx, int p0[3], int p1[3], int p2[3]){
 	if (!gl_ctx) return 0;
 	if (!gl_ctx->verts) return 0;
 	if (!gl_ctx->elems) return 0;
+	
+	/* check if elements buffer is full,
+	and draw waiting elements to clear buffer if necessary */
+	draw_gl (gl_ctx, 0);
+	if (gl_ctx->elems == NULL){
+		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	}
+	/* */
 		
 	/* orientation in drawing area */
 	float flip_y = (gl_ctx->flip_y) ? -1.0 : 1.0;
@@ -546,6 +582,15 @@ int draw_gl_image_rec (struct ogl *gl_ctx, int x, int y, int z, int w, int h, bm
 	if (!gl_ctx->verts) return 0;
 	if (!gl_ctx->elems) return 0;
 	if (!img) return 0;
+	
+	/* check if elements buffer is full,
+	and draw waiting elements to clear buffer if necessary */
+	draw_gl (gl_ctx, 0);
+	if (gl_ctx->elems == NULL){
+		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	}
+	/* */
 	
 	/* orientation in drawing area */
 	float flip_y = (gl_ctx->flip_y) ? -1.0 : 1.0;
@@ -640,6 +685,15 @@ int draw_gl_image_quad(struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int 
 	if (!gl_ctx) return 0;
 	if (!gl_ctx->verts) return 0;
 	if (!gl_ctx->elems) return 0;
+	
+	/* check if elements buffer is full,
+	and draw waiting elements to clear buffer if necessary */
+	draw_gl (gl_ctx, 0);
+	if (gl_ctx->elems == NULL){
+		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	}
+	/* */
 	
 	/* orientation in drawing area */
 	float flip_y = (gl_ctx->flip_y) ? -1.0 : 1.0;

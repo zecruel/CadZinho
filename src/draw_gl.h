@@ -22,7 +22,7 @@
  #include "graph.h"
  
 #define MAX_TRIANG 100000
-#define MAX_TRIANG_2 80000
+#define MAX_TRIANG_2 99900
 #define MAX_SCAN_LINES 15000
 #define MAX_P_NODES 1000
 

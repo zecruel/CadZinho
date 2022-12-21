@@ -7,19 +7,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Run a one-line script
-      #run: python ./.github/workflows/todo_List.py
-      run: cp ./.github/workflows/curr_version.txt ./
-    - name: switching from HTTPS to SSH
-      run: git remote set-url origin ${{ secrets.ssh }}
-    - name: check for changes
-      run: git status
-    - name: stage changed files
-      run: git add .
-    - name: commit changed files
-      run: git commit -m "Update version"
-    - name: fetch from master
-      run: git fetch origin master
-    - name: push code to master
-      run: git push origin HEAD:master
+      - uses: actions/checkout@v2
+      - name: Create report file
+        run: date +%s > report.txt
+      - name: Commit report
+        run: |
+          git config --global user.name 'Your Name'
+          git config --global user.email 'your-username@users.noreply.github.com'
+          git commit -am "Automated report"
+          git push

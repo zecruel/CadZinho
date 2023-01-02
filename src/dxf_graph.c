@@ -3433,7 +3433,8 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 	
 	dxf_node *current = NULL, *insert_ent = NULL, *blk = NULL , *prev;
 	enum dxf_graph ent_type;
-	int lay_idx, ltype_idx, mod_idx = 0;
+	int lay_idx, ltype_idx;
+	int mod_idx = list_len(list_ret);
 	graph_obj * curr_graph = NULL;
 	
 	/* for attrib and attdef objects */

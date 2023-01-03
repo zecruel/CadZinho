@@ -1,0 +1,22 @@
+name: Test2
+
+on: workflow_dispatch
+
+env:
+  MAJOR: 4
+  MINOR: 3
+  MAN: 1
+  YEAR: 2023
+jobs:
+  up-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Update version in information files
+        run: |
+          sed -n -e "/CZ_VERSION/s/[[:digit:]]\{4\}/$YEAR/" \
+            -e "/CZ_VERSION/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/$MAJOR.\2.\3/" \
+            -e "/CZ_VERSION/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.$MINOR.\3/" \
+            -e "/CZ_VERSION/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.\2.$MAN/p" \
+            ./src/dxf.h

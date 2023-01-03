@@ -1,21 +1,21 @@
 100 ICON "cadzinho.ico"
 1 VERSIONINFO
-FILEVERSION     0,2,0,0
-PRODUCTVERSION  0,2,0,0
+FILEVERSION     0,2,1,0
+PRODUCTVERSION  0,2,1,0
 BEGIN
 	BLOCK "StringFileInfo"
 	BEGIN
 		BLOCK "080904B0"
 		BEGIN
-			VALUE "Comments", "Built year - 2022"
+			VALUE "Comments", "Built year - 2023"
             VALUE "CompanyName", "ZeCruel"
 			VALUE "FileDescription", "Minimalist CAD"
-			VALUE "FileVersion", "0.2.0"
+			VALUE "FileVersion", "0.2.1"
 			VALUE "InternalName", "CadZinho"
-			VALUE "LegalCopyright", "MIT Licence - 2022"
+			VALUE "LegalCopyright", "MIT Licence - 2023"
 			VALUE "OriginalFilename", "CadZinho.exe"
 			VALUE "ProductName", "CadZinho"
-			VALUE "ProductVersion", "0.2.0"
+			VALUE "ProductVersion", "0.2.1"
 		END
 	END
 	BLOCK "VarFileInfo"

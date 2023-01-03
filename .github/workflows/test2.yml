@@ -3,8 +3,8 @@ name: Test2
 on: workflow_dispatch
 
 env:
-  MAJOR: 4
-  MINOR: 3
+  MAJOR: 0
+  MINOR: 2
   MAN: 1
   YEAR: 2023
 jobs:
@@ -15,8 +15,15 @@ jobs:
       - uses: actions/checkout@v2
       - name: Update version in information files
         run: |
-          sed -n -e "/CZ_VERSION/s/[[:digit:]]\{4\}/$YEAR/" \
+          sed -i -e "/CZ_VERSION/s/[[:digit:]]\{4\}/$YEAR/" \
             -e "/CZ_VERSION/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/$MAJOR.\2.\3/" \
             -e "/CZ_VERSION/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.$MINOR.\3/" \
-            -e "/CZ_VERSION/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.\2.$MAN/p" \
+            -e "/CZ_VERSION/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.\2.$MAN/" \
             ./src/dxf.h
+      - name: Commit
+        run: |
+          git config --global user.name 'zecruel'
+          git config --global user.email 'zecruel@users.noreply.github.com'
+          git add .
+          git commit -m "Update version to $MAJOR.$MINOR.$MAN - $YEAR"
+          git push

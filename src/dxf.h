@@ -17,7 +17,7 @@
 #define DXF_MAX_PAT 12
 #define DXF_POOL_PAGES 1000
 
-#define CZ_VERSION "0.2.0 - 2022"
+#define CZ_VERSION "0.2.1 - 2023"
 
 struct sort_by_idx{
 	long int idx;

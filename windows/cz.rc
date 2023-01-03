@@ -7,10 +7,10 @@ BEGIN
 	BEGIN
 		BLOCK "080904B0"
 		BEGIN
-			VALUE "Comments", "Built year - 2022"
+			VALUE "Comments", "Built year - 2023"
             VALUE "CompanyName", "ZeCruel"
 			VALUE "FileDescription", "Minimalist CAD"
-			VALUE "FileVersion", "0.2.0"
+			VALUE "FileVersion", "0.2.1"
 			VALUE "InternalName", "CadZinho"
 			VALUE "LegalCopyright", "MIT Licence - 2023"
 			VALUE "OriginalFilename", "CadZinho.exe"

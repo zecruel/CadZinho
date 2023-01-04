@@ -5,7 +5,7 @@ on: workflow_dispatch
 env:
   MAJOR: 0
   MINOR: 2
-  MAN: 0
+  MAN: 1
   YEAR: 2023
 jobs:
   up-version:
@@ -48,5 +48,5 @@ jobs:
           git config --global user.name 'zecruel'
           git config --global user.email 'zecruel@users.noreply.github.com'
           git add .
-          git commit -m "Update version to $MAJOR.$MINOR.$MAN - $YEAR"
+          git commit -n -m "Update version to $MAJOR.$MINOR.$MAN - $YEAR"
           git push

@@ -51,6 +51,7 @@ jobs:
           git add .
           git commit -m "Update version to $MAJOR.$MINOR.$MAN - $YEAR"
           git push
+        continue-on-error: true
 
   linux-build:
     needs: up-version

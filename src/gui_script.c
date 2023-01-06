@@ -329,7 +329,9 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	};
 	luaL_newlib(T, fs_lib);
 	lua_setglobal(T, "fs");
+  
   lua_getglobal(T, "fs");
+  
   /* add dir separator and path separator chars in lib */
   char str_tmp[2];
   str_tmp[0] = DIR_SEPARATOR;
@@ -340,6 +342,11 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
   str_tmp[1] = 0;
   lua_pushstring(T, str_tmp);
   lua_setfield(T, -2, "path_sep");
+  
+  /* add OS information in lib (win32, win64, macOS, linux, freeBSD or unix) */
+  lua_pushstring(T, operating_system());
+  lua_setfield(T, -2, "os");
+  
   lua_pop(T, 1);
   
 	

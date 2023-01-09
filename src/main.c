@@ -146,7 +146,7 @@ int main(int argc, char** argv){
 	/* --------------- Configure paths ----------*/
 	char *base_path = SDL_GetBasePath();
 	if (base_path){
-		strncpy(gui->base_dir, base_path, DXF_MAX_CHARS);
+		strncpy(gui->base_dir, base_path, PATH_MAX_CHARS);
 		SDL_free(base_path);
 	}
 	
@@ -158,7 +158,7 @@ int main(int argc, char** argv){
 	const char * arg_file = kgflags_get_non_flag_arg(0);
 	
 	if (pref_path){
-		strncpy(gui->pref_path, dir_full(pref_path), DXF_MAX_CHARS);
+		strncpy(gui->pref_path, dir_full(pref_path), PATH_MAX_CHARS);
 	}
 	
 	if (strlen (gui->pref_path) == 0){
@@ -166,10 +166,10 @@ int main(int argc, char** argv){
 		if (pref_path){
 			if (strlen (pref_path) > 0){
 				if (pref_path[strlen (pref_path) - 1] == DIR_SEPARATOR){
-					strncpy(gui->pref_path, pref_path, DXF_MAX_CHARS);
+					strncpy(gui->pref_path, pref_path, PATH_MAX_CHARS);
 				}
 				else {
-					snprintf(gui->pref_path, DXF_MAX_CHARS, "%s%c", pref_path, DIR_SEPARATOR);
+					snprintf(gui->pref_path, PATH_MAX_CHARS, "%s%c", pref_path, DIR_SEPARATOR);
 				}
 			}
 			SDL_free(pref_path);
@@ -178,7 +178,7 @@ int main(int argc, char** argv){
 	
 	if (strlen (gui->pref_path) == 0){ /* pref path is not present */
 		/* pref path = base path */
-		strncpy(gui->pref_path, gui->base_dir, DXF_MAX_CHARS);
+		strncpy(gui->pref_path, gui->base_dir, PATH_MAX_CHARS);
 	}
 	else {
 		char new_path[PATH_MAX_CHARS+1];
@@ -655,7 +655,7 @@ int main(int argc, char** argv){
 		if (gui->recent_drwg->next->data){
 			STRPOOL_U64 str_a = (STRPOOL_U64) gui->recent_drwg->next->data;
 			dir_change(get_dir((char*)strpool_cstr( &gui->file_pool, str_a)));
-			strncpy (gui->dwg_dir, get_dir((char*)strpool_cstr( &gui->file_pool, str_a)) , DXF_MAX_CHARS);
+			strncpy (gui->dwg_dir, get_dir((char*)strpool_cstr( &gui->file_pool, str_a)) , PATH_MAX_CHARS);
 		}
 	}
 	/* ------------------------------------------------------------------------*/
@@ -1244,8 +1244,8 @@ int main(int argc, char** argv){
 			gui->drwg_hist_pos ++;
 			sel_list_clear (gui);
 
-			//strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
-			//strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
+			//strncpy (gui->dwg_dir, get_dir(gui->curr_path) , PATH_MAX_CHARS);
+			//strncpy (gui->dwg_file, get_filename(gui->curr_path) , PATH_MAX_CHARS);
 			gui->dwg_file[0] = 0;
 			
 			update_title = 1;
@@ -1293,7 +1293,7 @@ int main(int argc, char** argv){
 					init_do_list(&gui->list_do);
 					save_pt = gui->list_do.current;
 	
-					strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
+					strncpy (gui->dwg_dir, get_dir(gui->curr_path) , PATH_MAX_CHARS);
 					strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
 					
 					update_title = 1;
@@ -1312,7 +1312,7 @@ int main(int argc, char** argv){
 		
 		
 			if (dxf_save (gui->curr_path, gui->drawing)){
-				strncpy (gui->dwg_dir, get_dir(gui->curr_path) , DXF_MAX_CHARS);
+				strncpy (gui->dwg_dir, get_dir(gui->curr_path) , PATH_MAX_CHARS);
 				strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
 				
 				save_pt = gui->list_do.current;

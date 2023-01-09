@@ -6826,6 +6826,18 @@ returns:
 	- a boolean indicating success or fail
 */
 int script_fs_chdir (lua_State *L) {
+  
+  /* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
 	
 	char path[PATH_MAX_CHARS+1];
 	path[0] = '.'; path[1] = 0;
@@ -6849,7 +6861,15 @@ int script_fs_chdir (lua_State *L) {
 		return 1;
 	}
 	
-	int ret = chdir(path); 
+	int ret = chdir(path);
+  
+  if (!ret) strncpy (gui->dwg_dir, path, PATH_MAX_CHARS);
+  char last_char = strlen(gui->dwg_dir) - 1;
+  if(last_char > 1 && last_char < PATH_MAX_CHARS - 2) {
+    if (gui->dwg_dir[last_char] != DIR_SEPARATOR) {
+      gui->dwg_dir[last_char + 1] = DIR_SEPARATOR;
+    }
+  }
 	
 	lua_pushboolean(L, ret != 0); /* return success or fail */
 	return 1;

@@ -403,11 +403,11 @@ struct Gui_obj {
 	int show_plugins;
 	
 	
-	char curr_path[PATH_MAX_CHARS+1];
-	char base_dir[DXF_MAX_CHARS + 1];
+	char curr_path[PATH_MAX_CHARS + 1];
+	char base_dir[PATH_MAX_CHARS + 1];
 	char dwg_file[DXF_MAX_CHARS + 1];
-	char dwg_dir[DXF_MAX_CHARS + 1];
-	char pref_path[DXF_MAX_CHARS + 1];
+	char dwg_dir[PATH_MAX_CHARS + 1];
+	char pref_path[PATH_MAX_CHARS + 1];
 	
 	char drwg_hist[DRWG_HIST_MAX][DXF_MAX_CHARS+1];
 	int drwg_hist_size;

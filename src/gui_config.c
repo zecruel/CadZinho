@@ -474,7 +474,7 @@ int config_win (gui_obj *gui){
 			nk_label(gui->ctx, "Preferences folder:", NK_TEXT_LEFT);
 			nk_edit_string_zero_terminated(gui->ctx, 
 				NK_EDIT_READ_ONLY,
-				gui->pref_path, DXF_MAX_CHARS, nk_filter_default);
+				gui->pref_path, PATH_MAX_CHARS, nk_filter_default);
 			nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.3, 0.7});
 			if (nk_button_label(gui->ctx, "Copy")){
 				SDL_SetClipboardText(gui->pref_path);
@@ -486,10 +486,10 @@ int config_win (gui_obj *gui){
 			nk_label(gui->ctx, "Config File:", NK_TEXT_LEFT);
 			if (nk_button_label(gui->ctx, "Open file")){
 				/* full path of config file */
-				char config_path[DXF_MAX_CHARS + 1];
+				char config_path[PATH_MAX_CHARS + 1];
 				config_path[0] = 0;
-				strncpy(config_path, gui->pref_path, DXF_MAX_CHARS);
-				strncat(config_path, "config.lua", DXF_MAX_CHARS);
+				strncpy(config_path, gui->pref_path, PATH_MAX_CHARS);
+				strncat(config_path, "config.lua", PATH_MAX_CHARS);
 				opener(config_path);
 			}
 			if (nk_button_label(gui->ctx, "Reload config")){

@@ -24,6 +24,12 @@ int gui_rotate_interactive(gui_obj *gui){
 			/* in first step, select the elements to proccess*/
 			gui->en_distance = 0;
 			gui_simple_select(gui);
+      /* user cancel operation */
+      if (gui->ev & EV_CANCEL){
+        gui->element = NULL;
+        gui_default_modal(gui);
+        gui->step = 0;
+      }
 		}
 		else if (gui->step == 1){
 			/* user enters a pivot point for rotation */

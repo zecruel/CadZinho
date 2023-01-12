@@ -26,6 +26,12 @@ int gui_ed_attr_interactive(gui_obj *gui){
 		gui->en_distance = 0;
 		gui->sel_ent_filter = DXF_INSERT;
 		gui_simple_select(gui);
+    /* user cancel operation */
+		if (gui->ev & EV_CANCEL){
+			gui->element = NULL;
+			gui_default_modal(gui);
+			gui->step = 0;
+		}
 	}
 	else if (gui->step >= 1){
 		/* verify if selected insert have attributes */

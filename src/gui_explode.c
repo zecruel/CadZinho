@@ -19,6 +19,12 @@ int gui_expl_interactive(gui_obj *gui){
 		gui->en_distance = 0;
 		gui->sel_ent_filter = ~DXF_NONE;
 		gui_simple_select(gui);
+    /* user cancel operation */
+		if (gui->ev & EV_CANCEL){
+			gui->element = NULL;
+			gui_default_modal(gui);
+			gui->step = 0;
+		}
 	}
 	else{
 		//gui->free_sel = 0;

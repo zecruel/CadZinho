@@ -24,6 +24,13 @@ int gui_ed_text_interactive(gui_obj *gui){
 		gui->en_distance = 0;
 		gui->sel_ent_filter = DXF_TEXT | DXF_MTEXT;
 		gui_simple_select(gui);
+    
+    /* user cancel operation */
+		if (gui->ev & EV_CANCEL){
+			gui->element = NULL;
+			gui_default_modal(gui);
+			gui->step = 0;
+		}
 	}
 	else if (gui->step == 1){
 		/* get selected element */

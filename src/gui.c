@@ -1977,10 +1977,6 @@ void gui_simple_select(gui_obj *gui){
 				i++;
 			}
 		}
-		else {
-			/* if not any hovered object, clear selection */
-			gui_default_modal(gui);
-		}
 		gui->draw = 1;
 	}
 	if (gui->ev & EV_MOTION){ /* cursor motion */

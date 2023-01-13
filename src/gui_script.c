@@ -1082,8 +1082,7 @@ int gui_script_dyn(gui_obj *gui){
 		{
 			gui->lua_script[i].time = clock(); /* refresh clock */
 			
-			/* get dynamic function */
-			lua_getglobal(gui->lua_script[i].T, gui->lua_script[i].dyn_func);
+			
 			/* pass current mouse position */
 			lua_createtable (gui->lua_script[i].T, 0, 3);
 			lua_pushnumber(gui->lua_script[i].T,  gui->step_x[gui->step]);
@@ -1113,7 +1112,13 @@ int gui_script_dyn(gui_obj *gui){
 			lua_setfield(gui->lua_script[i].T, -2, "type");
 			
 			/*finally call the function */
-			gui->lua_script[i].status = lua_pcall(gui->lua_script[i].T, 1, 0, 0);
+      /* get dynamic function */
+      gui->lua_script[i].time = clock();
+			lua_getglobal(gui->lua_script[i].T, gui->lua_script[i].dyn_func);
+      
+			//gui->lua_script[i].status = lua_pcall(gui->lua_script[i].T, 1, 0, 0);
+      gui->lua_script[i].n_results = 0; /* for Lua 5.4*/
+      gui->lua_script[i].status = lua_resume(gui->lua_script[i].T, NULL, 0, &gui->lua_script[i].n_results); /* start thread */
 			
 			/* close pending nk_groups, to prevent nuklear crashes */
 			for (j = 0; j < gui->lua_script[i].groups; j++){

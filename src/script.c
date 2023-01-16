@@ -6778,18 +6778,26 @@ int script_fs_dir (lua_State *L) {
     snprintf(path, PATH_MAX_CHARS, "%s%c", lua_tostring(L, 1), DIR_SEPARATOR);
   }
 	
-	int i;
+	int i, is_dir = 0;
 	struct dirent *entry;
+  struct stat filestat;
 	i = 0;
 	lua_newtable(L);
 	while (entry = readdir(d)) {
 		/* verify if current item is a subdir */
     snprintf(sub_path, PATH_MAX_CHARS, "%s%s", path, entry->d_name);
+    
+    //date = filestat.st_mtime; /* modification time */
+    //size = filestat.st_size; /* file size */
+    
 		subdir = opendir(sub_path);
+    
 		if (subdir != NULL){ /* a subdir */
 			if (!(strcmp(entry->d_name, ".") == 0) &&
 			    !(strcmp(entry->d_name, "..") == 0)){ /* don't show current and parent dir information */
 				i++;
+        stat(sub_path, &filestat); /* get storage information */
+        
 				lua_newtable(L); /* table to store data */
 				lua_pushstring(L, "name");
 				lua_pushstring(L, entry->d_name);
@@ -6798,11 +6806,37 @@ int script_fs_dir (lua_State *L) {
 				lua_pushstring(L, "is_dir");
 				lua_pushboolean(L, 1);
 				lua_rawset(L, -3);
+        
+        lua_pushstring(L, "created");
+        lua_pushinteger(L, filestat.st_ctime);
+        lua_rawset(L, -3);
+        
+        lua_pushstring(L, "modified");
+        lua_pushinteger(L, filestat.st_mtime);
+        lua_rawset(L, -3);
+        
+        lua_pushstring(L, "size");
+        lua_pushinteger(L, filestat.st_size);
+        lua_rawset(L, -3);
+        
+        lua_pushstring(L, "r");
+        lua_pushboolean(L, filestat.st_mode & R_OK);
+        lua_rawset(L, -3);
+        
+        lua_pushstring(L, "w");
+        lua_pushboolean(L, filestat.st_mode & W_OK);
+        lua_rawset(L, -3);
+        
+        lua_pushstring(L, "x");
+        lua_pushboolean(L, filestat.st_mode & X_OK);
+        lua_rawset(L, -3);
 				
 				lua_rawseti(L, -2, i); /*store in main table */
 			}
 		} else {
 			i++;
+      stat(sub_path, &filestat); /* get storage information */
+      
 			lua_newtable(L); /* table to store data */
 			lua_pushstring(L, "name");
 			lua_pushstring(L, entry->d_name);
@@ -6811,7 +6845,31 @@ int script_fs_dir (lua_State *L) {
 			lua_pushstring(L, "is_dir");
 			lua_pushboolean(L, 0);
 			lua_rawset(L, -3);
+      
+      lua_pushstring(L, "created");
+      lua_pushinteger(L, filestat.st_ctime);
+			lua_rawset(L, -3);
 			
+      lua_pushstring(L, "modified");
+      lua_pushinteger(L, filestat.st_mtime);
+			lua_rawset(L, -3);
+      
+      lua_pushstring(L, "size");
+      lua_pushinteger(L, filestat.st_size);
+			lua_rawset(L, -3);
+      
+      lua_pushstring(L, "r");
+			lua_pushboolean(L, filestat.st_mode & R_OK);
+			lua_rawset(L, -3);
+      
+      lua_pushstring(L, "w");
+			lua_pushboolean(L, filestat.st_mode & W_OK);
+			lua_rawset(L, -3);
+      
+      lua_pushstring(L, "x");
+			lua_pushboolean(L, filestat.st_mode & X_OK);
+			lua_rawset(L, -3);
+      
 			lua_rawseti(L, -2, i); /*store in main table */
 		}
 	}

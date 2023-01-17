@@ -1078,10 +1078,10 @@ int gui_script_dyn(gui_obj *gui){
 		
 		/* dynamic functions */
 		if (gui->lua_script[i].L != NULL && gui->lua_script[i].T != NULL &&
-			strlen(gui->lua_script[i].dyn_func) > 0 && gui->lua_script[i].dynamic)
+			strlen(gui->lua_script[i].dyn_func) > 0 && gui->lua_script[i].dynamic &&
+				gui->lua_script[i].status != LUA_YIELD)
 		{
 			gui->lua_script[i].time = clock(); /* refresh clock */
-			lua_resetthread(gui->lua_script[i].T);
       /* get dynamic function */
 			lua_getglobal(gui->lua_script[i].T, gui->lua_script[i].dyn_func);
 			

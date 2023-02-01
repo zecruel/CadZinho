@@ -9,7 +9,7 @@ const subprocess = exec('cadzinho.exe', function(err, data) {
     });
 
 setTimeout(() => {
-  screenshot({ filename: 'teste.png' });
+  screenshot({ filename: 'test.png' });
 }, 1000);
 
 setTimeout(() => {

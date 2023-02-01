@@ -3,7 +3,7 @@
 const exec = require('child_process').execFile;
 const screenshot = require("screenshot-desktop");
 
-const subprocess = exec('cadzinho.exe', function(err, data) {  
+const subprocess = await exec('cadzinho.exe', function(err, data) {  
         console.log(err)
         console.log(data.toString());                       
     });

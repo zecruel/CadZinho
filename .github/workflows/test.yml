@@ -43,6 +43,8 @@ jobs:
       run: cp windows/* ./
     - name: make
       run: make
+    - name: take a screenshot
+      run: node .github/workflows/test.js
     - run: |
         mkdir CadZinho
         cp cadzinho.exe CadZinho/
@@ -50,6 +52,7 @@ jobs:
         cp /mingw64/bin/SDL2.dll CadZinho/
         cp /mingw64/bin/glew32.dll CadZinho/
         cp LICENSE.txt CadZinho/
+        cp test.png CadZinho/
     - name: create archive
       run: 7z a windows.zip CadZinho
     - name: Upload the result

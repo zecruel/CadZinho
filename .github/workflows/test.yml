@@ -3,7 +3,7 @@ name: Test
 on: workflow_dispatch
 
 jobs:
-  msvc-build:
+  win:
   
    defaults:
       run:
@@ -54,7 +54,7 @@ jobs:
         cp /mingw64/bin/SDL2.dll CadZinho/
         cp /mingw64/bin/glew32.dll CadZinho/
         cp LICENSE.txt CadZinho/
-        cp test.png CadZinho/
+        cp .github/workflows/test.png CadZinho/
     - name: create archive
       run: 7z a windows.zip CadZinho
     - name: Upload the result

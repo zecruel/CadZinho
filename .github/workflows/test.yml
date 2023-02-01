@@ -45,7 +45,6 @@ jobs:
       shell: cmd
       run: |
         cd .github/workflows/
-        npm init
         npm install screenshot-desktop
         node test.js
     - run: |

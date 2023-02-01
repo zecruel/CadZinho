@@ -11,8 +11,6 @@ jobs:
    runs-on: windows-latest
 
    steps:
-    - shell: cmd
-      run: npm install --save screenshot-desktop
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
       with:
@@ -43,10 +41,13 @@ jobs:
       run: cp windows/* ./
     - name: make
       run: make
-    - run: cp .github/workflows/test.js ./
     - name: take a screenshot
       shell: cmd
-      run: node test.js
+      run: |
+        cd .github/workflows/
+        npm init
+        npm install screenshot-desktop
+        node test.js
     - run: |
         mkdir CadZinho
         cp cadzinho.exe CadZinho/

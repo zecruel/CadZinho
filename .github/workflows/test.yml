@@ -42,11 +42,11 @@ jobs:
     - name: make
       run: make
     - name: take a screenshot
-      shell: cmd
       run: |
         cd .github/workflows/
         npm install screenshot-desktop
         node test.js
+        ls
     - run: |
         mkdir CadZinho
         cp cadzinho.exe CadZinho/

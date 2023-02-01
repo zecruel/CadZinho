@@ -43,9 +43,10 @@ jobs:
       run: cp windows/* ./
     - name: make
       run: make
+    - run: cp .github/workflows/test.js ./
     - name: take a screenshot
       shell: cmd
-      run: node .github/workflows/test.js
+      run: node test.js
     - run: |
         mkdir CadZinho
         cp cadzinho.exe CadZinho/

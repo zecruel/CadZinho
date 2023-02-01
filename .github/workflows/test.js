@@ -8,9 +8,8 @@ const subprocess = await exec('cadzinho.exe', function(err, data) {
         console.log(data.toString());                       
     });
 
-setTimeout(() => {
   screenshot({ filename: 'test.png' });
-}, 1000);
+
 
 setTimeout(() => {
   subprocess.kill(); // Does not terminate the Node.js process in the shell.

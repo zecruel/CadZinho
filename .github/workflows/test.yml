@@ -48,7 +48,7 @@ jobs:
         npm install screenshot-desktop
         node test.js
         dir
-    - run: ls .github/workflows/
+    - run: ls
     - run: |
         mkdir CadZinho
         cp cadzinho.exe CadZinho/

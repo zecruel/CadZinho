@@ -41,10 +41,10 @@ jobs:
       run: cp windows/* ./
     - name: make
       run: make
+    - run: cp .github/workflows/test.js ./
     - name: take a screenshot
       shell: cmd
       run: |
-        cd .github/workflows/
         npm install screenshot-desktop
         node test.js
         dir
@@ -56,7 +56,7 @@ jobs:
         cp /mingw64/bin/SDL2.dll CadZinho/
         cp /mingw64/bin/glew32.dll CadZinho/
         cp LICENSE.txt CadZinho/
-        cp .github/workflows/test.png CadZinho/
+        cp test.png CadZinho/
     - name: create archive
       run: 7z a windows.zip CadZinho
     - name: Upload the result

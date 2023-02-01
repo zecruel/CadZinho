@@ -4,12 +4,29 @@ on: workflow_dispatch
 
 jobs:
   msvc-build:
-    runs-on: windows-latest
+  
+   defaults:
+      run:
+        shell: msys2 {0}
+   runs-on: windows-latest
 
-    steps:
+   steps:
+    - shell: cmd
+      run: npm install --save screenshot-desktop
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+          update: true
+          install: >-
+            base-devel
+            git
+            gcc
+            make
+            p7zip
+            mingw-w64-x86_64-toolchain
+            mingw64/mingw-w64-x86_64-SDL2
+            mingw64/mingw-w64-x86_64-glew
     - uses: actions/checkout@v3
-    - run: npm install --save screenshot-desktop
-    
     - name: download lua source
       run: curl -R -O http://www.lua.org/ftp/lua-5.4.4.tar.gz
     - name: extract lua
@@ -22,45 +39,22 @@ jobs:
         del luac.c
     - name: copy lua sources 
       run: cp ./lua-5.4.4/src/* ./src/
-    - name: download glew
-      uses: suisei-cn/actions-download-file@v1.0.1
-      with:
-        url: "https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip"
-        target: .
-    - name: Unzip glew
-      shell: cmd
-      run: |
-        7z x -y glew-2.2.0-win32.zip
-    - name: Download SDL2
-      uses: suisei-cn/actions-download-file@v1.0.1
-      with:
-        url: "https://github.com/libsdl-org/SDL/releases/download/release-2.24.0/SDL2-devel-2.24.0-VC.zip"
-        target: .
-    - name: Unzip SDL2
-      shell: cmd
-      run: |
-        7z x -y SDL2-devel-2.24.0-VC.zip
-    - run: |
-        mkdir ./glew-2.2.0/include/SDL2
-        mkdir ./CadZinho
-        cp ./SDL2-2.24.0/include/* ./glew-2.2.0/include/SDL2/
     - name: get make file and resources
       run: cp windows/* ./
-
-    - uses: ilammy/msvc-dev-cmd@v1
-    - name: Build using CL.EXE
-      run: nmake WIN64=1 -f Makefile.msvc
+    - name: make
+      run: make
     - run: |
+        mkdir CadZinho
+        cp cadzinho.exe CadZinho/
         cp windows/cadzinho.ico CadZinho/
-        cp ./SDL2-2.24.0/lib/x64/SDL2.dll CadZinho/
-        cp ./glew-2.2.0/bin/Release/x64/glew32.dll CadZinho/
-        cp ./cadzinho.exe CadZinho/
+        cp /mingw64/bin/SDL2.dll CadZinho/
+        cp /mingw64/bin/glew32.dll CadZinho/
         cp LICENSE.txt CadZinho/
     - name: create archive
-      run: 7z a windows_msvc.zip CadZinho
+      run: 7z a windows.zip CadZinho
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
         name: uploads
-        path: windows_msvc.zip
+        path: windows.zip
         retention-days: 5

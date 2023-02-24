@@ -2451,6 +2451,7 @@ int script_ent_append (lua_State *L) {
 /* given parameters:
 	- first vertex x, y and z, as numbers
 	- second vertex x, y and z, as numbers
+  - drawing parameters (layer, color, etc), as table (optional)
 returns:
 	- DXF entity, as userdata
 Notes:
@@ -2484,6 +2485,20 @@ int script_new_line (lua_State *L) {
 			lua_error(L);
 		}
 	}
+  
+  /* change drawing params, temporarily */
+  int prev_color = gui->color_idx;
+  int prev_layer = gui->layer_idx;
+  int prev_ltype = gui->ltypes_idx;
+  int prev_style = gui->t_sty_idx;
+  int prev_lw = gui->lw_idx;
+  if (lua_istable(L,7)){
+    lua_getglobal(L, "cadzinho"); /* function to be called */
+    lua_getfield(L, -1, "set_param");
+    lua_pushvalue(L, 7); /* push table with param keys */
+    lua_pcall(L, 1, 1, 0); /* call function (1 arguments, 1 result) */
+    lua_pop(L, 2); /* pop returned value */
+  }
 	
 	/* new LINE entity */
 	dxf_node * new_el = (dxf_node *) dxf_new_line (
@@ -2493,6 +2508,13 @@ int script_new_line (lua_State *L) {
 		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 		0, FRAME_LIFE); /* paper space */
 	
+  /* restore original drawing parameters */
+  gui->color_idx = prev_color;
+  gui->layer_idx = prev_layer;
+  gui->ltypes_idx = prev_ltype;
+  gui->t_sty_idx = prev_style;
+  gui->lw_idx = prev_lw;
+  
 	if (!new_el) {
 		lua_pushnil(L); /* return fail */
 		return 1;
@@ -2514,6 +2536,7 @@ int script_new_line (lua_State *L) {
 /* given parameters:
 	- first vertex x, y and bulge, as numbers
 	- second vertex x, y and bulge, as numbers
+  - drawing parameters (layer, color, etc), as table (optional)
 returns:
 	- DXF entity, as userdata
 Notes:
@@ -2547,6 +2570,20 @@ int script_new_pline (lua_State *L) {
 			lua_error(L);
 		}
 	}
+  
+  /* change drawing params, temporarily */
+  int prev_color = gui->color_idx;
+  int prev_layer = gui->layer_idx;
+  int prev_ltype = gui->ltypes_idx;
+  int prev_style = gui->t_sty_idx;
+  int prev_lw = gui->lw_idx;
+  if (lua_istable(L,7)){
+    lua_getglobal(L, "cadzinho"); /* function to be called */
+    lua_getfield(L, -1, "set_param");
+    lua_pushvalue(L, 7); /* push table with param keys */
+    lua_pcall(L, 1, 1, 0); /* call function (1 arguments, 1 result) */
+    lua_pop(L, 2); /* pop returned value */
+  }
 	
 	/* new LWPOLYLINE entity */
 	dxf_node *new_el = (dxf_node *) dxf_new_lwpolyline (
@@ -2558,6 +2595,13 @@ int script_new_pline (lua_State *L) {
 	/* append second vertex to ensure entity's validity */
 	dxf_lwpoly_append (new_el, lua_tonumber(L, 4), lua_tonumber(L, 5), 0.0, lua_tonumber(L, 6), FRAME_LIFE);
 	
+  /* restore original drawing parameters */
+  gui->color_idx = prev_color;
+  gui->layer_idx = prev_layer;
+  gui->ltypes_idx = prev_ltype;
+  gui->t_sty_idx = prev_style;
+  gui->lw_idx = prev_lw;
+  
 	if (!new_el) {
 		lua_pushnil(L); /* return fail */
 		return 1;
@@ -2683,6 +2727,7 @@ int script_pline_close (lua_State *L) {
 /* given parameters:
 	- center x, y, as numbers
 	- radius, as number
+  - drawing parameters (layer, color, etc), as table (optional)
 returns:
 	- DXF entity, as userdata
 Notes:
@@ -2716,6 +2761,21 @@ int script_new_circle (lua_State *L) {
 			lua_error(L);
 		}
 	}
+  
+  /* change drawing params, temporarily */
+  int prev_color = gui->color_idx;
+  int prev_layer = gui->layer_idx;
+  int prev_ltype = gui->ltypes_idx;
+  int prev_style = gui->t_sty_idx;
+  int prev_lw = gui->lw_idx;
+  if (lua_istable(L,4)){
+    lua_getglobal(L, "cadzinho"); /* function to be called */
+    lua_getfield(L, -1, "set_param");
+    lua_pushvalue(L, 4); /* push table with param keys */
+    lua_pcall(L, 1, 1, 0); /* call function (1 arguments, 1 result) */
+    lua_pop(L, 2); /* pop returned value */
+  }
+  
 	/* new CIRCLE entity */
 	dxf_node * new_el = (dxf_node *) dxf_new_circle (
 		lua_tonumber(L, 1), lua_tonumber(L, 2), 0.0, lua_tonumber(L, 3), /* pt1, radius */
@@ -2723,6 +2783,13 @@ int script_new_circle (lua_State *L) {
 		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 		0, FRAME_LIFE); /* paper space */
 	
+  /* restore original drawing parameters */
+  gui->color_idx = prev_color;
+  gui->layer_idx = prev_layer;
+  gui->ltypes_idx = prev_ltype;
+  gui->t_sty_idx = prev_style;
+  gui->lw_idx = prev_lw;
+  
 	if (!new_el) {
 		lua_pushnil(L); /* return fail */
 		return 1;
@@ -2745,6 +2812,7 @@ int script_new_circle (lua_State *L) {
 	- boundary vertexes, as table (elements in table are tables too,
 		with "x" and "y" labeled numbers elements)
 	- hatch type, as string ( acceptable values = USER, SOLID, PREDEF)
+  - drawing parameters (layer, color, etc), as table (optional)
 returns:
 	- DXF entity, as userdata
 Notes:
@@ -2780,6 +2848,20 @@ int script_new_hatch (lua_State *L) {
 		lua_pushliteral(L, "new_hatch: incorrect argument type");
 		lua_error(L);
 	}
+  
+  /* change drawing params, temporarily */
+  int prev_color = gui->color_idx;
+  int prev_layer = gui->layer_idx;
+  int prev_ltype = gui->ltypes_idx;
+  int prev_style = gui->t_sty_idx;
+  int prev_lw = gui->lw_idx;
+  if (lua_istable(L,3)){
+    lua_getglobal(L, "cadzinho"); /* function to be called */
+    lua_getfield(L, -1, "set_param");
+    lua_pushvalue(L, 3); /* push table with param keys */
+    lua_pcall(L, 1, 1, 0); /* call function (1 arguments, 1 result) */
+    lua_pop(L, 2); /* pop returned value */
+  }
 	
 	/* -----------create boundary as graph vector -------------- */
 	graph_obj *bound = graph_new(FRAME_LIFE);
@@ -2886,6 +2968,13 @@ int script_new_hatch (lua_State *L) {
 	gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 	gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 	0, FRAME_LIFE); /* paper space */
+  
+  /* restore original drawing parameters */
+  gui->color_idx = prev_color;
+  gui->layer_idx = prev_layer;
+  gui->ltypes_idx = prev_ltype;
+  gui->t_sty_idx = prev_style;
+  gui->lw_idx = prev_lw;
 	
 	if (!new_el) {
 		lua_pushnil(L); /* return fail */
@@ -2911,6 +3000,7 @@ int script_new_hatch (lua_State *L) {
 	- height, as number - OPTIONAL
 	- horizontal alingment, as string - OPTIONAL
 	- vertical alingment, as string - OPTIONAL
+  - drawing parameters (layer, color, etc), as table (optional)
 returns:
 	- DXF entity, as userdata
 Notes:
@@ -2991,6 +3081,20 @@ int script_new_text (lua_State *L) {
 			if (strcmp(al, al_v[i]) == 0) t_al_v = i;
 		}
 	}
+  
+  /* change drawing params, temporarily */
+  int prev_color = gui->color_idx;
+  int prev_layer = gui->layer_idx;
+  int prev_ltype = gui->ltypes_idx;
+  int prev_style = gui->t_sty_idx;
+  int prev_lw = gui->lw_idx;
+  if (lua_istable(L,7)){
+    lua_getglobal(L, "cadzinho"); /* function to be called */
+    lua_getfield(L, -1, "set_param");
+    lua_pushvalue(L, 7); /* push table with param keys */
+    lua_pcall(L, 1, 1, 0); /* call function (1 arguments, 1 result) */
+    lua_pop(L, 2); /* pop returned value */
+  }
 	
 	/* create a new DXF TEXT */
 	dxf_node * new_el = (dxf_node *) dxf_new_text (
@@ -3002,6 +3106,13 @@ int script_new_text (lua_State *L) {
 	dxf_attr_change_i(new_el, 72, &t_al_h, -1);
 	dxf_attr_change_i(new_el, 73, &t_al_v, -1);
 	dxf_attr_change(new_el, 7, gui->drawing->text_styles[gui->t_sty_idx].name);
+  
+  /* restore original drawing parameters */
+  gui->color_idx = prev_color;
+  gui->layer_idx = prev_layer;
+  gui->ltypes_idx = prev_ltype;
+  gui->t_sty_idx = prev_style;
+  gui->lw_idx = prev_lw;
 	
 	if (!new_el) {
 		lua_pushnil(L); /* return fail */
@@ -3467,6 +3578,7 @@ int script_new_block_file (lua_State *L) {
 	- placement x, y, as numbers
 	- scale x, y, as numbers (optional)
 	- rotation in degrees, as number (optional)
+  - drawing parameters (layer, color, etc), as table (optional)
 returns:
 	- DXF entity, as userdata
 Notes:
@@ -3514,6 +3626,20 @@ int script_new_insert (lua_State *L) {
 	
 	double x = lua_tonumber(L, 2);
 	double y = lua_tonumber(L, 3);
+  
+  /* change drawing params, temporarily */
+  int prev_color = gui->color_idx;
+  int prev_layer = gui->layer_idx;
+  int prev_ltype = gui->ltypes_idx;
+  int prev_style = gui->t_sty_idx;
+  int prev_lw = gui->lw_idx;
+  if (lua_istable(L,7)){
+    lua_getglobal(L, "cadzinho"); /* function to be called */
+    lua_getfield(L, -1, "set_param");
+    lua_pushvalue(L, 7); /* push table with param keys */
+    lua_pcall(L, 1, 1, 0); /* call function (1 arguments, 1 result) */
+    lua_pop(L, 2); /* pop returned value */
+  }
 	
 	/* new INSERT entity */
 	
@@ -3566,6 +3692,13 @@ int script_new_insert (lua_State *L) {
 		if (!nxt_attdef) break;
 	}
 	
+  
+  /* restore original drawing parameters */
+  gui->color_idx = prev_color;
+  gui->layer_idx = prev_layer;
+  gui->ltypes_idx = prev_ltype;
+  gui->t_sty_idx = prev_style;
+  gui->lw_idx = prev_lw;
 	
 	/* return success */
 	struct ent_lua *ent = (struct ent_lua *) lua_newuserdatauv(L, sizeof(struct ent_lua), 0);  /* create a userdata object */
@@ -3751,13 +3884,13 @@ int script_set_ltype (lua_State *L) {
 			lua_pushboolean(L, 0); /* return fail */
 			return 1;
 		}
-		/* change current layer*/
+		/* change current ltype */
 		gui->ltypes_idx = idx;
 	}
 	else if (lua_isstring(L, 1)) {
 		char *name = (char *) lua_tostring(L, 1);
 		int idx = dxf_ltype_idx (gui->drawing, name);
-		/* change current layer*/
+		/* change current ltype */
 		gui->ltypes_idx = idx;
 	}
 	else {
@@ -3795,13 +3928,13 @@ int script_set_style (lua_State *L) {
 			lua_pushboolean(L, 0); /* return fail */
 			return 1;
 		}
-		/* change current layer*/
+		/* change current style */
 		gui->t_sty_idx = idx;
 	}
 	else if (lua_isstring(L, 1)) {
 		char *name = (char *) lua_tostring(L, 1);
 		int idx = dxf_tstyle_idx (gui->drawing, name);
-		/* change current layer*/
+		/* change current style */
 		gui->t_sty_idx = idx;
 	}
 	else {
@@ -3838,7 +3971,7 @@ int script_set_lw (lua_State *L) {
 			lua_pushboolean(L, 0); /* return fail */
 			return 1;
 		}
-		/* change current color*/
+		/* change current lw */
 		gui->lw_idx = idx;
 	}
 	else if (lua_isstring(L, 1)) {
@@ -3852,7 +3985,7 @@ int script_set_lw (lua_State *L) {
 			gui->lw_idx = DXF_LW_LEN + 1;
 		}
 		else if (strcmp(new_name, "BY LAYER") == 0){
-			/* change current color*/
+			/* change current lw */
 			gui->lw_idx = DXF_LW_LEN;
 		}
 		else {
@@ -3868,6 +4001,137 @@ int script_set_lw (lua_State *L) {
 	
 	lua_pushboolean(L, 1); /* return success */
 	return 1;
+}
+
+int script_set_param (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+  
+  if (!lua_istable(L, 1)) {
+		lua_pushboolean(L, 0); /* return fail */
+    return 1;
+	}
+  
+  int idx = 0;
+  
+  /* layer */
+	int field_typ = lua_getfield(L, 1, "layer");
+  if (field_typ == LUA_TNUMBER) {
+    idx = lua_tonumber(L, -1);
+    int num_layers = gui->drawing->num_layers;
+    if (idx < num_layers && idx >= 0){
+      /* change current layer */
+      gui->layer_idx = idx;
+    }
+  }
+  else if (field_typ == LUA_TSTRING) {
+    char *name = (char *) lua_tostring(L, -1);
+    idx = dxf_lay_idx (gui->drawing, name);
+    /* change current layer */
+    gui->layer_idx = idx;
+  }
+  lua_pop(L, 1);
+
+  /* color */
+  field_typ = lua_getfield(L, 1, "color");
+  if (field_typ == LUA_TNUMBER) {
+    idx = lua_tonumber(L, -1);
+    if (idx < 257 && idx >= 0){
+      /* change current color */
+      gui->color_idx = idx;
+    }
+  }
+  else if (field_typ == LUA_TSTRING) {
+    char name[DXF_MAX_CHARS + 1];
+    strncpy(name, lua_tostring(L, -1), DXF_MAX_CHARS);
+    str_upp(name);
+    char *new_name = trimwhitespace(name);
+    
+    if (strcmp(new_name, "BY BLOCK") == 0){
+      /* change current color */
+      gui->color_idx = 0;
+    }
+    else if (strcmp(new_name, "BY LAYER") == 0){
+      /* change current color */
+      gui->color_idx = 256;
+    }
+  }
+  lua_pop(L, 1);
+
+  /* ltype */
+  field_typ = lua_getfield(L, 1, "ltype");
+  if (field_typ == LUA_TNUMBER) {
+    idx = lua_tonumber(L, -1);
+    int num_ltypes = gui->drawing->num_ltypes;
+    if (idx < num_ltypes && idx >= 0){
+      /* change current line type */
+      gui->ltypes_idx = idx;
+    }
+  
+  }
+  else if (field_typ == LUA_TSTRING) {
+    char *name = (char *) lua_tostring(L, -1);
+    idx = dxf_ltype_idx (gui->drawing, name);
+    /* change current line type */
+    gui->ltypes_idx = idx;
+  }
+  lua_pop(L, 1);
+
+  /* style */
+  field_typ = lua_getfield(L, 1, "style");
+  if (field_typ == LUA_TNUMBER) {
+    idx = lua_tonumber(L, -1);
+    int num_tstyles = gui->drawing->num_tstyles;
+    if (idx < num_tstyles && idx >= 0){
+      /* change current style */
+      gui->t_sty_idx = idx;
+    }
+  }
+  else if (field_typ == LUA_TSTRING) {
+    char *name = (char *) lua_tostring(L, -1);
+    idx = dxf_tstyle_idx (gui->drawing, name);
+    /* change current style*/
+    gui->t_sty_idx = idx;
+  }
+  lua_pop(L, 1);
+
+  /* lw */
+  field_typ = lua_getfield(L, 1, "lw");
+  if (field_typ == LUA_TNUMBER) {
+    idx = lua_tonumber(L, -1);
+    if (idx < DXF_LW_LEN + 2 && idx >= 0){
+      /* change current lw */
+      gui->lw_idx = idx;
+    }
+  }
+  else if (field_typ == LUA_TSTRING) {
+    char name[DXF_MAX_CHARS + 1];
+    strncpy(name, lua_tostring(L, -1), DXF_MAX_CHARS);
+    str_upp(name);
+    char *new_name = trimwhitespace(name);
+    
+    if (strcmp(new_name, "BY BLOCK") == 0){
+      /* change current color*/
+      gui->lw_idx = DXF_LW_LEN + 1;
+    }
+    else if (strcmp(new_name, "BY LAYER") == 0){
+      /* change current color*/
+      gui->lw_idx = DXF_LW_LEN;
+    }
+  }
+  lua_pop(L, 1);
+  
+  lua_pushboolean(L, 1); /* return success */
+  return 1;
 }
 
 /* set gui modal */

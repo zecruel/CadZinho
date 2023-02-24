@@ -207,6 +207,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"set_ltype", script_set_ltype},
 		{"set_style", script_set_style},
 		{"set_lw", script_set_lw},
+    {"set_param", script_set_param},
 		{"set_modal", script_set_modal},
 		{"new_appid", script_new_appid},
 		

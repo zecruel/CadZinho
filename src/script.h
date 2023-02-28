@@ -8,6 +8,8 @@
 #include "dxf.h"
 #include "dxf_print.h"
 #include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 struct script_obj{
 	lua_State *L; /* main lua state */

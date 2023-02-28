@@ -10,7 +10,7 @@
 
 (SDL 2.0 and OpenGL 3.2 port)
 
-## New Release! - 0.2.1
+## New Release! - 0.2.2
 **Try it:** [Latest Release](https://github.com/zecruel/CadZinho/releases/latest)
 
 ![Screen shot](/screenshot.png)

@@ -93,7 +93,57 @@ int gui_load_conf (gui_obj *gui){
 		}
 		/* finaly get configuration from global variables in Lua instance */
 		gui_get_conf (conf_script.T);
-		
+    
+    
+    
+    /* language */
+    if(strlen(gui->main_lang) > 1){
+      new_path[0] = 0;
+      snprintf(new_path, PATH_MAX_CHARS, "%slang%c%s.lua", 
+        gui->base_dir, DIR_SEPARATOR, gui->main_lang);
+      
+      if (gui_script_init (gui, &gui->main_lang_scr, new_path, NULL) == 1){
+        gui->main_lang_scr.active = 1;
+        
+        gui->main_lang_scr.time = clock();
+        gui->main_lang_scr.timeout = 1.0; /* default timeout value */
+        gui->main_lang_scr.do_init = 0;
+        
+        lua_getglobal(gui->main_lang_scr.T, "cz_main_func");
+        n_results = 0;
+        gui->main_lang_scr.status = lua_resume(gui->main_lang_scr.T, NULL, 0, &n_results); /* start thread */
+        if (gui->main_lang_scr.status != LUA_OK){
+          /* error */
+          /* close script and clean instance*/
+          lua_close(gui->main_lang_scr.L);
+          gui->main_lang_scr.L = NULL;
+          gui->main_lang_scr.T = NULL;
+          gui->main_lang_scr.active = 0;
+          gui->main_lang_scr.dynamic = 0;
+        }
+        else{
+          /* globals always in stack to prevent garbage colector */
+          /* 'translate' table in stack pos = 1 */
+          if (lua_getglobal(gui->main_lang_scr.T, "translate") != LUA_TTABLE){
+            gui->main_lang_scr.active = 0;
+            lua_pop(gui->main_lang_scr.T, 1);
+          }
+          else {
+            /* 'descr' string in stack pos = 2 */
+            if (lua_getglobal(gui->main_lang_scr.T, "descr") != LUA_TSTRING){
+              lua_pop(gui->main_lang_scr.T, 1);
+              lua_pushliteral(gui->main_lang_scr.T, "");
+            }
+            /* 'flag' SVG string in stack pos = 3 */
+            if (lua_getglobal(gui->main_lang_scr.T, "flag") != LUA_TSTRING){
+              lua_pop(gui->main_lang_scr.T, 1);
+              lua_pushliteral(gui->main_lang_scr.T, "");
+            }
+          }
+        }
+      }
+    
+		}
 		/* close script and clean instance*/
 		lua_close(conf_script.L);
 		conf_script.L = NULL;
@@ -318,6 +368,13 @@ int gui_get_conf (lua_State *L) {
 		}
 	}
 	lua_pop(L, 1);
+  
+  /* ------------------ get gui language --------------- */
+  gui->main_lang[0] = 0;
+	if (lua_getglobal(L, "language") == LUA_TSTRING){
+    strncpy(gui->main_lang, lua_tostring(L, -1), DXF_MAX_CHARS);
+  }
+  lua_pop(L, 1);
 	
 	return 1;
 }

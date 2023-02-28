@@ -576,6 +576,7 @@ int main(int argc, char** argv){
 	
 	if (gui_script_init (gui, &macro_script, macro_path, NULL) == 1){
 		macro_script.active = 1;
+    lua_getglobal(macro_script.T, "cz_main_func"); /* stack pos = 1 (always in stack to prevent garbage colector) */
 	}
 	
 	
@@ -1680,7 +1681,8 @@ int main(int argc, char** argv){
 			lua_setglobal(macro_script.T, "accept");
 			//print_lua_stack(macro_script.T);
 			
-			lua_getglobal(macro_script.T, "cz_main_func");
+			//lua_getglobal(macro_script.T, "cz_main_func");
+      lua_pushvalue(macro_script.T, 1);
 			int n_results = 0; /* for Lua 5.4*/
 			macro_script.status = lua_resume(macro_script.T, NULL, 0, &n_results); /* start thread */
 			if (macro_script.status != LUA_OK){
@@ -1979,6 +1981,14 @@ int main(int argc, char** argv){
 	}
 	
 	/* safe quit */
+  
+  if (gui->main_lang_scr.L){
+		lua_close(gui->main_lang_scr.L);
+	}
+  
+  if (gui->cand_lang_scr.L){
+		lua_close(gui->cand_lang_scr.L);
+	}
 	
 	/* Delete allocated resources */
 	draw_gl_init ((void *)gui, 1);

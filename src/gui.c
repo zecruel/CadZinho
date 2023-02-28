@@ -1917,6 +1917,19 @@ int gui_start(gui_obj *gui){
 	gui->discard_changes = 0;
 	gui->desired_action = NONE;
 	gui->hist_action = HIST_NONE;
+  
+  gui->main_lang[0] = 0;
+  gui->cand_lang[0] = 0;
+  
+  gui->main_lang_scr.L = NULL;
+	gui->main_lang_scr.T = NULL;
+	gui->main_lang_scr.active = 0;
+	gui->main_lang_scr.dynamic = 0;
+  
+  gui->cand_lang_scr.L = NULL;
+	gui->cand_lang_scr.T = NULL;
+	gui->cand_lang_scr.active = 0;
+	gui->cand_lang_scr.dynamic = 0;
 	
 	return 1;
 }
@@ -2600,4 +2613,21 @@ void gui_draw_vert_gl(gui_obj *gui, dxf_node *obj){
 			}
 		}
 	}
+}
+
+char* gui_get_literal (gui_obj *gui, const char *literal){
+  static char value[DXF_MAX_CHARS + 1];
+  if (!literal) return NULL;
+  if (strlen(literal) == 0) return literal;
+  if (!gui->main_lang_scr.active) return literal;
+  lua_pushvalue(gui->main_lang_scr.T, 1);
+  if (lua_getfield(gui->main_lang_scr.T, -1, literal) == LUA_TSTRING){
+    strncpy(value, lua_tostring(gui->main_lang_scr.T, -1), DXF_MAX_CHARS);
+    lua_pop(gui->main_lang_scr.T, 1);
+    return value;
+  }
+  else{
+    lua_pop(gui->main_lang_scr.T, 1);
+    return literal;
+  }
 }

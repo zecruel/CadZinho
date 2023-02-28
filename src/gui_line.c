@@ -67,7 +67,7 @@ int gui_line_interactive(gui_obj *gui){
 int gui_line_info (gui_obj *gui){
 	if (gui->modal == LINE) {
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Place a single line", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Place a single line"), NK_TEXT_LEFT);
 		if (gui->step == 0){
 			nk_label(gui->ctx, "Enter first point", NK_TEXT_LEFT);
 		} else {

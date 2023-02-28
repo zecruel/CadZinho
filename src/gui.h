@@ -448,6 +448,11 @@ struct Gui_obj {
 	int discard_changes;
 	enum Action desired_action;
 	enum Hist_action hist_action;
+  
+  char main_lang[DXF_MAX_CHARS + 1]; /* gui language */
+  struct script_obj main_lang_scr;
+  char cand_lang[DXF_MAX_CHARS + 1]; /* gui language - candidate */
+  struct script_obj cand_lang_scr;
 };
 typedef struct Gui_obj gui_obj;
 
@@ -518,6 +523,8 @@ int draw_attractor_gl(gui_obj *gui, enum attract_type type, int x, int y, bmp_co
 
 void gui_draw_vert_gl(gui_obj *gui, dxf_node *obj);
 
+char* gui_get_literal (gui_obj *gui, const char *literal);
+
 extern int dxf_lw[];
 extern const char *dxf_lw_descr[];
 extern bmp_color dxf_colors[];
@@ -537,5 +544,7 @@ extern const char *dxf_seed_2007;
 #ifndef T_AL_V_LEN
 	#define T_AL_V_LEN 4
 #endif
+
+#define _l(X) gui_get_literal (gui, X)
 
 #endif

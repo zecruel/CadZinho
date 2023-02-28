@@ -11,6 +11,20 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifdef _MSC_VER
+
+  #ifndef R_OK
+    #define R_OK _S_IREAD
+  #endif
+  #ifndef W_OK
+    #define W_OK _S_IWRITE
+  #endif
+  #ifndef X_OK
+    #define X_OK _S_IEXEC
+  #endif
+
+#endif
+
 struct script_obj{
 	lua_State *L; /* main lua state */
 	lua_State *T; /* thread for execution */

@@ -62,11 +62,11 @@ int gui_measure_info (gui_obj *gui){
 		static int init = 0, init2 = 0;
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Measure Distance", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Measure Distance"), NK_TEXT_LEFT);
 		if (gui->step == 0){
-			nk_label(gui->ctx, "Enter first point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter first point"), NK_TEXT_LEFT);
 		} else {
-			nk_label(gui->ctx, "Enter next point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter next point"), NK_TEXT_LEFT);
 			
 			/* calcule distance between previous and current points */
 			x = gui->step_x[gui->step] - gui->step_x[gui->step-1];
@@ -76,10 +76,10 @@ int gui_measure_info (gui_obj *gui){
 			
 			/* update strings if has relevant information */
 			if (fabs(distance) > 1e-9){
-				snprintf(dist_str, 63, "Distance: %.9g", distance);
-				snprintf(x_str, 63, "X: %.9g", x);
-				snprintf(y_str, 63, "Y: %.9g", y);
-				snprintf(ang_str, 63, "Angle: %.7g", angle);
+				snprintf(dist_str, 63, _l("Distance: %.9g"), distance);
+				snprintf(x_str, 63, _l("X: %.9g"), x);
+				snprintf(y_str, 63, _l("Y: %.9g"), y);
+				snprintf(ang_str, 63, _l("Angle: %.7g"), angle);
 				
 				if (gui->step > 1){
 					/* calcule distance between last previous points */
@@ -87,10 +87,10 @@ int gui_measure_info (gui_obj *gui){
 					y = gui->step_y[gui->step - 1] - gui->step_y[gui->step - 2];
 					distance = sqrt(x*x + y*y);
 					angle = atan2 (y, x) * 180 / M_PI;
-					snprintf(last_dist_str, 63, "Distance: %.9g", distance);
-					snprintf(last_x_str, 63, "X: %.9g", x);
-					snprintf(last_y_str, 63, "Y: %.9g", y);
-					snprintf(last_ang_str, 63, "Angle: %.7g", angle);
+					snprintf(last_dist_str, 63, _l("Distance: %.9g"), distance);
+					snprintf(last_x_str, 63, _l("X: %.9g"), x);
+					snprintf(last_y_str, 63, _l("Y: %.9g"), y);
+					snprintf(last_ang_str, 63, _l("Angle: %.7g"), angle);
 					
 					/* calcule total distance along all points entered */
 					total = 0.0;
@@ -99,8 +99,8 @@ int gui_measure_info (gui_obj *gui){
 						y = gui->step_y[i+1] - gui->step_y[i];
 						total += sqrt(x*x + y*y);
 					}
-					snprintf(pt_str, 63, "Points: %d", gui->step);
-					snprintf(total_str, 63, "Total: %.9g", total);
+					snprintf(pt_str, 63, _l("Points: %d"), gui->step);
+					snprintf(total_str, 63, _l("Total: %.9g"), total);
 					
 					init2 = 1; /* strings updated*/
 				}
@@ -110,7 +110,7 @@ int gui_measure_info (gui_obj *gui){
 		
 		if (init){ /* show informations */
 			nk_layout_row_dynamic(gui->ctx, 13, 1);
-			nk_label_colored(gui->ctx, "Current:", NK_TEXT_LEFT, nk_rgb(255,255,0));
+			nk_label_colored(gui->ctx, _l("Current:"), NK_TEXT_LEFT, nk_rgb(255,255,0));
 			nk_label(gui->ctx, dist_str, NK_TEXT_LEFT);
 			nk_label(gui->ctx, x_str, NK_TEXT_LEFT);
 			nk_label(gui->ctx, y_str, NK_TEXT_LEFT);
@@ -118,7 +118,7 @@ int gui_measure_info (gui_obj *gui){
 			nk_layout_row_dynamic(gui->ctx, 5, 1);
 			if (init2){
 				nk_layout_row_dynamic(gui->ctx, 13, 1);
-				nk_label_colored(gui->ctx, "Last:", NK_TEXT_LEFT, nk_rgb(255,255,0));
+				nk_label_colored(gui->ctx, _l("Last:"), NK_TEXT_LEFT, nk_rgb(255,255,0));
 				nk_label(gui->ctx, last_dist_str, NK_TEXT_LEFT);
 				nk_label(gui->ctx, last_x_str, NK_TEXT_LEFT);
 				nk_label(gui->ctx, last_y_str, NK_TEXT_LEFT);

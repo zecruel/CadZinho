@@ -119,13 +119,13 @@ int info_win (gui_obj *gui){
 	gui->next_win_h = 300;
 	
 	//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Info", NK_WINDOW_CLOSABLE, nk_rect(310, 50, 200, 300))){
-	if (nk_begin(gui->ctx, "Info", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
+	if (nk_begin(gui->ctx, _l("Info"), nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		
 		#if (0)
-		if (nk_button_label(gui->ctx, "Generate DB")){
+		if (nk_button_label(gui->ctx, _l("Generate DB"))){
 			sqlite3 *db;
 			sqlite3_stmt *res;
 			char *zErrMsg = 0;
@@ -135,7 +135,7 @@ int info_win (gui_obj *gui){
 			rc = sqlite3_open("test.db", &db);
     
 			if (rc != SQLITE_OK) {
-				printf("Cannot open database: %s\n", sqlite3_errmsg(db));
+				printf(_l("Cannot open database: %s\n"), sqlite3_errmsg(db));
 			}
 			else {
 				char *sql = "DROP TABLE IF EXISTS Ents;" 
@@ -143,7 +143,7 @@ int info_win (gui_obj *gui){
 				rc = sqlite3_exec(db, sql, 0, 0, 0);
 
 				if (rc != SQLITE_OK) {
-					printf("Failed to fetch data: %s\n", sqlite3_errmsg(db));
+					printf(_l("Failed to fetch data: %s\n"), sqlite3_errmsg(db));
 				}    
 				else {
 					
@@ -158,7 +158,7 @@ int info_win (gui_obj *gui){
 						rc = sqlite3_prepare_v2(db, sql, -1, &res, 0);
 
 						if (rc != SQLITE_OK) {
-							printf("Failed to insert data: %s\n", sqlite3_errmsg(db));
+							printf(_l("Failed to insert data: %s\n"), sqlite3_errmsg(db));
 							current = NULL;
 						}
 						
@@ -199,7 +199,7 @@ int info_win (gui_obj *gui){
 									rc = sqlite3_step(res);
 
 									if (rc != SQLITE_DONE) {
-										printf("Failed to put data\n" );
+										printf(_l("Failed to put data\n") );
 										break;
 									}
 									sqlite3_reset(res);
@@ -221,11 +221,11 @@ int info_win (gui_obj *gui){
 		}
 		#endif
 		
-		nk_label(gui->ctx, "BLK:", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("BLK:"), NK_TEXT_LEFT);
 		i = 1;
 		nk_dxf_ent_info (gui->ctx, gui->drawing->blks, i);
 		
-		nk_label(gui->ctx, "ENTS:", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("ENTS:"), NK_TEXT_LEFT);
 		if (gui->sel_list != NULL){				
 			list_node *current = gui->sel_list->next;
 			// starts the content sweep 

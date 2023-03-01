@@ -79,7 +79,7 @@ int gui_ed_text_interactive(gui_obj *gui){
 				dxf_obj_subst(text_el, new_ent);
 				
 				/* update undo/redo list */
-				do_add_entry(&gui->list_do, "EDIT TEXT");
+				do_add_entry(&gui->list_do, _l("EDIT TEXT"));
 				do_add_item(gui->list_do.current, text_el, new_ent);
 			}
 			gui->element = NULL;
@@ -101,15 +101,15 @@ int gui_ed_text_interactive(gui_obj *gui){
 int gui_ed_text_info (gui_obj *gui){
 	if (gui->modal == ED_TEXT) {
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Edit a text", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Edit a text"), NK_TEXT_LEFT);
 		if (gui->step == 0){
-			nk_label(gui->ctx, "Select a text element", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Select a text element"), NK_TEXT_LEFT);
 		} else {
-			nk_label(gui->ctx, "Enter a new text", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter a new text"), NK_TEXT_LEFT);
 				
 			static struct nk_rect s = {150, 10, 420, 330};
 			/* edit text window */
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Edit text", NK_WINDOW_CLOSABLE|NK_WINDOW_MOVABLE, s)){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Edit text"), NK_WINDOW_CLOSABLE|NK_WINDOW_MOVABLE, s)){
 				nk_layout_row_dynamic(gui->ctx, 270, 1);
 				/* big edit box */
 				//nk_edit_buffer(gui->ctx, NK_EDIT_BOX, &(gui->text_edit), nk_filter_default);

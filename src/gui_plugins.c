@@ -10,7 +10,7 @@ int gui_plugins_win (gui_obj *gui){
 	gui->next_win_w = 200;
 	gui->next_win_h = 300;
 	
-	if (nk_begin(gui->ctx, "Plugins", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
+	if (nk_begin(gui->ctx, _l("Plugins"), nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);

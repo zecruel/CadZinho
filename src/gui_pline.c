@@ -53,7 +53,7 @@ int gui_pline_interactive(gui_obj *gui){
 					new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
 					drawing_ent_append(gui->drawing, new_el);
 					
-					do_add_entry(&gui->list_do, "POLYLINE");
+					do_add_entry(&gui->list_do, _l("POLYLINE"));
 					do_add_item(gui->list_do.current, NULL, new_el);
 					
 					gui->step = 0;
@@ -81,14 +81,14 @@ int gui_pline_interactive(gui_obj *gui){
 int gui_pline_info (gui_obj *gui){
 	if (gui->modal == POLYLINE) {
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Place a poly line", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Place a poly line"), NK_TEXT_LEFT);
 		if (gui->step == 0){
-			nk_label(gui->ctx, "Enter first point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter first point"), NK_TEXT_LEFT);
 		} else {
-			nk_label(gui->ctx, "Enter next point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter next point"), NK_TEXT_LEFT);
 		}
-		nk_checkbox_label(gui->ctx, "Closed", &gui->closed);
-		gui->bulge = nk_propertyd(gui->ctx, "Bulge", -10.0, gui->bulge, 10.0, 0.1, 0.1f);
+		nk_checkbox_label(gui->ctx, _l("Closed"), &gui->closed);
+		gui->bulge = nk_propertyd(gui->ctx, _l("Bulge"), -10.0, gui->bulge, 10.0, 0.1, 0.1f);
 	}
 	return 1;
 }

@@ -25,7 +25,7 @@ int print_win (gui_obj *gui){
 	gui->next_win_h = 350;
 	
 	/* print window */
-	if (nk_begin(gui->ctx, "Print", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
+	if (nk_begin(gui->ctx, _l("Print"), nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_flags res;
@@ -43,14 +43,23 @@ int print_win (gui_obj *gui){
 			[PRT_PS] = "PS",
 			[PRT_NONE] = "*"
 		};
-		static const char *ext_descr[] = {
-			[PRT_PDF] = "Portable Document Format (.pdf)",
-			[PRT_SVG] = "Scalable Vector Graphics (.svg)",
-			[PRT_PNG] = "Image PNG (.png)",
-			[PRT_JPG] = "Image JPG (.jpg)",
-			[PRT_BMP] = "Image Bitmap (.bmp)",
-			[PRT_PS] = "Postscript (.ps)",
-			[PRT_NONE] = "All files (*)"
+    static char ext_descr[7][DXF_MAX_CHARS + 1];
+    strncpy(ext_descr[0], _l("Portable Document Format (.pdf)"), DXF_MAX_CHARS);
+    strncpy(ext_descr[1], _l("Scalable Vector Graphics (.svg)"), DXF_MAX_CHARS);
+    strncpy(ext_descr[2], _l("Image PNG (.png)"), DXF_MAX_CHARS);
+    strncpy(ext_descr[3], _l("Image JPG (.jpg)"), DXF_MAX_CHARS);
+    strncpy(ext_descr[4], _l("Image Bitmap (.bmp)"), DXF_MAX_CHARS);
+    strncpy(ext_descr[5], _l("Postscript (.ps)"), DXF_MAX_CHARS);
+    strncpy(ext_descr[6], _l("All files (*)"), DXF_MAX_CHARS);
+    
+		static const char *ext_descr_addr[] = {
+			[PRT_PDF] = ext_descr[0],
+			[PRT_SVG] = ext_descr[1],
+			[PRT_PNG] = ext_descr[2],
+			[PRT_JPG] = ext_descr[3],
+			[PRT_BMP] = ext_descr[4],
+			[PRT_PS] = ext_descr[5],
+			[PRT_NONE] = ext_descr[6]
 		};
 		
 		/* basic colors */
@@ -118,7 +127,7 @@ int print_win (gui_obj *gui){
 		
 		nk_layout_row(gui->ctx, NK_STATIC, 180, 3, (float[]){190, 160, 190});
 		/* Paper size setup */
-		if (nk_group_begin(gui->ctx, "Page setup", NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, _l("Page setup"), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)) {
 			static const char *unit_descr[] = {"in", "mm", "px"};
 			static int num_fam = 6; /* number of paper families */
 			static int curr_fam = -1; /* current selected paper family (-1 -> none selected) */
@@ -181,9 +190,9 @@ int print_win (gui_obj *gui){
 			/* units options */
 			nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 3, (float[]){0.25, 0.4, 0.35});
 			new_unit = unit;
-			if (nk_option_label(gui->ctx, "mm", new_unit == PRT_MM)) {new_unit = PRT_MM;}
-			if (nk_option_label(gui->ctx, "inches", new_unit == PRT_IN)) {new_unit = PRT_IN;}
-			if (nk_option_label(gui->ctx, "pixels", new_unit == PRT_PX)) {new_unit = PRT_PX;}
+			if (nk_option_label(gui->ctx, _l("mm"), new_unit == PRT_MM)) {new_unit = PRT_MM;}
+			if (nk_option_label(gui->ctx, _l("inches"), new_unit == PRT_IN)) {new_unit = PRT_IN;}
+			if (nk_option_label(gui->ctx, _l("pixels"), new_unit == PRT_PX)) {new_unit = PRT_PX;}
 			
 			if (unit != new_unit){ /* if units was changed */
 				/* convert sizes to new unit */
@@ -212,7 +221,7 @@ int print_win (gui_obj *gui){
 			
 			/* width customization */
 			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 70});
-			nk_label(gui->ctx, "Width:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Width:"), NK_TEXT_RIGHT);
 			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, page_w_str, 63, nk_filter_float);
 			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 				nk_edit_unfocus(gui->ctx);
@@ -222,7 +231,7 @@ int print_win (gui_obj *gui){
 			}
 			
 			/* height customization */
-			nk_label(gui->ctx, "Height:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Height:"), NK_TEXT_RIGHT);
 			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, page_h_str, 63, nk_filter_float);
 			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 				nk_edit_unfocus(gui->ctx);
@@ -232,7 +241,7 @@ int print_win (gui_obj *gui){
 			}
 			
 			/* rotate page */
-			if (nk_button_label(gui->ctx, "Rotate")){
+			if (nk_button_label(gui->ctx, _l("Rotate"))){
 				/* simply swap dimentions */
 				double swap = page_w;
 				page_w = page_h;
@@ -244,11 +253,11 @@ int print_win (gui_obj *gui){
 			nk_group_end(gui->ctx);
 		}
 		/* adjust drawing position and scale on print area */
-		if (nk_group_begin(gui->ctx, "Scale & Position", NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
+		if (nk_group_begin(gui->ctx, _l("Scale & Position"), NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
 			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 70});
 			
 			/* customize x axis origin of print area (left lower corner) in drawing */
-			nk_label(gui->ctx, "Origin X:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Origin X:"), NK_TEXT_RIGHT);
 			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, ofs_x_str, 63, nk_filter_float);
 			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 				nk_edit_unfocus(gui->ctx);
@@ -258,7 +267,7 @@ int print_win (gui_obj *gui){
 			}
 			
 			/* customize x axis origin of print area (left lower corner) in drawing */
-			nk_label(gui->ctx, "Origin Y:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Origin Y:"), NK_TEXT_RIGHT);
 			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, ofs_y_str, 63, nk_filter_float);
 			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 				nk_edit_unfocus(gui->ctx);
@@ -268,7 +277,7 @@ int print_win (gui_obj *gui){
 			}
 			
 			/* customize drawing scale in print area ( [drawing unit]/[print unit] factor) */
-			nk_label(gui->ctx, "Scale:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Scale:"), NK_TEXT_RIGHT);
 			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, scale_str, 63, nk_filter_float);
 			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 				nk_edit_unfocus(gui->ctx);
@@ -280,7 +289,7 @@ int print_win (gui_obj *gui){
 			}
 			
 			/* adjust print parameters to fit the current drawing view in screen */
-			if (nk_button_label(gui->ctx, "View")){
+			if (nk_button_label(gui->ctx, _l("View"))){
 				double zoom_x, zoom_y;
 				
 				/* get origin */
@@ -301,7 +310,7 @@ int print_win (gui_obj *gui){
 			}
 			
 			/* adjust print parameters to fit the drawing extends */
-			if (nk_button_label(gui->ctx, "Fit all")){
+			if (nk_button_label(gui->ctx, _l("Fit all"))){
 				double min_x, min_y, min_z, max_x, max_y, max_z;
 				double zoom_x, zoom_y;
 				
@@ -327,7 +336,7 @@ int print_win (gui_obj *gui){
 			}
 			/* adjust print parameters to centralize small figure in page*/
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			if (nk_button_label(gui->ctx, "Centralize")){
+			if (nk_button_label(gui->ctx, _l("Centralize"))){
 				double min_x, min_y, min_z, max_x, max_y, max_z;
 				
 				/* get drawing extents */
@@ -353,7 +362,7 @@ int print_win (gui_obj *gui){
 		}
 		
 		/* show print preview image */
-		if (nk_group_begin(gui->ctx, "Preview", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, _l("Preview"), NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_dynamic(gui->ctx, 172, 1);
 			nk_button_image(gui->ctx,  nk_image_ptr(gui->preview_img));
 			
@@ -362,17 +371,17 @@ int print_win (gui_obj *gui){
 		
 		/* choose color options (color substitution tables)*/
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 3, (float[]){120, 120, 70});
-		nk_label(gui->ctx, "Color options:", NK_TEXT_RIGHT);
-		nk_checkbox_label(gui->ctx, "Monochrome", &mono);
-		nk_checkbox_label(gui->ctx, "Dark", &dark);
+		nk_label(gui->ctx, _l("Color options:"), NK_TEXT_RIGHT);
+		nk_checkbox_label(gui->ctx, _l("Monochrome"), &mono);
+		nk_checkbox_label(gui->ctx, _l("Dark"), &dark);
 		
 		/* choose output file format */
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){120, 270});
-		nk_label(gui->ctx, "Output format:", NK_TEXT_RIGHT);
+		nk_label(gui->ctx, _l("Output format:"), NK_TEXT_RIGHT);
 		/* combo for file extension filter */
 		int h = (PRT_SIZE - 1) * 22 + 5;
 		h = (h < 300)? h : 300;
-		int fmt = nk_combo (gui->ctx, ext_descr, PRT_SIZE - 1, out_fmt, 17, nk_vec2(270, h));
+		int fmt = nk_combo (gui->ctx, ext_descr_addr, PRT_SIZE - 1, out_fmt, 17, nk_vec2(270, h));
 		/* if current format type was changed */
 		if (fmt != out_fmt){
 			out_fmt = fmt;
@@ -391,12 +400,12 @@ int print_win (gui_obj *gui){
 		
 		/* choose output file path */
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Destination:", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Destination:"), NK_TEXT_LEFT);
 		nk_layout_row_template_begin(gui->ctx, 20);
 		nk_layout_row_template_push_static(gui->ctx, 80);
 		nk_layout_row_template_push_dynamic(gui->ctx);
 		nk_layout_row_template_end(gui->ctx);
-		if (nk_button_label(gui->ctx, "Browse")){/* call file browser */
+		if (nk_button_label(gui->ctx, _l("Browse"))){/* call file browser */
 			show_app_file = 1;
 			/* set filter for suported output formats */
 			for (i = 0; i < PRT_SIZE; i++){
@@ -425,7 +434,7 @@ int print_win (gui_obj *gui){
 		
 		/* Print command */
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
-		if (nk_button_label(gui->ctx, "Print")){
+		if (nk_button_label(gui->ctx, _l("Print"))){
 			snprintf(gui->log_msg, 63, " ");
 			/* call corresponding  function, based on output format */
 			if (out_fmt == PRT_PDF)
@@ -440,9 +449,9 @@ int print_win (gui_obj *gui){
 				ret = print_ps(gui->drawing, param, sel_file);
 			/* verify success or fail*/
 			if (ret)
-				snprintf(gui->log_msg, 63, "Print: Created print output succesfully");
+				snprintf(gui->log_msg, 63, _l("Print: Created print output succesfully"));
 			else
-				snprintf(gui->log_msg, 63, "Print Error");
+				snprintf(gui->log_msg, 63, _l("Print Error"));
 		}
     if (fabs(scale) < 1.0e-15) scale = 1.0; /* prevent zero division */
 		/* draw print preview image */

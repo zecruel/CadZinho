@@ -37,10 +37,15 @@ int export_win (gui_obj *gui){
 			[EXPORT_GCODE] = "NC",
 			[EXPORT_NONE] = "*"
 		};
-		static const char *ext_descr[] = {
-			[EXPORT_HPGL] = "HP-GL files (.plt)",
-			[EXPORT_GCODE] = "G-Code files (.nc)",
-			[EXPORT_NONE] = "All files (*)"
+    
+    static char ext_descr[3][DXF_MAX_CHARS + 1];
+    strncpy(ext_descr[0], _l("HP-GL files (.plt)"), DXF_MAX_CHARS);
+    strncpy(ext_descr[1], _l("G-Code files (.nc)"), DXF_MAX_CHARS);
+    strncpy(ext_descr[2], _l("All files (*)"), DXF_MAX_CHARS);
+		char *ext_descr_addr[] = {
+			[EXPORT_HPGL] = ext_descr[0],
+			[EXPORT_GCODE] = ext_descr[1],
+			[EXPORT_NONE] = ext_descr[2]
 		};
 				
 		/* update structure parameters */
@@ -49,13 +54,13 @@ int export_win (gui_obj *gui){
 		param.ofs_y = ofs_y;
 		
 		nk_layout_row(gui->ctx, NK_STATIC, 180, 2, (float[]){160, 310});
-		if (nk_group_begin(gui->ctx, "Position and scale", NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, _l("Position and scale"), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)) {
 			
 			/* adjust drawing position and scale factor */
 			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 70});
 			
 			/* customize x axis origin of export area (left lower corner) in drawing */
-			nk_label(gui->ctx, "Origin X:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Origin X:"), NK_TEXT_RIGHT);
 			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, ofs_x_str, 63, nk_filter_float);
 			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 				nk_edit_unfocus(gui->ctx);
@@ -65,7 +70,7 @@ int export_win (gui_obj *gui){
 			}
 			
 			/* customize x axis origin of export area (left lower corner) in drawing */
-			nk_label(gui->ctx, "Origin Y:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Origin Y:"), NK_TEXT_RIGHT);
 			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, ofs_y_str, 63, nk_filter_float);
 			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 				nk_edit_unfocus(gui->ctx);
@@ -75,7 +80,7 @@ int export_win (gui_obj *gui){
 			}
 			
 			/* customize drawing scale in export area ( [drawing unit]/[export unit] factor) */
-			nk_label(gui->ctx, "Scale:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Scale:"), NK_TEXT_RIGHT);
 			res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, scale_str, 63, nk_filter_float);
 			if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 				nk_edit_unfocus(gui->ctx);
@@ -85,11 +90,11 @@ int export_win (gui_obj *gui){
 			}
 			nk_group_end(gui->ctx);
 		}
-		if (nk_group_begin(gui->ctx, "Driver specific", NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, _l("Driver specific"), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)) {
 			if (out_fmt == EXPORT_GCODE){
 				nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){50, 220});
 				/* feed rate */
-				nk_label(gui->ctx, "Feed:", NK_TEXT_RIGHT);
+				nk_label(gui->ctx, _l("Feed:"), NK_TEXT_RIGHT);
 				res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, gcode_feed_str, 63, nk_filter_float);
 				if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 					nk_edit_unfocus(gui->ctx);
@@ -99,19 +104,19 @@ int export_win (gui_obj *gui){
 				}
 				
 				/* init  command*/
-				nk_label(gui->ctx, "Init:", NK_TEXT_RIGHT);
+				nk_label(gui->ctx, _l("Init:"), NK_TEXT_RIGHT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, gcode_init, DXF_MAX_CHARS, nk_filter_default);
 				
 				/* end command */
-				nk_label(gui->ctx, "End:", NK_TEXT_RIGHT);
+				nk_label(gui->ctx, _l("End:"), NK_TEXT_RIGHT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, gcode_end, DXF_MAX_CHARS, nk_filter_default);
 				
 				/* command before move */
-				nk_label(gui->ctx, "Move:", NK_TEXT_RIGHT);
+				nk_label(gui->ctx, _l("Move:"), NK_TEXT_RIGHT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, gcode_move, DXF_MAX_CHARS, nk_filter_default);
 				
 				/* command before stroke */
-				nk_label(gui->ctx, "Stroke:", NK_TEXT_RIGHT);
+				nk_label(gui->ctx, _l("Stroke:"), NK_TEXT_RIGHT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER, gcode_stroke, DXF_MAX_CHARS, nk_filter_default);
 			}
 			nk_group_end(gui->ctx);
@@ -121,11 +126,11 @@ int export_win (gui_obj *gui){
 		
 		/* choose output file format */
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){120, 270});
-		nk_label(gui->ctx, "Output format:", NK_TEXT_RIGHT);
+		nk_label(gui->ctx, _l("Output format:"), NK_TEXT_RIGHT);
 		/* combo for file extension filter */
 		int h = (EXPORT_SIZE - 1) * 22 + 5;
 		h = (h < 300)? h : 300;
-		int fmt = nk_combo (gui->ctx, ext_descr, EXPORT_SIZE - 1, out_fmt, 17, nk_vec2(270, h));
+		int fmt = nk_combo (gui->ctx, (const char **)ext_descr_addr, EXPORT_SIZE - 1, out_fmt, 17, nk_vec2(270, h));
 		/* if current format type was changed */
 		if (fmt != out_fmt){
 			out_fmt = fmt;
@@ -144,12 +149,12 @@ int export_win (gui_obj *gui){
 		
 		/* choose output file path */
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Destination:", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Destination:"), NK_TEXT_LEFT);
 		nk_layout_row_template_begin(gui->ctx, 20);
 		nk_layout_row_template_push_static(gui->ctx, 80);
 		nk_layout_row_template_push_dynamic(gui->ctx);
 		nk_layout_row_template_end(gui->ctx);
-		if (nk_button_label(gui->ctx, "Browse")){/* call file browser */
+		if (nk_button_label(gui->ctx, _l("Browse"))){/* call file browser */
 			show_app_file = 1;
 			/* set filter for suported output formats */
 			for (i = 0; i < EXPORT_SIZE; i++){
@@ -178,7 +183,7 @@ int export_win (gui_obj *gui){
 		
 		/* export command */
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
-		if (nk_button_label(gui->ctx, "Export")){
+		if (nk_button_label(gui->ctx, _l("Export"))){
 			snprintf(gui->log_msg, 63, " ");
 			/* call corresponding  function, based on output format */
 			if (out_fmt == EXPORT_HPGL)
@@ -193,9 +198,9 @@ int export_win (gui_obj *gui){
 			}
 			/* verify success or fail*/
 			if (ret)
-				snprintf(gui->log_msg, 63, "Export: Created export output succesfully");
+				snprintf(gui->log_msg, 63, _l("Export: Created export output succesfully"));
 			else
-				snprintf(gui->log_msg, 63, "Export Error");
+				snprintf(gui->log_msg, 63, _l("Export Error"));
 		}
 		
 	}

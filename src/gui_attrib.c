@@ -49,7 +49,7 @@ int gui_attrib_interactive(gui_obj *gui){
 		if (gui->ev & EV_ENTER){ /* place and confirm  attribute creation */
 			
 			if (strlen(gui->tag) <= 0) {
-				snprintf(gui->log_msg, 63, "Error: Attribute must have a Tag");
+				snprintf(gui->log_msg, 63, _l("Error: Attribute must have a Tag"));
 				return 0;
 			}
 			
@@ -84,7 +84,7 @@ int gui_attrib_interactive(gui_obj *gui){
 			dxf_obj_subst(ins_ent, new_ins);
 			
 			/* undo/redo list */
-			do_add_entry(&gui->list_do, "ADD TAG");
+			do_add_entry(&gui->list_do, _l("ADD TAG"));
 			do_add_item(gui->list_do.current, ins_ent, new_ins);
 			
 			gui->step_x[gui->step - 1] = gui->step_x[gui->step];
@@ -130,11 +130,11 @@ int gui_attrib_interactive(gui_obj *gui){
 int gui_attrib_info (gui_obj *gui){
 	if (gui->modal != ADD_ATTRIB) return 0;
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
-	nk_label(gui->ctx, "Add a Tag", NK_TEXT_LEFT);
+	nk_label(gui->ctx, _l("Add a Tag"), NK_TEXT_LEFT);
 	
 	if (gui->step == 0){ /* get insert element to edit */
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Select a Insert element", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Select a Insert element"), NK_TEXT_LEFT);
 	} else if (gui->step == 2){ /* all inited */
 		/* get available text styles */
 		int num_tstyles = gui->drawing->num_tstyles;
@@ -145,7 +145,7 @@ int gui_attrib_info (gui_obj *gui){
 		nk_layout_row_template_push_static(gui->ctx, 45);
 		nk_layout_row_template_push_dynamic(gui->ctx);
 		nk_layout_row_template_end(gui->ctx);
-		nk_label(gui->ctx, "Style:", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Style:"), NK_TEXT_LEFT);
 		/* text style combo selection */
 		int h = num_tstyles * 25 + 5;
 		h = (h < 200)? h : 200;
@@ -163,23 +163,23 @@ int gui_attrib_info (gui_obj *gui){
 		}
 		/* hide attribute option*/
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
-		nk_checkbox_label(gui->ctx, "Hide", &gui->hide_tag);
+		nk_checkbox_label(gui->ctx, _l("Hide"), &gui->hide_tag);
 		
 		nk_layout_row_template_begin(gui->ctx, 20);
 		nk_layout_row_template_push_static(gui->ctx, 45);
 		nk_layout_row_template_push_dynamic(gui->ctx);
 		nk_layout_row_template_end(gui->ctx);
 		/* atribute tag string */
-		nk_label(gui->ctx, "Tag:", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Tag:"), NK_TEXT_LEFT);
 		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->tag, DXF_MAX_CHARS, nk_filter_default);
 		/* atribute value string */
-		nk_label(gui->ctx, "Value:", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Value:"), NK_TEXT_LEFT);
 		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->txt, DXF_MAX_CHARS, nk_filter_default);
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		/* size and rotation parameters */
-		gui->txt_h = nk_propertyd(gui->ctx, "Height", 1e-9, gui->txt_h, 1e9, SMART_STEP(gui->txt_h), SMART_STEP(gui->txt_h));
-		gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0, gui->angle, 180.0, 0.1, 0.1f);
+		gui->txt_h = nk_propertyd(gui->ctx, _l("Height"), 1e-9, gui->txt_h, 1e9, SMART_STEP(gui->txt_h), SMART_STEP(gui->txt_h));
+		gui->angle = nk_propertyd(gui->ctx, _l("Angle"), -180.0, gui->angle, 180.0, 0.1, 0.1f);
 		/* text aligment parameters */
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		gui->t_al_v = nk_combo(gui->ctx, text_al_v, T_AL_V_LEN, gui->t_al_v, 20, nk_vec2(100,105));

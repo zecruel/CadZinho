@@ -614,15 +614,15 @@ int gui_find_info (gui_obj *gui){
 	static int entire_el = 1, f_text = 1, f_mtext = 1, f_tag = 1;
 	/* Title */
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
-	nk_label(gui->ctx, "Find/Replace text", NK_TEXT_LEFT);
+	nk_label(gui->ctx, _l("Find/Replace text"), NK_TEXT_LEFT);
 	/* string pattern to find */
-	nk_label(gui->ctx, "Search:", NK_TEXT_LEFT);
+	nk_label(gui->ctx, _l("Search:"), NK_TEXT_LEFT);
 	nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, search, DXF_MAX_CHARS, nk_filter_default);
 	/* entity type filter */
 	nk_layout_row_dynamic(gui->ctx, 20, 3);
-	nk_checkbox_label(gui->ctx, "Text", &f_text);
-	nk_checkbox_label(gui->ctx, "MText", &f_mtext);
-	nk_checkbox_label(gui->ctx, "Tag", &f_tag);
+	nk_checkbox_label(gui->ctx, _l("Text"), &f_text);
+	nk_checkbox_label(gui->ctx, _l("MText"), &f_mtext);
+	nk_checkbox_label(gui->ctx, _l("Tag"), &f_tag);
 	
 	if(f_text) filter |= DXF_TEXT;
 	else filter &= ~DXF_TEXT;
@@ -632,7 +632,7 @@ int gui_find_info (gui_obj *gui){
 	else filter &= ~DXF_ATTRIB;
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
-	if (nk_button_label(gui->ctx, "Find Next") && strlen(search) > 0 ){
+	if (nk_button_label(gui->ctx, _l("Find Next")) && strlen(search) > 0 ){
 		/* try to find next match */
 		log[0] = 0;
 		if(dwg_find(gui->drawing, L, search, rect, filter, &found, &next)){
@@ -649,20 +649,20 @@ int gui_find_info (gui_obj *gui){
 			gui->step = 2; /* to draw  rectangle in dyamic mode*/
 			
 			if (!next.ent){
-				snprintf(log, 63, "End of search");
+				snprintf(log, 63, _l("End of search"));
 			}
 		}
 		else {
 			gui->step = 0;
-			snprintf(log, 63, "No elements matched");
+			snprintf(log, 63, _l("No elements matched"));
 		}
 	}
 	/* string pattern to replace */
-	nk_label(gui->ctx, "Replace:", NK_TEXT_LEFT);
+	nk_label(gui->ctx, _l("Replace:"), NK_TEXT_LEFT);
 	nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, repl, DXF_MAX_CHARS, nk_filter_default);
 	
 	nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.45f, 0.55f});
-	if (nk_button_label(gui->ctx, "Current") && strlen(search) > 0 ){
+	if (nk_button_label(gui->ctx, _l("Current")) && strlen(search) > 0 ){
 		/* replace current match */
 		log[0] = 0;
 		dxf_node *new_ent = NULL;
@@ -675,7 +675,7 @@ int gui_find_info (gui_obj *gui){
 				dxf_obj_subst(found.ent, new_ent);
 				
 				/* update undo/redo list */
-				do_add_entry(&gui->list_do, "REPLACE");
+				do_add_entry(&gui->list_do, _l("REPLACE"));
 				do_add_item(gui->list_do.current, found.ent, new_ent);
 				
 				if (next.ent == found.ent) { /* if is a partial replace */
@@ -702,23 +702,23 @@ int gui_find_info (gui_obj *gui){
 			gui->step = 2; /* to draw  rectangle in dyamic mode*/
 			
 			if (!next.ent){
-				snprintf(log, 63, "End of search");
+				snprintf(log, 63, _l("End of search"));
 			}
 		}
 		else {
 			gui->step = 0;
-			snprintf(log, 63, "No elements matched");
+			snprintf(log, 63, _l("No elements matched"));
 		}
 		
 	}
 	
 	/* flag to replace all matches in entity's text. It permits full functionality
 	of Lua gsub, like numbered group capture replace. */
-	nk_checkbox_label(gui->ctx, "Entire element", &entire_el);
+	nk_checkbox_label(gui->ctx, _l("Entire element"), &entire_el);
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 2);
 	
-	if (nk_button_label(gui->ctx, "Selection") && strlen(search) > 0 ){
+	if (nk_button_label(gui->ctx, _l("Selection")) && strlen(search) > 0 ){
 		/* find and replace text pattern in all entities in current selection, according type filter */
 		log[0] = 0;
 		int ini_do = 0, n = 0;
@@ -740,7 +740,7 @@ int gui_find_info (gui_obj *gui){
 						
 						/* update undo/redo list */
 						if (!ini_do){
-							do_add_entry(&gui->list_do, "REPLACE");
+							do_add_entry(&gui->list_do, _l("REPLACE"));
 							ini_do = 1;
 						}
 						do_add_item(gui->list_do.current, (dxf_node *)curr_lst->data, new_ent);
@@ -751,10 +751,10 @@ int gui_find_info (gui_obj *gui){
 			}
 			curr_lst = curr_lst->next;
 		}
-		if (n >0) snprintf(log, 63, "Total replaced: %d", n);
-		else snprintf(log, 63, "No elements matched");
+		if (n >0) snprintf(log, 63, _l("Total replaced: %d"), n);
+		else snprintf(log, 63, _l("No elements matched"));
 	}
-	if (nk_button_label(gui->ctx, "All") && strlen(search) > 0 ){
+	if (nk_button_label(gui->ctx, _l("All")) && strlen(search) > 0 ){
 		/* find and replace text pattern in all entities in current drawing, according type filter */
 		log[0] = 0;
 		int ini_do = 0, n = 0;
@@ -775,7 +775,7 @@ int gui_find_info (gui_obj *gui){
 					
 					/* update undo/redo list */
 					if (!ini_do){
-						do_add_entry(&gui->list_do, "REPLACE");
+						do_add_entry(&gui->list_do, _l("REPLACE"));
 						ini_do = 1;
 					}
 					do_add_item(gui->list_do.current, current, new_ent);
@@ -784,8 +784,8 @@ int gui_find_info (gui_obj *gui){
 			}
 			current = current->next;
 		}
-		if (n >0) snprintf(log, 63, "Total replaced: %d", n);
-		else snprintf(log, 63, "No elements matched");
+		if (n >0) snprintf(log, 63, _l("Total replaced: %d"), n);
+		else snprintf(log, 63, _l("No elements matched"));
 	}
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);

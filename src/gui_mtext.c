@@ -56,7 +56,7 @@ int gui_mtext_interactive(gui_obj *gui){
 				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
 				drawing_ent_append(gui->drawing, new_el);
 				
-				do_add_entry(&gui->list_do, "MTEXT");
+				do_add_entry(&gui->list_do, _l("MTEXT"));
 				do_add_item(gui->list_do.current, NULL, new_el);
 				
 				gui->step_x[gui->step - 1] = gui->step_x[gui->step];
@@ -107,9 +107,9 @@ int gui_mtext_info (gui_obj *gui){
 		if (gui->t_sty_idx >= num_tstyles) gui->t_sty_idx = 0;
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Place an inteli text", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Place an inteli text"), NK_TEXT_LEFT);
 			
-		nk_label(gui->ctx, "Style:", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Style:"), NK_TEXT_LEFT);
 		
 		int h = num_tstyles * 25 + 5;
 		h = (h < 200)? h : 200;
@@ -130,15 +130,15 @@ int gui_mtext_info (gui_obj *gui){
 		}
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		
-		nk_label(gui->ctx, "Text:", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Text:"), NK_TEXT_LEFT);
 		
-		if (nk_button_label(gui->ctx,  "Edit")){
+		if (nk_button_label(gui->ctx,  _l("Edit"))){
 			mtext_pop = 1;
 		}
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		gui->txt_h = nk_propertyd(gui->ctx, "Text Height", 1e-9, gui->txt_h, 1e9, SMART_STEP(gui->txt_h), SMART_STEP(gui->txt_h));
-		gui->rect_w = nk_propertyd(gui->ctx, "Rect width", 0.0, gui->rect_w, 1e9, SMART_STEP(gui->rect_w), SMART_STEP(gui->rect_w));
+		gui->txt_h = nk_propertyd(gui->ctx, _l("Text Height"), 1e-9, gui->txt_h, 1e9, SMART_STEP(gui->txt_h), SMART_STEP(gui->txt_h));
+		gui->rect_w = nk_propertyd(gui->ctx, _l("Rect width"), 0.0, gui->rect_w, 1e9, SMART_STEP(gui->rect_w), SMART_STEP(gui->rect_w));
 		
 		if (gui->t_al_v > 2) gui->t_al_v = 0;
 		if (gui->t_al_h > 2) gui->t_al_h = 0;
@@ -149,7 +149,7 @@ int gui_mtext_info (gui_obj *gui){
 		if (mtext_pop){
 			
 			static struct nk_rect s = {150, 10, 420, 330};
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Edit inteli text", NK_WINDOW_CLOSABLE|NK_WINDOW_MOVABLE, s)){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Edit inteli text"), NK_WINDOW_CLOSABLE|NK_WINDOW_MOVABLE, s)){
 				#if(0)
 				/* wrap text in text edit widget */
 				char *text = nk_str_get(&(gui->text_edit.string));

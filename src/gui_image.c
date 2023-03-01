@@ -118,7 +118,7 @@ int gui_image_interactive(gui_obj *gui){
 			drawing_ent_append(gui->drawing, new_el);
 			
 			/* append to undo/redo list */
-			do_add_entry(&gui->list_do, "IMAGE");
+			do_add_entry(&gui->list_do, _l("IMAGE"));
 			do_add_item(gui->list_do.current, NULL, new_el);
 			
 			/* restart the proccess */
@@ -142,27 +142,22 @@ int gui_image_info (gui_obj *gui){
 
 		/* supported image formats */
 		static const char *ext_type[] = {
-			//"PDF",
-			//"SVG",
 			"PNG",
 			"JPG",
 			"BMP",
 			"*"
 		};
-		static const char *ext_descr[] = {
-			//"Portable Document Format (.pdf)",
-			//"Scalable Vector Graphics (.svg)",
-			"Image PNG (.png)",
-			"Image JPG (.jpg)",
-			"Image Bitmap (.bmp)",
-			"All files (*)"
-		};
+    static char ext_descr[4][DXF_MAX_CHARS + 1];
+    strncpy(ext_descr[0], _l("Image PNG (.png)"), DXF_MAX_CHARS);
+    strncpy(ext_descr[1], _l("Image JPG (.jpg)"), DXF_MAX_CHARS);
+    strncpy(ext_descr[2], _l("Image Bitmap (.bmp)"), DXF_MAX_CHARS);
+    strncpy(ext_descr[3], _l("All files (*)"), DXF_MAX_CHARS);
 		#define FILTER_COUNT 4
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Place Raster Image", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Place Raster Image"), NK_TEXT_LEFT);
 		
-		if (nk_button_label(gui->ctx, "Browse")){/* call file browser */
+		if (nk_button_label(gui->ctx, _l("Browse"))){/* call file browser */
 			show_app_file = 1;
 			/* set filter for suported output formats */
 			for (i = 0; i < FILTER_COUNT; i++){
@@ -186,10 +181,10 @@ int gui_image_info (gui_obj *gui){
 		} /* manual entry to output path */
 		
 		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, path, DXF_MAX_CHARS - 1, nk_filter_default);
-		nk_checkbox_label(gui->ctx, "Proportional", &gui->proportional);
+		nk_checkbox_label(gui->ctx, _l("Proportional"), &gui->proportional);
 		
 		if(gui->step == 0){
-			if (nk_button_label(gui->ctx, "Attach")){
+			if (nk_button_label(gui->ctx, _l("Attach"))){
 				strncpy(path, get_filename(path), DXF_MAX_CHARS - 1);
 				int w, h, comp;
 				if(stbi_info (path, &w, &h, &comp)){
@@ -203,10 +198,10 @@ int gui_image_info (gui_obj *gui){
 			}
 		}
 		else if(gui->step == 1){
-			nk_label(gui->ctx, "Enter first corner", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter first corner"), NK_TEXT_LEFT);
 		}
 		else if(gui->step == 2){
-			nk_label(gui->ctx, "Enter last corner", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter last corner"), NK_TEXT_LEFT);
 		}
 		
 	}

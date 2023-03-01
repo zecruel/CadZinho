@@ -53,7 +53,7 @@ int gui_dupli_interactive(gui_obj *gui){
 					list_node *current = gui->sel_list->next;
 					dxf_node *new_ent = NULL;
 					if (current != NULL){
-						do_add_entry(&gui->list_do, "DUPLI");
+						do_add_entry(&gui->list_do, _l("DUPLI"));
 					}
 					
 					while (current != NULL){
@@ -100,14 +100,14 @@ int gui_dupli_interactive(gui_obj *gui){
 int gui_dupli_info (gui_obj *gui){
 	if (gui->modal == DUPLI) {
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Duplicate a selection", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Duplicate a selection"), NK_TEXT_LEFT);
 		if (gui->step == 0){
-			nk_label(gui->ctx, "Select/Add element", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Select/Add element"), NK_TEXT_LEFT);
 		}
 		else if (gui->step == 1){
-			nk_label(gui->ctx, "Enter base point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter base point"), NK_TEXT_LEFT);
 		} else {
-			nk_label(gui->ctx, "Enter destination point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter destination point"), NK_TEXT_LEFT);
 		}
 	}
 	return 1;

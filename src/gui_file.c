@@ -121,7 +121,7 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 	if (gui->filter_idx >= num_ext) gui->filter_idx = 0;
 	
 	
-	if (nk_begin(gui->ctx, "File explorer", nk_rect(550, 100, 600, 510),
+	if (nk_begin_titled(gui->ctx, "file_expl", _l("File explorer"), nk_rect(550, 100, 600, 510),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		/* read the workind directory */
@@ -185,7 +185,7 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 		char curr_path[PATH_MAX_CHARS+1];
 		getcwd(curr_path, PATH_MAX_CHARS);
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label_colored(gui->ctx, "Current directory:", NK_TEXT_LEFT, nk_rgb(255,255,0));
+		nk_label_colored(gui->ctx, _l("Current directory:"), NK_TEXT_LEFT, nk_rgb(255,255,0));
 		
 		/* dynamic width for directory path and fixed width for "up" button */
 		nk_layout_row_template_begin(gui->ctx, 22);
@@ -195,7 +195,7 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 		
 		nk_label(gui->ctx, curr_path, NK_TEXT_LEFT); /* show current directory */
 		
-		if (nk_button_label(gui->ctx,  "Up")){
+		if (nk_button_label(gui->ctx,  _l("Up"))){
 			/* up in directory structure */
 			closedir(work);
 			chdir(".."); /* change working dir */
@@ -218,16 +218,16 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 			/* sort option - by dir/file name */
 			if (sorted == BY_NAME){
 				if (sort_reverse){
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Name", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, _l("Name"), NK_TEXT_CENTERED)){
 						sorted = UNSORTED;
 						sort_reverse = 0;
 					}
 				} else {
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Name", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, _l("Name"), NK_TEXT_CENTERED)){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_label(gui->ctx, "Name")){
+			}else if (nk_button_label(gui->ctx, _l("Name"))){
 				sorted = BY_NAME;
 				sort_reverse = 0;
 			}
@@ -235,16 +235,16 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 			/* sort option - by file/dir byte size */
 			if (sorted == BY_SIZE){
 				if (sort_reverse){
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Size", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, _l("Size"), NK_TEXT_CENTERED)){
 						sorted = UNSORTED;
 						sort_reverse = 0;
 					}
 				} else {
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Size", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, _l("Size"), NK_TEXT_CENTERED)){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_label(gui->ctx, "Size")){
+			}else if (nk_button_label(gui->ctx, _l("Size"))){
 				sorted = BY_SIZE;
 				sort_reverse = 0;
 			}
@@ -252,16 +252,16 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 			/* sort option -  by file/dir modification time */
 			if (sorted == BY_DATE){
 				if (sort_reverse){
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Date", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, _l("Date"), NK_TEXT_CENTERED)){
 						sorted = UNSORTED;
 						sort_reverse = 0;
 					}
 				} else {
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Date", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, _l("Date"), NK_TEXT_CENTERED)){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_label(gui->ctx, "Date")){
+			}else if (nk_button_label(gui->ctx, _l("Date"))){
 				sorted = BY_DATE;
 				sort_reverse = 0;
 			}
@@ -356,7 +356,7 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 			nk_group_end(gui->ctx);
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 2);
-			nk_label_colored(gui->ctx, "Selected:", NK_TEXT_LEFT, nk_rgb(0,0,255));
+			nk_label_colored(gui->ctx, _l("Selected:"), NK_TEXT_LEFT, nk_rgb(0,0,255));
 			
 			/* file extension filter option */
 			int h = num_ext * 22 + 5;
@@ -391,7 +391,7 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 			}
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 2);
-			if (nk_button_label(gui->ctx,  "OK")){
+			if (nk_button_label(gui->ctx,  _l("OK"))){
 				/* return the full path of selected file and close window*/
 				if (strlen(sel_file) > 0){
 					snprintf(full_path, PATH_MAX_CHARS, "%s%c%s", curr_path, DIR_SEPARATOR, sel_file);
@@ -403,13 +403,13 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 				sel_file[0] = 0;
 				show_browser = 2;
 			}
-			if (nk_button_label(gui->ctx,  "Cancel")){
+			if (nk_button_label(gui->ctx,  _l("Cancel"))){
 				/* close window */
 				closedir(work);
 				work = NULL;
 				sel_file[0] = 0;
 				show_browser = 0;
-				nk_window_show(gui->ctx, "File explorer", NK_HIDDEN);
+				nk_window_show(gui->ctx, "file_expl", NK_HIDDEN);
 			}
 			
 		}
@@ -430,21 +430,21 @@ int file_pop (gui_obj *gui, enum files_types filters[], int num_filters, char *i
 	
 	int show_app_file = 1;
 	static struct nk_rect s = {20, 200, 400, 150};
-	if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "File", NK_WINDOW_CLOSABLE, s)){
+	if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("File"), NK_WINDOW_CLOSABLE, s)){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "File to Open:", NK_TEXT_CENTERED);
+		nk_label(gui->ctx, _l("File to Open:"), NK_TEXT_CENTERED);
 		
 		/* user can type the file name/path, or paste text, or drop from system navigator */
 		nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
 		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->curr_path, PATH_MAX_CHARS, nk_filter_default);
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
-		if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
+		if ((nk_button_label(gui->ctx, _l("OK"))) && (gui->show_file_br != 1)) {
 			nk_popup_close(gui->ctx);
 			show_app_file = 2;
 			gui->show_file_br = 0;
 		}
-		if (nk_button_label(gui->ctx, "Explore")) {
+		if (nk_button_label(gui->ctx, _l("Explore"))) {
 			/* option for internal file explorer */
 			int i;
 			
@@ -490,17 +490,17 @@ int gui_file_open (gui_obj *gui, char *init_dir){
 		gui->show_file_br = 0;
 	}
 	
-	if (nk_begin(gui->ctx, "Open Drawing", nk_rect(200, 150, 400, 350),
+	if (nk_begin(gui->ctx, _l("Open Drawing"), nk_rect(200, 150, 400, 350),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_flags res;
 		
 		/* show current directory */
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label_colored(gui->ctx, "Current directory:", NK_TEXT_LEFT, nk_rgb(255,255,0));
+		nk_label_colored(gui->ctx, _l("Current directory:"), NK_TEXT_LEFT, nk_rgb(255,255,0));
 		nk_label(gui->ctx, dir, NK_TEXT_LEFT); /* show current directory */
 		
-		nk_label(gui->ctx, "File to Open:", NK_TEXT_CENTERED);
+		nk_label(gui->ctx, _l("File to Open:"), NK_TEXT_CENTERED);
 		
 		/* user can type the file name/path, or paste text, or drop from system navigator */
 		nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
@@ -522,7 +522,7 @@ int gui_file_open (gui_obj *gui, char *init_dir){
 		}
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
-		if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
+		if ((nk_button_label(gui->ctx, _l("OK"))) && (gui->show_file_br != 1)) {
 			if (strlen(file)){
 				if (gui->changed){
 					discard_changes = 1;
@@ -541,14 +541,22 @@ int gui_file_open (gui_obj *gui, char *init_dir){
 				}
 			}
 		}
-		if (nk_button_label(gui->ctx, "Explore")) {
+		if (nk_button_label(gui->ctx, _l("Explore"))) {
 			/* option for internal file explorer */
 			
 			/* update file extension filter */
-			gui->file_filter_types[0] = filter_types[FILE_DXF];
-			gui->file_filter_descr[0] = filter_descr[FILE_DXF];
-			gui->file_filter_types[1] = filter_types[FILE_ALL];
-			gui->file_filter_descr[1] = filter_descr[FILE_ALL];
+      static const char *ext_type[] = {
+        "DXF",
+        "*"
+      };
+      static char ext_descr[2][DXF_MAX_CHARS + 1];
+      strncpy(ext_descr[0], _l("Drawing files (.dxf)"), DXF_MAX_CHARS);
+      strncpy(ext_descr[1], _l("All files (*)"), DXF_MAX_CHARS);
+
+			gui->file_filter_types[0] = ext_type[0];
+			gui->file_filter_descr[0] = ext_descr[0];
+			gui->file_filter_types[1] = ext_type[1];
+			gui->file_filter_descr[1] = ext_descr[1];
 			gui->file_filter_count = 2;
 			
 			gui->show_file_br = 1;
@@ -556,7 +564,7 @@ int gui_file_open (gui_obj *gui, char *init_dir){
 		
 		/* recent files */
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Recent:", NK_TEXT_CENTERED);
+		nk_label(gui->ctx, _l("Recent:"), NK_TEXT_CENTERED);
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		i = 0;
 		list_node *rcnt_curr = gui->recent_drwg->next;
@@ -576,16 +584,16 @@ int gui_file_open (gui_obj *gui, char *init_dir){
 		}
 		
 		if (discard_changes){
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Discard changes", NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, nk_rect(30, 100, 300, 100))){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Discard changes"), NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, nk_rect(30, 100, 300, 100))){
 				//nk_layout_row_dynamic(gui->ctx, 20, 2);
 				nk_layout_row_template_begin(gui->ctx, 23);
 				nk_layout_row_template_push_static(gui->ctx, 24);
 				nk_layout_row_template_push_dynamic(gui->ctx);
 				nk_layout_row_template_end(gui->ctx);
 				nk_image(gui->ctx, nk_image_ptr(gui->svg_bmp[SVG_WARNING]));
-				nk_label(gui->ctx, "Changes in drawing will be lost", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("Changes in drawing will be lost"), NK_TEXT_LEFT);
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				if ((nk_button_label(gui->ctx, "Discard")) && (gui->show_file_br != 1)) {
+				if ((nk_button_label(gui->ctx, _l("Discard"))) && (gui->show_file_br != 1)) {
 					/* put "dir" and "file" strings in current path */
 					char full_path[PATH_MAX_CHARS+1];
 					strncpy (full_path, dir, PATH_MAX_CHARS);
@@ -598,7 +606,7 @@ int gui_file_open (gui_obj *gui, char *init_dir){
 					discard_changes = 0;
 					nk_popup_close(gui->ctx);
 				}
-				if (nk_button_label(gui->ctx, "Cancel")) {
+				if (nk_button_label(gui->ctx, _l("Cancel"))) {
 					discard_changes = 0;
 					nk_popup_close(gui->ctx);
 				}
@@ -644,17 +652,17 @@ int gui_file_save (gui_obj *gui, char *init_dir){
 		gui->show_file_br = 0;
 	}
 	
-	if (nk_begin(gui->ctx, "Save Drawing", nk_rect(200, 150, 400, 180),
+	if (nk_begin(gui->ctx, _l("Save Drawing"), nk_rect(200, 150, 400, 180),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_flags res;
 		
 		/* show current directory */
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label_colored(gui->ctx, "Current directory:", NK_TEXT_LEFT, nk_rgb(255,255,0));
+		nk_label_colored(gui->ctx, _l("Current directory:"), NK_TEXT_LEFT, nk_rgb(255,255,0));
 		nk_label(gui->ctx, dir, NK_TEXT_LEFT); /* show current directory */
 		
-		nk_label(gui->ctx, "File to Save on:", NK_TEXT_CENTERED);
+		nk_label(gui->ctx, _l("File to Save on:"), NK_TEXT_CENTERED);
 		
 		/* user can type the file name/path, or paste text, or drop from system navigator */
 		nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
@@ -676,7 +684,7 @@ int gui_file_save (gui_obj *gui, char *init_dir){
 		}
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
-		if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
+		if ((nk_button_label(gui->ctx, _l("OK"))) && (gui->show_file_br != 1)) {
 			if (strlen(file)){
 				/* put "dir" and "file" strings in current path */
 				char full_path[PATH_MAX_CHARS+1];
@@ -696,30 +704,38 @@ int gui_file_save (gui_obj *gui, char *init_dir){
 				}
 			}
 		}
-		if (nk_button_label(gui->ctx, "Explore")) {
+		if (nk_button_label(gui->ctx, _l("Explore"))) {
 			/* option for internal file explorer */
 			
 			/* update file extension filter */
-			gui->file_filter_types[0] = filter_types[FILE_DXF];
-			gui->file_filter_descr[0] = filter_descr[FILE_DXF];
-			gui->file_filter_types[1] = filter_types[FILE_ALL];
-			gui->file_filter_descr[1] = filter_descr[FILE_ALL];
+			static const char *ext_type[] = {
+        "DXF",
+        "*"
+      };
+      static char ext_descr[2][DXF_MAX_CHARS + 1];
+      strncpy(ext_descr[0], _l("Drawing files (.dxf)"), DXF_MAX_CHARS);
+      strncpy(ext_descr[1], _l("All files (*)"), DXF_MAX_CHARS);
+
+			gui->file_filter_types[0] = ext_type[0];
+			gui->file_filter_descr[0] = ext_descr[0];
+			gui->file_filter_types[1] = ext_type[1];
+			gui->file_filter_descr[1] = ext_descr[1];
 			gui->file_filter_count = 2;
 			
 			gui->show_file_br = 1;
 		}
 		
 		if (overwrite){
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Existing File", NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, nk_rect(30, 100, 300, 100))){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Existing File"), NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, nk_rect(30, 100, 300, 100))){
 				//nk_layout_row_dynamic(gui->ctx, 20, 2);
 				nk_layout_row_template_begin(gui->ctx, 23);
 				nk_layout_row_template_push_static(gui->ctx, 24);
 				nk_layout_row_template_push_dynamic(gui->ctx);
 				nk_layout_row_template_end(gui->ctx);
 				nk_image(gui->ctx, nk_image_ptr(gui->svg_bmp[SVG_WARNING]));
-				nk_label(gui->ctx, "Over write existing file?", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("Over write existing file?"), NK_TEXT_LEFT);
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				if ((nk_button_label(gui->ctx, "OK")) && (gui->show_file_br != 1)) {
+				if ((nk_button_label(gui->ctx, _l("OK"))) && (gui->show_file_br != 1)) {
 					/* put "dir" and "file" strings in current path */
 					char full_path[PATH_MAX_CHARS+1];
 					strncpy (full_path, dir, PATH_MAX_CHARS);
@@ -732,7 +748,7 @@ int gui_file_save (gui_obj *gui, char *init_dir){
 					overwrite = 0;
 					nk_popup_close(gui->ctx);
 				}
-				if (nk_button_label(gui->ctx, "Cancel")) {
+				if (nk_button_label(gui->ctx, _l("Cancel"))) {
 					overwrite = 0;
 					nk_popup_close(gui->ctx);
 				}

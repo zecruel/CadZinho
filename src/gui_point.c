@@ -4,7 +4,7 @@ int gui_point_info (gui_obj *gui){
 	if (gui->modal != POINT) return 0;
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
-	nk_label(gui->ctx, "Place a single point", NK_TEXT_LEFT);
+	nk_label(gui->ctx, _l("Place a single point"), NK_TEXT_LEFT);
 	
 	
 	dxf_node *new_el;
@@ -32,7 +32,7 @@ int gui_point_info (gui_obj *gui){
 		
 		drawing_ent_append(gui->drawing, new_el);
 		
-		do_add_entry(&gui->list_do, "POINT");
+		do_add_entry(&gui->list_do, _l("POINT"));
 		do_add_item(gui->list_do.current, NULL, new_el);
 	}
 	else if (gui->ev & EV_CANCEL){

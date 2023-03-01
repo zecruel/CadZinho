@@ -31,7 +31,7 @@ int gui_line_interactive(gui_obj *gui){
 				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
 				drawing_ent_append(gui->drawing, new_el);
 				
-				do_add_entry(&gui->list_do, "LINE");
+				do_add_entry(&gui->list_do, _l("LINE"));
 				do_add_item(gui->list_do.current, NULL, new_el);
 				
 				gui->step_x[gui->step - 1] = gui->step_x[gui->step];
@@ -69,9 +69,9 @@ int gui_line_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, _l("Place a single line"), NK_TEXT_LEFT);
 		if (gui->step == 0){
-			nk_label(gui->ctx, "Enter first point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter first point"), NK_TEXT_LEFT);
 		} else {
-			nk_label(gui->ctx, "Enter end point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter end point"), NK_TEXT_LEFT);
 		}
 	}
 	return 1;

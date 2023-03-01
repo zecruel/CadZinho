@@ -31,7 +31,7 @@ int gui_circle_interactive(gui_obj *gui){
 				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
 				drawing_ent_append(gui->drawing, new_el);
 				
-				do_add_entry(&gui->list_do, "CIRCLE");
+				do_add_entry(&gui->list_do, _l("CIRCLE"));
 				do_add_item(gui->list_do.current, NULL, new_el);
 				
 				gui_first_step(gui);
@@ -111,7 +111,7 @@ int gui_circle_interactive(gui_obj *gui){
 				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
 				drawing_ent_append(gui->drawing, new_el);
 				
-				do_add_entry(&gui->list_do, "ARC");
+				do_add_entry(&gui->list_do, _l("ARC"));
 				do_add_item(gui->list_do.current, NULL, new_el);
 				
 				gui->draw_phanton = 0;
@@ -217,24 +217,29 @@ int gui_circle_interactive(gui_obj *gui){
 }
 
 int gui_circle_info (gui_obj *gui){
-	static const char *mode[] = {"Full circle","Circular arc"};
+  static char mode[2][DXF_MAX_CHARS + 1];
+  strncpy(mode[0], _l("Full circle"), DXF_MAX_CHARS);
+  strncpy(mode[1], _l("Circular arc"), DXF_MAX_CHARS);
+  
+  char *mode_addr[] = {mode[0], mode[1]};
+  
 	if (gui->modal == CIRCLE) {
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Place a circular arc", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Place a circular arc"), NK_TEXT_LEFT);
 		
 		int h = 2 * 25 + 5;
-		gui->circle_mode = nk_combo(gui->ctx, mode, 2, gui->circle_mode, 20, nk_vec2(150, h));
+		gui->circle_mode = nk_combo(gui->ctx, (const char **)mode_addr, 2, gui->circle_mode, 20, nk_vec2(150, h));
 		
 		
 		if (gui->step == 0){
-			nk_label(gui->ctx, "Enter center point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter center point"), NK_TEXT_LEFT);
 		}
 		else if (gui->step == 1){
 			if (gui->circle_mode == CIRCLE_FULL){
-				nk_label(gui->ctx, "Enter circle end point", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("Enter circle end point"), NK_TEXT_LEFT);
 			}
 			else {
-				nk_label(gui->ctx, "Enter arc start point", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("Enter arc start point"), NK_TEXT_LEFT);
 			}
 		}
 		else {
@@ -242,7 +247,7 @@ int gui_circle_info (gui_obj *gui){
 				gui->step = 0;
 			}
 			else {
-				nk_label(gui->ctx, "Enter arc end point", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("Enter arc end point"), NK_TEXT_LEFT);
 			}
 		}
 	}

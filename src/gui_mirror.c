@@ -82,7 +82,7 @@ int gui_mirror_interactive(gui_obj *gui){
 					current = gui->sel_list->next;
 					if (current != NULL){
 						/* add to undo/redo list */
-						do_add_entry(&gui->list_do, "MIRROR");
+						do_add_entry(&gui->list_do, _l("MIRROR"));
 					}
 					/* sweep the selection list */
 					while (current != NULL){
@@ -166,18 +166,18 @@ int gui_mirror_interactive(gui_obj *gui){
 int gui_mirror_info (gui_obj *gui){
 	if (gui->modal == MIRROR) {
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Mirror a selection", NK_TEXT_LEFT);
-		nk_checkbox_label(gui->ctx, "Keep Original", &gui->keep_orig);
+		nk_label(gui->ctx, _l("Mirror a selection"), NK_TEXT_LEFT);
+		nk_checkbox_label(gui->ctx, _l("Keep Original"), &gui->keep_orig);
 		
 		if (gui->step == 0){
-			nk_label(gui->ctx, "Select/Add element", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Select/Add element"), NK_TEXT_LEFT);
 		}
 		else if (gui->step == 1){
-			nk_label(gui->ctx, "Set the reflection line", NK_TEXT_LEFT);
-			nk_label(gui->ctx, "Enter first point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Set the reflection line"), NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter first point"), NK_TEXT_LEFT);
 		} else {
-			nk_label(gui->ctx, "Set the reflection line", NK_TEXT_LEFT);
-			nk_label(gui->ctx, "Enter second point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Set the reflection line"), NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter second point"), NK_TEXT_LEFT);
 		}
 	}
 	return 1;

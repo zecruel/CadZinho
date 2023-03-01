@@ -38,7 +38,7 @@ int gui_ed_attr_interactive(gui_obj *gui){
 		if (dxf_find_obj2(gui->sel_list->next->data, "ATTRIB"))
 			gui->element = gui->sel_list->next->data;
 		else{
-			snprintf(gui->log_msg, 63, "Error: No attributes found");
+			snprintf(gui->log_msg, 63, _l("Error: No attributes found"));
 			gui->step = 0;
 			gui->element = NULL;
 			sel_list_clear (gui);
@@ -58,9 +58,9 @@ int gui_ed_attr_info (gui_obj *gui){
 		static dxf_node *new_ent = NULL;
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Edit Attributes", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Edit Attributes"), NK_TEXT_LEFT);
 		if (gui->step == 0){ /* get insert element to edit */
-			nk_label(gui->ctx, "Select a Insert element", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Select a Insert element"), NK_TEXT_LEFT);
 			init = 0;
 		}
 		else if (gui->step == 1){ /* init */
@@ -69,7 +69,7 @@ int gui_ed_attr_info (gui_obj *gui){
 			gui->step = 2;
 		}
 		else { /* all inited */
-			nk_label(gui->ctx, "Edit data", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Edit data"), NK_TEXT_LEFT);
 			
 			static dxf_node *ins_ent = NULL, *attr = NULL;
 			static dxf_node *attributes[1000];
@@ -131,14 +131,14 @@ int gui_ed_attr_info (gui_obj *gui){
 			if (init){
 				/* edit attributes window */
 				static struct nk_rect s = {150, -50, 420, 350};
-				if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Edit Insert Attributes", NK_WINDOW_CLOSABLE|NK_WINDOW_MOVABLE, s)){
+				if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Edit Insert Attributes"), NK_WINDOW_CLOSABLE|NK_WINDOW_MOVABLE, s)){
 					
 					/* show refered block name */
 					nk_layout_row_template_begin(gui->ctx, 20);
 					nk_layout_row_template_push_static(gui->ctx, 50);
 					nk_layout_row_template_push_dynamic(gui->ctx);
 					nk_layout_row_template_end(gui->ctx);
-					nk_label(gui->ctx, "Block:", NK_TEXT_RIGHT);
+					nk_label(gui->ctx, _l("Block:"), NK_TEXT_RIGHT);
 					nk_label_colored(gui->ctx, blk_name, NK_TEXT_LEFT, nk_rgb(255,255,0));
 					
 					nk_layout_row_dynamic(gui->ctx, 250, 1);
@@ -155,13 +155,13 @@ int gui_ed_attr_info (gui_obj *gui){
 							nk_layout_row_template_push_static(gui->ctx, 8);
 							nk_layout_row_template_end(gui->ctx);
 							
-							if (nk_button_label(gui->ctx, "Tag")){
+							if (nk_button_label(gui->ctx, _l("Tag"))){
 								
 							}
-							if (nk_button_label(gui->ctx, "Value")){
+							if (nk_button_label(gui->ctx, _l("Value"))){
 								
 							}
-							if (nk_button_label(gui->ctx, "Hide")){
+							if (nk_button_label(gui->ctx, _l("Hide"))){
 								
 							}
 							nk_group_end(gui->ctx);
@@ -202,7 +202,7 @@ int gui_ed_attr_info (gui_obj *gui){
 						nk_group_end(gui->ctx);
 					}
 					nk_layout_row_dynamic(gui->ctx, 20, 2);
-					if (nk_button_label(gui->ctx, "OK")){
+					if (nk_button_label(gui->ctx, _l("OK"))){
 						/* update changes in insert */
 						for (i = 0; i < num_attr; i++){
 							new_str = trimwhitespace(tag[i]);
@@ -211,7 +211,7 @@ int gui_ed_attr_info (gui_obj *gui){
 								snprintf(gui->log_msg, 63, "Error: No spaces allowed in tags");
 								continue; /* skip change */
 							}
-							attr = dxf_find_obj_i(new_ent, "ATTRIB", i);
+							attr = dxf_find_obj_i(new_ent, _l("ATTRIB"), i);
 							
 							/* update tag */
 							dxf_attr_change(attr, 2, new_str);
@@ -242,7 +242,7 @@ int gui_ed_attr_info (gui_obj *gui){
 						new_ent = NULL;
 						sel_list_clear (gui);
 					}
-					if (nk_button_label(gui->ctx, "Cancel")){
+					if (nk_button_label(gui->ctx, _l("Cancel"))){
 						/* close edit window */
 						init = 0;
 						new_ent = NULL;

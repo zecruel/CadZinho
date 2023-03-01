@@ -50,7 +50,7 @@ int gui_insert_interactive(gui_obj *gui){
 				/* append to drawing */
 				drawing_ent_append(gui->drawing, new_el);
 				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , DWG_LIFE);
-				do_add_entry(&gui->list_do, "INSERT");
+				do_add_entry(&gui->list_do, _l("INSERT"));
 				do_add_item(gui->list_do.current, NULL, new_el);
 				
 				/* prepare to new insert */
@@ -95,24 +95,24 @@ int gui_insert_info (gui_obj *gui){
 		dxf_node *blk = NULL, *blk_flag = NULL;
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Place a Insert", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Place a Insert"), NK_TEXT_LEFT);
 		
 		if (gui->step == 0){ /* choose a block description */
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			nk_label(gui->ctx, "Choose Block:", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Choose Block:"), NK_TEXT_LEFT);
 			
 			/* enter a block name directly */
 			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE, gui->blk_name, DXF_MAX_CHARS, nk_filter_default);
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 2);
-			if (nk_button_label(gui->ctx, "OK")){ /* try go to next step */
+			if (nk_button_label(gui->ctx, _l("OK"))){ /* try go to next step */
 				/* check if block exists */
 				if (blk = dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", gui->blk_name)){
 					/* verify if block is annonimous */
 					blk_flag = dxf_find_attr2(blk, 70);
 					if (blk_flag) {
 						if (blk_flag->value.i_data & 1) {
-							snprintf(gui->log_msg, 63, "Error: Block not allowed");
+							snprintf(gui->log_msg, 63, _l("Error: Block not allowed"));
 						}
 						else{ /* ok to place insert */
 							gui->step = 1;
@@ -125,12 +125,12 @@ int gui_insert_info (gui_obj *gui){
 					}
 				}
 				else {
-					snprintf(gui->log_msg, 63, "Error: Block not found");
+					snprintf(gui->log_msg, 63, _l("Error: Block not found"));
 				}
 			}
 			
 			/* explore to view available blocks in drawing */
-			if (nk_button_label(gui->ctx, "Explore")) show_blk_pp = 1;
+			if (nk_button_label(gui->ctx, _l("Explore"))) show_blk_pp = 1;
 		}
 		else{ /* define parameters and place a insert */
 			/* show refered block name */
@@ -138,22 +138,22 @@ int gui_insert_info (gui_obj *gui){
 			nk_layout_row_template_push_static(gui->ctx, 50);
 			nk_layout_row_template_push_dynamic(gui->ctx);
 			nk_layout_row_template_end(gui->ctx);
-			nk_label(gui->ctx, "Block:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Block:"), NK_TEXT_RIGHT);
 			nk_label_colored(gui->ctx, gui->blk_name, NK_TEXT_LEFT, nk_rgb(255,255,0));
 			
 			/* dinamicaly, choose a place point and confirm */
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			nk_label(gui->ctx, "Enter place point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter place point"), NK_TEXT_LEFT);
 			
 			/* scale and rotation parameters */
-			gui->scale_x = nk_propertyd(gui->ctx, "Scale", 0.0, gui->scale_x, 100000.0, 0.1, 0.1f);
+			gui->scale_x = nk_propertyd(gui->ctx, _l("Scale"), 0.0, gui->scale_x, 100000.0, 0.1, 0.1f);
 			gui->scale_y = gui->scale_x; //gui->scale_z = gui->scale_x;
-			gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0, gui->angle, 180.0, 0.1, 0.1f);
+			gui->angle = nk_propertyd(gui->ctx, _l("Angle"), -180.0, gui->angle, 180.0, 0.1, 0.1f);
 		}
 		if (show_blk_pp){
 			/* explore and select block popup */
 			static struct nk_rect s = {20, -80, 420, 380};
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Select Block", NK_WINDOW_CLOSABLE, s)){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Select Block"), NK_WINDOW_CLOSABLE, s)){
 				
 				list_node *blk_g; /*graphic object of current block */
 				dxf_node *blk, *blk_nm; /* current block and its name attribute */
@@ -254,9 +254,9 @@ int gui_insert_info (gui_obj *gui){
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				/* option to show hidden blocks */
-				nk_checkbox_label(gui->ctx, "Hidden", &show_hidden_blks);
+				nk_checkbox_label(gui->ctx, _l("Hidden"), &show_hidden_blks);
 				
-				if (nk_button_label(gui->ctx, "Select")){ /* select block and close popup */
+				if (nk_button_label(gui->ctx, _l("Select"))){ /* select block and close popup */
 					show_blk_pp = 0;
 					nk_popup_close(gui->ctx);
 				}

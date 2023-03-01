@@ -285,7 +285,7 @@ int gui_ellip_interactive(gui_obj *gui){
 		new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
 		drawing_ent_append(gui->drawing, new_el);
 		
-		do_add_entry(&gui->list_do, "ELLIPSE");
+		do_add_entry(&gui->list_do, _l("ELLIPSE"));
 		do_add_item(gui->list_do.current, NULL, new_el);
 		
 		gui->draw_phanton = 0;
@@ -297,34 +297,46 @@ int gui_ellip_interactive(gui_obj *gui){
 
 int gui_ellip_info (gui_obj *gui){
 	if (gui->modal != ELLIPSE) return 0;
-	
-	static const char *mode[] = {"Full ellipse","Elliptical arc", "Isometric Circle", "Isometric Arc"};
-	static const char *view[] = {"Top","Front", "Left"};
+  
+  static char mode[4][DXF_MAX_CHARS + 1];
+  strncpy(mode[0], _l("Full ellipse"), DXF_MAX_CHARS);
+  strncpy(mode[1], _l("Elliptical arc"), DXF_MAX_CHARS);
+  strncpy(mode[2], _l("Isometric Circle"), DXF_MAX_CHARS);
+  strncpy(mode[3], _l("Isometric Arc"), DXF_MAX_CHARS);
+  
+  char *mode_addr[] = {mode[0], mode[1], mode[2], mode[3]};
+  
+  static char view[3][DXF_MAX_CHARS + 1];
+  strncpy(view[0], _l("Top"), DXF_MAX_CHARS);
+  strncpy(view[1], _l("Front"), DXF_MAX_CHARS);
+  strncpy(view[2], _l("Left"), DXF_MAX_CHARS);
+  
+  char *view_addr[] = {view[0], view[1], view[2]};
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
-	nk_label(gui->ctx, "Place a ellipse", NK_TEXT_LEFT);
+	nk_label(gui->ctx, _l("Place a ellipse"), NK_TEXT_LEFT);
 	
 	int h = 4 * 25 + 5;
-	gui->el_mode = nk_combo(gui->ctx, mode, 4, gui->el_mode, 20, nk_vec2(150, h));
+	gui->el_mode = nk_combo(gui->ctx, (const char **) mode_addr, 4, gui->el_mode, 20, nk_vec2(150, h));
 	if (gui->el_mode == EL_ISO_CIRCLE || gui->el_mode == EL_ISO_ARC){
-		gui->o_view = nk_combo(gui->ctx, view, 3, gui->o_view, 20, nk_vec2(150, 80));
+		gui->o_view = nk_combo(gui->ctx, (const char **) view_addr, 3, gui->o_view, 20, nk_vec2(150, 80));
 	}
 	
 	if (gui->step == 0){
-		nk_label(gui->ctx, "Enter center point", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Enter center point"), NK_TEXT_LEFT);
 	} else if (gui->step == 1){
-		nk_label(gui->ctx, "Define major axis", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Define major axis"), NK_TEXT_LEFT);
 	}
 	else if (gui->step == 2){
 		if (gui->el_mode == EL_ISO_CIRCLE || gui->el_mode == EL_ISO_ARC)
-			nk_label(gui->ctx, "Define circle radius", NK_TEXT_LEFT);
-		else nk_label(gui->ctx, "Define minor axis", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Define circle radius"), NK_TEXT_LEFT);
+		else nk_label(gui->ctx, _l("Define minor axis"), NK_TEXT_LEFT);
 	}
 	else if (gui->step == 3){
-		nk_label(gui->ctx, "Enter arc start point", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Enter arc start point"), NK_TEXT_LEFT);
 	}
 	else {
-		nk_label(gui->ctx, "Enter arc end point", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Enter arc end point"), NK_TEXT_LEFT);
 	}
 	
 	return 1;

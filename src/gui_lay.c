@@ -186,7 +186,7 @@ int lay_mng (gui_obj *gui){
 	};
 	static int lay_change = LAY_OP_NONE;
 	
-	if (nk_begin(gui->ctx, "Layer Manager", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
+	if (nk_begin(gui->ctx, _l("Layer Manager"), nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		static char lay_name[DXF_MAX_CHARS] = "";
@@ -286,16 +286,16 @@ int lay_mng (gui_obj *gui){
 			/* sort by Layer name */
 			if (sorted == BY_NAME){
 				if (sort_reverse){
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Name", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, _l("Name"), NK_TEXT_CENTERED)){
 						sorted = UNSORTED;
 						sort_reverse = 0;
 					}
 				} else {
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Name", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, _l("Name"), NK_TEXT_CENTERED)){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_label(gui->ctx, "Name")){
+			}else if (nk_button_label(gui->ctx, _l("Name"))){
 				sorted = BY_NAME;
 				sort_reverse = 0;
 			}
@@ -311,7 +311,7 @@ int lay_mng (gui_obj *gui){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_label(gui->ctx, "C")){
+			}else if (nk_button_label(gui->ctx, _l("C"))){
 				sorted = BY_COLOR;
 				sort_reverse = 0;
 			}
@@ -366,48 +366,48 @@ int lay_mng (gui_obj *gui){
 			/* sort by Line pattern */
 			if (sorted == BY_LTYPE){
 				if (sort_reverse){
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Line type", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, _l("Line type"), NK_TEXT_CENTERED)){
 						sorted = UNSORTED;
 						sort_reverse = 0;
 					}
 				} else {
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Line type", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, _l("Line type"), NK_TEXT_CENTERED)){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_label(gui->ctx, "Line type")){
+			}else if (nk_button_label(gui->ctx, _l("Line type"))){
 				sorted = BY_LTYPE;
 				sort_reverse = 0;
 			}
 			/* sort by Line weight */
 			if (sorted == BY_LW){
 				if (sort_reverse){
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Line weight", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, _l("Line weight"), NK_TEXT_CENTERED)){
 						sorted = UNSORTED;
 						sort_reverse = 0;
 					}
 				} else {
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Line weight", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, _l("Line weight"), NK_TEXT_CENTERED)){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_label(gui->ctx, "Line weight")){
+			}else if (nk_button_label(gui->ctx, _l("Line weight"))){
 				sorted = BY_LW;
 				sort_reverse = 0;
 			}
 			/* sort by use */
 			if (sorted == BY_USE){
 				if (sort_reverse){
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Used", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, _l("Used"), NK_TEXT_CENTERED)){
 						sorted = UNSORTED;
 						sort_reverse = 0;
 					}
 				} else {
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Used", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, _l("Used"), NK_TEXT_CENTERED)){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_label(gui->ctx, "Used")){
+			}else if (nk_button_label(gui->ctx, _l("Used"))){
 				sorted = BY_USE;
 				sort_reverse = 0;
 			}
@@ -571,14 +571,14 @@ int lay_mng (gui_obj *gui){
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 3);
 		/* create a new layer */
-		if (nk_button_label(gui->ctx, "Create")){
+		if (nk_button_label(gui->ctx, _l("Create"))){
 			/* open a popup for entering the layer name */
 			show_lay_name = 1;
 			lay_name[0] = 0;
 			lay_change = LAY_OP_CREATE;
 		}
 		/* rename selected layer */
-		if ((nk_button_label(gui->ctx, "Rename")) && (sel_lay >= 0)){
+		if ((nk_button_label(gui->ctx, _l("Rename"))) && (sel_lay >= 0)){
 			/* open a popup for entering the layer name */
 			show_lay_name = 1;
 			strncpy(lay_name, layers[sel_lay].name, DXF_MAX_CHARS);
@@ -586,16 +586,16 @@ int lay_mng (gui_obj *gui){
 			
 		}
 		/* delete selected layer */
-		if ((nk_button_label(gui->ctx, "Remove")) && (sel_lay >= 0)){
+		if ((nk_button_label(gui->ctx, _l("Remove"))) && (sel_lay >= 0)){
 			/* update all layers for sure */
 			layer_use(gui->drawing);
 			/* don't remove layer in use */
 			if (layers[sel_lay].num_el){ 
-				snprintf(gui->log_msg, 63, "Error: Don't remove Layer in use");
+				snprintf(gui->log_msg, 63, _l("Error: Don't remove Layer in use"));
 			}
 			else{
 				/* remove layer from main structure */
-				do_add_entry(&gui->list_do, "Remove Layer");
+				do_add_entry(&gui->list_do, _l("Remove Layer"));
 				do_add_item(gui->list_do.current, layers[sel_lay].obj, NULL);
 				dxf_obj_subst(layers[sel_lay].obj, NULL);
 				sel_lay = -1;
@@ -606,7 +606,7 @@ int lay_mng (gui_obj *gui){
 		
 		/* popup to change layer's color */
 		if ((show_color_pick) && (sel_lay >= 0)){
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Layer Color", NK_WINDOW_CLOSABLE, nk_rect(220, 10, 220, 300))){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Layer Color"), NK_WINDOW_CLOSABLE, nk_rect(220, 10, 220, 300))){
 				
 				int j;
 				nk_layout_row_static(gui->ctx, 15, 15, 10);
@@ -635,7 +635,7 @@ int lay_mng (gui_obj *gui){
 		
 		/* popup to entering layer name (new and rename) */
 		if ((show_lay_name)){
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Layer Name", NK_WINDOW_CLOSABLE, nk_rect(10, 20, 220, 100))){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Layer Name"), NK_WINDOW_CLOSABLE, nk_rect(10, 20, 220, 100))){
 				
 				/* get name */
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
@@ -643,12 +643,12 @@ int lay_mng (gui_obj *gui){
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, lay_name, DXF_MAX_CHARS, nk_filter_default);
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				if (nk_button_label(gui->ctx, "OK")){
+				if (nk_button_label(gui->ctx, _l("OK"))){
 					/* try to create a new layer */
 					if (lay_change == LAY_OP_CREATE){
 						if (!dxf_new_layer (gui->drawing, lay_name, 7, ltypes[dxf_ltype_idx (gui->drawing, "Continuous")].name)){
 							/* fail to  create, commonly name already exists */
-							snprintf(gui->log_msg, 63, "Error: Layer already exists");
+							snprintf(gui->log_msg, 63, _l("Error: Layer already exists"));
 						}
 						else {
 							/* layer created and attached in drawing main structure */
@@ -673,7 +673,7 @@ int lay_mng (gui_obj *gui){
 							nk_popup_close(gui->ctx);
 							show_lay_name = 0;
 						}
-						else snprintf(gui->log_msg, 63, "Error: exists Layer with same name");
+						else snprintf(gui->log_msg, 63, _l("Error: exists Layer with same name"));
 					}
 	/* ------------ cancel or close window ---------------- */
 					else {
@@ -682,7 +682,7 @@ int lay_mng (gui_obj *gui){
 						lay_change = LAY_OP_NONE;
 					}
 				}
-				if (nk_button_label(gui->ctx, "Cancel")){
+				if (nk_button_label(gui->ctx, _l("Cancel"))){
 					nk_popup_close(gui->ctx);
 					show_lay_name = 0;
 					lay_change = LAY_OP_NONE;

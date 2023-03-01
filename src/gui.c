@@ -2618,16 +2618,16 @@ void gui_draw_vert_gl(gui_obj *gui, dxf_node *obj){
 char* gui_get_literal (gui_obj *gui, const char *literal){
   static char value[DXF_MAX_CHARS + 1];
   if (!literal) return NULL;
-  if (strlen(literal) == 0) return literal;
-  if (!gui->main_lang_scr.active) return literal;
+  if (strlen(literal) == 0) return (char*) literal;
+  if (!gui->main_lang_scr.active) return (char*) literal;
   lua_pushvalue(gui->main_lang_scr.T, 1);
   if (lua_getfield(gui->main_lang_scr.T, -1, literal) == LUA_TSTRING){
     strncpy(value, lua_tostring(gui->main_lang_scr.T, -1), DXF_MAX_CHARS);
-    lua_pop(gui->main_lang_scr.T, 1);
+    lua_pop(gui->main_lang_scr.T, 2);
     return value;
   }
   else{
-    lua_pop(gui->main_lang_scr.T, 1);
-    return literal;
+    lua_pop(gui->main_lang_scr.T, 2);
+    return (char*) literal;
   }
 }

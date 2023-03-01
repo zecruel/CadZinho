@@ -28,7 +28,7 @@ const char* gui_dflt_conf() {
 	"-- Drawing cursor type - cross (default), square, x or circle\n"
 	"cursor = \"cross\"\n\n";
 	
-	char * fonts_path = escape_path(dflt_fonts_dir ());
+	char * fonts_path = escape_path((char *)dflt_fonts_dir ());
 	
 	const char* font = plat_dflt_font ();
 	
@@ -62,7 +62,7 @@ int gui_load_conf (gui_obj *gui){
 	gui->dflt_pat = try_load_dflt(new_path, (char *)h_pattern_lib_dflt());
 	
 	/* load hatches patterns -NEED IMPROVEMENTS */
-	gui->hatch_fam.next = dxf_hatch_family("Standard", "Internal standard pattern library", gui->dflt_pat);
+	gui->hatch_fam.next = dxf_hatch_family(_l("Standard"), _l("Internal standard pattern library"), gui->dflt_pat);
 	if(gui->hatch_fam.next) gui->end_fam = gui->hatch_fam.next;
 	
 	/* full path of config file */
@@ -513,35 +513,35 @@ int config_win (gui_obj *gui){
 	} cfg_grp = GRP_PREF;
 	
 	//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "config", NK_WINDOW_CLOSABLE, nk_rect(310, 50, 200, 300))){
-	if (nk_begin(gui->ctx, "Config", nk_rect(418, 88, 400, 300),
+	if (nk_begin(gui->ctx, _l("Config"), nk_rect(418, 88, 400, 300),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		/* Config groups - Preferences, Raw info, 3D view */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
-		if (gui_tab (gui, "Preferences", cfg_grp == GRP_PREF)) cfg_grp = GRP_PREF;
-		if (gui_tab (gui, "Info", cfg_grp == GRP_INFO)) cfg_grp = GRP_INFO;
-		if (gui_tab (gui, "3D", cfg_grp == GRP_3D)) cfg_grp = GRP_3D;
+		if (gui_tab (gui, _l("Preferences"), cfg_grp == GRP_PREF)) cfg_grp = GRP_PREF;
+		if (gui_tab (gui, _l("Info"), cfg_grp == GRP_INFO)) cfg_grp = GRP_INFO;
+		if (gui_tab (gui, _l("3D"), cfg_grp == GRP_3D)) cfg_grp = GRP_3D;
 		nk_style_pop_vec2(gui->ctx);
 		nk_layout_row_end(gui->ctx);
 		
 		if(cfg_grp == GRP_PREF){
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			nk_label(gui->ctx, "Preferences folder:", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Preferences folder:"), NK_TEXT_LEFT);
 			nk_edit_string_zero_terminated(gui->ctx, 
 				NK_EDIT_READ_ONLY,
 				gui->pref_path, PATH_MAX_CHARS, nk_filter_default);
 			nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.3, 0.7});
-			if (nk_button_label(gui->ctx, "Copy")){
+			if (nk_button_label(gui->ctx, _l("Copy"))){
 				SDL_SetClipboardText(gui->pref_path);
 			}
-			if (nk_button_label(gui->ctx, "Open folder")){
+			if (nk_button_label(gui->ctx, _l("Open folder"))){
 				opener(gui->pref_path);
 			}
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			nk_label(gui->ctx, "Config File:", NK_TEXT_LEFT);
-			if (nk_button_label(gui->ctx, "Open file")){
+			nk_label(gui->ctx, _l("Config File:"), NK_TEXT_LEFT);
+			if (nk_button_label(gui->ctx, _l("Open file"))){
 				/* full path of config file */
 				char config_path[PATH_MAX_CHARS + 1];
 				config_path[0] = 0;
@@ -549,7 +549,7 @@ int config_win (gui_obj *gui){
 				strncat(config_path, "config.lua", PATH_MAX_CHARS);
 				opener(config_path);
 			}
-			if (nk_button_label(gui->ctx, "Reload config")){
+			if (nk_button_label(gui->ctx, _l("Reload config"))){
 				gui_list_font_free (gui->ui_font_list);
 				gui->ui_font_list = gui_new_font (NULL);
 				
@@ -579,13 +579,13 @@ int config_win (gui_obj *gui){
 		else if(cfg_grp == GRP_INFO){
 			nk_layout_row_dynamic(gui->ctx, 60, 1);
 			
-			nk_label_wrap(gui->ctx, "The following window is used to visualize "
+			nk_label_wrap(gui->ctx, _l("The following window is used to visualize "
 				"the raw parameters of the selected elements, according to "
 				"the DXF specification. It is useful for advanced users to debug "
-				"current file entities");
+				"current file entities"));
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			if (nk_button_label(gui->ctx, "Open Info Window")){
+			if (nk_button_label(gui->ctx, _l("Open Info Window"))){
 				gui->show_info = 1;
 			}
 			
@@ -594,48 +594,48 @@ int config_win (gui_obj *gui){
 			
 			nk_layout_row_dynamic(gui->ctx, 60, 1);
 			
-			nk_label_wrap(gui->ctx, "This is a experimental 3D view mode. To return to default 2D view, choose \"Top\" or set all angles to 0");
+			nk_label_wrap(gui->ctx, _l("This is a experimental 3D view mode. To return to default 2D view, choose \"Top\" or set all angles to 0"));
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			nk_property_float(gui->ctx, "#Alpha", -180.0, &gui->alpha, 180.0f, 1.0f, 1.0);
-			nk_property_float(gui->ctx, "#Beta", -180.0, &gui->beta, 180.0f, 1.0f, 1.0);
-			nk_property_float(gui->ctx, "#Gamma", -180.0, &gui->gamma, 180.0f, 1.0f, 1.0);
+			nk_property_float(gui->ctx, _l("#Alpha"), -180.0, &gui->alpha, 180.0f, 1.0f, 1.0);
+			nk_property_float(gui->ctx, _l("#Beta"), -180.0, &gui->beta, 180.0f, 1.0f, 1.0);
+			nk_property_float(gui->ctx, _l("#Gamma"), -180.0, &gui->gamma, 180.0f, 1.0f, 1.0);
 			/*nk_slider_float(gui->ctx, -180.0, &gui->alpha, 180.0f, 0.1f);
 			nk_slider_float(gui->ctx, -180.0, &gui->beta, 180.0f, 0.1f);
 			nk_slider_float(gui->ctx, -180.0, &gui->gamma, 180.0f, 0.1f);*/
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 3);
-			if (nk_button_label(gui->ctx, "Top")){
+			if (nk_button_label(gui->ctx, _l("Top"))){
 				gui->alpha = 0.0;
 				gui->beta = 0.0;
 				gui->gamma = 0.0;
 			}
-			if (nk_button_label(gui->ctx, "Front")){
+			if (nk_button_label(gui->ctx, _l("Front"))){
 				gui->alpha = 0.0;
 				gui->beta = 0.0;
 				gui->gamma = 90.0;
 			}
-			if (nk_button_label(gui->ctx, "Right")){
+			if (nk_button_label(gui->ctx, _l("Right"))){
 				gui->alpha = 90.0;
 				gui->beta = 0.0;
 				gui->gamma = 90.0;
 			}
-			if (nk_button_label(gui->ctx, "Bottom")){
+			if (nk_button_label(gui->ctx, _l("Bottom"))){
 				gui->alpha = 0.0;
 				gui->beta = 0.0;
 				gui->gamma = 180.0;
 			}
-			if (nk_button_label(gui->ctx, "Rear")){
+			if (nk_button_label(gui->ctx, _l("Rear"))){
 				gui->alpha = 180.0;
 				gui->beta = 0.0;
 				gui->gamma = 90.0;
 			}
-			if (nk_button_label(gui->ctx, "Left")){
+			if (nk_button_label(gui->ctx, _l("Left"))){
 				gui->alpha = -90.0;
 				gui->beta = 0.0;
 				gui->gamma = 90.0;
 			}
-			if (nk_button_label(gui->ctx, "Iso")){
+			if (nk_button_label(gui->ctx, _l("Iso"))){
 				gui->alpha = 45.0;
 				gui->beta = 0.0;
 				gui->gamma = 90.0 - 35.264;

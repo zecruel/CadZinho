@@ -111,7 +111,7 @@ int gui_hatch_interactive(gui_obj *gui){
 							/* and append to drawing */
 							drawing_ent_append(gui->drawing, new_hatch_el);
 							/* add to the undo/redo list*/
-							do_add_entry(&gui->list_do, "HATCH");
+							do_add_entry(&gui->list_do, _l("HATCH"));
 							do_add_item(gui->list_do.current, NULL, new_hatch_el);
 						}
 						
@@ -221,7 +221,7 @@ int gui_hatch_interactive(gui_obj *gui){
 						/* and append to drawing */
 						drawing_ent_append(gui->drawing, new_hatch_el);
 						/* add to the undo/redo list*/
-						do_add_entry(&gui->list_do, "HATCH");
+						do_add_entry(&gui->list_do, _l("HATCH"));
 						do_add_item(gui->list_do.current, NULL, new_hatch_el);
 					}
 				}
@@ -242,18 +242,18 @@ int gui_hatch_info (gui_obj *gui){
 		int i = 0;
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Place a Hatch:", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Place a Hatch:"), NK_TEXT_LEFT);
 		
 		/* Selection mode option - Points or Selection */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 3);
 		nk_layout_row_push(gui->ctx, 45);
-		nk_label(gui->ctx, "Mode:", NK_TEXT_LEFT);
-		if (gui_tab (gui, "Points", gui->hatch_sel == 0)) {
+		nk_label(gui->ctx, _l("Mode:"), NK_TEXT_LEFT);
+		if (gui_tab (gui, _l("Points"), gui->hatch_sel == 0)) {
 			gui->hatch_sel = 0;
 			gui->step = 0;
 		}
-		if (gui_tab (gui, "Selection", gui->hatch_sel == 1)) {
+		if (gui_tab (gui, _l("Selection"), gui->hatch_sel == 1)) {
 			gui->hatch_sel = 1;
 			gui->step = 0;
 		}
@@ -264,9 +264,9 @@ int gui_hatch_info (gui_obj *gui){
 		
 		nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.65f, 0.35f});
 		/* associative flag for Hatch*/
-		nk_checkbox_label(gui->ctx, "Associative", &gui->hatch_assoc);
+		nk_checkbox_label(gui->ctx, _l("Associative"), &gui->hatch_assoc);
 		/* in selection mode, option to include text box as hacth boundary*/
-		if (gui->hatch_sel) nk_checkbox_label(gui->ctx, "Text", &gui->hatch_t_box);
+		if (gui->hatch_sel) nk_checkbox_label(gui->ctx, _l("Text"), &gui->hatch_t_box);
 		
 		nk_layout_row_dynamic(gui->ctx, 5, 1);
 		
@@ -276,20 +276,20 @@ int gui_hatch_info (gui_obj *gui){
 			- Solid fill; */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
-		if (gui_tab (gui, "User", gui->h_type == HATCH_USER)) gui->h_type = HATCH_USER;
-		if (gui_tab (gui, "Library", gui->h_type == HATCH_PREDEF)) gui->h_type = HATCH_PREDEF;
-		if (gui_tab (gui, "Solid", gui->h_type == HATCH_SOLID)) gui->h_type = HATCH_SOLID;
+		if (gui_tab (gui, _l("User"), gui->h_type == HATCH_USER)) gui->h_type = HATCH_USER;
+		if (gui_tab (gui, _l("Library"), gui->h_type == HATCH_PREDEF)) gui->h_type = HATCH_PREDEF;
+		if (gui_tab (gui, _l("Solid"), gui->h_type == HATCH_SOLID)) gui->h_type = HATCH_SOLID;
 		nk_style_pop_vec2(gui->ctx);
 		nk_layout_row_end(gui->ctx);
 		
 		nk_layout_row_dynamic(gui->ctx, 105, 1);
-		if (nk_group_begin(gui->ctx, "Patt_controls", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, _l("Patt_controls"), NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 		
 			if (gui->h_type == HATCH_USER){/*User definied simple hatch*/
 				/* the user can select only angle and spacing of continuous lines*/
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				gui->user_patt.ang = nk_propertyd(gui->ctx, "Angle", 0.0, gui->user_patt.ang, 360.0, 0.1, 0.1f);
-				gui->user_patt.dy = nk_propertyd(gui->ctx, "Spacing", 0.0, gui->user_patt.dy, 1e9, SMART_STEP(gui->user_patt.dy), SMART_STEP(gui->user_patt.dy));
+				gui->user_patt.ang = nk_propertyd(gui->ctx, _l("Angle"), 0.0, gui->user_patt.ang, 360.0, 0.1, 0.1f);
+				gui->user_patt.dy = nk_propertyd(gui->ctx, _l("Spacing"), 0.0, gui->user_patt.dy, 1e9, SMART_STEP(gui->user_patt.dy), SMART_STEP(gui->user_patt.dy));
 			}
 			else if (gui->h_type == HATCH_PREDEF){ /*Hatch pattern from a library */
 				/*the library or family of pattern hatchs is a .pat file, according the
@@ -329,17 +329,17 @@ int gui_hatch_info (gui_obj *gui){
 				
 				/* for selection of pattern*/
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				if (nk_button_label(gui->ctx, "Explore")) gui->show_hatch_mng = 1;//show_pat_pp = 1;
+				if (nk_button_label(gui->ctx, _l("Explore"))) gui->show_hatch_mng = 1;//show_pat_pp = 1;
 				
 				/*show data of current pattern*/
 				nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.2f, 0.8f});
-				nk_label(gui->ctx, "Name:", NK_TEXT_RIGHT);
+				nk_label(gui->ctx, _l("Name:"), NK_TEXT_RIGHT);
 				nk_label_colored(gui->ctx, gui->patt_name, NK_TEXT_CENTERED, nk_rgb(255,255,0));
 				
 				/* optional rotation and scale */
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				gui->patt_scale = nk_propertyd(gui->ctx, "#Scale", 1e-9, gui->patt_scale, 1e9, SMART_STEP(gui->patt_scale), SMART_STEP(gui->patt_scale));
-				gui->patt_ang = nk_propertyd(gui->ctx, "Angle", 0.0, gui->patt_ang, 360.0, 0.1, 0.1f);
+				gui->patt_scale = nk_propertyd(gui->ctx, _l("#Scale"), 1e-9, gui->patt_scale, 1e9, SMART_STEP(gui->patt_scale), SMART_STEP(gui->patt_scale));
+				gui->patt_ang = nk_propertyd(gui->ctx, _l("Angle"), 0.0, gui->patt_ang, 360.0, 0.1, 0.1f);
 			}
 			nk_group_end(gui->ctx);
 		}
@@ -349,16 +349,16 @@ int gui_hatch_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		if (!gui->hatch_sel){
 			if (gui->step == 0){
-				nk_label(gui->ctx, "Enter first point", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("Enter first point"), NK_TEXT_LEFT);
 			} else {
-				nk_label(gui->ctx, "Enter next point", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("Enter next point"), NK_TEXT_LEFT);
 			}
 		}
 		else{
 			if (gui->step == 0){
-				nk_label(gui->ctx, "Select/Add element", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("Select/Add element"), NK_TEXT_LEFT);
 			}
-			else	nk_label(gui->ctx, "Confirm", NK_TEXT_LEFT);
+			else	nk_label(gui->ctx, _l("Confirm"), NK_TEXT_LEFT);
 		}
 	}
 	return 1;
@@ -378,7 +378,7 @@ int gui_hatch_mng (gui_obj *gui){
 	static struct nk_rect s = {215, 95, 420, 490};
 	
 	
-	if (nk_begin(gui->ctx, "Hatch Pattern", s,
+	if (nk_begin(gui->ctx, _l("Hatch Pattern"), s,
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		graph_obj *ref_graph = NULL, *curr_graph = NULL;
@@ -412,7 +412,7 @@ int gui_hatch_mng (gui_obj *gui){
 		int num_fam = i;
 		
 		nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 3, (float[]){0.15, 0.75, 0.1});
-		nk_label(gui->ctx, "Family:", NK_TEXT_RIGHT);
+		nk_label(gui->ctx, _l("Family:"), NK_TEXT_RIGHT);
 		
 		int h = num_fam * 25 + 5;
 		h = (h < 300)? h : 300;
@@ -615,12 +615,12 @@ int gui_hatch_mng (gui_obj *gui){
 			nk_label_colored_wrap(gui->ctx, patt_descr, nk_rgb(100,115,255));
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			nk_label(gui->ctx, "Ref: 10 x 10 units", NK_TEXT_CENTERED);
+			nk_label(gui->ctx, _l("Ref: 10 x 10 units"), NK_TEXT_CENTERED);
 			/* optional parameters -> change the preview */
-			patt_scale = nk_propertyd(gui->ctx, "#Scale", 1e-9, patt_scale, 1e9, SMART_STEP(patt_scale), SMART_STEP(patt_scale));
-			patt_rot = nk_propertyd(gui->ctx, "#Rotation", 0.00, patt_rot, 360.0, 0.1, 0.1);
+			patt_scale = nk_propertyd(gui->ctx, _l("#Scale"), 1e-9, patt_scale, 1e9, SMART_STEP(patt_scale), SMART_STEP(patt_scale));
+			patt_rot = nk_propertyd(gui->ctx, _l("#Rotation"), 0.00, patt_rot, 360.0, 0.1, 0.1);
 			
-			if (nk_button_label(gui->ctx, "Choose")){ /*done the selection*/
+			if (nk_button_label(gui->ctx, _l("Choose"))){ /*done the selection*/
 				/* update  the main parameters */
 				gui->hatch_idx = patt_idx;
 				gui->patt_scale = patt_scale;
@@ -640,10 +640,10 @@ int gui_hatch_mng (gui_obj *gui){
 				"PAT",
 				"*"
 			};
-			static const char *ext_descr[] = {
-				"Hatch Pattern Library (.pat)",
-				"All files (*)"
-			};
+      static char ext_descr[2][DXF_MAX_CHARS + 1];
+      strncpy(ext_descr[0], _l("Hatch Pattern Library (.pat)"), DXF_MAX_CHARS);
+      strncpy(ext_descr[1], _l("All files (*)"), DXF_MAX_CHARS);
+			
 			#define FILTER_COUNT 2
 			
 			if (gui->show_file_br == 2){
@@ -653,14 +653,14 @@ int gui_hatch_mng (gui_obj *gui){
 			}
 			
 			static struct nk_rect s = {20, -20, 300, 120};
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Add pattern family", NK_WINDOW_CLOSABLE, s)){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Add pattern family"), NK_WINDOW_CLOSABLE, s)){
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				nk_label(gui->ctx, "File to Open:", NK_TEXT_CENTERED);
+				nk_label(gui->ctx, _l("File to Open:"), NK_TEXT_CENTERED);
 				/* get the file path */
 				nk_edit_focus(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, pat_path, PATH_MAX_CHARS, nk_filter_default);
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				if (nk_button_label(gui->ctx, "OK")) {
+				if (nk_button_label(gui->ctx, _l("OK"))) {
 					/* check if filename extension is ".pat" */
 					char *ext = get_ext(pat_path);
 					if (strcmp(ext, "pat") == 0){
@@ -675,7 +675,7 @@ int gui_hatch_mng (gui_obj *gui){
 					}
 					
 				}
-				if (nk_button_label(gui->ctx, "Explore")) {
+				if (nk_button_label(gui->ctx, _l("Explore"))) {
 					for (i = 0; i < FILTER_COUNT; i++){
 						gui->file_filter_types[i] = ext_type[i];
 						gui->file_filter_descr[i] = ext_descr[i];

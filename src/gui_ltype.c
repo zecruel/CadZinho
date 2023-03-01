@@ -646,7 +646,7 @@ int ltyp_mng (gui_obj *gui){
 			qsort(sort_ltyp, num_ltypes, sizeof(struct sort_by_idx), cmp_ltype_use_rev);
 	}
 	
-	if (nk_begin(gui->ctx, "Line Types Manager", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
+	if (nk_begin(gui->ctx, _l("Line Types Manager"), nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		static char ltyp_name[DXF_MAX_CHARS] = "";
@@ -671,36 +671,36 @@ int ltyp_mng (gui_obj *gui){
 			/* sort by ltype name */
 			if (sorted == BY_NAME){
 				if (sort_reverse){
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Name", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, _l("Name"), NK_TEXT_CENTERED)){
 						sorted = UNSORTED;
 						sort_reverse = 0;
 					}
 				} else {
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Name", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, _l("Name"), NK_TEXT_CENTERED)){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_label(gui->ctx, "Name")){
+			}else if (nk_button_label(gui->ctx, _l("Name"))){
 				sorted = BY_NAME;
 				sort_reverse = 0;
 			}
 			
-			nk_button_label(gui->ctx, "Description");
-			nk_button_label(gui->ctx, "Preview");
+			nk_button_label(gui->ctx, _l("Description"));
+			nk_button_label(gui->ctx, _l("Preview"));
 			
 			/* sort by use */
 			if (sorted == BY_USE){
 				if (sort_reverse){
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Used", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, _l("Used"), NK_TEXT_CENTERED)){
 						sorted = UNSORTED;
 						sort_reverse = 0;
 					}
 				} else {
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Used", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, _l("Used"), NK_TEXT_CENTERED)){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_label(gui->ctx, "Used")){
+			}else if (nk_button_label(gui->ctx, _l("Used"))){
 				sorted = BY_USE;
 				sort_reverse = 0;
 			}
@@ -762,12 +762,12 @@ int ltyp_mng (gui_obj *gui){
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 3);
 		/* add a new ltype */
-		if (nk_button_label(gui->ctx, "Add")){
+		if (nk_button_label(gui->ctx, _l("Add"))){
 			/* open a window to create a new linetype */
 			show_add = 1;
 		}
 		/* rename selected ltype */
-		if ((nk_button_label(gui->ctx, "Rename")) && (sel_ltyp >= 0)){
+		if ((nk_button_label(gui->ctx, _l("Rename"))) && (sel_ltyp >= 0)){
 			/* open a popup for entering the ltype name */
 			show_ltyp_name = 1;
 			strncpy(ltyp_name, ltypes[sel_ltyp].name, DXF_MAX_CHARS);
@@ -775,16 +775,16 @@ int ltyp_mng (gui_obj *gui){
 			
 		}
 		/* delete selected ltype */
-		if ((nk_button_label(gui->ctx, "Remove")) && (sel_ltyp >= 0)){
+		if ((nk_button_label(gui->ctx, _l("Remove"))) && (sel_ltyp >= 0)){
 			/* update all ltypes for sure */
 			ltype_use(gui->drawing);
 			/* don't remove ltype in use */
 			if (ltypes[sel_ltyp].num_el){ 
-				snprintf(gui->log_msg, 63, "Error: Don't remove Line Type in use");
+				snprintf(gui->log_msg, 63, _l("Error: Don't remove Line Type in use"));
 			}
 			else{
 				/* remove ltype from main structure */
-				do_add_entry(&gui->list_do, "Remove Line Type");
+				do_add_entry(&gui->list_do, _l("Remove Line Type"));
 				do_add_item(gui->list_do.current, ltypes[sel_ltyp].obj, NULL);
 				dxf_obj_subst(ltypes[sel_ltyp].obj, NULL);
 				sel_ltyp = -1;
@@ -795,7 +795,7 @@ int ltyp_mng (gui_obj *gui){
 		
 		/* edit global drawing line type scale */
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 4, (float[]){140, 100, 160,100});
-		nk_label(gui->ctx, "Global Scale Factor:", NK_TEXT_RIGHT);
+		nk_label(gui->ctx, _l("Global Scale Factor:"), NK_TEXT_RIGHT);
 		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, ltscale_str, 63, nk_filter_float);
 		if (!(res & NK_EDIT_ACTIVE)){
 			snprintf(ltscale_str, 63, "%.9g", gui->drawing->ltscale);
@@ -823,7 +823,7 @@ int ltyp_mng (gui_obj *gui){
 		}
 		
 		/* edit line type scale for the next new entities*/
-		nk_label(gui->ctx, "Current Object Scale:", NK_TEXT_RIGHT);
+		nk_label(gui->ctx, _l("Current Object Scale:"), NK_TEXT_RIGHT);
 		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, celtscale_str, 63, nk_filter_float);
 		if (!(res & NK_EDIT_ACTIVE)){
 			snprintf(celtscale_str, 63, "%.9g", gui->drawing->celtscale);
@@ -837,7 +837,7 @@ int ltyp_mng (gui_obj *gui){
 		
 		/* popup to entering ltype name in rename action */
 		if ((show_ltyp_name)){
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Line Type Name", NK_WINDOW_CLOSABLE, nk_rect(10, 20, 220, 100))){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Line Type Name"), NK_WINDOW_CLOSABLE, nk_rect(10, 20, 220, 100))){
 				
 				/* get name */
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
@@ -845,7 +845,7 @@ int ltyp_mng (gui_obj *gui){
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, ltyp_name, DXF_MAX_CHARS, nk_filter_default);
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				if (nk_button_label(gui->ctx, "OK")){
+				if (nk_button_label(gui->ctx, _l("OK"))){
 					/* try to create a new ltype */
 					if ((ltyp_change == LTYP_OP_RENAME) && (sel_ltyp >= 0)){
 						/* verify if name already exists*/
@@ -863,7 +863,7 @@ int ltyp_mng (gui_obj *gui){
 							nk_popup_close(gui->ctx);
 							show_ltyp_name = 0;
 						}
-						else snprintf(gui->log_msg, 63, "Error: exists Line Type with same name");
+						else snprintf(gui->log_msg, 63, _l("Error: exists Line Type with same name"));
 					}
 				/* ------------ cancel or close window ---------------- */
 					else {
@@ -872,7 +872,7 @@ int ltyp_mng (gui_obj *gui){
 						ltyp_change = LTYP_OP_NONE;
 					}
 				}
-				if (nk_button_label(gui->ctx, "Cancel")){
+				if (nk_button_label(gui->ctx, _l("Cancel"))){
 					nk_popup_close(gui->ctx);
 					show_ltyp_name = 0;
 					ltyp_change = LTYP_OP_NONE;
@@ -892,7 +892,7 @@ int ltyp_mng (gui_obj *gui){
 	if ((show_add)){
 		static int add_init = 0;
 		/* Window to add a line type definition to drawing */
-		if (nk_begin(gui->ctx, "Add Line Type", nk_rect(gui->next_win_x + 150, gui->next_win_y + 20, 560, 520), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
+		if (nk_begin(gui->ctx, _l("Add Line Type"), nk_rect(gui->next_win_x + 150, gui->next_win_y + 20, 560, 520), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
 			
 			static char name[DXF_MAX_CHARS+1] = "", descr[DXF_MAX_CHARS+1] = "";
 			static char cpy_from[DXF_MAX_CHARS+1] = "";
@@ -914,23 +914,23 @@ int ltyp_mng (gui_obj *gui){
 			
 			/* Name and description of new line type */
 			nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.4, 0.6});
-			nk_label(gui->ctx, "Name:", NK_TEXT_LEFT);
-			nk_label(gui->ctx, "Description:", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Name:"), NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Description:"), NK_TEXT_LEFT);
 			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, name, DXF_MAX_CHARS, nk_filter_default);
 			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, descr, DXF_MAX_CHARS, nk_filter_default);
 			
 			/* apply scale to new line type (from original definition source) */
 			nk_layout_row(gui->ctx, NK_STATIC, 32, 2, (float[]){100, 200});
-			nk_label(gui->ctx, "Apply Scale:", NK_TEXT_RIGHT);
-			scale = nk_propertyd(gui->ctx, "Factor", 1e-9, scale, 1.0e9, SMART_STEP(scale), SMART_STEP(scale));
+			nk_label(gui->ctx, _l("Apply Scale:"), NK_TEXT_RIGHT);
+			scale = nk_propertyd(gui->ctx, _l("Factor"), 1e-9, scale, 1.0e9, SMART_STEP(scale), SMART_STEP(scale));
 			
 			/* Selection mode option - source of line type definition - copy or library */
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
-			nk_label(gui->ctx, "From:", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("From:"), NK_TEXT_LEFT);
 			nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
 			nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
-			if (gui_tab (gui, "Copy", mode == LT_ADD_CPY)) mode = LT_ADD_CPY;
-			if (gui_tab (gui, "Library", mode == LT_ADD_LIB)) mode = LT_ADD_LIB;
+			if (gui_tab (gui, _l("Copy"), mode == LT_ADD_CPY)) mode = LT_ADD_CPY;
+			if (gui_tab (gui, _l("Library"), mode == LT_ADD_LIB)) mode = LT_ADD_LIB;
 			nk_style_pop_vec2(gui->ctx);
 			nk_layout_row_end(gui->ctx);
 			
@@ -939,7 +939,7 @@ int ltyp_mng (gui_obj *gui){
 				if (mode == LT_ADD_CPY){
 					/* copy from existing line type in drawing */
 					nk_layout_row(gui->ctx, NK_STATIC, 22, 2, (float[]){60, 200});
-					nk_label(gui->ctx, "Source:", NK_TEXT_LEFT);
+					nk_label(gui->ctx, _l("Source:"), NK_TEXT_LEFT);
 					
 					int h = num_ltypes * 25 + 5;
 					h = (h < 200)? h : 200;
@@ -970,17 +970,17 @@ int ltyp_mng (gui_obj *gui){
 					nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
 					nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
 					/* There are 3 library options to choose */
-					if (gui_tab (gui, "Default", lib_mode == LT_LIB_DFLT)) {
+					if (gui_tab (gui, _l("Default"), lib_mode == LT_LIB_DFLT)) {
 						/* default library - configurable internal library */
 						lib_mode = LT_LIB_DFLT;
 						lib = load_lin_buf(gui->drawing, gui->dflt_lin, &n_lib); /* parse library */
 					}
-					if (gui_tab (gui, "Extra", lib_mode == LT_LIB_EXTRA)) {
+					if (gui_tab (gui, _l("Extra"), lib_mode == LT_LIB_EXTRA)) {
 						/* extra library - another configurable internal library */
 						lib_mode = LT_LIB_EXTRA;
 						lib = load_lin_buf(gui->drawing, gui->extra_lin, &n_lib); /* parse library */
 					}
-					if (gui_tab (gui, "File", lib_mode == LT_LIB_FILE)) {
+					if (gui_tab (gui, _l("File"), lib_mode == LT_LIB_FILE)) {
 						/* external library, from .LIN files */
 						lib_mode = LT_LIB_FILE;
 						n_lib = 0;
@@ -1003,14 +1003,15 @@ int ltyp_mng (gui_obj *gui){
 							"LIN",
 							"*"
 						};
-						static const char *ext_descr[] = {
-							"Line Type Library (.lin)",
-							"All files (*)"
-						};
+            
+            static char ext_descr[2][DXF_MAX_CHARS + 1];
+            strncpy(ext_descr[0], _l("Line Type Library (.lin)"), DXF_MAX_CHARS);
+            strncpy(ext_descr[1], _l("All files (*)"), DXF_MAX_CHARS);
 						#define FILTER_COUNT 2
+            
 						nk_layout_row(gui->ctx, NK_DYNAMIC, 22, 3, (float[]){0.15, 0.75, 0.1});
 						
-						if (nk_button_label(gui->ctx, "Browse")){/* call file browser */
+						if (nk_button_label(gui->ctx, _l("Browse"))){/* call file browser */
 							show_app_file = 1;
 							/* set filter for suported output formats */
 							for (i = 0; i < FILTER_COUNT; i++){
@@ -1036,7 +1037,7 @@ int ltyp_mng (gui_obj *gui){
 						/* manual entry to file path */
 						nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_FIELD|NK_EDIT_SIG_ENTER|NK_EDIT_CLIPBOARD, path, DXF_MAX_CHARS - 1, nk_filter_default);
 						
-						if (nk_button_label(gui->ctx, "Load")){
+						if (nk_button_label(gui->ctx, _l("Load"))){
 							
 							long fsize;
 							struct Mem_buffer *buf  = load_file_reuse(path, &fsize); /* load file in temp buffer */
@@ -1056,9 +1057,9 @@ int ltyp_mng (gui_obj *gui){
 						nk_layout_row_dynamic(gui->ctx, 32, 1);
 						if (nk_group_begin(gui->ctx, "LibLtyp_head", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 							nk_layout_row(gui->ctx, NK_STATIC, 22, 2, (float[]){175, 300});
-							nk_button_label(gui->ctx, "Name");
-							nk_button_label(gui->ctx, "Description");
-							//nk_button_label(gui->ctx, "Preview");
+							nk_button_label(gui->ctx, _l("Name"));
+							nk_button_label(gui->ctx, _l("Description"));
+							//nk_button_label(gui->ctx, _l("Preview"));
 							nk_group_end(gui->ctx);
 						}
 						
@@ -1133,18 +1134,18 @@ int ltyp_mng (gui_obj *gui){
 						graph_draw3(graph, &(ltyp_prev[DXF_MAX_LTYPES]), d_param); /* finally draw preview */
 						
 						nk_layout_row(gui->ctx, NK_STATIC, 40, 4, (float[]){70, 300, 120});
-						nk_label(gui->ctx, "Preview:", NK_TEXT_RIGHT);
+						nk_label(gui->ctx, _l("Preview:"), NK_TEXT_RIGHT);
 						/* show preview image as a button */
 						nk_button_image_styled(gui->ctx, &gui->b_icon_unsel, nk_image_ptr(&(ltyp_prev[DXF_MAX_LTYPES])));
 						/* edit preview scale */
-						prev_s = nk_propertyd(gui->ctx, "Scale", 1e-9, prev_s, 1.0e9, SMART_STEP(prev_s), SMART_STEP(prev_s));
+						prev_s = nk_propertyd(gui->ctx, _l("Scale"), 1e-9, prev_s, 1.0e9, SMART_STEP(prev_s), SMART_STEP(prev_s));
 					}
 				}
 			}
 			nk_group_end(gui->ctx);
 			
 			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 100});
-			if (nk_button_label(gui->ctx, "OK")){ /* proceeding to create a line type in drawing*/
+			if (nk_button_label(gui->ctx, _l("OK"))){ /* proceeding to create a line type in drawing*/
 				if (mode == LT_ADD_CPY){
 					if (idx > -1){
 						ltype_cpy (&line_type, &ltypes[idx], scale); /* deep copy the line type structure */
@@ -1153,7 +1154,7 @@ int ltyp_mng (gui_obj *gui){
 						
 						if (!dxf_new_ltype (gui->drawing, &line_type)){
 							/* fail to  create, commonly name already exists */
-							snprintf(gui->log_msg, 63, "Error: Line Type already exists");
+							snprintf(gui->log_msg, 63, _l("Error: Line Type already exists"));
 						}
 						else {
 							/* ltype created and attached in drawing main structure */
@@ -1162,7 +1163,7 @@ int ltyp_mng (gui_obj *gui){
 						}
 					}
 					else{
-						snprintf(gui->log_msg, 63, "Error: Select Source Line Type");
+						snprintf(gui->log_msg, 63, _l("Error: Select Source Line Type"));
 					}
 				}
 				else{
@@ -1173,7 +1174,7 @@ int ltyp_mng (gui_obj *gui){
 						
 						if (!dxf_new_ltype (gui->drawing, &line_type)){
 							/* fail to  create, commonly name already exists */
-							snprintf(gui->log_msg, 63, "Error: Line Type already exists");
+							snprintf(gui->log_msg, 63, _l("Error: Line Type already exists"));
 						}
 						else {
 							/* ltype created and attached in drawing main structure */
@@ -1183,7 +1184,7 @@ int ltyp_mng (gui_obj *gui){
 					}
 				}
 			}
-			if (nk_button_label(gui->ctx, "Cancel")){
+			if (nk_button_label(gui->ctx, _l("Cancel"))){
 				show_add = 0;
 				add_init = 1;
 			}

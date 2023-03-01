@@ -56,7 +56,7 @@ int gui_paste_interactive(gui_obj *gui){
 					list_node *current = list->next;
 					dxf_node *new_ent = NULL;
 					if (current != NULL){
-						do_add_entry(&gui->list_do, "PASTE");
+						do_add_entry(&gui->list_do, _l("PASTE"));
 					}
 					while (current != NULL){
 						if (current->data){
@@ -102,10 +102,10 @@ int gui_paste_interactive(gui_obj *gui){
 int gui_paste_info (gui_obj *gui){
 	if (gui->modal == PASTE) {
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Paste a selection", NK_TEXT_LEFT);
-		nk_label(gui->ctx, "Enter destination point", NK_TEXT_LEFT);
-		gui->scale_x = nk_propertyd(gui->ctx, "Scale", 0.0, gui->scale_x, 100000.0, 0.1, 0.1f);
-		gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0, gui->angle, 180.0, 0.1, 0.1f);
+		nk_label(gui->ctx, _l("Paste a selection"), NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Enter destination point"), NK_TEXT_LEFT);
+		gui->scale_x = nk_propertyd(gui->ctx, _l("Scale"), 0.0, gui->scale_x, 100000.0, 0.1, 0.1f);
+		gui->angle = nk_propertyd(gui->ctx, _l("Angle"), -180.0, gui->angle, 180.0, 0.1, 0.1f);
 	}
 	return 1;
 }

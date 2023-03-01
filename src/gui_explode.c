@@ -62,7 +62,7 @@ int gui_expl_interactive(gui_obj *gui){
 				if (current != NULL){ /* verify if is a valid list */
 					if(!init_do){
 						/* create a entry in do/redo list */
-						do_add_entry(&gui->list_do, "EXPLODE");
+						do_add_entry(&gui->list_do, _l("EXPLODE"));
 						init_do = 1;
 					}
 					/* remove current element (will substituted for its components) */
@@ -104,11 +104,11 @@ int gui_expl_info (gui_obj *gui){
 	
 	if (gui->step == 0){ /* get elements to edit */
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Explode elements", NK_TEXT_LEFT);
-		nk_label(gui->ctx, "Select/Add element", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Explode elements"), NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Select/Add element"), NK_TEXT_LEFT);
 	} else {
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Explode elements", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Explode elements"), NK_TEXT_LEFT);
 		
 		int ins = gui->expl_mode & EXPL_INS;
 		int poly = gui->expl_mode & EXPL_POLY;
@@ -125,18 +125,18 @@ int gui_expl_info (gui_obj *gui){
 		int prev_raw = raw;
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_checkbox_label(gui->ctx, "Insert", &ins);
+		nk_checkbox_label(gui->ctx, _l("Insert"), &ins);
 		if(ins) gui->expl_mode |= EXPL_INS;
 		else gui->expl_mode &= ~EXPL_INS;
 		if (ins){
 			/* attributes to text options*/
 			nk_layout_row_dynamic(gui->ctx, 45, 1);
-			if (nk_group_begin(gui->ctx, "Attributes to text", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+			if (nk_group_begin(gui->ctx, "attr2txt", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 				nk_layout_row_dynamic(gui->ctx, 15, 1);
-				nk_label(gui->ctx, "Attributes to text:", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("Attributes to text:"), NK_TEXT_LEFT);
 				nk_layout_row_dynamic(gui->ctx, 15, 2);
-				nk_checkbox_label(gui->ctx, "Value", &value);
-				nk_checkbox_label(gui->ctx, "Tag", &tag);
+				nk_checkbox_label(gui->ctx, _l("Value"), &value);
+				nk_checkbox_label(gui->ctx, _l("Tag"), &tag);
 				
 				if(tag) gui->expl_mode |= EXPL_TAG;
 				else gui->expl_mode &= ~EXPL_TAG;
@@ -147,41 +147,41 @@ int gui_expl_info (gui_obj *gui){
 		}
 		
 		nk_layout_row_dynamic(gui->ctx, 18, 2);
-		nk_checkbox_label(gui->ctx, "Poly Line", &poly);
+		nk_checkbox_label(gui->ctx, _l("Poly Line"), &poly);
 		if(poly) gui->expl_mode |= EXPL_POLY;
 		else gui->expl_mode &= ~EXPL_POLY;
 		
-		nk_checkbox_label(gui->ctx, "Dimension", &dim);
+		nk_checkbox_label(gui->ctx, _l("Dimension"), &dim);
 		if(dim) gui->expl_mode |= EXPL_DIM;
 		else gui->expl_mode &= ~EXPL_DIM;
 		
 		/*  // TODO
-		nk_checkbox_label(gui->ctx, "M Text", &mtext);
+		nk_checkbox_label(gui->ctx, _l("M Text"), &mtext);
 		if(mtext) gui->expl_mode |= EXPL_MTEXT;
 		else gui->expl_mode &= ~EXPL_MTEXT;
 		
-		nk_checkbox_label(gui->ctx, "Char", &txt_chr);
+		nk_checkbox_label(gui->ctx, _l("Char"), &txt_chr);
 		if(txt_chr) gui->expl_mode |= EXPL_CHAR;
 		else gui->expl_mode &= ~EXPL_CHAR;
 		
-		nk_checkbox_label(gui->ctx, "Hatch", &hatch);
+		nk_checkbox_label(gui->ctx, _l("Hatch"), &hatch);
 		if(hatch) gui->expl_mode |= EXPL_HATCH;
 		else gui->expl_mode &= ~EXPL_HATCH;
 		*/
 		
-		nk_checkbox_label(gui->ctx, "Raw", &raw);
+		nk_checkbox_label(gui->ctx, _l("Raw"), &raw);
 		if (raw){
 			if (!prev_raw) gui->expl_mode |= EXPL_RAW_LINE;
 			/* attributes to text options*/
 			nk_layout_row_dynamic(gui->ctx, 30, 1);
-			if (nk_group_begin(gui->ctx, "Raw options", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+			if (nk_group_begin(gui->ctx, "raw_options", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				if (nk_option_label(gui->ctx, "Line", raw_line)) {
+				if (nk_option_label(gui->ctx, _l("Line"), raw_line)) {
 					gui->expl_mode |= EXPL_RAW_LINE;
 					gui->expl_mode &= ~EXPL_RAW_PLINE;
 					raw_pline = 0;
 				}
-				if (nk_option_label(gui->ctx, "Poly", raw_pline)){
+				if (nk_option_label(gui->ctx, _l("Poly"), raw_pline)){
 					gui->expl_mode |= EXPL_RAW_PLINE;
 					gui->expl_mode &= ~EXPL_RAW_LINE;
 				}

@@ -57,9 +57,9 @@ int gui_prop_info (gui_obj *gui){
 	int i, j, h;
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
-	nk_label(gui->ctx, "Edit Properties", NK_TEXT_LEFT);
+	nk_label(gui->ctx, _l("Edit Properties"), NK_TEXT_LEFT);
 	if (gui->step == 0){ /* get elements to edit */
-		nk_label(gui->ctx, "Select a element", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Select a element"), NK_TEXT_LEFT);
 		show_color_pick = 0;
 	}
 	else if (gui->step == 1){ /* init the interface */
@@ -126,14 +126,14 @@ int gui_prop_info (gui_obj *gui){
 	}
 	else { /* all inited */
 		/* show entity type */
-		snprintf(tmp_str, DXF_MAX_CHARS, "Entity: %s", ent->obj.name);
+		snprintf(tmp_str, DXF_MAX_CHARS, _l("Entity: %s"), ent->obj.name);
 		nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
 		
 		/* ----------  properties -------------*/
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 110});
 		
 		/* ----------  layer -------------*/
-		nk_checkbox_label(gui->ctx, "Layer:", &en_lay);
+		nk_checkbox_label(gui->ctx, _l("Layer:"), &en_lay);
 		dxf_layer *layers = gui->drawing->layers;
 		int num_layers = gui->drawing->num_layers;
 		h = num_layers * 25 + 5;
@@ -161,7 +161,7 @@ int gui_prop_info (gui_obj *gui){
 		}
 		
 		/* ----------- line type ------------ */
-		nk_checkbox_label(gui->ctx, "Ltype:", &en_ltyp); 
+		nk_checkbox_label(gui->ctx, _l("Ltype:"), &en_ltyp); 
 		dxf_ltype *ltypes = gui->drawing->ltypes;
 		int num_ltypes = gui->drawing->num_ltypes;
 		h = num_ltypes * 25 + 5;
@@ -192,7 +192,7 @@ int gui_prop_info (gui_obj *gui){
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 3, (float[]){60, 20, 80});
 		
 		/* ----------- color ------------ */
-		nk_checkbox_label(gui->ctx, "Color:", &en_color);
+		nk_checkbox_label(gui->ctx, _l("Color:"), &en_color);
 		int curr_color = abs(color);
 		/* if is by layer, get layer color */
 		if (curr_color > 255) curr_color = layers[lay_i].color;
@@ -210,8 +210,8 @@ int gui_prop_info (gui_obj *gui){
 			
 		}
 		/* show color index (DFX color table) */
-		if ( abs(color) > 255 ) snprintf(tmp_str, DXF_MAX_CHARS, "By Layer");
-		else if ( abs(color) == 0 ) snprintf(tmp_str, DXF_MAX_CHARS, "By Block");
+		if ( abs(color) > 255 ) snprintf(tmp_str, DXF_MAX_CHARS, _l("By Layer"));
+		else if ( abs(color) == 0 ) snprintf(tmp_str, DXF_MAX_CHARS, _l("By Block"));
 		else snprintf(tmp_str, DXF_MAX_CHARS, "%d", abs(color));
 		nk_label_colored(gui->ctx, tmp_str, NK_TEXT_LEFT, nk_rgb(255,255,0));
 		
@@ -219,7 +219,7 @@ int gui_prop_info (gui_obj *gui){
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 110});
 		
 		/* ----------- line weigth ------------ */
-		nk_checkbox_label(gui->ctx, "LW:", &en_lw);
+		nk_checkbox_label(gui->ctx, _l("LW:"), &en_lw);
 		if (en_lw){ /* enable editing */
 			lw_i = nk_combo(gui->ctx, dxf_lw_descr, DXF_LW_LEN + 2, lw_i, 15, nk_vec2(100,205));
 		}
@@ -230,14 +230,14 @@ int gui_prop_info (gui_obj *gui){
 		/* ---------------------*/
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
-		if (nk_button_label(gui->ctx, "Modify") && ( en_lay || en_ltyp || en_color || en_lw)){
+		if (nk_button_label(gui->ctx, _l("Modify")) && ( en_lay || en_ltyp || en_color || en_lw)){
 			/* change selection properties according selected parameters */
 			if (gui->sel_list != NULL){
 				/* sweep the selection list */
 				list_node *current = gui->sel_list->next;
 				dxf_node *new_ent = NULL;
 				if (current != NULL){
-					do_add_entry(&gui->list_do, "CHANGE PROPERTIES"); /* init do/undo list */
+					do_add_entry(&gui->list_do, _l("CHANGE PROPERTIES")); /* init do/undo list */
 					gui->step = 1;
 				}
 				while (current != NULL){
@@ -262,7 +262,7 @@ int gui_prop_info (gui_obj *gui){
 			}
 			gui->draw = 1;
 		}
-		if (nk_button_label(gui->ctx, "Pick")){
+		if (nk_button_label(gui->ctx, _l("Pick"))){
 			/* get selected entity properties to match main tools*/
 			if (en_lay) gui->layer_idx = lay_i;
 			if (en_ltyp) gui->ltypes_idx = ltyp_i;
@@ -272,32 +272,32 @@ int gui_prop_info (gui_obj *gui){
 		
 		if (ins){ /* show insert information */
 			nk_layout_row(gui->ctx, NK_STATIC, 14, 2, (float[]){60, 110});
-			nk_label(gui->ctx, "Block:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Block:"), NK_TEXT_RIGHT);
 			nk_label_colored(gui->ctx, blk_name, NK_TEXT_LEFT, nk_rgb(255,255,0));
 			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", blk_ang);
-			nk_label(gui->ctx, "Angle:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Angle:"), NK_TEXT_RIGHT);
 			nk_label_colored(gui->ctx, tmp_str, NK_TEXT_LEFT, nk_rgb(255,255,0));
 			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", blk_sx);
-			nk_label(gui->ctx, "Scale X:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Scale X:"), NK_TEXT_RIGHT);
 			nk_label_colored(gui->ctx, tmp_str, NK_TEXT_LEFT, nk_rgb(255,255,0));
 			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", blk_sy);
-			nk_label(gui->ctx, "Scale Y:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Scale Y:"), NK_TEXT_RIGHT);
 			nk_label_colored(gui->ctx, tmp_str, NK_TEXT_LEFT, nk_rgb(255,255,0));
 			snprintf(tmp_str, DXF_MAX_CHARS, "%.5g", blk_sz);
-			nk_label(gui->ctx, "Scale Z:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Scale Z:"), NK_TEXT_RIGHT);
 			nk_label_colored(gui->ctx, tmp_str, NK_TEXT_LEFT, nk_rgb(255,255,0));
 		}
 		
 		/* popup to pick color */
 		if (show_color_pick){
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Choose Color", NK_WINDOW_CLOSABLE, nk_rect(220, 10, 220, 300))){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Choose Color"), NK_WINDOW_CLOSABLE, nk_rect(220, 10, 220, 300))){
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				if (nk_button_label(gui->ctx, "By Layer")){
+				if (nk_button_label(gui->ctx, _l("By Layer"))){
 					color = 256;
 					nk_popup_close(gui->ctx);
 					show_color_pick = 0;
 				}
-				if (nk_button_label(gui->ctx, "By Block")){
+				if (nk_button_label(gui->ctx, _l("By Block"))){
 					color = 0;
 					nk_popup_close(gui->ctx);
 					show_color_pick = 0;

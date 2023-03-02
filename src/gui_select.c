@@ -180,20 +180,20 @@ int gui_select_info (gui_obj *gui){
 		//static int prev_type = -1;
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Select objects", NK_TEXT_LEFT);
-		nk_label(gui->ctx, "Mode:", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Select objects"), NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Mode:"), NK_TEXT_LEFT);
 		
 		/* Selection mode option - toggle, add or remove */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
-		if (gui_tab (gui, "Toggle", gui->sel_mode == LIST_TOGGLE)) gui->sel_mode = LIST_TOGGLE;
-		if (gui_tab (gui, "+", gui->sel_mode == LIST_ADD)) gui->sel_mode = LIST_ADD;
-		if (gui_tab (gui, "-", gui->sel_mode == LIST_SUB)) gui->sel_mode = LIST_SUB;
+		if (gui_tab (gui, _l("Toggle"), gui->sel_mode == LIST_TOGGLE)) gui->sel_mode = LIST_TOGGLE;
+		if (gui_tab (gui, _l("+"), gui->sel_mode == LIST_ADD)) gui->sel_mode = LIST_ADD;
+		if (gui_tab (gui, _l("-"), gui->sel_mode == LIST_SUB)) gui->sel_mode = LIST_SUB;
 		nk_style_pop_vec2(gui->ctx);
 		nk_layout_row_end(gui->ctx);
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Type:", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Type:"), NK_TEXT_LEFT);
 		
 		/* Selection type option - single element or by rectangle */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));

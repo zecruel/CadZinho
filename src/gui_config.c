@@ -3,6 +3,7 @@
 
 const char* gui_dflt_conf() {
 	static char buf[8192];
+  char l_str[10];
 	
 	static const char *conf = "-- CadZinho enviroment configuration file\n"
 	"-- This file is writen in Lua language\n"
@@ -26,13 +27,24 @@ const char* gui_dflt_conf() {
 	"-- Hilite color - RGB components, integer values from 0 to 255\n"
 	"hilite = { r=255, g=0, b=255 }\n\n"
 	"-- Drawing cursor type - cross (default), square, x or circle\n"
-	"cursor = \"cross\"\n\n";
+	"cursor = \"cross\"\n\n"
+  "-- Main language in GUI (translation)\n"
+  "language = \"%s\"\n\n";
 	
+  SDL_Locale *locale = SDL_GetPreferredLocales();
+  
+  if(locale){
+    if (locale[0].language && locale[0].country)
+      snprintf(l_str, 9, "%s_%s", locale[0].language, locale[0].country);
+    SDL_free(locale);
+  }
+  
 	char * fonts_path = escape_path((char *)dflt_fonts_dir ());
 	
 	const char* font = plat_dflt_font ();
 	
-	snprintf(buf, 8191, conf, fonts_path, font, "Cadman_Roman.ttf");
+	snprintf(buf, 8191, conf, fonts_path, font,
+    "Cadman_Roman.ttf", l_str);
 	
 	return buf;
 }
@@ -98,6 +110,10 @@ int gui_load_conf (gui_obj *gui){
     
     /* language */
     if(strlen(gui->main_lang) > 1){
+      /* Recommendation: Language string written according codes defined in POSIX
+      convention (standarts ISO 639-1 and ISO 3166-1 alpha-2), like lang_COUNTRY
+      codes (eg. en_US, pt_BR, cz_CZ) */
+      
       new_path[0] = 0;
       snprintf(new_path, PATH_MAX_CHARS, "%slang%c%s.lua", 
         gui->base_dir, DIR_SEPARATOR, gui->main_lang);

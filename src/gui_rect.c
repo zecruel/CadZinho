@@ -40,7 +40,7 @@ int gui_rect_interactive(gui_obj *gui){
 				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
 				drawing_ent_append(gui->drawing, new_el);
 				
-				do_add_entry(&gui->list_do, "RECT");
+				do_add_entry(&gui->list_do, _l("RECT"));
 				do_add_item(gui->list_do.current, NULL, new_el);
 				
 				gui_first_step(gui);
@@ -68,11 +68,11 @@ int gui_rect_interactive(gui_obj *gui){
 int gui_rect_info (gui_obj *gui){
 	if (gui->modal == RECT) {
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Place a rectangle", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Place a rectangle"), NK_TEXT_LEFT);
 		if (gui->step == 0){
-			nk_label(gui->ctx, "Enter first point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter first point"), NK_TEXT_LEFT);
 		} else {
-			nk_label(gui->ctx, "Enter end point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter end point"), NK_TEXT_LEFT);
 		}
 	}
 	return 1;

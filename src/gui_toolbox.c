@@ -9,7 +9,7 @@ extern const char *dxf_seed_2007;
 
 int gui_tools_win (gui_obj *gui){
 
-	if (nk_begin(gui->ctx, "Toolbox", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
+	if (nk_begin(gui->ctx, _l("Toolbox"), nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 		NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 		NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)){
 			
@@ -47,10 +47,10 @@ int gui_tools_win (gui_obj *gui){
 		/* Tools collections - Place, Modify and Dimensions */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
-		if (gui_tab (gui, "Place", tool_grp == GRP_PLACE)) tool_grp = GRP_PLACE;
-		if (gui_tab (gui, "Modify", tool_grp == GRP_MODIFY)) tool_grp = GRP_MODIFY;
-		if (gui_tab (gui, "Dimension", tool_grp == GRP_DIM)) tool_grp = GRP_DIM;
-		//if (gui_tab (gui, "XData", too_grp == GRP_XDATA)) too_grp = GRP_XDATA;
+		if (gui_tab (gui, _l("Place"), tool_grp == GRP_PLACE)) tool_grp = GRP_PLACE;
+		if (gui_tab (gui, _l("Modify"), tool_grp == GRP_MODIFY)) tool_grp = GRP_MODIFY;
+		if (gui_tab (gui, _l("Dimension"), tool_grp == GRP_DIM)) tool_grp = GRP_DIM;
+		//if (gui_tab (gui, _l("XData"), too_grp == GRP_XDATA)) too_grp = GRP_XDATA;
 		nk_style_pop_vec2(gui->ctx);
 		nk_layout_row_end(gui->ctx);
 		
@@ -450,7 +450,7 @@ int gui_main_win(gui_obj *gui){
 			
 		/*layer*/
 		nk_layout_row_push(gui->ctx, 60);
-		nk_label(gui->ctx, "Layer: ", NK_TEXT_RIGHT);
+		nk_label(gui->ctx, _l("Layer: "), NK_TEXT_RIGHT);
 		nk_layout_row_push(gui->ctx, 200);
 		layer_prop(gui);
 		
@@ -468,25 +468,25 @@ int gui_main_win(gui_obj *gui){
 		
 		/* print the name (number) of color */
 		if (gui->color_idx == 0){
-			text_len = snprintf(text, 63, "%s", "ByB");
+			text_len = snprintf(text, 63, "%s", _l("ByB"));
 		}
 		else if (gui->color_idx < 256){
 			text_len = snprintf(text, 63, "%d", gui->color_idx);
 		}
 		else{
-			text_len = snprintf(text, 63, "%s", "ByL");
+			text_len = snprintf(text, 63, "%s", _l("ByL"));
 		}
 		nk_layout_row_push(gui->ctx, 70);
 		nk_label(gui->ctx, "Color: ", NK_TEXT_RIGHT);
 		nk_layout_row_push(gui->ctx, 70);
 		if (nk_combo_begin_image_label(gui->ctx, text, nk_image_ptr(gui->color_img), nk_vec2(215,320))){
 			nk_layout_row_dynamic(gui->ctx, 20, 2);
-			if (nk_button_label(gui->ctx, "By Layer")){
+			if (nk_button_label(gui->ctx, _l("By Layer"))){
 				gui->color_idx = 256;
 				gui->action = COLOR_CHANGE;
 				nk_combo_close(gui->ctx);
 			}
-			if (nk_button_label(gui->ctx, "By Block")){
+			if (nk_button_label(gui->ctx, _l("By Block"))){
 				gui->color_idx = 0;
 				gui->action = COLOR_CHANGE;
 				nk_combo_close(gui->ctx);
@@ -514,23 +514,23 @@ int gui_main_win(gui_obj *gui){
 		
 		/*line type*/
 		nk_layout_row_push(gui->ctx, 100);
-		nk_label(gui->ctx, "Line type: ", NK_TEXT_RIGHT);
+		nk_label(gui->ctx, _l("Line type: "), NK_TEXT_RIGHT);
 		nk_layout_row_push(gui->ctx, 200);
 		ltype_prop(gui);
 		
 		/* line weight */
 		nk_layout_row_push(gui->ctx, 120);
-		nk_label(gui->ctx, "Line weight: ", NK_TEXT_RIGHT);
+		nk_label(gui->ctx, _l("Line weight: "), NK_TEXT_RIGHT);
 		nk_layout_row_push(gui->ctx, 120);
 		
 		if (nk_combo_begin_label(gui->ctx, dxf_lw_descr[gui->lw_idx], nk_vec2(200,300))){
 			nk_layout_row_dynamic(gui->ctx, 25, 2);
-			if (nk_button_label(gui->ctx, "By Layer")){
+			if (nk_button_label(gui->ctx, _l("By Layer"))){
 				gui->lw_idx = DXF_LW_LEN;
 				gui->action = LW_CHANGE;
 				nk_combo_close(gui->ctx);
 			}
-			if (nk_button_label(gui->ctx, "By Block")){
+			if (nk_button_label(gui->ctx, _l("By Block"))){
 				gui->lw_idx = DXF_LW_LEN + 1;
 				gui->action = LW_CHANGE;
 				nk_combo_close(gui->ctx);
@@ -556,7 +556,7 @@ int gui_main_win(gui_obj *gui){
 			/* About Cadzinho */
 			const char* site = "https://github.com/zecruel/CadZinho";
 			static struct nk_rect s = {250, 150, 400, 210};
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "About", NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, s)){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("About"), NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, s)){
 				nk_layout_space_begin(gui->ctx, NK_STATIC, 50, 2);
 				nk_layout_space_push(gui->ctx, nk_rect(100, 0, 48, 48));
 				nk_image(gui->ctx, nk_image_ptr(gui->i_cz48));
@@ -569,21 +569,21 @@ int gui_main_win(gui_obj *gui){
 				
 				nk_layout_space_begin(gui->ctx, NK_STATIC, 40, 2);
 				nk_layout_space_push(gui->ctx, nk_rect(80, 2, 200, 24));
-				nk_label(gui->ctx, "By Ezequiel Rabelo de Aguiar", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("By Ezequiel Rabelo de Aguiar"), NK_TEXT_LEFT);
 				
 				nk_layout_space_push(gui->ctx, nk_rect(290, 0, 24, 24));
 				nk_image(gui->ctx, nk_image_ptr(gui->svg_bmp[SVG_BRAZIL]));
 				nk_layout_space_end(gui->ctx);
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				nk_label(gui->ctx, "CadZinho is licensed under the MIT License.",  NK_TEXT_CENTERED);
+				nk_label(gui->ctx, _l("CadZinho is licensed under the MIT License."),  NK_TEXT_CENTERED);
 				if (nk_button_label(gui->ctx, site)){
 					opener(site);
 				}
 				nk_layout_row_dynamic(gui->ctx, 20, 4);
-				nk_label(gui->ctx, "Build for: ",  NK_TEXT_RIGHT);
+				nk_label(gui->ctx, _l("Build for: "),  NK_TEXT_RIGHT);
 				nk_label(gui->ctx, operating_system(),  NK_TEXT_LEFT);
-				nk_label(gui->ctx, "Version: ",  NK_TEXT_RIGHT);
+				nk_label(gui->ctx, _l("Version: "),  NK_TEXT_RIGHT);
 				nk_label(gui->ctx, CZ_VERSION,  NK_TEXT_LEFT);
 				nk_popup_end(gui->ctx);
 				
@@ -591,16 +591,16 @@ int gui_main_win(gui_obj *gui){
 		}
 		
 		if (gui->discard_changes){
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Discard changes", NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, nk_rect(200, 100, 300, 100))){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Discard changes"), NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, nk_rect(200, 100, 300, 100))){
 				//nk_layout_row_dynamic(gui->ctx, 20, 2);
 				nk_layout_row_template_begin(gui->ctx, 23);
 				nk_layout_row_template_push_static(gui->ctx, 24);
 				nk_layout_row_template_push_dynamic(gui->ctx);
 				nk_layout_row_template_end(gui->ctx);
 				nk_image(gui->ctx, nk_image_ptr(gui->svg_bmp[SVG_WARNING]));
-				nk_label(gui->ctx, "Changes in drawing will be lost", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("Changes in drawing will be lost"), NK_TEXT_LEFT);
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				if ((nk_button_label(gui->ctx, "Discard")) && (gui->show_file_br != 1)) {
+				if ((nk_button_label(gui->ctx, _l("Discard"))) && (gui->show_file_br != 1)) {
 					gui->action = gui->desired_action;
 					gui->discard_changes = 0;
 					gui->desired_action = NONE;
@@ -626,7 +626,7 @@ int gui_main_win(gui_obj *gui){
 					gui->hist_action = HIST_NONE;
 					nk_popup_close(gui->ctx);
 				}
-				if (nk_button_label(gui->ctx, "Cancel")) {
+				if (nk_button_label(gui->ctx, _l("Cancel"))) {
 					gui->discard_changes = 0;
 					gui->desired_action = NONE;
 					gui->path_ok = 0;
@@ -806,7 +806,7 @@ int gui_bottom_win (gui_obj *gui){
 			nk_layout_row_dynamic(gui->ctx, 17, 1);
 			nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
 			
-			snprintf(text, 63, "%d of %d", gui->drwg_hist_wr, gui->drwg_hist_size);
+			snprintf(text, 63, _l("%d of %d"), gui->drwg_hist_wr, gui->drwg_hist_size);
 			nk_label(gui->ctx, text, NK_TEXT_CENTERED);
 			nk_style_pop_font(gui->ctx); /* return to the default font*/
 			

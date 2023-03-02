@@ -41,7 +41,7 @@ int gui_text_interactive(gui_obj *gui){
 			drawing_ent_append(gui->drawing, new_el);
 			
 			/* undo/redo list */
-			do_add_entry(&gui->list_do, "TEXT");
+			do_add_entry(&gui->list_do, _l("TEXT"));
 			do_add_item(gui->list_do.current, NULL, new_el);
 			
 			gui->step_x[gui->step - 1] = gui->step_x[gui->step];
@@ -87,13 +87,13 @@ int gui_text_info (gui_obj *gui){
 	if (gui->t_sty_idx >= num_tstyles) gui->t_sty_idx = 0;
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
-	nk_label(gui->ctx, "Place an text", NK_TEXT_LEFT);
+	nk_label(gui->ctx, _l("Place an text"), NK_TEXT_LEFT);
 	
 	nk_layout_row_template_begin(gui->ctx, 20);
 	nk_layout_row_template_push_static(gui->ctx, 45);
 	nk_layout_row_template_push_dynamic(gui->ctx);
 	nk_layout_row_template_end(gui->ctx);
-	nk_label(gui->ctx, "Style:", NK_TEXT_LEFT);
+	nk_label(gui->ctx, _l("Style:"), NK_TEXT_LEFT);
 	/* text style combo selection */
 	int h = num_tstyles * 25 + 5;
 	h = (h < 200)? h : 200;
@@ -111,12 +111,12 @@ int gui_text_info (gui_obj *gui){
 	}
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
-	nk_label(gui->ctx, "Text:", NK_TEXT_LEFT);
+	nk_label(gui->ctx, _l("Text:"), NK_TEXT_LEFT);
 	/* string to text entiy */
 	nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->txt, DXF_MAX_CHARS, nk_filter_default);
 	/* size and rotation parameters */
-	gui->txt_h = nk_propertyd(gui->ctx, "Height", 1e-9, gui->txt_h, 1e9, SMART_STEP(gui->txt_h), SMART_STEP(gui->txt_h));
-	gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0, gui->angle, 180.0, 0.1, 0.1f);
+	gui->txt_h = nk_propertyd(gui->ctx, _l("Height"), 1e-9, gui->txt_h, 1e9, SMART_STEP(gui->txt_h), SMART_STEP(gui->txt_h));
+	gui->angle = nk_propertyd(gui->ctx, _l("Angle"), -180.0, gui->angle, 180.0, 0.1, 0.1f);
 	/* text aligment parameters */
 	nk_layout_row_dynamic(gui->ctx, 20, 2);
 	gui->t_al_v = nk_combo(gui->ctx, text_al_v, T_AL_V_LEN, gui->t_al_v, 20, nk_vec2(100,105));

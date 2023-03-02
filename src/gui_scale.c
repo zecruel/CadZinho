@@ -96,7 +96,7 @@ int gui_scale_interactive(gui_obj *gui){
 				current = gui->sel_list->next;
 				if (current != NULL){
 					/* add to undo/redo list */
-					do_add_entry(&gui->list_do, "SCALE");
+					do_add_entry(&gui->list_do, _l("SCALE"));
 				}
 				/* sweep selection list */
 				while (current != NULL){
@@ -239,7 +239,7 @@ int gui_scale_interactive(gui_obj *gui){
 				new_ent = NULL;
 				if (current != NULL){
 					/* add to undo/redo list */
-					do_add_entry(&gui->list_do, "SCALE");
+					do_add_entry(&gui->list_do, _l("SCALE"));
 				}
 				/* sweep selection list */
 				while (current != NULL){
@@ -326,49 +326,53 @@ int gui_scale_interactive(gui_obj *gui){
 
 int gui_scale_info (gui_obj *gui){
 	if (gui->modal == SCALE) {
-		static const char *mode[] = {"Active factor","3 points"};
+    static char mode[2][DXF_MAX_CHARS + 1];
+    strncpy(mode[0], _l("Active factor"), DXF_MAX_CHARS);
+    strncpy(mode[1], _l("3 points"), DXF_MAX_CHARS);
+    
+    char *mode_addr[] = {mode[0], mode[1]};
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Scale a selection", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Scale a selection"), NK_TEXT_LEFT);
 		
 		int h = 2 * 25 + 5;
-		gui->scale_mode = nk_combo(gui->ctx, mode, 2, gui->scale_mode, 20, nk_vec2(150, h));
+		gui->scale_mode = nk_combo(gui->ctx, (const char **)mode_addr, 2, gui->scale_mode, 20, nk_vec2(150, h));
 		
-		nk_checkbox_label(gui->ctx, "Keep Original", &gui->keep_orig);
-		nk_checkbox_label(gui->ctx, "Proportional", &gui->proportional);
+		nk_checkbox_label(gui->ctx, _l("Keep Original"), &gui->keep_orig);
+		nk_checkbox_label(gui->ctx, _l("Proportional"), &gui->proportional);
 		
 		if (gui->scale_mode != SCALE_3POINTS){
 			
 			if (gui->proportional){
-				gui->scale_x = nk_propertyd(gui->ctx, "Factor", 1e-9, gui->scale_x, 1.0e9, SMART_STEP(gui->scale_x), SMART_STEP(gui->scale_x));
+				gui->scale_x = nk_propertyd(gui->ctx, _l("Factor"), 1e-9, gui->scale_x, 1.0e9, SMART_STEP(gui->scale_x), SMART_STEP(gui->scale_x));
 				gui->scale_y = gui->scale_x;
 			}
 			else {
-				gui->scale_x = nk_propertyd(gui->ctx, "X factor", 1e-9, gui->scale_x, 1.0e9, SMART_STEP(gui->scale_x), SMART_STEP(gui->scale_x));
-				gui->scale_y = nk_propertyd(gui->ctx, "Y factor", 1e-9, gui->scale_y, 1.0e9, SMART_STEP(gui->scale_y), SMART_STEP(gui->scale_y));
+				gui->scale_x = nk_propertyd(gui->ctx, _l("X factor"), 1e-9, gui->scale_x, 1.0e9, SMART_STEP(gui->scale_x), SMART_STEP(gui->scale_x));
+				gui->scale_y = nk_propertyd(gui->ctx, _l("Y factor"), 1e-9, gui->scale_y, 1.0e9, SMART_STEP(gui->scale_y), SMART_STEP(gui->scale_y));
 			}
 		}
 		
 		if (gui->step == 0){
-			nk_label(gui->ctx, "Select/Add element", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Select/Add element"), NK_TEXT_LEFT);
 		}
 		else if (gui->step == 1){
-			nk_label(gui->ctx, "Enter pivot point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter pivot point"), NK_TEXT_LEFT);
 		} else if (gui->step == 2){
 			if (gui->scale_mode == SCALE_3POINTS)
-				nk_label(gui->ctx, "First point", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("First point"), NK_TEXT_LEFT);
 			else
-				nk_label(gui->ctx, "Confirm scale", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("Confirm scale"), NK_TEXT_LEFT);
 		}
 		else {
 			/* in 3 points mode, show the efective scale factor */
-			nk_label(gui->ctx, "End point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("End point"), NK_TEXT_LEFT);
 			char ang_str[64];
 			double scale_x = sqrt(pow(gui->step_y[3] - gui->step_y[1], 2) + pow(gui->step_x[3] - gui->step_x[1], 2) )/
 				sqrt(pow(gui->step_y[2] - gui->step_y[1], 2) + pow(gui->step_x[2] - gui->step_x[1], 2));
 			
 			
-			snprintf(ang_str, 63, "Factor=%.4g", scale_x);
+			snprintf(ang_str, 63, _l("Factor=%.4g"), scale_x);
 			nk_label(gui->ctx, ang_str, NK_TEXT_LEFT);
 		}
 	}

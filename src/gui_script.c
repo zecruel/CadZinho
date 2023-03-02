@@ -638,7 +638,7 @@ int script_win (gui_obj *gui){
 		init = 1;
 	}
 	
-	if (nk_begin(gui->ctx, "Script", nk_rect(215, 88, 400, 380),
+	if (nk_begin(gui->ctx, _l("Script"), nk_rect(215, 88, 400, 380),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		struct nk_style_button *sel_type;
@@ -649,19 +649,19 @@ int script_win (gui_obj *gui){
 			- View set variables; */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 3);
-		if (gui_tab (gui, "Execute", script_tab == EXECUTE)) script_tab = EXECUTE;
-		if (gui_tab (gui, "Breakpoints", script_tab == BREAKS)) script_tab = BREAKS;
-		if (gui_tab (gui, "Variables", script_tab == VARS)) script_tab = VARS;
+		if (gui_tab (gui, _l("Execute"), script_tab == EXECUTE)) script_tab = EXECUTE;
+		if (gui_tab (gui, _l("Breakpoints"), script_tab == BREAKS)) script_tab = BREAKS;
+		if (gui_tab (gui, _l("Variables"), script_tab == VARS)) script_tab = VARS;
 		nk_style_pop_vec2(gui->ctx);
 		nk_layout_row_end(gui->ctx);
 		
 		/* body of tab control */
 		nk_layout_row_dynamic(gui->ctx, 180, 1);
-		if (nk_group_begin(gui->ctx, "Script_controls", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, _l("Script_controls"), NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 			/* run script tab*/
 			if (script_tab == EXECUTE){
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				nk_label(gui->ctx, "Script file:", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("Script file:"), NK_TEXT_LEFT);
 				
 				static int show_app_file = 0;
 
@@ -670,13 +670,13 @@ int script_win (gui_obj *gui){
 					"LUA",
 					"*"
 				};
-				static const char *ext_descr[] = {
-					"Lua Script (.lua)",
-					"All files (*)"
-				};
+				
+        static char ext_descr[2][DXF_MAX_CHARS + 1];
+        strncpy(ext_descr[0], _l("Lua Script (.lua)"), DXF_MAX_CHARS);
+        strncpy(ext_descr[1], _l("All files (*)"), DXF_MAX_CHARS);
 				#define FILTER_COUNT 2
 				
-				if (nk_button_label(gui->ctx, "Browse")){/* call file browser */
+				if (nk_button_label(gui->ctx, _l("Browse"))){/* call file browser */
 					show_app_file = 1;
 					/* set filter for suported output formats */
 					for (i = 0; i < FILTER_COUNT; i++){
@@ -713,7 +713,7 @@ int script_win (gui_obj *gui){
 						if (gui->lua_script[0].status != LUA_YIELD && gui->lua_script[0].status != LUA_OK){
 							/* execution error */
 							char msg[DXF_MAX_CHARS];
-							snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(gui->lua_script[0].T, -1));
+							snprintf(msg, DXF_MAX_CHARS-1, _l("error: %s"), lua_tostring(gui->lua_script[0].T, -1));
 							nk_str_append_str_char(&gui->debug_edit.string, msg);
 							
 							lua_pop(gui->lua_script[0].T, 1); /* pop error message from Lua stack */
@@ -752,13 +752,13 @@ int script_win (gui_obj *gui){
 				static int sel_brk = -1;
 				
 				nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 4, (float[]){0.18f, 0.45f, 0.12f, 0.25f});
-				nk_label(gui->ctx, "Source:", NK_TEXT_RIGHT);
+				nk_label(gui->ctx, _l("Source:"), NK_TEXT_RIGHT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, source, DXF_MAX_CHARS - 1, nk_filter_default);
-				nk_label(gui->ctx, "Line:", NK_TEXT_RIGHT);
+				nk_label(gui->ctx, _l("Line:"), NK_TEXT_RIGHT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, line, DXF_MAX_CHARS - 1, nk_filter_decimal);
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				if (nk_button_label(gui->ctx, "Add")){
+				if (nk_button_label(gui->ctx, _l("Add"))){
 					long i_line = strtol(line, NULL, 10);
 					if (i_line && strlen(source) && gui->num_brk_pts < BRK_PTS_MAX){
 						gui->brk_pts[gui->num_brk_pts].line = i_line;
@@ -769,8 +769,8 @@ int script_win (gui_obj *gui){
 					}
 				}
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				nk_label(gui->ctx, "Breakpoints:", NK_TEXT_LEFT);
-				if (nk_button_label(gui->ctx, "Remove")){
+				nk_label(gui->ctx, _l("Breakpoints:"), NK_TEXT_LEFT);
+				if (nk_button_label(gui->ctx, _l("Remove"))){
 					if (sel_brk >= 0 && gui->num_brk_pts > 0){
 						for (i = sel_brk; i < gui->num_brk_pts - 1; i++){
 							gui->brk_pts[i] = gui->brk_pts[i + 1];
@@ -780,11 +780,11 @@ int script_win (gui_obj *gui){
 						
 					}
 				}
-				//if (nk_button_label(gui->ctx, "On/Off")){
+				//if (nk_button_label(gui->ctx, _l("On/Off"))){
 					
 				//}
 				nk_layout_row_dynamic(gui->ctx, 95, 1);
-				if (nk_group_begin(gui->ctx, "Breaks", NK_WINDOW_BORDER)) {
+				if (nk_group_begin(gui->ctx, _l("Breaks"), NK_WINDOW_BORDER)) {
 					nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 3, (float[]){0.1f, 0.7f, 0.2f});
 					for (i = 0; i < gui->num_brk_pts; i++){
 						
@@ -798,8 +798,8 @@ int script_win (gui_obj *gui){
 						if (nk_button_label_styled(gui->ctx, sel_type, str_tmp)){
 							sel_brk = i; /* select current text style */
 						}
-						if (gui->brk_pts[i].enable) snprintf(str_tmp, DXF_MAX_CHARS-1, "On");
-						else snprintf(str_tmp, DXF_MAX_CHARS-1, "Off");
+						if (gui->brk_pts[i].enable) snprintf(str_tmp, DXF_MAX_CHARS-1, _l("On"));
+						else snprintf(str_tmp, DXF_MAX_CHARS-1, _l("Off"));
 						if (nk_button_label_styled(gui->ctx, sel_type, str_tmp)){
 							sel_brk = i; /* select current text style */
 							gui->brk_pts[i].enable = !gui->brk_pts[i].enable;
@@ -818,7 +818,7 @@ int script_win (gui_obj *gui){
 				static char values[50][DXF_MAX_CHARS];
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				if (nk_button_label(gui->ctx, "All Globals")){
+				if (nk_button_label(gui->ctx, _l("All Globals"))){
 					lua_pushglobaltable(gui->lua_script[0].T);
 					lua_pushnil(gui->lua_script[0].T);
 					i = 0;
@@ -836,7 +836,7 @@ int script_win (gui_obj *gui){
 					lua_pop(gui->lua_script[0].T, 1);
 					num_vars = i;
 				}
-				if (nk_button_label(gui->ctx, "All Locals")){
+				if (nk_button_label(gui->ctx, _l("All Locals"))){
 					ok = lua_getstack(gui->lua_script[0].T, 0, &ar);
 					if (ok){
 						i = 0;
@@ -858,21 +858,21 @@ int script_win (gui_obj *gui){
 				if (nk_group_begin(gui->ctx, "vars", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 					nk_layout_row_dynamic(gui->ctx, 19, 1);
 					
-					nk_label(gui->ctx, "Global:", NK_TEXT_LEFT);
+					nk_label(gui->ctx, _l("Global:"), NK_TEXT_LEFT);
 					nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, glob, DXF_MAX_CHARS - 1, nk_filter_default);
-					if (nk_button_label(gui->ctx, "Print")){
+					if (nk_button_label(gui->ctx, _l("Print"))){
 						char msg[DXF_MAX_CHARS];
 						lua_getglobal(gui->lua_script[0].T, glob);
 						print_lua_var(str_tmp, gui->lua_script[0].T);
 						lua_pop(gui->lua_script[0].T, 1);
 						
-						snprintf(msg, DXF_MAX_CHARS-1, "Global %s - %s\n", glob, str_tmp);
+						snprintf(msg, DXF_MAX_CHARS-1, _l("Global %s - %s\n"), glob, str_tmp);
 						nk_str_append_str_char(&gui->debug_edit.string, msg);
 					}
 					
-					nk_label(gui->ctx, "Local:", NK_TEXT_LEFT);
+					nk_label(gui->ctx, _l("Local:"), NK_TEXT_LEFT);
 					nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, loc, DXF_MAX_CHARS - 1, nk_filter_decimal);
-					if (nk_button_label(gui->ctx, "Print")){
+					if (nk_button_label(gui->ctx, _l("Print"))){
 						long i_loc = strtol(loc, NULL, 10);
 						char msg[DXF_MAX_CHARS];
 						ok = lua_getstack(gui->lua_script[0].T, 0, &ar);
@@ -882,7 +882,7 @@ int script_win (gui_obj *gui){
 							if (name = lua_getlocal(gui->lua_script[0].T, &ar, i_loc)) {
 								
 								print_lua_var(str_tmp, gui->lua_script[0].T);
-								snprintf(msg, DXF_MAX_CHARS-1, "Local %s - %s\n", name, str_tmp);
+								snprintf(msg, DXF_MAX_CHARS-1, _l("Local %s - %s\n"), name, str_tmp);
 								nk_str_append_str_char(&gui->debug_edit.string, msg);
 								lua_pop(gui->lua_script[0].T, 1);
 								
@@ -922,8 +922,8 @@ int script_win (gui_obj *gui){
 		
 		/* text edit control - emulate stdout, showing script "print" outputs */ 
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
-		nk_label(gui->ctx, "Output:", NK_TEXT_LEFT);
-		if (nk_button_label(gui->ctx, "Clear")){ /* clear text */
+		nk_label(gui->ctx, _l("Output:"), NK_TEXT_LEFT);
+		if (nk_button_label(gui->ctx, _l("Clear"))){ /* clear text */
 			nk_str_clear(&gui->debug_edit.string);
 		}
 		nk_layout_row_dynamic(gui->ctx, 100, 1);
@@ -994,12 +994,12 @@ int gui_script_interactive(gui_obj *gui){
 			if (gui->lua_script[i].status != LUA_YIELD && gui->lua_script[i].status != LUA_OK){
 				/* execution error */
 				char msg[DXF_MAX_CHARS];
-				snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(gui->lua_script[i].T, -1));
+				snprintf(msg, DXF_MAX_CHARS-1, _l("error: %s"), lua_tostring(gui->lua_script[i].T, -1));
 				
 				if ( i == 0 ){
 					nk_str_append_str_char(&gui->debug_edit.string, msg);
 				} else {
-					snprintf(gui->log_msg, 63, "Script %s", msg);
+					snprintf(gui->log_msg, 63, _l("Script %s"), msg);
 				}
 				
 				lua_pop(gui->lua_script[i].T, 1); /* pop error message from Lua stack */

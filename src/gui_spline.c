@@ -64,7 +64,7 @@ int gui_spline_interactive(gui_obj *gui){
 						spline->obj.graphics = dxf_graph_parse(gui->drawing, spline, 0 , DWG_LIFE);
 						drawing_ent_append(gui->drawing, spline);
 						
-						do_add_entry(&gui->list_do, "SPLINE");
+						do_add_entry(&gui->list_do, _l("SPLINE"));
 						do_add_item(gui->list_do.current, NULL, spline);
 					}
 					gui->step = 0;
@@ -115,21 +115,25 @@ int gui_spline_interactive(gui_obj *gui){
 
 int gui_spline_info (gui_obj *gui){
 	if (gui->modal == SPLINE) {
-		static const char *mode[] = {"Control points","Fit points"};
+    static char mode[2][DXF_MAX_CHARS + 1];
+    strncpy(mode[0], _l("Control points"), DXF_MAX_CHARS);
+    strncpy(mode[1], _l("Fit points"), DXF_MAX_CHARS);
+    
+    char *mode_addr[] = {mode[0], mode[1]};
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Place a spline by:", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Place a spline by:"), NK_TEXT_LEFT);
 		
-		gui->spline_mode = nk_combo(gui->ctx, mode, 2, gui->spline_mode, 20, nk_vec2(150, 55));
+		gui->spline_mode = nk_combo(gui->ctx, (const char **)mode_addr, 2, gui->spline_mode, 20, nk_vec2(150, 55));
 		if (gui->spline_mode == SP_CTRL)
-			nk_property_int(gui->ctx, "Degree", 2, &gui->sp_degree, 15, 1, 0.1);
-		nk_checkbox_label(gui->ctx, "Closed", &gui->closed);
+			nk_property_int(gui->ctx, _l("Degree"), 2, &gui->sp_degree, 15, 1, 0.1);
+		nk_checkbox_label(gui->ctx, _l("Closed"), &gui->closed);
 		
 		
 		if (gui->step == 0){
-			nk_label(gui->ctx, "Enter first point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter first point"), NK_TEXT_LEFT);
 		} else {
-			nk_label(gui->ctx, "Enter next point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Enter next point"), NK_TEXT_LEFT);
 		}
 	}
 	return 1;

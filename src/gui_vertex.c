@@ -107,9 +107,9 @@ int gui_vertex_info (gui_obj *gui){
 	static dxf_node *ent = NULL, *new_ent = NULL;
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
-	nk_label(gui->ctx, "Edit Vertex", NK_TEXT_LEFT);
+	nk_label(gui->ctx, _l("Edit Vertex"), NK_TEXT_LEFT);
 	if (gui->step == 0){ /* get elements to edit */
-		nk_label(gui->ctx, "Select a element", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Select a element"), NK_TEXT_LEFT);
 	}
 	else if (gui->step == 1){ /* init the interface */
 		/* get information of first element in selection list */
@@ -124,19 +124,19 @@ int gui_vertex_info (gui_obj *gui){
 	else if (gui->step == 2){
 		gui->element = ent; /* reinit entity */
 		if (gui->vert_idx > -1){
-			nk_label(gui->ctx, "Click again to modify", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Click again to modify"), NK_TEXT_LEFT);
 		}
 		else{
-			nk_label(gui->ctx, "Select Vertex", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Select Vertex"), NK_TEXT_LEFT);
 		}
 	}
 	else{
-		nk_label(gui->ctx, "Confirm modification", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Confirm modification"), NK_TEXT_LEFT);
 	}
 	if (gui->step >= 2) { /* all inited */
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){40, 120});
 		/* show entity type */
-		nk_label(gui->ctx, "Type:", NK_TEXT_RIGHT);
+		nk_label(gui->ctx, _l("Type:"), NK_TEXT_RIGHT);
 		nk_label_colored(gui->ctx, ent->obj.name, NK_TEXT_LEFT, nk_rgb(255,255,0));
 		
 		if (gui->vert_idx > -1){
@@ -146,28 +146,28 @@ int gui_vertex_info (gui_obj *gui){
 				char tmp_str[64];
 				nk_layout_row(gui->ctx, NK_STATIC, 15, 2, (float[]){110, 60});
 				snprintf(tmp_str, 63, "%d", gui->vert_idx);
-				nk_label(gui->ctx, "Selected vertex:", NK_TEXT_RIGHT);
+				nk_label(gui->ctx, _l("Selected vertex:"), NK_TEXT_RIGHT);
 				nk_label_colored(gui->ctx, tmp_str, NK_TEXT_LEFT, nk_rgb(255,255,0));
 				
 				nk_layout_row(gui->ctx, NK_STATIC, 15, 2, (float[]){40, 120});
 				if (vert_x){
 					snprintf(tmp_str, 63, "%.9g", vert_x->value.d_data);
-					nk_label(gui->ctx, "X:", NK_TEXT_RIGHT);
+					nk_label(gui->ctx, _l("X:"), NK_TEXT_RIGHT);
 					nk_label_colored(gui->ctx, tmp_str, NK_TEXT_LEFT, nk_rgb(255,255,0));
 				}
 				if (vert_y){
 					snprintf(tmp_str, 63, "%.9g", vert_y->value.d_data);
-					nk_label(gui->ctx, "Y:", NK_TEXT_RIGHT);
+					nk_label(gui->ctx, _l("Y:"), NK_TEXT_RIGHT);
 					nk_label_colored(gui->ctx, tmp_str, NK_TEXT_LEFT, nk_rgb(255,255,0));
 				}
 				if (vert_z){
 					snprintf(tmp_str, 63, "%.9g", vert_z->value.d_data);
-					nk_label(gui->ctx, "Z:", NK_TEXT_RIGHT);
+					nk_label(gui->ctx, _l("Z:"), NK_TEXT_RIGHT);
 					nk_label_colored(gui->ctx, tmp_str, NK_TEXT_LEFT, nk_rgb(255,255,0));
 				}
 				if (bulge){
 					if (gui->step < 5){
-						nk_label(gui->ctx, "Bulge:", NK_TEXT_RIGHT);
+						nk_label(gui->ctx, _l("Bulge:"), NK_TEXT_RIGHT);
 						snprintf(tmp_str, 63, "%.9g", bulge->value.d_data);
 						nk_label_colored(gui->ctx, tmp_str, NK_TEXT_LEFT, nk_rgb(255,255,0));
 						
@@ -175,7 +175,7 @@ int gui_vertex_info (gui_obj *gui){
 					else{
 						/* modify bulge of current vertex */
 						nk_layout_row_dynamic(gui->ctx, 20, 1);
-						double b = nk_propertyd(gui->ctx, "#Bulge", -10.0, bulge->value.d_data, 10.0, 0.1, 0.1f);
+						double b = nk_propertyd(gui->ctx, _l("#Bulge"), -10.0, bulge->value.d_data, 10.0, 0.1, 0.1f);
 						
 						if (fabs(b - bulge->value.d_data) > 1.0e-9){
 							bulge->value.d_data = b;
@@ -201,7 +201,7 @@ int gui_vertex_info (gui_obj *gui){
 			dxf_obj_subst(ent, new_ent);
 			
 			/* update undo/redo list */
-			do_add_entry(&gui->list_do, "EDIT VERTEX");
+			do_add_entry(&gui->list_do, _l("EDIT VERTEX"));
 			do_add_item(gui->list_do.current, ent, new_ent);
 			
 			ent = new_ent;

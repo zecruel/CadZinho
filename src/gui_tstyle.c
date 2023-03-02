@@ -293,7 +293,7 @@ int tstyles_mng (gui_obj *gui){
 	} sorted = UNSORTED;
 	static int sort_reverse = 0;
 	
-	if (nk_begin(gui->ctx, "Text Styles Manager", nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
+	if (nk_begin(gui->ctx, _l("Text Styles Manager"), nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		
@@ -308,92 +308,92 @@ int tstyles_mng (gui_obj *gui){
 			/* name */
 			if (sorted == BY_NAME){
 				if (sort_reverse){
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Name", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, _l("Name"), NK_TEXT_CENTERED)){
 						sorted = UNSORTED;
 						sort_reverse = 0;
 					}
 				} else {
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Name", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, _l("Name"), NK_TEXT_CENTERED)){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_label(gui->ctx, "Name")){
+			}else if (nk_button_label(gui->ctx, _l("Name"))){
 				sorted = BY_NAME;
 				sort_reverse = 0;
 			}
 			/* font */
 			if (sorted == BY_FONT){
 				if (sort_reverse){
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Font", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, _l("Font"), NK_TEXT_CENTERED)){
 						sorted = UNSORTED;
 						sort_reverse = 0;
 					}
 				} else {
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Font", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, _l("Font"), NK_TEXT_CENTERED)){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_label(gui->ctx, "Font")){
+			}else if (nk_button_label(gui->ctx, _l("Font"))){
 				sorted = BY_FONT;
 				sort_reverse = 0;
 			}
-			if (nk_button_label(gui->ctx, "Subst")){
+			if (nk_button_label(gui->ctx, _l("Subst"))){
 				
 			}
 			/* Width */
 			if (sorted == BY_WIDTH){
 				if (sort_reverse){
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Width", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, _l("Width"), NK_TEXT_CENTERED)){
 						sorted = UNSORTED;
 						sort_reverse = 0;
 					}
 				} else {
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Width", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, _l("Width"), NK_TEXT_CENTERED)){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_label(gui->ctx, "Width")){
+			}else if (nk_button_label(gui->ctx, _l("Width"))){
 				sorted = BY_WIDTH;
 				sort_reverse = 0;
 			}
 			/* fixed height */
 			if (sorted == BY_HEIGHT){
 				if (sort_reverse){
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Fix H", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, _l("Fix H"), NK_TEXT_CENTERED)){
 						sorted = UNSORTED;
 						sort_reverse = 0;
 					}
 				} else {
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Fix H", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, _l("Fix H"), NK_TEXT_CENTERED)){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_label(gui->ctx, "Fix H")){
+			}else if (nk_button_label(gui->ctx, _l("Fix H"))){
 				sorted = BY_HEIGHT;
 				sort_reverse = 0;
 			}
 			/* Oblique angle */
 			if (sorted == BY_ANGLE){
 				if (sort_reverse){
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, "Angle", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_DOWN, _l("Angle"), NK_TEXT_CENTERED)){
 						sorted = UNSORTED;
 						sort_reverse = 0;
 					}
 				} else {
-					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, "Angle", NK_TEXT_CENTERED)){
+					if (nk_button_symbol_label(gui->ctx, NK_SYMBOL_TRIANGLE_UP, _l("Angle"), NK_TEXT_CENTERED)){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_label(gui->ctx, "Angle")){
+			}else if (nk_button_label(gui->ctx, _l("Angle"))){
 				sorted = BY_ANGLE;
 				sort_reverse = 0;
 			}
 			
-			if (nk_button_label(gui->ctx, "Flags")){
+			if (nk_button_label(gui->ctx, _l("Flags"))){
 				
 			}
 			
-			if (nk_button_label(gui->ctx, "Used")){
+			if (nk_button_label(gui->ctx, _l("Used"))){
 				
 			}
 			
@@ -494,12 +494,12 @@ int tstyles_mng (gui_obj *gui){
 		}
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 5);
-		if (nk_button_label(gui->ctx, "Create")){
+		if (nk_button_label(gui->ctx, _l("Create"))){
 			/* show popup window for entry new text style name */
 			show_name = 1;
 			sty_name[0] = 0;
 		}
-		if ((nk_button_label(gui->ctx, "Edit")) && (sel_t_sty >= 0)){
+		if ((nk_button_label(gui->ctx, _l("Edit"))) && (sel_t_sty >= 0)){
 			show_edit = 1; /* show edit window */
 			/* initialize variables for edit window with selected text style parameters*/
 			strncpy(sty_name, t_sty[sel_t_sty].name, DXF_MAX_CHARS);
@@ -516,23 +516,23 @@ int tstyles_mng (gui_obj *gui){
 			edit_sty = sel_t_sty;
 			
 		}
-		if ((nk_button_label(gui->ctx, "Remove")) && (sel_t_sty >= 0)){
+		if ((nk_button_label(gui->ctx, _l("Remove"))) && (sel_t_sty >= 0)){
 			char name[DXF_MAX_CHARS] = "";
 			/*copy to a temporary string to preserve original name */
 			strncpy(name, t_sty[sel_t_sty].name, DXF_MAX_CHARS);
 			str_upp(name); /* upper case to compare*/
 			/* preserve STANDARD text style from remove */
 			if (strcmp(name, "STANDARD") == 0){
-				snprintf(gui->log_msg, 63, "Error: Don't remove Standard Style");
+				snprintf(gui->log_msg, 63, _l("Error: Don't remove Standard Style"));
 			}
 			else{
 				/*check if text style is used */
 				t_sty_use(gui->drawing); /* update for sure */
 				if (t_sty[sel_t_sty].num_el){
-					snprintf(gui->log_msg, 63, "Error: Don't remove Style in use");
+					snprintf(gui->log_msg, 63, _l("Error: Don't remove Style in use"));
 				}
 				else{ /* if allowed, proceed to remove */
-					do_add_entry(&gui->list_do, "Remove Style");
+					do_add_entry(&gui->list_do, _l("Remove Style"));
 					do_add_item(gui->list_do.current, t_sty[sel_t_sty].obj, NULL);
 					dxf_obj_subst(t_sty[sel_t_sty].obj, NULL);
 					sel_t_sty = 0;
@@ -543,13 +543,13 @@ int tstyles_mng (gui_obj *gui){
 		
 		nk_label(gui->ctx, " ", NK_TEXT_RIGHT); /*label only for simple space layout */
 		
-		if (nk_button_label(gui->ctx, "Fonts")){
+		if (nk_button_label(gui->ctx, _l("Fonts"))){
 			/* show fonts manager */
 			show_fonts = 1;
 		}
 		
 		if ((show_name)){ /* popup window to creat a new text style */
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "Style Name", NK_WINDOW_CLOSABLE, nk_rect(10, 20, 220, 100))){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Style Name"), NK_WINDOW_CLOSABLE, nk_rect(10, 20, 220, 100))){
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				/* set focus to edit */
@@ -558,10 +558,10 @@ int tstyles_mng (gui_obj *gui){
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_name, DXF_MAX_CHARS, nk_filter_default);
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				if (nk_button_label(gui->ctx, "OK")){
+				if (nk_button_label(gui->ctx, _l("OK"))){
 					/* try to create a new text style */
 					if (!dxf_new_tstyle (gui->drawing, sty_name)){
-						snprintf(gui->log_msg, 63, "Error: Text Style already exists");
+						snprintf(gui->log_msg, 63, _l("Error: Text Style already exists"));
 					}
 					else {
 						/* success - close popup */
@@ -569,7 +569,7 @@ int tstyles_mng (gui_obj *gui){
 						show_name = 0;
 					}
 				}
-				if (nk_button_label(gui->ctx, "Cancel")){
+				if (nk_button_label(gui->ctx, _l("Cancel"))){
 					nk_popup_close(gui->ctx);
 					show_name = 0;
 				}
@@ -587,17 +587,17 @@ int tstyles_mng (gui_obj *gui){
 	
 	if ((show_edit)){
 		/* edit window - allow modifications on parameters of selected text style */
-		if (nk_begin(gui->ctx, "Edit Text Style", nk_rect(gui->next_win_x, gui->next_win_y + gui->next_win_h + 3, 330, 220), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
+		if (nk_begin(gui->ctx, _l("Edit Text Style"), nk_rect(gui->next_win_x, gui->next_win_y + gui->next_win_h + 3, 330, 220), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_MOVABLE|NK_WINDOW_CLOSABLE)){
 			static int show_app_file = 0;
 			
 			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 200});
 			
 			/* -------------------- name setting ------------------*/
-			nk_label(gui->ctx, "Name:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Name:"), NK_TEXT_RIGHT);
 			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_name, DXF_MAX_CHARS, nk_filter_default);
 			
 			/* -------------------- font setting ------------------*/
-			nk_label(gui->ctx, "Font:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Font:"), NK_TEXT_RIGHT);
 			sel_font = -1;
 			if (nk_combo_begin_label(gui->ctx,  sty_font, nk_vec2(220,200))){
 				
@@ -621,28 +621,28 @@ int tstyles_mng (gui_obj *gui){
 			}
 			/* -------------------- width setting ------------------*/
 			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 100});
-			nk_label(gui->ctx, "Width factor:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Width factor:"), NK_TEXT_RIGHT);
 			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_w_fac, 63, nk_filter_float);
 			
 			/* -------------------- fixed heigth setting ------------------*/
-			nk_label(gui->ctx, "Fixed height:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Fixed height:"), NK_TEXT_RIGHT);
 			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_fixed_h, 63, nk_filter_float);
 			
 			/* -------------------- oblique angle setting ------------------*/
-			nk_label(gui->ctx, "Oblique angle:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Oblique angle:"), NK_TEXT_RIGHT);
 			nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, sty_o_ang, 63, nk_filter_float);
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 3);
 			
 			/* -------------------- flags ------------------*/
-			//nk_checkbox_label(gui->ctx, "Shape", &shape);
-			nk_checkbox_label(gui->ctx, "Vertical", &vertical);
-			nk_checkbox_label(gui->ctx, "Backward", &backward);
-			nk_checkbox_label(gui->ctx, "Upside down", &upside);
+			//nk_checkbox_label(gui->ctx, _l("Shape"), &shape);
+			nk_checkbox_label(gui->ctx, _l("Vertical"), &vertical);
+			nk_checkbox_label(gui->ctx, _l("Backward"), &backward);
+			nk_checkbox_label(gui->ctx, _l("Upside down"), &upside);
 				
 				
 			nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){100, 100});
-			if (nk_button_label(gui->ctx, "OK")){
+			if (nk_button_label(gui->ctx, _l("OK"))){
 				
 				
 				/* verify if name is duplicated */
@@ -661,7 +661,7 @@ int tstyles_mng (gui_obj *gui){
 					str_upp(name2); /* upper case to compare*/
 					if (i == edit_sty) { /*if current text style */
 						/* preserve STANDARD text style from rename*/
-						if (strcmp(name2, "STANDARD") == 0){
+						if (strcmp(name2, _l("STANDARD")) == 0){
 							if (strcmp(name2, name1) != 0) sty_exist = 2;
 							break;
 						}
@@ -721,11 +721,11 @@ int tstyles_mng (gui_obj *gui){
 					show_edit = 0;
 				}
 				else{ /* show error messages */
-					if (sty_exist == 1) snprintf(gui->log_msg, 63, "Error: Duplicated Text Style");
-					else if (sty_exist == 2) snprintf(gui->log_msg, 63, "Error: STANDARD style can't be renamed");
+					if (sty_exist == 1) snprintf(gui->log_msg, 63, _l("Error: Duplicated Text Style"));
+					else if (sty_exist == 2) snprintf(gui->log_msg, 63, _l("Error: STANDARD style can't be renamed"));
 				}
 			}
-			if (nk_button_label(gui->ctx, "Cancel")){
+			if (nk_button_label(gui->ctx, _l("Cancel"))){
 				show_edit = 0;
 			}
 			
@@ -738,14 +738,14 @@ int tstyles_mng (gui_obj *gui){
 	if ((show_fonts)){
 		/* show fonts */
 		static int show_app_file = 0, sel_f_idx = 0, prev = -1;
-		if (nk_begin(gui->ctx, "Manage Fonts", nk_rect(gui->next_win_x + 235, gui->next_win_y + 80, 400, 260), NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_TITLE|NK_WINDOW_CLOSABLE)){
+		if (nk_begin(gui->ctx, _l("Manage Fonts"), nk_rect(gui->next_win_x + 235, gui->next_win_y + 80, 400, 260), NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_TITLE|NK_WINDOW_CLOSABLE)){
 			struct tfont * selected_font = NULL;
 			
 			struct nk_style_button *sel_type;
 			
 			nk_layout_row(gui->ctx, NK_STATIC, 190, 2, (float[]){167, 193});
 			
-			if (nk_group_begin(gui->ctx, "Available Fonts", NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
+			if (nk_group_begin(gui->ctx, _l("Available Fonts"), NK_WINDOW_BORDER|NK_WINDOW_TITLE)) {
 				/* show loaded fonts, available for setting */
 				
 				sel_type = &gui->b_icon_unsel;
@@ -847,16 +847,16 @@ int tstyles_mng (gui_obj *gui){
 				"OTF",
 				"*"
 			};
-			static const char *ext_descr[] = {
-				"Shapes files (.shp)",
-				"Binary shapes file (.shx)",
-				"True type font file (.ttf)",
-				"Open font file (.otf)",
-				"All files (*)"
-			};
+      
+      static char ext_descr[5][DXF_MAX_CHARS + 1];
+      strncpy(ext_descr[0], _l("Shapes files (.shp)"), DXF_MAX_CHARS);
+      strncpy(ext_descr[1], _l("Binary shapes file (.shx)"), DXF_MAX_CHARS);
+      strncpy(ext_descr[2], _l("True type font file (.ttf)"), DXF_MAX_CHARS);
+      strncpy(ext_descr[3], _l("Open font file (.otf)"), DXF_MAX_CHARS);
+      strncpy(ext_descr[4], _l("All files (*)"), DXF_MAX_CHARS);
 			#define FILTER_COUNT 5
 			
-			if (nk_button_label(gui->ctx, "Load font")){
+			if (nk_button_label(gui->ctx, _l("Load font"))){
 				/* load more other fonts */
 				show_app_file = 1;
 				/* set filter for suported output formats */

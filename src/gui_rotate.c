@@ -95,7 +95,7 @@ int gui_rotate_interactive(gui_obj *gui){
 				current = gui->sel_list->next;
 				if (current != NULL){
 					/* add to undo/redo list */
-					do_add_entry(&gui->list_do, "ROTATE");
+					do_add_entry(&gui->list_do, _l("ROTATE"));
 				}
 				/* sweep selection list */
 				while (current != NULL){
@@ -229,7 +229,7 @@ int gui_rotate_interactive(gui_obj *gui){
 				new_ent = NULL;
 				if (current != NULL){
 					/* add to undo/redo list */
-					do_add_entry(&gui->list_do, "ROTATE");
+					do_add_entry(&gui->list_do, _l("ROTATE"));
 				}
 				/* sweep selection list */
 				while (current != NULL){
@@ -302,30 +302,42 @@ int gui_rotate_interactive(gui_obj *gui){
 
 int gui_rotate_info (gui_obj *gui){
 	if (gui->modal == ROTATE) {
-		static const char *mode[] = {"Active angle","3 points"};
+    
+    static char mode[2][DXF_MAX_CHARS + 1];
+    strncpy(mode[0], _l("Active angle"), DXF_MAX_CHARS);
+    strncpy(mode[1], _l("3 points"), DXF_MAX_CHARS);
+    
+    char *mode_addr[] = {mode[0], mode[1]};
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label(gui->ctx, "Rotate a selection", NK_TEXT_LEFT);
-		
-		nk_checkbox_label(gui->ctx, "Keep Original", &gui->keep_orig);
-		
-		int h = 2 * 25 + 5;
-		gui->rot_mode = nk_combo(gui->ctx, mode, 2, gui->rot_mode, 20, nk_vec2(150, h));
+		nk_label(gui->ctx, _l("Rotate a selection"), NK_TEXT_LEFT);
 		
 		if (gui->step == 0){
-			nk_label(gui->ctx, "Select/Add element", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("Select/Add element"), NK_TEXT_LEFT);
 		}
-		else if (gui->step == 1){
-			nk_label(gui->ctx, "Enter pivot point", NK_TEXT_LEFT);
-		} else if (gui->step == 2){
+		if (gui->step > 0){
+      nk_label(gui->ctx, _l("Mode:"), NK_TEXT_LEFT);
+      int h = 2 * 25 + 5;
+      gui->rot_mode = nk_combo(gui->ctx, (const char **)mode_addr, 2,
+        gui->rot_mode, 20, nk_vec2(150, h));
+      nk_checkbox_label(gui->ctx, _l("Keep Original"), &gui->keep_orig);
+      if (gui->rot_mode != ROT_3POINTS)
+        gui->angle = nk_propertyd(gui->ctx, _l("Angle"), -180.0, gui->angle, 180.0, 0.1, 0.1f);
+      nk_layout_row_dynamic(gui->ctx, 5, 1);
+      nk_layout_row_dynamic(gui->ctx, 20, 1);
+    }
+    if (gui->step == 1){
+			nk_label(gui->ctx, _l("Enter pivot point"), NK_TEXT_LEFT);
+		}
+    else if (gui->step == 2){
 			if (gui->rot_mode == ROT_3POINTS)
-				nk_label(gui->ctx, "First point", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("First point"), NK_TEXT_LEFT);
 			else
-				nk_label(gui->ctx, "Confirm rotation", NK_TEXT_LEFT);
+				nk_label(gui->ctx, _l("Confirm rotation"), NK_TEXT_LEFT);
 		}
-		else {
+		else if (gui->step > 0){
 			/* in 3 points mode, show the efective rotation angle */
-			nk_label(gui->ctx, "End point", NK_TEXT_LEFT);
+			nk_label(gui->ctx, _l("End point"), NK_TEXT_LEFT);
 			char ang_str[64];
 			double angle = atan2(gui->step_y[3] - gui->step_y[1], gui->step_x[3] - gui->step_x[1]) - 
 				atan2(gui->step_y[2] - gui->step_y[1], gui->step_x[2] - gui->step_x[1]);
@@ -334,11 +346,10 @@ int gui_rotate_info (gui_obj *gui){
 			if (angle < 0) angle += 2.0 * M_PI;
 			angle *= 180.0/M_PI;
 			
-			snprintf(ang_str, 63, "Angle=%.4g°", angle);
+			snprintf(ang_str, 63, _l("Angle=%.4g°"), angle);
 			nk_label(gui->ctx, ang_str, NK_TEXT_LEFT);
 		}
-		if (gui->rot_mode != ROT_3POINTS)
-			gui->angle = nk_propertyd(gui->ctx, "Angle", -180.0, gui->angle, 180.0, 0.1, 0.1f);
+		
 	}
 	return 1;
 }

@@ -60,9 +60,9 @@ int gui_txt_prop_info (gui_obj *gui){
 	int i, j, h;
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
-	nk_label(gui->ctx, "Edit Text Properties", NK_TEXT_LEFT);
+	nk_label(gui->ctx, _l("Edit Text Properties"), NK_TEXT_LEFT);
 	if (gui->step == 0){ /* get elements to edit */
-		nk_label(gui->ctx, "Select a element", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Select a element"), NK_TEXT_LEFT);
 	}
 	else if (gui->step == 1){ /* init the interface */
 		/* get information of first element in selection list */
@@ -132,14 +132,14 @@ int gui_txt_prop_info (gui_obj *gui){
 		if(strcmp(ent->obj.name, "TEXT") == 0 ||
 			strcmp(ent->obj.name, "MTEXT") == 0)
 		{ /* show entity type */
-			nk_label(gui->ctx, "Type:", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("Type:"), NK_TEXT_RIGHT);
 			nk_label_colored(gui->ctx, ent->obj.name, NK_TEXT_LEFT, nk_rgb(255,255,0));
 		}
 		
 		/* ----------  properties -------------*/
 		
 		/* ----------  style -------------*/
-		nk_checkbox_label(gui->ctx, "Style:", &en_sty);
+		nk_checkbox_label(gui->ctx, _l("Style:"), &en_sty);
 		int num_tstyles = gui->drawing->num_tstyles;
 		dxf_tstyle *t_sty = gui->drawing->text_styles;
 		/* text style combo selection */
@@ -168,7 +168,7 @@ int gui_txt_prop_info (gui_obj *gui){
 		
 		/* ----------- alignment ------------ */
 		/* vertical alignment */
-		nk_checkbox_label(gui->ctx, "Vert:", &en_al_v);
+		nk_checkbox_label(gui->ctx, _l("Vert:"), &en_al_v);
 		if (en_al_v){
 			t_al_v = nk_combo(gui->ctx, text_al_v, T_AL_V_LEN, t_al_v, 20, nk_vec2(100,105));
 		}
@@ -176,7 +176,7 @@ int gui_txt_prop_info (gui_obj *gui){
 			nk_label_colored(gui->ctx, text_al_v[t_al_v], NK_TEXT_LEFT, nk_rgb(255,255,0));
 		}
 		/* horizontal alignment */
-		nk_checkbox_label(gui->ctx, "Horiz:", &en_al_h);
+		nk_checkbox_label(gui->ctx, _l("Horiz:"), &en_al_h);
 		if (en_al_h){
 			t_al_h = nk_combo(gui->ctx, text_al_h, T_AL_H_LEN, t_al_h, 20, nk_vec2(100,105));
 		}
@@ -185,7 +185,7 @@ int gui_txt_prop_info (gui_obj *gui){
 		}
 		
 		/* ----------- text height ------------ */
-		nk_checkbox_label(gui->ctx, "Height:", &en_h);
+		nk_checkbox_label(gui->ctx, _l("Height:"), &en_h);
 		if (en_h){
 			txt_h = nk_propertyd(gui->ctx, "#", 1.0e-9, txt_h, 1.0e9, SMART_STEP(txt_h), SMART_STEP(txt_h));
 		}
@@ -195,7 +195,7 @@ int gui_txt_prop_info (gui_obj *gui){
 		}
 		
 		/* ----------- angle ------------ */
-		nk_checkbox_label(gui->ctx, "Angle:", &en_ang);
+		nk_checkbox_label(gui->ctx, _l("Angle:"), &en_ang);
 		if (en_ang){
 			ang = nk_propertyd(gui->ctx, "#", 0.0, ang, 360.0, 0.1, 0.1f);
 		}
@@ -205,7 +205,7 @@ int gui_txt_prop_info (gui_obj *gui){
 		}
 		
 		/* ----------- rectangle width (MTEXT only) ------------ */
-		nk_checkbox_label(gui->ctx, "Rec W:", &en_rec);
+		nk_checkbox_label(gui->ctx, _l("Rec W:"), &en_rec);
 		if (en_rec){
 			rec_w = nk_propertyd(gui->ctx, "#", 0.0, rec_w, 1.0e9, SMART_STEP(rec_w), SMART_STEP(rec_w));
 		}
@@ -217,7 +217,7 @@ int gui_txt_prop_info (gui_obj *gui){
 		/* ---------------------*/
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
-		if (nk_button_label(gui->ctx, "Modify") && ( en_sty || en_al_v || en_al_h || en_h || en_ang || en_rec)){
+		if (nk_button_label(gui->ctx, _l("Modify")) && ( en_sty || en_al_v || en_al_h || en_h || en_ang || en_rec)){
 			/* change selection properties according selected parameters */
 			if (gui->sel_list != NULL){
 				int ini_do = 0;
@@ -263,7 +263,7 @@ int gui_txt_prop_info (gui_obj *gui){
 							dxf_obj_subst((dxf_node *)current->data, new_ent);
 							/* update undo/redo list */
 							if (!ini_do){
-								do_add_entry(&gui->list_do, "CHANGE TEXT PROPERTIES"); /* init do/undo list */
+								do_add_entry(&gui->list_do, _l("CHANGE TEXT PROPERTIES")); /* init do/undo list */
 								gui->step = 1;
 								ini_do = 1;
 							}
@@ -276,7 +276,7 @@ int gui_txt_prop_info (gui_obj *gui){
 			}
 			gui->draw = 1;
 		}
-		if (nk_button_label(gui->ctx, "Pick")){
+		if (nk_button_label(gui->ctx, _l("Pick"))){
 			/* get selected entity properties to match main tools (place text tools) */
 			if (en_sty) gui->t_sty_idx = sty_i;
 			if (en_h) gui->txt_h = txt_h;

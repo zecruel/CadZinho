@@ -170,15 +170,15 @@ int gui_xy(gui_obj *gui){
 			/* X distance */
 			/* hilite coordinate, if coord is predominant during a drawing operation*/
 			if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000) && (flag_x)){
-				nk_label_colored(gui->ctx, "X=", NK_TEXT_RIGHT, nk_rgb(255,255,0));
+				nk_label_colored(gui->ctx, _l("X="), NK_TEXT_RIGHT, nk_rgb(255,255,0));
 			}
 			else {
-				nk_label(gui->ctx, "X=", NK_TEXT_RIGHT);
+				nk_label(gui->ctx, _l("X="), NK_TEXT_RIGHT);
 			}
 			space = 120;
 		} else {
 			nk_layout_row_push(gui->ctx, 40);
-			nk_label(gui->ctx, "len=", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("len="), NK_TEXT_RIGHT);
 			space = 100;
 		}
 		/* verify if the user initiate a number entry during a drawing operation */
@@ -234,14 +234,14 @@ int gui_xy(gui_obj *gui){
 			/* Y distance */
 			/* hilite coordinate, if coord is predominant during a drawing operation*/
 			if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000) && (flag_y)){
-				nk_label_colored(gui->ctx, "Y=", NK_TEXT_RIGHT, nk_rgb(255,255,0));
+				nk_label_colored(gui->ctx, _l("Y="), NK_TEXT_RIGHT, nk_rgb(255,255,0));
 			}
 			else {
-				nk_label(gui->ctx, "Y=", NK_TEXT_RIGHT);
+				nk_label(gui->ctx, _l("Y="), NK_TEXT_RIGHT);
 			}
 		} else {
 			nk_layout_row_push(gui->ctx, 40);
-			nk_label(gui->ctx, "ang=", NK_TEXT_RIGHT);
+			nk_label(gui->ctx, _l("ang="), NK_TEXT_RIGHT);
 		}
 		/* verify if the user initiate a number entry during a drawing operation */
 		if (((gui->en_distance)||(!gui->entry_relative)) && (gui->user_number) && (gui->step >= 0) && (gui->step < 1000) &&
@@ -298,13 +298,13 @@ int gui_xy(gui_obj *gui){
 			gui->en_distance = 1; /* in polar mode, always enable distance */
 			gui->entry_relative = 1;
 			//nk_selectable_label(gui->ctx, "Polar", NK_TEXT_CENTERED, &gui->rect_polar);
-			if(gui_selectable (gui, "Polar", gui->rect_polar)){
+			if(gui_selectable (gui, _l("Polar"), gui->rect_polar)){
 				gui->rect_polar = 0;
 				gui->user_flag_x = 0;
 				gui->user_flag_y = 0;
 			}
 		}
-		else if(gui_selectable (gui, "Rectangular", gui->rect_polar)){
+		else if(gui_selectable (gui, _l("Rectangular"), gui->rect_polar)){
 			gui->rect_polar = 1;
 			gui->user_flag_x = 0;
 			gui->user_flag_y = 0;
@@ -392,11 +392,11 @@ int gui_xy(gui_obj *gui){
 		if (!gui->rect_polar){
 			nk_layout_row_push(gui->ctx, 100);
 			if (gui->entry_relative){
-				if(gui_selectable (gui, "Relative", gui->entry_relative)){
+				if(gui_selectable (gui, _l("Relative"), gui->entry_relative)){
 					gui->entry_relative = 0;
 				}
 			}
-			else if(gui_selectable (gui, "Absolute", gui->entry_relative)){
+			else if(gui_selectable (gui, _l("Absolute"), gui->entry_relative)){
 				gui->entry_relative = 1;
 			}
 		}

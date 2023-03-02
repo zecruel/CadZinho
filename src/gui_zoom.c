@@ -5,10 +5,10 @@ int gui_zoom_info (gui_obj *gui){
 	//static int prev_type = -1;
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
-	nk_label(gui->ctx, "Zoom in rectangle", NK_TEXT_LEFT);
+	nk_label(gui->ctx, _l("Zoom in rectangle"), NK_TEXT_LEFT);
 	
 	if (gui->step == 0){
-		nk_label(gui->ctx, "Enter first corner", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Enter first corner"), NK_TEXT_LEFT);
 		if (gui->ev & EV_ENTER){
 			/* starts rectangle - first corner*/
 			gui->draw_phanton = 1;
@@ -29,7 +29,7 @@ int gui_zoom_info (gui_obj *gui){
 		}
 	}
 	else{
-		nk_label(gui->ctx, "Enter zoom area", NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Enter zoom area"), NK_TEXT_LEFT);
 		if (gui->ev & EV_ENTER){
 			/* ends rectangle zoom */
 			double rect_pt1[2], rect_pt2[2];

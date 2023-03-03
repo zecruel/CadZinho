@@ -127,7 +127,10 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	if(!script) return 0;
 	if (!fname && !alt_chunk) return 0;
 	
-	/* initialize script object */ 
+  /* close previous Lua state */
+  if(script->L) lua_close(script->L);
+  
+	/* initialize script object */
 	if(!(script->L = luaL_newstate())) return 0; /* opens Lua */
 	script->T = NULL;
 	script->status = LUA_OK;

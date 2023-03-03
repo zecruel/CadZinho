@@ -447,7 +447,7 @@ int gui_blk_mng (gui_obj *gui){
 					create = 0;
 					/* verify if  block name is valid */
 					if(strlen(new_name) < 1){
-						snprintf(gui->log_msg, 63, _l("Error: ivalid Block name"));
+						snprintf(gui->log_msg, 63, _l("Error: invalid Block name"));
 					}
 					/* verify if exists other block with same name */
 					else if(dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", new_name)){
@@ -510,7 +510,7 @@ int gui_blk_mng (gui_obj *gui){
 				if (nk_button_label(gui->ctx, _l("Create"))){
 					/* verify if  block name is valid */
 					if(strlen(new_name) < 1){
-						snprintf(gui->log_msg, 63, _l("Error: ivalid Block name"));
+						snprintf(gui->log_msg, 63, _l("Error: invalid Block name"));
 					}
 					/* verify if exists other block with same name */
 					else if(dxf_find_obj_descr2(gui->drawing->blks, "BLOCK", new_name)){

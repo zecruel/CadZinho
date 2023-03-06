@@ -180,10 +180,29 @@ int gui_attrib_info (gui_obj *gui){
 		/* size and rotation parameters */
 		gui->txt_h = nk_propertyd(gui->ctx, _l("Height"), 1e-9, gui->txt_h, 1e9, SMART_STEP(gui->txt_h), SMART_STEP(gui->txt_h));
 		gui->angle = nk_propertyd(gui->ctx, _l("Angle"), -180.0, gui->angle, 180.0, 0.1, 0.1f);
-		/* text aligment parameters */
+		
+    static char al_v[4][DXF_MAX_CHARS + 1];
+    strncpy(al_v[0], _l("Base Line"), DXF_MAX_CHARS);
+    strncpy(al_v[1], _l("Bottom"), DXF_MAX_CHARS);
+    strncpy(al_v[2], _l("Middle"), DXF_MAX_CHARS);
+    strncpy(al_v[3], _l("Top"), DXF_MAX_CHARS);
+
+    char *al_v_addr[] = {al_v[0], al_v[1], al_v[2], al_v[3]};
+    
+    static char al_h[6][DXF_MAX_CHARS + 1];
+    strncpy(al_h[0], _l("Left"), DXF_MAX_CHARS);
+    strncpy(al_h[1], _l("Center"), DXF_MAX_CHARS);
+    strncpy(al_h[2], _l("Right"), DXF_MAX_CHARS);
+    strncpy(al_h[3], _l("Aligned"), DXF_MAX_CHARS);
+    strncpy(al_h[4], _l("Middle"), DXF_MAX_CHARS);
+    strncpy(al_h[5], _l("Fit"), DXF_MAX_CHARS);
+    
+    char *al_h_addr[] = {al_h[0], al_h[1], al_h[2], al_h[3], al_h[4], al_h[5]};
+    
+    /* text aligment parameters */
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
-		gui->t_al_v = nk_combo(gui->ctx, text_al_v, T_AL_V_LEN, gui->t_al_v, 20, nk_vec2(100,105));
-		gui->t_al_h = nk_combo(gui->ctx, text_al_h, T_AL_H_LEN, gui->t_al_h, 20, nk_vec2(100,105));
+		gui->t_al_v = nk_combo(gui->ctx, (const char **)al_v_addr, 4, gui->t_al_v, 20, nk_vec2(100,105));
+		gui->t_al_h = nk_combo(gui->ctx, (const char **)al_h_addr, 6, gui->t_al_h, 20, nk_vec2(100,105));
 	}
 	return 1;
 }

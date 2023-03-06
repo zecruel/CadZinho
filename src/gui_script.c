@@ -660,7 +660,7 @@ int script_win (gui_obj *gui){
 		
 		/* body of tab control */
 		nk_layout_row_dynamic(gui->ctx, 180, 1);
-		if (nk_group_begin(gui->ctx, _l("Script_controls"), NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, "Script_controls", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 			/* run script tab*/
 			if (script_tab == EXECUTE){
 				nk_layout_row_dynamic(gui->ctx, 20, 2);

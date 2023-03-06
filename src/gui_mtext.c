@@ -136,6 +136,20 @@ int gui_mtext_info (gui_obj *gui){
 			mtext_pop = 1;
 		}
 		
+    static char al_v[3][DXF_MAX_CHARS + 1];
+    strncpy(al_v[0], _l("Bottom"), DXF_MAX_CHARS);
+    strncpy(al_v[1], _l("Middle"), DXF_MAX_CHARS);
+    strncpy(al_v[2], _l("Top"), DXF_MAX_CHARS);
+
+    char *al_v_addr[] = {al_v[0], al_v[1], al_v[2]};
+    
+    static char al_h[3][DXF_MAX_CHARS + 1];
+    strncpy(al_h[0], _l("Left"), DXF_MAX_CHARS);
+    strncpy(al_h[1], _l("Center"), DXF_MAX_CHARS);
+    strncpy(al_h[2], _l("Right"), DXF_MAX_CHARS);
+    
+    char *al_h_addr[] = {al_h[0], al_h[1], al_h[2]};
+        
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		gui->txt_h = nk_propertyd(gui->ctx, _l("Text Height"), 1e-9, gui->txt_h, 1e9, SMART_STEP(gui->txt_h), SMART_STEP(gui->txt_h));
 		gui->rect_w = nk_propertyd(gui->ctx, _l("Rect width"), 0.0, gui->rect_w, 1e9, SMART_STEP(gui->rect_w), SMART_STEP(gui->rect_w));
@@ -143,8 +157,8 @@ int gui_mtext_info (gui_obj *gui){
 		if (gui->t_al_v > 2) gui->t_al_v = 0;
 		if (gui->t_al_h > 2) gui->t_al_h = 0;
 		
-		gui->t_al_v = nk_combo(gui->ctx, text_al_v + 1, 3, gui->t_al_v, 20, nk_vec2(100, 80));
-		gui->t_al_h = nk_combo(gui->ctx, text_al_h, 3, gui->t_al_h, 20, nk_vec2(100, 80));
+		gui->t_al_v = nk_combo(gui->ctx, (const char **)al_v_addr, 3, gui->t_al_v, 20, nk_vec2(100, 80));
+		gui->t_al_h = nk_combo(gui->ctx, (const char **)al_h_addr, 3, gui->t_al_h, 20, nk_vec2(100, 80));
 		
 		if (mtext_pop){
 			

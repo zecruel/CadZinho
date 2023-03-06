@@ -165,23 +165,42 @@ int gui_txt_prop_info (gui_obj *gui){
 		else { /* only show information */
 			nk_label_colored(gui->ctx, style, NK_TEXT_LEFT, nk_rgb(255,255,0));
 		}
+    
+    static char al_v[4][DXF_MAX_CHARS + 1];
+    strncpy(al_v[0], _l("Base Line"), DXF_MAX_CHARS);
+    strncpy(al_v[1], _l("Bottom"), DXF_MAX_CHARS);
+    strncpy(al_v[2], _l("Middle"), DXF_MAX_CHARS);
+    strncpy(al_v[3], _l("Top"), DXF_MAX_CHARS);
+
+    char *al_v_addr[] = {al_v[0], al_v[1], al_v[2], al_v[3]};
+    
+    static char al_h[6][DXF_MAX_CHARS + 1];
+    strncpy(al_h[0], _l("Left"), DXF_MAX_CHARS);
+    strncpy(al_h[1], _l("Center"), DXF_MAX_CHARS);
+    strncpy(al_h[2], _l("Right"), DXF_MAX_CHARS);
+    strncpy(al_h[3], _l("Aligned"), DXF_MAX_CHARS);
+    strncpy(al_h[4], _l("Middle"), DXF_MAX_CHARS);
+    strncpy(al_h[5], _l("Fit"), DXF_MAX_CHARS);
+    
+    char *al_h_addr[] = {al_h[0], al_h[1], al_h[2], al_h[3], al_h[4], al_h[5]};
+    
 		
 		/* ----------- alignment ------------ */
 		/* vertical alignment */
 		nk_checkbox_label(gui->ctx, _l("Vert:"), &en_al_v);
 		if (en_al_v){
-			t_al_v = nk_combo(gui->ctx, text_al_v, T_AL_V_LEN, t_al_v, 20, nk_vec2(100,105));
+			t_al_v = nk_combo(gui->ctx, (const char **)al_v_addr, 4, t_al_v, 20, nk_vec2(100,105));
 		}
 		else { /* only show information */
-			nk_label_colored(gui->ctx, text_al_v[t_al_v], NK_TEXT_LEFT, nk_rgb(255,255,0));
+			nk_label_colored(gui->ctx, al_v_addr[t_al_v], NK_TEXT_LEFT, nk_rgb(255,255,0));
 		}
 		/* horizontal alignment */
 		nk_checkbox_label(gui->ctx, _l("Horiz:"), &en_al_h);
 		if (en_al_h){
-			t_al_h = nk_combo(gui->ctx, text_al_h, T_AL_H_LEN, t_al_h, 20, nk_vec2(100,105));
+			t_al_h = nk_combo(gui->ctx, (const char **)al_h_addr, 6, t_al_h, 20, nk_vec2(100,105));
 		}
 		else { /* only show information */
-			nk_label_colored(gui->ctx, text_al_h[t_al_h], NK_TEXT_LEFT, nk_rgb(255,255,0));
+			nk_label_colored(gui->ctx, al_h_addr[t_al_h], NK_TEXT_LEFT, nk_rgb(255,255,0));
 		}
 		
 		/* ----------- text height ------------ */

@@ -283,7 +283,7 @@ int gui_hatch_info (gui_obj *gui){
 		nk_layout_row_end(gui->ctx);
 		
 		nk_layout_row_dynamic(gui->ctx, 105, 1);
-		if (nk_group_begin(gui->ctx, _l("Patt_controls"), NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+		if (nk_group_begin(gui->ctx, "Patt_controls", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 		
 			if (gui->h_type == HATCH_USER){/*User definied simple hatch*/
 				/* the user can select only angle and spacing of continuous lines*/

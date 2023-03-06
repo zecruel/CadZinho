@@ -49,7 +49,7 @@ int gui_tools_win (gui_obj *gui){
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
 		if (gui_tab (gui, _l("Place"), tool_grp == GRP_PLACE)) tool_grp = GRP_PLACE;
 		if (gui_tab (gui, _l("Modify"), tool_grp == GRP_MODIFY)) tool_grp = GRP_MODIFY;
-		if (gui_tab (gui, _l("Dimension"), tool_grp == GRP_DIM)) tool_grp = GRP_DIM;
+		if (gui_tab (gui, _l("Dimensions"), tool_grp == GRP_DIM)) tool_grp = GRP_DIM;
 		//if (gui_tab (gui, _l("XData"), too_grp == GRP_XDATA)) too_grp = GRP_XDATA;
 		nk_style_pop_vec2(gui->ctx);
 		nk_layout_row_end(gui->ctx);
@@ -477,8 +477,8 @@ int gui_main_win(gui_obj *gui){
 			text_len = snprintf(text, 63, "%s", _l("ByL"));
 		}
 		nk_layout_row_push(gui->ctx, 70);
-		nk_label(gui->ctx, "Color: ", NK_TEXT_RIGHT);
-		nk_layout_row_push(gui->ctx, 70);
+		nk_label(gui->ctx, _l("Color: "), NK_TEXT_RIGHT);
+		nk_layout_row_push(gui->ctx, 80);
 		if (nk_combo_begin_image_label(gui->ctx, text, nk_image_ptr(gui->color_img), nk_vec2(215,320))){
 			nk_layout_row_dynamic(gui->ctx, 20, 2);
 			if (nk_button_label(gui->ctx, _l("By Layer"))){
@@ -522,8 +522,12 @@ int gui_main_win(gui_obj *gui){
 		nk_layout_row_push(gui->ctx, 120);
 		nk_label(gui->ctx, _l("Line weight: "), NK_TEXT_RIGHT);
 		nk_layout_row_push(gui->ctx, 120);
+    
+    char * lw_descr = (char *)dxf_lw_descr[gui->lw_idx];
+    if(gui->lw_idx == DXF_LW_LEN) lw_descr = _l("By Layer");
+    if(gui->lw_idx == DXF_LW_LEN + 1) lw_descr = _l("By Block");
 		
-		if (nk_combo_begin_label(gui->ctx, dxf_lw_descr[gui->lw_idx], nk_vec2(200,300))){
+		if (nk_combo_begin_label(gui->ctx, lw_descr, nk_vec2(200,300))){
 			nk_layout_row_dynamic(gui->ctx, 25, 2);
 			if (nk_button_label(gui->ctx, _l("By Layer"))){
 				gui->lw_idx = DXF_LW_LEN;
@@ -568,10 +572,10 @@ int gui_main_win(gui_obj *gui){
 				nk_layout_space_end(gui->ctx);
 				
 				nk_layout_space_begin(gui->ctx, NK_STATIC, 40, 2);
-				nk_layout_space_push(gui->ctx, nk_rect(80, 2, 200, 24));
+				nk_layout_space_push(gui->ctx, nk_rect(80, 2, 250, 24));
 				nk_label(gui->ctx, _l("By Ezequiel Rabelo de Aguiar"), NK_TEXT_LEFT);
 				
-				nk_layout_space_push(gui->ctx, nk_rect(290, 0, 24, 24));
+				nk_layout_space_push(gui->ctx, nk_rect(340, 0, 24, 24));
 				nk_image(gui->ctx, nk_image_ptr(gui->svg_bmp[SVG_BRAZIL]));
 				nk_layout_space_end(gui->ctx);
 				
@@ -591,7 +595,7 @@ int gui_main_win(gui_obj *gui){
 		}
 		
 		if (gui->discard_changes){
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Discard changes"), NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, nk_rect(200, 100, 300, 100))){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Discard changes"), NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, nk_rect(200, 100, 370, 100))){
 				//nk_layout_row_dynamic(gui->ctx, 20, 2);
 				nk_layout_row_template_begin(gui->ctx, 23);
 				nk_layout_row_template_push_static(gui->ctx, 24);

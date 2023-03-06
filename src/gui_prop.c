@@ -56,6 +56,21 @@ int gui_prop_info (gui_obj *gui){
 	char tmp_str[DXF_MAX_CHARS+1];
 	int i, j, h;
 	
+  
+  
+  static char by[2][DXF_MAX_CHARS + 1];
+  strncpy(by[0], _l("By Layer"), DXF_MAX_CHARS);
+  strncpy(by[1], _l("By Block"), DXF_MAX_CHARS);
+  
+  char *lw_descr[26];
+  
+  for (i = 0; i < 24; i++){
+    lw_descr[i] = (char*) dxf_lw_descr[i];
+  }
+  lw_descr[24] = by[0];
+  lw_descr[25] = by[1];
+  
+  
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, _l("Edit Properties"), NK_TEXT_LEFT);
 	if (gui->step == 0){ /* get elements to edit */
@@ -217,14 +232,15 @@ int gui_prop_info (gui_obj *gui){
 		
 		
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 110});
+    
 		
 		/* ----------- line weigth ------------ */
 		nk_checkbox_label(gui->ctx, _l("LW:"), &en_lw);
 		if (en_lw){ /* enable editing */
-			lw_i = nk_combo(gui->ctx, dxf_lw_descr, DXF_LW_LEN + 2, lw_i, 15, nk_vec2(100,205));
+			lw_i = nk_combo(gui->ctx, (const char**)lw_descr, DXF_LW_LEN + 2, lw_i, 15, nk_vec2(110,205));
 		}
 		else{ /* only show line width description */
-			nk_label_colored(gui->ctx, dxf_lw_descr[lw_i], NK_TEXT_LEFT, nk_rgb(255,255,0));
+			nk_label_colored(gui->ctx, lw_descr[lw_i], NK_TEXT_LEFT, nk_rgb(255,255,0));
 		}
 		
 		/* ---------------------*/

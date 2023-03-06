@@ -661,7 +661,7 @@ int tstyles_mng (gui_obj *gui){
 					str_upp(name2); /* upper case to compare*/
 					if (i == edit_sty) { /*if current text style */
 						/* preserve STANDARD text style from rename*/
-						if (strcmp(name2, _l("STANDARD")) == 0){
+						if (strcmp(name2, "STANDARD") == 0){
 							if (strcmp(name2, name1) != 0) sty_exist = 2;
 							break;
 						}

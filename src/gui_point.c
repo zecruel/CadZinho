@@ -5,6 +5,7 @@ int gui_point_info (gui_obj *gui){
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, _l("Place a single point"), NK_TEXT_LEFT);
+  nk_label(gui->ctx, _l("Enter destination point"), NK_TEXT_LEFT);
 	
 	
 	dxf_node *new_el;

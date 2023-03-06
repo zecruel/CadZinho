@@ -74,7 +74,8 @@ int gui_load_conf (gui_obj *gui){
 	gui->dflt_pat = try_load_dflt(new_path, (char *)h_pattern_lib_dflt());
 	
 	/* load hatches patterns -NEED IMPROVEMENTS */
-	gui->hatch_fam.next = dxf_hatch_family(_l("Standard"), _l("Internal standard pattern library"), gui->dflt_pat);
+	gui->hatch_fam.next = dxf_hatch_family(_l("Standard"), 
+    _l("Internal standard pattern library"), gui->dflt_pat);
 	if(gui->hatch_fam.next) gui->end_fam = gui->hatch_fam.next;
 	
 	/* full path of config file */

@@ -190,7 +190,7 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 		/* dynamic width for directory path and fixed width for "up" button */
 		nk_layout_row_template_begin(gui->ctx, 22);
 		nk_layout_row_template_push_dynamic(gui->ctx);
-		nk_layout_row_template_push_static(gui->ctx, 30);
+		nk_layout_row_template_push_static(gui->ctx, 50);
 		nk_layout_row_template_end(gui->ctx);
 		
 		nk_label(gui->ctx, curr_path, NK_TEXT_LEFT); /* show current directory */
@@ -584,7 +584,7 @@ int gui_file_open (gui_obj *gui, char *init_dir){
 		}
 		
 		if (discard_changes){
-			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Discard changes"), NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, nk_rect(30, 100, 300, 100))){
+			if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, _l("Discard changes"), NK_WINDOW_CLOSABLE|NK_WINDOW_NO_SCROLLBAR, nk_rect(30, 100, 370, 100))){
 				//nk_layout_row_dynamic(gui->ctx, 20, 2);
 				nk_layout_row_template_begin(gui->ctx, 23);
 				nk_layout_row_template_push_static(gui->ctx, 24);

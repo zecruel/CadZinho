@@ -528,21 +528,11 @@ char* gui_get_literal (gui_obj *gui, const char *literal);
 extern int dxf_lw[];
 extern const char *dxf_lw_descr[];
 extern bmp_color dxf_colors[];
-extern const char *text_al_h[];
-extern const char *text_al_v[];
 extern const char *dxf_seed_2007;
 
 
 #ifndef DXF_LW_LEN
 	#define DXF_LW_LEN 24
-#endif
-
-#ifndef T_AL_H_LEN	
-	#define T_AL_H_LEN 6
-#endif
-
-#ifndef T_AL_V_LEN
-	#define T_AL_V_LEN 4
 #endif
 
 #define _l(X) gui_get_literal (gui, X)

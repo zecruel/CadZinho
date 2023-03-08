@@ -225,6 +225,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"win_close", script_win_close},
 		{"nk_layout", script_nk_layout},
 		{"nk_button", script_nk_button},
+    {"nk_button_img", script_nk_button_img},
 		{"nk_label", script_nk_label},
 		{"nk_edit", script_nk_edit},
 		{"nk_propertyi", script_nk_propertyi},
@@ -244,9 +245,13 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 		{"start_dynamic", script_start_dynamic},
 		{"stop_dynamic", script_stop_dynamic},
 		{"ent_draw", script_ent_draw},
-		{"unique_id", script_unique_id},
+		
+    {"svg_image", script_svg_image},
+    
+    {"unique_id", script_unique_id},
 		{"last_blk", script_last_blk},
-		{"pdf_new", script_pdf_new},
+		
+    {"pdf_new", script_pdf_new},
 		{NULL, NULL}
 	};
 	luaL_newlib(T, cz_lib);
@@ -384,6 +389,13 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	/* create metatable */
 	luaL_newmetatable(T, "Sqlite_stmt");
 	lua_pushcfunction(T, script_sqlite_stmt_gc);
+	lua_setfield(T, -2, "__gc");
+	lua_pop( T, 1);
+  
+  /* create a new type of lua userdata to represent a raster image */
+	/* create metatable */
+	luaL_newmetatable(T, "Rast_img");
+	lua_pushcfunction(T, script_rast_image_gc);
 	lua_setfield(T, -2, "__gc");
 	lua_pop( T, 1);
 	

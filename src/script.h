@@ -139,6 +139,7 @@ int script_win_show (lua_State *L);
 int script_win_close (lua_State *L);
 int script_nk_layout (lua_State *L);
 int script_nk_button (lua_State *L);
+int script_nk_button_img (lua_State *L);
 int script_nk_label (lua_State *L);
 int script_nk_edit (lua_State *L);
 int script_nk_propertyi (lua_State *L);
@@ -168,6 +169,9 @@ int script_fs_dir (lua_State *L);
 int script_fs_chdir (lua_State *L);
 int script_fs_cwd (lua_State *L);
 int script_fs_script_path(lua_State *L);
+
+int script_svg_image(lua_State *L);
+int script_rast_image_gc(lua_State *L);
 
 int script_unique_id (lua_State *L);
 int script_last_blk (lua_State *L);

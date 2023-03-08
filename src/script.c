@@ -2,6 +2,11 @@
 #include "miniz.h"
 #include "yxml.h"
 #include "gui_script.h"
+#include "i_svg_media.h"
+
+struct script_rast_image { /* image user object */
+	bmp_img * img;
+};
 
 /* for debug purposes - print a Lua variable in given buffer string (idx is its position on Lua stack)*/
 static int print_lua_var(char * value, lua_State * L, int idx){
@@ -5632,6 +5637,47 @@ int script_nk_button (lua_State *L) {
 	return 1;
 }
 
+/* GUI image button object */
+/* given parameters:
+	- Button image, as user value
+returns:
+	- button pressed, as boolean,
+*/
+int script_nk_button_img (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "nk_button_img: invalid number of arguments");
+		lua_error(L);
+	}
+	
+  struct script_rast_image * img_obj;
+  
+  if (!( img_obj =  luaL_checkudata(L, 1, "Rast_img") )) { /* the Rast_img object is a Lua userdata type*/
+		lua_pushliteral(L, "nk_button_img: incorrect argument type");
+		lua_error(L);
+	}
+	
+	if (!gui->ctx->current) return 0; /* verifiy if has current window - prevent crash in nuklear */
+	
+	int ret = nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(img_obj->img));
+	
+	lua_pushboolean(L, ret); /* return button status */
+	
+	return 1;
+}
+
 /* GUI label object */
 /* given parameters:
 	- label text, as string
@@ -7563,6 +7609,72 @@ int script_sqlite_close(lua_State *L){
 	
 	lua_pushboolean(L, 1); /* return success */
 	return 1;
+}
+
+/* ------------ SVG Image ------------- */
+
+/* Rasterize a SVG image */
+/* given parameters:
+	- SVG data, as string
+  - forced width and height, as numbers (optional, default: use SVG param)
+returns:
+	- a Image object (user value), or nil if fail
+*/
+int script_svg_image(lua_State *L){
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "image: invalid number of arguments");
+		lua_error(L);
+	}
+	luaL_argcheck(L, lua_isstring(L, 1), 1, "string expected");
+	
+	struct script_rast_image * img_obj;
+  
+	/* create a userdata object */
+	img_obj = (struct script_rast_image *) lua_newuserdatauv(L, sizeof(struct script_rast_image), 0); 
+	luaL_getmetatable(L, "Rast_img");
+	lua_setmetatable(L, -2);
+	
+  img_obj->img = NULL;
+  size_t len = 0;
+  const char *data = lua_tolstring(L, 1, &len);
+  char *svg_data = malloc(len + 1);
+  
+  /* init image */
+  NSVGimage *curves =NULL;
+  if (svg_data){  /* get vectorized data from SVG */
+    strncpy(svg_data, data, len); /* copy string to allow modification */
+    curves = nsvgParse(svg_data, "px", 96.0f);
+    free(svg_data);
+  }
+  if (curves){ /* rasterize image */
+    int w = curves->width; /* default width and height from SVG */
+    int h = curves->height;
+  
+    if (lua_isnumber(L, 2) && lua_isnumber(L, 3)) { /* force size - optional*/
+      w = lua_tonumber(L, 2);
+      h = lua_tonumber(L, 3);
+    }
+    
+    img_obj->img = i_svg_bmp(curves, w, h);
+    nsvgDelete(curves);
+  }
+  
+	if (img_obj->img == NULL){
+		lua_pop(L, 1);
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	return 1;
+}
+
+/* garbage colector function for raster images */
+int script_rast_image_gc(lua_State *L){
+	struct script_rast_image * img_obj = (struct script_rast_image *)lua_touserdata(L, 1);
+	bmp_free(img_obj->img);
+	return 0;
 }
 
 /* ------------- Misc ------*/

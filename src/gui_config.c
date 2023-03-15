@@ -520,8 +520,12 @@ int gui_get_ini (lua_State *L) {
 }
 
 int config_win (gui_obj *gui){
+  static struct script_obj lang_scr;
+  static int init = 0;
+  
 	int show_config = 1;
 	int i = 0;
+  static int num_lang = 0;
 	
 	static enum Cfg_group {
 			GRP_PREF,
@@ -533,6 +537,86 @@ int config_win (gui_obj *gui){
 	if (nk_begin(gui->ctx, _l("Config"), nk_rect(418, 88, 400, 300),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
+    if (!init){ /* init Lua engine and static structures */
+      init = 1;
+      num_lang = 0;
+      /* custom Lua functions to find and replace text in config.lua */
+      const char *f =
+        "function change_lang_config (fname, lang)\n"
+        "  local f = io.open(fname, \"r\")\n"
+        "  local content = f:read(\"a\")\n"
+        "  f:close()\n"
+        "  content = string.gsub (content, '(\\n[^-\\n]*language%s*=%s*)%g+', '%1\"'.. lang ..'\"')\n"
+        "  f = io.open(fname, \"w+\")\n"
+        "  f:write(content)\n"
+        "  f:close()\n"
+        "end\n"
+        "function list_lang (path)\n"
+        "  langs = {}\n"
+        "  langs_o = {}\n"
+        "  local dir = fs.dir(path)\n"
+        "  if not dir then return langs, langs_o end -- quit on error\n"
+        "  for i = 1, #dir do\n"
+        "    if dir[i].is_dir == false then\n"
+        "      if string.find(dir[i].name, '^%l%l_%u%u%.lua$') then\n"
+        "        langs[#langs+1] = string.match(dir[i].name, '^%l%l_%u%u')\n"
+        "      end\n"
+        "    end\n"
+        "  end\n"
+        "  table.sort(langs)\n"
+        "  for i, lang in ipairs(langs) do\n"
+        "    local img = nil\n"
+        "    dofile(path .. lang .. '.lua')\n"
+        "    if flag then\n"
+        "      img = cadzinho.svg_image(flag, 20, 18)\n"
+        "    end\n"
+        "    langs_o[i] = {descr = descr, flag = img}\n"
+        "    descr = nil\n"
+        "    flag = nil\n"
+        "  end\n"
+        "  return langs, langs_o\n"
+        "end";
+      lang_scr.L = NULL;
+      lang_scr.T = NULL;
+      lang_scr.active = 0;
+      lang_scr.dynamic = 0;
+      
+      if (gui_script_init (gui, &lang_scr, NULL, (char*)f) == 1){
+        lang_scr.time = clock();
+        lang_scr.timeout = 10.0; /* default timeout value */
+        lang_scr.do_init = 0;
+        
+        lua_getglobal(lang_scr.T, "cz_main_func");
+        int n_results = 0; /* for Lua 5.4*/
+        lang_scr.status = lua_resume(lang_scr.T, NULL, 0, &n_results); /* start thread */
+        if (lang_scr.status != LUA_OK){
+          lang_scr.active = 0; /* error */			
+        } else lang_scr.active = 1;
+      }
+      if (lang_scr.active){
+        char new_path[PATH_MAX_CHARS+1];
+        snprintf(new_path, PATH_MAX_CHARS, "%slang%c", 
+          gui->base_dir, DIR_SEPARATOR);
+        
+        lua_getglobal(lang_scr.T, "list_lang"); /* get function to be called */
+        lua_pushstring(lang_scr.T, new_path); /* path to lang dir */
+        lang_scr.time = clock();
+        if (lua_pcall(lang_scr.T, 1, 2, 0) == LUA_OK){
+          num_lang = lua_rawlen (lang_scr.T, 1);
+        }
+        else{
+          const char *error = lua_tostring(lang_scr.T, -1);
+          lua_pop(lang_scr.T, 1); /* pop error message from the stack */
+        }
+      }
+      
+      //lua_getglobal(L, "change_lang_config"); /* get function to be called */
+      //lua_pushstring(L, "config.lua"); /* path to config.lua file */
+      //lua_pushstring(L, "pt_BR"); /* language chosen */
+      //if (lua_pcall(L, 2, 0, 0) == LUA_OK){ }
+      //else{char *error = lua_tostring(L, -1)); lua_pop(L, 1); /* pop error message from the stack */}
+    }   
+    
 		/* Config groups - Preferences, Raw info, 3D view */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
@@ -592,6 +676,78 @@ int config_win (gui_obj *gui){
 					}
 				}
 			}
+      
+      
+      nk_layout_row_dynamic(gui->ctx, 20, 3);
+      
+      /* language chooser */
+      int h = num_lang * 30 + 5;
+      h = (h < 300)? h : 300;
+      if (nk_combo_begin_label(gui->ctx, gui->main_lang, nk_vec2(300,h))){
+        for (i = 1; i <= num_lang; i++){
+          nk_layout_row_dynamic(gui->ctx, 25, 1);
+          /* get table with language description and country flag */
+          lua_rawgeti (lang_scr.T, 2, i);
+          lua_pushstring(lang_scr.T, "descr");
+          int type = lua_gettable(lang_scr.T, -2);
+          lua_pushstring(lang_scr.T, "flag");
+          int type2 = lua_gettable(lang_scr.T, -3);
+          /* get current language Id */
+          lua_rawgeti (lang_scr.T, 1, i);
+          if (type == LUA_TSTRING) {
+            if (type2 == LUA_TUSERDATA) {
+              struct script_rast_image * img_obj = (struct script_rast_image *)
+                lua_touserdata (lang_scr.T, -2);
+              if (nk_button_image_label(gui->ctx, nk_image_ptr(img_obj->img),
+                lua_tostring(lang_scr.T, -3), NK_TEXT_RIGHT))
+              {
+                
+              }
+            }
+            else{
+              if (nk_button_label(gui->ctx, lua_tostring(lang_scr.T, -3))){
+                
+              }
+            }
+          }
+          else {
+            if (type2 == LUA_TUSERDATA) {
+              struct script_rast_image * img_obj = (struct script_rast_image *)
+                lua_touserdata (lang_scr.T, -2);
+              if (nk_button_image_label(gui->ctx, nk_image_ptr(img_obj->img),
+                lua_tostring(lang_scr.T, -1), NK_TEXT_RIGHT))
+              {
+                
+              }
+            }
+            else{
+              if (nk_button_label(gui->ctx, lua_tostring(lang_scr.T, -1))){
+                
+              }
+            }
+          }
+          
+          lua_pop(lang_scr.T, 4);
+          
+          
+        }
+        nk_combo_end(gui->ctx);
+      }
+      
+      
+      if (gui->main_lang_scr.active) {
+        nk_label(gui->ctx, lua_tostring(gui->main_lang_scr.T, 2), NK_TEXT_LEFT);
+        //struct script_rast_image * img_obj = (struct script_rast_image *)
+        //  lua_touserdata (gui->main_lang_scr.T, 3);
+        //nk_image(gui->ctx, nk_image_ptr(img_obj->img));
+      }
+      
+      else {
+        nk_label(gui->ctx, " ", NK_TEXT_LEFT);
+        nk_label(gui->ctx, " ", NK_TEXT_LEFT);
+      }
+      
+      
 		}
 		else if(cfg_grp == GRP_INFO){
 			nk_layout_row_dynamic(gui->ctx, 60, 1);
@@ -726,7 +882,17 @@ int config_win (gui_obj *gui){
 			
 			invert_4matrix(gui->drwg_view[0], gui->drwg_view_i[0]);
 		}
-	} else show_config = 0;
+	} else {
+    show_config = 0;
+    if (lang_scr.L) {
+			lua_close(lang_scr.L);
+			lang_scr.L = NULL;
+		}
+    lang_scr.T = NULL;
+    lang_scr.active = 0;
+    lang_scr.dynamic = 0;
+    init = 0;
+  }
 	nk_end(gui->ctx);
 	
 	return show_config;

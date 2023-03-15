@@ -66,6 +66,10 @@ enum script_yield_reason {
 	YIELD_GUI_REFRESH
 };
 
+struct script_rast_image { /* image user object */
+	bmp_img * img;
+};
+
 #include "gui.h"
 
 int set_timeout (lua_State *L);

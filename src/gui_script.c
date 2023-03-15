@@ -139,7 +139,8 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	script->do_init = 0;
 	//script->wait_gui_resume = 0;
 	script->groups = 0;
-	strncpy(script->path, fname, DXF_MAX_CHARS - 1);
+  script->path[0] = 0;
+	if (fname) strncpy(script->path, fname, DXF_MAX_CHARS - 1);
 	
 	script->timeout = 10.0; /* default timeout value */
 	
@@ -413,14 +414,16 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	luaL_addchar(&b, DIR_SEPARATOR);
 	luaL_addstring(&b, "init.lua;");
   */
-	luaL_addstring(&b, get_dir(fname));
-	luaL_addchar(&b, DIR_SEPARATOR);
-	luaL_addstring(&b, "?.lua;");
-	luaL_addstring(&b, get_dir(fname));
-	luaL_addchar(&b, DIR_SEPARATOR);
-	luaL_addstring(&b, "?");
-	luaL_addchar(&b, DIR_SEPARATOR);
-	luaL_addstring(&b, "init.lua;");
+  if (fname) {
+    luaL_addstring(&b, get_dir(fname));
+    luaL_addchar(&b, DIR_SEPARATOR);
+    luaL_addstring(&b, "?.lua;");
+    luaL_addstring(&b, get_dir(fname));
+    luaL_addchar(&b, DIR_SEPARATOR);
+    luaL_addstring(&b, "?");
+    luaL_addchar(&b, DIR_SEPARATOR);
+    luaL_addstring(&b, "init.lua;");
+  }
 
 	if (strcmp (gui->base_dir, gui->pref_path) != 0){
 		luaL_addstring(&b, gui->pref_path);

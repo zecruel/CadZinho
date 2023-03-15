@@ -4,10 +4,6 @@
 #include "gui_script.h"
 #include "i_svg_media.h"
 
-struct script_rast_image { /* image user object */
-	bmp_img * img;
-};
-
 /* for debug purposes - print a Lua variable in given buffer string (idx is its position on Lua stack)*/
 static int print_lua_var(char * value, lua_State * L, int idx){
 	int type = lua_type(L, idx); /*get  Lua type*/
@@ -5664,7 +5660,7 @@ int script_nk_button_img (lua_State *L) {
 	
   struct script_rast_image * img_obj;
   
-  if (!( img_obj =  luaL_checkudata(L, 1, "Rast_img") )) { /* the Rast_img object is a Lua userdata type*/
+  if (!( img_obj = luaL_checkudata(L, 1, "Rast_img") )) { /* the Rast_img object is a Lua userdata type*/
 		lua_pushliteral(L, "nk_button_img: incorrect argument type");
 		lua_error(L);
 	}

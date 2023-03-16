@@ -25,12 +25,12 @@
 
 descr = "Português (Brasil)"
 
-flag = "<svg width=\"512\" height=\"335\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\">" ..
-	"  <path id=\"brazil1\" fill=\"#007f00\" d=\"m512.05078,335.65631c-128,0 -512,0 -512,0l0,-335.4l512,0c0,0 0,245 0,326.6c0,4.9 0,8.8 0,8.8z\" class=\"st0\"/>" ..
-	"  <path fill=\"#ffff00\" id=\"brazil2\" d=\"m251.2361,30.37856l-210.32621,128.11806c-6.44548,3.84467 -6.44548,13.11712 0,17.07487l210.43929,128.11806c3.1662,1.92234 7.23703,1.92234 10.40323,0l210.43929,-128.11806c6.44548,-3.84467 6.44548,-13.11712 0,-17.07487l-210.55237,-128.11806c-3.1662,-1.92234 -7.23703,-1.92234 -10.40323,0z\" class=\"st1\"/>" ..
-	"  <circle id=\"brazil3\" fill=\"#0000ff\" r=\"94.59999\" cy=\"167.95632\" cx=\"254.05078\" class=\"st2\"/>" ..
-	"  <path stroke=\"null\" fill=\"#ffffff\" id=\"svg_5\" d=\"m172.85022,119.58436c-4.42181,7.50368 -7.90567,15.54334 -10.18357,24.25298c52.39179,-3.88584 130.10851,10.71955 179.41842,58.68952c3.21586,-8.17365 5.35977,-17.01728 6.16374,-26.1289c-51.05184,-43.01218 -121.53287,-58.28754 -175.39859,-56.8136z\" class=\"st3\"/>" ..
-	"</svg>"
+flag = [[<svg width="512" height="335" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+	  <path id="brazil1" fill="#007f00" d="m512.05078,335.65631c-128,0 -512,0 -512,0l0,-335.4l512,0c0,0 0,245 0,326.6c0,4.9 0,8.8 0,8.8z" class="st0"/>
+	  <path fill="#ffff00" id="brazil2" d="m251.2361,30.37856l-210.32621,128.11806c-6.44548,3.84467 -6.44548,13.11712 0,17.07487l210.43929,128.11806c3.1662,1.92234 7.23703,1.92234 10.40323,0l210.43929,-128.11806c6.44548,-3.84467 6.44548,-13.11712 0,-17.07487l-210.55237,-128.11806c-3.1662,-1.92234 -7.23703,-1.92234 -10.40323,0z" class="st1"/>
+	  <circle id="brazil3" fill="#0000ff" r="94.59999" cy="167.95632" cx="254.05078" class="st2"/>
+	  <path stroke="null" fill="#ffffff" id="svg_5" d="m172.85022,119.58436c-4.42181,7.50368 -7.90567,15.54334 -10.18357,24.25298c52.39179,-3.88584 130.10851,10.71955 179.41842,58.68952c3.21586,-8.17365 5.35977,-17.01728 6.16374,-26.1289c-51.05184,-43.01218 -121.53287,-58.28754 -175.39859,-56.8136z" class="st3"/>
+	</svg>]]
 
 
 translate = {}
@@ -125,6 +125,7 @@ translate["Open folder"] = "Abre a pasta"
 translate["Config File:"] = "Arquivo de configuração:"
 translate["Open file"] = "Abre o arquivo"
 translate["Reload config"] = "Recarrega as configurações"
+translate["Interface language:"] = "Língua da interface:"
 translate["Open Info Window"] = "Abre a janela de informações"
 translate["The following window is used to visualize " ..
     "the raw parameters of the selected elements, according to " ..

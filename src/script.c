@@ -7645,16 +7645,18 @@ int script_svg_image(lua_State *L){
     free(svg_data);
   }
   if (curves){ /* rasterize image */
-    int w = curves->width; /* default width and height from SVG */
-    int h = curves->height;
-  
-    if (lua_isnumber(L, 2) && lua_isnumber(L, 3)) { /* force size - optional*/
-      w = lua_tonumber(L, 2);
-      h = lua_tonumber(L, 3);
-    }
+    if (curves->shapes){
+      int w = curves->width; /* default width and height from SVG */
+      int h = curves->height;
     
-    img_obj->img = i_svg_bmp(curves, w, h);
-    nsvgDelete(curves);
+      if (lua_isnumber(L, 2) && lua_isnumber(L, 3)) { /* force size - optional*/
+        w = lua_tonumber(L, 2);
+        h = lua_tonumber(L, 3);
+      }
+      
+      img_obj->img = i_svg_bmp(curves, w, h);
+      nsvgDelete(curves);
+    }
   }
   
 	if (img_obj->img == NULL){

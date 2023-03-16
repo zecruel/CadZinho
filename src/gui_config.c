@@ -1,6 +1,11 @@
 #include "gui_config.h"
 #include "gui_script.h"
 
+const char * no_flag = "<svg width=\"88.0000\" height=\"68.0000\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n"
+  "<path fill=\"rgb(254, 254, 254)\" stroke=\"rgb(0, 0, 0)\" stroke-width=\"3.0\" d=\"M0 67 L88 67 L88 1 L0 1 L0 67 \"/>\n"
+  "<path stroke=\"rgb(0, 0, 0)\" stroke-width=\"3.0\" fill=\"none\" d=\"M36.46 24.78 L36.46 23.1 L38.13 19.75 L39.81 18.08 L43.16 16.4 L49.87 16.4 L53.22 18.08 L54.9 19.75 L56.57 23.1 L56.57 26.46 L54.9 29.81 L53.22 31.49 L46.51 34.84 L46.51 39.87 M46.51 48.25 L44.84 49.92 L46.51 51.6 L48.19 49.92 L46.51 48.25 \"/>\n"
+  "</svg>";
+
 const char* gui_dflt_conf() {
 	static char buf[8192];
   char l_str[10];
@@ -47,6 +52,93 @@ const char* gui_dflt_conf() {
     "Cadman_Roman.ttf", l_str);
 	
 	return buf;
+}
+
+void gui_load_lang (gui_obj *gui){
+  /* Recommendation: Language string written according codes defined in POSIX
+  convention (standarts ISO 639-1 and ISO 3166-1 alpha-2), like lang_COUNTRY
+  codes (eg. en_US, pt_BR, cz_CZ) */
+  char new_path[PATH_MAX_CHARS+1];
+  new_path[0] = 0;
+  snprintf(new_path, PATH_MAX_CHARS, "%slang%c%s.lua", 
+    gui->base_dir, DIR_SEPARATOR, gui->main_lang);
+  
+  if (gui_script_init (gui, &gui->main_lang_scr, new_path, NULL) == 1){
+    gui->main_lang_scr.active = 1;
+    
+    gui->main_lang_scr.time = clock();
+    gui->main_lang_scr.timeout = 1.0; /* default timeout value */
+    gui->main_lang_scr.do_init = 0;
+    
+    lua_getglobal(gui->main_lang_scr.T, "cz_main_func");
+    int n_results = 0;
+    gui->main_lang_scr.status = lua_resume(gui->main_lang_scr.T, NULL, 0, &n_results); /* start thread */
+    if (gui->main_lang_scr.status != LUA_OK){
+      /* error */
+      /* close script and clean instance*/
+      lua_close(gui->main_lang_scr.L);
+      gui->main_lang_scr.L = NULL;
+      gui->main_lang_scr.T = NULL;
+      gui->main_lang_scr.active = 0;
+      gui->main_lang_scr.dynamic = 0;
+    }
+    else{
+      /* globals always in stack to prevent garbage colector */
+      /* 'translate' table in stack pos = 1 */
+      if (lua_getglobal(gui->main_lang_scr.T, "translate") != LUA_TTABLE){
+        gui->main_lang_scr.active = 0;
+        lua_pop(gui->main_lang_scr.T, 1);
+      }
+      else {
+        /* 'descr' string in stack pos = 2 */
+        if (lua_getglobal(gui->main_lang_scr.T, "descr") != LUA_TSTRING){
+          lua_pop(gui->main_lang_scr.T, 1);
+          lua_pushliteral(gui->main_lang_scr.T, "");
+        }
+        /* 'flag' SVG string in stack pos = 3 */
+        lua_getglobal(gui->main_lang_scr.T, "cadzinho");
+        lua_pushstring(gui->main_lang_scr.T, "svg_image");
+        lua_gettable(gui->main_lang_scr.T, -2);
+        if (lua_getglobal(gui->main_lang_scr.T, "flag") != LUA_TSTRING){
+          lua_pop(gui->main_lang_scr.T, 1);
+          lua_pushstring(gui->main_lang_scr.T, no_flag);
+        }
+        lua_pushnumber(gui->main_lang_scr.T, 24);
+        lua_pushnumber(gui->main_lang_scr.T, 18);
+        gui->main_lang_scr.time = clock();
+        lua_pcall(gui->main_lang_scr.T, 3, 1, 0);
+        if (!lua_isuserdata(gui->main_lang_scr.T, -1)){
+          lua_pop(gui->main_lang_scr.T, 1);
+          lua_pushstring(gui->main_lang_scr.T, "svg_image");
+          lua_gettable(gui->main_lang_scr.T, -2);
+          lua_pushstring(gui->main_lang_scr.T, no_flag);
+          lua_pushnumber(gui->main_lang_scr.T, 24);
+          lua_pushnumber(gui->main_lang_scr.T, 18);
+          gui->main_lang_scr.time = clock();
+          lua_pcall(gui->main_lang_scr.T, 3, 1, 0);
+        }
+        lua_replace(gui->main_lang_scr.T, 3);
+      }
+    }
+  }
+}
+static void gui_change_lang (gui_obj *gui, lua_State *L){
+  /* full path of config file */
+	char config_path[PATH_MAX_CHARS + 1];
+	config_path[0] = 0;
+	snprintf(config_path, PATH_MAX_CHARS, "%sconfig.lua", gui->pref_path);
+  
+  /* Its will alter the config.lua file, changing the language variable */
+  lua_getglobal(L, "change_lang_config"); /* get function to be called */
+  lua_pushstring(L, config_path); /* path to config.lua file */
+  lua_pushstring(L, gui->main_lang); /* language chosen */
+  if (lua_pcall(L, 2, 0, 0) == LUA_OK){
+    gui_load_lang(gui); /* file changed */
+  }
+  else{
+    //char *error = lua_tostring(L, -1);
+    lua_pop(L, 1); /* pop error message from the stack */
+  }
 }
 
 int gui_load_conf (gui_obj *gui){
@@ -111,55 +203,7 @@ int gui_load_conf (gui_obj *gui){
     
     /* language */
     if(strlen(gui->main_lang) > 1){
-      /* Recommendation: Language string written according codes defined in POSIX
-      convention (standarts ISO 639-1 and ISO 3166-1 alpha-2), like lang_COUNTRY
-      codes (eg. en_US, pt_BR, cz_CZ) */
-      
-      new_path[0] = 0;
-      snprintf(new_path, PATH_MAX_CHARS, "%slang%c%s.lua", 
-        gui->base_dir, DIR_SEPARATOR, gui->main_lang);
-      
-      if (gui_script_init (gui, &gui->main_lang_scr, new_path, NULL) == 1){
-        gui->main_lang_scr.active = 1;
-        
-        gui->main_lang_scr.time = clock();
-        gui->main_lang_scr.timeout = 1.0; /* default timeout value */
-        gui->main_lang_scr.do_init = 0;
-        
-        lua_getglobal(gui->main_lang_scr.T, "cz_main_func");
-        n_results = 0;
-        gui->main_lang_scr.status = lua_resume(gui->main_lang_scr.T, NULL, 0, &n_results); /* start thread */
-        if (gui->main_lang_scr.status != LUA_OK){
-          /* error */
-          /* close script and clean instance*/
-          lua_close(gui->main_lang_scr.L);
-          gui->main_lang_scr.L = NULL;
-          gui->main_lang_scr.T = NULL;
-          gui->main_lang_scr.active = 0;
-          gui->main_lang_scr.dynamic = 0;
-        }
-        else{
-          /* globals always in stack to prevent garbage colector */
-          /* 'translate' table in stack pos = 1 */
-          if (lua_getglobal(gui->main_lang_scr.T, "translate") != LUA_TTABLE){
-            gui->main_lang_scr.active = 0;
-            lua_pop(gui->main_lang_scr.T, 1);
-          }
-          else {
-            /* 'descr' string in stack pos = 2 */
-            if (lua_getglobal(gui->main_lang_scr.T, "descr") != LUA_TSTRING){
-              lua_pop(gui->main_lang_scr.T, 1);
-              lua_pushliteral(gui->main_lang_scr.T, "");
-            }
-            /* 'flag' SVG string in stack pos = 3 */
-            if (lua_getglobal(gui->main_lang_scr.T, "flag") != LUA_TSTRING){
-              lua_pop(gui->main_lang_scr.T, 1);
-              lua_pushliteral(gui->main_lang_scr.T, "");
-            }
-          }
-        }
-      }
-    
+      gui_load_lang(gui);
 		}
 		/* close script and clean instance*/
 		lua_close(conf_script.L);
@@ -546,16 +590,24 @@ int config_win (gui_obj *gui){
         "  local f = io.open(fname, \"r\")\n"
         "  local content = f:read(\"a\")\n"
         "  f:close()\n"
-        "  content = string.gsub (content, '(\\n[^-\\n]*language%s*=%s*)%g+', '%1\"'.. lang ..'\"')\n"
+        "  if string.find(content, '(\\n[^-\\n]*language%s*=%s*)%g+') then\n"
+        "    content = string.gsub (content, '(\\n[^-\\n]*language%s*=%s*)%g+', '%1\"'.. lang ..'\"')\n"
+        "  else\n"
+        "    content = content .. '\\nlanguage = \"' .. lang .. '\"'\n"
+        "  end\n"
         "  f = io.open(fname, \"w+\")\n"
         "  f:write(content)\n"
         "  f:close()\n"
         "end\n"
         "function list_lang (path)\n"
+        "  local no_flag = [[<svg width=\"88.0000\" height=\"68.0000\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n"
+        "    <path fill=\"rgb(254, 254, 254)\" stroke=\"rgb(0, 0, 0)\" stroke-width=\"3.0\" d=\"M0 67 L88 67 L88 1 L0 1 L0 67 \"/>\n"
+        "    <path stroke=\"rgb(0, 0, 0)\" stroke-width=\"3.0\" fill=\"none\" d=\"M36.46 24.78 L36.46 23.1 L38.13 19.75 L39.81 18.08 L43.16 16.4 L49.87 16.4 L53.22 18.08 L54.9 19.75 L56.57 23.1 L56.57 26.46 L54.9 29.81 L53.22 31.49 L46.51 34.84 L46.51 39.87 M46.51 48.25 L44.84 49.92 L46.51 51.6 L48.19 49.92 L46.51 48.25 \"/>\n"
+        "    </svg>]]\n"
         "  langs = {}\n"
         "  langs_o = {}\n"
         "  local dir = fs.dir(path)\n"
-        "  if not dir then return langs, langs_o end -- quit on error\n"
+        "  if not dir then return langs end -- quit on error\n"
         "  for i = 1, #dir do\n"
         "    if dir[i].is_dir == false then\n"
         "      if string.find(dir[i].name, '^%l%l_%u%u%.lua$') then\n"
@@ -567,8 +619,12 @@ int config_win (gui_obj *gui){
         "  for i, lang in ipairs(langs) do\n"
         "    local img = nil\n"
         "    dofile(path .. lang .. '.lua')\n"
-        "    if flag then\n"
-        "      img = cadzinho.svg_image(flag, 20, 18)\n"
+        "    if type (flag) ~= 'string' then\n"
+        "      flag = no_flag\n"
+        "    end\n"
+        "    img = cadzinho.svg_image(flag, 24, 18)\n"
+        "    if not img then\n"
+        "      img = cadzinho.svg_image(no_flag, 24, 18)\n"
         "    end\n"
         "    langs_o[i] = {descr = descr, flag = img}\n"
         "    descr = nil\n"
@@ -609,12 +665,6 @@ int config_win (gui_obj *gui){
           lua_pop(lang_scr.T, 1); /* pop error message from the stack */
         }
       }
-      
-      //lua_getglobal(L, "change_lang_config"); /* get function to be called */
-      //lua_pushstring(L, "config.lua"); /* path to config.lua file */
-      //lua_pushstring(L, "pt_BR"); /* language chosen */
-      //if (lua_pcall(L, 2, 0, 0) == LUA_OK){ }
-      //else{char *error = lua_tostring(L, -1)); lua_pop(L, 1); /* pop error message from the stack */}
     }   
     
 		/* Config groups - Preferences, Raw info, 3D view */
@@ -640,6 +690,7 @@ int config_win (gui_obj *gui){
 			if (nk_button_label(gui->ctx, _l("Open folder"))){
 				opener(gui->pref_path);
 			}
+      nk_layout_row_dynamic(gui->ctx, 5, 1);
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			nk_label(gui->ctx, _l("Config File:"), NK_TEXT_LEFT);
 			if (nk_button_label(gui->ctx, _l("Open file"))){
@@ -677,8 +728,10 @@ int config_win (gui_obj *gui){
 				}
 			}
       
-      
-      nk_layout_row_dynamic(gui->ctx, 20, 3);
+      nk_layout_row_dynamic(gui->ctx, 5, 1);
+      nk_layout_row_dynamic(gui->ctx, 20, 1);
+			nk_label(gui->ctx, _l("Interface language:"), NK_TEXT_LEFT);
+      nk_layout_row(gui->ctx, NK_STATIC, 20, 4, (float []){80, 10, 25, 220});
       
       /* language chooser */
       int h = num_lang * 30 + 5;
@@ -701,7 +754,9 @@ int config_win (gui_obj *gui){
               if (nk_button_image_label(gui->ctx, nk_image_ptr(img_obj->img),
                 lua_tostring(lang_scr.T, -3), NK_TEXT_RIGHT))
               {
-                
+                strncpy(gui->main_lang, lua_tostring(lang_scr.T, -1), DXF_MAX_CHARS);
+                gui_change_lang(gui, lang_scr.T);
+                nk_combo_close(gui->ctx);
               }
             }
             else{
@@ -734,12 +789,12 @@ int config_win (gui_obj *gui){
         nk_combo_end(gui->ctx);
       }
       
-      
+      nk_label(gui->ctx, " ", NK_TEXT_LEFT);
       if (gui->main_lang_scr.active) {
+        struct script_rast_image * img_obj = (struct script_rast_image *)
+          lua_touserdata (gui->main_lang_scr.T, 3);
+        nk_image(gui->ctx, nk_image_ptr(img_obj->img));
         nk_label(gui->ctx, lua_tostring(gui->main_lang_scr.T, 2), NK_TEXT_LEFT);
-        //struct script_rast_image * img_obj = (struct script_rast_image *)
-        //  lua_touserdata (gui->main_lang_scr.T, 3);
-        //nk_image(gui->ctx, nk_image_ptr(img_obj->img));
       }
       
       else {

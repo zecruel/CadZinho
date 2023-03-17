@@ -1985,10 +1985,6 @@ int main(int argc, char** argv){
   if (gui->main_lang_scr.L){
 		lua_close(gui->main_lang_scr.L);
 	}
-  
-  if (gui->cand_lang_scr.L){
-		lua_close(gui->cand_lang_scr.L);
-	}
 	
 	/* Delete allocated resources */
 	draw_gl_init ((void *)gui, 1);

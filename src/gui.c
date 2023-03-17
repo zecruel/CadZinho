@@ -1919,17 +1919,11 @@ int gui_start(gui_obj *gui){
 	gui->hist_action = HIST_NONE;
   
   gui->main_lang[0] = 0;
-  gui->cand_lang[0] = 0;
   
   gui->main_lang_scr.L = NULL;
 	gui->main_lang_scr.T = NULL;
 	gui->main_lang_scr.active = 0;
 	gui->main_lang_scr.dynamic = 0;
-  
-  gui->cand_lang_scr.L = NULL;
-	gui->cand_lang_scr.T = NULL;
-	gui->cand_lang_scr.active = 0;
-	gui->cand_lang_scr.dynamic = 0;
 	
 	return 1;
 }

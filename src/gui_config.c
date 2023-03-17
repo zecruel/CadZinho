@@ -58,11 +58,14 @@ void gui_load_lang (gui_obj *gui){
   /* Recommendation: Language string written according codes defined in POSIX
   convention (standarts ISO 639-1 and ISO 3166-1 alpha-2), like lang_COUNTRY
   codes (eg. en_US, pt_BR, cz_CZ) */
+  
   char new_path[PATH_MAX_CHARS+1];
   new_path[0] = 0;
+  /* look for language file in -program-/lang/ directory */
   snprintf(new_path, PATH_MAX_CHARS, "%slang%c%s.lua", 
     gui->base_dir, DIR_SEPARATOR, gui->main_lang);
   
+  /* init auxiliary script object */
   if (gui_script_init (gui, &gui->main_lang_scr, new_path, NULL) == 1){
     gui->main_lang_scr.active = 1;
     
@@ -95,23 +98,26 @@ void gui_load_lang (gui_obj *gui){
           lua_pop(gui->main_lang_scr.T, 1);
           lua_pushliteral(gui->main_lang_scr.T, "");
         }
-        /* 'flag' SVG string in stack pos = 3 */
+        /* 'flag' SVG image in stack pos = 3 */
         lua_getglobal(gui->main_lang_scr.T, "cadzinho");
         lua_pushstring(gui->main_lang_scr.T, "svg_image");
         lua_gettable(gui->main_lang_scr.T, -2);
         if (lua_getglobal(gui->main_lang_scr.T, "flag") != LUA_TSTRING){
+          /* missing flag SVG string */
           lua_pop(gui->main_lang_scr.T, 1);
-          lua_pushstring(gui->main_lang_scr.T, no_flag);
+          lua_pushstring(gui->main_lang_scr.T, no_flag); /* 'missing flag' image */
         }
+        /* try to rasterize flag image to 24x18 pix (4:3) */
         lua_pushnumber(gui->main_lang_scr.T, 24);
         lua_pushnumber(gui->main_lang_scr.T, 18);
         gui->main_lang_scr.time = clock();
         lua_pcall(gui->main_lang_scr.T, 3, 1, 0);
         if (!lua_isuserdata(gui->main_lang_scr.T, -1)){
+          /* fail in rasterization - replace to default image */
           lua_pop(gui->main_lang_scr.T, 1);
           lua_pushstring(gui->main_lang_scr.T, "svg_image");
           lua_gettable(gui->main_lang_scr.T, -2);
-          lua_pushstring(gui->main_lang_scr.T, no_flag);
+          lua_pushstring(gui->main_lang_scr.T, no_flag); /* 'missing flag' image */
           lua_pushnumber(gui->main_lang_scr.T, 24);
           lua_pushnumber(gui->main_lang_scr.T, 18);
           gui->main_lang_scr.time = clock();
@@ -129,11 +135,11 @@ static void gui_change_lang (gui_obj *gui, lua_State *L){
 	snprintf(config_path, PATH_MAX_CHARS, "%sconfig.lua", gui->pref_path);
   
   /* Its will alter the config.lua file, changing the language variable */
-  lua_getglobal(L, "change_lang_config"); /* get function to be called */
+  lua_getglobal(L, "change_lang_config");
   lua_pushstring(L, config_path); /* path to config.lua file */
   lua_pushstring(L, gui->main_lang); /* language chosen */
-  if (lua_pcall(L, 2, 0, 0) == LUA_OK){
-    gui_load_lang(gui); /* file changed */
+  if (lua_pcall(L, 2, 0, 0) == LUA_OK){ /* file changed successfully */
+    gui_load_lang(gui); /* load a new language */
   }
   else{
     //char *error = lua_tostring(L, -1);
@@ -198,8 +204,6 @@ int gui_load_conf (gui_obj *gui){
 		}
 		/* finaly get configuration from global variables in Lua instance */
 		gui_get_conf (conf_script.T);
-    
-    
     
     /* language */
     if(strlen(gui->main_lang) > 1){
@@ -581,10 +585,11 @@ int config_win (gui_obj *gui){
 	if (nk_begin(gui->ctx, _l("Config"), nk_rect(418, 88, 400, 300),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
+    
     if (!init){ /* init Lua engine and static structures */
       init = 1;
       num_lang = 0;
-      /* custom Lua functions to find and replace text in config.lua */
+      /* custom Lua functions to manage language config */
       const char *f =
         "function change_lang_config (fname, lang)\n"
         "  local f = io.open(fname, \"r\")\n"
@@ -637,6 +642,7 @@ int config_win (gui_obj *gui){
       lang_scr.active = 0;
       lang_scr.dynamic = 0;
       
+      /* init the auxiliary language script object  */
       if (gui_script_init (gui, &lang_scr, NULL, (char*)f) == 1){
         lang_scr.time = clock();
         lang_scr.timeout = 10.0; /* default timeout value */
@@ -650,7 +656,9 @@ int config_win (gui_obj *gui){
         } else lang_scr.active = 1;
       }
       if (lang_scr.active){
+        /* get languages available in system */
         char new_path[PATH_MAX_CHARS+1];
+        /* look for language files in -program-/lang/ directory */
         snprintf(new_path, PATH_MAX_CHARS, "%slang%c", 
           gui->base_dir, DIR_SEPARATOR);
         
@@ -658,6 +666,7 @@ int config_win (gui_obj *gui){
         lua_pushstring(lang_scr.T, new_path); /* path to lang dir */
         lang_scr.time = clock();
         if (lua_pcall(lang_scr.T, 1, 2, 0) == LUA_OK){
+          /* numer of languages available */
           num_lang = lua_rawlen (lang_scr.T, 1);
         }
         else{
@@ -665,8 +674,7 @@ int config_win (gui_obj *gui){
           lua_pop(lang_scr.T, 1); /* pop error message from the stack */
         }
       }
-    }   
-    
+    }
 		/* Config groups - Preferences, Raw info, 3D view */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
@@ -736,7 +744,7 @@ int config_win (gui_obj *gui){
       /* language chooser */
       int h = num_lang * 30 + 5;
       h = (h < 300)? h : 300;
-      if (nk_combo_begin_label(gui->ctx, gui->main_lang, nk_vec2(300,h))){
+      if (nk_combo_begin_label(gui->ctx, gui->main_lang, nk_vec2(300,h))) {
         for (i = 1; i <= num_lang; i++){
           nk_layout_row_dynamic(gui->ctx, 25, 1);
           /* get table with language description and country flag */
@@ -748,6 +756,7 @@ int config_win (gui_obj *gui){
           /* get current language Id */
           lua_rawgeti (lang_scr.T, 1, i);
           if (type == LUA_TSTRING) {
+            /* use description string, if available */
             if (type2 == LUA_TUSERDATA) {
               struct script_rast_image * img_obj = (struct script_rast_image *)
                 lua_touserdata (lang_scr.T, -2);
@@ -755,53 +764,60 @@ int config_win (gui_obj *gui){
                 lua_tostring(lang_scr.T, -3), NK_TEXT_RIGHT))
               {
                 strncpy(gui->main_lang, lua_tostring(lang_scr.T, -1), DXF_MAX_CHARS);
-                gui_change_lang(gui, lang_scr.T);
+                gui_change_lang(gui, lang_scr.T); /* change in config.lua file too */
                 nk_combo_close(gui->ctx);
               }
             }
             else{
-              if (nk_button_label(gui->ctx, lua_tostring(lang_scr.T, -3))){
-                
+              if (nk_button_label(gui->ctx, lua_tostring(lang_scr.T, -3))) {
+                strncpy(gui->main_lang, lua_tostring(lang_scr.T, -1), DXF_MAX_CHARS);
+                gui_change_lang(gui, lang_scr.T); /* change in config.lua file too */
+                nk_combo_close(gui->ctx);
               }
             }
           }
           else {
+            /* use language Id code, when description string not available */
             if (type2 == LUA_TUSERDATA) {
               struct script_rast_image * img_obj = (struct script_rast_image *)
                 lua_touserdata (lang_scr.T, -2);
               if (nk_button_image_label(gui->ctx, nk_image_ptr(img_obj->img),
                 lua_tostring(lang_scr.T, -1), NK_TEXT_RIGHT))
               {
-                
+                strncpy(gui->main_lang, lua_tostring(lang_scr.T, -1), DXF_MAX_CHARS);
+                gui_change_lang(gui, lang_scr.T); /* change in config.lua file too */
+                nk_combo_close(gui->ctx);
               }
             }
             else{
-              if (nk_button_label(gui->ctx, lua_tostring(lang_scr.T, -1))){
-                
+              if (nk_button_label(gui->ctx, lua_tostring(lang_scr.T, -1))) {
+                strncpy(gui->main_lang, lua_tostring(lang_scr.T, -1), DXF_MAX_CHARS);
+                gui_change_lang(gui, lang_scr.T); /* change in config.lua file too */
+                nk_combo_close(gui->ctx);
               }
             }
           }
-          
-          lua_pop(lang_scr.T, 4);
-          
+          lua_pop(lang_scr.T, 4); /* clean the Lua stack */
           
         }
         nk_combo_end(gui->ctx);
       }
+      nk_label(gui->ctx, " ", NK_TEXT_LEFT); /* just a space */
       
-      nk_label(gui->ctx, " ", NK_TEXT_LEFT);
+      /* current language */
       if (gui->main_lang_scr.active) {
+        /* contry flag */
         struct script_rast_image * img_obj = (struct script_rast_image *)
           lua_touserdata (gui->main_lang_scr.T, 3);
         nk_image(gui->ctx, nk_image_ptr(img_obj->img));
+        /* language description */
         nk_label(gui->ctx, lua_tostring(gui->main_lang_scr.T, 2), NK_TEXT_LEFT);
       }
       
-      else {
+      else { /* no language available */
         nk_label(gui->ctx, " ", NK_TEXT_LEFT);
         nk_label(gui->ctx, " ", NK_TEXT_LEFT);
       }
-      
       
 		}
 		else if(cfg_grp == GRP_INFO){

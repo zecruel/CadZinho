@@ -451,8 +451,6 @@ struct Gui_obj {
   
   char main_lang[DXF_MAX_CHARS + 1]; /* gui language */
   struct script_obj main_lang_scr;
-  char cand_lang[DXF_MAX_CHARS + 1]; /* gui language - candidate */
-  struct script_obj cand_lang_scr;
 };
 typedef struct Gui_obj gui_obj;
 

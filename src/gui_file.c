@@ -695,6 +695,10 @@ int gui_file_save (gui_obj *gui, char *init_dir){
 					overwrite = 1;
 				}
 				else {
+          if (strcmp (gui->curr_path, full_path) != 0){
+            gui->hist_new = 1;
+          }
+          
 					strncpy (gui->curr_path, full_path, PATH_MAX_CHARS);
 					/* close window */
 					show_app_file = 2;
@@ -740,6 +744,11 @@ int gui_file_save (gui_obj *gui, char *init_dir){
 					char full_path[PATH_MAX_CHARS+1];
 					strncpy (full_path, dir, PATH_MAX_CHARS);
 					strncat (full_path, file, PATH_MAX_CHARS - strlen(dir));
+          
+          if (strcmp (gui->curr_path, full_path) != 0){
+            gui->hist_new = 1;
+          }
+          
 					strncpy (gui->curr_path, full_path, PATH_MAX_CHARS);
 					/* close window */
 					show_app_file = 2;

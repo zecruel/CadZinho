@@ -61,6 +61,12 @@ void gui_load_lang (gui_obj *gui){
   
   char new_path[PATH_MAX_CHARS+1];
   new_path[0] = 0;
+  
+  
+  snprintf(new_path, PATH_MAX_CHARS, "%s.UTF-8", gui->main_lang);
+  setlocale(LC_CTYPE, new_path);
+  setlocale(LC_COLLATE, new_path);
+  
   /* look for language file in -program-/lang/ directory */
   snprintf(new_path, PATH_MAX_CHARS, "%slang%c%s.lua", 
     gui->base_dir, DIR_SEPARATOR, gui->main_lang);

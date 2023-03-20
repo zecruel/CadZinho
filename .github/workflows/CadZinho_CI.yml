@@ -4,8 +4,8 @@ on: workflow_dispatch
 
 env:
   MAJOR: 0
-  MINOR: 2
-  MAN: 2
+  MINOR: 3
+  MAN: 0
   YEAR: 2023
   
 jobs:

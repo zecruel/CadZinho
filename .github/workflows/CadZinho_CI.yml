@@ -74,12 +74,12 @@ jobs:
     - name: make
       run: make
     - name: download AppImageTool
-      uses: suisei-cn/actions-download-file@v1.0.1
+      uses: suisei-cn/actions-download-file@v1.3.0
       with:
         url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
         target: .
     - name: download AppImage asset
-      uses: suisei-cn/actions-download-file@v1.0.1
+      uses: suisei-cn/actions-download-file@v1.3.0
       with:
         url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64"
         target: .
@@ -216,7 +216,7 @@ jobs:
     - name: copy lua sources 
       run: cp ./lua-5.4.4/src/* ./src/
     - name: download glew
-      uses: suisei-cn/actions-download-file@v1.0.1
+      uses: suisei-cn/actions-download-file@v1.3.0
       with:
         url: "https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip"
         target: .
@@ -225,7 +225,7 @@ jobs:
       run: |
         7z x -y glew-2.2.0-win32.zip
     - name: Download SDL2
-      uses: suisei-cn/actions-download-file@v1.0.1
+      uses: suisei-cn/actions-download-file@v1.3.0
       with:
         url: "https://github.com/libsdl-org/SDL/releases/download/release-2.24.0/SDL2-devel-2.24.0-VC.zip"
         target: .

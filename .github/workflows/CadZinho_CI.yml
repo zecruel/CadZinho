@@ -94,6 +94,7 @@ jobs:
         cp ./linux/cadzinho.desktop ./CadZinho.AppDir
         cp ./linux/cadzinho.png ./CadZinho.AppDir
         cp ./cadzinho ./CadZinho.AppDir/usr/bin
+        cp -r ./lang/ ./CadZinho.AppDir/usr/bin/
         cp $(ldd cadzinho | grep -o '\W/[^ ]*' | grep 'SDL2\|GLEW') ./CadZinho.AppDir/usr/lib
         chmod u+x ./appimagetool-x86_64.AppImage
         ./appimagetool-x86_64.AppImage CadZinho.AppDir
@@ -129,6 +130,7 @@ jobs:
       run: make
     - run: mkdir ./macos/CadZinho.app/Contents/MacOS
     - run: cp ./cadzinho ./macos/CadZinho.app/Contents/MacOS/cadzinho
+    - run: cp -r ./lang/ ./macos/CadZinho.app/Contents/MacOS/cadzinho/
     - name: fix dependencies
       run: dylibbundler -od -b -x ./macos/CadZinho.app/Contents/MacOS/cadzinho -d ./macos/CadZinho.app/Contents/libs/
     - name: create archive
@@ -184,6 +186,7 @@ jobs:
     - run: |
         mkdir CadZinho
         cp cadzinho.exe CadZinho/
+        cp -r ./lang/ CadZinho/
         cp windows/cadzinho.ico CadZinho/
         cp /mingw64/bin/SDL2.dll CadZinho/
         cp /mingw64/bin/glew32.dll CadZinho/
@@ -227,27 +230,28 @@ jobs:
     - name: Download SDL2
       uses: suisei-cn/actions-download-file@v1.3.0
       with:
-        url: "https://github.com/libsdl-org/SDL/releases/download/release-2.24.0/SDL2-devel-2.24.0-VC.zip"
+        url: "https://github.com/libsdl-org/SDL/releases/download/release-2.26.4/SDL2-devel-2.26.4-VC.zip"
         target: .
     - name: Unzip SDL2
       shell: cmd
       run: |
-        7z x -y SDL2-devel-2.24.0-VC.zip
+        7z x -y SDL2-devel-2.26.4-VC.zip
     - run: |
         mkdir ./glew-2.2.0/include/SDL2
         mkdir ./CadZinho
-        cp ./SDL2-2.24.0/include/* ./glew-2.2.0/include/SDL2/
+        cp ./SDL2-2.26.4/include/* ./glew-2.2.0/include/SDL2/
     - name: get make file and resources
       run: cp windows/* ./
 
-    - uses: ilammy/msvc-dev-cmd@v1
+    - uses: ilammy/msvc-dev-cmd@v1.12.1
     - name: Build using CL.EXE
       run: nmake WIN64=1 -f Makefile.msvc
     - run: |
         cp windows/cadzinho.ico CadZinho/
-        cp ./SDL2-2.24.0/lib/x64/SDL2.dll CadZinho/
+        cp ./SDL2-2.26.4/lib/x64/SDL2.dll CadZinho/
         cp ./glew-2.2.0/bin/Release/x64/glew32.dll CadZinho/
         cp ./cadzinho.exe CadZinho/
+        cp -r ./lang/ CadZinho/
         cp LICENSE.txt CadZinho/
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho

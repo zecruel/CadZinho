@@ -27,7 +27,7 @@ EXE=$(DIR_BIN)\cadzinho.exe
 
 INCLUDES = -I $(ZSDK)/include -I ./glew-2.2.0/include/ -I ./SDL2-2.26.4/include/
 LIBRARIES = ./glew-2.2.0/lib/Release/x64/glew32.lib \
-            ./SDL2-2.24.0/lib/x64/SDL2.lib ./SDL2-2.26.4/lib/x64/SDL2main.lib
+            ./SDL2-2.26.4/lib/x64/SDL2.lib ./SDL2-2.26.4/lib/x64/SDL2main.lib
 
 LIBS=$(LIBRARIES) opengl32.lib Shell32.lib
 

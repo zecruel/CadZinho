@@ -98,6 +98,7 @@ jobs:
         cp $(ldd cadzinho | grep -o '\W/[^ ]*' | grep 'SDL2\|GLEW') ./CadZinho.AppDir/usr/lib
         chmod u+x ./appimagetool-x86_64.AppImage
         ./appimagetool-x86_64.AppImage CadZinho.AppDir
+    - run: ldd cadzinho
     - name: create archive
       run: |
         zip -r linux CadZinho-x86_64.AppImage LICENSE.txt
@@ -130,7 +131,7 @@ jobs:
       run: make
     - run: mkdir ./macos/CadZinho.app/Contents/MacOS
     - run: cp ./cadzinho ./macos/CadZinho.app/Contents/MacOS/cadzinho
-    - run: cp -r ./lang/ ./macos/CadZinho.app/Contents/MacOS/
+    - run: cp -r ./lang/ ./macos/CadZinho.app/Contents/Resources/
     - name: fix dependencies
       run: dylibbundler -od -b -x ./macos/CadZinho.app/Contents/MacOS/cadzinho -d ./macos/CadZinho.app/Contents/libs/
     - name: create archive

@@ -1,4 +1,7 @@
 #include "i_svg_media.h"
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
 
 char * svg_data[] = {
 	[SVG_I_SEL] = (char[]){"<svg width=\"24\" height=\"24\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\">"
@@ -558,6 +561,48 @@ char * svg_data[] = {
 	"</svg>"},
 
 };
+
+
+NSVGimage ** i_svg_all_curves2(char *find, char *repl){
+	static NSVGimage *curves[SVG_MEDIA_SIZE];
+	int i = 0;
+	//char ** media = svg_media();
+  
+  static lua_State *L = NULL;
+  if (!L){ /* init Lua engine and static structures */
+		L = luaL_newstate(); /* opens Lua */
+		luaL_openlibs(L); /* opens the standard libraries */
+  }
+  
+  if (!L) return NULL;
+  lua_getglobal(L, "string"); /* get library */
+	lua_getfield(L, 1, "gsub"); /* and function to be called */
+  
+  
+	
+	for (i = 0; i <  SVG_MEDIA_SIZE; i++){
+    curves[i] = NULL;
+	
+    /* using Lua, try to find match and replace pattern in text */
+    lua_pushvalue(L, 2); /* function to be called in index 2 */
+    lua_pushstring(L, svg_data[i]); /* input string */
+    lua_pushstring(L, find); /* pattern to find */
+    lua_pushstring(L, repl); /* text or pattern to replace */
+    if (lua_pcall(L, 3, 2, 0) == LUA_OK){
+      if (lua_isnumber(L, -1)) { /* success */
+        //int n = (int)lua_tonumber(L, -1); /* number of matches */
+        //if (n > 0) new_text = (char *)lua_tostring(L, -2);
+        curves[i] = nsvgParse((char *)lua_tostring(L, -2), "px", 96.0f);
+        
+      }
+      lua_pop(L, 2); /* clear Lua stack - pop returned values */
+    }
+	}
+  lua_close(L);
+  L = NULL;
+  
+	return curves;
+}
 
 NSVGimage ** i_svg_all_curves(void){
 	static NSVGimage *curves[SVG_MEDIA_SIZE];

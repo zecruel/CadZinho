@@ -115,6 +115,8 @@ enum svg_list {
 
 NSVGimage ** i_svg_all_curves(void);
 
+NSVGimage ** i_svg_all_curves2(char *find, char *repl);
+
 void i_svg_free_curves(NSVGimage **curves);
 
 bmp_img ** i_svg_all_bmp(NSVGimage **curves, int w, int h);

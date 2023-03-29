@@ -286,7 +286,7 @@ struct Gui_obj {
 	
 	int step, user_flag_x, user_flag_y, lock_ax_x, lock_ax_y, user_number;
 	int keyEnter;
-	int draw, draw_tmp, draw_phanton, draw_vert, vert_idx;
+	int draw, draw_tmp, draw_phanton, draw_vert, vert_idx, safe_draw;
 	int near_attr;
 	
 	int text2tag, hide_tag;

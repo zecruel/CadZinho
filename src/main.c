@@ -398,6 +398,10 @@ int main(int argc, char** argv){
 	bmp_color green = {.r = 0, .g = 255, .b =0, .a = 255};
 	bmp_color yellow = {.r = 255, .g = 255, .b =0, .a = 255};
 	bmp_color grey = {.r = 100, .g = 100, .b = 100, .a = 255};
+  
+  /* default substitution list (display white -> print black) */
+  bmp_color list[] = { white, };
+  bmp_color subst[] = { black, };
 	
 	/* line types in use */
 	double center [] = {12, -6, 2 , -6};
@@ -426,11 +430,17 @@ int main(int argc, char** argv){
 	
 	
 	
-	
+	#if(0)
 	/* init the toolbox image */
+  
+  char *dflt_color = "\"#f9f9f9\"";
+  char subst_color[25]  = "";
+  snprintf(subst_color, 24, "\"rgb(%d, %d, %d)\"",
+    gui->b_icon.text_normal.r, gui->b_icon.text_normal.g, gui->b_icon.text_normal.b);
 	
 	
-	gui->svg_curves = i_svg_all_curves();
+	//gui->svg_curves = i_svg_all_curves();
+  gui->svg_curves = i_svg_all_curves2(dflt_color, subst_color);
 	gui->svg_bmp = i_svg_all_bmp(gui->svg_curves, ICON_SIZE-1, ICON_SIZE-1);
 	
 	bmp_free(gui->svg_bmp[SVG_LOCK]);
@@ -450,7 +460,7 @@ int main(int argc, char** argv){
 	
 	gui->i_cz48 = i_svg_bmp(gui->svg_curves[SVG_CZ], 48, 48);
 	gui->i_trash = i_svg_bmp(gui->svg_curves[SVG_TRASH], 16, 16);
-	
+	#endif
 	
 	//struct nk_style_button b_icon_style;
 	
@@ -1799,15 +1809,23 @@ int main(int argc, char** argv){
 			SDL_GetWindowSize(window, &gui->gl_ctx.win_w, &gui->gl_ctx.win_h);
 			glViewport(0, 0, gui->gl_ctx.win_w, gui->gl_ctx.win_h);
 			
-			
 			d_param.ofs_x = gui->ofs_x;
 			d_param.ofs_y = gui->ofs_y;
 			d_param.ofs_z = 0;
 			d_param.scale = gui->zoom;
-			d_param.list = NULL;
-			d_param.subst = NULL;
-			d_param.len_subst = 0;
+      if (gui->background.r * 0.21 +  /* verify "brightness" of background color */
+        gui->background.g * 0.72 + gui->background.b * 0.07 > 150) {
+        /* in bright background, change defaut color (white) to black */
+        d_param.list = list;
+        d_param.subst = subst;
+        d_param.len_subst = 1;
+      } else {
+        d_param.list = NULL;
+        d_param.subst = NULL;
+        d_param.len_subst = 0;
+      }
 			d_param.inc_thick = 0;
+      
 			
 			/* 3D test */
 			gui->gl_ctx.transf[0][0] = gui->drwg_view[0][0];

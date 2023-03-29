@@ -539,26 +539,26 @@ int gui_next_step(gui_obj *gui){
 void set_style(gui_obj *gui, enum theme theme){
 	struct nk_color table[NK_COLOR_COUNT];
 	if (theme == THEME_WHITE) {
-		table[NK_COLOR_TEXT] = nk_rgba(70, 70, 70, 255);
-		table[NK_COLOR_WINDOW] = nk_rgba(175, 175, 175, 255);
+		table[NK_COLOR_TEXT] = nk_rgba(35, 35, 35, 255);
+		table[NK_COLOR_WINDOW] = nk_rgba(225, 225, 225, 255);
 		table[NK_COLOR_HEADER] = nk_rgba(175, 175, 175, 255);
 		table[NK_COLOR_BORDER] = nk_rgba(0, 0, 0, 255);
-		table[NK_COLOR_BUTTON] = nk_rgba(185, 185, 185, 255);
+		table[NK_COLOR_BUTTON] = nk_rgba(200, 200, 200, 255);
 		table[NK_COLOR_BUTTON_HOVER] = nk_rgba(170, 170, 170, 255);
 		table[NK_COLOR_BUTTON_ACTIVE] = nk_rgba(160, 160, 160, 255);
 		table[NK_COLOR_TOGGLE] = nk_rgba(150, 150, 150, 255);
 		table[NK_COLOR_TOGGLE_HOVER] = nk_rgba(120, 120, 120, 255);
-		table[NK_COLOR_TOGGLE_CURSOR] = nk_rgba(175, 175, 175, 255);
-		table[NK_COLOR_SELECT] = nk_rgba(190, 190, 190, 255);
-		table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(175, 175, 175, 255);
-		table[NK_COLOR_SLIDER] = nk_rgba(190, 190, 190, 255);
+		table[NK_COLOR_TOGGLE_CURSOR] = nk_rgba(225, 225, 225, 255);
+		table[NK_COLOR_SELECT] = nk_rgba(200, 200, 200, 255);
+		table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(225, 225, 225, 255);
+		table[NK_COLOR_SLIDER] = nk_rgba(200, 200, 200, 255);
 		table[NK_COLOR_SLIDER_CURSOR] = nk_rgba(80, 80, 80, 255);
 		table[NK_COLOR_SLIDER_CURSOR_HOVER] = nk_rgba(70, 70, 70, 255);
 		table[NK_COLOR_SLIDER_CURSOR_ACTIVE] = nk_rgba(60, 60, 60, 255);
-		table[NK_COLOR_PROPERTY] = nk_rgba(175, 175, 175, 255);
-		table[NK_COLOR_EDIT] = nk_rgba(150, 150, 150, 255);
+		table[NK_COLOR_PROPERTY] = nk_rgba(225, 225, 225, 255);
+		table[NK_COLOR_EDIT] = nk_rgba(175, 175, 175, 255);
 		table[NK_COLOR_EDIT_CURSOR] = nk_rgba(0, 0, 0, 255);
-		table[NK_COLOR_COMBO] = nk_rgba(175, 175, 175, 255);
+		table[NK_COLOR_COMBO] = nk_rgba(225, 225, 225, 255);
 		table[NK_COLOR_CHART] = nk_rgba(160, 160, 160, 255);
 		table[NK_COLOR_CHART_COLOR] = nk_rgba(45, 45, 45, 255);
 		table[NK_COLOR_CHART_COLOR_HIGHLIGHT] = nk_rgba( 255, 0, 0, 255);
@@ -757,7 +757,7 @@ void set_style(gui_obj *gui, enum theme theme){
 		table[NK_COLOR_BUTTON_HOVER] = nk_rgba(255, 121, 198, 255);
 		table[NK_COLOR_BUTTON_ACTIVE] = nk_rgba(255, 85, 85, 255);
 		table[NK_COLOR_TOGGLE] = nk_rgba(40, 42, 54, 255);
-		table[NK_COLOR_TOGGLE_HOVER] = nk_rgba(98, 114, 164, 255);
+		table[NK_COLOR_TOGGLE_HOVER] = nk_rgba(255, 121, 198, 255);
 		table[NK_COLOR_TOGGLE_CURSOR] = nk_rgba(255, 85, 85, 255);
 		table[NK_COLOR_SELECT] = nk_rgba(98, 114, 164, 255);
 		table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(255, 85, 85, 255);
@@ -810,7 +810,38 @@ void set_style(gui_obj *gui, enum theme theme){
 	gui->b_icon_unsel.image_padding.x = -4;
 	gui->b_icon_unsel.image_padding.y = -4;
     
-    
+  char *dflt_color = "\"#f9f9f9\"";
+  char subst_color[25]  = "";
+  snprintf(subst_color, 24, "\"rgb(%d, %d, %d)\"",
+    gui->b_icon.text_normal.r, gui->b_icon.text_normal.g, gui->b_icon.text_normal.b);
+	
+	if(gui->svg_bmp) i_svg_free_bmp(gui->svg_bmp);
+	if(gui->svg_curves) i_svg_free_curves(gui->svg_curves);
+  
+  /* load svg icons */
+	//gui->svg_curves = i_svg_all_curves();
+  gui->svg_curves = i_svg_all_curves2(dflt_color, subst_color);
+	gui->svg_bmp = i_svg_all_bmp(gui->svg_curves, ICON_SIZE-1, ICON_SIZE-1);
+	
+	bmp_free(gui->svg_bmp[SVG_LOCK]);
+	gui->svg_bmp[SVG_LOCK] = i_svg_bmp(gui->svg_curves[SVG_LOCK], 16, 16);
+	bmp_free(gui->svg_bmp[SVG_UNLOCK]);
+	gui->svg_bmp[SVG_UNLOCK] = i_svg_bmp(gui->svg_curves[SVG_UNLOCK], 16, 16);
+	bmp_free(gui->svg_bmp[SVG_EYE]);
+	gui->svg_bmp[SVG_EYE] = i_svg_bmp(gui->svg_curves[SVG_EYE], 16, 16);
+	bmp_free(gui->svg_bmp[SVG_NO_EYE]);
+	gui->svg_bmp[SVG_NO_EYE] = i_svg_bmp(gui->svg_curves[SVG_NO_EYE], 16, 16);
+	bmp_free(gui->svg_bmp[SVG_SUN]);
+	gui->svg_bmp[SVG_SUN] = i_svg_bmp(gui->svg_curves[SVG_SUN], 16, 16);
+	bmp_free(gui->svg_bmp[SVG_FREEZE]);
+	gui->svg_bmp[SVG_FREEZE] = i_svg_bmp(gui->svg_curves[SVG_FREEZE], 16, 16);
+	bmp_free(gui->svg_bmp[SVG_CZ]);
+	gui->svg_bmp[SVG_CZ] = i_svg_bmp(gui->svg_curves[SVG_CZ], 32, 32);
+	
+	gui->i_cz48 = i_svg_bmp(gui->svg_curves[SVG_CZ], 48, 48);
+	gui->i_trash = i_svg_bmp(gui->svg_curves[SVG_TRASH], 16, 16);
+  
+  gui->safe_draw = 1;
 }
 
 bmp_color nk_to_bmp_color(struct nk_color color){
@@ -841,6 +872,12 @@ int gui_check_draw(gui_obj *gui){
 				}
 			}
 		}
+    
+    if (gui->safe_draw) {
+      gui->safe_draw = 0;
+      gui->draw = 0;
+      draw = 0;
+    }
 	}
 	return draw;
 }
@@ -1654,6 +1691,7 @@ int gui_start(gui_obj *gui){
 	gui->user_number = 0;
 	gui->keyEnter = 0;
 	gui->draw = 0;
+  gui->safe_draw = 0;
 	gui->draw_tmp = 0;
 	gui->draw_phanton = 0;
 	gui->draw_vert = 0;

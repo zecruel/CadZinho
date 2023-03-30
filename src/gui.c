@@ -659,7 +659,7 @@ void set_style(gui_obj *gui, enum theme theme){
 		table[NK_COLOR_TAB_HEADER] = nk_rgba(48, 83, 111, 255);
 		nk_style_from_table(gui->ctx, table);
 	} else if (theme == THEME_GREEN) {
-		table[NK_COLOR_TEXT] = nk_rgba(210, 210, 210, 255);
+		table[NK_COLOR_TEXT] = nk_rgba(244, 244, 244, 255);
 		table[NK_COLOR_WINDOW] = nk_rgba(57, 71, 58, 215);
 		table[NK_COLOR_HEADER] = nk_rgba(52, 57, 52, 220);
 		table[NK_COLOR_BORDER] = nk_rgba(46, 46, 46, 255);

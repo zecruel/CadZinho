@@ -210,6 +210,18 @@ enum Hist_action {
 	HIST_NEXT
 };
 
+enum Prev_typ {
+  PRV_BLOCK,
+  PRV_PRINT,
+  PRV_HATCH,
+  PRV_INSERT,
+  PRV_FONT,
+  PRV_SCRIPT,
+  PRV_OTHER,
+  
+  PRV_SIZE
+};
+
 struct gui_glyph{
 	int code_p, x, y, w, h;
 	double adv;
@@ -326,7 +338,7 @@ struct Gui_obj {
 	
 	NSVGimage **svg_curves;
 	bmp_img **svg_bmp;
-	bmp_img *preview_img;
+	bmp_img *preview[PRV_SIZE];
 	bmp_img * color_img;
 	bmp_img *i_cz48;
 	bmp_img *i_trash;
@@ -340,15 +352,16 @@ struct Gui_obj {
 	struct nk_style_button b_icon_sel, b_icon_unsel;
 	
 	char log_msg[64];
-	char txt[DXF_MAX_CHARS];
-	char tag[DXF_MAX_CHARS];
+	char txt[DXF_MAX_CHARS + 1];
+	char tag[DXF_MAX_CHARS + 1];
+  char value[DXF_MAX_CHARS + 1];
 	char long_txt[5 * DXF_MAX_CHARS];
-	char blk_name[DXF_MAX_CHARS+1];
-	char blk_descr[DXF_MAX_CHARS+1];
-	char tag_mark[DXF_MAX_CHARS+1];
-	char hide_mark[DXF_MAX_CHARS+1];
-	char value_mark[DXF_MAX_CHARS+1];
-	char dflt_value[DXF_MAX_CHARS+1];
+	char blk_name[DXF_MAX_CHARS + 1];
+	char blk_descr[DXF_MAX_CHARS + 1];
+	char tag_mark[DXF_MAX_CHARS + 1];
+	char hide_mark[DXF_MAX_CHARS + 1];
+	char value_mark[DXF_MAX_CHARS + 1];
+	char dflt_value[DXF_MAX_CHARS + 1];
 	
 	char patt_name[DXF_MAX_CHARS];
 	char patt_descr[DXF_MAX_CHARS];

@@ -1714,7 +1714,9 @@ int gui_start(gui_obj *gui){
 	
 	gui->svg_curves = NULL;
 	gui->svg_bmp = NULL;
-	gui->preview_img = NULL;
+  for (i = 0; i < PRV_SIZE; i++){
+    gui->preview[i] = NULL;
+  }
 	
 	//gui->b_icon;
 	
@@ -1724,6 +1726,7 @@ int gui_start(gui_obj *gui){
 	gui->log_msg[0] = 0;
 	gui->txt[0] = 0;
 	gui->tag[0] = 0;
+  gui->value[0] = 0;
 	gui->long_txt[0] = 0;
 	gui->blk_name[0] = 0;
 	gui->blk_descr[0] = 0;

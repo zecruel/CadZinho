@@ -16,7 +16,7 @@ int gui_hatch_interactive(gui_obj *gui){
 						gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 						gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 						0, DWG_LIFE); /* paper space */
-					dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge, DWG_LIFE);
+					dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, 0.0, DWG_LIFE);
 					dxf_attr_change_i(new_el, 70, (void *) (int[]){1}, 0);
 					gui->element = new_el;
 					gui->step = 1;
@@ -39,7 +39,7 @@ int gui_hatch_interactive(gui_obj *gui){
 					
 					new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
 					
-					dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->bulge, DWG_LIFE);
+					dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, 0.0, DWG_LIFE);
 					gui->step = 2;
 					gui_next_step(gui);
 				}
@@ -565,9 +565,9 @@ int gui_hatch_mng (gui_obj *gui){
 			
 			if ((curr_graph != NULL) && (pat_g != NULL)){
 				/*change color -> white*/
-				curr_graph->color.r = 255;// - gui->preview_img->bkg.r;
-				curr_graph->color.g = 255;// - gui->preview_img->bkg.g;
-				curr_graph->color.b = 255;// - gui->preview_img->bkg.b;
+				curr_graph->color.r = 255;// - gui->preview[PRV_HATCH]->bkg.r;
+				curr_graph->color.g = 255;// - gui->preview[PRV_HATCH]->bkg.g;
+				curr_graph->color.b = 255;// - gui->preview[PRV_HATCH]->bkg.b;
 				
 				list_push(pat_g, list_new((void *)curr_graph, FRAME_LIFE));
 			}
@@ -578,17 +578,17 @@ int gui_hatch_mng (gui_obj *gui){
 		/* calcule the zoom and offset for preview */
 		graph_list_ext(pat_g, &pat_ei, &pat_x0, &pat_y0, &pat_z0, &pat_x1, &pat_y1, &pat_z1);
 		
-		z_x = fabs(pat_x1 - pat_x0)/gui->preview_img->width;
-		z_y = fabs(pat_y1 - pat_y0)/gui->preview_img->height;
+		z_x = fabs(pat_x1 - pat_x0)/gui->preview[PRV_HATCH]->width;
+		z_y = fabs(pat_y1 - pat_y0)/gui->preview[PRV_HATCH]->height;
 		z = (z_x > z_y) ? z_x : z_y;
 		if (z <= 0) z =1;
 		else z = 1/(1.1 * z);
-		o_x = pat_x0 - (fabs((pat_x1 - pat_x0)*z - gui->preview_img->width)/2)/z;
-		o_y = pat_y0 - (fabs((pat_y1 - pat_y0)*z - gui->preview_img->height)/2)/z;
+		o_x = pat_x0 - (fabs((pat_x1 - pat_x0)*z - gui->preview[PRV_HATCH]->width)/2)/z;
+		o_y = pat_y0 - (fabs((pat_y1 - pat_y0)*z - gui->preview[PRV_HATCH]->height)/2)/z;
 		
 		/* draw graphics in preview bitmap */
-		bmp_fill(gui->preview_img, gui->preview_img->bkg); /* clear bitmap */
-		//graph_list_draw(pat_g, gui->preview_img, o_x, o_y, z);
+		bmp_fill(gui->preview[PRV_HATCH], gui->preview[PRV_HATCH]->bkg); /* clear bitmap */
+		//graph_list_draw(pat_g, gui->preview[PRV_HATCH], o_x, o_y, z);
 		struct draw_param d_param;
 		
 		d_param.ofs_x = o_x;
@@ -599,7 +599,7 @@ int gui_hatch_mng (gui_obj *gui){
 		d_param.subst = NULL;
 		d_param.len_subst = 0;
 		d_param.inc_thick = 0;
-		graph_list_draw(pat_g, gui->preview_img, d_param);
+		graph_list_draw(pat_g, gui->preview[PRV_HATCH], d_param);
 		
 		
 		
@@ -610,7 +610,7 @@ int gui_hatch_mng (gui_obj *gui){
 			
 			/* preview img */
 			nk_layout_row_dynamic(gui->ctx, 175, 1);
-			nk_button_image(gui->ctx,  nk_image_ptr(gui->preview_img));
+			nk_button_image(gui->ctx,  nk_image_ptr(gui->preview[PRV_HATCH]));
 			nk_layout_row_dynamic(gui->ctx, 50, 1);
 			nk_label_colored_wrap(gui->ctx, patt_descr, nk_rgb(100,115,255));
 			

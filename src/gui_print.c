@@ -364,7 +364,7 @@ int print_win (gui_obj *gui){
 		/* show print preview image */
 		if (nk_group_begin(gui->ctx, _l("Preview"), NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_dynamic(gui->ctx, 172, 1);
-			nk_button_image(gui->ctx,  nk_image_ptr(gui->preview_img));
+			nk_button_image(gui->ctx,  nk_image_ptr(gui->preview[PRV_PRINT]));
 			
 			nk_group_end(gui->ctx);
 		}
@@ -458,30 +458,30 @@ int print_win (gui_obj *gui){
 		if (update){
 			update = 0;
 			/* calcule the zoom and offset for preview */
-			double z_x = page_w/gui->preview_img->width;
-			double z_y = page_h/gui->preview_img->height;
+			double z_x = page_w/gui->preview[PRV_PRINT]->width;
+			double z_y = page_h/gui->preview[PRV_PRINT]->height;
 			double z = (z_x > z_y) ? z_x : z_y;
 			if (z <= 1.0e-15) z = 1.0;
 			else z = 1/z;
 				
 			int w = (int)(page_w * z);
 			int h = (int)(page_h * z);
-			int x = -(int)(w - gui->preview_img->width) / 2;
-			int y = -(int)(h - gui->preview_img->height) / 2;
+			int x = -(int)(w - gui->preview[PRV_PRINT]->width) / 2;
+			int y = -(int)(h - gui->preview[PRV_PRINT]->height) / 2;
 			
 			double o_x = ofs_x - (double) x / (z * scale);
 			double o_y = ofs_y - (double) y / (z * scale);
 			
 			/* clear entire image with its background color*/
-			bmp_fill(gui->preview_img, gui->preview_img->bkg);
+			bmp_fill(gui->preview[PRV_PRINT], gui->preview[PRV_PRINT]->bkg);
 			
 			/* set image clip for paper area */
-			gui->preview_img->clip_x = (unsigned int)x;
-			gui->preview_img->clip_y = (unsigned int)y;
-			gui->preview_img->clip_w = (unsigned int)w;
-			gui->preview_img->clip_h = (unsigned int)h;
+			gui->preview[PRV_PRINT]->clip_x = (unsigned int)x;
+			gui->preview[PRV_PRINT]->clip_y = (unsigned int)y;
+			gui->preview[PRV_PRINT]->clip_w = (unsigned int)w;
+			gui->preview[PRV_PRINT]->clip_h = (unsigned int)h;
 			/* clear image on page bounds with white color */
-			bmp_fill_clip(gui->preview_img, white);
+			bmp_fill_clip(gui->preview[PRV_PRINT], white);
 			
 			/* draw image */
 			struct draw_param d_param;
@@ -493,16 +493,16 @@ int print_win (gui_obj *gui){
 			d_param.subst = param.subst;
 			d_param.len_subst = param.len;
 			d_param.inc_thick = 0;
-			dxf_ents_draw(gui->drawing, gui->preview_img, d_param);
+			dxf_ents_draw(gui->drawing, gui->preview[PRV_PRINT], d_param);
 			
 			/* draw page rectangle */
 			bmp_color blue = { .r = 0, .g = 0, .b = 255, .a = 255 };
-			gui->preview_img->frg = blue;
-			gui->preview_img->tick = 0;
-			bmp_line(gui->preview_img, x, y, x + w - 1, y);
-			bmp_line(gui->preview_img, x + w - 1, y, x + w - 1, y + h - 1);
-			bmp_line(gui->preview_img, x + w - 1, y + h - 1, x, y + h - 1);
-			bmp_line(gui->preview_img, x, y + h - 1, x, y);
+			gui->preview[PRV_PRINT]->frg = blue;
+			gui->preview[PRV_PRINT]->tick = 0;
+			bmp_line(gui->preview[PRV_PRINT], x, y, x + w - 1, y);
+			bmp_line(gui->preview[PRV_PRINT], x + w - 1, y, x + w - 1, y + h - 1);
+			bmp_line(gui->preview[PRV_PRINT], x + w - 1, y + h - 1, x, y + h - 1);
+			bmp_line(gui->preview[PRV_PRINT], x, y + h - 1, x, y);
 		}
 		
 		/* update parameters for next iteration */
@@ -522,7 +522,7 @@ int print_win (gui_obj *gui){
 	else{
 		show_print = 0; /* close window*/
 		/* clear preview image */
-		bmp_fill(gui->preview_img, gui->preview_img->bkg);
+		bmp_fill(gui->preview[PRV_PRINT], gui->preview[PRV_PRINT]->bkg);
 	}
 	nk_end(gui->ctx);
 	

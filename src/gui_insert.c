@@ -204,20 +204,20 @@ int gui_insert_info (gui_obj *gui){
 					graph_list_ext(blk_g, &blk_ei, &blk_x0, &blk_y0, &blk_z0, &blk_x1, &blk_y1, &blk_z1);
 					
 					/* calcule the zoom and offset for preview */
-					z_x = fabs(blk_x1 - blk_x0)/gui->preview_img->width;
-					z_y = fabs(blk_y1 - blk_y0)/gui->preview_img->height;
+					z_x = fabs(blk_x1 - blk_x0)/gui->preview[PRV_INSERT]->width;
+					z_y = fabs(blk_y1 - blk_y0)/gui->preview[PRV_INSERT]->height;
 					z = (z_x > z_y) ? z_x : z_y;
 					if (z <= 0) z =1;
 					else z = 1/(1.1 * z);
-					o_x = blk_x0 - (fabs((blk_x1 - blk_x0)*z - gui->preview_img->width)/2)/z;
-					o_y = blk_y0 - (fabs((blk_y1 - blk_y0)*z - gui->preview_img->height)/2)/z;
+					o_x = blk_x0 - (fabs((blk_x1 - blk_x0)*z - gui->preview[PRV_INSERT]->width)/2)/z;
+					o_y = blk_y0 - (fabs((blk_y1 - blk_y0)*z - gui->preview[PRV_INSERT]->height)/2)/z;
 					
 					snprintf(txt, DXF_MAX_CHARS, "(%0.2f,%0.2f)-(%0.2f,%0.2f)", blk_x0, blk_y0, blk_x1, blk_y1);
 					
 					/* draw graphics in current preview bitmap */
-					//gui->preview_img->zero_tl = 1;
-					bmp_fill(gui->preview_img, gui->preview_img->bkg); /* clear bitmap */
-					//graph_list_draw(blk_g, gui->preview_img, o_x, o_y, z);
+					//gui->preview[PRV_INSERT]->zero_tl = 1;
+					bmp_fill(gui->preview[PRV_INSERT], gui->preview[PRV_INSERT]->bkg); /* clear bitmap */
+					//graph_list_draw(blk_g, gui->preview[PRV_INSERT], o_x, o_y, z);
 					struct draw_param d_param;
 					d_param.ofs_x = o_x;
 					d_param.ofs_y = o_y;
@@ -227,7 +227,7 @@ int gui_insert_info (gui_obj *gui){
 					d_param.subst = NULL;
 					d_param.len_subst = 0;
 					d_param.inc_thick = 0;
-					graph_list_draw(blk_g, gui->preview_img, d_param);
+					graph_list_draw(blk_g, gui->preview[PRV_INSERT], d_param);
 					
 				}
 				if (nk_group_begin(gui->ctx, "Block_prev", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
@@ -237,7 +237,7 @@ int gui_insert_info (gui_obj *gui){
 					
 					/* preview img */
 					nk_layout_row_dynamic(gui->ctx, 175, 1);
-					nk_button_image(gui->ctx,  nk_image_ptr(gui->preview_img));
+					nk_button_image(gui->ctx,  nk_image_ptr(gui->preview[PRV_INSERT]));
 					
 					/* current block corners */
 					nk_layout_row_dynamic(gui->ctx, 15, 1);

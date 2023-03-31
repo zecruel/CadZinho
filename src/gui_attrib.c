@@ -33,7 +33,7 @@ int gui_attrib_interactive(gui_obj *gui){
 		/* create a new DXF attrib candidate */
 		new_attrib = dxf_new_attrib (
 			gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->txt_h, /* pt1, height */
-			gui->txt, gui->tag, /* tag and value */
+			gui->value, gui->tag, /* tag and value */
 			gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
 			gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
 			0, ONE_TIME); /* paper space */
@@ -68,7 +68,7 @@ int gui_attrib_interactive(gui_obj *gui){
 			dxf_attr_change_i(new_attrib, 11, &gui->step_x[gui->step], -1);
 			dxf_attr_change_i(new_attrib, 21, &gui->step_y[gui->step], -1);
 			dxf_attr_change(new_attrib, 40, &gui->txt_h);
-			dxf_attr_change(new_attrib, 1, gui->txt);
+			dxf_attr_change(new_attrib, 1, gui->value);
 			dxf_attr_change(new_attrib, 2, gui->tag);
 			dxf_attr_change_i(new_attrib, 72, &gui->t_al_h, -1);
 			dxf_attr_change_i(new_attrib, 74, &gui->t_al_v, -1);
@@ -105,7 +105,7 @@ int gui_attrib_interactive(gui_obj *gui){
 			dxf_attr_change_i(new_attrib, 11, &gui->step_x[gui->step], -1);
 			dxf_attr_change_i(new_attrib, 21, &gui->step_y[gui->step], -1);
 			dxf_attr_change(new_attrib, 40, &gui->txt_h);
-			dxf_attr_change(new_attrib, 1, gui->txt);
+			dxf_attr_change(new_attrib, 1, gui->value);
 			dxf_attr_change(new_attrib, 2, gui->tag);
 			dxf_attr_change(new_attrib, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
 			dxf_attr_change(new_attrib, 8, gui->drawing->layers[gui->layer_idx].name);
@@ -174,7 +174,7 @@ int gui_attrib_info (gui_obj *gui){
 		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->tag, DXF_MAX_CHARS, nk_filter_default);
 		/* atribute value string */
 		nk_label(gui->ctx, _l("Value:"), NK_TEXT_LEFT);
-		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->txt, DXF_MAX_CHARS, nk_filter_default);
+		nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->value, DXF_MAX_CHARS, nk_filter_default);
 		
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		/* size and rotation parameters */

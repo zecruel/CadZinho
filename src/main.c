@@ -480,12 +480,11 @@ int main(int argc, char** argv){
 			font_size += 0.2;
 		}
 	}
-	
-	//int show_blk_pp = 0;
-	//bmp_img * gui->preview_img;
-	gui->preview_img = bmp_new(160, 160, grey, red);
-	//char tag_mark[DXF_MAX_CHARS];
-	
+  
+  /* init preview images */
+  for (i = 0; i < PRV_SIZE; i++){
+    gui->preview[i] = bmp_new(160, 160, grey, red);
+  }
 	
 	/* init global variable font */
 	dflt_font = get_font_list(gui->font_list, "txt.shx"); /* GLOBAL GLOBAL*/
@@ -2039,7 +2038,9 @@ int main(int argc, char** argv){
 	do_mem_pool(FREE_DO_ALL);
 	
 	bmp_free(gui->color_img);
-	bmp_free(gui->preview_img);
+  for (i = 0; i < PRV_SIZE; i++){
+    bmp_free(gui->preview[i]);
+  }
 	bmp_free(gui->i_cz48);
 	bmp_free(gui->i_trash);
 	

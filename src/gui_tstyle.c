@@ -801,17 +801,17 @@ int tstyles_mng (gui_obj *gui){
 					graph_list_color(preview, color);
 					
 					/* calcule the zoom and offset for preview */
-					z_x = fabs(x1 - x0)/gui->preview_img->width;
-					z_y = fabs(y1 - y0)/gui->preview_img->height;
+					z_x = fabs(x1 - x0)/gui->preview[PRV_FONT]->width;
+					z_y = fabs(y1 - y0)/gui->preview[PRV_FONT]->height;
 					z = (z_x > z_y) ? z_x : z_y;
 					if (z <= 0) z =1;
 					else z = 1/(1.1 * z);
-					o_x = x0 - (fabs((x1 - x0)*z - gui->preview_img->width)/2)/z;
-					o_y = y0 - (fabs((y1 - y0)*z - gui->preview_img->height)/2)/z;
+					o_x = x0 - (fabs((x1 - x0)*z - gui->preview[PRV_FONT]->width)/2)/z;
+					o_y = y0 - (fabs((y1 - y0)*z - gui->preview[PRV_FONT]->height)/2)/z;
 					
 					/* draw graphics in current preview bitmap */
-					bmp_fill(gui->preview_img, gui->preview_img->bkg); /* clear bitmap preview */
-					//graph_list_draw(preview, gui->preview_img, o_x, o_y, z);
+					bmp_fill(gui->preview[PRV_FONT], gui->preview[PRV_FONT]->bkg); /* clear bitmap preview */
+					//graph_list_draw(preview, gui->preview[PRV_FONT], o_x, o_y, z);
 					struct draw_param d_param;
 	
 					d_param.ofs_x = o_x;
@@ -822,7 +822,7 @@ int tstyles_mng (gui_obj *gui){
 					d_param.subst = NULL;
 					d_param.len_subst = 0;
 					d_param.inc_thick = 0;
-					graph_list_draw(preview, gui->preview_img, d_param);
+					graph_list_draw(preview, gui->preview[PRV_FONT], d_param);
 					
 				}
 				
@@ -832,7 +832,7 @@ int tstyles_mng (gui_obj *gui){
 			if (nk_group_begin(gui->ctx, "Font_prev", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 				/* preview img */
 				nk_layout_row_dynamic(gui->ctx, 175, 1);
-				nk_button_image(gui->ctx,  nk_image_ptr(gui->preview_img));
+				nk_button_image(gui->ctx,  nk_image_ptr(gui->preview[PRV_FONT]));
 				
 				nk_group_end(gui->ctx);
 			}
@@ -883,7 +883,7 @@ int tstyles_mng (gui_obj *gui){
 		} else {
 			show_fonts = 0;
 			prev = -1;
-			bmp_fill(gui->preview_img, gui->preview_img->bkg); /* clear bitmap preview */
+			bmp_fill(gui->preview[PRV_FONT], gui->preview[PRV_FONT]->bkg); /* clear bitmap preview */
 		}
 		nk_end(gui->ctx);
 	}

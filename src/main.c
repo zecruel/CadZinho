@@ -704,7 +704,8 @@ int main(int argc, char** argv){
 			SDL_SetCursor(dflt_cur);
 		}
 		else{
-			SDL_SetCursor(gui->modal_cursor[gui->modal]);
+			if (gui->pan_mode) SDL_SetCursor(gui->modal_cursor[PAN]);
+      else SDL_SetCursor(gui->modal_cursor[gui->modal]);
 			//SDL_ShowCursor(SDL_DISABLE);
 			
 			if (ev_type != 0){
@@ -828,14 +829,20 @@ int main(int argc, char** argv){
 					
 						}
 						
-						if (event.button.button == SDL_BUTTON_LEFT){
+						if (event.button.button == SDL_BUTTON_LEFT && !gui->pan_mode){
 							leftMouseButtonDown = 1;
 							leftMouseButtonClick = 1;
 						}
-						else if(event.button.button == SDL_BUTTON_RIGHT){
+						else if(event.button.button == SDL_BUTTON_RIGHT && !gui->pan_mode){
 							rightMouseButtonDown = 1;
 							rightMouseButtonClick = 1;
 						}
+            /* activate or toggle the pan mode */
+            if (event.button.button == SDL_BUTTON_MIDDLE){
+              gui->pan_mode = !gui->pan_mode;
+            }
+            else gui->pan_mode = 0;
+            gui->draw = 1;
 						break;
 					case SDL_MOUSEMOTION:
 						MouseMotion = 1;
@@ -890,7 +897,15 @@ int main(int argc, char** argv){
 								}
 							}
 						}
-					
+            
+            /* pan drawing with middle button */
+            
+            if (gui->pan_mode){//(event.motion.state & SDL_BUTTON_MMASK){
+              gui->ofs_x -= (double) (gui->mouse_x - gui->prev_mouse_x)/gui->zoom;
+              gui->ofs_y -= (double) (gui->mouse_y - gui->prev_mouse_y)/gui->zoom;
+            }
+            gui->prev_mouse_x = gui->mouse_x;
+            gui->prev_mouse_y = gui->mouse_y;
 						}
 						gui->draw = 1;
 						break;
@@ -1862,8 +1877,8 @@ int main(int argc, char** argv){
 			
 			dxf_ents_draw_gl(gui->drawing, &gui->gl_ctx, d_param);
 			
-			
-			draw_cursor_gl(gui, gui->mouse_x, gui->mouse_y, gui->cursor);
+			if (!gui->pan_mode) 
+        draw_cursor_gl(gui, gui->mouse_x, gui->mouse_y, gui->cursor);
 			
 			draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
 			//glReadPixels(gui->mouse_x, gui->mouse_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &gui->mouse_z);

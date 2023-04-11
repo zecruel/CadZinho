@@ -479,6 +479,7 @@ int gui_create_modal_cur(gui_obj *gui){
 	cur_img[DIM_RADIUS] = SVG_DIM_RADIUS;
 	cur_img[DIM_ORDINATE] = SVG_DIM_ORDINATE;
 	cur_img[ZOOM] = SVG_ZOOM_W;
+  cur_img[PAN] = SVG_HAND;
 	int i;
 	for (i = 0; i < MODAL_SIZE; i++){
 		surface = SDL_CreateRGBSurfaceFrom(
@@ -1653,6 +1654,10 @@ int gui_start(gui_obj *gui){
 	
 	gui->mouse_x = 0;
 	gui->mouse_y = 0;
+  gui->prev_mouse_x = 0;
+	gui->prev_mouse_y = 0;
+  gui->pan_mode = 0;
+  
 	
 	gui->zoom = 20.0;
 	gui->ofs_x = -10.0;

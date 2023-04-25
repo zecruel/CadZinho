@@ -78,54 +78,12 @@ struct tfont *dflt_font = NULL;
 
 /* ---------------------------------------------------------*/
 
-
-void zoom_ext(dxf_drawing *drawing, bmp_img *img, double *zoom, double *ofs_x, double *ofs_y){
-	double min_x = 0.0, min_y = 0.0, min_z, max_x = 20.0, max_y = 20.0, max_z;
-	double zoom_x = 1.0, zoom_y = 1.0;
-	
-	dxf_ents_ext(drawing, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
-	zoom_x = (max_x - min_x)/img->width;
-	zoom_y = (max_y - min_y)/img->height;
-	*zoom = (zoom_x > zoom_y) ? zoom_x : zoom_y;
-	if (*zoom <= 0){ *zoom =1;}
-	else{ *zoom = 1/(1.1 * (*zoom));}
-	
-	*ofs_x = min_x - (fabs((max_x - min_x)*(*zoom) - img->width)/2)/(*zoom);
-	*ofs_y = min_y - (fabs((max_y - min_y)*(*zoom) - img->height)/2)/(*zoom);
-}
-
-void zoom_ext2(dxf_drawing *drawing, int x, int y, int width, int height, double *zoom, double *ofs_x, double *ofs_y){
-	double min_x = 0.0, min_y = 0.0, min_z, max_x = 20.0, max_y = 20.0, max_z;
-	double zoom_x = 1.0, zoom_y = 1.0;
-	
-	dxf_ents_ext(drawing, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
-	zoom_x = fabs(max_x - min_x)/width;
-	zoom_y = fabs(max_y - min_y)/height;
-	
-	*zoom = (zoom_x > zoom_y) ? zoom_x : zoom_y;
-	*zoom = 1/(1.1 * (*zoom));
-	
-	*ofs_x = min_x - ((fabs((max_x - min_x)*(*zoom) - width)/2)+x)/(*zoom);
-	*ofs_y = min_y - ((fabs((max_y - min_y)*(*zoom) - height)/2)+y)/(*zoom);
-}
-
 int main(int argc, char** argv){
 	aux_mtx1 = malloc(sizeof(struct Matrix));
-	
-	char macro[64];
-	int macro_len = 0;
-	int macro_timer = 0;
-	macro[0] = 0;
-	
-	int refresh_timer = 0;
-	
-	char function_key[20];
-	function_key[0] = 0;
 	
 	gui_obj *gui = malloc(sizeof(gui_obj));
 	gui_start(gui);
 	
-	struct do_entry *save_pt;
 	int update_title = 0, changed = 0;
 	
 	
@@ -135,9 +93,6 @@ int main(int argc, char** argv){
 	time_t t;
 	/* Intializes random number generator */
 	srand((unsigned) time(&t));
-
-	
-	SDL_Rect win_r, display_r;
 	
 	/* init the SDL2 */
 	SDL_Init(SDL_INIT_VIDEO);
@@ -251,9 +206,8 @@ int main(int argc, char** argv){
 	}
 	
 	/* full path of clipboard file */
-	char clip_path[DXF_MAX_CHARS + 1];
-	clip_path[0] = 0;
-	snprintf(clip_path, DXF_MAX_CHARS, "%sclipboard.dxf", gui->pref_path);
+	gui->clip_path[0] = 0;
+	snprintf(gui->clip_path, DXF_MAX_CHARS, "%sclipboard.dxf", gui->pref_path);
 	
 	/* full path of init file */
 	char init_path[DXF_MAX_CHARS + 1];
@@ -268,7 +222,6 @@ int main(int argc, char** argv){
 	gui_load_conf (gui);
 	
 	/* -------------- load last session states ---------------*/
-	
 	/* init the Lua instance, to run init */
 	struct script_obj conf_script;
 	conf_script.L = NULL;
@@ -312,78 +265,24 @@ int main(int argc, char** argv){
 	//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 	//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
 	
-	SDL_Window * window = SDL_CreateWindow(
+	gui->window = SDL_CreateWindow(
 		"CadZinho", /* title */
 		gui->win_x, /* x position */
 		gui->win_y, /* y position */
 		gui->win_w, /* width */
 		gui->win_h, /* height */
 		SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE); /* flags */
-		
-		
+  
 	/* ------------------------------ opengl --------------------------------------*/
-	gui->gl_ctx.ctx = SDL_GL_CreateContext(window);
-	
+	gui->gl_ctx.ctx = SDL_GL_CreateContext(gui->window);
 	draw_gl_init ((void *)gui, 0);
 	
 	/* ------------------------------------------------------------------------------- */
 	
-
-	int open_prg = 0;
-	//int progress = 0;
-	int progr_win = 0;
-	int progr_end = 0;
-	unsigned int quit = 0;
-	unsigned int wait_open = 0;
-	/*int show_app_about = 0;
-	int show_app_file = 0;
-	int path_ok = 0;
-	int show_info = 0;
-	int show_script = 0;
-	int show_print = 0;*/
-	struct draw_param d_param;
-	
-	//int hist_new = 0;
-	
-	
-	char file_path[DXF_MAX_CHARS];
-	int file_path_len = 0;
-	
-	//int show_lay_mng = 0, sel_tmp = 0, show_color_pick = 0, show_lay_name = 0;
-	//int show_tstyles_mng = 0;
-	
-	int ev_type;
-	//struct nk_color background;
-	
-	
-	int leftMouseButtonDown = 0;
-	int rightMouseButtonDown = 0;
-	int leftMouseButtonClick = 0;
-	int rightMouseButtonClick = 0;
-	int MouseMotion = 0;
-	int ctrlDown = 0;
-	
-	//int en_attr = 1;
-	
-	SDL_Event event;
-	int low_proc = 1;
-	
 	char *url = NULL;
-	//char const * lFilterPatterns[2] = { "*.dxf", "*.txt" };
 	
-	struct Mem_buffer *file_buf = NULL;
-	long file_size = 0;
-	
-	char* dropped_filedir;                  /* Pointer for directory of dropped file */
-	
-	
-	gui->show_file_br = 0;
-	
-	//gui->file_filter_types[0] = ext_types[FILE_DXF];
-	//gui->file_filter_types[1] = ext_types[FILE_ALL];
-	
-	//gui->file_filter_descr[0] = ext_descr[FILE_DXF];
-	//gui->file_filter_descr[1] = ext_descr[FILE_ALL];
+	gui->file_buf = NULL;
+	gui->file_size = 0;
 	
 	gui->file_filter_count = 0;
 	gui->filter_idx = 0;
@@ -398,10 +297,6 @@ int main(int argc, char** argv){
 	bmp_color green = {.r = 0, .g = 255, .b =0, .a = 255};
 	bmp_color yellow = {.r = 255, .g = 255, .b =0, .a = 255};
 	bmp_color grey = {.r = 100, .g = 100, .b = 100, .a = 255};
-  
-  /* default substitution list (display white -> print black) */
-  bmp_color list[] = { white, };
-  bmp_color subst[] = { black, };
 	
 	/* line types in use */
 	double center [] = {12, -6, 2 , -6};
@@ -412,66 +307,18 @@ int main(int argc, char** argv){
 	gui->sel_list = list_new(NULL, PRG_LIFE);
 	
 	/* initialize the undo/redo list */
-	//struct do_list gui->list_do;
 	init_do_list(&gui->list_do);
-	save_pt = gui->list_do.current;
+	gui->save_pt = gui->list_do.current;
 		
 	/* init Nuklear GUI */
 	
 	nk_sdl_init(gui);
-	
-	//enum theme {THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK, THEME_GREEN};
-	//~ set_style(gui, THEME_BLACK);
-	//~ set_style(gui, THEME_WHITE);
-	//~ set_style(gui, THEME_RED);
-	//~ set_style(gui, THEME_BLUE);
-	//~ set_style(gui, THEME_DARK);
 	set_style(gui, gui->theme);
-	
-	
-	
-	#if(0)
-	/* init the toolbox image */
-  
-  char *dflt_color = "\"#f9f9f9\"";
-  char subst_color[25]  = "";
-  snprintf(subst_color, 24, "\"rgb(%d, %d, %d)\"",
-    gui->b_icon.text_normal.r, gui->b_icon.text_normal.g, gui->b_icon.text_normal.b);
-	
-	
-	//gui->svg_curves = i_svg_all_curves();
-  gui->svg_curves = i_svg_all_curves2(dflt_color, subst_color);
-	gui->svg_bmp = i_svg_all_bmp(gui->svg_curves, ICON_SIZE-1, ICON_SIZE-1);
-	
-	bmp_free(gui->svg_bmp[SVG_LOCK]);
-	gui->svg_bmp[SVG_LOCK] = i_svg_bmp(gui->svg_curves[SVG_LOCK], 16, 16);
-	bmp_free(gui->svg_bmp[SVG_UNLOCK]);
-	gui->svg_bmp[SVG_UNLOCK] = i_svg_bmp(gui->svg_curves[SVG_UNLOCK], 16, 16);
-	bmp_free(gui->svg_bmp[SVG_EYE]);
-	gui->svg_bmp[SVG_EYE] = i_svg_bmp(gui->svg_curves[SVG_EYE], 16, 16);
-	bmp_free(gui->svg_bmp[SVG_NO_EYE]);
-	gui->svg_bmp[SVG_NO_EYE] = i_svg_bmp(gui->svg_curves[SVG_NO_EYE], 16, 16);
-	bmp_free(gui->svg_bmp[SVG_SUN]);
-	gui->svg_bmp[SVG_SUN] = i_svg_bmp(gui->svg_curves[SVG_SUN], 16, 16);
-	bmp_free(gui->svg_bmp[SVG_FREEZE]);
-	gui->svg_bmp[SVG_FREEZE] = i_svg_bmp(gui->svg_curves[SVG_FREEZE], 16, 16);
-	bmp_free(gui->svg_bmp[SVG_CZ]);
-	gui->svg_bmp[SVG_CZ] = i_svg_bmp(gui->svg_curves[SVG_CZ], 32, 32);
-	
-	gui->i_cz48 = i_svg_bmp(gui->svg_curves[SVG_CZ], 48, 48);
-	gui->i_trash = i_svg_bmp(gui->svg_curves[SVG_TRASH], 16, 16);
-	#endif
-	
-	//struct nk_style_button b_icon_style;
-	
 	
 	gui->color_img = bmp_new(15, 13, black, red);
 	struct nk_image i_color = nk_image_ptr(gui->color_img);
 	
 	/* other font */
-	
-	
-	
 	{
 		double font_size = 0.8;
 		for (i = 0; i < FONT_NUM_SIZE; i++){
@@ -527,24 +374,7 @@ int main(int argc, char** argv){
 	}
 	/* *************************************************** */
 	
-	
-	//printf(dxf_seed_r12);
-	
-	//dxf_new_block(gui->drawing, "teste", "0");
-	//dxf_ent_print2(gui->drawing->blks);
-	//dxf_ent_print2(gui->drawing->blks_rec);
-	//dxf_ent_print2(gui->drawing->head);
-	/*-------------------- test -----------------------*/
-	//printf("version = %d\n", gui->drawing->version);
-	/*---------------------------------------*/
-	
 	dxf_ents_parse(gui->drawing);
-	
-
-	
-	
-	
-	
 	
 	SDL_Surface *surface = SDL_CreateRGBSurfaceFrom(
 		(void *)gui->svg_bmp[SVG_CZ]->buf,
@@ -553,28 +383,25 @@ int main(int argc, char** argv){
 		32, gui->svg_bmp[SVG_CZ]->width * 4,
 		0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 
-	// The icon is attached to the window pointer
-	SDL_SetWindowIcon(window, surface);
+	/* The icon is attached to the window pointer */
+	SDL_SetWindowIcon(gui->window, surface);
 
-	// ...and the surface containing the icon pixel data is no longer required.
+	/* ...and the surface containing the icon pixel data is no longer required. */
 	SDL_FreeSurface(surface);
 
 	
 	/* ****************** test cursor ************************** */
-	SDL_Cursor* dflt_cur = SDL_GetDefaultCursor();
+	gui->dflt_cur = SDL_GetDefaultCursor();
 	gui_create_modal_cur(gui);
 	/* ******************************************************* */
 		
 	SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
 	
-	
-	
 	/*-------------------------------- keyboard macros script --------------------- */
-	struct script_obj macro_script;
-	macro_script.L = NULL;
-	macro_script.T = NULL;
-	macro_script.active = 0;
-	macro_script.dynamic = 0;
+	gui->macro_script.L = NULL;
+	gui->macro_script.T = NULL;
+	gui->macro_script.active = 0;
+	gui->macro_script.dynamic = 0;
 	
 	/* full path of macro file */
 	char macro_path[DXF_MAX_CHARS + 1];
@@ -583,28 +410,25 @@ int main(int argc, char** argv){
 	
 	miss_file (macro_path, (char*)macro_dflt_file);
 	
-	if (gui_script_init (gui, &macro_script, macro_path, NULL) == 1){
-		macro_script.active = 1;
-    lua_getglobal(macro_script.T, "cz_main_func"); /* stack pos = 1 (always in stack to prevent garbage colector) */
+	if (gui_script_init (gui, &gui->macro_script, macro_path, NULL) == 1){
+		gui->macro_script.active = 1;
+    lua_getglobal(gui->macro_script.T, "cz_main_func"); /* stack pos = 1 (always in stack to prevent garbage colector) */
 	}
 	
-	
 	/*-------------------------------- functions keys script --------------------- */
-	struct script_obj func_keys_script;
-	func_keys_script.L = NULL;
-	func_keys_script.T = NULL;
-	func_keys_script.active = 0;
-	func_keys_script.dynamic = 0;
+	gui->func_keys_script.L = NULL;
+	gui->func_keys_script.T = NULL;
+	gui->func_keys_script.active = 0;
+	gui->func_keys_script.dynamic = 0;
 	
 	/* full path of func_keys file */
-	char func_keys_path[DXF_MAX_CHARS + 1];
-	func_keys_path[0] = 0;
-	snprintf(func_keys_path, DXF_MAX_CHARS, "%sfunc_keys.lua", gui->pref_path);
+	gui->func_keys_path[0] = 0;
+	snprintf(gui->func_keys_path, DXF_MAX_CHARS, "%sfunc_keys.lua", gui->pref_path);
 	
-	miss_file (func_keys_path, (char*)func_key_dflt_file);
+	miss_file (gui->func_keys_path, (char*)func_key_dflt_file);
 	
-	if (gui_script_init (gui, &func_keys_script, func_keys_path, NULL) == 1){
-		func_keys_script.active = 1;
+	if (gui_script_init (gui, &gui->func_keys_script, gui->func_keys_path, NULL) == 1){
+		gui->func_keys_script.active = 1;
 	}
 	
 	/*-------------------------------- Additional tools script --------------------- */
@@ -633,27 +457,6 @@ int main(int argc, char** argv){
 		}
 	}
 	
-	/*===================== teste ===============*/
-	
-	//list_node * tt_test = list_new(NULL, PRG_LIFE);
-	//double w_teste;
-	//tt_parse4(tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ");
-	
-	//struct tfont *font_teste = get_font_list(gui->font_list, "OpenSans-Light.ttf");
-	//struct tfont *font_teste = get_font_list(gui->font_list, "Roboto-LightItalic.ttf");
-	//font_str_w(font_teste, "Ezequiel Rabelo de Aguiar  AV çβμπ", &w_teste);
-	//printf("\ntext w1 = %0.2f\n", w_teste);
-	//font_parse_str(font_teste, tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ", NULL);
-	/*font_teste = get_font_list(gui->font_list, "romans.shx");
-	
-	font_str_w(font_teste, "Ezequiel Rabelo de Aguiar  AV çβμπ", &w_teste);
-	printf("\ntext w1 = %0.2f\n", w_teste);
-	font_parse_str(font_teste, tt_test, PRG_LIFE, "Ezequiel Rabelo de Aguiar  AV çβμπ", NULL);
-	*/
-	
-	//graph_obj * hers = hershey_test (PRG_LIFE);
-	/*===================== teste ===============*/
-	
 	/* try to open file passed in command line arg */
 	if (strcmp(get_ext((char *) arg_file), "dxf") == 0){
 		gui->action = FILE_OPEN;
@@ -671,1352 +474,25 @@ int main(int argc, char** argv){
 	/* ------------------------------------------------------------------------*/
 	
 	/* main loop */
-	while (quit == 0){
-		ev_type = 0;
-		low_proc = 1;
-		
-		//SDL_ShowCursor(SDL_DISABLE);
-		
-		
-		/* get events for Nuklear GUI input */
-		nk_input_begin(gui->ctx);
-		if(SDL_PollEvent(&event)){
-			if (event.type == SDL_QUIT) {
-				//quit = 1;
-				if (gui->changed){
-					gui->discard_changes = 1;
-					gui->desired_action = EXIT;
-					gui->hist_action = HIST_NONE;
-				}
-				else{
-					quit = 1;
-				}
-			}
-			nk_sdl_handle_event(gui, window, &event);
-			ev_type = event.type;
-		}
-		nk_input_end(gui->ctx);
-		
-		/* ===============================*/
-		if (nk_window_is_any_hovered(gui->ctx)) {
-			//SDL_ShowCursor(SDL_ENABLE);
-			//printf("show\n");
-			SDL_SetCursor(dflt_cur);
-		}
-		else{
-			if (gui->pan_mode) SDL_SetCursor(gui->modal_cursor[PAN]);
-      else SDL_SetCursor(gui->modal_cursor[gui->modal]);
-			//SDL_ShowCursor(SDL_DISABLE);
-			
-			if (ev_type != 0){
-				double wheel = 1.0;
-				switch (event.type){
-					case SDL_MOUSEBUTTONUP:
-						gui->mouse_x = event.button.x;
-						gui->mouse_y = event.button.y;
-						gui->mouse_y = gui->win_h - gui->mouse_y;
-						{
-						/* get ray  from mouse point in screen*/
-						double ray_o[3], ray_dir[3], plane[4], point[3];
-						
-						ray_o[0] = (double) gui->mouse_x * gui->drwg_view_i[0][0] +
-							(double) gui->mouse_y * gui->drwg_view_i[1][0] +
-							gui->drwg_view_i[3][0];
-						ray_o[1] = (double) gui->mouse_x * gui->drwg_view_i[0][1] +
-							(double) gui->mouse_y * gui->drwg_view_i[1][1] +
-							gui->drwg_view_i[3][1];
-						ray_o[2] = (double) gui->mouse_x * gui->drwg_view_i[0][2] +
-							(double) gui->mouse_y * gui->drwg_view_i[1][2] +
-							gui->drwg_view_i[3][2];
-						
-						ray_dir[0] = -gui->drwg_view_i[2][0];
-						ray_dir[1] = -gui->drwg_view_i[2][1];
-						ray_dir[2] = -gui->drwg_view_i[2][2];
-						
-						/* try xy plane*/
-						plane[0] = 0.0; plane[1] = 0.0; plane[2] = 1.0; plane[3] = 0.0;
-						if( ray_plane(ray_o, ray_dir, plane, point)){
-							gui->mouse_x = point[0];
-							gui->mouse_y = point[1];
-							//gui->mouse_z = point[2];
-						}
-						else{
-							/* try xz plane*/
-							plane[0] = 0.0; plane[1] = 1.0; plane[2] = 0.0; plane[3] = 0.0;
-							if( ray_plane(ray_o, ray_dir, plane, point)){
-								gui->mouse_x = point[0];
-								gui->mouse_y = point[1];
-								//gui->mouse_z = point[2];
-							}
-							else{
-								/* try yz plane*/
-								plane[0] = 1.0; plane[1] = 0.0; plane[2] = 0.0; plane[3] = 0.0;
-								if( ray_plane(ray_o, ray_dir, plane, point)){
-									gui->mouse_x = point[0];
-									gui->mouse_y = point[1];
-									//gui->mouse_z = point[2];
-								}
-								else{
-									gui->mouse_x = ray_o[0];
-									gui->mouse_y = ray_o[1];
-									//gui->mouse_z = ray_o[2];
-								}
-							}
-						}
-					
-						}
-					
-						if (event.button.button == SDL_BUTTON_LEFT){
-							leftMouseButtonDown = 0;
-						}
-						else if(event.button.button == SDL_BUTTON_RIGHT){
-							rightMouseButtonDown = 0;
-						}
-						break;
-					case SDL_MOUSEBUTTONDOWN:
-						gui->mouse_x = event.button.x;
-						gui->mouse_y = event.button.y;
-						gui->mouse_y = gui->win_h - gui->mouse_y;
-						
-						{
-						/* get ray  from mouse point in screen*/
-						double ray_o[3], ray_dir[3], plane[4], point[3];
-						
-						ray_o[0] = (double) gui->mouse_x * gui->drwg_view_i[0][0] +
-							(double) gui->mouse_y * gui->drwg_view_i[1][0] +
-							gui->drwg_view_i[3][0];
-						ray_o[1] = (double) gui->mouse_x * gui->drwg_view_i[0][1] +
-							(double) gui->mouse_y * gui->drwg_view_i[1][1] +
-							gui->drwg_view_i[3][1];
-						ray_o[2] = (double) gui->mouse_x * gui->drwg_view_i[0][2] +
-							(double) gui->mouse_y * gui->drwg_view_i[1][2] +
-							gui->drwg_view_i[3][2];
-						
-						ray_dir[0] = -gui->drwg_view_i[2][0];
-						ray_dir[1] = -gui->drwg_view_i[2][1];
-						ray_dir[2] = -gui->drwg_view_i[2][2];
-						
-						/* try xy plane*/
-						plane[0] = 0.0; plane[1] = 0.0; plane[2] = 1.0; plane[3] = 0.0;
-						if( ray_plane(ray_o, ray_dir, plane, point)){
-							gui->mouse_x = point[0];
-							gui->mouse_y = point[1];
-							//gui->mouse_z = point[2];
-						}
-						else{
-							/* try xz plane*/
-							plane[0] = 0.0; plane[1] = 1.0; plane[2] = 0.0; plane[3] = 0.0;
-							if( ray_plane(ray_o, ray_dir, plane, point)){
-								gui->mouse_x = point[0];
-								gui->mouse_y = point[1];
-								//gui->mouse_z = point[2];
-							}
-							else{
-								/* try yz plane*/
-								plane[0] = 1.0; plane[1] = 0.0; plane[2] = 0.0; plane[3] = 0.0;
-								if( ray_plane(ray_o, ray_dir, plane, point)){
-									gui->mouse_x = point[0];
-									gui->mouse_y = point[1];
-									//gui->mouse_z = point[2];
-								}
-								else{
-									gui->mouse_x = ray_o[0];
-									gui->mouse_y = ray_o[1];
-									//gui->mouse_z = ray_o[2];
-								}
-							}
-						}
-					
-						}
-						
-						if (event.button.button == SDL_BUTTON_LEFT && !gui->pan_mode){
-							leftMouseButtonDown = 1;
-							leftMouseButtonClick = 1;
-						}
-						else if(event.button.button == SDL_BUTTON_RIGHT && !gui->pan_mode){
-							rightMouseButtonDown = 1;
-							rightMouseButtonClick = 1;
-						}
-            /* activate or toggle the pan mode */
-            if (event.button.button == SDL_BUTTON_MIDDLE){
-              gui->pan_mode = !gui->pan_mode;
-            }
-            else gui->pan_mode = 0;
-            gui->draw = 1;
-						break;
-					case SDL_MOUSEMOTION:
-						MouseMotion = 1;
-						gui->mouse_x = event.motion.x;
-						gui->mouse_y = event.motion.y;
-						gui->mouse_y = gui->win_h - gui->mouse_y;
-						{
-						/* get ray  from mouse point in screen*/
-						double ray_o[3], ray_dir[3], plane[4], point[3];
-						
-						ray_o[0] = (double) gui->mouse_x * gui->drwg_view_i[0][0] +
-							(double) gui->mouse_y * gui->drwg_view_i[1][0] +
-							gui->drwg_view_i[3][0];
-						ray_o[1] = (double) gui->mouse_x * gui->drwg_view_i[0][1] +
-							(double) gui->mouse_y * gui->drwg_view_i[1][1] +
-							gui->drwg_view_i[3][1];
-						ray_o[2] = (double) gui->mouse_x * gui->drwg_view_i[0][2] +
-							(double) gui->mouse_y * gui->drwg_view_i[1][2] +
-							gui->drwg_view_i[3][2];
-						
-						ray_dir[0] = -gui->drwg_view_i[2][0];
-						ray_dir[1] = -gui->drwg_view_i[2][1];
-						ray_dir[2] = -gui->drwg_view_i[2][2];
-						
-						/* try xy plane*/
-						plane[0] = 0.0; plane[1] = 0.0; plane[2] = 1.0; plane[3] = 0.0;
-						if( ray_plane(ray_o, ray_dir, plane, point)){
-							gui->mouse_x = point[0];
-							gui->mouse_y = point[1];
-							//gui->mouse_z = point[2];
-						}
-						else{
-							/* try xz plane*/
-							plane[0] = 0.0; plane[1] = 1.0; plane[2] = 0.0; plane[3] = 0.0;
-							if( ray_plane(ray_o, ray_dir, plane, point)){
-								gui->mouse_x = point[0];
-								gui->mouse_y = point[1];
-								//gui->mouse_z = point[2];
-							}
-							else{
-								/* try yz plane*/
-								plane[0] = 1.0; plane[1] = 0.0; plane[2] = 0.0; plane[3] = 0.0;
-								if( ray_plane(ray_o, ray_dir, plane, point)){
-									gui->mouse_x = point[0];
-									gui->mouse_y = point[1];
-									//gui->mouse_z = point[2];
-								}
-								else{
-									gui->mouse_x = ray_o[0];
-									gui->mouse_y = ray_o[1];
-									//gui->mouse_z = ray_o[2];
-								}
-							}
-						}
-            
-            /* pan drawing with middle button */
-            
-            if (gui->pan_mode){//(event.motion.state & SDL_BUTTON_MMASK){
-              gui->ofs_x -= (double) (gui->mouse_x - gui->prev_mouse_x)/gui->zoom;
-              gui->ofs_y -= (double) (gui->mouse_y - gui->prev_mouse_y)/gui->zoom;
-            }
-            gui->prev_mouse_x = gui->mouse_x;
-            gui->prev_mouse_y = gui->mouse_y;
-						}
-						gui->draw = 1;
-						break;
-					case SDL_MOUSEWHEEL:
-						
-						if(event.wheel.y < 0) wheel = -1.0; // scroll down
-						gui->prev_zoom = gui->zoom;
-						gui->zoom = gui->zoom + wheel * 0.3 * gui->zoom;
-						
-						SDL_GetMouseState(&gui->mouse_x, &gui->mouse_y);
-						gui->mouse_y = gui->win_h - gui->mouse_y;
-						gui->ofs_x += ((double) gui->mouse_x)*(1/gui->prev_zoom - 1/gui->zoom);
-						gui->ofs_y += ((double) gui->mouse_y)*(1/gui->prev_zoom - 1/gui->zoom);
-						gui->draw = 1;
-						break;
-					#if(0)
-					case (SDL_DROPFILE): {      /* In case if dropped file */
-						/* get file path -> drop event has previously proccessed and string was moved to clipboard !!!*/
-						char *dropped_filedir = SDL_GetClipboardText(); 
-						if (!gui->show_open && !gui->show_save){
-							strncpy (gui->curr_path, dropped_filedir, DXF_MAX_CHARS);
-							gui->path_ok = 1;
-							/* open file */
-							if (gui->changed){
-								gui->discard_changes = 1;
-								gui->desired_action = FILE_OPEN;
-								gui->hist_action = HIST_ADD;
-							}
-							else{
-								gui->action = FILE_OPEN;
-								gui->hist_new = 1; /* add to history entries */
-							}
-							
-						}
-						SDL_free(dropped_filedir);    // Free dropped_filedir memory
-						}
-						break;
-					#endif
-					case SDL_KEYDOWN: {
-						SDL_Keycode key = event.key.keysym.sym;
-						SDL_Keymod mod = event.key.keysym.mod;
-						int n_func = sizeof(func_keys)/sizeof(struct func_key);
-						for (i = 0; i < n_func; i++){
-							if (func_keys[i].code == key && (func_keys[i].mod & mod || func_keys[i].mod == KMOD_NONE)){
-								strncpy (function_key, func_keys[i].key, 19);
-							}
-						}
-						
-						if (key == SDLK_RCTRL || key == SDLK_LCTRL) ctrlDown = 1;
-					
-						//printf("%s\n", SDL_GetKeyName(event.key.keysym.sym));
-						if ((key == SDLK_RETURN) || (key == SDLK_RETURN2)){
-							gui->keyEnter = 1;
-						}
-						else if (key == SDLK_SPACE){
-							key_space = 1;
-						}
-            else if (key == SDLK_ESCAPE){
-							key_esc = 1;
-						}
-						else if (key == SDLK_UP && (mod & KMOD_CTRL)){
-							gui->action = VIEW_PAN_U;
-						}
-						else if (key == SDLK_DOWN && (mod & KMOD_CTRL)){
-							gui->action = VIEW_PAN_D;
-						}
-						else if (key == SDLK_LEFT && (mod & KMOD_CTRL)){
-							gui->action = VIEW_PAN_L;
-						}
-						else if (key == SDLK_RIGHT && (mod & KMOD_CTRL)){
-							gui->action = VIEW_PAN_R;
-						}
-						else if ((key == SDLK_KP_MINUS || key == SDLK_MINUS) && 
-              (mod & KMOD_CTRL)){
-							gui->action = VIEW_ZOOM_M;
-						}
-						else if ((key == SDLK_KP_PLUS || key == SDLK_PLUS || key == SDLK_EQUALS) && 
-              (mod & KMOD_CTRL)){
-							gui->action = VIEW_ZOOM_P;
-						}
-						else if (key == SDLK_DELETE){
-							//gui->ev |= EV_DEL;
-							gui->action = DELETE;
-						}
-						else if (key == SDLK_c && (mod & KMOD_CTRL)){
-							//gui->ev |= EV_YANK;
-							gui->action = YANK;
-						}
-						else if (key == SDLK_x && (mod & KMOD_CTRL)){
-							//gui->ev |= EV_CUT;
-							gui->action = CUT;
-						}
-						else if (key == SDLK_v && (mod & KMOD_CTRL)){
-							//gui->ev |= EV_PASTE;
-							gui->action = START_PASTE;
-						}
-						else if (key == SDLK_z && (mod & KMOD_CTRL)){
-							//gui->ev |= EV_UNDO;
-							gui->action = UNDO;
-						}
-						else if (key == SDLK_r && (mod & KMOD_CTRL)){
-							//gui->ev |= EV_REDO;
-							gui->action = REDO;
-						}}
-						break;
-						
-					case SDL_KEYUP: {
-						SDL_Keycode key = event.key.keysym.sym;
-						SDL_Keymod mod = event.key.keysym.mod;
-						
-						if (key == SDLK_RCTRL || key == SDLK_LCTRL) ctrlDown = 0;
-						}break;
-					case SDL_TEXTINPUT:
-						/* text input */
-					
-						/* if the user enters a character relative a number */
-						if ((*event.text.text > 41) && (*event.text.text < 58) && (gui->en_distance||!gui->entry_relative)){
-							gui->user_number = 1; /* sinalize a user flag */
-						}
-						else{
-							macro[macro_len] = *event.text.text;
-							if (macro_len < 63) macro_len++;
-							macro[macro_len] = 0;
-							macro_timer = 0;
-							gui->draw = 1;
-						}
-						break;
-					case SDL_WINDOWEVENT:
-						if (event.window.event == SDL_WINDOWEVENT_RESIZED){
-							gui->draw = 1;
-						}
-						if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED){
-							gui->draw = 1;
-						}
-				}
-			}
-			
-		}
-		
-		if (MouseMotion) gui->ev |= EV_MOTION;
-		if (leftMouseButtonClick) gui->ev |= EV_ENTER;
-		if (rightMouseButtonClick || key_esc) gui->ev |= EV_CANCEL;
-		if (key_space) gui->ev |= EV_LOCK_AX;
-		if (ctrlDown) gui->ev |= EV_ADD;
-		
-		/* verify if drawing was changed */
-		gui->changed = 0;
-		if (save_pt != gui->list_do.current){
-			gui->changed = 1;
-		}
-		
-		/* == Window title == */
-		if (update_title || changed != gui->changed){
-			/* update window title, for changes in drawing file name or during drawing editing */
-			char title[DXF_MAX_CHARS] = "CadZinho - ";
-			strncat (title, gui->dwg_file, DXF_MAX_CHARS - strlen(title));
-			if (gui->changed){ /* if current drawing was changed, put "(*)" to indicate modifications */
-				strncat (title, " (*)", DXF_MAX_CHARS - strlen(title));
-			}
-			
-			SDL_SetWindowTitle(window, title);
-			update_title = 0;
-		}
-		
-		changed = gui->changed;
-		
-		gui->next_win_h = 83;
-		gui->next_win_x = 2;
-		gui->next_win_y = 2;
-		
-		/*
-		if (nk_begin(gui->ctx, "Icons", nk_rect(500, 50, 200, 500),
-		NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
-		NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE)){
-			nk_layout_row_static(gui->ctx, 28, 28, 6);
-			for (i = 0; i <  SVG_MEDIA_SIZE; i++){
-				nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[i]));
-			}
-			
-		}
-		nk_end(gui->ctx);*/
-		
-		gui->next_win_y += gui->next_win_h + 3;
-		gui->next_win_w = 210;
-		gui->next_win_h = 500;
-		
-		gui_tools_win (gui);
-		gui_main_win (gui);
-		
-		
-		if (gui->show_open){
-			gui->show_open = gui_file_open (gui, NULL);  // *** test
-			if (gui->show_open == 2){
-				gui->path_ok = 1;
-				
-				gui->show_open = 0;
-			}
-		}
-		
-		if (gui->show_save){
-			gui->show_save = gui_file_save (gui, NULL);  // *** test
-			if (gui->show_save == 2){
-				gui->path_ok = 1;
-				
-				gui->show_save = 0;
-			}
-		}
-		
-		
-/* ==============================================================
-======    LAYER MANAGER   ==========================================
-================================================================*/
-		
-		if (gui->show_lay_mng){
-			gui->show_lay_mng = lay_mng (gui);
-		}
-		
-/* ==============================================================
-======    END LAYER MANAGER   ======================================
-================================================================*/
-		if (gui->show_ltyp_mng){
-			gui->show_ltyp_mng = ltyp_mng (gui);
-		}
-		
-		if (gui->show_info){
-			gui->show_info = info_win(gui);
-		}
-		if (gui->show_script){
-			gui->show_script = script_win(gui);
-		}
-		if (gui->show_print){
-			gui->show_print = print_win(gui);
-		}
-		if (gui->show_export){
-			gui->show_export = export_win(gui);
-		}
-		if (gui->show_blk_mng){
-			gui->show_blk_mng = gui_blk_mng (gui);
-		}
-		
-		if (gui->show_tstyles_mng){
-			gui->show_tstyles_mng = tstyles_mng (gui);
-		}
-		
-		if (gui->show_config){ /* configuration window */
-			gui->show_config = config_win (gui);
-		}
-		
-		if (gui->show_dim_mng){
-			gui->show_dim_mng = gui_dim_mng (gui);
-		}
-		
-		if (gui->show_hatch_mng){
-			gui->show_hatch_mng = gui_hatch_mng (gui);
-		}
-		
-		if (gui->show_plugins){ /* Additional tools window */
-			gui->show_plugins = gui_plugins_win (gui);
-		}
-		
-		if (progr_win){
-			/* opening */
-			if (nk_begin(gui->ctx, "Progress", nk_rect(200, 200, 400, 40),
-			NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_NO_SCROLLBAR))
-			//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "opening", 0, nk_rect(200, 200, 400, 40)))
-			{
-				static char text[64];
-				static int text_len;
-				nk_layout_row_dynamic(gui->ctx, 20, 2);
-				text_len = snprintf(text, 63, "Opening...");
-				nk_label(gui->ctx, text, NK_TEXT_LEFT);
-				nk_prog(gui->ctx, (nk_size)gui->progress, 100, NK_FIXED);
-				//nk_popup_end(gui->ctx);
-				nk_end(gui->ctx);
-			}
-			
-			if (progr_end){
-				progr_win = 0;
-				progr_end = 0;
-				nk_window_close(gui->ctx, "Progress");
-			}
-		}
-		
-		gui_bottom_win (gui);
-		
-		/* */
-		
-		
-		if (!(nk_window_is_any_hovered(gui->ctx)) && (gui->modal != SELECT)){
-			nk_window_set_focus(gui->ctx, "POS");
-			
-			
-		}
-		
-		
-		/*================================================
-		==================================================
-		=================================================*/
-		
-		
-		
-		if (wait_open != 0){
-			low_proc = 0;
-			gui->draw = 1;
-			
-			open_prg = dxf_read(gui->drawing, file_buf->buffer, file_size, &gui->progress);
-			
-			if(open_prg <= 0){
-				//free(file_buf);
-				manage_buffer(0, BUF_RELEASE, 0);
-				file_buf = NULL;
-				file_size = 0;
-				low_proc = 1;
-				
-				//dxf_ent_print2(gui->drawing->blks);
-				dxf_ents_parse(gui->drawing);				
-				gui->action = VIEW_ZOOM_EXT;
-				gui->layer_idx = dxf_lay_idx (gui->drawing, "0");
-				gui->ltypes_idx = dxf_ltype_idx (gui->drawing, "BYLAYER");
-				gui->t_sty_idx = dxf_tstyle_idx (gui->drawing, "STANDARD");
-				gui->color_idx = 256;
-				gui->lw_idx = DXF_LW_LEN;
-				wait_open = 0;
-				progr_end = 1;
-				sel_list_clear (gui);
-				
-				if (gui->script_resume_reason == YIELD_DRWG_OPEN){
-					gui->script_resume_reason = YIELD_NONE;
-					gui->script_resume = 1;
-					if(open_prg < 0) gui->script_resume = -1;
-				}
-			}
-			
-		}
-		else low_proc = 1;
-		
-		
-		/*===============================*/
-		if(gui->action == EXIT) {
-			quit = 1;
-		}
-		else if(gui->action == FILE_NEW) {
-			gui->action = NONE;
-			do_mem_pool(ZERO_DO_ITEM);
-			do_mem_pool(ZERO_DO_ENTRY);
-			init_do_list(&gui->list_do);
-			save_pt = gui->list_do.current;
-			
-			/* load and apply the fonts required for drawing */
-			gui->drawing->font_list = gui->font_list;
-			gui->drawing->dflt_font = get_font_list(gui->font_list, "txt.shx");
-			gui->drawing->dflt_fonts_path = gui->dflt_fonts_path;
-			
-			while (dxf_read (gui->drawing, gui->seed, strlen(gui->seed), &gui->progress) > 0){
-				
-			}
-			
-			gui->layer_idx = dxf_lay_idx (gui->drawing, "0");
-			gui->ltypes_idx = dxf_ltype_idx (gui->drawing, "BYLAYER");
-			gui->t_sty_idx = dxf_tstyle_idx (gui->drawing, "STANDARD");
-			gui->color_idx = 256;
-			gui->lw_idx = DXF_LW_LEN;
-			gui->curr_path[0] = 0;
-			gui->drwg_hist_pos ++;
-			sel_list_clear (gui);
-
-			//strncpy (gui->dwg_dir, get_dir(gui->curr_path) , PATH_MAX_CHARS);
-			//strncpy (gui->dwg_file, get_filename(gui->curr_path) , PATH_MAX_CHARS);
-			gui->dwg_file[0] = 0;
-			
-			update_title = 1;
-			
-			if (gui->script_resume_reason == YIELD_DRWG_NEW){
-				gui->script_resume_reason = YIELD_NONE;
-				gui->script_resume = 1;
-			}
-		}
-		else if((gui->action == FILE_OPEN) && (gui->path_ok)) {
-			gui->action = NONE; gui->path_ok = 0;
-			file_buf = load_file_reuse(gui->curr_path, &file_size);
-			
-			if (file_buf){
-				/* change dir to main drawing folder */
-				dir_change(get_dir(gui->curr_path));
-				
-				dxf_mem_pool(ZERO_DXF, DWG_LIFE);
-				graph_mem_pool(ZERO_GRAPH, DWG_LIFE);
-				graph_mem_pool(ZERO_LINE, DWG_LIFE);
-				
-				wait_open = 1;
-				gui->progress = 0;
-			
-				/* load and apply the fonts required for drawing */
-				gui->drawing->font_list = gui->font_list;
-				gui->drawing->dflt_font = get_font_list(gui->font_list, "txt.shx");
-				gui->drawing->dflt_fonts_path = gui->dflt_fonts_path;
-				
-				open_prg = dxf_read(gui->drawing, file_buf->buffer, file_size, &gui->progress);
-				
-				low_proc = 0;
-				progr_win = 1;
-				
-				SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
-				
-				/* add file to history */
-				if (gui->hist_new && open_prg >= 0){
-					gui_hist_add (gui);
-					
-				}
-				if (open_prg >= 0){
-					do_mem_pool(ZERO_DO_ITEM);
-					do_mem_pool(ZERO_DO_ENTRY);
-					init_do_list(&gui->list_do);
-					save_pt = gui->list_do.current;
-	
-					strncpy (gui->dwg_dir, get_dir(gui->curr_path) , PATH_MAX_CHARS);
-					strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
-					
-					update_title = 1;
-				}
-			}
-			else {
-				snprintf(gui->log_msg, 63, "Error in opening drawing: Not file");
-				if (gui->script_resume_reason == YIELD_DRWG_OPEN){
-					gui->script_resume_reason = YIELD_NONE;
-					gui->script_resume = -1;
-				}
-			}
-		}
-		else if((gui->action == FILE_SAVE) && (gui->path_ok)){
-			gui->action = NONE; gui->path_ok = 0;
-		
-		
-			if (dxf_save (gui->curr_path, gui->drawing)){
-				strncpy (gui->dwg_dir, get_dir(gui->curr_path) , PATH_MAX_CHARS);
-				strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
-				
-				save_pt = gui->list_do.current;
-				update_title = 1;
-				if (gui->hist_new){
-					gui_hist_add (gui);
-				}
-				if (gui->script_resume_reason == YIELD_DRWG_SAVE){
-					gui->script_resume_reason = YIELD_NONE;
-					gui->script_resume = 1;
-				}
-			}
-			else {
-				snprintf(gui->log_msg, 63, "Error in saving drawing");
-				if (gui->script_resume_reason == YIELD_DRWG_SAVE){
-					gui->script_resume_reason = YIELD_NONE;
-					gui->script_resume = -1;
-				}
-			}
-		
-		}
-		else if((gui->action == EXPORT) && (gui->path_ok)) {
-			gui->action = NONE; gui->path_ok = 0;
-			
-			if (gui->drawing->main_struct != NULL){
-				dxf_ent_print_f (gui->drawing->main_struct, gui->curr_path);
-				//dxf_save (url, gui->drawing);
-			}
-		}
-		else if(gui->action == VIEW_ZOOM_EXT){
-			gui->action = NONE;
-			zoom_ext2(gui->drawing, 0, 0, gui->win_w, gui->win_h, &gui->zoom, &gui->ofs_x, &gui->ofs_y);
-			gui->draw = 1;
-		}
-		else if(gui->action == VIEW_ZOOM_P){
-			gui->action = NONE;
-			
-			gui->prev_zoom = gui->zoom;
-			gui->zoom = gui->zoom + 0.2 * gui->zoom;
-			gui->ofs_x += (gui->win_w/2)*(1/gui->prev_zoom - 1/gui->zoom);
-			gui->ofs_y += (gui->win_h/2)*(1/gui->prev_zoom - 1/gui->zoom);
-			gui->draw = 1;
-		}
-		else if(gui->action == VIEW_ZOOM_M){
-			gui->action = NONE;
-			gui->prev_zoom = gui->zoom;
-			gui->zoom = gui->zoom - 0.2 * gui->zoom;
-			gui->ofs_x += (gui->win_w/2)*(1/gui->prev_zoom - 1/gui->zoom);
-			gui->ofs_y += (gui->win_h/2)*(1/gui->prev_zoom - 1/gui->zoom);
-			gui->draw = 1;
-		}
-		else if(gui->action == VIEW_PAN_U){
-			gui->action = NONE;
-			gui->ofs_y += (gui->win_h*0.1)/gui->zoom;
-			gui->draw = 1;
-		}
-		else if(gui->action == VIEW_PAN_D){
-			gui->action = NONE;
-			gui->ofs_y -= (gui->win_h*0.1)/gui->zoom;
-			gui->draw = 1;
-		}
-		else if(gui->action == VIEW_PAN_L){
-			gui->action = NONE;
-			gui->ofs_x -= (gui->win_w*0.1)/gui->zoom;
-			gui->draw = 1;
-		}
-		else if(gui->action == VIEW_PAN_R){
-			gui->action = NONE;
-			gui->ofs_x += (gui->win_w*0.1)/gui->zoom;
-			gui->draw = 1;
-		}
-		else if(gui->action == REDRAW){
-			gui->action = NONE;
-			
-			dxf_ents_parse(gui->drawing);
-			
-			gui->draw = 1;
-		}
-		else if((gui->action == YANK || gui->action == CUT) && strlen(clip_path) > 0) {
-			if (gui->sel_list->next){ /* verify if  has elements in list */
-				/* clear the clipboard drawing and init with basis seed */
-				dxf_drawing_clear(gui->clip_drwg);
-				
-				/* load and apply the fonts required for clipboard drawing */
-				gui->clip_drwg->font_list = gui->font_list;
-				gui->clip_drwg->dflt_font = get_font_list(gui->font_list, "txt.shx");
-				gui->clip_drwg->dflt_fonts_path = gui->dflt_fonts_path;
-				
-				while (dxf_read (gui->clip_drwg, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &gui->progress) > 0){
-					
-				}
-				/* copy selected elements from main drawing to clipboard */
-				dxf_drwg_ent_cpy(gui->drawing, gui->clip_drwg, gui->sel_list);
-				
-				/* validate the clipboard drawing with used layers, styles, line types and APPIDs */
-				dxf_cpy_lay_drwg(gui->drawing, gui->clip_drwg);
-				dxf_cpy_sty_drwg(gui->drawing, gui->clip_drwg);
-				dxf_cpy_ltyp_drwg(gui->drawing, gui->clip_drwg);
-				dxf_cpy_appid_drwg(gui->drawing, gui->clip_drwg);
-				
-				/* save clipboard to file */
-				dxf_save (clip_path, gui->clip_drwg);
-				
-				/* preapre to reuse memory of clipboard */
-				dxf_mem_pool(ZERO_DXF, ONE_TIME);
-			}
-			if(gui->action == CUT){
-				do_add_entry(&gui->list_do, "CUT");
-				
-				list_node *current = gui->sel_list->next;
-				
-				// starts the content sweep 
-				while (current != NULL){
-					if (current->data){
-						if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
-							
-							if (do_add_item(gui->list_do.current, (dxf_node *)current->data, NULL)) {
-								//printf("add item = %d\n", current->data);
-							}
-							
-							// -------------------------------------------
-							//dxf_obj_detach((dxf_node *)current->data);
-							dxf_obj_subst((dxf_node *)current->data, NULL);
-							
-							//---------------------------------------
-						}
-					}
-					current = current->next;
-				}
-				sel_list_clear (gui);
-				gui->element = NULL;
-			}
-			
-			gui->action = NONE;
-			gui->draw = 1;
-		}
-		else if (gui->action == START_PASTE && strlen(clip_path) > 0) {
-			/* clear memory pool used before */
-			dxf_mem_pool(ZERO_DXF, ONE_TIME);
-			graph_mem_pool(ZERO_GRAPH, ONE_TIME);
-			graph_mem_pool(ZERO_LINE, ONE_TIME);
-			dxf_drawing_clear(gui->clip_drwg);
-			/* load the clipboard file */
-			file_size = 0;
-			file_buf = load_file_reuse(clip_path, &file_size);
-			if (!file_buf) {
-				gui->action = NONE;
-			}
-			else{
-				/* load and apply the fonts required for clipboard drawing */
-				gui->clip_drwg->font_list = gui->font_list;
-				gui->clip_drwg->dflt_font = get_font_list(gui->font_list, "txt.shx");
-				gui->clip_drwg->dflt_fonts_path = gui->dflt_fonts_path;
-				
-				while (dxf_read (gui->clip_drwg, file_buf->buffer, file_size, &gui->progress) > 0){
-					
-				}
-				
-				/* clear the file buffer */
-				//free(file_buf);
-				manage_buffer(0, BUF_RELEASE, 0);
-				file_buf = NULL;
-				file_size = 0;
-				
-				/* prepare for next steps on paste */
-				gui->modal = PASTE;
-				gui->step = 0;
-				gui->action = NONE;
-				gui->draw = 1;
-			}
-		}
-		else if(gui->action == DELETE){
-			gui->action = NONE;
-			
-			list_node *deleted = dxf_delete_list(gui->drawing, gui->sel_list);
-		
-			if (deleted && deleted->next){ /* verify if  has elements in list */
-				
-				do_add_entry(&gui->list_do, "DELETE");
-				
-				list_node *current = deleted->next;
-				
-				// starts the content sweep 
-				while (current != NULL){
-					if (current->data){
-						if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
-							
-							if (do_add_item(gui->list_do.current, (dxf_node *)current->data, NULL)) {
-								//printf("add item = %d\n", current->data);
-							}
-						}
-					}
-					current = current->next;
-				}
-				sel_list_clear (gui);
-				gui->element = NULL;
-			}
-			gui->draw = 1;
-		}
-		else if(gui->action == UNDO){
-			gui->action = NONE;
-			sel_list_clear (gui);
-			char *text = gui->list_do.current->text;
-			
-			if (do_undo(&gui->list_do)){
-				snprintf(gui->log_msg, 63, "UNDO: %s", text);
-				gui_first_step(gui);
-			}
-			else{
-				snprintf(gui->log_msg, 63, "No actions to undo");
-			}
-			gui->draw = 1;
-		}
-		
-		else if(gui->action == REDO){
-			gui->action = NONE;
-			sel_list_clear (gui);
-			if (do_redo(&gui->list_do)){
-				snprintf(gui->log_msg, 63, "REDO: %s", gui->list_do.current->text);
-				gui_first_step(gui);
-			}
-			else{
-				snprintf(gui->log_msg, 63, "No actions to redo");
-			}
-			gui->draw = 1;
-		}
-		
-		else if(gui->action == LAYER_CHANGE){
-			gui->action = NONE;
-			if (gui->sel_list != NULL){
-				/* sweep the selection list */
-				list_node *current = gui->sel_list->next;
-				dxf_node *new_ent = NULL;
-				if (current != NULL){
-					do_add_entry(&gui->list_do, "CHANGE LAYER");
-				}
-				while (current != NULL){
-					if (current->data){
-						if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
-							new_ent = dxf_ent_copy((dxf_node *)current->data, 0);
-							
-							dxf_attr_change(new_ent, 8, gui->drawing->layers[gui->layer_idx].name);
-							
-							new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
-							
-							dxf_obj_subst((dxf_node *)current->data, new_ent);
-							
-							do_add_item(gui->list_do.current, (dxf_node *)current->data, new_ent);
-
-							current->data = new_ent;
-						}
-					}
-					current = current->next;
-				}
-			}
-			gui->draw = 1;
-		}
-		
-		else if(gui->action == COLOR_CHANGE){
-			gui->action = NONE;
-			if (gui->sel_list != NULL){
-				/* sweep the selection list */
-				list_node *current = gui->sel_list->next;
-				dxf_node *new_ent = NULL;
-				if (current != NULL){
-					do_add_entry(&gui->list_do, "CHANGE COLOR");
-				}
-				while (current != NULL){
-					if (current->data){
-						if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
-							new_ent = dxf_ent_copy((dxf_node *)current->data, 0);
-							
-							dxf_attr_change(new_ent, 62, &gui->color_idx);
-							new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
-							
-							dxf_obj_subst((dxf_node *)current->data, new_ent);
-							
-							do_add_item(gui->list_do.current, (dxf_node *)current->data, new_ent);
-
-							current->data = new_ent;
-						}
-					}
-					current = current->next;
-				}
-			}
-			gui->draw = 1;
-		}
-		else if(gui->action == LTYPE_CHANGE){
-			gui->action = NONE;
-			if (gui->sel_list != NULL){
-				/* sweep the selection list */
-				list_node *current = gui->sel_list->next;
-				dxf_node *new_ent = NULL;
-				if (current != NULL){
-					do_add_entry(&gui->list_do, "CHANGE LINE TYPE");
-				}
-				while (current != NULL){
-					if (current->data){
-						if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
-							new_ent = dxf_ent_copy((dxf_node *)current->data, 0);
-							
-							dxf_attr_change(new_ent, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
-							new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
-							
-							dxf_obj_subst((dxf_node *)current->data, new_ent);
-							
-							do_add_item(gui->list_do.current, (dxf_node *)current->data, new_ent);
-
-							current->data = new_ent;
-						}
-					}
-					current = current->next;
-				}
-			}
-			gui->draw = 1;
-		}
-		else if(gui->action == LW_CHANGE){
-			gui->action = NONE;
-			if (gui->sel_list != NULL){
-				/* sweep the selection list */
-				list_node *current = gui->sel_list->next;
-				dxf_node *new_ent = NULL;
-				if (current != NULL){
-					do_add_entry(&gui->list_do, "CHANGE LINE WEIGHT");
-				}
-				while (current != NULL){
-					if (current->data){
-						if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
-							new_ent = dxf_ent_copy((dxf_node *)current->data, 0);
-							
-							dxf_attr_change(new_ent, 370, &dxf_lw[gui->lw_idx]);
-							new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
-							
-							dxf_obj_subst((dxf_node *)current->data, new_ent);
-							
-							do_add_item(gui->list_do.current, (dxf_node *)current->data, new_ent);
-
-							current->data = new_ent;
-						}
-					}
-					current = current->next;
-				}
-			}
-			gui->draw = 1;
-		}
-		
-		/**********************************/
-		
-		gui_update_pos(gui);
-		
-		/**********************************/
-		
-		
-		
-		/*-------------------------------- macro script --------------------- */
-		if ( macro_script.active && strlen(macro) > 0 ){
-			macro_script.time = clock();
-			macro_script.timeout = 1.0; /* default timeout value */
-			macro_script.do_init = 0;
-			
-			lua_pushstring(macro_script.T, macro);
-			lua_setglobal(macro_script.T, "macro");
-			
-			lua_pushboolean(macro_script.T, 0);
-			lua_setglobal(macro_script.T, "accept");
-			//print_lua_stack(macro_script.T);
-			
-			//lua_getglobal(macro_script.T, "cz_main_func");
-      lua_pushvalue(macro_script.T, 1);
-			int n_results = 0; /* for Lua 5.4*/
-			macro_script.status = lua_resume(macro_script.T, NULL, 0, &n_results); /* start thread */
-			if (macro_script.status != LUA_OK){
-				macro_script.active = 0;
-				
-			}
-			else {
-				
-				lua_getglobal(macro_script.T, "accept");
-				if (lua_toboolean(macro_script.T, -1)){
-					macro_timer = 0;
-					macro_len = 0;
-					macro[0] = 0;
-				}
-				lua_pop(macro_script.T, 1);
-			}
-		}
-		
-		/*-------------------------------- function key script --------------------- */
-		if ( func_keys_script.active && strlen(function_key) > 0 ){
-			func_keys_script.time = clock();
-			func_keys_script.timeout = 1.0; /* default timeout value */
-			func_keys_script.do_init = 0;
-			
-			lua_pushstring(func_keys_script.T, function_key);
-			lua_setglobal(func_keys_script.T, "function_key");
-			
-			if (luaL_dofile (func_keys_script.T,  func_keys_path) != LUA_OK) {
-				/* error*/
-			}
-		}
-		
-		gui_select_interactive(gui);
-		gui_line_interactive(gui);
-		gui_pline_interactive(gui);
-		gui_circle_interactive(gui);
-		gui_rect_interactive(gui);
-		gui_text_interactive(gui);
-		gui_mtext_interactive(gui);
-		gui_move_interactive(gui);
-		gui_dupli_interactive(gui);
-		gui_scale_interactive(gui);
-		gui_rotate_interactive(gui);
-		gui_mirror_interactive(gui);
-			
-		gui_insert_interactive(gui);
-		gui_block_interactive(gui);
-		gui_hatch_interactive(gui);
-		gui_paste_interactive(gui);
-		gui_ed_text_interactive(gui);
-		gui_script_interactive(gui);
-		gui_spline_interactive(gui);
-		//gui_arc_interactive(gui);
-		gui_ellip_interactive(gui);
-		gui_image_interactive(gui);
-		
-		gui_ed_attr_interactive(gui);
-		gui_attrib_interactive(gui);
-		gui_expl_interactive(gui);
-		gui_measure_interactive(gui);
-		gui_find_interactive(gui);
-		gui_prop_interactive(gui);
-		gui_txt_prop_interactive(gui);
-		gui_vertex_interactive(gui);
-		
-		gui_dim_interactive(gui);
-		
-		if (gui->prev_modal != gui->modal){
-			
-			gui->en_distance = 0;
-			gui->draw_tmp = 0;
-			gui->element = NULL;
-			gui->draw = 1;
-			gui->step = 0;
-			gui->draw_phanton = 0;
-			if (gui->phanton){
-				//free(gui->phanton->data);
-				//free(gui->phanton);
-				gui->phanton = NULL;
-			}
-			gui->lock_ax_x = 0;
-			gui->lock_ax_y = 0;
-			gui->user_flag_x = 0;
-			gui->user_flag_y = 0;
-			//printf("change tool\n");
-			/*
-			if (gui->prev_modal == SCRIPT){
-				gui->lua_script[0].active = 0;
-				gui->lua_script[0].dynamic = 0;
-			}
-			*/
-			gui->prev_modal = gui->modal;
-		}
-		
-		/* window file browser */
-		if (gui->show_file_br == 1){			
-			gui->show_file_br = file_win(gui, gui->file_filter_types, gui->file_filter_descr, gui->file_filter_count, NULL);
-			strncpy(file_path, gui->curr_path, DXF_MAX_CHARS);
-			file_path_len = strlen(file_path);
-		}
-		
-		if (gui_check_draw(gui) != 0){
-			gui->draw = 1;
-		}
-		
-		if (gui->draw != 0){
-			/*get current window size and position*/
-			SDL_GetWindowSize(window, &gui->win_w, &gui->win_h);
-			SDL_GetWindowPosition (window, &gui->win_x, &gui->win_y);
-			
-			
-			glUniform1i(gui->gl_ctx.tex_uni, 0);
-			
-			SDL_GetWindowSize(window, &gui->gl_ctx.win_w, &gui->gl_ctx.win_h);
-			glViewport(0, 0, gui->gl_ctx.win_w, gui->gl_ctx.win_h);
-			
-			d_param.ofs_x = gui->ofs_x;
-			d_param.ofs_y = gui->ofs_y;
-			d_param.ofs_z = 0;
-			d_param.scale = gui->zoom;
-      if (gui->background.r * 0.21 +  /* verify "brightness" of background color */
-        gui->background.g * 0.72 + gui->background.b * 0.07 > 150) {
-        /* in bright background, change defaut color (white) to black */
-        d_param.list = list;
-        d_param.subst = subst;
-        d_param.len_subst = 1;
-      } else {
-        d_param.list = NULL;
-        d_param.subst = NULL;
-        d_param.len_subst = 0;
-      }
-			d_param.inc_thick = 0;
-      
-			
-			/* 3D test */
-			gui->gl_ctx.transf[0][0] = gui->drwg_view[0][0];
-			gui->gl_ctx.transf[0][1] = gui->drwg_view[0][1];
-			gui->gl_ctx.transf[0][2] = gui->drwg_view[0][2];
-			gui->gl_ctx.transf[0][3] = gui->drwg_view[0][3];
-			gui->gl_ctx.transf[1][0] = gui->drwg_view[1][0];
-			gui->gl_ctx.transf[1][1] = gui->drwg_view[1][1];
-			gui->gl_ctx.transf[1][2] = gui->drwg_view[1][2];
-			gui->gl_ctx.transf[1][3] = gui->drwg_view[1][3];
-			gui->gl_ctx.transf[2][0] = gui->drwg_view[2][0];
-			gui->gl_ctx.transf[2][1] = gui->drwg_view[2][1];
-			gui->gl_ctx.transf[2][2] = gui->drwg_view[2][2];
-			gui->gl_ctx.transf[2][3] = gui->drwg_view[2][3];
-			gui->gl_ctx.transf[3][0] = gui->drwg_view[3][0];
-			gui->gl_ctx.transf[3][1] = gui->drwg_view[3][1];
-			gui->gl_ctx.transf[3][2] = gui->drwg_view[3][2];
-			gui->gl_ctx.transf[3][3] = gui->drwg_view[3][3];
-			
-			//glDepthFunc(GL_ALWAYS);
-			glDepthFunc(GL_LEQUAL);
-			
-			
-			/* Clear the screen to background color */
-			glClearColor((GLfloat) gui->background.r/255, (GLfloat) gui->background.g/255, 
-				(GLfloat) gui->background.b/255, 1.0);
-			glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
-			
-			gui->gl_ctx.verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-			gui->gl_ctx.elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-			gui->gl_ctx.vert_count = 0;
-			gui->gl_ctx.elem_count = 0;
-			glUniform1i(gui->gl_ctx.tex_uni, 0);
-			
-			
-			dxf_ents_draw_gl(gui->drawing, &gui->gl_ctx, d_param);
-			
-			if (!gui->pan_mode) 
-        draw_cursor_gl(gui, gui->mouse_x, gui->mouse_y, gui->cursor);
-			
-			draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
-			//glReadPixels(gui->mouse_x, gui->mouse_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &gui->mouse_z);
-			
-			glDepthFunc(GL_ALWAYS);
-			
-			
-			/*hilite test */
-			if((gui->draw_tmp)&&(gui->element != NULL)){
-				gui->element->obj.graphics = dxf_graph_parse(gui->drawing, gui->element, 0 , 1);
-			}
-			
-			
-			
-			d_param.subst = &gui->hilite;
-			d_param.len_subst = 1;
-			d_param.inc_thick = 3;
-			
-			
-			if(gui->element != NULL){
-				graph_list_draw_gl2(gui->element->obj.graphics, &gui->gl_ctx, d_param);
-			}
-			if((gui->draw_phanton)&&(gui->phanton)){
-				graph_list_draw_gl2(gui->phanton, &gui->gl_ctx, d_param);
-			}
-			if (gui->sel_list->next) {/* verify if  has elements in list */
-				dxf_list_draw_gl(gui->sel_list, &gui->gl_ctx, d_param);
-			}
-			
-			
-			if ((gui->draw_vert) && (gui->element)){
-				/* draw vertices */
-				gui_draw_vert_gl(gui, gui->element);
-			}
-			
-			if (gui->near_attr){ /* check if needs to draw an attractor mark */
-				/* convert entities coordinates to screen coordinates */
-				int attr_x = (int) round((gui->near_x - gui->ofs_x) * gui->zoom);
-				int attr_y = (int) round((gui->near_y - gui->ofs_y) * gui->zoom);
-				draw_attractor_gl(gui, gui->near_attr, attr_x, attr_y, yellow);
-			}
-			
-			
-			/* -------- macro --  rendering text by default general drawing engine 
-			if (macro_len > 0){
-				list_node * graph = list_new(NULL, FRAME_LIFE);
-				if (graph) {
-					if (font_parse_str(gui->dflt_font, graph, FRAME_LIFE, macro, NULL, 0)){
-						graph_list_color(graph, white);
-						graph_list_modify(graph, 230, 100, 20.0, 20.0, 0.0);
-						
-						struct draw_param param = {.ofs_x = 0, .ofs_y = 0, .scale = 1.0, .list = NULL, .subst = NULL, .len_subst = 0, .inc_thick = 0};
-						graph_list_draw_gl(graph, &gui->gl_ctx, param);
-					}
-				}
-			}
-			*/
-			
-			
-			/* ---------------------------------- */
-			draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
-			
-			
-			
-			
-			win_r.x = 0; win_r.y = 0;
-			win_r.w = gui->win_w; win_r.h = gui->win_h;
-			
-			
-			/*draw gui*/
-			nk_gl_render(gui);
-			
-			//SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
-			
-			gui->gl_ctx.vert_count = 0;
-			gui->gl_ctx.elem_count = 0;
-			
-			/* Swap buffers */
-			SDL_GL_SwapWindow(window);
-			
-			gui->draw = 0;
-			
-		}
-		
-		leftMouseButtonClick = 0;
-		rightMouseButtonClick = 0;
-		MouseMotion = 0;
-		gui->keyEnter = 0;
-		key_space = 0;
-    key_esc = 0;
-		gui->ev = EV_NONE;
-		
-		//graph_mem_pool(ZERO_GRAPH, 2);
-		//graph_mem_pool(ZERO_LINE, 2);
-		
-		//gui->phanton = NULL;
-		
-		graph_mem_pool(ZERO_GRAPH, 1);
-		graph_mem_pool(ZERO_LINE, 1);
-		graph_mem_pool(ZERO_GRAPH, FRAME_LIFE);
-		graph_mem_pool(ZERO_LINE, FRAME_LIFE);
-		list_mem_pool(ZERO_LIST, FRAME_LIFE);
-		dxf_mem_pool(ZERO_DXF, FRAME_LIFE);
-		
-		nk_clear(gui->ctx); /*IMPORTANT */
-		if (low_proc){
-			SDL_Delay(20);
-			SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEMOTION);
-		}
-		
-		/* -------- macro */
-		if (macro_timer < 40){
-			macro_timer++;
-		} else {
-			if (macro_len) gui->draw = 1;
-			macro_timer = 0;
-			macro_len = 0;
-			macro[0] = 0;
-		}
-		
-		function_key[0] = 0;
-		
-		if (gui->script_resume_reason == YIELD_GUI_REFRESH){
-			if (refresh_timer < 3){
-				refresh_timer++;
-			} else {
-				refresh_timer = 0;
-				gui->script_resume_reason = YIELD_NONE;
-				gui->script_resume = 1;
-			}
-		}
-		
+	while (gui_main_loop (gui)){
+    
+    if (gui->low_proc){
+      SDL_Delay(20);
+      SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEMOTION);
+    }
 	}
 	
 	/* safe quit */
+  
+  /*-------------------------------- macro script clean-up--------------------- */
+	if (gui->macro_script.L){
+		lua_close(gui->macro_script.L);
+	}
+	
+	/*-------------------------------- func_keys script clean-up--------------------- */
+	if (gui->func_keys_script.L){
+		lua_close(gui->func_keys_script.L);
+	}
   
   if (gui->main_lang_scr.L){
 		lua_close(gui->main_lang_scr.L);
@@ -2030,16 +506,11 @@ int main(int argc, char** argv){
 	dxf_drawing_clear(gui->drawing);
 	dxf_drawing_clear(gui->clip_drwg);
 	
-	//SDL_DestroyTexture(canvas);
-	//SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
+	SDL_DestroyWindow(gui->window);
 	
 	SDL_Quit();
 	
-	if(free_font_list(gui->font_list)){
-		//printf("\n------------------------------------------\n         FREE FONT OK\n---------------------------------\n");
-	}
-	
+  free_font_list(gui->font_list);
 	
 	gui_save_init (init_path, gui);
 	
@@ -2086,16 +557,6 @@ int main(int argc, char** argv){
 	manage_buffer(0, BUF_FREE, 1);
 	manage_buffer(0, BUF_FREE, 2);
 	manage_buffer(0, BUF_FREE, 3);
-	
-	/*-------------------------------- macro script clean-up--------------------- */
-	if (macro_script.L){
-		lua_close(macro_script.L);
-	}
-	
-	/*-------------------------------- func_keys script clean-up--------------------- */
-	if (func_keys_script.L){
-		lua_close(func_keys_script.L);
-	}
 	
 	return 0;
 	

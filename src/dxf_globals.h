@@ -627,12 +627,6 @@ struct page_def *fam_pages[] = {
 const char *fam_pages_descr[] = {"ISO A", "ISO B", "US", "ANSI", "ARCH", "IMAGE"};
 const int fam_pages_len[] = {13, 11, 5, 5, 6, 4};
 
-struct func_key {
-	char key[15];
-	SDL_Keycode code;
-	SDL_Keymod mod;
-};
-
 struct func_key func_keys[] = {
 	{ "f1", SDLK_F1, KMOD_NONE},
 	{ "f2", SDLK_F2, KMOD_NONE},
@@ -673,6 +667,8 @@ struct func_key func_keys[] = {
 	{ "shift_f11", SDLK_F11, KMOD_SHIFT},
 	{ "shift_f12", SDLK_F12, KMOD_SHIFT},
 };
+
+const int func_keys_size = sizeof(func_keys)/sizeof(struct func_key);
 
 const char *func_key_dflt_file = "-- CadZinho function keys script file\n"
 "-- This script is executed each time a function key (F1 - F12) is pressed\n"

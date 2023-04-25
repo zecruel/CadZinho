@@ -147,4 +147,6 @@ int gui_point_info (gui_obj *gui);
 
 int gui_plugins_win (gui_obj *gui);
 
+int gui_main_loop (gui_obj *gui);
+
 #endif

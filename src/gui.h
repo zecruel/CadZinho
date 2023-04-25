@@ -243,59 +243,25 @@ struct script_brk_pt{
 	int enable;
 };
 
+struct func_key {
+	char key[15];
+	SDL_Keycode code;
+	SDL_Keymod mod;
+};
+
 struct Gui_obj {
-	struct nk_context *ctx;
-	struct nk_user_font *font;
-	struct gui_font *ui_font_list;
-	void *buf; /*for fixed memory */
-	void *last; /* to verify if needs to draw */
-	
-	enum theme theme;
-	enum Cursor_type cursor;
-	
-	char *seed;
-	char *dflt_pat;
-	char *dflt_lin;
-	char *extra_lin;
-	
-	dxf_drawing *drawing;
-	int changed;
-	dxf_node *element, *near_el;
-	
-	list_node *near_list;
-	int near_count;
+  int low_proc;
+  int changed;
+  int near_count;
 	int sel_idx;
-	enum list_op_mode sel_mode;
-	enum Sel_type sel_type;
-	int sel_count;
+  int sel_count;
 	int free_sel;
-	enum dxf_graph sel_ent_filter;
-	
-	struct ogl gl_ctx;
-	
-	/* Window dimension */
-	int win_x;
-	int win_y;
-	unsigned int win_w;
-	unsigned int win_h;
-	
-	/*gui pos variables */
-	int next_win_x, next_win_y, next_win_w, next_win_h;
+  
+  int next_win_x, next_win_y, next_win_w, next_win_h;
 	int mouse_x, mouse_y;//, mouse_z;
   int prev_mouse_x, prev_mouse_y, pan_mode;
-	double zoom, ofs_x, ofs_y, ofs_z, mouse_z;
-	double prev_zoom;
-	
-	double user_x, user_y;
-	double step_x[1000], step_y[1000];
-	double near_x, near_y;
-	double bulge, scale_x, scale_y, angle;
-	double txt_h;
-	double rect_w;
-	
-	double patt_scale, patt_ang;
-	
-	int color_idx, lw_idx, t_al_v, t_al_h;
+  
+  int color_idx, lw_idx, t_al_v, t_al_h;
 	int layer_idx, ltypes_idx, t_sty_idx;
 	
 	int step, user_flag_x, user_flag_y, lock_ax_x, lock_ax_y, user_number;
@@ -312,86 +278,14 @@ struct Gui_obj {
 	int closed, proportional;
 	
 	int sp_degree;
-	enum Spline_mode spline_mode;
-	
-	enum Scale_mode scale_mode;
-	enum Rotate_mode rot_mode;
-	
-	enum Explode_mode expl_mode;
-	
-	enum Circle_mode circle_mode;
-	
-	enum Ellipse_mode el_mode;
-	enum Ortho_view o_view;
-	
-	int image_w, image_h;
+  
+  int image_w, image_h;
 	
 	int en_distance; /* enable distance entry */
 	int entry_relative;
 	int rect_polar; /* mode rectangular / polar to enter coordinates or distances */
-	
-	enum Action action;
-	enum Modal modal, prev_modal;
-	enum Gui_ev ev;
-	enum attract_type curr_attr_t;
-	
-	bmp_color background;
-	bmp_color hilite;
-	
-	NSVGimage **svg_curves;
-	bmp_img **svg_bmp;
-	bmp_img *preview[PRV_SIZE];
-	bmp_img * color_img;
-	bmp_img *i_cz48;
-	bmp_img *i_trash;
-	bmp_img * attr_vec[15];
-	
-	SDL_Cursor * modal_cursor[MODAL_SIZE];
-	
-	struct nk_style_button b_icon;
-	
-	/* style for toggle buttons (or select buttons) with image */
-	struct nk_style_button b_icon_sel, b_icon_unsel;
-	
-	char log_msg[64];
-	char txt[DXF_MAX_CHARS + 1];
-	char tag[DXF_MAX_CHARS + 1];
-  char value[DXF_MAX_CHARS + 1];
-	char long_txt[5 * DXF_MAX_CHARS];
-	char blk_name[DXF_MAX_CHARS + 1];
-	char blk_descr[DXF_MAX_CHARS + 1];
-	char tag_mark[DXF_MAX_CHARS + 1];
-	char hide_mark[DXF_MAX_CHARS + 1];
-	char value_mark[DXF_MAX_CHARS + 1];
-	char dflt_value[DXF_MAX_CHARS + 1];
-	
-	char patt_name[DXF_MAX_CHARS];
-	char patt_descr[DXF_MAX_CHARS];
-	char h_fam_name[DXF_MAX_CHARS];
-	char h_fam_descr[DXF_MAX_CHARS];
-	
-	char dflt_fonts_path[5 * DXF_MAX_CHARS+1];
-	
-	list_node * sel_list;
-	list_node *phanton;
-	
-	struct do_list list_do;
-	
-	list_node *font_list;
-	//struct tfont * ui_font;
-	struct nk_user_font ui_font;
-	struct nk_user_font alt_font_sizes[FONT_NUM_SIZE];
-	struct tfont * dflt_font;
-	
-	struct h_pattern list_pattern;
-	struct hatch_line user_patt;
-	struct h_family hatch_fam;
-	struct h_family *end_fam;
-	
-	int show_file_br;
-	char const * file_filter_types[20];
-	char const * file_filter_descr[20];
-	int file_filter_count;
+  
+  int file_filter_count;
 	int filter_idx;
 	
 	int show_open;
@@ -416,56 +310,197 @@ struct Gui_obj {
 	int show_hatch_mng;
 	int show_config;
 	int show_plugins;
+  
+  int show_file_br;
+  
+  int drwg_hist_size;
+	int drwg_hist_pos;
+	int drwg_hist_wr;
+	int drwg_hist_head;
+  
+  int paper_fam;
+	int sel_paper;
+  
+  int num_brk_pts;
+	int script_resume_reason;
+	int script_resume;
+  
+  int discard_changes;
+  
+  /* Window dimension */
+	int win_x;
+	int win_y;
+	unsigned int win_w;
+	unsigned int win_h;
+  
+  enum theme theme;
+	enum Cursor_type cursor;
+  enum list_op_mode sel_mode;
+	enum Sel_type sel_type;
+	enum dxf_graph sel_ent_filter;
+  enum Spline_mode spline_mode;
 	
+	enum Scale_mode scale_mode;
+	enum Rotate_mode rot_mode;
 	
-	char curr_path[PATH_MAX_CHARS + 1];
+	enum Explode_mode expl_mode;
+	
+	enum Circle_mode circle_mode;
+	
+	enum Ellipse_mode el_mode;
+	enum Ortho_view o_view;
+	
+	enum Action desired_action;
+	enum Hist_action hist_action;
+	
+	enum Action action;
+	enum Modal modal, prev_modal;
+	enum Gui_ev ev;
+	enum attract_type curr_attr_t;
+  
+  long file_size;
+  
+  char log_msg[64];
+	char txt[DXF_MAX_CHARS + 1];
+	char tag[DXF_MAX_CHARS + 1];
+  char value[DXF_MAX_CHARS + 1];
+	char long_txt[5 * DXF_MAX_CHARS];
+	char blk_name[DXF_MAX_CHARS + 1];
+	char blk_descr[DXF_MAX_CHARS + 1];
+	char tag_mark[DXF_MAX_CHARS + 1];
+	char hide_mark[DXF_MAX_CHARS + 1];
+	char value_mark[DXF_MAX_CHARS + 1];
+	char dflt_value[DXF_MAX_CHARS + 1];
+	
+	char patt_name[DXF_MAX_CHARS];
+	char patt_descr[DXF_MAX_CHARS];
+	char h_fam_name[DXF_MAX_CHARS];
+	char h_fam_descr[DXF_MAX_CHARS];
+	
+	char dflt_fonts_path[5 * DXF_MAX_CHARS+1];
+  
+  char curr_path[PATH_MAX_CHARS + 1];
 	char base_dir[PATH_MAX_CHARS + 1];
 	char dwg_file[DXF_MAX_CHARS + 1];
 	char dwg_dir[PATH_MAX_CHARS + 1];
 	char pref_path[PATH_MAX_CHARS + 1];
 	
 	char drwg_hist[DRWG_HIST_MAX][DXF_MAX_CHARS+1];
-	int drwg_hist_size;
-	int drwg_hist_pos;
-	int drwg_hist_wr;
-	int drwg_hist_head;
+  
+  char const * file_filter_types[20];
+	char const * file_filter_descr[20];
+  
+  char func_keys_path[DXF_MAX_CHARS + 1];
+  
+  char main_lang[DXF_MAX_CHARS + 1]; /* gui language */
+  
+  char clip_path[DXF_MAX_CHARS + 1];
+  
+  char image_path[DXF_MAX_CHARS];
+  
+  char curr_script[PATH_MAX_CHARS];
 	
-	list_node *recent_drwg;
-	strpool_t file_pool;
+	unsigned char blank_tex[4*20*600]; /* blank texture */
+  
+  float alpha, beta, gamma;
+	
+	float drwg_view[4][4];
+	float drwg_view_i[4][4];
+  
+  /*gui pos variables */
+	double zoom, ofs_x, ofs_y, ofs_z, mouse_z;
+	double prev_zoom;
+	
+	double user_x, user_y;
+	double near_x, near_y;
+	double bulge, scale_x, scale_y, angle;
+	double txt_h;
+	double rect_w;
+	
+	double patt_scale, patt_ang;
+  
+  double step_x[1000], step_y[1000];
+  
+  char * seed;
+	char * dflt_pat;
+	char * dflt_lin;
+	char * extra_lin;
+  
+  void * buf; /*for fixed memory */
+	void * last; /* to verify if needs to draw */
+  
+	struct nk_context * ctx;
+	struct nk_user_font * font;
+  
+	struct gui_font * ui_font_list;
+  
+  SDL_Window * window;
+  SDL_Cursor * dflt_cur;
+  SDL_Cursor * modal_cursor[MODAL_SIZE];
+  
+  struct do_entry * save_pt;
+  
+  struct Mem_buffer * file_buf;
+  
+  NSVGimage ** svg_curves;
+	bmp_img ** svg_bmp;
+	bmp_img * preview[PRV_SIZE];
+	bmp_img * color_img;
+	bmp_img * i_cz48;
+	bmp_img * i_trash;
+	bmp_img * attr_vec[15];
+	
+	dxf_drawing * drawing; /* main drawing buffer */
+  dxf_drawing * clip_drwg;
+	dxf_node * element, * near_el;
+  
+  list_node * near_list;
+  
+  list_node * sel_list;
+	list_node * phanton;
+  list_node * recent_drwg;
+	list_node * font_list;
+  
+  struct h_family * end_fam;
+  struct tfont * dflt_font;
+  
+  bmp_color background;
+	bmp_color hilite;
+	
+  strpool_t file_pool;
+  
+  struct script_obj macro_script;
+  struct script_obj func_keys_script;
+  
+  struct nk_user_font ui_font;
+	struct nk_user_font alt_font_sizes[FONT_NUM_SIZE];
+  
+	struct ogl gl_ctx;
+	
+	struct nk_style_button b_icon;
+	
+	/* style for toggle buttons (or select buttons) with image */
+	struct nk_style_button b_icon_sel, b_icon_unsel;
+	
+	struct h_pattern list_pattern;
+	struct hatch_line user_patt;
+	struct h_family hatch_fam;
+	
+  struct do_list list_do;
 	
 	struct nk_text_edit text_edit;
 	struct nk_text_edit debug_edit;
 	
-	int paper_fam;
-	int sel_paper;
-	
-	dxf_drawing *clip_drwg;
-	
-	struct script_obj lua_script[MAX_SCRIPTS];
-	char curr_script[PATH_MAX_CHARS];
-	struct script_brk_pt brk_pts[BRK_PTS_MAX];
-	int num_brk_pts;
-	int script_resume_reason;
-	int script_resume;
-	struct script_thread script_wait_t;
-	
-	struct script_obj plugins_script;
-	
-	char image_path[DXF_MAX_CHARS];
-	
-	unsigned char blank_tex[4*20*600]; /* blank texture */
-	
-	float alpha, beta, gamma;
-	
-	float drwg_view[4][4];
-	float drwg_view_i[4][4];
-	
-	int discard_changes;
-	enum Action desired_action;
-	enum Hist_action hist_action;
+  struct script_thread script_wait_t;
   
-  char main_lang[DXF_MAX_CHARS + 1]; /* gui language */
+	struct script_obj plugins_script;
+  
   struct script_obj main_lang_scr;
+  
+  struct script_obj lua_script[MAX_SCRIPTS];
+  
+  struct script_brk_pt brk_pts[BRK_PTS_MAX];
+  
 };
 typedef struct Gui_obj gui_obj;
 
@@ -542,7 +577,8 @@ extern int dxf_lw[];
 extern const char *dxf_lw_descr[];
 extern bmp_color dxf_colors[];
 extern const char *dxf_seed_2007;
-
+extern struct func_key func_keys[];
+extern const int func_keys_size;
 
 #ifndef DXF_LW_LEN
 	#define DXF_LW_LEN 24

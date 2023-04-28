@@ -78,6 +78,13 @@ struct tfont *dflt_font = NULL;
 
 /* ---------------------------------------------------------*/
 
+#ifdef __EMSCRIPTEN__
+void update(void *arg){
+  gui_obj *gui = (gui_obj *) arg;
+  gui_main_loop (gui);
+}
+#endif
+
 int main(int argc, char** argv){
 	aux_mtx1 = malloc(sizeof(struct Matrix));
 	
@@ -95,9 +102,10 @@ int main(int argc, char** argv){
 	srand((unsigned) time(&t));
 	
 	/* init the SDL2 */
+  #ifndef GLES2
 	SDL_Init(SDL_INIT_VIDEO);
-	
-	
+  #endif
+  
 	/* --------------- Configure paths ----------*/
 	char *base_path = SDL_GetBasePath();
 	if (base_path){
@@ -253,7 +261,11 @@ int main(int argc, char** argv){
 	}
 	
 	/* -------------------------------------------------------------------------- */
-	
+#ifdef __EMSCRIPTEN__
+  SDL_Renderer *renderer = NULL;
+  SDL_CreateWindowAndRenderer(gui->win_w, gui->win_h, SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE, &gui->window, &renderer);
+#else
+  #ifndef GLES2
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
@@ -264,6 +276,19 @@ int main(int argc, char** argv){
 	/* enable ati-aliasing */
 	//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 	//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
+  #else
+  SDL_GL_SetAttribute (SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+  SDL_GL_SetAttribute (SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+  SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+  SDL_GL_SetSwapInterval(1);
+  SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+  SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+  #endif
 	
 	gui->window = SDL_CreateWindow(
 		"CadZinho", /* title */
@@ -275,6 +300,8 @@ int main(int argc, char** argv){
   
 	/* ------------------------------ opengl --------------------------------------*/
 	gui->gl_ctx.ctx = SDL_GL_CreateContext(gui->window);
+#endif
+
 	draw_gl_init ((void *)gui, 0);
 	
 	/* ------------------------------------------------------------------------------- */
@@ -472,7 +499,10 @@ int main(int argc, char** argv){
 		}
 	}
 	/* ------------------------------------------------------------------------*/
-	
+#ifdef __EMSCRIPTEN__
+  /* register update as callback */
+  emscripten_set_main_loop_arg(update, gui, 0, 1);
+#else 
 	/* main loop */
 	while (gui_main_loop (gui)){
     
@@ -559,7 +589,7 @@ int main(int argc, char** argv){
 	manage_buffer(0, BUF_FREE, 3);
 	
 	return 0;
-	
+#endif
 };
 
 /*

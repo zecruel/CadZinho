@@ -6,27 +6,36 @@
 #include <math.h>
 #include <stdlib.h>
 
-#include <GL/glew.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
-
-#ifdef PLATFORM_Darwin
-  #include <OpenGL/glu.h>
-  #include <OpenGL/gl.h>
+#ifdef __EMSCRIPTEN__
+  #define GLES2
+  #include <emscripten.h>
+#endif
+#ifdef GLES2
+  #include <SDL.h>
+  #include <SDL_opengles2.h>
+  #include <GLES2/gl2.h>
 #else
-  #include <GL/glu.h>
-  #include <GL/gl.h>
+  #include <GL/glew.h>
+  #include <SDL2/SDL.h>
+  #include <SDL2/SDL_opengl.h>
+  
+  #ifdef PLATFORM_Darwin
+    #include <OpenGL/glu.h>
+    #include <OpenGL/gl.h>
+  #else
+    #include <GL/glu.h>
+    #include <GL/gl.h>
+  #endif
+  
 #endif
  
  #include "bmp.h"
  #include "graph.h"
  
-#define MAX_TRIANG 100000
-#define MAX_TRIANG_2 99900
+#define MAX_TRIANG 10000
+#define MAX_TRIANG_2 9900
 #define MAX_SCAN_LINES 15000
 #define MAX_P_NODES 1000
-
-#define GLSL(src) "#version 150 core\n" #src
 
 struct Vertex {	/*use a struct to represent a vertex in openGL */
     GLfloat pos[3];  /*vertex position - x, y, z*/

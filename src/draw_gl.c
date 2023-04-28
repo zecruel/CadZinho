@@ -45,6 +45,7 @@ int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
 		size_t vt = offsetof(struct Vertex, uv);
 		size_t vc = offsetof(struct Vertex, col);
 		
+    #ifndef GLES2
 		/* Init GLEW */
 		glewExperimental = GL_TRUE;
 		if (glewInit() != GLEW_OK) {
@@ -55,6 +56,7 @@ int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
 		/* Create Vertex Array Object */
 		glGenVertexArrays(1, &vao);
 		glBindVertexArray(vao);
+    #endif
 
 		/* Create a Vertex Buffer Object and copy the vertex data to it */
 		glGenBuffers(1, &vbo);
@@ -67,39 +69,55 @@ int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, MAX_TRIANG * 3 * sizeof(GLuint), NULL,  GL_STREAM_DRAW);//GL_STATIC_DRAW); //GL_STREAM_DRAW
 		
 		/* Create and compile the vertex shader */
-		const char* vertexSource = GLSL(
-			in vec3 position;
-			in vec2 uv;
-			in vec4 color;
-			out vec4 vertexColor;
-			out vec2 texcoord;
-			
-			uniform mat4 transform;
-		
-			void main() {
-				gl_Position = transform * vec4(position, 1.0);
-				vertexColor = color;
-				texcoord = uv;
-			}
-		); /* =========== vertex shader */
+    #ifdef GLES2
+    const char* vertexSource = "#version 100\n"
+      "attribute vec3 position;\n"
+      "attribute vec2 uv;\n"
+      "attribute vec4 color;\n"
+      "varying vec4 vertexColor;\n"
+      "varying vec2 texcoord;\n"
+      "uniform mat4 transform;\n"
+      "void main() {\n"
+      "	vertexColor = color;\n"
+      "	texcoord = uv;\n"
+      "	gl_Position = transform * vec4(position, 1.0);\n"
+      "}\n"; /* =========== vertex shader */
+      
+    const char* fragmentSource = "#version 100\n"
+      "precision mediump float;\n"
+      "varying vec4 vertexColor;\n"
+      "varying vec2 texcoord;\n"
+      "uniform sampler2D tex;\n\n"
+      "void main() {\n"
+      "	gl_FragColor = texture2D(tex, texcoord) * vertexColor;\n"
+      "}\n"; /* ========== fragment shader */
+  #else
+    const char* vertexSource = "#version 150 core\n"
+      "in vec3 position;\n"
+      "in vec2 uv;\n"
+      "in vec4 color;\n"
+      "out vec4 vertexColor;\n"
+      "out vec2 texcoord;\n"
+      "uniform mat4 transform;\n"
+      "void main() {\n"
+      "	gl_Position = transform * vec4(position, 1.0);\n"
+      "	vertexColor = color;\n"
+      "	texcoord = uv;\n"
+      "}\n"; /* =========== vertex shader */
+      
+    const char* fragmentSource = "#version 150 core\n"
+      "in vec4 vertexColor;\n"
+      "in vec2 texcoord;\n"
+      "out vec4 outColor;\n"
+      "uniform sampler2D tex;\n\n"
+      "void main() {\n"
+      "	outColor = texture(tex, texcoord) * vertexColor;\n"
+      "}\n"; /* ========== fragment shader */
+   #endif
 
 		vertexShader = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(vertexShader, 1, &vertexSource, NULL);
 		glCompileShader(vertexShader);
-
-		/* Create and compile the fragment shader */
-		const char* fragmentSource = GLSL(
-			in vec4 vertexColor;
-			in vec2 texcoord;
-			
-			out vec4 outColor;
-			
-			uniform sampler2D tex;
-
-			void main() {
-				outColor = texture(tex, texcoord) * vertexColor;
-			}
-		); /* ========== fragment shader */
 
 		fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 		glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
@@ -109,7 +127,9 @@ int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
 		shaderProgram = glCreateProgram();
 		glAttachShader(shaderProgram, vertexShader);
 		glAttachShader(shaderProgram, fragmentShader);
+  #ifndef GLES2
 		glBindFragDataLocation(shaderProgram, 0, "outColor");
+  #endif
 		glLinkProgram(shaderProgram);
 		glUseProgram(shaderProgram);
 			
@@ -185,11 +205,18 @@ int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
 		glEnable(GL_DEPTH_TEST);
 		// Accept fragment if it closer to the camera than the former one
 		glDepthFunc(GL_LESS);
-		
+    
+  #ifdef GLES2
+    /* load vertices/elements directly into vertex/element buffer */
+    gui->gl_ctx.verts = malloc(MAX_TRIANG*3*vs);
+    gui->gl_ctx.elems = malloc(MAX_TRIANG*3*sizeof(GLuint));
+  #else
 		/* load vertices/elements directly into vertex/element buffer */
-		gui->gl_ctx.verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-		gui->gl_ctx.elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-		
+    if (gui->gl_ctx.elems == NULL){
+      gui->gl_ctx.verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+      gui->gl_ctx.elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+    }
+  #endif
 		//glScissor(200,200,100,100);
 		//glEnable(GL_SCISSOR_TEST);
 		//glDisable(GL_SCISSOR_TEST);
@@ -202,7 +229,9 @@ int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
 		glDeleteShader(vertexShader);
 		glDeleteBuffers(1, &ebo);
 		glDeleteBuffers(1, &vbo);
+  #ifndef GLES2
 		glDeleteVertexArrays(1, &vao);
+  #endif
 		return 1;
 	}
 }
@@ -218,10 +247,12 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[3], int p1[3], int thick){
 	/* check if elements buffer is full,
 	and draw waiting elements to clear buffer if necessary */
 	draw_gl (gl_ctx, 0);
+  #ifndef GLES2
 	if (gl_ctx->elems == NULL){
 		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	}
+  #endif
 	/* */
 	
 	if (thick <= 0) thick = 1; /* one pixel as minimal thickness */
@@ -331,10 +362,12 @@ int draw_gl_quad (struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3]
 	/* check if elements buffer is full,
 	and draw waiting elements to clear buffer if necessary */
 	draw_gl (gl_ctx, 0);
+  #ifndef GLES2
 	if (gl_ctx->elems == NULL){
 		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	}
+  #endif
 	/* */
 	
 	/* orientation in drawing area */
@@ -415,10 +448,12 @@ int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int z, int w, int h){
 	/* check if elements buffer is full,
 	and draw waiting elements to clear buffer if necessary */
 	draw_gl (gl_ctx, 0);
+  #ifndef GLES2
 	if (gl_ctx->elems == NULL){
 		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	}
+  #endif
 	/* */
 	
 	/* orientation in drawing area */
@@ -517,10 +552,12 @@ int draw_gl_triang (struct ogl *gl_ctx, int p0[3], int p1[3], int p2[3]){
 	/* check if elements buffer is full,
 	and draw waiting elements to clear buffer if necessary */
 	draw_gl (gl_ctx, 0);
+  #ifndef GLES2
 	if (gl_ctx->elems == NULL){
 		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	}
+  #endif
 	/* */
 		
 	/* orientation in drawing area */
@@ -586,10 +623,12 @@ int draw_gl_image_rec (struct ogl *gl_ctx, int x, int y, int z, int w, int h, bm
 	/* check if elements buffer is full,
 	and draw waiting elements to clear buffer if necessary */
 	draw_gl (gl_ctx, 0);
+  #ifndef GLES2
 	if (gl_ctx->elems == NULL){
 		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	}
+  #endif
 	/* */
 	
 	/* orientation in drawing area */
@@ -689,10 +728,12 @@ int draw_gl_image_quad(struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int 
 	/* check if elements buffer is full,
 	and draw waiting elements to clear buffer if necessary */
 	draw_gl (gl_ctx, 0);
+  #ifndef GLES2
 	if (gl_ctx->elems == NULL){
 		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	}
+  #endif
 	/* */
 	
 	/* orientation in drawing area */
@@ -971,8 +1012,12 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 		gl_ctx->fg[2] = color.b;
 		gl_ctx->fg[3] = color.a;
 		/* prepare for new opengl commands */
-		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+    #ifndef GLES2
+    if (gl_ctx->elems == NULL){
+      gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+      gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+    }
+    #endif
 		glUniform1i(gl_ctx->tex_uni, 1); /* choose second texture */
 		/* finally draw image */
 		draw_gl_image_quad(gl_ctx, tl, bl, tr, br, master->img);
@@ -1325,14 +1370,22 @@ int draw_gl (struct ogl *gl_ctx, int force){
 		matrix4_mul(win_mtx[0], gl_ctx->transf[0], res_mtx[0]);
 		
 		glUniformMatrix4fv(gl_ctx->transf_uni, 1,  GL_FALSE, res_mtx[0]);
-		
-		glUnmapBuffer(GL_ARRAY_BUFFER);
-		glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+  #ifndef GLES2
+    if(gl_ctx->elems){
+      glUnmapBuffer(GL_ARRAY_BUFFER);
+      glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+    }
+  #else
+    glBufferSubData(GL_ARRAY_BUFFER, 0, gl_ctx->vert_count*sizeof(struct Vertex), gl_ctx->verts);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, gl_ctx->elem_count*3*sizeof(GLuint), gl_ctx->elems);
+  #endif
 		glDrawElements(GL_TRIANGLES, gl_ctx->elem_count*3, GL_UNSIGNED_INT, 0);
 		gl_ctx->vert_count = 0;
 		gl_ctx->elem_count = 0;
+  #ifndef GLES2
 		gl_ctx->elems = NULL;
 		gl_ctx->verts = NULL;
+  #endif
 		glUniform1i(gl_ctx->tex_uni, 0);
 		
 		return 1;
@@ -1353,16 +1406,27 @@ int graph_list_draw_gl(list_node *list, struct ogl *gl_ctx, struct draw_param pa
 			if (current->data){
 				curr_graph = (graph_obj *)current->data;
 				
-				/*gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-				gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+				/*
+        #ifndef GLES2
+        if (gl_ctx->elems == NULL){
+          gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+          gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+        }
+        #endif
 				gl_ctx->vert_count = 0;
 				gl_ctx->elem_count = 0;
 				glUniform1i(gl_ctx->tex_uni, 0);*/
 				
 				graph_draw_gl(curr_graph, gl_ctx, param);
 				
-				/*glUnmapBuffer(GL_ARRAY_BUFFER);
-				glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+				/*
+        #ifndef GLES2
+          glUnmapBuffer(GL_ARRAY_BUFFER);
+          glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+        #else
+          glBufferSubData(GL_ARRAY_BUFFER, 0, gl_ctx->vert_count*sizeof(struct Vertex), gl_ctx->verts);
+          glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, gl_ctx->elem_count*3*sizeof(GLuint), gl_ctx->elems);
+        #endif
 				glDrawElements(GL_TRIANGLES, gl_ctx->elem_count*3, GL_UNSIGNED_INT, 0);*/
 			}
 			current = current->next;
@@ -1386,12 +1450,12 @@ int graph_list_draw_gl2(list_node *list, struct ogl *gl_ctx, struct draw_param p
 	while (current != NULL){
 		if (current->data){
 			curr_graph = (graph_obj *)current->data;
-			
+			#ifndef GLES2
 			if (gl_ctx->elems == NULL){
 				gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 				gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 			}
-			
+			#endif
 			graph_draw_gl(curr_graph, gl_ctx, param);
 			
 			draw_gl (gl_ctx, 0);

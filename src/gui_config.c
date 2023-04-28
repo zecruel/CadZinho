@@ -529,13 +529,13 @@ int gui_get_ini (lua_State *L) {
 	/* -------------------- get screen width -------------------*/
 	lua_getglobal(L, "win_width");
 	if (lua_isnumber(L, -1)) gui->win_w = (int)lua_tonumber(L, -1);
-	else gui->win_w = 1120; /* default value, if not definied in file*/
+	else gui->win_w = 1200; /* default value, if not definied in file*/
 	lua_pop(L, 1);
 	
 	/* -------------------- get screen height -------------------*/
 	lua_getglobal(L, "win_height");
 	if (lua_isnumber(L, -1)) gui->win_h = (int)lua_tonumber(L, -1);
-	else gui->win_h = 600; /* default value, if not definied in file*/
+	else gui->win_h = 685; /* default value, if not definied in file*/
 	lua_pop(L, 1);
 	
 	/* -------------------- load list of recent drawing files  -------------------*/

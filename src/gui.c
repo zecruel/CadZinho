@@ -890,8 +890,12 @@ int nk_gl_render(gui_obj *gui) {
 	const struct nk_command *cmd = NULL;
 	
 	gl_ctx->flip_y = 1;
-	gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-	gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+#ifndef GLES2
+  if (gl_ctx->elems == NULL){
+    gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+  }
+#endif
 	gl_ctx->vert_count = 0;
 	gl_ctx->elem_count = 0;
 	glUniform1i(gl_ctx->tex_uni, 0);
@@ -917,10 +921,12 @@ int nk_gl_render(gui_obj *gui) {
 	
 	
 	nk_foreach(cmd, gui->ctx){
+    #ifndef GLES2
 		if (gl_ctx->elems == NULL){
 			gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 			gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 		}
+    #endif
 		
 		if (cmd->type == NK_COMMAND_LINE) {
 			const struct nk_command_line *l = (const struct nk_command_line *)cmd;
@@ -1058,8 +1064,12 @@ int nk_gl_render(gui_obj *gui) {
 				gl_ctx->fg[2] = 255;
 				gl_ctx->fg[3] = 255;
 				/* prepare for new opengl commands */
-				gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-				gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+        #ifndef GLES2
+        if (gl_ctx->elems == NULL){
+          gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+          gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+        }
+        #endif
 				glUniform1i(gl_ctx->tex_uni, 1); /* choose second texture */
 				/* finally draw image */
 				//draw_gl_image (gl_ctx, i->x, i->y, img->width, img->height, img);
@@ -1102,8 +1112,12 @@ int nk_gl_render(gui_obj *gui) {
 				
 				draw_gl (gl_ctx, 1); /* force draw previous commands and cleanup */
 				/* prepare for new opengl commands */
-				gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-				gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+        #ifndef GLES2
+        if (gl_ctx->elems == NULL){
+          gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+          gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+        }
+        #endif
 				glUniform1i(gl_ctx->tex_uni, 1); /* choose second texture */
 				/* finally draw image */
 				int height = t->font->height + 5;
@@ -1644,8 +1658,8 @@ int gui_start(gui_obj *gui){
 	
 	gui->win_x = SDL_WINDOWPOS_CENTERED;
 	gui->win_y = SDL_WINDOWPOS_CENTERED;
-	gui->win_w = 1120;
-	gui->win_h = 600;
+	gui->win_w = 1200;
+	gui->win_h = 685;
 	
 	gui->next_win_x = 0;
 	gui->next_win_y = 0;
@@ -2066,10 +2080,12 @@ int draw_cursor_gl(gui_obj *gui, int x, int y, enum Cursor_type type) {
 	struct ogl *gl_ctx = &(gui->gl_ctx);
 	
 	/* init opengl context */
+  #ifndef GLES2
 	if (gl_ctx->elems == NULL){
 		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	}
+  #endif
 	/* set the color to contrast with background*/
 	gl_ctx->fg[0] = gui->background.r ^ 255;
 	gl_ctx->fg[1] = gui->background.g ^ 255;
@@ -2135,10 +2151,12 @@ int draw_attractor_gl(gui_obj *gui, enum attract_type type, int x, int y, bmp_co
 	struct ogl *gl_ctx = &(gui->gl_ctx);
 	
 	/* init opengl context */
+  #ifndef GLES2
 	if (gl_ctx->elems == NULL){
 		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	}
+  #endif
 	/* set the color */
 	gl_ctx->fg[0] = color.r;
 	gl_ctx->fg[1] = color.g;
@@ -2281,10 +2299,12 @@ int gui_draw_vert_rect_gl(gui_obj *gui, double x, double y, bmp_color color){
 	struct ogl *gl_ctx = &(gui->gl_ctx);
 	
 	/* init opengl context */
+  #ifndef GLES2
 	if (gl_ctx->elems == NULL){
 		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	}
+  #endif
 	/* set the color */
 	gl_ctx->fg[0] = color.r;
 	gl_ctx->fg[1] = color.g;

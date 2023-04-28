@@ -1251,9 +1251,12 @@ int gui_main_loop (gui_obj *gui) {
     glClearColor((GLfloat) gui->background.r/255, (GLfloat) gui->background.g/255, 
       (GLfloat) gui->background.b/255, 1.0);
     glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
-    
-    gui->gl_ctx.verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-    gui->gl_ctx.elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+    #ifndef GLES2
+    if (gui->gl_ctx.elems == NULL){
+      gui->gl_ctx.verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+      gui->gl_ctx.elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+    }
+    #endif
     gui->gl_ctx.vert_count = 0;
     gui->gl_ctx.elem_count = 0;
     glUniform1i(gui->gl_ctx.tex_uni, 0);

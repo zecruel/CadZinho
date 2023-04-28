@@ -110,7 +110,9 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: uploads
-        path: linux_appimage.zip linux.zip
+        path: |
+          linux_appimage.zip
+          linux.zip
         retention-days: 5
         
   macos-build:

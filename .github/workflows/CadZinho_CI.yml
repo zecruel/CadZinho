@@ -98,15 +98,19 @@ jobs:
         cp $(ldd cadzinho | grep -o '\W/[^ ]*' | grep 'SDL2\|GLEW\|decor') ./CadZinho.AppDir/usr/lib
         chmod u+x ./appimagetool-x86_64.AppImage
         ./appimagetool-x86_64.AppImage CadZinho.AppDir
-    - run: ldd cadzinho
     - name: create archive
       run: |
-        zip -r linux CadZinho-x86_64.AppImage LICENSE.txt
+        zip -r linux_appimage CadZinho-x86_64.AppImage LICENSE.txt
+    - name: regular linux package
+      run: |
+        cp ./cadzinho ./linux/CadZinho
+        cp ./LICENSE.txt ./linux/CadZinho
+        zip -r linux ./linux/CadZinho
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
         name: uploads
-        path: linux.zip
+        path: linux_appimage.zip linux.zip
         retention-days: 5
         
   macos-build:
@@ -262,8 +266,47 @@ jobs:
         name: uploads
         path: windows_msvc.zip
         retention-days: 5
+        
+  emscripten-built:
+    needs: up-version
+    runs-on: ubuntu-latest
+
+    steps:
+    
+    - uses: actions/checkout@v3
+    - name: configure SDK
+      uses: mymindstorm/setup-emsdk@v12
+    - name: download lua source
+      run: curl -R -O http://www.lua.org/ftp/lua-5.4.4.tar.gz
+    - name: extract lua
+      run: tar zxf lua-5.4.4.tar.gz
+    - name: remove main in lua
+      run: rm lua-5.4.4/src/lua.c lua-5.4.4/src/luac.c
+    - name: copy lua sources 
+      run: cp lua-5.4.4/src/* ./src/
+    - name: clear samples
+      run: |
+        rm samples/*.pdf
+        rm samples/*.svg
+        rm samples/*.ps
+        rm samples/*.jpg
+    - name: get make and resources files
+      run: |
+        cp emscripten/Makefile ./Makefile
+        cp emscripten/shell_minimal.html ./shell_minimal.html
+    - name: make
+      run: make
+    - name: create archive
+      run: |
+        zip -r emscripten cadzinho.js cadzinho.wasm cadzinho.html cadzinho.data
+    - name: Upload the result
+      uses: actions/upload-artifact@v3
+      with:
+        name: uploads
+        path: emscripten.zip
+        retention-days: 5
   release:
-    needs: [linux-build, macos-build, windows-build, msvc-build]
+    needs: [linux-build, macos-build, windows-build, msvc-build, emscripten-built]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -276,7 +319,9 @@ jobs:
           draft: true
           files: |
             linux.zip
+            linux_appimage.zip
             macos.zip
             windows.zip
             windows_msvc.zip
+            emscripten.zip
 

@@ -32,8 +32,8 @@
  #include "bmp.h"
  #include "graph.h"
  
-#define MAX_TRIANG 10000
-#define MAX_TRIANG_2 9900
+#define MAX_TRIANG 100000
+#define MAX_TRIANG_2 99000
 #define MAX_SCAN_LINES 15000
 #define MAX_P_NODES 1000
 

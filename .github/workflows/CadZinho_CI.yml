@@ -89,12 +89,14 @@ jobs:
         mkdir CadZinho.AppDir/usr/
         mkdir CadZinho.AppDir/usr/lib
         mkdir CadZinho.AppDir/usr/bin
+        mkdir CadZinho.AppDir/usr/bin/share
+        mkdir CadZinho.AppDir/usr/bin/share/cadzinho
         mv AppRun-x86_64 CadZinho.AppDir/AppRun
         chmod u+x ./CadZinho.AppDir/AppRun
         cp ./linux/cadzinho.desktop ./CadZinho.AppDir
         cp ./linux/cadzinho.png ./CadZinho.AppDir
         cp ./cadzinho ./CadZinho.AppDir/usr/bin
-        cp -r ./lang/ ./CadZinho.AppDir/usr/bin/
+        cp -r ./lang/ ./CadZinho.AppDir/usr/bin/share/cadzinho/
         cp $(ldd cadzinho | grep -o '\W/[^ ]*' | grep 'SDL2\|GLEW\|decor') ./CadZinho.AppDir/usr/lib
         chmod u+x ./appimagetool-x86_64.AppImage
         ./appimagetool-x86_64.AppImage CadZinho.AppDir
@@ -103,9 +105,13 @@ jobs:
         zip -r linux_appimage CadZinho-x86_64.AppImage LICENSE.txt
     - name: regular linux package
       run: |
+        mkdir ./linux/CadZinho/share/cadzinho
         cp ./cadzinho ./linux/CadZinho
-        cp ./LICENSE.txt ./linux/CadZinho
-        zip -r linux ./linux/CadZinho
+        cp ./LICENSE.txt ./linux/CadZinho/share/cadzinho
+        cp -r ./lang/ ./linux/CadZinho/share/cadzinho/
+        cd ./linux/CadZinho
+        zip -r linux *
+    - run: cp ./linux/CadZinho/linux.zip ./
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:

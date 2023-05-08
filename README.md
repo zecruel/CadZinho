@@ -10,8 +10,9 @@
 
 (SDL 2.0 and OpenGL 3.2 port)
 
-## New Release! - 0.2.2
-**Try it:** [Latest Release](https://github.com/zecruel/CadZinho/releases/latest)
+## New Release! - 0.3.0
+## Documentation: [**Wiki**](https://github.com/zecruel/CadZinho/wiki)
+## Try it: [**Live Demo**](https://github.com/zecruel/CadZinho-in-browser)
 
 ![Screen shot](/screenshot.png)
 

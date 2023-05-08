@@ -61,6 +61,7 @@ void gui_load_lang (gui_obj *gui){
   
   char new_path[PATH_MAX_CHARS+1];
   new_path[0] = 0;
+  const char *platform = operating_system();
   
   
   snprintf(new_path, PATH_MAX_CHARS, "%s.UTF-8", gui->main_lang);
@@ -68,8 +69,15 @@ void gui_load_lang (gui_obj *gui){
   setlocale(LC_COLLATE, new_path);
   
   /* look for language file in -program-/lang/ directory */
-  snprintf(new_path, PATH_MAX_CHARS, "%slang%c%s.lua", 
-    gui->base_dir, DIR_SEPARATOR, gui->main_lang);
+	if (!strcmp(platform, "unix") /* Handle Linux, Unix, posix */
+	|| !strcmp(platform, "linux") 
+	|| !strcmp(platform, "freeBSD")) {
+		snprintf(new_path, PATH_MAX_CHARS, "%sshare/cadzinho/lang/%s.lua", 
+      gui->base_dir, gui->main_lang);
+	} else {
+    snprintf(new_path, PATH_MAX_CHARS, "%slang%c%s.lua", 
+      gui->base_dir, DIR_SEPARATOR, gui->main_lang);
+  }
   
   /* init auxiliary script object */
   if (gui_script_init (gui, &gui->main_lang_scr, new_path, NULL) == 1){
@@ -664,9 +672,17 @@ int config_win (gui_obj *gui){
       if (lang_scr.active){
         /* get languages available in system */
         char new_path[PATH_MAX_CHARS+1];
+        const char *platform = operating_system();
         /* look for language files in -program-/lang/ directory */
-        snprintf(new_path, PATH_MAX_CHARS, "%slang%c", 
-          gui->base_dir, DIR_SEPARATOR);
+        if (!strcmp(platform, "unix") /* Handle Linux, Unix, posix */
+        || !strcmp(platform, "linux") 
+        || !strcmp(platform, "freeBSD")) {
+          snprintf(new_path, PATH_MAX_CHARS, "%sshare/cadzinho/lang/", 
+            gui->base_dir);
+        } else {
+          snprintf(new_path, PATH_MAX_CHARS, "%slang%c", 
+            gui->base_dir, DIR_SEPARATOR);
+        }
         
         lua_getglobal(lang_scr.T, "list_lang"); /* get function to be called */
         lua_pushstring(lang_scr.T, new_path); /* path to lang dir */

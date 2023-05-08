@@ -12,7 +12,7 @@
 
 ## New Release! - [0.3.0](https://github.com/zecruel/CadZinho/releases/)
 ## Documentation: [**Wiki**](https://github.com/zecruel/CadZinho/wiki)
-## Try it: [**In Browser**](https://github.com/zecruel/CadZinho-in-browser)
+## Try it: [**In Browser**](https://zecruel.github.io/CadZinho-in-browser/cadzinho.html)
 
 ![Screen shot](/screenshot.png)
 

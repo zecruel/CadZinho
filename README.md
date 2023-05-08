@@ -1,4 +1,4 @@
-# CadZinho
+# CadZinho - Minimalist computer aided design (CAD) software
 
 ![stars](https://img.shields.io/github/stars/zecruel/CadZinho)
 ![forks](https://img.shields.io/github/forks/zecruel/CadZinho)
@@ -6,13 +6,13 @@
 ![issues](https://img.shields.io/github/issues/zecruel/CadZinho)
 ![licence](https://img.shields.io/github/license/zecruel/CadZinho)
 
-![CadZinho](/logo_48.png) **Minimalist computer aided design (CAD) software**
+![CadZinho](/logo.png)
 
 (SDL 2.0 and OpenGL 3.2 port)
 
-## New Release! - 0.3.0
+## New Release! - [0.3.0](https://github.com/zecruel/CadZinho/releases/)
 ## Documentation: [**Wiki**](https://github.com/zecruel/CadZinho/wiki)
-## Try it: [**Live Demo**](https://github.com/zecruel/CadZinho-in-browser)
+## Try it: [**In Browser**](https://github.com/zecruel/CadZinho-in-browser)
 
 ![Screen shot](/screenshot.png)
 

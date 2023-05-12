@@ -36,6 +36,7 @@
 #include <math.h>
 #include <ctype.h>
 #include <locale.h>
+#include <sys/time.h>
 
 
 #include "lua.h"
@@ -525,13 +526,27 @@ int main(int argc, char** argv){
   /* register update as callback */
   emscripten_set_main_loop_arg(update, gui, 0, 1);
 #else 
+	struct timeval prev_frame_t;
+	struct timeval current_frame_t;
+	Uint32 delay;
+	Uint32 ms_per_frame = 1000 / 120;
+	gettimeofday(&prev_frame_t, NULL);
 	/* main loop */
 	while (gui_main_loop (gui)){
-    
-    if (gui->low_proc){
-      SDL_Delay(20);
-      SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEMOTION);
-    }
+		gettimeofday(&current_frame_t, NULL);
+		if (gui->low_proc){
+			delay = (current_frame_t.tv_sec - prev_frame_t.tv_sec) * 1000;
+			delay += (current_frame_t.tv_usec - prev_frame_t.tv_usec) / 1000;
+			if (delay >= ms_per_frame) {
+				delay = 0;
+			} else {
+				delay = ms_per_frame - delay;
+			}
+			SDL_Delay(delay);
+			SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEMOTION);
+		}
+		prev_frame_t.tv_sec = current_frame_t.tv_sec;
+		prev_frame_t.tv_usec = current_frame_t.tv_usec;
 	}
 	
 	/* safe quit */

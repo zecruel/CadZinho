@@ -534,17 +534,16 @@ int main(int argc, char** argv){
 	/* main loop */
 	while (gui_main_loop (gui)){
 		gettimeofday(&current_frame_t, NULL);
-		if (gui->low_proc){
-			delay = (current_frame_t.tv_sec - prev_frame_t.tv_sec) * 1000;
-			delay += (current_frame_t.tv_usec - prev_frame_t.tv_usec) / 1000;
-			if (delay >= ms_per_frame) {
-				delay = 0;
-			} else {
-				delay = ms_per_frame - delay;
-			}
-			SDL_Delay(delay);
-			SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEMOTION);
+		/* time in ms from previous frame */
+		delay = (current_frame_t.tv_sec - prev_frame_t.tv_sec) * 1000;
+		delay += (current_frame_t.tv_usec - prev_frame_t.tv_usec) / 1000;
+		if (delay >= ms_per_frame) {
+			delay = 0;
+		} else {
+			delay = ms_per_frame - delay;
 		}
+		SDL_Delay(delay);
+		SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEMOTION);
 		prev_frame_t.tv_sec = current_frame_t.tv_sec;
 		prev_frame_t.tv_usec = current_frame_t.tv_usec;
 	}

@@ -4,7 +4,7 @@ on: workflow_dispatch
 
 env:
   MAJOR: 0
-  MINOR: 3
+  MINOR: 4
   MAN: 0
   YEAR: 2023
   

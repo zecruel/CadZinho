@@ -161,6 +161,48 @@ static void gui_change_lang (gui_obj *gui, lua_State *L){
   }
 }
 
+static int gui_change_var (gui_obj *gui, lua_State *L, char * name, char * value){
+  /* full path of config file */
+	char config_path[PATH_MAX_CHARS + 1];
+	config_path[0] = 0;
+	snprintf(config_path, PATH_MAX_CHARS, "%sconfig.lua", gui->pref_path);
+  
+  /* Its will alter the config.lua file, changing choosen variable */
+  lua_getglobal(L, "change_var_config");
+  lua_pushstring(L, config_path); /* path to config.lua file */
+  lua_pushstring(L, name); /* variable name */
+  lua_pushstring(L, value); /* variable name */
+  if (lua_pcall(L, 3, 0, 0) == LUA_OK){ /* file changed successfully */
+    return 1;
+  }
+  else{
+    //char *error = lua_tostring(L, -1);
+    lua_pop(L, 1); /* pop error message from the stack */
+    return 0;
+  }
+}
+
+static int gui_change_var2 (gui_obj *gui, lua_State *L, char * name, char * value){
+  /* full path of config file */
+	char config_path[PATH_MAX_CHARS + 1];
+	config_path[0] = 0;
+	snprintf(config_path, PATH_MAX_CHARS, "%sconfig.lua", gui->pref_path);
+  
+  /* Its will alter the config.lua file, changing choosen variable */
+  lua_getglobal(L, "change_var_config2");
+  lua_pushstring(L, config_path); /* path to config.lua file */
+  lua_pushstring(L, name); /* variable name */
+  lua_pushstring(L, value); /* variable name */
+  if (lua_pcall(L, 3, 0, 0) == LUA_OK){ /* file changed successfully */
+    return 1;
+  }
+  else{
+    //char *error = lua_tostring(L, -1);
+    lua_pop(L, 1); /* pop error message from the stack */
+    return 0;
+  }
+}
+
 int gui_load_conf (gui_obj *gui){
 	/* initialize fonts paths with base directory and resource folder */
 	snprintf(gui->dflt_fonts_path, 5 * DXF_MAX_CHARS, "%s%c%sres%cfont%c%c", gui->pref_path, PATH_SEPARATOR,
@@ -260,7 +302,7 @@ int gui_get_conf (lua_State *L) {
 	lua_getglobal(L, "theme");
 	if (lua_isstring(L, -1)){
 		const char *theme = lua_tostring(L, -1);
-		//enum theme {THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK, THEME_GREEN};
+		
 		if (strcmp(theme, "green") == 0){
 			gui->theme = THEME_GREEN;
 		}
@@ -316,9 +358,8 @@ int gui_get_conf (lua_State *L) {
 		lua_pushnil(L);  /* first key */
 		while (lua_next(L, -2) != 0) { /* table index are shifted*/
 			/* uses 'key' (at index -2) and 'value' (at index -1) */
-			//printf("%s - %s\n", lua_typename(L, lua_type(L, -2)), lua_typename(L, lua_type(L, -1)));
+			
 			if (lua_isstring(L, -1)){
-				//printf("%s\n", lua_tostring(L, -1));
 				add_font_list(gui->font_list, (char *)lua_tostring(L, -1), gui->dflt_fonts_path);
 			}
 			/* removes 'value'; keeps 'key' for next iteration */
@@ -582,7 +623,7 @@ int gui_get_ini (lua_State *L) {
 }
 
 int config_win (gui_obj *gui){
-  static struct script_obj lang_scr;
+  static struct script_obj cfg_scr;
   static int init = 0;
   
 	int show_config = 1;
@@ -594,14 +635,29 @@ int config_win (gui_obj *gui){
 			GRP_3D,
 			GRP_INFO,
 	} cfg_grp = GRP_PREF;
+  
+  static struct nk_color bg_color = {100, 100, 100, 255}, hi_color = {255, 0, 255, 255};
+  static int prev_theme = 0, prev_cursor = 0;
 	
 	//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "config", NK_WINDOW_CLOSABLE, nk_rect(310, 50, 200, 300))){
-	if (nk_begin(gui->ctx, _l("Config"), nk_rect(418, 88, 400, 300),
+	if (nk_begin(gui->ctx, _l("Config"), nk_rect(418, 88, 400, 500),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
     
     if (!init){ /* init Lua engine and static structures */
       init = 1;
+      
+      bg_color.r = gui->background.r;
+      bg_color.g = gui->background.g;
+      bg_color.b = gui->background.b;
+      
+      hi_color.r = gui->hilite.r;
+      hi_color.g = gui->hilite.g;
+      hi_color.b = gui->hilite.b;
+      
+      prev_theme = gui->theme;
+      prev_cursor = gui->cursor;
+      
       num_lang = 0;
       /* custom Lua functions to manage language config */
       const char *f =
@@ -613,6 +669,32 @@ int config_win (gui_obj *gui){
         "    content = string.gsub (content, '(\\n[^-\\n]*language%s*=%s*)%g+', '%1\"'.. lang ..'\"')\n"
         "  else\n"
         "    content = content .. '\\nlanguage = \"' .. lang .. '\"'\n"
+        "  end\n"
+        "  f = io.open(fname, \"w+\")\n"
+        "  f:write(content)\n"
+        "  f:close()\n"
+        "end\n"
+        "function change_var_config (fname, name, value)\n"
+        "  local f = io.open(fname, \"r\")\n"
+        "  local content = f:read(\"a\")\n"
+        "  f:close()\n"
+        "  if string.find(content, '(\\n[^-\\n]*'.. name .. '%s*=%s*)%g+') then\n"
+        "    content = string.gsub (content, '(\\n[^-\\n]*' .. name .. '%s*=%s*)%g+', '%1\"'.. value ..'\"')\n"
+        "  else\n"
+        "    content = content .. '\\n' .. name .. ' = \"' .. value .. '\"'\n"
+        "  end\n"
+        "  f = io.open(fname, \"w+\")\n"
+        "  f:write(content)\n"
+        "  f:close()\n"
+        "end\n"
+        "function change_var_config2 (fname, name, value)\n"
+        "  local f = io.open(fname, \"r\")\n"
+        "  local content = f:read(\"a\")\n"
+        "  f:close()\n"
+        "  if string.find(content, '(\\n[^-\\n]*'.. name .. '%s*=%s*)[^%c]+') then\n"
+        "    content = string.gsub (content, '(\\n[^-\\n]*' .. name .. '%s*=%s*)[^%c]+', '%1'.. value)\n"
+        "  else\n"
+        "    content = content .. '\\n' .. name .. ' = ' .. value\n"
         "  end\n"
         "  f = io.open(fname, \"w+\")\n"
         "  f:write(content)\n"
@@ -651,25 +733,25 @@ int config_win (gui_obj *gui){
         "  end\n"
         "  return langs, langs_o\n"
         "end";
-      lang_scr.L = NULL;
-      lang_scr.T = NULL;
-      lang_scr.active = 0;
-      lang_scr.dynamic = 0;
+      cfg_scr.L = NULL;
+      cfg_scr.T = NULL;
+      cfg_scr.active = 0;
+      cfg_scr.dynamic = 0;
       
-      /* init the auxiliary language script object  */
-      if (gui_script_init (gui, &lang_scr, NULL, (char*)f) == 1){
-        lang_scr.time = clock();
-        lang_scr.timeout = 10.0; /* default timeout value */
-        lang_scr.do_init = 0;
+      /* init the auxiliary script object  */
+      if (gui_script_init (gui, &cfg_scr, NULL, (char*)f) == 1){
+        cfg_scr.time = clock();
+        cfg_scr.timeout = 10.0; /* default timeout value */
+        cfg_scr.do_init = 0;
         
-        lua_getglobal(lang_scr.T, "cz_main_func");
+        lua_getglobal(cfg_scr.T, "cz_main_func");
         int n_results = 0; /* for Lua 5.4*/
-        lang_scr.status = lua_resume(lang_scr.T, NULL, 0, &n_results); /* start thread */
-        if (lang_scr.status != LUA_OK){
-          lang_scr.active = 0; /* error */			
-        } else lang_scr.active = 1;
+        cfg_scr.status = lua_resume(cfg_scr.T, NULL, 0, &n_results); /* start thread */
+        if (cfg_scr.status != LUA_OK){
+          cfg_scr.active = 0; /* error */			
+        } else cfg_scr.active = 1;
       }
-      if (lang_scr.active){
+      if (cfg_scr.active){
         /* get languages available in system */
         char new_path[PATH_MAX_CHARS+1];
         const char *platform = operating_system();
@@ -684,16 +766,16 @@ int config_win (gui_obj *gui){
             gui->base_dir, DIR_SEPARATOR);
         }
         
-        lua_getglobal(lang_scr.T, "list_lang"); /* get function to be called */
-        lua_pushstring(lang_scr.T, new_path); /* path to lang dir */
-        lang_scr.time = clock();
-        if (lua_pcall(lang_scr.T, 1, 2, 0) == LUA_OK){
+        lua_getglobal(cfg_scr.T, "list_lang"); /* get function to be called */
+        lua_pushstring(cfg_scr.T, new_path); /* path to lang dir */
+        cfg_scr.time = clock();
+        if (lua_pcall(cfg_scr.T, 1, 2, 0) == LUA_OK){
           /* numer of languages available */
-          num_lang = lua_rawlen (lang_scr.T, 1);
+          num_lang = lua_rawlen (cfg_scr.T, 1);
         }
         else{
-          const char *error = lua_tostring(lang_scr.T, -1);
-          lua_pop(lang_scr.T, 1); /* pop error message from the stack */
+          const char *error = lua_tostring(cfg_scr.T, -1);
+          lua_pop(cfg_scr.T, 1); /* pop error message from the stack */
         }
       }
     }
@@ -770,30 +852,30 @@ int config_win (gui_obj *gui){
         for (i = 1; i <= num_lang; i++){
           nk_layout_row_dynamic(gui->ctx, 25, 1);
           /* get table with language description and country flag */
-          lua_rawgeti (lang_scr.T, 2, i);
-          lua_pushstring(lang_scr.T, "descr");
-          int type = lua_gettable(lang_scr.T, -2);
-          lua_pushstring(lang_scr.T, "flag");
-          int type2 = lua_gettable(lang_scr.T, -3);
+          lua_rawgeti (cfg_scr.T, 2, i);
+          lua_pushstring(cfg_scr.T, "descr");
+          int type = lua_gettable(cfg_scr.T, -2);
+          lua_pushstring(cfg_scr.T, "flag");
+          int type2 = lua_gettable(cfg_scr.T, -3);
           /* get current language Id */
-          lua_rawgeti (lang_scr.T, 1, i);
+          lua_rawgeti (cfg_scr.T, 1, i);
           if (type == LUA_TSTRING) {
             /* use description string, if available */
             if (type2 == LUA_TUSERDATA) {
               struct script_rast_image * img_obj = (struct script_rast_image *)
-                lua_touserdata (lang_scr.T, -2);
+                lua_touserdata (cfg_scr.T, -2);
               if (nk_button_image_label(gui->ctx, nk_image_ptr(img_obj->img),
-                lua_tostring(lang_scr.T, -3), NK_TEXT_RIGHT))
+                lua_tostring(cfg_scr.T, -3), NK_TEXT_RIGHT))
               {
-                strncpy(gui->main_lang, lua_tostring(lang_scr.T, -1), DXF_MAX_CHARS);
-                gui_change_lang(gui, lang_scr.T); /* change in config.lua file too */
+                strncpy(gui->main_lang, lua_tostring(cfg_scr.T, -1), DXF_MAX_CHARS);
+                gui_change_lang(gui, cfg_scr.T); /* change in config.lua file too */
                 nk_combo_close(gui->ctx);
               }
             }
             else{
-              if (nk_button_label(gui->ctx, lua_tostring(lang_scr.T, -3))) {
-                strncpy(gui->main_lang, lua_tostring(lang_scr.T, -1), DXF_MAX_CHARS);
-                gui_change_lang(gui, lang_scr.T); /* change in config.lua file too */
+              if (nk_button_label(gui->ctx, lua_tostring(cfg_scr.T, -3))) {
+                strncpy(gui->main_lang, lua_tostring(cfg_scr.T, -1), DXF_MAX_CHARS);
+                gui_change_lang(gui, cfg_scr.T); /* change in config.lua file too */
                 nk_combo_close(gui->ctx);
               }
             }
@@ -802,24 +884,24 @@ int config_win (gui_obj *gui){
             /* use language Id code, when description string not available */
             if (type2 == LUA_TUSERDATA) {
               struct script_rast_image * img_obj = (struct script_rast_image *)
-                lua_touserdata (lang_scr.T, -2);
+                lua_touserdata (cfg_scr.T, -2);
               if (nk_button_image_label(gui->ctx, nk_image_ptr(img_obj->img),
-                lua_tostring(lang_scr.T, -1), NK_TEXT_RIGHT))
+                lua_tostring(cfg_scr.T, -1), NK_TEXT_RIGHT))
               {
-                strncpy(gui->main_lang, lua_tostring(lang_scr.T, -1), DXF_MAX_CHARS);
-                gui_change_lang(gui, lang_scr.T); /* change in config.lua file too */
+                strncpy(gui->main_lang, lua_tostring(cfg_scr.T, -1), DXF_MAX_CHARS);
+                gui_change_lang(gui, cfg_scr.T); /* change in config.lua file too */
                 nk_combo_close(gui->ctx);
               }
             }
             else{
-              if (nk_button_label(gui->ctx, lua_tostring(lang_scr.T, -1))) {
-                strncpy(gui->main_lang, lua_tostring(lang_scr.T, -1), DXF_MAX_CHARS);
-                gui_change_lang(gui, lang_scr.T); /* change in config.lua file too */
+              if (nk_button_label(gui->ctx, lua_tostring(cfg_scr.T, -1))) {
+                strncpy(gui->main_lang, lua_tostring(cfg_scr.T, -1), DXF_MAX_CHARS);
+                gui_change_lang(gui, cfg_scr.T); /* change in config.lua file too */
                 nk_combo_close(gui->ctx);
               }
             }
           }
-          lua_pop(lang_scr.T, 4); /* clean the Lua stack */
+          lua_pop(cfg_scr.T, 4); /* clean the Lua stack */
           
         }
         nk_combo_end(gui->ctx);
@@ -841,6 +923,219 @@ int config_win (gui_obj *gui){
         nk_label(gui->ctx, " ", NK_TEXT_LEFT);
       }
       
+      /* Themes */
+      nk_layout_row_dynamic(gui->ctx, 5, 1);
+			//nk_layout_row_dynamic(gui->ctx, 20, 1);
+      nk_layout_row(gui->ctx, NK_DYNAMIC, 25, 3, (float[]){0.3, 0.4, 0.3});
+			nk_label(gui->ctx, _l("Theme:"), NK_TEXT_LEFT);
+      static char thems_nm[10][DXF_MAX_CHARS + 1];
+      strncpy(thems_nm[0], _l("Black"), DXF_MAX_CHARS);
+      strncpy(thems_nm[1], _l("White"), DXF_MAX_CHARS);
+      strncpy(thems_nm[2], _l("Red"), DXF_MAX_CHARS);
+      strncpy(thems_nm[3], _l("Blue"), DXF_MAX_CHARS);
+      strncpy(thems_nm[4], _l("Dark"), DXF_MAX_CHARS);
+      strncpy(thems_nm[5], _l("Green"), DXF_MAX_CHARS);
+      strncpy(thems_nm[6], _l("Brown"), DXF_MAX_CHARS);
+      strncpy(thems_nm[7], _l("Purple"), DXF_MAX_CHARS);
+      strncpy(thems_nm[8], _l("Dracula"), DXF_MAX_CHARS);
+      strncpy(thems_nm[9], _l("Nuklear"), DXF_MAX_CHARS);
+      
+      char *thems[10];
+      
+      for (i = 0; i < 10; i++){
+        thems[i] = thems_nm[i];
+      }
+      
+      gui->theme = nk_combo(gui->ctx, (const char **) thems, 10, gui->theme, 20, nk_vec2(200,200));
+      
+      if (gui->theme != prev_theme){
+        static const char *themes[] = {"black","white","red","blue","dark","green","brown","purple","dracula","default"};
+        if (gui_change_var (gui, cfg_scr.T, (char*) "theme", (char*) themes[gui->theme])){
+          
+          if (gui->theme == THEME_BLACK){
+            bg_color.r = 0;
+            bg_color.g = 0;
+            bg_color.b = 0;
+          }
+          else if (gui->theme == THEME_WHITE){
+            bg_color.r = 255;
+            bg_color.g = 255;
+            bg_color.b = 255;
+          }
+          else if (gui->theme == THEME_RED){
+            bg_color.r = 150;
+            bg_color.g = 100;
+            bg_color.b = 100;
+          }
+          else if (gui->theme == THEME_BLUE){
+            bg_color.r = 240;
+            bg_color.g = 240;
+            bg_color.b = 200;
+          }
+          else if (gui->theme == THEME_DARK){
+            bg_color.r = 50;
+            bg_color.g = 50;
+            bg_color.b = 50;
+          }
+          else if (gui->theme == THEME_GREEN){
+            bg_color.r = 100;
+            bg_color.g = 100;
+            bg_color.b = 100;
+          }
+          else if (gui->theme == THEME_BROWN){
+            bg_color.r = 100;
+            bg_color.g = 120;
+            bg_color.b = 100;
+          }
+          else if (gui->theme == THEME_PURPLE){
+            bg_color.r = 100;
+            bg_color.g = 80;
+            bg_color.b = 100;
+          }
+          else if (gui->theme == THEME_DRACULA){
+            bg_color.r = 40;
+            bg_color.g = 42;
+            bg_color.b = 54;
+          }
+          else if (gui->theme == THEME_DEFAULT){
+            bg_color.r = 100;
+            bg_color.g = 100;
+            bg_color.b = 100;
+          }
+          
+          set_style(gui, gui->theme);
+          prev_theme = gui->theme;
+          
+          char str[30];
+          snprintf(str, 29, "{ r=%d, g=%d, b=%d }", bg_color.r, bg_color.g, bg_color.b);
+          if (gui_change_var2 (gui, cfg_scr.T, (char*) "background", str)){
+            
+            gui->background.r = bg_color.r;
+            gui->background.g = bg_color.g;
+            gui->background.b = bg_color.b;
+          }
+				}
+        else {
+          gui->theme = prev_theme;
+        }
+      }
+      
+      /* cursors */
+      nk_layout_row_dynamic(gui->ctx, 5, 1);
+			//nk_layout_row_dynamic(gui->ctx, 20, 1);
+      nk_layout_row(gui->ctx, NK_DYNAMIC, 25, 3, (float[]){0.3, 0.4, 0.3});
+			nk_label(gui->ctx, _l("Cursor:"), NK_TEXT_LEFT);
+      static char cursors_nm[4][DXF_MAX_CHARS + 1];
+      strncpy(cursors_nm[0], _l("Cross"), DXF_MAX_CHARS);
+      strncpy(cursors_nm[1], _l("Square"), DXF_MAX_CHARS);
+      strncpy(cursors_nm[2], _l("X"), DXF_MAX_CHARS);
+      strncpy(cursors_nm[3], _l("Circle"), DXF_MAX_CHARS);
+      
+      char *cursors[4];
+      
+      for (i = 0; i < 4; i++){
+        cursors[i] = cursors_nm[i];
+      }
+      
+      gui->cursor = nk_combo(gui->ctx, (const char **) cursors, 4, gui->cursor, 20, nk_vec2(200,200));
+      
+      if (gui->cursor != prev_cursor){
+        static const char *cursors_std[] = {"cross", "square", "x", "circle"};
+        if (gui_change_var (gui, cfg_scr.T, (char*) "cursor", (char*) cursors_std[gui->cursor])){
+          prev_cursor = gui->cursor;
+        }
+        else {
+          gui->cursor = prev_cursor;
+        }
+      }
+      
+      /* background color */
+      nk_layout_row_dynamic(gui->ctx, 5, 1);
+			//nk_layout_row_dynamic(gui->ctx, 25, 3);
+      nk_layout_row(gui->ctx, NK_DYNAMIC, 25, 3, (float[]){0.4, 0.3, 0.3});
+			nk_label(gui->ctx, _l("Background Color:"), NK_TEXT_LEFT);
+      
+      if (nk_combo_begin_color(gui->ctx, bg_color, nk_vec2(400,120))) {
+        //nk_layout_row_dynamic(gui->ctx, 130, 2);
+        nk_layout_row(gui->ctx, NK_DYNAMIC, 90, 2, (float[]){0.6, 0.4});
+
+        if (nk_group_begin(gui->ctx, "col_pick", NK_WINDOW_NO_SCROLLBAR)) {
+          nk_layout_row_dynamic(gui->ctx, 18, 1);
+          nk_button_color(gui->ctx, bg_color);
+          
+          
+          nk_layout_row_dynamic(gui->ctx, 5, 1);
+          nk_layout_row_dynamic(gui->ctx, 18, 2);
+          
+          bg_color.r = nk_propertyi(gui->ctx, "#R:", 0, bg_color.r, 255, 1, 1.0);
+          bg_color.g = nk_propertyi(gui->ctx, "#G:", 0, bg_color.g, 255, 1, 1.0);
+          bg_color.b = nk_propertyi(gui->ctx, "#B:", 0, bg_color.b, 255, 1, 1.0);
+          bg_color.a = nk_propertyi(gui->ctx, "#A:", 0, bg_color.a, 255, 1, 1.0);
+          
+          nk_group_end(gui->ctx);
+        }
+        
+        bg_color = nk_rgb_cf(nk_color_picker(gui->ctx, nk_color_cf(bg_color), NK_RGBA));
+        
+        
+        nk_combo_end(gui->ctx);
+      }
+      
+      if (nk_button_label(gui->ctx, _l("Modify"))){
+        char str[30];
+        snprintf(str, 29, "{ r=%d, g=%d, b=%d }", bg_color.r, bg_color.g, bg_color.b);
+        if (gui_change_var2 (gui, cfg_scr.T, (char*) "background", str)){
+          
+          gui->background.r = bg_color.r;
+          gui->background.g = bg_color.g;
+          gui->background.b = bg_color.b;
+        }
+        
+      }
+      
+      /* hilite color */
+			//nk_layout_row_dynamic(gui->ctx, 25, 3);
+      nk_layout_row(gui->ctx, NK_DYNAMIC, 25, 3, (float[]){0.4, 0.3, 0.3});
+			nk_label(gui->ctx, _l("Hilite Color:"), NK_TEXT_LEFT);
+      
+      if (nk_combo_begin_color(gui->ctx, hi_color, nk_vec2(400,120))) {
+        //nk_layout_row_dynamic(gui->ctx, 130, 2);
+        nk_layout_row(gui->ctx, NK_DYNAMIC, 90, 2, (float[]){0.6, 0.4});
+
+        if (nk_group_begin(gui->ctx, "col_pick2", NK_WINDOW_NO_SCROLLBAR)) {
+          nk_layout_row_dynamic(gui->ctx, 18, 1);
+          nk_button_color(gui->ctx, hi_color);
+          
+          
+          nk_layout_row_dynamic(gui->ctx, 5, 1);
+          nk_layout_row_dynamic(gui->ctx, 18, 2);
+          
+          hi_color.r = nk_propertyi(gui->ctx, "#R:", 0, hi_color.r, 255, 1, 1.0);
+          hi_color.g = nk_propertyi(gui->ctx, "#G:", 0, hi_color.g, 255, 1, 1.0);
+          hi_color.b = nk_propertyi(gui->ctx, "#B:", 0, hi_color.b, 255, 1, 1.0);
+          hi_color.a = nk_propertyi(gui->ctx, "#A:", 0, hi_color.a, 255, 1, 1.0);
+          
+          nk_group_end(gui->ctx);
+        }
+        
+        hi_color = nk_rgb_cf(nk_color_picker(gui->ctx, nk_color_cf(hi_color), NK_RGBA));
+        
+        
+        nk_combo_end(gui->ctx);
+      }
+      
+      if (nk_button_label(gui->ctx, _l("Modify"))){
+        char str[30];
+        snprintf(str, 29, "{ r=%d, g=%d, b=%d }", hi_color.r, hi_color.g, hi_color.b);
+        if (gui_change_var2 (gui, cfg_scr.T, (char*) "hilite", str)){
+          
+          gui->hilite.r = hi_color.r;
+          gui->hilite.g = hi_color.g;
+          gui->hilite.b = hi_color.b;
+        }
+        
+      }
+      
 		}
 		else if(cfg_grp == GRP_INFO){
 			nk_layout_row_dynamic(gui->ctx, 60, 1);
@@ -854,6 +1149,7 @@ int config_win (gui_obj *gui){
 			if (nk_button_label(gui->ctx, _l("Open Info Window"))){
 				gui->show_info = 1;
 			}
+      
 			
 		}
 		else if(cfg_grp == GRP_3D){
@@ -977,13 +1273,13 @@ int config_win (gui_obj *gui){
 		}
 	} else {
     show_config = 0;
-    if (lang_scr.L) {
-			lua_close(lang_scr.L);
-			lang_scr.L = NULL;
+    if (cfg_scr.L) {
+			lua_close(cfg_scr.L);
+			cfg_scr.L = NULL;
 		}
-    lang_scr.T = NULL;
-    lang_scr.active = 0;
-    lang_scr.dynamic = 0;
+    cfg_scr.T = NULL;
+    cfg_scr.active = 0;
+    cfg_scr.dynamic = 0;
     init = 0;
   }
 	nk_end(gui->ctx);

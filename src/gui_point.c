@@ -14,8 +14,11 @@ int gui_point_info (gui_obj *gui){
 	/* temp entity */
 	new_el = (dxf_node *) dxf_new_point (
 		gui->step_x[gui->step], gui->step_y[gui->step], 0.0,
-		gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+		gui->color_idx, /* color, layer */
+    (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+		/* line type, line weight */
+    (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+    dxf_lw[gui->lw_idx],
 		0, FRAME_LIFE); /* paper space */
 	new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , FRAME_LIFE);
 	gui->element = new_el;
@@ -26,8 +29,11 @@ int gui_point_info (gui_obj *gui){
 		/* create a new DXF point */
 		new_el = (dxf_node *) dxf_new_point (
 			gui->step_x[gui->step], gui->step_y[gui->step], 0.0,
-			gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-			gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+			gui->color_idx, /* color, layer */
+      (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+			/* line type, line weight */
+      (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+      dxf_lw[gui->lw_idx],
 			0, DWG_LIFE); /* paper space */
 		new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , DWG_LIFE);
 		

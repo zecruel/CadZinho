@@ -14,8 +14,11 @@ int gui_rect_interactive(gui_obj *gui){
 				new_el = (dxf_node *) dxf_new_lwpolyline (
 					gui->step_x[gui->step], gui->step_y[gui->step], 0.0, /* pt1, */
 					0.0,  /* bulge, */
-					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+					gui->color_idx, /* color, layer */
+          (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+					/* line type, line weight */
+          (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+          dxf_lw[gui->lw_idx],
 					0, DWG_LIFE); /* paper space */
 				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, 0.0, DWG_LIFE);
 				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, 0.0, DWG_LIFE);
@@ -53,8 +56,10 @@ int gui_rect_interactive(gui_obj *gui){
 				dxf_attr_change_i(new_el, 10, (void *) &gui->step_x[gui->step], 2);
 				dxf_attr_change_i(new_el, 20, (void *) &gui->step_y[gui->step], 2);
 				dxf_attr_change_i(new_el, 20, (void *) &gui->step_y[gui->step], 3);
-				dxf_attr_change(new_el, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
-				dxf_attr_change(new_el, 8, gui->drawing->layers[gui->layer_idx].name);
+				dxf_attr_change(new_el, 6,
+          (void *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name));
+				dxf_attr_change(new_el, 8,
+          (void *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name));
 				dxf_attr_change(new_el, 370, &dxf_lw[gui->lw_idx]);
 				dxf_attr_change(new_el, 62, &gui->color_idx);
 				

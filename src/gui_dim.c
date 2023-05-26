@@ -26,6 +26,8 @@ int gui_dim_linear_info (gui_obj *gui){
 	static int fix_dist = 0;
 	static int custom_text = 0;
 	static char user_text[DXF_MAX_CHARS+1] = "<>";
+  
+  gui->phanton = NULL;
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, _l("Place a Linear Dim"), NK_TEXT_LEFT);
@@ -45,16 +47,20 @@ int gui_dim_linear_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		
 		dxf_node *dsty, *dsty_nm, *next = NULL;
+    
+    char *name = NULL;
 		/* sweep DIMSTYLE table */
 		dsty = dxf_find_obj_nxt(gui->drawing->t_dimst, &next, "DIMSTYLE");
 		while (dsty){
 			/* get name of current dimstyle */
 			dsty_nm = dxf_find_attr2(dsty, 2);
-			if (dsty_nm){
+      name = NULL;
+      if (dsty_nm) name = (char *) strpool_cstr2( &name_pool, dsty_nm->value.str);
+			if (name){
 				/* dimstyle name */
-				if (nk_button_label(gui->ctx, dsty_nm->value.s_data)){
+        if (nk_button_label(gui->ctx, name)){
 					/* select current dimstyle */
-					strncpy(sty_name, dsty_nm->value.s_data, DXF_MAX_CHARS);
+          strncpy(sty_name, name, DXF_MAX_CHARS);
 					
 					nk_combo_close(gui->ctx);
 					break;
@@ -104,14 +110,16 @@ int gui_dim_linear_info (gui_obj *gui){
 	} 
 	else {
 		dxf_dimsty dim_sty;
-		strncpy(dim_sty.name, sty_name, DXF_MAX_CHARS);
+    dim_sty.name = strpool_inject( &name_pool, (char const*) sty_name, strlen(sty_name) );
 		/*init drawing style */
 		dxf_dim_get_sty(gui->drawing, &dim_sty);
 		
 		char tmp_str[DXF_MAX_CHARS + 1];
 		/* create a temporary DIMENSION entity */
-		dxf_node *new_dim = dxf_new_dim (gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-			gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+		dxf_node *new_dim = dxf_new_dim (gui->color_idx, /* color */
+      (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name), /* layer */
+			(char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name), /* line type */
+      dxf_lw[gui->lw_idx], /* line weight */
 			0, FRAME_LIFE); /* paper space */
 		
 		/* dimension angle */
@@ -125,7 +133,8 @@ int gui_dim_linear_info (gui_obj *gui){
 		double length = cosine*(gui->step_x[1]  - gui->step_x[0]) + sine*(gui->step_y[1] - gui->step_y[0]);
 		
 		/* update dimension entity parameters */
-		dxf_attr_change(new_dim, 3, dim_sty.name);
+		dxf_attr_change(new_dim, 3,
+      (void *) strpool_cstr2( &name_pool, dim_sty.name)); 
 		dxf_attr_change(new_dim, 13, &gui->step_x[0]);
 		dxf_attr_change(new_dim, 23, &gui->step_y[0]);
 		dxf_attr_change(new_dim, 14, &gui->step_x[1]);
@@ -219,6 +228,8 @@ int gui_dim_angular_info (gui_obj *gui){
 	static int fix_dist = 0;
 	static int custom_text = 0;
 	static char user_text[DXF_MAX_CHARS+1] = "<>";
+  
+  gui->phanton = NULL;
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, _l("Place a Angular Dim"), NK_TEXT_LEFT);
@@ -238,16 +249,20 @@ int gui_dim_angular_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		
 		dxf_node *dsty, *dsty_nm, *next = NULL;
+    
+    char *name = NULL;
 		/* sweep DIMSTYLE table */
 		dsty = dxf_find_obj_nxt(gui->drawing->t_dimst, &next, "DIMSTYLE");
 		while (dsty){
 			/* get name of current dimstyle */
 			dsty_nm = dxf_find_attr2(dsty, 2);
-			if (dsty_nm){
+      name = NULL;
+      if (dsty_nm) name = (char *) strpool_cstr2( &name_pool, dsty_nm->value.str);
+			if (name){
 				/* dimstyle name */
-				if (nk_button_label(gui->ctx, dsty_nm->value.s_data)){
+        if (nk_button_label(gui->ctx, name)){
 					/* select current dimstyle */
-					strncpy(sty_name, dsty_nm->value.s_data, DXF_MAX_CHARS);
+          strncpy(sty_name, name, DXF_MAX_CHARS);
 					
 					nk_combo_close(gui->ctx);
 					break;
@@ -322,17 +337,20 @@ int gui_dim_angular_info (gui_obj *gui){
 	} 
 	else {
 		dxf_dimsty dim_sty;
-		strncpy(dim_sty.name, sty_name, DXF_MAX_CHARS);
+    dim_sty.name = strpool_inject( &name_pool, (char const*) sty_name, strlen(sty_name) );
 		/*init drawing style */
 		dxf_dim_get_sty(gui->drawing, &dim_sty);
 		char tmp_str[DXF_MAX_CHARS + 1];
 		
 		/* create a temporary DIMENSION entity */
-		dxf_node *new_dim = dxf_new_dim_angular (gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-			gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+		dxf_node *new_dim = dxf_new_dim_angular (gui->color_idx, /* color */
+      (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name), /* layer */
+			(char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name), /* line type */
+      dxf_lw[gui->lw_idx], /* line weight */
 			0, FRAME_LIFE); /* paper space */
 		
-		dxf_attr_change(new_dim, 3, dim_sty.name);
+		dxf_attr_change(new_dim, 3,
+      (void *) strpool_cstr2( &name_pool, dim_sty.name)); 
 		
 		/* dimension angle */
 		double start = atan2((gui->step_y[1] - gui->step_y[0]), (gui->step_x[1] - gui->step_x[0])); /* calculed from points */
@@ -466,6 +484,8 @@ int gui_dim_radial_info (gui_obj *gui){
 	static int custom_text = 0;
 	static char user_text[DXF_MAX_CHARS+1] = "<>";
 	static int diametric = 0;
+  
+  gui->phanton = NULL;
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, _l("Place a Dimension:"), NK_TEXT_LEFT);
@@ -493,16 +513,20 @@ int gui_dim_radial_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		
 		dxf_node *dsty, *dsty_nm, *next = NULL;
+    
+    char *name = NULL;
 		/* sweep DIMSTYLE table */
 		dsty = dxf_find_obj_nxt(gui->drawing->t_dimst, &next, "DIMSTYLE");
 		while (dsty){
 			/* get name of current dimstyle */
 			dsty_nm = dxf_find_attr2(dsty, 2);
-			if (dsty_nm){
+      name = NULL;
+      if (dsty_nm) name = (char *) strpool_cstr2( &name_pool, dsty_nm->value.str);
+			if (name){
 				/* dimstyle name */
-				if (nk_button_label(gui->ctx, dsty_nm->value.s_data)){
+        if (nk_button_label(gui->ctx, name)){
 					/* select current dimstyle */
-					strncpy(sty_name, dsty_nm->value.s_data, DXF_MAX_CHARS);
+          strncpy(sty_name, name, DXF_MAX_CHARS);
 					
 					nk_combo_close(gui->ctx);
 					break;
@@ -547,15 +571,17 @@ int gui_dim_radial_info (gui_obj *gui){
 	} 
 	else {
 		dxf_dimsty dim_sty;
-		strncpy(dim_sty.name, sty_name, DXF_MAX_CHARS);
+    dim_sty.name = strpool_inject( &name_pool, (char const*) sty_name, strlen(sty_name) );
 		/*init drawing style */
 		dxf_dim_get_sty(gui->drawing, &dim_sty);
 		char tmp_str[DXF_MAX_CHARS + 1];
 		
 		/* create a temporary DIMENSION entity */
 		dxf_node *new_dim = dxf_new_dim_radial (diametric, 
-			gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-			gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+			gui->color_idx, /* color */
+      (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name), /* layer */
+			(char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name), /* line type */
+      dxf_lw[gui->lw_idx], /* line weight */
 			0, FRAME_LIFE); /* paper space */
 		
 		/* calcule dimension annotation (text) placement */
@@ -576,7 +602,8 @@ int gui_dim_radial_info (gui_obj *gui){
 		double length = sqrt(pow(gui->step_x[1]  - gui->step_x[0], 2) + pow(gui->step_y[1] - gui->step_y[0], 2));
 		
 		/* update dimension entity parameters */
-		dxf_attr_change(new_dim, 3, dim_sty.name);
+		dxf_attr_change(new_dim, 3,
+      (void *) strpool_cstr2( &name_pool, dim_sty.name)); 
 		dxf_attr_change(new_dim, 10, &gui->step_x[0]);
 		dxf_attr_change(new_dim, 20, &gui->step_y[0]);
 		dxf_attr_change(new_dim, 11, &base_x);
@@ -663,6 +690,8 @@ int gui_dim_ordinate_info (gui_obj *gui){
 	static double start = 0.0, ext = 0.0;
 	double x, y;
 	
+  gui->phanton = NULL;
+  
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, _l("Place a Ordinate Dim"), NK_TEXT_LEFT);
 	
@@ -681,19 +710,20 @@ int gui_dim_ordinate_info (gui_obj *gui){
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		
 		dxf_node *dsty, *dsty_nm, *next = NULL;
+    
+    char *name = NULL;
 		/* sweep DIMSTYLE table */
 		dsty = dxf_find_obj_nxt(gui->drawing->t_dimst, &next, "DIMSTYLE");
 		while (dsty){
 			/* get name of current dimstyle */
 			dsty_nm = dxf_find_attr2(dsty, 2);
-			if (dsty_nm){
+      name = NULL;
+      if (dsty_nm) name = (char *) strpool_cstr2( &name_pool, dsty_nm->value.str);
+			if (name){
 				/* dimstyle name */
-				if (nk_button_label(gui->ctx, dsty_nm->value.s_data)){
+        if (nk_button_label(gui->ctx, name)){
 					/* select current dimstyle */
-					strncpy(sty_name, dsty_nm->value.s_data, DXF_MAX_CHARS);
-					
-					/* go to first step, if user change the style */
-					gui_first_step(gui);
+          strncpy(sty_name, name, DXF_MAX_CHARS);
 					
 					nk_combo_close(gui->ctx);
 					break;
@@ -750,7 +780,7 @@ int gui_dim_ordinate_info (gui_obj *gui){
 	} 
 	else {
 		dxf_dimsty dim_sty;
-		strncpy(dim_sty.name, sty_name, DXF_MAX_CHARS);
+    dim_sty.name = strpool_inject( &name_pool, (char const*) sty_name, strlen(sty_name) );
 		/*init drawing style */
 		dxf_dim_get_sty(gui->drawing, &dim_sty);
 		
@@ -760,9 +790,11 @@ int gui_dim_ordinate_info (gui_obj *gui){
 		char tmp_str[DXF_MAX_CHARS + 1];
 		
 		/* create a temporary DIMENSION entity */
-		dxf_node *new_dim = dxf_new_dim_ordinate (gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-				gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
-				0, FRAME_LIFE); /* paper space */
+		dxf_node *new_dim = dxf_new_dim_ordinate (gui->color_idx, /* color */
+      (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name), /* layer */
+			(char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name), /* line type */
+      dxf_lw[gui->lw_idx], /* line weight */
+			0, FRAME_LIFE); /* paper space */
 		
 		double dir = (((x_dir) ? gui->step_y[1] - gui->step_y[0] : gui->step_x[1] - gui->step_x[0]) > 0.0) ? 1.0 : -1.0;
 		double cosine = (x_dir) ? 1.0 : 0.0;
@@ -776,7 +808,8 @@ int gui_dim_ordinate_info (gui_obj *gui){
 		length = cosine*(gui->step_x[2]  - start) + sine*(gui->step_y[2] - start);
 		
 		/* update dimension entity parameters */
-		dxf_attr_change(new_dim, 3, dim_sty.name);
+		dxf_attr_change(new_dim, 3,
+      (void *) strpool_cstr2( &name_pool, dim_sty.name)); 
 		dxf_attr_change(new_dim, 10, &gui->step_x[0]);
 		dxf_attr_change(new_dim, 20, &gui->step_y[0]);
 		dxf_attr_change(new_dim, 13, &gui->step_x[2]);
@@ -911,7 +944,8 @@ int gui_dim_mng (gui_obj *gui){
 						sel_type = &gui->b_icon_unsel;
 						if (dsty_i == i) sel_type = &gui->b_icon_sel;
 						/* dimstyle name */
-						if (nk_button_label_styled(gui->ctx, sel_type, dsty_nm->value.s_data)){
+						if (nk_button_label_styled(gui->ctx, sel_type,
+              (void *) strpool_cstr2( &name_pool, dsty_nm->value.str))){ 
 							/* select current dimstyle */
 							dsty_i = i;
 						}
@@ -971,23 +1005,21 @@ int gui_dim_mng (gui_obj *gui){
 				dsty = dxf_find_obj_i(gui->drawing->t_dimst, "DIMSTYLE", dsty_i);
 			if (dsty){
 				dxf_dimsty dim_sty;
-				dim_sty.name[0] = 0;
 				dxf_node *dsty_nm = dxf_find_attr2(dsty, 2);
 				if (dsty_nm){
-					strncpy(dim_sty.name, dsty_nm->value.s_data, DXF_MAX_CHARS);
+          dim_sty.name = dsty_nm->value.str;
 				}
 				
 				dxf_dim_get_sty(gui->drawing, &dim_sty);
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
-				nk_label_colored(gui->ctx, dim_sty.name, NK_TEXT_CENTERED, nk_rgb(255,255,0));
+				nk_label_colored(gui->ctx, strpool_cstr2( &name_pool, dim_sty.name),
+          NK_TEXT_CENTERED, nk_rgb(255,255,0));
 				/* edit global dim scale */
 				nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.6, 0.4});
 				nk_label(gui->ctx, _l("Global Scale"), NK_TEXT_LEFT);
 				res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, dimscale_str, 63, nk_filter_float);
-				if (!(res & NK_EDIT_ACTIVE)){
-					snprintf(dimscale_str, 63, "%.9g", dim_sty.scale);
-				}
+				
 				if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 					nk_edit_unfocus(gui->ctx);
 					if (strlen(dimscale_str)) /* update parameter value */
@@ -997,13 +1029,14 @@ int gui_dim_mng (gui_obj *gui){
 					/* update in DXF main struct */
 					dxf_dim_update_sty(gui->drawing, &dim_sty);
 				}
+        else if (!(res & NK_EDIT_ACTIVE)){
+					snprintf(dimscale_str, 63, "%.9g", dim_sty.scale);
+				}
 				
 				/* edit measure dim scale */
 				nk_label(gui->ctx, _l("Meas. Factor"), NK_TEXT_LEFT);
 				res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, dimlfac_str, 63, nk_filter_float);
-				if (!(res & NK_EDIT_ACTIVE)){
-					snprintf(dimlfac_str, 63, "%.9g", dim_sty.an_scale);
-				}
+				
 				if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 					nk_edit_unfocus(gui->ctx);
 					if (strlen(dimlfac_str)) /* update parameter value */
@@ -1012,14 +1045,15 @@ int gui_dim_mng (gui_obj *gui){
 					/* update in DXF main struct */
 					dxf_dim_update_sty(gui->drawing, &dim_sty);
 				}
+        else if (!(res & NK_EDIT_ACTIVE)){
+					snprintf(dimlfac_str, 63, "%.9g", dim_sty.an_scale);
+				}
 				
 				/* edit decimal places (precision) */
 				//nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.6, 0.4});
 				nk_label(gui->ctx, _l("Dec. places"), NK_TEXT_LEFT);
 				res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, dimdec_str, 63, nk_filter_decimal);
-				if (!(res & NK_EDIT_ACTIVE)){
-					snprintf(dimdec_str, 63, "%d", dim_sty.dec);
-				}
+				
 				if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 					nk_edit_unfocus(gui->ctx);
 					if (strlen(dimdec_str)) /* update parameter value */
@@ -1028,18 +1062,22 @@ int gui_dim_mng (gui_obj *gui){
 					/* update in DXF main struct */
 					dxf_dim_update_sty(gui->drawing, &dim_sty);
 				}
+        else if (!(res & NK_EDIT_ACTIVE)){
+					snprintf(dimdec_str, 63, "%d", dim_sty.dec);
+				}
 				
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				nk_label(gui->ctx, _l("Annotation text:"), NK_TEXT_LEFT);
 				res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, dimpost_str, DXF_MAX_CHARS, nk_filter_default);
-				if (!(res & NK_EDIT_ACTIVE)){
-					strncpy(dimpost_str, dim_sty.post, DXF_MAX_CHARS);
-				}
+				
 				if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 					nk_edit_unfocus(gui->ctx);
 					strncpy(dim_sty.post, dimpost_str, DXF_MAX_CHARS);
 					/* update in DXF main struct */
 					dxf_dim_update_sty(gui->drawing, &dim_sty);
+				}
+        else if (!(res & NK_EDIT_ACTIVE)){
+					strncpy(dimpost_str, dim_sty.post, DXF_MAX_CHARS);
 				}
 				
 				nk_label(gui->ctx, _l("Annotation text style:"), NK_TEXT_LEFT);
@@ -1047,8 +1085,9 @@ int gui_dim_mng (gui_obj *gui){
 				int num_tstyles = gui->drawing->num_tstyles;
 				dxf_tstyle *t_sty = gui->drawing->text_styles;
 				if (dim_sty.tstyle >= 0)
-					strncpy(sty_name, t_sty[dim_sty.tstyle].name, DXF_MAX_CHARS); /* select current style */
-				
+					strncpy(sty_name,  /* select current style */
+            strpool_cstr2( &name_pool, t_sty[dim_sty.tstyle].name),
+            DXF_MAX_CHARS);
 				/* text style combo selection */
 				int h = num_tstyles * 25 + 5;
 				h = (h < 200)? h : 200;
@@ -1056,7 +1095,9 @@ int gui_dim_mng (gui_obj *gui){
 					nk_layout_row_dynamic(gui->ctx, 20, 1);
 					int j = 0;
 					for (j = 0; j < num_tstyles; j++){
-						if (nk_button_label(gui->ctx, t_sty[j].name)){
+            if (!t_sty[j].name) continue; /* show only the named styles */
+						if (nk_button_label(gui->ctx,
+              strpool_cstr2( &name_pool, t_sty[j].name))){
 							dim_sty.tstyle = j;
 							
 							/* update in DXF main struct */
@@ -1093,9 +1134,7 @@ int gui_dim_mng (gui_obj *gui){
 					nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){0.6, 0.4});
 					nk_label(gui->ctx, _l("Term. size"), NK_TEXT_LEFT);
 					res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, dimasz_str, 63, nk_filter_float);
-					if (!(res & NK_EDIT_ACTIVE)){
-						snprintf(dimasz_str, 63, "%.9g", dim_sty.a_size);
-					}
+					
 					if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 						nk_edit_unfocus(gui->ctx);
 						if (strlen(dimasz_str)) /* update parameter value */
@@ -1105,13 +1144,14 @@ int gui_dim_mng (gui_obj *gui){
 						/* update in DXF main struct */
 						dxf_dim_update_sty(gui->drawing, &dim_sty);
 					}
-					
+					else if (!(res & NK_EDIT_ACTIVE)){
+						snprintf(dimasz_str, 63, "%.9g", dim_sty.a_size);
+					}
+          
 					/* extension line offset */
 					nk_label(gui->ctx, _l("Offset"), NK_TEXT_LEFT);
 					res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, dimexo_str, 63, nk_filter_float);
-					if (!(res & NK_EDIT_ACTIVE)){
-						snprintf(dimexo_str, 63, "%.9g", dim_sty.ext_ofs);
-					}
+					
 					if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 						nk_edit_unfocus(gui->ctx);
 						if (strlen(dimexo_str)) /* update parameter value */
@@ -1121,13 +1161,14 @@ int gui_dim_mng (gui_obj *gui){
 						/* update in DXF main struct */
 						dxf_dim_update_sty(gui->drawing, &dim_sty);
 					}
+          else if (!(res & NK_EDIT_ACTIVE)){
+						snprintf(dimexo_str, 63, "%.9g", dim_sty.ext_ofs);
+					}
 					
 					/* extension line extend */
 					nk_label(gui->ctx, _l("Extension"), NK_TEXT_LEFT);
 					res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, dimexe_str, 63, nk_filter_float);
-					if (!(res & NK_EDIT_ACTIVE)){
-						snprintf(dimexe_str, 63, "%.9g", dim_sty.ext_e);
-					}
+					
 					if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 						nk_edit_unfocus(gui->ctx);
 						if (strlen(dimexe_str)) /* update parameter value */
@@ -1137,13 +1178,14 @@ int gui_dim_mng (gui_obj *gui){
 						/* update in DXF main struct */
 						dxf_dim_update_sty(gui->drawing, &dim_sty);
 					}
+          else if (!(res & NK_EDIT_ACTIVE)){
+						snprintf(dimexe_str, 63, "%.9g", dim_sty.ext_e);
+					}
 					
 					/* text size */
 					nk_label(gui->ctx, _l("Text size"), NK_TEXT_LEFT);
 					res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, dimtxt_str, 63, nk_filter_float);
-					if (!(res & NK_EDIT_ACTIVE)){
-						snprintf(dimtxt_str, 63, "%.9g", dim_sty.txt_size);
-					}
+					
 					if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 						nk_edit_unfocus(gui->ctx);
 						if (strlen(dimtxt_str)) /* update parameter value */
@@ -1153,13 +1195,14 @@ int gui_dim_mng (gui_obj *gui){
 						/* update in DXF main struct */
 						dxf_dim_update_sty(gui->drawing, &dim_sty);
 					}
+          else if (!(res & NK_EDIT_ACTIVE)){
+						snprintf(dimtxt_str, 63, "%.9g", dim_sty.txt_size);
+					}
 					
 					/* text gap */
 					nk_label(gui->ctx, _l("Text gap"), NK_TEXT_LEFT);
 					res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, dimgap_str, 63, nk_filter_float);
-					if (!(res & NK_EDIT_ACTIVE)){
-						snprintf(dimgap_str, 63, "%.9g", dim_sty.gap);
-					}
+					
 					if ((res & NK_EDIT_DEACTIVATED) || (res & NK_EDIT_COMMITED)){ /* probably, user change parameter string */
 						nk_edit_unfocus(gui->ctx);
 						if (strlen(dimgap_str)) /* update parameter value */
@@ -1168,6 +1211,9 @@ int gui_dim_mng (gui_obj *gui){
 						
 						/* update in DXF main struct */
 						dxf_dim_update_sty(gui->drawing, &dim_sty);
+					}
+          else if (!(res & NK_EDIT_ACTIVE)){
+						snprintf(dimgap_str, 63, "%.9g", dim_sty.gap);
 					}
 				}
 			}
@@ -1186,7 +1232,7 @@ int gui_dim_mng (gui_obj *gui){
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				if (nk_button_label(gui->ctx, _l("OK"))){
 					dxf_dimsty dim_sty;
-					strncpy(dim_sty.name, new_name, DXF_MAX_CHARS);
+          dim_sty.name = strpool_inject( &name_pool, (char const*) new_name, strlen(new_name) );
 					if (dxf_dim_get_sty(gui->drawing, &dim_sty) != -1){
 						/* fail to  create, commonly name already exists */
 						snprintf(gui->log_msg, 63, _l("Error: DIMSTYLE already exists"));

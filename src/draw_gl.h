@@ -33,7 +33,7 @@
  #include "graph.h"
  
 #define MAX_TRIANG 100000
-#define MAX_TRIANG_2 99000
+#define MAX_TRIANG_2 99900
 #define MAX_SCAN_LINES 15000
 #define MAX_P_NODES 1000
 
@@ -84,6 +84,9 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[3], int p1[3], int thick);
 int draw_gl_quad (struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3]);
 
 int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int z, int w, int h);
+
+int draw_gl_rect_color (struct ogl *gl_ctx, int x, int y, int z, int w, int h,
+  GLubyte tl[4], GLubyte tr[4], GLubyte br[4], GLubyte bl[4]);
 
 int draw_gl_triang (struct ogl *gl_ctx, int p0[3], int p1[3], int p2[3]);
 

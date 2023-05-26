@@ -20,11 +20,11 @@ int txt_ent_find_i(dxf_node *ent, lua_State *L, char* pat, int *start, int *end,
 	luaL_buffinit(L, &b); /* init the Lua buffer */
 	for (i = 0; x = dxf_find_attr_i(ent, 3, i); i++){
 		/* first, get the additional text (MTEXT ent) */
-		luaL_addstring(&b, x->value.s_data);
+		luaL_addstring(&b, strpool_cstr2( &value_pool, x->value.str));
 	}
 	for (i = 0; x = dxf_find_attr_i(ent, 1, i); i++){
 		/* finally, get main text */
-		luaL_addstring(&b, x->value.s_data);
+		luaL_addstring(&b, strpool_cstr2( &value_pool, x->value.str));
 	}
 	luaL_pushresult(&b); /* finalize string and put on Lua stack */
 	
@@ -77,11 +77,11 @@ char * txt_ent_repl(dxf_node *ent, lua_State *L, char* pat, char* rpl){
 	luaL_buffinit(L, &b); /* init the Lua buffer */
 	for (i = 0; x = dxf_find_attr_i(ent, 3, i); i++){
 		/* first, get the additional text (MTEXT ent) */
-		luaL_addstring(&b, x->value.s_data);
+		luaL_addstring(&b, strpool_cstr2( &value_pool, x->value.str));
 	}
 	for (i = 0; x = dxf_find_attr_i(ent, 1, i); i++){
 		/* finally, get main text */
-		luaL_addstring(&b, x->value.s_data);
+		luaL_addstring(&b, strpool_cstr2( &value_pool, x->value.str));
 	}
 	luaL_pushresult(&b); /* finalize string and put on Lua stack */
 	
@@ -120,11 +120,11 @@ char * txt_ent_repl_i(dxf_node *ent, lua_State *L, char* pat, char* rpl, int idx
 	luaL_buffinit(L, &b); /* init the Lua buffer */
 	for (i = 0; x = dxf_find_attr_i(ent, 3, i); i++){
 		/* first, get the additional text (MTEXT ent) */
-		luaL_addstring(&b, x->value.s_data);
+		luaL_addstring(&b, strpool_cstr2( &value_pool, x->value.str));
 	}
 	for (i = 0; x = dxf_find_attr_i(ent, 1, i); i++){
 		/* finally, get main text */
-		luaL_addstring(&b, x->value.s_data);
+		luaL_addstring(&b, strpool_cstr2( &value_pool, x->value.str));
 	}
 	luaL_pushresult(&b); /* finalize string and put on Lua stack */
 	
@@ -214,7 +214,7 @@ int dwg_find (dxf_drawing *drawing, lua_State *L, char* pat, double rect[4], enu
 	*/
 	dxf_node *current = NULL, *first, *tmp = NULL;
 	found->ent = NULL;
-	int str_idx;
+	int str_idx, typ = DXF_NONE;
 	
 	/* verify structures */
 	if (!drawing || (drawing->ents == NULL) || (drawing->main_struct == NULL)){
@@ -247,13 +247,13 @@ int dwg_find (dxf_drawing *drawing, lua_State *L, char* pat, double rect[4], enu
 		}
 		
 		if (current->type == DXF_ENT){ /* look for DXF entity */
-			
+			typ = dxf_ident_ent_type(current);
 			/*verify if entity layer is on and thaw */
 			if ((!drawing->layers[current->obj.layer].off) && 
 				(!drawing->layers[current->obj.layer].frozen) ){
 				/* and if  is a compatible entity */
-				if ( ( (strcmp(current->obj.name, "TEXT") == 0) && (filter & DXF_TEXT) ) ||
-					( (strcmp(current->obj.name, "MTEXT") == 0) && (filter & DXF_MTEXT) ) )
+        if ((typ == DXF_TEXT && (filter & DXF_TEXT) ) ||
+          (typ == DXF_MTEXT && (filter & DXF_MTEXT) ) )
 				{
 					/* TEXT and MTEXT DXF entities */
 					if (found->ent) { /* prepare for next element */
@@ -276,7 +276,7 @@ int dwg_find (dxf_drawing *drawing, lua_State *L, char* pat, double rect[4], enu
 					}
 					
 				}
-				else if ( (strcmp(current->obj.name, "INSERT") == 0) && (filter & DXF_ATTRIB) ){
+        else if (typ == DXF_INSERT && (filter & DXF_ATTRIB) ){
 					/* ATTRIB DXF entities inside INSERTs*/
 					int num_attr = 0;
 					dxf_node *attr = NULL, *nxt_attr = NULL;
@@ -343,10 +343,12 @@ int ent_find (dxf_node *ent, lua_State *L, char* pat, enum dxf_graph filter){
 	if (ent->type != DXF_ENT) return 0;
 	int start = 0, end = 0, next = 1, ok = 0;
 	dxf_node *tmp = NULL;
+  
+  int typ = dxf_ident_ent_type(ent);
 	
 	/* and if  is a compatible entity */
-	if ( ( (strcmp(ent->obj.name, "TEXT") == 0) && (filter & DXF_TEXT) ) ||
-		( (strcmp(ent->obj.name, "MTEXT") == 0) && (filter & DXF_MTEXT) ) )
+  if ((typ == DXF_TEXT && (filter & DXF_TEXT) ) ||
+          (typ == DXF_MTEXT && (filter & DXF_MTEXT) ) )
 	{
 		/* TEXT and MTEXT DXF entities */
 		next = 1;
@@ -354,7 +356,7 @@ int ent_find (dxf_node *ent, lua_State *L, char* pat, enum dxf_graph filter){
 		ok =  txt_ent_find_i(ent, L, pat, &start, &end, &next);
 		
 	}
-	else if ( (strcmp(ent->obj.name, "INSERT") == 0) && (filter & DXF_ATTRIB) ){
+  else if (typ == DXF_INSERT && (filter & DXF_ATTRIB) ){
 		/* ATTRIB DXF entities inside INSERTs*/
 		dxf_node *attr = NULL, *nxt_attr = NULL;
 		int num_attr = 0;
@@ -390,9 +392,8 @@ int ent_replace (dxf_node * ent, lua_State *L, char * search, char * repl, int s
 	if (!L) return 0;
 	if (ent->type != DXF_ENT) return 0;
 	
-	if ( (strcmp(ent->obj.name, "TEXT") == 0)  ||
-		(strcmp(ent->obj.name, "MTEXT") == 0) )
-	{
+  int typ = dxf_ident_ent_type(ent);
+  if (typ == DXF_TEXT || typ == DXF_MTEXT){
 		/* TEXT and MTEXT DXF entities */
 		/* perform replace in string, according entire flag */
 		char *text = NULL;
@@ -400,16 +401,16 @@ int ent_replace (dxf_node * ent, lua_State *L, char * search, char * repl, int s
 		else text = txt_ent_repl_i(ent, L, search, repl, str_idx);
 		if (text){
 			/* replace the text  in entity */
-			if (strcmp(ent->obj.name, "MTEXT") == 0) 
+      if (typ == DXF_MTEXT)
 				mtext_change_text (ent, text, strlen(text), ent->obj.pool);
-			else if (strcmp(ent->obj.name, "TEXT") == 0) {
+      else if (typ == DXF_TEXT){
 				dxf_attr_change(ent, 1, text);
 			}
 			
 			return 1;
 		}
 	}
-	else if (strcmp(ent->obj.name, "INSERT") == 0) {
+  else if (typ == DXF_INSERT){
 		/* ATTRIB DXF entities inside INSERTs*/
 		int num_attr = 0;
 		dxf_node *attr = NULL, *nxt_attr = NULL;
@@ -447,25 +448,26 @@ int ent_replace_all (dxf_node * ent, lua_State *L, char * search, char * repl, e
 	if (ent->type != DXF_ENT) return 0;
 	
 	int ok = 0;
+	int typ = dxf_ident_ent_type(ent);
 	
-	if ( ( (strcmp(ent->obj.name, "TEXT") == 0) && (filter & DXF_TEXT) ) ||
-		( (strcmp(ent->obj.name, "MTEXT") == 0) && (filter & DXF_MTEXT) ) )
+  if ((typ == DXF_TEXT && (filter & DXF_TEXT) ) ||
+      (typ == DXF_MTEXT && (filter & DXF_MTEXT) ) )
 	{
 		/* TEXT and MTEXT DXF entities */
 		/* perform replace in string */
 		char *text = txt_ent_repl(ent, L, search, repl);
 		if (text){
 			/* replace the text  in entity */
-			if (strcmp(ent->obj.name, "MTEXT") == 0) 
+      if (typ == DXF_MTEXT)
 				mtext_change_text (ent, text, strlen(text), DWG_LIFE);
-			else if (strcmp(ent->obj.name, "TEXT") == 0) {
+      else if (typ == DXF_TEXT){
 				dxf_attr_change(ent, 1, text);
 			}
 			
 			ok = 1;
 		}
 	}
-	else if ( (strcmp(ent->obj.name, "INSERT") == 0) && (filter & DXF_ATTRIB) ){
+  else if (typ == DXF_INSERT && (filter & DXF_ATTRIB) ){
 		/* ATTRIB DXF entities inside INSERTs*/
 		dxf_node *attr = NULL, *nxt_attr = NULL, *tmp = NULL;
 		

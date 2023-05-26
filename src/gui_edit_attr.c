@@ -97,7 +97,8 @@ int gui_ed_attr_info (gui_obj *gui){
 				if (new_ent){
 					/* get block name */
 					if(tmp = dxf_find_attr2(new_ent, 2))
-						strncpy (blk_name, tmp->value.s_data, DXF_MAX_CHARS);
+						strncpy (blk_name,
+              strpool_cstr2( &name_pool, tmp->value.str), DXF_MAX_CHARS);
 					/* find attibutes */
 					num_attr = 0;
 					while ((attr = dxf_find_obj_i(new_ent, "ATTRIB", num_attr)) && num_attr < 999){
@@ -107,9 +108,11 @@ int gui_ed_attr_info (gui_obj *gui){
 						value[num_attr][0] = 0;
 						hidden[num_attr] = 0;
 						if(tmp = dxf_find_attr2(attr, 2))
-							strncpy(tag[num_attr], tmp->value.s_data, DXF_MAX_CHARS);
+							strncpy(tag[num_attr],
+                strpool_cstr2( &name_pool, tmp->value.str), DXF_MAX_CHARS);
 						if(tmp = dxf_find_attr2(attr, 1))
-							strncpy(value[num_attr], tmp->value.s_data, DXF_MAX_CHARS);
+							strncpy(value[num_attr],
+                strpool_cstr2( &value_pool, tmp->value.str), DXF_MAX_CHARS);
 						if(tmp = dxf_find_attr2(attr, 70))
 							hidden[num_attr] = tmp->value.i_data & 1;
 						

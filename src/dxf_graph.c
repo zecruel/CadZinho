@@ -23,9 +23,7 @@ int dxf_ent_get_color(dxf_drawing *drawing, dxf_node * ent, int ins_color){
 		
 		if (abs(color) >= 256){ /* color is by layer */
 			if (layer_obj = dxf_find_attr2(ent, 8)){
-				char layer[DXF_MAX_CHARS];
-				strncpy(layer, layer_obj->value.s_data, DXF_MAX_CHARS);
-				str_upp(layer);
+        STRPOOL_U64 layer = layer_obj->value.str;
 				
 				/* find the layer index */
 				int lay_idx = dxf_lay_idx(drawing, layer);
@@ -54,33 +52,25 @@ int dxf_ent_get_ltype(dxf_drawing *drawing, dxf_node * ent, int ins_ltype){
 	if(!ent || !drawing) return -1;
 	
 	dxf_node *ltype_obj, *layer_obj;
-	char ltype_name[DXF_MAX_CHARS], *new_name;
+  STRPOOL_U64 ltype_name = 0;
 	
 	if (ltype_obj = dxf_find_attr2(ent, 6)){
-		strncpy(ltype_name, ltype_obj->value.s_data, DXF_MAX_CHARS);
-		
-		/* remove trailing spaces */
-		new_name = trimwhitespace(ltype_name);
-		/* change to upper case */
-		str_upp(new_name);
-		
-		if (strcmp(new_name, "BYBLOCK") == 0){
+		ltype_name = ltype_obj->value.str;
+    if (ltype_name == strpool_inject( &name_pool, "BYBLOCK", strlen("BYBLOCK") )){
 			ltype = ins_ltype;
 		}
-		else if (strcmp(new_name, "BYLAYER") == 0){
+    else if (ltype_name == strpool_inject( &name_pool, "BYLAYER", strlen("BYLAYER") )){
 			by_layer = 1;
 		}
 		else{
-			ltype = dxf_ltype_idx(drawing, new_name);
+			ltype = dxf_ltype_idx(drawing, ltype_name);
 		}
 		
 	} else by_layer = 1;
 	
 	if (by_layer){ /* ltype is by layer */
 		if (layer_obj = dxf_find_attr2(ent, 8)){
-			char layer[DXF_MAX_CHARS];
-			strncpy(layer, layer_obj->value.s_data, DXF_MAX_CHARS);
-			str_upp(layer);
+      STRPOOL_U64 layer = layer_obj->value.str;
 			
 			/* find the layer index */
 			int lay_idx = dxf_lay_idx(drawing, layer);
@@ -130,7 +120,8 @@ int change_ltype (dxf_drawing *drawing, graph_obj * graph, int ltype_idx, double
 			font = drawing->text_styles[drawing->ltypes[ltype_idx].dashes[i].sty_i].font;
 			double w;
 			graph->cmplx_pat[i] = list_new (NULL, graph->pool_idx);
-			font_parse_str(font, graph->cmplx_pat[i], graph->pool_idx, drawing->ltypes[ltype_idx].dashes[i].str, &w, 0);
+			font_parse_str(font, graph->cmplx_pat[i], graph->pool_idx,
+        (char*) strpool_cstr2( &value_pool, drawing->ltypes[ltype_idx].dashes[i].str), &w, 0);
 			
 			graph_list_modify(graph->cmplx_pat[i],
 				drawing->ltypes[ltype_idx].dashes[i].ofs_x * drawing->ltscale * scale,
@@ -180,7 +171,8 @@ int change_ltype2 (dxf_drawing *drawing, graph_obj * graph, dxf_ltype ltype, dou
 				font = drawing->text_styles[ltype.dashes[i].sty_i].font;
 				double w;
 				graph->cmplx_pat[i] = list_new (NULL, graph->pool_idx);
-				font_parse_str(font, graph->cmplx_pat[i], graph->pool_idx, ltype.dashes[i].str, &w, 0);
+				font_parse_str(font, graph->cmplx_pat[i], graph->pool_idx,
+          (char*) strpool_cstr2( &value_pool, ltype.dashes[i].str), &w, 0);
 				
 				graph_list_modify(graph->cmplx_pat[i],
 					ltype.dashes[i].ofs_x * drawing->ltscale * scale,
@@ -206,9 +198,7 @@ int dxf_ent_get_lw(dxf_drawing *drawing, dxf_node * ent, int ins_lw){
 		
 		if ((lw == -1) || (by_layer == 1)){ /* line weight is by layer */
 			if (layer_obj = dxf_find_attr2(ent, 8)){
-				char layer[DXF_MAX_CHARS];
-				strncpy(layer, layer_obj->value.s_data, DXF_MAX_CHARS);
-				str_upp(layer);
+        STRPOOL_U64 layer = layer_obj->value.str;
 				
 				/* find the layer index */
 				int lay_idx = dxf_lay_idx(drawing, layer);
@@ -242,7 +232,6 @@ graph_obj * dxf_line_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 		if (ent->type == DXF_ENT){
 			if (ent->obj.content){
 				current = ent->obj.content->next;
-				//printf("%s\n", ent->obj.name);
 			}
 		}
 		while (current){
@@ -276,7 +265,7 @@ graph_obj * dxf_line_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 						paper = current->value.i_data;
 						break;
 					case 101:
-						strcpy(tmp_str, current->value.s_data);
+            strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), 19);
 						str_upp(tmp_str);
 						char *tmp = trimwhitespace(tmp_str);
 						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -315,7 +304,6 @@ graph_obj * dxf_circle_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 		if (ent->type == DXF_ENT){
 			if (ent->obj.content){
 				current = ent->obj.content->next;
-				//printf("%s\n", ent->obj.name);
 			}
 		}
 		while (current){
@@ -353,7 +341,7 @@ graph_obj * dxf_circle_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 						extru_z = current->value.d_data;
 						break;
 					case 101:
-						strcpy(tmp_str, current->value.s_data);
+            strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), 19);
 						str_upp(tmp_str);
 						char *tmp = trimwhitespace(tmp_str);
 						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -399,7 +387,6 @@ graph_obj * dxf_arc_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int
 		if (ent->type == DXF_ENT){
 			if (ent->obj.content){
 				current = ent->obj.content->next;
-				//printf("%s\n", ent->obj.name);
 			}
 		}
 		while (current){
@@ -443,7 +430,7 @@ graph_obj * dxf_arc_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, int
 						extru_z = current->value.d_data;
 						break;
 					case 101:
-						strcpy(tmp_str, current->value.s_data);
+            strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), 19);
 						str_upp(tmp_str);
 						char *tmp = trimwhitespace(tmp_str);
 						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -567,7 +554,6 @@ graph_obj * dxf_ellipse_parse(dxf_drawing *drawing, dxf_node * ent, int p_space,
 		if (ent->type == DXF_ENT){
 			if (ent->obj.content){
 				current = ent->obj.content->next;
-				//printf("%s\n", ent->obj.name);
 			}
 		}
 		while (current){
@@ -620,7 +606,7 @@ graph_obj * dxf_ellipse_parse(dxf_drawing *drawing, dxf_node * ent, int p_space,
 						extru_z = current->value.d_data;
 						break;
 					case 101:
-						strcpy(tmp_str, current->value.s_data);
+            strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), 19);
 						str_upp(tmp_str);
 						char *tmp = trimwhitespace(tmp_str);
 						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -720,7 +706,7 @@ list_node * dxf_pline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 					extru_z = current->value.d_data;
 					break;
 				case 101:
-					strncpy(tmp_str, current->value.s_data, 20);
+          strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), 19);
 					str_upp(tmp_str);
 					char *tmp = trimwhitespace(tmp_str);
 					if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -993,7 +979,6 @@ graph_obj * dxf_lwpline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space,
 		if (ent->type == DXF_ENT){
 			if (ent->obj.content){
 				current = ent->obj.content->next;
-				//printf("%s\n", ent->obj.name);
 			}
 		}
 		while (current){
@@ -1043,7 +1028,7 @@ graph_obj * dxf_lwpline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space,
 						extru_z = current->value.d_data;
 						break;
 					case 101:
-						strcpy(tmp_str, current->value.s_data);
+            strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), 19);
 						str_upp(tmp_str);
 						char *tmp = trimwhitespace(tmp_str);
 						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -1058,7 +1043,6 @@ graph_obj * dxf_lwpline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space,
 				if((init != 0) &&(first == 0)){
 					first = 1;
 					
-					//printf("primeiro vertice\n");
 					last_x = curr_x;
 					last_y = pt1_y;
 					last_z = pt1_z;
@@ -1085,7 +1069,6 @@ graph_obj * dxf_lwpline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space,
 					}
 				}
 				else if((first != 0) && (curr_graph != NULL)){
-					//printf("(%0.2f, %0.2f)-(%0.2f, %0.2f)\n", prev_x, prev_y, curr_x, pt1_y);
 					if (prev_bulge == 0){
 						line_add(curr_graph, prev_x, prev_y, prev_z, curr_x, pt1_y, pt1_z);
 					}
@@ -1108,7 +1091,6 @@ graph_obj * dxf_lwpline_parse(dxf_drawing *drawing, dxf_node * ent, int p_space,
 		
 		/* last vertex */
 		if((first != 0) && (curr_graph != NULL)){
-			//printf("(%0.2f, %0.2f)-(%0.2f, %0.2f)\n", prev_x, prev_y, curr_x, pt1_y);
 			if (prev_bulge == 0){
 				line_add(curr_graph, prev_x, prev_y, prev_z, curr_x, pt1_y, pt1_z);
 			}
@@ -1458,7 +1440,10 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 		double t_pos_x, t_pos_y, t_center_x = 0, t_center_y = 0, t_base_x = 0, t_base_y = 0;
 		double t_scale_x = 1, t_scale_y = 1, txt_w, txt_h;
 		
-		char text[DXF_MAX_CHARS+1], t_style[DXF_MAX_CHARS+1];
+		char text[DXF_MAX_CHARS+1];
+    STRPOOL_U64 dflt = strpool_inject( &name_pool, "Standard", strlen("Standard") ); /* default style is "Standard" */
+    STRPOOL_U64 t_style = dflt;
+    
 		char tmp_str[DXF_MAX_CHARS+1];
 		char *pos_st, *pos_curr, *pos_tmp, special;
 		
@@ -1474,23 +1459,23 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 		
 		/* clear the strings */
 		text[0] = 0;
-		t_style[0] = 0;
 		tmp_str[0] = 0;
 		
 		if (ent->type == DXF_ENT){
 			if (ent->obj.content){
 				current = ent->obj.content->next;
-				//printf("%s\n", ent->obj.name);
 			}
 		}
 		while (current){
 			if (current->type == DXF_ATTR){ /* DXF attibute */
 				switch (current->value.group){
 					case 1:
-						strncpy(text, current->value.s_data, DXF_MAX_CHARS);
+						strncpy(text,
+              strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 						break;
 					case 7:
-						strncpy(t_style, current->value.s_data, DXF_MAX_CHARS);
+            t_style = current->value.str;
+            if (!t_style) t_style = dflt;
 						break;
 					case 10:
 						pt1_x = current->value.d_data;
@@ -1555,7 +1540,7 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 						extru_z = current->value.d_data;
 						break;
 					case 101:
-						strncpy(tmp_str, current->value.s_data, DXF_MAX_CHARS);
+            strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), 19);
 						str_upp(tmp_str);
 						char *tmp = trimwhitespace(tmp_str);
 						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -1569,16 +1554,11 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 		if ((((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))) && !hidden){
 			
 			/* find the tstyle index and font*/
-			if (strlen(t_style) > 0){
-				fnt_idx = dxf_tstyle_idx(drawing, t_style);
-				if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
-				else font = drawing->dflt_font;
-			}
-			else {
-				fnt_idx = dxf_tstyle_idx(drawing, "STANDARD");
-				if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
-				else font = drawing->dflt_font;
-			}
+			
+      fnt_idx = dxf_tstyle_idx(drawing, t_style, 0);
+      if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
+      else font = drawing->dflt_font;
+			
 			
 			if (!font) font = drawing->dflt_font;
 			
@@ -1778,7 +1758,6 @@ list_node * dxf_text_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, in
 				t_center_x = (t_scale_x*txt_w * txt_size/2);
 				//rot = atan2((pt2_y - pt1_y),(pt2_x - pt1_x)) * 180/M_PI;
 				
-				//printf("alinhamento=%d\n", t_alin_h);
 			}
 			if(t_alin_v >0){
 				if(t_alin_v != 1){
@@ -1834,9 +1813,12 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		double t_scale_x = 1, t_scale_y = 1, txt_w, txt_h;
 		double rect_w = 0.0;
 		
-		char text[DXF_MAX_CHARS+1], t_style[DXF_MAX_CHARS+1];
+		char text[DXF_MAX_CHARS+1];
+    STRPOOL_U64 dflt = strpool_inject( &name_pool, "Standard", strlen("Standard") ); /* default style is "Standard" */
+    STRPOOL_U64 t_style = dflt;
+    
 		char tmp_str[DXF_MAX_CHARS+1];
-		char layer[DXF_MAX_CHARS+1];
+    STRPOOL_U64 layer = 0;
 		char *pos_st, *pos_curr, *pos_tmp, special;
 		
 		int fnt_idx, i, paper = 0;
@@ -1884,33 +1866,28 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		
 		/* clear the strings */
 		text[0] = 0;
-		t_style[0] = 0;
 		tmp_str[0] = 0;
-		layer[0] = 0;
 		
 		if (ent->type == DXF_ENT){
 			if (ent->obj.content){
 				current = ent->obj.content->next;
-				//printf("%s\n", ent->obj.name);
 			}
 		}
 		while (current){
 			if (current->type == DXF_ATTR){ /* DXF attibute */
 				switch (current->value.group){
 					case 1:
-						//strcpy(text, current->value.s_data);
 						num_str++;
 						break;
 					case 3:
-						//strcpy(text, current->value.s_data);
 						num_str++;
 						break;
 					case 7:
-						strncpy(t_style, current->value.s_data, DXF_MAX_CHARS);
+            t_style = current->value.str;
+            if (!t_style) t_style = dflt;
 						break;
 					case 8:
-						strncpy(layer, current->value.s_data, DXF_MAX_CHARS);
-						str_upp(layer);
+            layer = current->value.str;
 						break;
 					case 10:
 						pt1_x = current->value.d_data;
@@ -1967,7 +1944,7 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						extru_z = current->value.d_data;
 						break;
 					case 101:
-						strncpy(tmp_str, current->value.s_data, DXF_MAX_CHARS);
+            strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), 19);
 						str_upp(tmp_str);
 						char *tmp = trimwhitespace(tmp_str);
 						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -1979,31 +1956,23 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 			current = current->next; /* go to the next in the list */
 		}
 		
+    /* find the layer index */
+    int lay_idx = dxf_lay_idx(drawing, layer);
+    lay_color = drawing->layers[lay_idx].color;
+    ent->obj.layer = lay_idx;
 		
-		if (strlen(layer)>0){
-			/* find the layer index */
-			int lay_idx = dxf_lay_idx(drawing, layer);
-			lay_color = drawing->layers[lay_idx].color;
-			ent->obj.layer = lay_idx;
-		}
 		
 		int lw = dxf_ent_get_lw(drawing, ent, ins.lw);
 		
 		if (((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))){
 			
 			/* find the tstyle index and font*/
-			if (strlen(t_style) > 0){
-				fnt_idx = dxf_tstyle_idx(drawing, t_style);
-				if (fnt_idx >= 0) stack[0].font = drawing->text_styles[fnt_idx].font;
-				else stack[0].font = drawing->dflt_font;
-				if(!stack[0].font) stack[0].font = drawing->dflt_font;
-			}
-			else {
-				fnt_idx = dxf_tstyle_idx(drawing, "STANDARD");
-				if (fnt_idx >= 0) stack[0].font = drawing->text_styles[fnt_idx].font;
-				else stack[0].font = drawing->dflt_font;
-				if(!stack[0].font) stack[0].font = drawing->dflt_font;
-			}
+			
+      fnt_idx = dxf_tstyle_idx(drawing, t_style, 0);
+      if (fnt_idx >= 0) stack[0].font = drawing->text_styles[fnt_idx].font;
+      else stack[0].font = drawing->dflt_font;
+      if(!stack[0].font) stack[0].font = drawing->dflt_font;
+			
 			
 			if (fnt_idx >= 0) 
 				if ((drawing->text_styles[fnt_idx].flags2 & 2) != 0)
@@ -2040,7 +2009,8 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 				if (!current) continue;
 				ofs = 0;
 				str_start = 0;
-				strncpy(text, current->value.s_data, DXF_MAX_CHARS);
+				strncpy(text, //current->value.s_data, DXF_MAX_CHARS);
+          strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 				txt_len = strlen(text);
 				
 				/*sweep the string, decoding utf8 or ascii (cp1252)*/
@@ -2167,8 +2137,6 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 									if (next_mark){
 										char *param;
 										
-										//printf("\n");
-										
 										for (param = text + str_start + 2; param < next_mark; param++){
 											/*
 											parameters, where n is a number (numeric parameters are separated by commas) and $ is a char:
@@ -2215,7 +2183,6 @@ list_node * dxf_mtext_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 												stack[stack_pos].al_h = 0;
 												if (p_alin == 'c') stack[stack_pos].al_h= 1;
 												if (p_alin == 'r') stack[stack_pos].al_h = 2;
-												//printf("alin = %c \n", p_alin);
 												param++;
 											}
 											else if (*param == 'x'){
@@ -2816,8 +2783,11 @@ list_node * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 		double t_pos_x, t_pos_y, t_center_x = 0, t_center_y = 0, t_base_x = 0, t_base_y = 0;
 		double t_scale_x = 1, t_scale_y = 1, txt_w, txt_h;
 		
-		char text[DXF_MAX_CHARS], t_style[DXF_MAX_CHARS];
-		char tmp_str[DXF_MAX_CHARS];
+		char text[DXF_MAX_CHARS+1];
+    STRPOOL_U64 dflt = strpool_inject( &name_pool, "Standard", strlen("Standard") ); /* default style is "Standard" */
+    STRPOOL_U64 t_style = dflt;
+    
+		char tmp_str[DXF_MAX_CHARS+1];
 		char *pos_st, *pos_curr, *pos_tmp, special;
 		
 		int fnt_idx, i, paper = 0;
@@ -2829,23 +2799,22 @@ list_node * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 		
 		/* clear the strings */
 		text[0] = 0;
-		t_style[0] = 0;
 		tmp_str[0] = 0;
 		
 		if (ent->type == DXF_ENT){
 			if (ent->obj.content){
 				current = ent->obj.content->next;
-				//printf("%s\n", ent->obj.name);
 			}
 		}
 		while (current){
 			if (current->type == DXF_ATTR){ /* DXF attibute */
 				switch (current->value.group){
 					case 1:
-						strcpy(text, current->value.s_data);
+            strncpy(text, strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 						break;
 					case 7:
-						strcpy(t_style, current->value.s_data);
+            t_style = current->value.str;
+            if (!t_style) t_style = dflt;
 						break;
 					case 10:
 						pt1_x = current->value.d_data;
@@ -2902,7 +2871,7 @@ list_node * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 						extru_z = current->value.d_data;
 						break;
 					case 101:
-						strcpy(tmp_str, current->value.s_data);
+            strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), 19);
 						str_upp(tmp_str);
 						char *tmp = trimwhitespace(tmp_str);
 						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -2916,18 +2885,10 @@ list_node * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 		if (((p_space == 0) && (paper == 0)) || ((p_space != 0) && (paper != 0))){
 			
 			/* find the tstyle index and font*/
-			if (strlen(t_style) > 0){
-				fnt_idx = dxf_tstyle_idx(drawing, t_style);
-				if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
-				else font = drawing->dflt_font;
-				if(!font) font = drawing->dflt_font;
-			}
-			else {
-				fnt_idx = dxf_tstyle_idx(drawing, "STANDARD");
-				if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
-				else font = drawing->dflt_font;
-				if(!font) font = drawing->dflt_font;
-			}
+      fnt_idx = dxf_tstyle_idx(drawing, t_style, 0);
+      if (fnt_idx >= 0) font = drawing->text_styles[fnt_idx].font;
+      else font = drawing->dflt_font;
+      if(!font) font = drawing->dflt_font;
 			
 			list_node * graph = list_new(NULL, FRAME_LIFE);
 			
@@ -3102,7 +3063,6 @@ list_node * dxf_attrib_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 				t_center_x = (t_scale_x*txt_w * txt_size/2);
 				//rot = atan2((pt2_y - pt1_y),(pt2_x - pt1_x)) * 180/M_PI;
 				
-				//printf("alinhamento=%d\n", t_alin_h);
 			}
 			if(t_alin_v >0){
 				if(t_alin_v != 1){
@@ -3151,7 +3111,6 @@ graph_obj * dxf_solid_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		if (ent->type == DXF_ENT){
 			if (ent->obj.content){
 				current = ent->obj.content->next;
-				//printf("%s\n", ent->obj.name);
 			}
 		}
 		while (current){
@@ -3221,7 +3180,7 @@ graph_obj * dxf_solid_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						extru_z = current->value.d_data;
 						break;
 					case 101:
-						strcpy(tmp_str, current->value.s_data);
+            strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), 19);
 						str_upp(tmp_str);
 						char *tmp = trimwhitespace(tmp_str);
 						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -3341,7 +3300,7 @@ graph_obj * dxf_3dface_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, 
 					paper = current->value.i_data;
 					break;
 				case 101:
-					strcpy(tmp_str, current->value.s_data);
+          strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), 19);
 					str_upp(tmp_str);
 					char *tmp = trimwhitespace(tmp_str);
 					if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -3394,12 +3353,9 @@ int proc_obj_graph(dxf_drawing *drawing, dxf_node * ent, graph_obj * graph, stru
 	
 	if (!(bypass & OBJ_LAYER)){
 		if (layer_obj = dxf_find_attr2(ent, 8)){
-			char layer[DXF_MAX_CHARS];
-			strncpy(layer, layer_obj->value.s_data, DXF_MAX_CHARS);
-			str_upp(layer);
 			
 			/* find the layer index */
-			ent->obj.layer = dxf_lay_idx(drawing, layer);
+			ent->obj.layer = dxf_lay_idx(drawing, layer_obj->value.str);
 		}
 	}
 	if (!(bypass & OBJ_COLOR)){
@@ -3464,9 +3420,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 	double scale_x = 1.0, scale_y = 1.0, scale_z = 1.0;
 	double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0;
 	
-	char handle[DXF_MAX_CHARS] = "", l_type[DXF_MAX_CHARS] = "", layer[DXF_MAX_CHARS] = "";
-	char name1[DXF_MAX_CHARS] = "", name2[DXF_MAX_CHARS] = "", comment[DXF_MAX_CHARS] = "";
-	char xref_path[DXF_MAX_CHARS+1] = "";
+  STRPOOL_U64 layer = 0, name1 = 0, xref_path = 0;
 	
 	int color = 256, paper = 0;
 	
@@ -3487,7 +3441,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 		/* ============================================================= */
 		if (current->type == DXF_ENT){
 			ent_type = DXF_NONE;
-			if (strcmp(current->obj.name, "LINE") == 0){
+      if (dxf_ident_ent_type(current) == DXF_LINE){
 				ent_type = DXF_LINE;
 				curr_graph = dxf_line_parse(drawing, current, p_space, pool_idx);
 				if (curr_graph){
@@ -3513,7 +3467,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				}
 				
 			}
-			else if (strcmp(current->obj.name, "TEXT") == 0){
+      else if (dxf_ident_ent_type(current) == DXF_TEXT){
 				ent_type = DXF_TEXT;
 				list_node * text_list = dxf_text_parse(drawing, current, p_space, pool_idx);
 				
@@ -3536,7 +3490,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				
 	
 			}
-			else if (strcmp(current->obj.name, "CIRCLE") == 0){
+      else if (dxf_ident_ent_type(current) == DXF_CIRCLE){
 				ent_type = DXF_CIRCLE;
 				curr_graph = dxf_circle_parse(drawing, current, p_space, pool_idx);
 				if (curr_graph){
@@ -3547,7 +3501,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				}
 				
 			}
-			else if (strcmp(current->obj.name, "ARC") == 0){
+      else if (dxf_ident_ent_type(current) == DXF_ARC){
 				ent_type = DXF_ARC;
 				curr_graph = dxf_arc_parse(drawing, current, p_space, pool_idx);
 				if (curr_graph){
@@ -3558,7 +3512,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				}
 				
 			}
-			else if (strcmp(current->obj.name, "POLYLINE") == 0){
+      else if (dxf_ident_ent_type(current) == DXF_POLYLINE){
 				ent_type = DXF_POLYLINE;
 				
 				list_node * poly_list = dxf_pline_parse(drawing, current, p_space, pool_idx);
@@ -3580,7 +3534,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				}
 				
 			}
-			else if (strcmp(current->obj.name, "HATCH") == 0){
+      else if (dxf_ident_ent_type(current) == DXF_HATCH){
 				ent_type = DXF_HATCH;
 				list_node *hatch_items = list_new(NULL, FRAME_LIFE);
 				
@@ -3603,7 +3557,8 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				}
 				//list_clear (hatch_items);
 			}
-			else if (strcmp(current->obj.name, "VERTEX") == 0){
+			/*
+      else if (strcmp(current->obj.name, "VERTEX") == 0){
 				ent_type = DXF_VERTEX;
 				
 				
@@ -3612,8 +3567,8 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				ent_type = DXF_TRACE;
 				
 				
-			}
-			else if (strcmp(current->obj.name, "SOLID") == 0){
+			}*/
+      else if (dxf_ident_ent_type(current) == DXF_SOLID){
 				ent_type = DXF_SOLID;
 				curr_graph = dxf_solid_parse(drawing, current, p_space, pool_idx);
 				if (curr_graph){
@@ -3625,7 +3580,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				
 				
 			}
-			else if (strcmp(current->obj.name, "3DFACE") == 0){
+      else if (dxf_ident_ent_type(current) == DXF_3DFACE){
 				ent_type = DXF_3DFACE;
 				curr_graph = dxf_3dface_parse(drawing, current, p_space, pool_idx);
 				if (curr_graph){
@@ -3637,7 +3592,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				
 				
 			}
-			else if (strcmp(current->obj.name, "LWPOLYLINE") == 0){
+      else if (dxf_ident_ent_type(current) == DXF_LWPOLYLINE){
 				ent_type = DXF_LWPOLYLINE;
 				curr_graph = dxf_lwpline_parse(drawing, current, p_space, pool_idx);
 				if (curr_graph){
@@ -3647,7 +3602,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					mod_idx++;
 				}
 			}
-			else if (strcmp(current->obj.name, "SPLINE") == 0){
+      else if (dxf_ident_ent_type(current) == DXF_SPLINE){
 				ent_type = DXF_SPLINE;
 				curr_graph = dxf_spline_parse(drawing, current, p_space, pool_idx);
 				if (curr_graph){
@@ -3657,7 +3612,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					mod_idx++;
 				}
 			}
-			else if (strcmp(current->obj.name, "ATTRIB") == 0){
+      else if (dxf_ident_ent_type(current) == DXF_ATTRIB){
 				ent_type = DXF_ATTRIB;
 				
 				//list_node * text_list = dxf_attrib_parse(drawing, current, p_space, pool_idx);
@@ -3684,7 +3639,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					}
 				}
 			}
-			else if ((strcmp(current->obj.name, "ATTDEF") == 0) && parse_attdef){
+      else if (dxf_ident_ent_type(current) == DXF_ATTDEF && parse_attdef){
 				ent_type = DXF_ATTRIB;
 				
 				list_node * text_list = dxf_attrib_parse(drawing, current, p_space, pool_idx);
@@ -3708,21 +3663,21 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					}
 				}
 			}
-			else if (strcmp(current->obj.name, "POINT") == 0){
+      else if (dxf_ident_ent_type(current) == DXF_POINT){
 				ent_type = DXF_POINT;
 				curr_graph = dxf_point_parse(drawing, current, p_space, pool_idx);
 				if (curr_graph){
 					
 					/* store the graph in the return vector */
 					list_push(list_ret, list_new((void *)curr_graph, pool_idx));
-					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_NONE);
+					proc_obj_graph(drawing, current, curr_graph, ins_stack[ins_stack_pos], OBJ_LTYPE);
 					mod_idx++;
 				}
 				
 			
 				
 			}
-			
+			/*
 			else if (strcmp(current->obj.name, "SHAPE") == 0){
 				ent_type = DXF_SHAPE;
 				
@@ -3737,8 +3692,8 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				ent_type = DXF_3DFACE;
 				
 				
-			}
-			else if (strcmp(current->obj.name, "ELLIPSE") == 0){
+			}*/
+      else if (dxf_ident_ent_type(current) == DXF_ELLIPSE){
 				ent_type = DXF_ELLIPSE;
 				curr_graph = dxf_ellipse_parse(drawing, current, p_space, pool_idx);
 				if (curr_graph){
@@ -3749,7 +3704,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				}
 				
 			}
-			else if (strcmp(current->obj.name, "MTEXT") == 0){
+      else if (dxf_ident_ent_type(current) == DXF_MTEXT){
 				ent_type = DXF_MTEXT;
 				list_node * text_list = dxf_mtext_parse(drawing, current, p_space, pool_idx, ins_stack[ins_stack_pos]);
 				
@@ -3771,7 +3726,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				
 			}
 			
-			if (strcmp(current->obj.name, "IMAGE") == 0){
+      else if (dxf_ident_ent_type(current) == DXF_IMAGE){
 				ent_type = DXF_IMAGE;
 				curr_graph = dxf_image_parse(drawing, current, p_space, pool_idx);
 				if (curr_graph){
@@ -3786,7 +3741,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			
 			/* ============================================================= */
 			/* complex entities */
-			else if (strcmp(current->obj.name, "INSERT") == 0){
+      else if (dxf_ident_ent_type(current) == DXF_INSERT){
 				ent_type = DXF_INSERT;
 				insert_ent = current;
 				ins_flag = 1;
@@ -3799,7 +3754,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					continue;
 				}
 			}
-			else if (strcmp(current->obj.name, "BLOCK") == 0){
+      else if (dxf_ident_ent_type(current) == DXF_BLK){
 				ent_type = DXF_BLK;
 				blk_flag = 1;
 				
@@ -3810,7 +3765,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					continue;
 				}
 			}
-			else if (strcmp(current->obj.name, "DIMENSION") == 0){
+      else if (dxf_ident_ent_type(current) == DXF_DIMENSION){
 				ent_type = DXF_DIMENSION;
 				/* a dimension will draw as a insert entity */
 				insert_ent = current;
@@ -3828,25 +3783,15 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 		
 		/* ============================================================= */
 		else if (current->type == DXF_ATTR){ /* DXF attibute */
-			//printf("%d\n", current->value.group);
 			switch (current->value.group){
 				case 2:
-					strcpy(name1, current->value.s_data);
-					break;
-				case 3:
-					strcpy(name2, current->value.s_data);
+          name1 = current->value.str;
 					break;
 				case 1:
-					strcpy(xref_path, current->value.s_data);
-					break;
-				case 5:
-					strcpy(handle, current->value.s_data);
-					break;
-				case 6:
-					strcpy(l_type, current->value.s_data);
+          xref_path = current->value.str;
 					break;
 				case 8:
-					strcpy(layer, current->value.s_data);
+          layer = current->value.str;
 					break;
 				case 10:
 					pt1_x = current->value.d_data;
@@ -3883,7 +3828,6 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					break;
 				case 67:
 					paper = current->value.i_data;
-					//printf("Paper %d\n", paper);
 					break;
 				case 70:
 					ent_flag = current->value.i_data;
@@ -3897,9 +3841,9 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				case 230:
 					extru_z = current->value.d_data;
 					break;
-				case 999:
+				/*case 999:
 					strcpy(comment, current->value.s_data);
-					break;
+					break;*/
 			}
 			
 			
@@ -3912,22 +3856,15 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			((ins_flag != 0) && (current != NULL) && (current != insert_ent) && (current->type == DXF_ENT))){
 			ins_flag = 0;
 			/* look for block */
-			blk = dxf_find_obj_descr2(drawing->blks, "BLOCK", name1);
+			blk = dxf_find_obj_descr2(drawing->blks, "BLOCK",
+        (char *) strpool_cstr2( &name_pool, name1));
 			if ((blk) && /* block found */
 			/* Also check the paper space parameter */
 			(((p_space == 0) && (paper == 0)) || 
 			((p_space != 0) && (paper != 0)))){
 				
-				
-				
-				
-					
 				/* find the layer index */
 				insert_ent->obj.layer = dxf_lay_idx(drawing, layer);
-				
-				
-				
-				//printf ("bloco %s\n", name1);
 				
 				/* save current entity for future process */
 				ins_stack_pos++;
@@ -3995,13 +3932,9 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				extru_x = 0.0; extru_y = 0.0; extru_z = 1.0;
 				
 				/* clear the strings */
-				handle[0] = 0;
-				l_type[0] = 0;
-				layer[0] = 0;
-				comment[0] = 0;
-				name1[0] = 0;
-				name2[0] = 0;
-				xref_path[0] = 0;
+				layer = 0;
+				name1 = 0;
+				xref_path = 0;
 				
 				color = 256; paper= 0;
 				
@@ -4018,8 +3951,6 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			blk_flag = 0;
 			//p_space = paper;
 			
-			//printf("Bloco %0.2f, %0.2f, %0.2f\n", pt1_x, pt1_y, pt1_z);
-			
 			/* adjust block orign */
 			ins_stack[ins_stack_pos].blk_x = pt1_x;
 			ins_stack[ins_stack_pos].blk_y = pt1_y;
@@ -4028,7 +3959,8 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			/* verify if block is a external reference */
 			if (ent_flag & 4) {
 				
-				dxf_drawing *xref_dwg = dxf_xref_list(drawing, xref_path);
+				dxf_drawing *xref_dwg = dxf_xref_list(drawing,
+          (char*) strpool_cstr2( &value_pool, xref_path));
 				
 				if (xref_dwg){
 					if ((xref_dwg->ents != NULL) && (xref_dwg->main_struct != NULL)){
@@ -4042,7 +3974,6 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 		}
 		
 		if (prev == ent){ /* stop the search if back on initial entity */
-			//printf("para\n");
 			current = NULL;
 			break;
 		}
@@ -4056,7 +3987,6 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 			if (prev){ /* up in structure */
 				/* try to continue on previous point in structure */
 				//current = prev->next;
-				//indent --;
 				if (prev == ins_stack[ins_stack_pos].ins_ent){/* back on initial entity */
 					if (mod_idx > 0){
 						graph_list_modify_idx(list_ret,
@@ -4095,7 +4025,6 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 						drawing = ins_stack[ins_stack_pos].drwg;
 						ins_stack_pos--;
 						//prev = ins_stack[ins_stack_pos].ins_ent;
-						//printf("retorna %d\n", ins_stack_pos);
 						current = prev->next;
 						
 					}
@@ -4106,7 +4035,6 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				break;
 			}
 			if (prev == ent){ /* stop the search if back on initial entity */
-				//printf("para\n");
 				current = NULL;
 				break;
 			}
@@ -4152,13 +4080,9 @@ int dxf_ents_parse(dxf_drawing *drawing){
 				if (vec_graph){
 					current->obj.graphics = vec_graph;
 				}
-				/*if (current->obj.name){
-					printf("%s\n", current->obj.name);
-				}*/
 				//---------------------------------------
 			}
 			current = current->next;
-			//printf("%d\n", current);
 		}
 	}
 }
@@ -4677,7 +4601,7 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 						}
 						break;
 					case 101:
-						strcpy(tmp_str, current->value.s_data);
+            strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), 19);
 						str_upp(tmp_str);
 						char *tmp = trimwhitespace(tmp_str);
 						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -4792,8 +4716,6 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 			if (pt1){
 				pt1 = 0;
 				if(first == 1){
-					
-					//printf("primeiro vertice\n");
 					last_x = curr_x;
 					last_y = pt1_y;
 					prev_x = curr_x;
@@ -4802,7 +4724,6 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 				if (prev_edge_type == EDGE_POLY) {
 					
 					if((first > 1) && (*curr_graph != NULL)){
-						//printf("(%0.2f, %0.2f)-(%0.2f, %0.2f)\n", prev_x, prev_y, curr_x, pt1_y);
 						if (prev_bulge == 0){
 							line_add(*curr_graph, prev_x, prev_y, 0.0, curr_x, pt1_y, 0.0);
 						}
@@ -4944,7 +4865,7 @@ int dxf_hatch_get_def(list_node *list_ret, graph_obj *bound, dxf_node * ent, dxf
 						curr_def++;
 						break;
 					case 101:
-						strcpy(tmp_str, current->value.s_data);
+            strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), 19);
 						str_upp(tmp_str);
 						char *tmp = trimwhitespace(tmp_str);
 						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -5016,8 +4937,6 @@ int dxf_hatch_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, i
 		double p_angle = 0.0, p_scale =1.0;
 		char tmp_str[20];
 		
-		char name_patt[DXF_MAX_CHARS];
-		
 		/*flags*/
 		int paper = 0, solid = 0, assoc = 0, patt_double = 0;
 		
@@ -5026,15 +4945,14 @@ int dxf_hatch_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, i
 		if (ent->type == DXF_ENT){
 			if (ent->obj.content){
 				current = ent->obj.content->next;
-				//printf("%s\n", ent->obj.name);
 			}
 		}
 		while (current){
 			if (current->type == DXF_ATTR){ /* DXF attibute */
 				switch (current->value.group){
-					case 2:
+					/*case 2:
 						strcpy(name_patt, current->value.s_data);
-						break;
+						break;*/
 					case 30:
 						elev = current->value.d_data;
 						break;
@@ -5112,7 +5030,7 @@ int dxf_hatch_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, i
 						extru_z = current->value.d_data;
 						break;
 					case 101:
-						strcpy(tmp_str, current->value.s_data);
+            strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), 19);
 						str_upp(tmp_str);
 						char *tmp = trimwhitespace(tmp_str);
 						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -5211,7 +5129,8 @@ graph_obj * dxf_image_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						break;
 					/* pointer to IMAGE_DEF object */
 					case 340:
-						img_id = strtol(current->value.s_data, NULL, 16);
+						img_id = strtol(//current->value.s_data, NULL, 16);
+              strpool_cstr2( &value_pool, current->value.str), NULL, 16);
 						break;
 				}
 			}
@@ -5300,7 +5219,6 @@ graph_obj * dxf_point_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 		if (ent->type == DXF_ENT){
 			if (ent->obj.content){
 				current = ent->obj.content->next;
-				//printf("%s\n", ent->obj.name);
 			}
 		}
 		while (current){
@@ -5319,7 +5237,7 @@ graph_obj * dxf_point_parse(dxf_drawing *drawing, dxf_node * ent, int p_space, i
 						paper = current->value.i_data;
 						break;
 					case 101:
-						strcpy(tmp_str, current->value.s_data);
+            strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), 19);
 						str_upp(tmp_str);
 						char *tmp = trimwhitespace(tmp_str);
 						if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){

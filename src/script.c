@@ -408,7 +408,7 @@ int script_get_ent_typ (lua_State *L) {
 		return 1;
 	}
 	/* success - return type of entity */
-	lua_pushstring (L, ent->obj.name);
+	lua_pushstring (L, strpool_cstr2( &obj_pool, ent->obj.id));
 	return 1;
 }
 
@@ -447,7 +447,7 @@ int script_get_circle_data (lua_State *L) {
 		return 1;
 	}
 	/* verify if it is a CIRCLE ent */
-	if (strcmp(ent->obj.name, "CIRCLE") != 0) {
+  if (dxf_ident_ent_type (ent) != DXF_CIRCLE) {
 		lua_pushnil(L); /* return fail */
 		return 1;
 	}
@@ -561,14 +561,14 @@ int script_get_blk_name (lua_State *L) {
 		return 1;
 	}
 	/* verify if it is a INSERT ent */
-	if (!( (strcmp(ent->obj.name, "INSERT") == 0) || (strcmp(ent->obj.name, "DIMENSION") == 0) )) {
+  if (!(dxf_ident_ent_type (ent) == DXF_INSERT || dxf_ident_ent_type (ent) == DXF_DIMENSION)) {
 		lua_pushnil(L); /* return fail */
 		return 1;
 	}
 	
 	dxf_node *tmp = NULL;
 	if(tmp = dxf_find_attr2(ent, 2)) /* look for block name */
-		lua_pushstring (L, tmp->value.s_data);
+		lua_pushstring (L, strpool_cstr2( &name_pool, tmp->value.str));
 	else lua_pushnil(L); /* return fail */
 	return 1;
 }
@@ -608,7 +608,7 @@ int script_get_ins_data (lua_State *L) {
 		return 1;
 	}
 	/* verify if it is a INSERT ent */
-	if (!( (strcmp(ent->obj.name, "INSERT") == 0) || (strcmp(ent->obj.name, "DIMENSION") == 0) )) {
+  if (!(dxf_ident_ent_type (ent) == DXF_INSERT || dxf_ident_ent_type (ent) == DXF_DIMENSION)) {
 		lua_pushnil(L); /* return fail */
 		return 1;
 	}
@@ -722,7 +722,7 @@ int script_count_attrib (lua_State *L) {
 		return 1;
 	}
 	/* verify if it is a INSERT ent */
-	if (strcmp(ent->obj.name, "INSERT") != 0) {
+  if (dxf_ident_ent_type (ent) != DXF_INSERT){
 		lua_pushnil(L); /* return fail */
 		return 1;
 	}
@@ -790,7 +790,7 @@ int script_get_attrib_i (lua_State *L) {
 		return 1;
 	}
 	/* verify if it is a INSERT ent */
-	if (strcmp(ent->obj.name, "INSERT") != 0) {
+  if (dxf_ident_ent_type (ent) != DXF_INSERT){
 		lua_pushnil(L); /* return fail */
 		return 1;
 	}
@@ -815,9 +815,9 @@ int script_get_attrib_i (lua_State *L) {
 			if(tmp = dxf_find_attr2(attr, 70))
 				hidden = tmp->value.i_data & 1;
 			if(tmp = dxf_find_attr2(attr, 2))
-				strncpy(tag, tmp->value.s_data, DXF_MAX_CHARS);
+				strncpy(tag, strpool_cstr2( &name_pool, tmp->value.str), DXF_MAX_CHARS);
 			if(tmp = dxf_find_attr2(attr, 1))
-				strncpy(value, tmp->value.s_data, DXF_MAX_CHARS);
+				strncpy(value, strpool_cstr2( &value_pool, tmp->value.str), DXF_MAX_CHARS);
 			
 			lua_pushstring (L, tag);
 			lua_pushstring (L, value);
@@ -874,7 +874,7 @@ int script_get_attribs (lua_State *L) {
 	}
 	
 	/* verify if it is a INSERT ent */
-	if (strcmp(ent->obj.name, "INSERT") != 0) {
+  if (dxf_ident_ent_type (ent) != DXF_INSERT){
 		return 1;
 	}
 	
@@ -895,9 +895,9 @@ int script_get_attribs (lua_State *L) {
 		if(tmp = dxf_find_attr2(attr, 70))
 			hidden = tmp->value.i_data & 1;
 		if(tmp = dxf_find_attr2(attr, 2))
-			strncpy(tag, tmp->value.s_data, DXF_MAX_CHARS);
+			strncpy(tag, strpool_cstr2( &name_pool, tmp->value.str), DXF_MAX_CHARS);
 		if(tmp = dxf_find_attr2(attr, 1))
-			strncpy(value, tmp->value.s_data, DXF_MAX_CHARS);
+			strncpy(value, strpool_cstr2( &value_pool, tmp->value.str), DXF_MAX_CHARS);
 		
 		lua_newtable(L); /* table to store attr data */
 		lua_pushstring(L, "tag");
@@ -1256,7 +1256,7 @@ int script_get_points (lua_State *L) {
 		while (current == NULL){
 			/* end of list sweeping */
 			if ((prev == NULL) || (prev == stop)){ /* stop the search if back on initial entity */
-				//printf("para\n");
+				
 				current = NULL;
 				break;
 			}
@@ -1429,7 +1429,7 @@ int script_get_ext (lua_State *L) {
 		if (!found){
 			if (current->type == DXF_ATTR){
 				if(current->value.group == 1001){
-					strncpy(name, current->value.s_data, DXF_MAX_CHARS); /* preserve original string */
+					strncpy(name, strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					str_upp(name); /*upper case */
 					if(strcmp(name, appid) == 0){
 						found = 1; /* appid found */
@@ -1457,7 +1457,11 @@ int script_get_ext (lua_State *L) {
 						lua_pushinteger(L, current->value.i_data);
 						break;
 					case DXF_STR :
-						lua_pushstring(L, current->value.s_data);
+            if (current->value.group == 2 || (current->value.group > 5 && current->value.group < 9) ){
+              lua_pushstring(L, strpool_cstr2( &name_pool, current->value.str));
+            } else {
+              lua_pushstring(L, strpool_cstr2( &value_pool, current->value.str));
+            }
 				}
 				lua_rawseti(L, -2, num_data);  /* set table at key `num_data' */
 			}
@@ -1516,7 +1520,8 @@ int script_get_blk_ents (lua_State *L) {
 	struct ent_lua *ent = NULL;
 	while (current){ /* sweep elements in block */
 		if (current->type == DXF_ENT){ /* DXF entity */
-			if (strcmp(current->obj.name, "ENDBLK") != 0){ /* skip ENDBLK elements */
+			/* skip ENDBLK elements */
+      if (dxf_ident_ent_type (current) != DXF_ENDBLK){
 				ent = (struct ent_lua *) lua_newuserdatauv(L, sizeof(struct ent_lua), 0);  /* create a userdata object */
 				ent->curr_ent = NULL;
 				ent->orig_ent = (dxf_node *) current;
@@ -1639,7 +1644,7 @@ int script_get_text_data (lua_State *L) {
 		return 1;
 	}
 	/* verify if it is a TEXT ent */
-	if (!( (strcmp(ent->obj.name, "TEXT") == 0) 
+  if (!(dxf_ident_ent_type (ent) == DXF_TEXT
 		//|| (strcmp(ent->obj.name, "MTEXT") == 0) 
 	)) {
 		lua_pushnil(L); /* return fail */
@@ -1657,10 +1662,10 @@ int script_get_text_data (lua_State *L) {
 		if (current->type == DXF_ATTR){ /* DXF attibute */
 			switch (current->value.group){
 				case 1:
-					strncpy(text, current->value.s_data, DXF_MAX_CHARS);
+					strncpy(text, strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					break;
 				case 7:
-					strncpy(t_style, current->value.s_data, DXF_MAX_CHARS);
+					strncpy(t_style, strpool_cstr2( &name_pool, current->value.str), DXF_MAX_CHARS);
 					break;
 				case 10:
 					x = current->value.d_data;
@@ -1687,7 +1692,7 @@ int script_get_text_data (lua_State *L) {
 					alin_v = current->value.i_data;
 					break;
 				case 101:
-					strncpy(tmp_str, current->value.s_data, DXF_MAX_CHARS);
+					strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					str_upp(tmp_str);
 					char *tmp = trimwhitespace(tmp_str);
 					if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -1855,7 +1860,7 @@ int script_edit_attr (lua_State *L) {
 		return 1;
 	}
 	/* verify if it is a INSERT ent */
-	if (strcmp(ent->obj.name, "INSERT") != 0) {
+  if (dxf_ident_ent_type (ent) != DXF_INSERT){
 		lua_pushboolean(L, 0);  /* return fail */
 		return 1;
 	}
@@ -1996,7 +2001,7 @@ int script_add_ext (lua_State *L) {
 			/* try to find the first entry, by matching the APPID */
 			if (!found){
 				if(current->value.group == 1001){
-					strncpy(name, current->value.s_data, DXF_MAX_CHARS); /* preserve original string */
+					strncpy(name, strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					str_upp(name); /*upper case */
 					if(strcmp(name, appid) == 0){
 						found = 1; /* appid found */
@@ -2134,7 +2139,7 @@ int script_edit_ext_i (lua_State *L) {
 			/* try to find the first entry, by matching the APPID */
 			if (!found){
 				if(current->value.group == 1001){
-					strncpy(name, current->value.s_data, DXF_MAX_CHARS); /* preserve original string */
+					strncpy(name, strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					str_upp(name); /*upper case */
 					if(strcmp(name, appid) == 0){
 						found = 1; /* appid found */
@@ -2264,7 +2269,7 @@ int script_del_ext_i (lua_State *L) {
 			/* try to find the first entry, by matching the APPID */
 			if (!found){
 				if(current->value.group == 1001){
-					strncpy(name, current->value.s_data, DXF_MAX_CHARS); /* preserve original string */
+					strncpy(name, strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					str_upp(name); /*upper case */
 					if(strcmp(name, appid) == 0){
 						found = 1; /* appid found */
@@ -2367,7 +2372,7 @@ int script_del_ext_all (lua_State *L) {
 			/* try to find the first entry, by matching the APPID */
 			if (!found){
 				if(current->value.group == 1001){
-					strncpy(name, current->value.s_data, DXF_MAX_CHARS); /* preserve original string */
+					strncpy(name, strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					str_upp(name); /*upper case */
 					if(strcmp(name, appid) == 0){
 						found = 1; /* appid found */
@@ -2505,8 +2510,11 @@ int script_new_line (lua_State *L) {
 	dxf_node * new_el = (dxf_node *) dxf_new_line (
 		lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), /* first point */
 		lua_tonumber(L, 4), lua_tonumber(L, 5), lua_tonumber(L, 6), /* end point */
-		gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+		gui->color_idx, /* color, layer */
+    (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+		/* line type, line weight */
+    (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+    dxf_lw[gui->lw_idx],
 		0, FRAME_LIFE); /* paper space */
 	
   /* restore original drawing parameters */
@@ -2590,8 +2598,11 @@ int script_new_pline (lua_State *L) {
 	dxf_node *new_el = (dxf_node *) dxf_new_lwpolyline (
 		lua_tonumber(L, 1), lua_tonumber(L, 2), 0.0, /* pt1, */
 		lua_tonumber(L, 3), /* bulge */
-		gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+		gui->color_idx, /* color, layer */
+    (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+		/* line type, line weight */
+    (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+    dxf_lw[gui->lw_idx],
 		0, FRAME_LIFE); /* paper space */
 	/* append second vertex to ensure entity's validity */
 	dxf_lwpoly_append (new_el, lua_tonumber(L, 4), lua_tonumber(L, 5), 0.0, lua_tonumber(L, 6), FRAME_LIFE);
@@ -2780,8 +2791,11 @@ int script_new_circle (lua_State *L) {
 	/* new CIRCLE entity */
 	dxf_node * new_el = (dxf_node *) dxf_new_circle (
 		lua_tonumber(L, 1), lua_tonumber(L, 2), 0.0, lua_tonumber(L, 3), /* pt1, radius */
-		gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+		gui->color_idx, /* color, layer */
+    (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+		/* line type, line weight */
+    (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+    dxf_lw[gui->lw_idx],
 		0, FRAME_LIFE); /* paper space */
 	
   /* restore original drawing parameters */
@@ -2966,8 +2980,11 @@ int script_new_hatch (lua_State *L) {
 	solid, gui->hatch_assoc,
 	0, 0, /* style, type */
 	rot, scale,
-	gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-	gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+	gui->color_idx, /* color, layer */
+  (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+	/* line type, line weight */
+  (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+  dxf_lw[gui->lw_idx],
 	0, FRAME_LIFE); /* paper space */
   
   /* restore original drawing parameters */
@@ -3101,12 +3118,16 @@ int script_new_text (lua_State *L) {
 	dxf_node * new_el = (dxf_node *) dxf_new_text (
 		lua_tonumber(L, 1), lua_tonumber(L, 2), 0.0, txt_h, /* pt1, height */
 		txt, /* text, */
-		gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+		gui->color_idx, /* color, layer */
+    (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+		/* line type, line weight */
+    (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+    dxf_lw[gui->lw_idx],
 		0, DWG_LIFE); /* paper space */
 	dxf_attr_change_i(new_el, 72, &t_al_h, -1);
 	dxf_attr_change_i(new_el, 73, &t_al_v, -1);
-	dxf_attr_change(new_el, 7, gui->drawing->text_styles[gui->t_sty_idx].name);
+	dxf_attr_change(new_el, 7,
+    (char *) strpool_cstr2( &name_pool, gui->drawing->text_styles[gui->t_sty_idx].name));
   
   /* restore original drawing parameters */
   gui->color_idx = prev_color;
@@ -3327,12 +3348,12 @@ int script_new_block (lua_State *L) {
 	
 	/* Create block*/	
 	if (ref_pt) ok = dxf_new_block (drawing, name, descr, orig, txt2attr, 
-		mark, hide_mark, value_mark, dflt_value, 
-		gui->drawing->layers[gui->layer_idx].name, list,
+		mark, hide_mark, value_mark, dflt_value,
+    (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name), list,
 		&blkrec, &blk, DWG_LIFE);
 	else ok = dxf_new_block (drawing, name, descr, NULL, txt2attr, 
-		mark, hide_mark, value_mark, dflt_value, 
-		gui->drawing->layers[gui->layer_idx].name, list,
+		mark, hide_mark, value_mark, dflt_value,
+    (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name), list,
 		&blkrec, &blk, DWG_LIFE);
 	
 	if (ok) {
@@ -3539,12 +3560,12 @@ int script_new_block_file (lua_State *L) {
 	
 	/* Create block*/
 	if (ref_pt) ok = dxf_new_blk_file (drawing, name, descr, orig, txt2attr, 
-		mark, hide_mark, value_mark, dflt_value, 
-		gui->drawing->layers[gui->layer_idx].name, path,
+		mark, hide_mark, value_mark, dflt_value,
+    (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name), path,
 		&blkrec, &blk, DWG_LIFE);
 	else ok = dxf_new_blk_file (drawing, name, descr, NULL, txt2attr, 
-		mark, hide_mark, value_mark, dflt_value, 
-		gui->drawing->layers[gui->layer_idx].name, path,
+		mark, hide_mark, value_mark, dflt_value,
+    (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name), path,
 		&blkrec, &blk, DWG_LIFE);
 	
 	if (ok) {
@@ -3646,8 +3667,11 @@ int script_new_insert (lua_State *L) {
 	
 	dxf_node * new_el = (dxf_node *) dxf_new_insert ( name,
 		x, y, 0.0, /* placement point */
-		gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-		gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+		gui->color_idx, /* color, layer */
+    (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+		/* line type, line weight */
+    (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+    dxf_lw[gui->lw_idx],
 		0, FRAME_LIFE); /* paper space */
 		
 	if (!new_el) {
@@ -3743,7 +3767,8 @@ int script_get_dwg_appids (lua_State *L) {
 	while (appid = dxf_find_obj_nxt(gui->drawing->t_appid, &nxt_appid, "APPID")){
 		name_obj = dxf_find_attr2(appid, 2);
 		if (name_obj){
-			strncpy(name, name_obj->value.s_data, DXF_MAX_CHARS); /* preserve original string */
+			strncpy(name, /* preserve original string */
+        strpool_cstr2( &name_pool, name_obj->value.str), DXF_MAX_CHARS);
 			str_upp(name); /*upper case */
 			
 			lua_pushstring(L, name);
@@ -3789,7 +3814,8 @@ int script_set_layer (lua_State *L) {
 	}
 	else if (lua_isstring(L, 1)) {
 		char *name = (char *) lua_tostring(L, 1);
-		int idx = dxf_lay_idx (gui->drawing, name);
+		int idx = dxf_lay_idx (gui->drawing,
+      strpool_inject( &name_pool, (char const*) name, strlen(name) ));
 		/* change current layer*/
 		gui->layer_idx = idx;
 	}
@@ -3890,7 +3916,8 @@ int script_set_ltype (lua_State *L) {
 	}
 	else if (lua_isstring(L, 1)) {
 		char *name = (char *) lua_tostring(L, 1);
-		int idx = dxf_ltype_idx (gui->drawing, name);
+		int idx = dxf_ltype_idx (gui->drawing,
+      strpool_inject( &name_pool, (char const*) name, strlen(name) ));
 		/* change current ltype */
 		gui->ltypes_idx = idx;
 	}
@@ -3934,7 +3961,8 @@ int script_set_style (lua_State *L) {
 	}
 	else if (lua_isstring(L, 1)) {
 		char *name = (char *) lua_tostring(L, 1);
-		int idx = dxf_tstyle_idx (gui->drawing, name);
+		int idx = dxf_tstyle_idx (gui->drawing,
+      strpool_inject( &name_pool, (char const*) name, strlen(name) ), 0);
 		/* change current style */
 		gui->t_sty_idx = idx;
 	}
@@ -4036,7 +4064,8 @@ int script_set_param (lua_State *L) {
   }
   else if (field_typ == LUA_TSTRING) {
     char *name = (char *) lua_tostring(L, -1);
-    idx = dxf_lay_idx (gui->drawing, name);
+    idx = dxf_lay_idx (gui->drawing,
+      strpool_inject( &name_pool, (char const*) name, strlen(name) ));
     /* change current layer */
     gui->layer_idx = idx;
   }
@@ -4081,7 +4110,8 @@ int script_set_param (lua_State *L) {
   }
   else if (field_typ == LUA_TSTRING) {
     char *name = (char *) lua_tostring(L, -1);
-    idx = dxf_ltype_idx (gui->drawing, name);
+    idx = dxf_ltype_idx (gui->drawing,
+      strpool_inject( &name_pool, (char const*) name, strlen(name) ));
     /* change current line type */
     gui->ltypes_idx = idx;
   }
@@ -4099,7 +4129,8 @@ int script_set_param (lua_State *L) {
   }
   else if (field_typ == LUA_TSTRING) {
     char *name = (char *) lua_tostring(L, -1);
-    idx = dxf_tstyle_idx (gui->drawing, name);
+    idx = dxf_tstyle_idx (gui->drawing,
+      strpool_inject( &name_pool, (char const*) name, strlen(name) ), 0);
     /* change current style*/
     gui->t_sty_idx = idx;
   }
@@ -4396,7 +4427,8 @@ int script_new_appid (lua_State *L) {
 	while (appid_obj = dxf_find_obj_nxt(gui->drawing->t_appid, &nxt_appid_obj, "APPID")){
 		name_obj = dxf_find_attr2(appid_obj, 2);
 		if (name_obj){
-			strncpy(name, name_obj->value.s_data, DXF_MAX_CHARS); /* preserve original string */
+			strncpy(name, /* preserve original string */
+        strpool_cstr2( &name_pool, name_obj->value.str), DXF_MAX_CHARS);
 			str_upp(name); /*upper case */
 			
 			if (strcmp(name, new_str) == 0){

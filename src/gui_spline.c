@@ -2,7 +2,7 @@
 
 int gui_spline_interactive(gui_obj *gui){
 	if (gui->modal == SPLINE){
-		static dxf_node *new_el;
+		static dxf_node *new_el = NULL;
 		dxf_node *spline = NULL;
 		
 		if (gui->step == 0){
@@ -17,7 +17,7 @@ int gui_spline_interactive(gui_obj *gui){
 					7, "0", /* color, layer */
 					"Continuous", 0, /* line type, line weight */
 					0, ONE_TIME); /* paper space */
-				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, 0.0, DWG_LIFE);
+				dxf_lwpoly_append (new_el, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, 0.0, ONE_TIME);
 				gui->step = 1;
 				gui->en_distance = 1;
 				gui->draw_tmp = 1;
@@ -49,14 +49,20 @@ int gui_spline_interactive(gui_obj *gui){
 					
 					if (gui->spline_mode == SP_CTRL){					
 						spline =  dxf_new_spline (new_el, gui->sp_degree - 1, gui->closed,
-							gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-							gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+							gui->color_idx, /* color, layer */
+              (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+							/* line type, line weight */
+              (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+              dxf_lw[gui->lw_idx],
 							0, DWG_LIFE); /* paper space */
 					}
 					else {
 						spline =  dxf_new_spline2 (new_el, gui->closed,
-							gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-							gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+							gui->color_idx, /* color, layer */
+              (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+							/* line type, line weight */
+              (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+              dxf_lw[gui->lw_idx],
 							0, DWG_LIFE); /* paper space */
 					}
 					
@@ -69,6 +75,7 @@ int gui_spline_interactive(gui_obj *gui){
 					}
 					gui->step = 0;
 				}
+        new_el = NULL;
 				gui->element = NULL;
 				gui_first_step(gui);
 			}
@@ -80,14 +87,20 @@ int gui_spline_interactive(gui_obj *gui){
 			gui->draw_phanton = 1;
 			if (gui->spline_mode == SP_CTRL){
 				spline =  dxf_new_spline (new_el, gui->sp_degree - 1, gui->closed,
-					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+					gui->color_idx, /* color, layer */
+          (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+					/* line type, line weight */
+          (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+          dxf_lw[gui->lw_idx],
 					0, FRAME_LIFE); /* paper space */
 			}
 			else {
 				spline =  dxf_new_spline2 (new_el, gui->closed,
-					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+					gui->color_idx, /* color, layer */
+          (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+					/* line type, line weight */
+          (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+          dxf_lw[gui->lw_idx],
 					0, FRAME_LIFE); /* paper space */
 			}
 			if (spline)

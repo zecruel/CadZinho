@@ -5,8 +5,10 @@ static int ltype_cpy (dxf_ltype *dest, dxf_ltype *src, double scale){
 	if (dest == NULL || src == NULL) return 0;
 	
 	/* copy strings */
-	strncpy (dest->name, src->name, DXF_MAX_CHARS);
-	strncpy (dest->descr, src->descr, DXF_MAX_CHARS);
+	//strncpy (dest->name, src->name, DXF_MAX_CHARS);
+  dest->name = src->name;
+	//strncpy (dest->descr, src->descr, DXF_MAX_CHARS);
+  dest->descr = src->descr;
 	/* main dashes information */
 	dest->size = src->size;
 	dest->length = src->length * scale; /* apply scale */
@@ -19,7 +21,7 @@ static int ltype_cpy (dxf_ltype *dest, dxf_ltype *src, double scale){
 		/* copy each dash definition, and apply scale factor in dimmension parameters */
 		dest->dashes[i].dash = src->dashes[i].dash * scale; 
 		dest->dashes[i].type  = src->dashes[i].type;
-		strncpy (dest->dashes[i].sty, src->dashes[i].sty, 29);
+    dest->dashes[i].sty = src->dashes[i].sty;
 		dest->dashes[i].sty_i  = src->dashes[i].sty_i;
 		dest->dashes[i].abs_rot  = src->dashes[i].abs_rot;
 		dest->dashes[i].rot  = src->dashes[i].rot;
@@ -32,7 +34,7 @@ static int ltype_cpy (dxf_ltype *dest, dxf_ltype *src, double scale){
 			dest->dashes[i].num  = src->dashes[i].num;
 		}
 		else if (dest->dashes[i].type == LTYP_STRING){
-			strncpy (dest->dashes[i].str, src->dashes[i].str, 29);
+      dest->dashes[i].str = src->dashes[i].str;
 		}
 	}
 	
@@ -125,15 +127,15 @@ dxf_ltype * parse_lin_def(char *doc, int *n){
 			end_field = 0;
 			if (state == NAME){ /* init line type */
 				/* get line type name */
-				strncpy(ret_vec[*n].name, field, 80);
+        ret_vec[*n].name = strpool_inject( &name_pool, (char const*) field, strlen(field) );
 				/* init other parameters */
-				ret_vec[*n].descr[0] = 0;
+        ret_vec[*n].descr = 0;
 				ret_vec[*n]. size = 0;
 				ret_vec[*n].length = 0.0;
 				ret_vec[*n].dashes[0].dash = 0;
 				ret_vec[*n].dashes[0].type = LTYP_SIMPLE;
-				ret_vec[*n].dashes[0].str[0] = 0;
-				ret_vec[*n].dashes[0].sty[0] = 0;
+        ret_vec[*n].dashes[0].str = 0;
+        ret_vec[*n].dashes[0].sty = 0;
 				ret_vec[*n].dashes[0].sty_i = -1;
 				ret_vec[*n].dashes[0].abs_rot = 0;
 				ret_vec[*n].dashes[0].rot = 0.0;
@@ -146,7 +148,7 @@ dxf_ltype * parse_lin_def(char *doc, int *n){
 				else state = DESCR; /* optional description */
 			}
 			else if (state == DESCR){
-				strncpy(ret_vec[*n].descr, field, 80);
+        ret_vec[*n].descr = strpool_inject( &value_pool, (char const*) field, strlen(field) );
 				if (new_line) state = ALIGN;
 				else state = NONE; /* ERROR */
 			}
@@ -158,17 +160,17 @@ dxf_ltype * parse_lin_def(char *doc, int *n){
 			else if (state == STROKE){
 				/* dash length */
 				stroke = atof(field);
-				ret_vec[*n].dashes[ret_vec[*n]. size].dash = stroke;
+				ret_vec[*n].dashes[ret_vec[*n].size].dash = stroke;
 				/* init current dash parameters*/
-				ret_vec[*n].dashes[ret_vec[*n]. size].type = LTYP_SIMPLE;
-				ret_vec[*n].dashes[ret_vec[*n]. size].str[0] = 0;
-				ret_vec[*n].dashes[ret_vec[*n]. size].sty[0] = 0;
-				ret_vec[*n].dashes[ret_vec[*n]. size].sty_i = -1;
-				ret_vec[*n].dashes[ret_vec[*n]. size].abs_rot = 0;
-				ret_vec[*n].dashes[ret_vec[*n]. size].rot = 0.0;
-				ret_vec[*n].dashes[ret_vec[*n]. size].scale = 1.0;
-				ret_vec[*n].dashes[ret_vec[*n]. size].ofs_x = 0.0;
-				ret_vec[*n].dashes[ret_vec[*n]. size].ofs_y = 0.0;
+				ret_vec[*n].dashes[ret_vec[*n].size].type = LTYP_SIMPLE;
+        ret_vec[*n].dashes[ret_vec[*n].size].str = 0;
+        ret_vec[*n].dashes[ret_vec[*n].size].sty = 0;
+				ret_vec[*n].dashes[ret_vec[*n].size].sty_i = -1;
+				ret_vec[*n].dashes[ret_vec[*n].size].abs_rot = 0;
+				ret_vec[*n].dashes[ret_vec[*n].size].rot = 0.0;
+				ret_vec[*n].dashes[ret_vec[*n].size].scale = 1.0;
+				ret_vec[*n].dashes[ret_vec[*n].size].ofs_x = 0.0;
+				ret_vec[*n].dashes[ret_vec[*n].size].ofs_y = 0.0;
 				
 				/* update line type global parameters */
 				ret_vec[*n].length += fabs(stroke);
@@ -190,23 +192,23 @@ dxf_ltype * parse_lin_def(char *doc, int *n){
 				if (cmplx_state == SHAPE){
 					/* get shape name */
 					ret_vec[*n].dashes[idx].type = LTYP_SHAPE;
-					strncpy(ret_vec[*n].dashes[idx].str, field, 29);
+          ret_vec[*n].dashes[idx].str = strpool_inject( &value_pool, (char const*) field, strlen(field) );
 					cmplx_state = FONT;
 				}
 				else if (cmplx_state == STRING){
 					/* get string in line type */
 					ret_vec[*n].dashes[idx].type = LTYP_STRING;
-					strncpy(ret_vec[*n].dashes[idx].str, field, 29);
+          ret_vec[*n].dashes[idx].str = strpool_inject( &value_pool, (char const*) field, strlen(field) );
 					cmplx_state = STYLE;
 				}
 				else if (cmplx_state == FONT){
 					/* get font name, for shape */
-					strncpy(ret_vec[*n].dashes[idx].sty, field, 29);
+          ret_vec[*n].dashes[idx].sty = strpool_inject( &name_pool, (char const*) field, strlen(field) );
 					cmplx_state = PARAM;
 				}
 				else if (cmplx_state == STYLE){
 					/* get text style name, for string */
-					strncpy(ret_vec[*n].dashes[idx].sty, field, 29);
+          ret_vec[*n].dashes[idx].sty = strpool_inject( &name_pool, (char const*) field, strlen(field) );
 					cmplx_state = PARAM;
 				}
 				else if (cmplx_state == PARAM){
@@ -297,6 +299,7 @@ dxf_ltype * parse_lin_def(char *doc, int *n){
 }
 
 int font_tstyle_idx (dxf_drawing *drawing, char *name){
+//int font_tstyle_idx (dxf_drawing *drawing, STRPOOL_U64 name){
 	/* try to find a text style (return a index) looking for a font name */
 	int i;
 	char name1[DXF_MAX_CHARS], name2[DXF_MAX_CHARS];
@@ -305,7 +308,8 @@ int font_tstyle_idx (dxf_drawing *drawing, char *name){
 	if (drawing){
 		for (i=0; i < drawing->num_tstyles; i++){
 			/* look font name (file path) */
-			strncpy(name2, drawing->text_styles[i].file, DXF_MAX_CHARS); /* preserve original string */
+			strncpy(name2, /* preserve original string */
+        strpool_cstr2( &value_pool, drawing->text_styles[i].file), DXF_MAX_CHARS);
 			str_upp(name2); /*upper case */
 			if (strcmp(name1, name2) == 0){
 				return i;
@@ -326,19 +330,22 @@ dxf_ltype * load_lin_buf(dxf_drawing *drawing, char *buf, int *n){
 		for (j = 0; j < lib[i].size; j++){ /* validate each complex dash */
 			if (lib[i].dashes[j].type == LTYP_SHAPE){ /* dash have a shape element */
 				/* get drawing's text style, by looking its shape file */
-				drawing, lib[i].dashes[j].sty_i = font_tstyle_idx(drawing, lib[i].dashes[j].sty);
-				
+				drawing, lib[i].dashes[j].sty_i = font_tstyle_idx(drawing,
+          (char *) strpool_cstr2( &name_pool, lib[i].dashes[j].sty));
+        
 				if (drawing, lib[i].dashes[j].sty_i >= 0){ /* text style found */
 					struct tfont *font = drawing->text_styles[lib[i].dashes[j].sty_i].font;
 					if (font && font->type == FONT_SHP){ /* verify if is a shape file */
 						/* search shape, by looking its name */
-						shp_typ *shape = shp_name((shp_typ *)font->data, lib[i].dashes[j].str);
+						shp_typ *shape = shp_name((shp_typ *)font->data,
+              (char *) strpool_cstr2( &value_pool, lib[i].dashes[j].str));
 						if (shape){
 							lib[i].dashes[j].num = shape->num; /* update line type */
 						}
 					}
 				}
-				else if(dxf_new_tstyle_shp (drawing, lib[i].dashes[j].sty)){ /* try to add a new font and reload */
+				else if(dxf_new_tstyle_shp (drawing,
+          (char *) strpool_cstr2( &name_pool, lib[i].dashes[j].sty))){ /* try to add a new font and reload */
 					i = -1;
 					j = 0;
 					break;
@@ -346,7 +353,7 @@ dxf_ltype * load_lin_buf(dxf_drawing *drawing, char *buf, int *n){
 			}
 			else if (lib[i].dashes[j].type == LTYP_STRING){ /* dash have a string element */
 				/* get drawing's text style, by looking its name */
-				drawing, lib[i].dashes[j].sty_i = dxf_tstyle_idx(drawing, lib[i].dashes[j].sty);
+				drawing, lib[i].dashes[j].sty_i = dxf_tstyle_idx(drawing, lib[i].dashes[j].sty, 0);
 			}
 		}
 	}
@@ -447,8 +454,8 @@ int cmp_ltype_name(const void * a, const void * b) {
 	dxf_ltype *ltyp1 = ((struct sort_by_idx *)a)->data;
 	dxf_ltype *ltyp2 = ((struct sort_by_idx *)b)->data;
 	/* copy strings for secure manipulation */
-	strncpy(copy1, ltyp1->name, DXF_MAX_CHARS);
-	strncpy(copy2, ltyp2->name, DXF_MAX_CHARS);
+	strncpy(copy1, strpool_cstr2( &name_pool, ltyp1->name), DXF_MAX_CHARS);
+	strncpy(copy2, strpool_cstr2( &name_pool, ltyp2->name), DXF_MAX_CHARS);
 	/* remove trailing spaces */
 	name1 = trimwhitespace(copy1);
 	name2 = trimwhitespace(copy2);
@@ -487,6 +494,7 @@ int cmp_ltype_use_rev(const void * a, const void * b) {
 int ltyp_mng (gui_obj *gui){
 	int i, show_ltyp_mng = 1;
 	static int show_add = 0, show_ltyp_name = 0, init = 0;
+  static STRPOOL_U64 by_b, by_l, dflt_l;
 	
 	gui->next_win_x += gui->next_win_w + 3;
 	//gui->next_win_y += gui->next_win_h + 3;
@@ -512,6 +520,9 @@ int ltyp_mng (gui_obj *gui){
 		bmp_color transp = {.r = 255, .g = 255, .b = 255, .a = 0};
 		bmp_color black = {.r = 0, .g = 0, .b =0, .a = 255};
 		for (i = 0; i <= DXF_MAX_LTYPES; i++){
+      by_b = strpool_inject( &name_pool, "BYBLOCK", strlen("BYBLOCK"));
+      by_l = strpool_inject( &name_pool, "BYLAYER", strlen("BYLAYER"));
+      dflt_l = strpool_inject( &name_pool, "Continuous", strlen("Continuous"));
 			/* initialize preview images */
 			/* dimensions */
 			ltyp_prev[i].width = PREV_W;
@@ -585,9 +596,7 @@ int ltyp_mng (gui_obj *gui){
 	num_ltypes = 0;
 	max_len = 0.0;
 	for (i = 0; i < gui->drawing->num_ltypes; i++){
-		strncpy(str_copy, ltypes[i].name, DXF_MAX_CHARS);
-		str_upp(str_copy);
-		if (!(strcmp(str_copy, "BYLAYER") == 0 || strcmp(str_copy, "BYBLOCK") == 0)){ /* skip bylayer and byblock line descriptions */
+    if (!(ltypes[i].name == by_l || ltypes[i].name == by_b)){ /* skip bylayer and byblock line descriptions */
 			if (ltypes[i].size > 1 && ltypes[i].length > max_len) max_len = ltypes[i].length;
 			
 			sort_ltyp[num_ltypes].idx = i;
@@ -717,23 +726,27 @@ int ltyp_mng (gui_obj *gui){
 				ltyp_idx = sort_ltyp[i].idx; /* current ltype */
 				/* select/deselect ltype */
 				if (sel_ltyp == ltyp_idx){
-					if (nk_button_label_styled(gui->ctx, &gui->b_icon_sel, ltypes[ltyp_idx].name)){
+					if (nk_button_label_styled(gui->ctx, &gui->b_icon_sel,
+            strpool_cstr2( &name_pool, ltypes[ltyp_idx].name))){
 						sel_ltyp = -1;
 					}
 				}
 				else {
-					if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel, ltypes[ltyp_idx].name)){
+					if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel,
+            strpool_cstr2( &name_pool, ltypes[ltyp_idx].name))){
 						sel_ltyp = ltyp_idx;
 					}
 				}
 				
 				if (sel_ltyp == ltyp_idx){
-					if (nk_button_label_styled(gui->ctx, &gui->b_icon_sel, ltypes[ltyp_idx].descr)){
+					if (nk_button_label_styled(gui->ctx, &gui->b_icon_sel,
+            strpool_cstr2( &value_pool, ltypes[ltyp_idx].descr))){
 						sel_ltyp = -1;
 					}
 				}
 				else {
-					if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel, ltypes[ltyp_idx].descr)){
+					if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel,
+            strpool_cstr2( &value_pool, ltypes[ltyp_idx].descr))){
 						sel_ltyp = ltyp_idx;
 					}
 				}
@@ -770,7 +783,8 @@ int ltyp_mng (gui_obj *gui){
 		if ((nk_button_label(gui->ctx, _l("Rename"))) && (sel_ltyp >= 0)){
 			/* open a popup for entering the ltype name */
 			show_ltyp_name = 1;
-			strncpy(ltyp_name, ltypes[sel_ltyp].name, DXF_MAX_CHARS);
+			strncpy(ltyp_name,
+        strpool_cstr2( &name_pool, ltypes[sel_ltyp].name), DXF_MAX_CHARS);
 			ltyp_change = LTYP_OP_RENAME;
 			
 		}
@@ -849,10 +863,11 @@ int ltyp_mng (gui_obj *gui){
 					/* try to create a new ltype */
 					if ((ltyp_change == LTYP_OP_RENAME) && (sel_ltyp >= 0)){
 						/* verify if name already exists*/
+            STRPOOL_U64 name = strpool_inject( &name_pool, (char const*) ltyp_name, strlen(ltyp_name) );
 						ltyp_exist = 0;
 						for (i = 0; i < num_ltypes; i++){
 							if (i != sel_ltyp){ /*except current ltype*/
-								if(strcmp(ltypes[i].name, ltyp_name) == 0){
+                if(ltypes[i].name == name){
 									ltyp_exist = 1;
 									break;
 								}
@@ -949,16 +964,21 @@ int ltyp_mng (gui_obj *gui){
 						
 						for (i = 0; i < num_ltypes; i++){
 							int ltyp_idx = sort_ltyp[i].idx; /* current ltype */
-							if (nk_button_label(gui->ctx, ltypes[ltyp_idx].name)){
+							if (nk_button_label(gui->ctx,
+                strpool_cstr2( &name_pool, ltypes[ltyp_idx].name))){
 								/* pre set name and description of new line with selected one */
 								idx = ltyp_idx;
-								strncpy (cpy_from, ltypes[ltyp_idx].name, DXF_MAX_CHARS);
-								strncpy (name, ltypes[ltyp_idx].name, DXF_MAX_CHARS);
-								strncpy (descr, ltypes[ltyp_idx].descr, DXF_MAX_CHARS);
+								strncpy (cpy_from,
+                  strpool_cstr2( &name_pool, ltypes[ltyp_idx].name), DXF_MAX_CHARS);
+								strncpy (name,
+                  strpool_cstr2( &name_pool, ltypes[ltyp_idx].name), DXF_MAX_CHARS);
+								strncpy (descr,
+                  strpool_cstr2( &value_pool, ltypes[ltyp_idx].descr), DXF_MAX_CHARS);
 								nk_combo_close(gui->ctx);
 								break;
 							}
-							nk_label(gui->ctx, ltypes[ltyp_idx].descr, NK_TEXT_LEFT);
+							nk_label(gui->ctx,
+                strpool_cstr2( &value_pool, ltypes[ltyp_idx].descr), NK_TEXT_LEFT);
 						}
 						
 						nk_combo_end(gui->ctx);
@@ -1070,30 +1090,38 @@ int ltyp_mng (gui_obj *gui){
 							for (i = 0; i < n_lib; i++){ /* show each line type information */
 								/* select/deselect ltype */
 								if (sel_ltyp == i){
-									if (nk_button_label_styled(gui->ctx, &gui->b_icon_sel, lib[i].name)){
+									if (nk_button_label_styled(gui->ctx, &gui->b_icon_sel,
+                    strpool_cstr2( &name_pool, lib[i].name))){
 										sel_ltyp = -1;
 									}
 								}
 								else {
-									if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel, lib[i].name)){
+									if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel,
+                    strpool_cstr2( &name_pool, lib[i].name))){
 										sel_ltyp = i;
 										/* pre set name and description of new line with selected one */
-										strncpy (name, lib[i].name, DXF_MAX_CHARS);
-										strncpy (descr, lib[i].descr, DXF_MAX_CHARS);
+										strncpy (name,
+                      strpool_cstr2( &name_pool, lib[i].name), DXF_MAX_CHARS);
+										strncpy (descr,
+                      strpool_cstr2( &value_pool, lib[i].descr), DXF_MAX_CHARS);
 									}
 								}
 								
 								if (sel_ltyp == i){
-									if (nk_button_label_styled(gui->ctx, &gui->b_icon_sel, lib[i].descr)){
+									if (nk_button_label_styled(gui->ctx, &gui->b_icon_sel,
+                    strpool_cstr2( &value_pool, lib[i].descr))){
 										sel_ltyp = -1;
 									}
 								}
 								else {
-									if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel, lib[i].descr)){
+									if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel,
+                    strpool_cstr2( &value_pool, lib[i].descr))){
 										sel_ltyp = i;
 										/* pre set name and description of new line with selected one */
-										strncpy (name, lib[i].name, DXF_MAX_CHARS);
-										strncpy (descr, lib[i].descr, DXF_MAX_CHARS);
+                    strncpy (name,
+                      strpool_cstr2( &name_pool, lib[i].name), DXF_MAX_CHARS);
+										strncpy (descr,
+                      strpool_cstr2( &value_pool, lib[i].descr), DXF_MAX_CHARS);
 									}
 								}
 							}
@@ -1149,8 +1177,8 @@ int ltyp_mng (gui_obj *gui){
 				if (mode == LT_ADD_CPY){
 					if (idx > -1){
 						ltype_cpy (&line_type, &ltypes[idx], scale); /* deep copy the line type structure */
-						strncpy (line_type.name, name, DXF_MAX_CHARS);
-						strncpy (line_type.descr, descr, DXF_MAX_CHARS);
+            line_type.name = strpool_inject( &name_pool, (char const*) name, strlen(name) );
+            line_type.descr = strpool_inject( &value_pool, (char const*) descr, strlen(descr) );
 						
 						if (!dxf_new_ltype (gui->drawing, &line_type)){
 							/* fail to  create, commonly name already exists */
@@ -1169,8 +1197,8 @@ int ltyp_mng (gui_obj *gui){
 				else{
 					if (n_lib > 0 && sel_ltyp>= 0){
 						ltype_cpy (&line_type, &lib[sel_ltyp], scale); /* deep copy the line type structure */
-						strncpy (line_type.name, name, DXF_MAX_CHARS);
-						strncpy (line_type.descr, descr, DXF_MAX_CHARS);
+            line_type.name = strpool_inject( &name_pool, (char const*) name, strlen(name) );
+            line_type.descr = strpool_inject( &value_pool, (char const*) descr, strlen(descr) );
 						
 						if (!dxf_new_ltype (gui->drawing, &line_type)){
 							/* fail to  create, commonly name already exists */
@@ -1203,7 +1231,7 @@ int ltype_rename(dxf_drawing *drawing, int idx, char *name){
 	/* rename existing ltype -  update all related elements in drawing */
 	int ok = 0, i;
 	dxf_node *current, *prev, *obj = NULL, *list[3], *ltyp_obj;
-	char *new_name = trimwhitespace(name);
+  STRPOOL_U64 new_name = strpool_inject( &name_pool, (char const*) name, strlen(name) );
 	
 	list[0] = NULL; list[1] = NULL; list[2] = NULL;
 	if (drawing){
@@ -1223,15 +1251,11 @@ int ltype_rename(dxf_drawing *drawing, int idx, char *name){
 			if (current->type == DXF_ENT){
 				ltyp_obj = dxf_find_attr2(current, 6); /* get element's ltype */
 				if (ltyp_obj){
-					char ltype[DXF_MAX_CHARS], old_name[DXF_MAX_CHARS];
-					strncpy(ltype, ltyp_obj->value.s_data, DXF_MAX_CHARS);
-					str_upp(ltype);
-					strncpy(old_name, drawing->ltypes[idx].name, DXF_MAX_CHARS);
-					str_upp(old_name);
 					/* verify if is related to modified ltype */
-					if(strcmp(ltype, old_name) == 0){
+          if (ltyp_obj->value.str == drawing->ltypes[idx].name){
 						/* change the ltype name */
-						dxf_attr_change(current, 6, new_name);
+						dxf_attr_change(current, 6,
+              (void *) strpool_cstr2( &name_pool, new_name));
 					}
 				}
 				/* search also in sub elements */
@@ -1272,8 +1296,9 @@ int ltype_rename(dxf_drawing *drawing, int idx, char *name){
 	}
 	
 	/* finally, change ltype's struct */
-	dxf_attr_change(drawing->ltypes[idx].obj, 2, new_name);
-	strncpy (drawing->ltypes[idx].name, new_name, DXF_MAX_CHARS);
+	dxf_attr_change(drawing->ltypes[idx].obj, 2,
+    (void *) strpool_cstr2( &name_pool, new_name));
+  drawing->ltypes[idx].name = new_name;
 	return ok;
 }
 
@@ -1304,7 +1329,7 @@ int ltype_use(dxf_drawing *drawing){
 				ltyp_obj = dxf_find_attr2(current, 6); /* get element's ltype */
 				if (ltyp_obj){
 					/* get ltype index */
-					idx = dxf_ltype_idx(drawing, ltyp_obj->value.s_data);
+          idx = dxf_ltype_idx(drawing, ltyp_obj->value.str);
 					/* and update its counting */
 					drawing->ltypes[idx].num_el++;
 					
@@ -1328,7 +1353,7 @@ int ltype_use(dxf_drawing *drawing){
 			while (current == NULL){
 				/* end of list sweeping */
 				if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
-					//printf("para\n");
+					
 					current = NULL;
 					break;
 				}
@@ -1357,18 +1382,22 @@ int ltype_prop(gui_obj *gui){
 	int h = num_ltypes * 25 + 5;
 	h = (h < 200)? h : 200;
 	
-	if (nk_combo_begin_label(gui->ctx, gui->drawing->ltypes[gui->ltypes_idx].name, nk_vec2(300, h))){
+	if (nk_combo_begin_label(gui->ctx,
+    strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+    nk_vec2(300, h))){
 		nk_layout_row_dynamic(gui->ctx, 20, 2);
 		
 		for (i = 0; i < num_ltypes; i++){
 			
-			if (nk_button_label(gui->ctx, gui->drawing->ltypes[i].name)){
+			if (nk_button_label(gui->ctx,
+        strpool_cstr2( &name_pool, gui->drawing->ltypes[i].name))){
 				gui->ltypes_idx = i;
 				gui->action = LTYPE_CHANGE;
 				nk_combo_close(gui->ctx);
 				break;
 			}
-			nk_label(gui->ctx, gui->drawing->ltypes[i].descr, NK_TEXT_LEFT);
+			nk_label(gui->ctx,
+        strpool_cstr2( &value_pool, gui->drawing->ltypes[i].descr), NK_TEXT_LEFT);
 		}
 		
 		nk_combo_end(gui->ctx);

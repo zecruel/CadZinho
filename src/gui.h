@@ -579,6 +579,7 @@ extern bmp_color dxf_colors[];
 extern const char *dxf_seed_2007;
 extern struct func_key func_keys[];
 extern const int func_keys_size;
+extern unsigned int wait_open;
 
 #ifndef DXF_LW_LEN
 	#define DXF_LW_LEN 24

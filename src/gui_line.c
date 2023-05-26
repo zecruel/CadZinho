@@ -11,8 +11,11 @@ int gui_line_interactive(gui_obj *gui){
 				/* create a new DXF line */
 				new_el = (dxf_node *) dxf_new_line (
 					gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, /* pt1, pt2 */
-					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+					gui->color_idx, /* color, layer */
+          (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+					/* line type, line weight */
+          (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+          dxf_lw[gui->lw_idx],
 					0, DWG_LIFE); /* paper space */
 				gui->element = new_el;
 				gui->step = 1;
@@ -39,8 +42,11 @@ int gui_line_interactive(gui_obj *gui){
 				
 				new_el = (dxf_node *) dxf_new_line (
 					gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->step_x[gui->step], gui->step_y[gui->step], 0.0, /* pt1, pt2 */
-					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+					gui->color_idx, /* color, layer */
+          (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+					/* line type, line weight */
+          (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+          dxf_lw[gui->lw_idx],
 					0, DWG_LIFE); /* paper space */
 				
 				gui->element = new_el;
@@ -50,8 +56,10 @@ int gui_line_interactive(gui_obj *gui){
 				gui_first_step(gui);
 			}
 			if (gui->ev & EV_MOTION){
-				dxf_attr_change(new_el, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
-				dxf_attr_change(new_el, 8, gui->drawing->layers[gui->layer_idx].name);
+				dxf_attr_change(new_el, 6,
+          (void *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name));
+				dxf_attr_change(new_el, 8,
+          (void *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name));
 				dxf_attr_change(new_el, 11, &gui->step_x[gui->step]);
 				dxf_attr_change(new_el, 21, &gui->step_y[gui->step]);
 				dxf_attr_change(new_el, 370, &dxf_lw[gui->lw_idx]);

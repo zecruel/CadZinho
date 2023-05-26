@@ -18,8 +18,10 @@ int gui_insert_interactive(gui_obj *gui){
 				/* create a candidate insert element */
 				new_el = dxf_new_insert (gui->blk_name,
 					gui->step_x[gui->step], gui->step_y[gui->step], 0.0, /* pt1 */
-					gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-					gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+					gui->color_idx, /* layer */
+          (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name), /* layer */
+          (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name), /* line type */
+          dxf_lw[gui->lw_idx], /* line weight */
 					0, DWG_LIFE);
 				/* go to next step */
 				gui->element = new_el;
@@ -68,12 +70,14 @@ int gui_insert_interactive(gui_obj *gui){
 				/* Modify insert parameters */
 				dxf_attr_change_i(new_el, 10, &gui->step_x[gui->step], -1);
 				dxf_attr_change_i(new_el, 20, &gui->step_y[gui->step], -1);
-				dxf_attr_change(new_el, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
-				dxf_attr_change(new_el, 8, gui->drawing->layers[gui->layer_idx].name);
+				dxf_attr_change(new_el, 6,
+          (void *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name));
+				dxf_attr_change(new_el, 8,
+          (void *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name));
 				dxf_attr_change(new_el, 62, &gui->color_idx);
 				dxf_attr_change(new_el, 41, &gui->scale_x);
 				dxf_attr_change(new_el, 42, &gui->scale_y);
-				dxf_attr_change(new_el, 43, &gui->scale_x);//
+				dxf_attr_change(new_el, 43, &gui->scale_x);
 				double angle = gui->angle;
 				if (angle <= 0.0) angle = 360.0 - angle;
 				angle = fmod(angle, 360.0);
@@ -161,7 +165,7 @@ int gui_insert_info (gui_obj *gui){
 				/* extents and zoom parameters */
 				double blk_x0, blk_y0, blk_x1, blk_y1, z, z_x, z_y, o_x, o_y;
 				double blk_z0, blk_z1;
-				
+				char * name = NULL;
 				nk_layout_row_dynamic(gui->ctx, 280, 2);
 				i = 0;
 				int blk_idx = -1;
@@ -172,11 +176,13 @@ int gui_insert_info (gui_obj *gui){
 						
 						/* get name of current block */
 						blk_nm = dxf_find_attr2(blk, 2);
-						if (blk_nm){
-							if((blk_nm->value.s_data[0] != '*') || (show_hidden_blks)){
-								if (nk_button_label(gui->ctx, blk_nm->value.s_data)){
+            name = NULL;
+						if (blk_nm) name = (char*) strpool_cstr2( &name_pool, blk_nm->value.str);
+            if (name) {
+              if((name[0] != '*') || (show_hidden_blks)){
+                if (nk_button_label(gui->ctx, name)){
 									blk_idx = i;
-									strncpy(gui->blk_name, blk_nm->value.s_data, DXF_MAX_CHARS-1);
+                  strncpy(gui->blk_name, name, DXF_MAX_CHARS-1);
 								}
 							}
 						}
@@ -193,8 +199,7 @@ int gui_insert_info (gui_obj *gui){
 					descr [0] = 0;
 					blk_nm = dxf_find_attr2(blk, 4);
 					if (blk_nm){
-						strncpy(descr, blk_nm->value.s_data, DXF_MAX_CHARS);
-						
+						strncpy(descr, strpool_cstr2( &value_pool, blk_nm->value.str), DXF_MAX_CHARS);
 					}
 					
 					blk_ei = 0;

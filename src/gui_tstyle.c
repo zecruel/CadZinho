@@ -8,8 +8,8 @@ int cmp_sty_name(const void * a, const void * b) {
 	dxf_tstyle *sty1 = ((struct sort_by_idx *)a)->data;
 	dxf_tstyle *sty2 = ((struct sort_by_idx *)b)->data;
 	/* copy strings for secure manipulation */
-	strncpy(copy1, sty1->name, DXF_MAX_CHARS);
-	strncpy(copy2, sty2->name, DXF_MAX_CHARS);
+	strncpy(copy1, strpool_cstr2( &name_pool, sty1->name), DXF_MAX_CHARS);
+	strncpy(copy2,  strpool_cstr2( &name_pool, sty2->name), DXF_MAX_CHARS);
 	/* remove trailing spaces */
 	name1 = trimwhitespace(copy1);
 	name2 = trimwhitespace(copy2);
@@ -31,8 +31,8 @@ int cmp_sty_font(const void * a, const void * b) {
 	dxf_tstyle *sty1 = ((struct sort_by_idx *)a)->data;
 	dxf_tstyle *sty2 = ((struct sort_by_idx *)b)->data;
 	/* copy strings for secure manipulation */
-	strncpy(copy1, sty1->file, DXF_MAX_CHARS);
-	strncpy(copy2, sty2->file, DXF_MAX_CHARS);
+	strncpy(copy1, strpool_cstr2( &value_pool, sty1->file), DXF_MAX_CHARS);
+	strncpy(copy2, strpool_cstr2( &value_pool, sty2->file), DXF_MAX_CHARS);
 	/* remove trailing spaces */
 	name1 = trimwhitespace(copy1);
 	name2 = trimwhitespace(copy2);
@@ -99,7 +99,8 @@ int t_sty_rename(dxf_drawing *drawing, int idx, char *name){
 	/* Rename text style - change the STYLE structure and the DXF entities wich uses this text style */
 	int ok = 0, i;
 	dxf_node *current, *prev, *obj = NULL, *list[2], *sty_obj;
-	char *new_name = trimwhitespace(name); /* remove trailing spaces*/
+	//char *new_name = trimwhitespace(name); /* remove trailing spaces*/
+  STRPOOL_U64 new_name = strpool_inject( &name_pool, (char const*) name, strlen(name) );
 	
 	list[0] = NULL; list[1] = NULL;
 	if (drawing){
@@ -120,18 +121,12 @@ int t_sty_rename(dxf_drawing *drawing, int idx, char *name){
 				sty_obj = dxf_find_attr2(current, 7);
 				if (sty_obj){
 					/* verify style name in entity*/
-					char t_sty[DXF_MAX_CHARS], old_name[DXF_MAX_CHARS];
-					strncpy(t_sty, sty_obj->value.s_data, DXF_MAX_CHARS); /* preserve original string */
-					str_upp(t_sty); /* upper to compare */
-					strncpy(old_name, drawing->text_styles[idx].name, DXF_MAX_CHARS); /* preserve original string */
-					str_upp(old_name); /*upper to compare */
-					
-					if(strcmp(t_sty, old_name) == 0){
+          if(sty_obj->value.str == drawing->text_styles[idx].name){
 						/* change if match */
-						dxf_attr_change(current, 7, new_name);
+						dxf_attr_change(current, 7,
+              (void *) strpool_cstr2( &name_pool, new_name));
 					}
 				}
-				
 				
 				if (current->obj.content){
 					/* starts the content sweep */
@@ -151,7 +146,7 @@ int t_sty_rename(dxf_drawing *drawing, int idx, char *name){
 			while (current == NULL){
 				/* end of list sweeping */
 				if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
-					//printf("para\n");
+					
 					current = NULL;
 					break;
 				}
@@ -170,9 +165,10 @@ int t_sty_rename(dxf_drawing *drawing, int idx, char *name){
 		}
 	}
 	/* change style name in DXF structure */
-	dxf_attr_change(drawing->text_styles[idx].obj, 2, new_name);
+	dxf_attr_change(drawing->text_styles[idx].obj, 2,
+    (void *) strpool_cstr2( &name_pool, new_name));
 	/* change in gui */
-	strncpy (drawing->text_styles[idx].name, new_name, DXF_MAX_CHARS);
+  drawing->text_styles[idx].name = new_name;
 	
 	return ok;
 }
@@ -181,13 +177,15 @@ int t_sty_rename(dxf_drawing *drawing, int idx, char *name){
 int t_sty_use(dxf_drawing *drawing){
 	/* Update text styles in use */
 	int ok = 0, i, idx;
-	dxf_node *current, *prev, *obj = NULL, *list[2], *sty_obj;
+	dxf_node *current, *prev, *obj = NULL, *list[4], *sty_obj;
 	
-	list[0] = NULL; list[1] = NULL;
+	list[0] = NULL; list[1] = NULL; list[2] = NULL; list[3] = NULL;
 	if (drawing){
 		/* look for entities in BLOCKS and ENTITIES sections */
 		list[0] = drawing->ents;
 		list[1] = drawing->blks;
+    list[2] = drawing->t_ltype;
+    list[3] = drawing->t_dimst;
 	}
 	else return 0;
 	
@@ -196,22 +194,41 @@ int t_sty_use(dxf_drawing *drawing){
 		drawing->text_styles[i].num_el = 0;
 	}
 	
-	for (i = 0; i< 2; i++){
+	for (i = 0; i < 4; i++){
 		obj = list[i];
 		current = obj;
 		while (current){ /* sweep current section */
 			ok = 1;
 			prev = current;
 			if (current->type == DXF_ENT){
-				/* Look for DXF code group 7, text style name */
-				sty_obj = dxf_find_attr2(current, 7);
-				if (sty_obj){
-					/* look for text style index */
-					idx = dxf_tstyle_idx(drawing, sty_obj->value.s_data);
-					/* increment elements wich uses its style*/
-					drawing->text_styles[idx].num_el++;
+        if (obj == drawing->ents || obj == drawing->blks){ /* entities */
+          /* Look for DXF code group 7, text style name */
+          sty_obj = dxf_find_attr2(current, 7);
+          if (sty_obj){
+            /* look for text style index */
+            idx = dxf_tstyle_idx(drawing, sty_obj->value.str, 0);
+            /* increment elements wich uses its style*/
+            drawing->text_styles[idx].num_el++;
+          }
 				}
-				
+        else if (obj == drawing->t_ltype || obj == drawing->t_dimst){ /* tables */
+          sty_obj = dxf_find_attr2(current, 340); /* get element's style handle */
+          if (sty_obj){
+            
+            long int id = strtol(strpool_cstr2( &value_pool, sty_obj->value.str), NULL, 16);
+            /* look for correspondent style object */
+            sty_obj = dxf_find_handle(drawing->t_style, id);
+            if (sty_obj){
+              dxf_node * file = dxf_find_attr2(sty_obj, 3); /* get style file */
+              sty_obj = dxf_find_attr2(sty_obj, 2); /* get style name */
+              if (sty_obj && file){
+                idx = dxf_tstyle_idx(drawing, sty_obj->value.str, file->value.str);
+                /* increment elements wich uses its style*/
+                drawing->text_styles[idx].num_el++;
+              }
+            }
+          }
+        }
 				
 				if (current->obj.content){
 					/* starts the content sweep */
@@ -231,7 +248,7 @@ int t_sty_use(dxf_drawing *drawing){
 			while (current == NULL){
 				/* end of list sweeping */
 				if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
-					//printf("para\n");
+					
 					current = NULL;
 					break;
 				}
@@ -448,22 +465,29 @@ int tstyles_mng (gui_obj *gui){
 			nk_layout_row(gui->ctx, NK_STATIC, 22, 8, (float[]){175, 175, 175, 50, 50, 50, 50, 50});
 			char txt[DXF_MAX_CHARS];
 			for (i = 0; i < num_tstyles; i++){
-				
-				/* hilite the selected text style in list */
 				t_sty_idx = sort_tstyle[i].idx;
+        if (!t_sty[t_sty_idx].name) continue; /* show only the named styles */
+        
+        /* hilite the selected text style in list */
 				sel_type = &gui->b_icon_unsel;
 				if (sel_t_sty == t_sty_idx) sel_type = &gui->b_icon_sel;
 				
 				/* show current text style name */
-				if (nk_button_label_styled(gui->ctx, sel_type, t_sty[t_sty_idx].name)){
+				if (nk_button_label_styled(gui->ctx, sel_type,
+          strpool_cstr2( &name_pool, t_sty[t_sty_idx].name))){
 					sel_t_sty = t_sty_idx; /* select current text style */
 				}
 				
 				/* show font file */
-				if (nk_button_label_styled(gui->ctx, sel_type, t_sty[t_sty_idx].file)) sel_t_sty = t_sty_idx; /* select current text style */
+				if (nk_button_label_styled(gui->ctx, sel_type,
+          strpool_cstr2( &value_pool, t_sty[t_sty_idx].file)))
+          sel_t_sty = t_sty_idx; /* select current text style */
+          
 				
 				/* show if font was substituted in case of unavailability */
-				if (nk_button_label_styled(gui->ctx, sel_type, t_sty[t_sty_idx].subst_file)) sel_t_sty = t_sty_idx; /* select current text style */
+				if (nk_button_label_styled(gui->ctx, sel_type,
+          strpool_cstr2( &value_pool, t_sty[t_sty_idx].subst_file)))
+          sel_t_sty = t_sty_idx; /* select current text style */
 				
 				/* show width factor */
 				snprintf(txt, DXF_MAX_CHARS, "%0.2f", t_sty[t_sty_idx].width_f);
@@ -502,8 +526,10 @@ int tstyles_mng (gui_obj *gui){
 		if ((nk_button_label(gui->ctx, _l("Edit"))) && (sel_t_sty >= 0)){
 			show_edit = 1; /* show edit window */
 			/* initialize variables for edit window with selected text style parameters*/
-			strncpy(sty_name, t_sty[sel_t_sty].name, DXF_MAX_CHARS);
-			strncpy(sty_font, t_sty[sel_t_sty].file, DXF_MAX_CHARS);
+			strncpy(sty_name,
+        strpool_cstr2( &name_pool, t_sty[sel_t_sty].name), DXF_MAX_CHARS);
+			strncpy(sty_font,
+        strpool_cstr2( &value_pool, t_sty[sel_t_sty].file), DXF_MAX_CHARS);
 			
 			snprintf(sty_w_fac, 63, "%f", t_sty[sel_t_sty].width_f);
 			snprintf(sty_fixed_h, 63, "%f", t_sty[sel_t_sty].fixed_h);
@@ -517,12 +543,9 @@ int tstyles_mng (gui_obj *gui){
 			
 		}
 		if ((nk_button_label(gui->ctx, _l("Remove"))) && (sel_t_sty >= 0)){
-			char name[DXF_MAX_CHARS] = "";
-			/*copy to a temporary string to preserve original name */
-			strncpy(name, t_sty[sel_t_sty].name, DXF_MAX_CHARS);
-			str_upp(name); /* upper case to compare*/
+			
 			/* preserve STANDARD text style from remove */
-			if (strcmp(name, "STANDARD") == 0){
+      if (t_sty[sel_t_sty].name == strpool_inject( &name_pool, "STANDARD", strlen("STANDARD") )){
 				snprintf(gui->log_msg, 63, _l("Error: Don't remove Standard Style"));
 			}
 			else{
@@ -647,47 +670,38 @@ int tstyles_mng (gui_obj *gui){
 				
 				/* verify if name is duplicated */
 				int sty_exist = 0;
-				char name1[DXF_MAX_CHARS] = "";
-				char name2[DXF_MAX_CHARS] = "";
-				
-				char *new_name = trimwhitespace(sty_name);
-				/*copy to a temporary string to preserve original name */
-				strncpy(name1, new_name, DXF_MAX_CHARS);
-				str_upp(name1); /* upper case to compare*/
-				
+        STRPOOL_U64 new_name = strpool_inject( &name_pool, (char const*) sty_name, strlen(sty_name) );
+        STRPOOL_U64 std = strpool_inject( &name_pool, "STANDARD", strlen("STANDARD") );
 				for (i = 0; i < num_tstyles; i++){
-					/*copy to a temporary string to preserve original name */
-					strncpy(name2, t_sty[i].name, DXF_MAX_CHARS);
-					str_upp(name2); /* upper case to compare*/
 					if (i == edit_sty) { /*if current text style */
 						/* preserve STANDARD text style from rename*/
-						if (strcmp(name2, "STANDARD") == 0){
-							if (strcmp(name2, name1) != 0) sty_exist = 2;
+            if (new_name == std){
+              sty_exist = 2;
 							break;
 						}
 					}
 					else{ /* verifify duplicated */
-						if (strcmp(name2, name1) == 0) sty_exist = 1;
-						break;
+            if (t_sty[i].name == new_name) {
+              sty_exist = 1;
+              break;
+            }
 					}
 				}
 				
 				if (!sty_exist){ /*proceed to rename, if no exists duplicated name*/
 					
 					/*--------- Style name  -----------*/
-					/*verify if was renamed*/
-					/*copy to a temporary string to preserve original name */
-					strncpy(name2, t_sty[edit_sty].name, DXF_MAX_CHARS);
-					str_upp(name2); /* upper case to compare*/
-					int renamed = strcmp(name2, name1);
+					/*verify if was renamed */
+          int renamed = t_sty[sel_t_sty].name != new_name;
 					if (renamed) {
 						/* change the STYLE structure and the DXF entities wich uses this text style */
-						t_sty_rename(gui->drawing, edit_sty, new_name);
+						t_sty_rename(gui->drawing, edit_sty,
+              (char *) strpool_cstr2( &name_pool, new_name));
 					}
 					
 					/*--------- Style font file  -----------*/
 					/* change font setting in gui */
-					strncpy(t_sty[edit_sty].file, sty_font, DXF_MAX_CHARS);
+          t_sty[edit_sty].file = strpool_inject( &value_pool, sty_font, strlen(sty_font) );
 					/* change font setting in DXF structure */
 					dxf_attr_change(t_sty[edit_sty].obj, 3, sty_font);
 					

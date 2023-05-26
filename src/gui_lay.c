@@ -9,8 +9,8 @@ int cmp_layer_name(const void * a, const void * b) {
 	dxf_layer *lay1 = ((struct sort_by_idx *)a)->data;
 	dxf_layer *lay2 = ((struct sort_by_idx *)b)->data;
 	/* copy strings for secure manipulation */
-	strncpy(copy1, lay1->name, DXF_MAX_CHARS);
-	strncpy(copy2, lay2->name, DXF_MAX_CHARS);
+	strncpy(copy1, strpool_cstr2( &name_pool, lay1->name), DXF_MAX_CHARS);
+	strncpy(copy2, strpool_cstr2( &name_pool, lay2->name), DXF_MAX_CHARS);
 	/* remove trailing spaces */
 	name1 = trimwhitespace(copy1);
 	name2 = trimwhitespace(copy2);
@@ -33,8 +33,8 @@ int cmp_layer_ltype(const void * a, const void * b) {
 	dxf_layer *lay1 = ((struct sort_by_idx *)a)->data;
 	dxf_layer *lay2 = ((struct sort_by_idx *)b)->data;
 	/* copy strings for secure manipulation */
-	strncpy(copy1, lay1->ltype, DXF_MAX_CHARS);
-	strncpy(copy2, lay2->ltype, DXF_MAX_CHARS);
+	strncpy(copy1, strpool_cstr2( &name_pool, lay1->ltype), DXF_MAX_CHARS);
+	strncpy(copy2, strpool_cstr2( &name_pool, lay2->ltype), DXF_MAX_CHARS);
 	/* remove trailing spaces */
 	ltype1 = trimwhitespace(copy1);
 	ltype2 = trimwhitespace(copy2);
@@ -184,7 +184,15 @@ int lay_mng (gui_obj *gui){
 		LAY_OP_RENAME,
 		LAY_OP_UPDATE
 	};
-	static int lay_change = LAY_OP_NONE;
+	static int lay_change = LAY_OP_NONE, init = 0;
+  static STRPOOL_U64 by_b, by_l, dflt_l;
+  
+  if (!init){
+    by_b = strpool_inject( &name_pool, "BYBLOCK", strlen("BYBLOCK"));
+    by_l = strpool_inject( &name_pool, "BYLAYER", strlen("BYLAYER"));
+    dflt_l = strpool_inject( &name_pool, "Continuous", strlen("Continuous"));
+    init = 1;
+  }
 	
 	if (nk_begin(gui->ctx, _l("Layer Manager"), nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
@@ -424,12 +432,14 @@ int lay_mng (gui_obj *gui){
 				lay_idx = sort_lay[i].idx; /* current layer */
 				/* select/deselect layer */
 				if (sel_lay == lay_idx){
-					if (nk_button_label_styled(gui->ctx, &gui->b_icon_sel, layers[lay_idx].name)){
+					if (nk_button_label_styled(gui->ctx, &gui->b_icon_sel,
+            strpool_cstr2( &name_pool, layers[lay_idx].name))){
 						sel_lay = -1;
 					}
 				}
 				else {
-					if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel, layers[lay_idx].name)){
+					if (nk_button_label_styled(gui->ctx,&gui->b_icon_unsel,
+            strpool_cstr2( &name_pool, layers[lay_idx].name))){
 						sel_lay = lay_idx;
 					}
 				}
@@ -512,36 +522,38 @@ int lay_mng (gui_obj *gui){
 				int h = num_ltypes * 25 + 5;
 				h = (h < 200)? h : 200;
 				
-				if (nk_combo_begin_label(gui->ctx, layers[lay_idx].ltype, nk_vec2(300, h))){
+				if (nk_combo_begin_label(gui->ctx,
+          strpool_cstr2( &name_pool, layers[lay_idx].ltype),
+          nk_vec2(300, h))){
+          
 					nk_layout_row_dynamic(gui->ctx, 20, 2);
 					
 					/* show available line patterns */
 					for (j = 0; j < num_ltypes; j++){
-						strncpy(str_tmp, ltypes[j].name, DXF_MAX_CHARS);
-						str_upp(str_tmp);
-						
 						/* skip unauthorized line types for layers */
-						if (strlen(str_tmp) == 0) continue;
-						if (strcmp(str_tmp, "BYBLOCK") == 0) continue;
-						if (strcmp(str_tmp, "BYLAYER") == 0) continue;
+            if (ltypes[j].name == 0) continue;
+						if (ltypes[j].name == by_b) continue;
+						if (ltypes[j].name == by_l) continue;
+            
 						
 						/* line type name*/
-						if (nk_button_label(gui->ctx, ltypes[j].name)){ /* change line type*/
+						if (nk_button_label(gui->ctx,
+              strpool_cstr2( &name_pool, ltypes[j].name))){ /* change line type*/
 							sel_ltype = j;
 							nk_combo_close(gui->ctx);
 							break;
 						}
 						/* show line type short description */
-						nk_label(gui->ctx, ltypes[j].descr, NK_TEXT_LEFT);
+						nk_label(gui->ctx, strpool_cstr2( &value_pool, ltypes[j].descr), NK_TEXT_LEFT);
 					}
 					nk_combo_end(gui->ctx);
 				}
 				
 				if (sel_ltype >= 0){
-					strncpy(layers[lay_idx].ltype, ltypes[sel_ltype].name, DXF_MAX_CHARS);
+          layers[lay_idx].ltype = ltypes[sel_ltype].name;
 					
-					dxf_attr_change(layers[lay_idx].obj, 6, layers[lay_idx].ltype);
-				
+					dxf_attr_change(layers[lay_idx].obj, 6,
+            (void *) strpool_cstr2( &name_pool, layers[lay_idx].ltype));
 				}
 				
 				/* layer's default line width */
@@ -581,7 +593,7 @@ int lay_mng (gui_obj *gui){
 		if ((nk_button_label(gui->ctx, _l("Rename"))) && (sel_lay >= 0)){
 			/* open a popup for entering the layer name */
 			show_lay_name = 1;
-			strncpy(lay_name, layers[sel_lay].name, DXF_MAX_CHARS);
+			strncpy(lay_name, strpool_cstr2( &name_pool, layers[sel_lay].name), DXF_MAX_CHARS);
 			lay_change = LAY_OP_RENAME;
 			
 		}
@@ -646,7 +658,8 @@ int lay_mng (gui_obj *gui){
 				if (nk_button_label(gui->ctx, _l("OK"))){
 					/* try to create a new layer */
 					if (lay_change == LAY_OP_CREATE){
-						if (!dxf_new_layer (gui->drawing, lay_name, 7, ltypes[dxf_ltype_idx (gui->drawing, "Continuous")].name)){
+						if (!dxf_new_layer (gui->drawing, lay_name, 7,
+                (char *) strpool_cstr2( &name_pool, ltypes[dxf_ltype_idx (gui->drawing, dflt_l)].name))){
 							/* fail to  create, commonly name already exists */
 							snprintf(gui->log_msg, 63, _l("Error: Layer already exists"));
 						}
@@ -660,9 +673,10 @@ int lay_mng (gui_obj *gui){
 					else if ((lay_change == LAY_OP_RENAME) && (sel_lay >= 0)){
 						/* verify if name already exists*/
 						lay_exist = 0;
+            STRPOOL_U64 name = strpool_inject( &name_pool, (char const*) lay_name, strlen(lay_name) );
 						for (i = 0; i < num_layers; i++){
 							if (i != sel_lay){ /*except current layer*/
-								if(strcmp(layers[i].name, lay_name) == 0){
+                if (layers[i].name == name){
 									lay_exist = 1;
 									break;
 								}
@@ -706,7 +720,8 @@ int layer_rename(dxf_drawing *drawing, int idx, char *name){
 	/* rename existing layer -  update all related elements in drawing */
 	int ok = 0, i;
 	dxf_node *current, *prev, *obj = NULL, *list[2], *lay_obj;
-	char *new_name = trimwhitespace(name);
+	
+  STRPOOL_U64 new_name = strpool_inject( &name_pool, (char const*) name, strlen(name) );
 	
 	list[0] = NULL; list[1] = NULL;
 	if (drawing){
@@ -725,15 +740,11 @@ int layer_rename(dxf_drawing *drawing, int idx, char *name){
 			if (current->type == DXF_ENT){
 				lay_obj = dxf_find_attr2(current, 8); /* get element's layer */
 				if (lay_obj){
-					char layer[DXF_MAX_CHARS], old_name[DXF_MAX_CHARS];
-					strncpy(layer, lay_obj->value.s_data, DXF_MAX_CHARS);
-					str_upp(layer);
-					strncpy(old_name, drawing->layers[idx].name, DXF_MAX_CHARS);
-					str_upp(old_name);
 					/* verify if is related to modified layer */
-					if(strcmp(layer, old_name) == 0){
+          if (lay_obj->value.str == drawing->layers[idx].name){
 						/* change the layer name */
-						dxf_attr_change(current, 8, new_name);
+						dxf_attr_change(current, 8,
+              (void *) strpool_cstr2( &name_pool, new_name));
 					}
 				}
 				/* search also in sub elements */
@@ -774,8 +785,9 @@ int layer_rename(dxf_drawing *drawing, int idx, char *name){
 	}
 	
 	/* finally, change layer's struct */
-	dxf_attr_change(drawing->layers[idx].obj, 2, new_name);
-	strncpy (drawing->layers[idx].name, new_name, DXF_MAX_CHARS);
+	dxf_attr_change(drawing->layers[idx].obj, 2,
+    (void *) strpool_cstr2( &name_pool, new_name));
+  drawing->layers[idx].name = new_name;
 	return ok;
 }
 
@@ -805,7 +817,7 @@ int layer_use(dxf_drawing *drawing){
 				lay_obj = dxf_find_attr2(current, 8); /* get element's layer */
 				if (lay_obj){
 					/* get layer index */
-					idx = dxf_lay_idx(drawing, lay_obj->value.s_data);
+          idx = dxf_lay_idx(drawing, lay_obj->value.str);
 					/* and update its counting */
 					drawing->layers[idx].num_el++;
 					
@@ -829,7 +841,7 @@ int layer_use(dxf_drawing *drawing){
 			while (current == NULL){
 				/* end of list sweeping */
 				if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
-					//printf("para\n");
+					
 					current = NULL;
 					break;
 				}
@@ -859,7 +871,10 @@ int layer_prop(gui_obj *gui){
 	int h = num_layers * 25 + 5;
 	h = (h < 300)? h : 300;
 	
-	if (nk_combo_begin_label(gui->ctx, gui->drawing->layers[gui->layer_idx].name, nk_vec2(300,h))){
+	if (nk_combo_begin_label(gui->ctx,
+    strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+    nk_vec2(300,h)))
+  {
 		int i;
 		float wid[] = {175, 20, 20, 20, 20};
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 5, wid);
@@ -873,7 +888,8 @@ int layer_prop(gui_obj *gui){
 		/* available layers */
 		for (i = 0; i < num_layers; i++){
 			/* layer name */
-			if (nk_button_label(gui->ctx, gui->drawing->layers[i].name)){
+			if (nk_button_label(gui->ctx,
+        strpool_cstr2( &name_pool, gui->drawing->layers[i].name))){
 				/* change current layer - also change selected objects */
 				gui->layer_idx = i;
 				gui->action = LAYER_CHANGE;

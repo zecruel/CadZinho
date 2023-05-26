@@ -9,6 +9,7 @@
 
 #include "list.h"
 #include "util.h"
+#include "strpool.h"
 
 #define DXF_MAX_LAYERS 1000
 #define DXF_MAX_LTYPES 1000
@@ -18,6 +19,11 @@
 #define DXF_POOL_PAGES 1000
 
 #define CZ_VERSION "0.3.0 - 2023"
+
+
+extern strpool_t obj_pool;
+extern strpool_t name_pool;
+extern strpool_t value_pool;
 
 struct sort_by_idx{
 	long int idx;
@@ -52,6 +58,7 @@ enum dxf_graph {
 	DXF_IMAGE 		= 0x400000,
 	DXF_IMAGE_DEF 	= 0x800000,
 	DXF_SPLINE 		= 0x1000000,
+  DXF_ATTDEF 		= 0x2000000,
 };
 
 enum dxf_pool_action{
@@ -95,7 +102,8 @@ struct Dxf_node{
 	union{
 		struct {
 			/* == entity dxf especific */
-			char name[DXF_MAX_CHARS+1]; /* standardized DXF name of entity */
+			/* standardized DXF name of entity */
+      STRPOOL_U64 id;
 			int layer;
 			int pool;
 			void * graphics; /* graphics information */
@@ -111,17 +119,18 @@ struct Dxf_node{
 			union {
 				double d_data; /* a float number, */
 				int i_data; /* a integer number, */
-				char s_data[DXF_MAX_CHARS+1]; /* or a string. */
-			};
+				/* or a string. */
+        STRPOOL_U64 str;
+      };
 		} value;
 	};
 }; 
 typedef struct Dxf_node dxf_node;
 
 struct Dxf_layer{
-	char name[DXF_MAX_CHARS+1];
+  STRPOOL_U64 name;
 	int color;
-	char ltype[DXF_MAX_CHARS+1];
+  STRPOOL_U64 ltype;
 	int line_w;
 	int frozen;
 	int lock;
@@ -135,7 +144,7 @@ typedef struct Dxf_layer dxf_layer;
 struct Dxf_ltyp_pat {
 	double dash;
 	enum dxf_ltyp_typ type;
-	char sty[30];
+  STRPOOL_U64 sty;
 	int sty_i;
 	int abs_rot;
 	double rot;
@@ -144,14 +153,14 @@ struct Dxf_ltyp_pat {
 	double ofs_y;
 	union {
 		long num;
-		char str[30];
+    STRPOOL_U64 str;
 	};
 };
 typedef struct Dxf_ltyp_pat dxf_ltyp_pat;
 
 struct Dxf_ltype{
-	char name[DXF_MAX_CHARS+1];
-	char descr[DXF_MAX_CHARS+1];
+  STRPOOL_U64 name;
+  STRPOOL_U64 descr;
 	int size;
 	//double pat[DXF_MAX_PAT];
 	dxf_ltyp_pat dashes[DXF_MAX_PAT];
@@ -162,11 +171,8 @@ struct Dxf_ltype{
 typedef struct Dxf_ltype dxf_ltype;
 
 struct Dxf_tstyle{
-	char name[DXF_MAX_CHARS+1];
-	char file[DXF_MAX_CHARS+1];
-	char big_file[DXF_MAX_CHARS+1];
-	char subst_file[DXF_MAX_CHARS+1];
-	
+	STRPOOL_U64 name, file, big_file, subst_file;
+  
 	int flags1;
 	int flags2;
 	int num_el;
@@ -182,9 +188,9 @@ struct Dxf_tstyle{
 typedef struct Dxf_tstyle dxf_tstyle;
 
 struct Dxf_dimsty{
-	char name[DXF_MAX_CHARS+1];
 	char post[DXF_MAX_CHARS+1]; /* custom text (sufix/prefix) for annotation */
 	char a_type[DXF_MAX_CHARS+1]; /* arrow type */
+  STRPOOL_U64 name;
 	
 	double scale; /* global scale for render */
 	double a_size; /* arrow size */
@@ -266,11 +272,15 @@ struct dxf_xref {
 
 /* functions*/
 
+char const* strpool_cstr2( strpool_t const* pool, STRPOOL_U64 handle );
+
 void dxf_ent_print2 (dxf_node *ent);
 
 void dxf_ent_print_f (dxf_node *ent, char *path);
 
 dxf_node * dxf_obj_new (char *name, int pool);
+
+dxf_node * dxf_obj_new2 (STRPOOL_U64 name, int pool);
 
 int dxf_ident_attr_type (int group);
 
@@ -308,11 +318,11 @@ void dxf_ltype_assemb (dxf_drawing *drawing);
 
 void dxf_tstyles_assemb (dxf_drawing *drawing);
 
-int dxf_lay_idx (dxf_drawing *drawing, char *name);
+int dxf_lay_idx (dxf_drawing *drawing, STRPOOL_U64 name);
 
-int dxf_ltype_idx (dxf_drawing *drawing, char *name);
+int dxf_ltype_idx (dxf_drawing *drawing, STRPOOL_U64 name);
 
-int dxf_tstyle_idx (dxf_drawing *drawing, char *name);
+int dxf_tstyle_idx (dxf_drawing *drawing, STRPOOL_U64 name, STRPOOL_U64 file);
 
 int dxf_save (char *path, dxf_drawing *drawing);
 
@@ -328,6 +338,8 @@ int dxf_find_head_var(dxf_node *obj, char *var, dxf_node **start, dxf_node **end
 
 dxf_drawing *dxf_drawing_new(int pool);
 
+int dxf_drawing_term(dxf_drawing *drawing);
+
 int dxf_drawing_clear (dxf_drawing *drawing);
 
 int dxf_obj_subst(dxf_node *orig, dxf_node *repl);
@@ -337,6 +349,8 @@ int dxf_obj_append(dxf_node *master, dxf_node *obj);
 int dxf_obj_detach(dxf_node *obj);
 
 int dxf_attr_append(dxf_node *master, int group, void *value, int pool);
+
+int dxf_attr_append_cpy(dxf_node *master, dxf_node *orig, int pool);
 
 int dxf_attr_insert_before(dxf_node *attr, int group, void *value, int pool);
 

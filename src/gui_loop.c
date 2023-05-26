@@ -54,7 +54,7 @@ int gui_main_loop (gui_obj *gui) {
   static int open_prg = 0;
 	static int progr_win = 0;
 	static int progr_end = 0;
-	static unsigned int wait_open = 0;
+	//static unsigned int wait_open = 0;
   
   struct draw_param d_param;
 	char file_path[DXF_MAX_CHARS];
@@ -98,7 +98,6 @@ int gui_main_loop (gui_obj *gui) {
   /* ===============================*/
   if (nk_window_is_any_hovered(gui->ctx)) {
     //SDL_ShowCursor(SDL_ENABLE);
-    //printf("show\n");
     SDL_SetCursor(gui->dflt_cur);
   }
   else{
@@ -605,12 +604,14 @@ int gui_main_loop (gui_obj *gui) {
       gui->file_size = 0;
       gui->low_proc = 1;
       
-      //dxf_ent_print2(gui->drawing->blks);
       dxf_ents_parse(gui->drawing);				
       gui->action = VIEW_ZOOM_EXT;
-      gui->layer_idx = dxf_lay_idx (gui->drawing, "0");
-      gui->ltypes_idx = dxf_ltype_idx (gui->drawing, "BYLAYER");
-      gui->t_sty_idx = dxf_tstyle_idx (gui->drawing, "STANDARD");
+      gui->layer_idx = dxf_lay_idx (gui->drawing,
+        strpool_inject( &name_pool, "0", 1));
+      gui->ltypes_idx = dxf_ltype_idx (gui->drawing,
+        strpool_inject( &name_pool, "BYLAYER", 7));
+      gui->t_sty_idx = dxf_tstyle_idx (gui->drawing,
+        strpool_inject( &name_pool, "STANDARD", 8), 0);
       gui->color_idx = 256;
       gui->lw_idx = DXF_LW_LEN;
       wait_open = 0;
@@ -632,7 +633,7 @@ int gui_main_loop (gui_obj *gui) {
   if(gui->action == EXIT) {
     running = 0;
   }
-  else if(gui->action == FILE_NEW) {
+  else if(gui->action == FILE_NEW && (wait_open == 0)) {
     gui->action = NONE;
     do_mem_pool(ZERO_DO_ITEM);
     do_mem_pool(ZERO_DO_ENTRY);
@@ -648,9 +649,12 @@ int gui_main_loop (gui_obj *gui) {
       
     }
     
-    gui->layer_idx = dxf_lay_idx (gui->drawing, "0");
-    gui->ltypes_idx = dxf_ltype_idx (gui->drawing, "BYLAYER");
-    gui->t_sty_idx = dxf_tstyle_idx (gui->drawing, "STANDARD");
+    gui->layer_idx = dxf_lay_idx (gui->drawing,
+      strpool_inject( &name_pool, "0", 1));
+    gui->ltypes_idx = dxf_ltype_idx (gui->drawing,
+      strpool_inject( &name_pool, "BYLAYER", 7));
+    gui->t_sty_idx = dxf_tstyle_idx (gui->drawing,
+      strpool_inject( &name_pool, "STANDARD", 8), 0);
     gui->color_idx = 256;
     gui->lw_idx = DXF_LW_LEN;
     gui->curr_path[0] = 0;
@@ -668,7 +672,7 @@ int gui_main_loop (gui_obj *gui) {
       gui->script_resume = 1;
     }
   }
-  else if((gui->action == FILE_OPEN) && (gui->path_ok)) {
+  else if((gui->action == FILE_OPEN) && (gui->path_ok) && (wait_open == 0)) {
     gui->action = NONE; gui->path_ok = 0;
     gui->file_buf = load_file_reuse(gui->curr_path, &gui->file_size);
     
@@ -679,6 +683,23 @@ int gui_main_loop (gui_obj *gui) {
       dxf_mem_pool(ZERO_DXF, DWG_LIFE);
       graph_mem_pool(ZERO_GRAPH, DWG_LIFE);
       graph_mem_pool(ZERO_LINE, DWG_LIFE);
+      
+      
+      {
+        /* reinit string pools */
+        strpool_term( &value_pool );
+        strpool_term( &name_pool );
+        
+        strpool_config_t str_pool_conf = strpool_default_config;
+        str_pool_conf.counter_bits = 32;
+        str_pool_conf.index_bits = 32;
+        str_pool_conf.ignore_case = 1;
+        strpool_init( &name_pool, &str_pool_conf);
+        
+        str_pool_conf.ignore_case = 0;
+        str_pool_conf.min_length = 256;
+        strpool_init( &value_pool, &str_pool_conf);
+      }
       
       wait_open = 1;
       gui->progress = 0;
@@ -720,7 +741,7 @@ int gui_main_loop (gui_obj *gui) {
       }
     }
   }
-  else if((gui->action == FILE_SAVE) && (gui->path_ok)){
+  else if((gui->action == FILE_SAVE) && (gui->path_ok) && (wait_open == 0)){
     gui->action = NONE; gui->path_ok = 0;
   
   
@@ -843,7 +864,7 @@ int gui_main_loop (gui_obj *gui) {
           if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
             
             if (do_add_item(gui->list_do.current, (dxf_node *)current->data, NULL)) {
-              //printf("add item = %d\n", current->data);
+              
             }
             
             // -------------------------------------------
@@ -913,7 +934,7 @@ int gui_main_loop (gui_obj *gui) {
           if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
             
             if (do_add_item(gui->list_do.current, (dxf_node *)current->data, NULL)) {
-              //printf("add item = %d\n", current->data);
+              
             }
           }
         }
@@ -966,7 +987,8 @@ int gui_main_loop (gui_obj *gui) {
           if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
             new_ent = dxf_ent_copy((dxf_node *)current->data, 0);
             
-            dxf_attr_change(new_ent, 8, gui->drawing->layers[gui->layer_idx].name);
+            dxf_attr_change(new_ent, 8,
+              (void *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name));
             
             new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
             
@@ -1026,7 +1048,8 @@ int gui_main_loop (gui_obj *gui) {
           if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
             new_ent = dxf_ent_copy((dxf_node *)current->data, 0);
             
-            dxf_attr_change(new_ent, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
+            dxf_attr_change(new_ent, 6,
+              (void *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name));
             new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
             
             dxf_obj_subst((dxf_node *)current->data, new_ent);

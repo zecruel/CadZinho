@@ -42,11 +42,13 @@ int gui_ed_text_interactive(gui_obj *gui){
 		nk_str_clear(&gui->text_edit.string);
 		for (i = 0; x = dxf_find_attr_i(text_el, 3, i); i++){
 			/* first, get the additional text (MTEXT ent) */
-			nk_str_append_str_char(&gui->text_edit.string, x->value.s_data);
+			nk_str_append_str_char(&gui->text_edit.string,
+        strpool_cstr2( &value_pool, x->value.str));
 		}
 		for (i = 0; x = dxf_find_attr_i(text_el, 1, i); i++){
 			/* finally, get main text */
-			nk_str_append_str_char(&gui->text_edit.string, x->value.s_data);
+			nk_str_append_str_char(&gui->text_edit.string,
+        strpool_cstr2( &value_pool, x->value.str));
 		}
 		
 		gui->step = 2;
@@ -70,9 +72,8 @@ int gui_ed_text_interactive(gui_obj *gui){
 				else if (ent_type == DXF_TEXT){
 					for (i = 0; x = dxf_find_attr_i(new_ent, 1, i); i++){
 						/* limit of TEXT entity length */
-						len = (len < DXF_MAX_CHARS - 1)? len : DXF_MAX_CHARS - 1;
-						strncpy(x->value.s_data, text, len);
-						x->value.s_data[len] = 0; /* terminate string */
+						len = (len < DXF_MAX_CHARS) ? len : DXF_MAX_CHARS;
+            x->value.str = strpool_inject( &value_pool, (char const*) text, len );
 					}
 				}
 				new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0, DWG_LIFE);

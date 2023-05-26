@@ -278,8 +278,11 @@ int gui_ellip_interactive(gui_obj *gui){
 		new_el = (dxf_node *) dxf_new_ellipse (gui->step_x[0], gui->step_y[0], 0.0,
 			step1_x - gui->step_x[0], step1_y - gui->step_y[0], 0.0,
 			ratio, start, end,
-			gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-			gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+			gui->color_idx, /* color, layer */
+      (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+      /* line type, line weight */
+      (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+      dxf_lw[gui->lw_idx],
 			0, DWG_LIFE); /* paper space */
 		
 		new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);

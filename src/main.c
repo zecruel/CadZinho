@@ -75,6 +75,11 @@
 #include "dxf_globals.h"
 struct Matrix *aux_mtx1 = NULL;
 struct tfont *dflt_font = NULL;
+unsigned int wait_open = 0;
+
+strpool_t obj_pool;
+strpool_t name_pool;
+strpool_t value_pool;
 
 /* ---------------------------------------------------------*/
 
@@ -86,7 +91,21 @@ void update(void *arg){
 #endif
 
 int main(int argc, char** argv){
+  /* init globals */
 	aux_mtx1 = malloc(sizeof(struct Matrix));
+  wait_open = 0;
+  
+  /*init string pools */
+  strpool_config_t str_pool_conf = strpool_default_config;
+  str_pool_conf.counter_bits = 32;
+  str_pool_conf.index_bits = 32;
+  str_pool_conf.ignore_case = 1;
+  strpool_init( &obj_pool, &str_pool_conf);
+  strpool_init( &name_pool, &str_pool_conf);
+  
+  str_pool_conf.ignore_case = 0;
+  str_pool_conf.min_length = 256;
+  strpool_init( &value_pool, &str_pool_conf);
 	
 	gui_obj *gui = malloc(sizeof(gui_obj));
 	gui_start(gui);
@@ -381,9 +400,12 @@ int main(int argc, char** argv){
 		
 	}
 	
-	gui->layer_idx = dxf_lay_idx (gui->drawing, "0");
-	gui->ltypes_idx = dxf_ltype_idx (gui->drawing, "BYLAYER");
-	gui->t_sty_idx = dxf_tstyle_idx (gui->drawing, "STANDARD");
+  gui->layer_idx = dxf_lay_idx (gui->drawing,
+    strpool_inject( &name_pool, "0", 1));
+  gui->ltypes_idx = dxf_ltype_idx (gui->drawing,
+    strpool_inject( &name_pool, "BYLAYER", 7));
+  gui->t_sty_idx = dxf_tstyle_idx (gui->drawing,
+    strpool_inject( &name_pool, "STANDARD", 8), 0);
 	gui->color_idx = 256;
 	gui->lw_idx = DXF_LW_LEN;
 	/* *************************************************** */
@@ -532,9 +554,9 @@ int main(int argc, char** argv){
 	draw_gl_init ((void *)gui, 1);
 	
 	SDL_GL_DeleteContext(gui->gl_ctx.ctx);
-	
-	dxf_drawing_clear(gui->drawing);
-	dxf_drawing_clear(gui->clip_drwg);
+  
+  dxf_drawing_term(gui->clip_drwg);
+  dxf_drawing_term(gui->drawing);
 	
 	SDL_DestroyWindow(gui->window);
 	
@@ -578,15 +600,16 @@ int main(int argc, char** argv){
 	if (gui->dflt_lin) free(gui->dflt_lin);
 	if (gui->extra_lin) free(gui->extra_lin);
 	
-	free(gui->clip_drwg);
-	
-	free(gui->drawing);
 	free(aux_mtx1);
 	nk_sdl_shutdown(gui);
 	manage_buffer(0, BUF_FREE, 0);
 	manage_buffer(0, BUF_FREE, 1);
 	manage_buffer(0, BUF_FREE, 2);
 	manage_buffer(0, BUF_FREE, 3);
+  
+  strpool_term( &value_pool );
+  strpool_term( &name_pool );
+  strpool_term( &obj_pool );
 	
 	return 0;
 #endif

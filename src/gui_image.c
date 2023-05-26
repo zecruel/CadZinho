@@ -109,8 +109,11 @@ int gui_image_interactive(gui_obj *gui){
 				rect_pt1[0], rect_pt1[1], 0.0,
 				u, v, (double)gui->image_w, (double)gui->image_h,
 				gui->image_path,
-				gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-				gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+				gui->color_idx, /* color, layer */
+        (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+				/* line type, line weight */
+        (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+        dxf_lw[gui->lw_idx],
 				0, DWG_LIFE); /* paper space */
 			
 			/* draw entity */

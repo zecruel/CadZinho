@@ -94,9 +94,9 @@ int gui_prop_info (gui_obj *gui){
 		
 		/* get raw parameters directly from entity */
 		if(tmp = dxf_find_attr2(ent, 8))
-			strncpy (layer, tmp->value.s_data, DXF_MAX_CHARS);
+			strncpy (layer, strpool_cstr2( &name_pool, tmp->value.str), DXF_MAX_CHARS);
 		if(tmp = dxf_find_attr2(ent, 6))
-			strncpy (ltype, tmp->value.s_data, DXF_MAX_CHARS);
+			strncpy (ltype, strpool_cstr2( &name_pool, tmp->value.str), DXF_MAX_CHARS);
 		if(tmp = dxf_find_attr2(ent, 62))
 			color = abs(tmp->value.i_data);
 		if(tmp = dxf_find_attr2(ent, 370))
@@ -120,11 +120,11 @@ int gui_prop_info (gui_obj *gui){
 		
 		/* verify if element is a insert */
 		ins = 0;
-		if(strcmp(ent->obj.name, "INSERT") == 0){
+    if (dxf_ident_ent_type(ent) == DXF_INSERT){
 			ins = 1;
 			/* get block name */
 			if(tmp = dxf_find_attr2(ent, 2))
-				strncpy (blk_name, tmp->value.s_data, DXF_MAX_CHARS);
+				strncpy (blk_name, strpool_cstr2( &name_pool, tmp->value.str), DXF_MAX_CHARS);
 			/* get block angle and scales */
 			if(tmp = dxf_find_attr2(ent, 50))
 				blk_ang = tmp->value.d_data;
@@ -141,7 +141,8 @@ int gui_prop_info (gui_obj *gui){
 	}
 	else { /* all inited */
 		/* show entity type */
-		snprintf(tmp_str, DXF_MAX_CHARS, _l("Entity: %s"), ent->obj.name);
+		snprintf(tmp_str, DXF_MAX_CHARS, _l("Entity: %s"),
+      strpool_cstr2( &obj_pool, ent->obj.id));
 		nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
 		
 		/* ----------  properties -------------*/
@@ -154,14 +155,17 @@ int gui_prop_info (gui_obj *gui){
 		h = num_layers * 25 + 5;
 		h = (h < 200)? h : 200;
 		if (en_lay){ /* enable editing */
-			if (nk_combo_begin_label(gui->ctx, layers[lay_i].name, nk_vec2(200, h))){
+			if (nk_combo_begin_label(gui->ctx,
+        strpool_cstr2( &name_pool, layers[lay_i].name),
+        nk_vec2(200, h))){
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				/* show available layers in drawing */
 				for (j = 0; j < num_layers; j++){
 					/* skip unauthorized layers */
-					if (strlen(layers[j].name) == 0) continue;
+          if (layers[j].name == 0) continue;
 					/* layer name*/
-					if (nk_button_label(gui->ctx, layers[j].name)){
+					if (nk_button_label(gui->ctx,
+            strpool_cstr2( &name_pool, layers[j].name))){
 						/* choose layer */
 						lay_i = j;
 						nk_combo_close(gui->ctx);
@@ -182,21 +186,24 @@ int gui_prop_info (gui_obj *gui){
 		h = num_ltypes * 25 + 5;
 		h = (h < 200)? h : 200;
 		if (en_ltyp){ /* enable editing */
-			if (nk_combo_begin_label(gui->ctx, ltypes[ltyp_i].name, nk_vec2(300, h))){
+			if (nk_combo_begin_label(gui->ctx,
+        strpool_cstr2( &name_pool, ltypes[ltyp_i].name), nk_vec2(300, h))){
 				nk_layout_row_dynamic(gui->ctx, 20, 2);
 				/* show available line patterns in drawing */
 				for (j = 0; j < num_ltypes; j++){
 					/* skip unauthorized line types*/
-					if (strlen(ltypes[j].name) == 0) continue;
+          if (ltypes[j].name == 0) continue;
 					/* line type name*/
-					if (nk_button_label(gui->ctx, ltypes[j].name)){
+					if (nk_button_label(gui->ctx,
+            strpool_cstr2( &name_pool, ltypes[j].name))){
 						/* choose line type*/
 						ltyp_i = j;
 						nk_combo_close(gui->ctx);
 						break;
 					}
 					/* show line type short description */
-					nk_label(gui->ctx, ltypes[j].descr, NK_TEXT_LEFT);
+					nk_label(gui->ctx,
+            strpool_cstr2( &value_pool, ltypes[j].descr), NK_TEXT_LEFT);
 				}
 				nk_combo_end(gui->ctx);
 			}
@@ -262,8 +269,10 @@ int gui_prop_info (gui_obj *gui){
 							/* copy current entity to preserve information to undo */
 							new_ent = dxf_ent_copy((dxf_node *)current->data, 0);
 							/* change properties according options */
-							if (en_lay) dxf_attr_change(new_ent, 8, gui->drawing->layers[lay_i].name);
-							if (en_ltyp) dxf_attr_change(new_ent, 6, gui->drawing->ltypes[ltyp_i].name);
+							if (en_lay) dxf_attr_change(new_ent, 8,
+                (void *) strpool_cstr2( &name_pool, gui->drawing->layers[lay_i].name));
+							if (en_ltyp) dxf_attr_change(new_ent, 6,
+                (void *) strpool_cstr2( &name_pool, gui->drawing->ltypes[ltyp_i].name));
 							if (en_color) dxf_attr_change(new_ent, 62, &color);
 							if (en_lw) dxf_attr_change(new_ent, 370, &dxf_lw[lw_i]);
 							/* update in drawing */

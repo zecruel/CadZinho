@@ -33,22 +33,23 @@ int gui_expl_interactive(gui_obj *gui){
 			
 			dxf_node *ent = NULL;
 			list_node *curr_sel = gui->sel_list->next;
-			int init_do = 0;
+			int init_do = 0, typ = DXF_NONE;
 			
 			while(curr_sel){
 				ent = (dxf_node *) curr_sel->data;
 				list_node * list = NULL;
-				if( (strcmp(ent->obj.name, "INSERT") == 0) && (gui->expl_mode & EXPL_INS) ){
+        typ = dxf_ident_ent_type(ent);
+        
+        if ( typ == DXF_INSERT && (gui->expl_mode & EXPL_INS) ){
 					/* explode insert entity in a list of entities */
 					list = dxf_edit_expl_ins(gui->drawing, ent, gui->expl_mode);
 				}
-				else if( ((strcmp(ent->obj.name, "LWPOLYLINE") == 0) ||
-					(strcmp(ent->obj.name, "POLYLINE") == 0)) && 
+        else if ( (typ == DXF_LWPOLYLINE || typ == DXF_POLYLINE) &&
 					(gui->expl_mode & EXPL_POLY) ){
 					/* explode polyline entity in a list of lines and arcs */
 					list = dxf_edit_expl_poly(gui->drawing, ent, gui->expl_mode);
-				}
-				else if( (strcmp(ent->obj.name, "DIMENSION") == 0) && (gui->expl_mode & EXPL_DIM) ){
+				} 
+        else if ( typ == DXF_DIMENSION && (gui->expl_mode & EXPL_DIM) ){
 					/* explode dimension entity in a list of entities */
 					list = dxf_edit_expl_dim(gui->drawing, ent, gui->expl_mode);
 				}

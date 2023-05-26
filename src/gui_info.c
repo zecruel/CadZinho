@@ -21,17 +21,19 @@ void nk_dxf_ent_info (struct nk_context *ctx, dxf_node *ent, int id){ /* print t
 		prev = current;
 		if (current->type == DXF_ENT){
 			/* DXF entities are show as Tree widget */
-			if (current->obj.name){
+      if (current->obj.id){
 				id++; /* increment id for child Trees */
 				if (level == 0){ /* verify if is the first Tree */
-					if (tree_st[level] = nk_tree_push_id(ctx, NK_TREE_TAB, current->obj.name, NK_MINIMIZED, id)) {
+					if (tree_st[level] = nk_tree_push_id(ctx, NK_TREE_TAB,
+              strpool_cstr2( &obj_pool, current->obj.id), NK_MINIMIZED, id)) {
 						/* if Tree is not minimized, start the placement of child widgets */
 						nk_layout_row_dynamic(ctx, 13, 1);
 						nk_label(ctx, "-----", NK_TEXT_LEFT);
 					}
 				}
 				else if (tree_st[level - 1]){ /* verify if the up level Tree is not minimized */
-					if (tree_st[level] = nk_tree_push_id(ctx, NK_TREE_TAB, current->obj.name, NK_MINIMIZED, id)) {
+					if (tree_st[level] = nk_tree_push_id(ctx, NK_TREE_TAB,
+            strpool_cstr2( &obj_pool, current->obj.id), NK_MINIMIZED, id)) {
 						/* if Tree is not minimized, start the placement of child widgets */
 						nk_layout_row_dynamic(ctx, 13, 1);
 						nk_label(ctx, "-----", NK_TEXT_LEFT);
@@ -54,9 +56,11 @@ void nk_dxf_ent_info (struct nk_context *ctx, dxf_node *ent, int id){ /* print t
 			i = snprintf (text, 400, "%d = ", current->value.group);
 			switch (current->value.t_data) {
 				case DXF_STR:
-					if(current->value.s_data){
-						i += snprintf (text + i, 400 - i, current->value.s_data);
-					}
+          if (current->value.group == 2 || (current->value.group > 5 && current->value.group < 9) ){
+            i += snprintf (text + i, 400 - i, strpool_cstr2( &name_pool, current->value.str));
+          } else {
+            i += snprintf (text + i, 400 - i, strpool_cstr2( &value_pool, current->value.str));
+          }
 					break;
 				case DXF_FLOAT:
 					i += snprintf (text + i, 400 - i, "%f", current->value.d_data);

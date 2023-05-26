@@ -755,7 +755,9 @@ int gui_bottom_win (gui_obj *gui){
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 2);
 			
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PREV]))){
-				if (gui->drwg_hist_size > 1 && gui->drwg_hist_pos > 0){ /* verify if not at begining */
+				if (gui->drwg_hist_size > 1 && gui->drwg_hist_pos > 0 /* verify if not at begining */
+          && (wait_open == 0)) /* check if exists a pendent operation */
+        {
 					/* get previous position in history, considering as circular buffer */
 					int pos = (gui->drwg_hist_pos - 1 + gui->drwg_hist_head) % DRWG_HIST_MAX;
 					/* get path from history */
@@ -781,7 +783,9 @@ int gui_bottom_win (gui_obj *gui){
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEXT]))){
 				if (gui->drwg_hist_pos < gui->drwg_hist_size - 1 &&
-				gui->drwg_hist_size > 1){ /* verify if not at end *
+				gui->drwg_hist_size > 1 /* verify if not at end */
+        && (wait_open == 0)) /* check if exists a pendent operation */
+      {
 					/* get next position in history, considering as circular buffer */
 					int pos = (gui->drwg_hist_pos + 1 + gui->drwg_hist_head) % DRWG_HIST_MAX;
 					/* get path from history */

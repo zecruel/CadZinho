@@ -81,17 +81,17 @@ int gui_txt_prop_info (gui_obj *gui){
 		sty_i = dxf_tstyle_get(gui->drawing, ent);
 		if (sty_i < 0) sty_i = 0; /* error on look for style */
 		
-		if(strcmp(ent->obj.name, "TEXT") == 0 ||
-			strcmp(ent->obj.name, "MTEXT") == 0){
+    if (dxf_ident_ent_type (ent) == DXF_TEXT || 
+      dxf_ident_ent_type (ent) == DXF_MTEXT){
 		
 			/* get raw parameters directly from entity */
 			if(tmp = dxf_find_attr2(ent, 7))
-				strncpy (style, tmp->value.s_data, DXF_MAX_CHARS);
+				strncpy (style, strpool_cstr2( &name_pool,tmp->value.str), DXF_MAX_CHARS);
 			if(tmp = dxf_find_attr2(ent, 40))
 				txt_h = tmp->value.d_data;
 			if(tmp = dxf_find_attr2(ent, 50))
 				ang = tmp->value.d_data;
-			if(strcmp(ent->obj.name, "TEXT") == 0){
+			if(dxf_ident_ent_type (ent) == DXF_TEXT){
 				/* TEXT parameters */
 				if(tmp = dxf_find_attr2(ent, 72))
 					t_al_h = tmp->value.i_data;
@@ -129,11 +129,13 @@ int gui_txt_prop_info (gui_obj *gui){
 	else { /* all inited */
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){60, 110});
 		
-		if(strcmp(ent->obj.name, "TEXT") == 0 ||
-			strcmp(ent->obj.name, "MTEXT") == 0)
+    if (dxf_ident_ent_type (ent) == DXF_TEXT || 
+      dxf_ident_ent_type (ent) == DXF_MTEXT)
 		{ /* show entity type */
 			nk_label(gui->ctx, _l("Type:"), NK_TEXT_RIGHT);
-			nk_label_colored(gui->ctx, ent->obj.name, NK_TEXT_LEFT, nk_rgb(255,255,0));
+			nk_label_colored(gui->ctx, 
+        strpool_cstr2( &obj_pool, ent->obj.id),
+        NK_TEXT_LEFT, nk_rgb(255,255,0));
 		}
 		
 		/* ----------  properties -------------*/
@@ -146,14 +148,16 @@ int gui_txt_prop_info (gui_obj *gui){
 		h = num_tstyles * 25 + 5;
 		h = (h < 200)? h : 200;
 		if (en_sty){ /* enable editing */
-			if (nk_combo_begin_label(gui->ctx,  t_sty[sty_i].name, nk_vec2(220, h))){
+			if (nk_combo_begin_label(gui->ctx,
+        strpool_cstr2( &name_pool, t_sty[sty_i].name), nk_vec2(220, h))){
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
 				/* show available text styles in drawing */
 				for (j = 0; j < num_tstyles; j++){
 					/* skip unauthorized styles */
-					if (strlen(t_sty[j].name) == 0) continue;
-					
-					if (nk_button_label(gui->ctx, t_sty[j].name)){
+					if (t_sty[j].name == 0) continue;
+          
+					if (nk_button_label(gui->ctx,
+            strpool_cstr2( &name_pool, t_sty[j].name))){
 						sty_i = j; /* select current style */
 						nk_combo_close(gui->ctx);
 						break;
@@ -247,15 +251,17 @@ int gui_txt_prop_info (gui_obj *gui){
 				while (current != NULL){
 					if (current->data){
 						/* check type of current entity */
-						if(strcmp(((dxf_node *)current->data)->obj.name, "TEXT") == 0 ||
-							strcmp(((dxf_node *)current->data)->obj.name, "MTEXT") == 0){
+            if (dxf_ident_ent_type ((dxf_node *)current->data) == DXF_TEXT || 
+              dxf_ident_ent_type ((dxf_node *)current->data) == DXF_MTEXT){
 							/* copy current entity to preserve information to undo */
 							new_ent = dxf_ent_copy((dxf_node *)current->data, 0);
 							/* change properties according options */
-							if (en_sty) dxf_attr_change(new_ent, 7, gui->drawing->text_styles[sty_i].name);
+							if (en_sty) dxf_attr_change(new_ent, 7,
+                (void*)strpool_cstr2( &name_pool, gui->drawing->text_styles[sty_i].name));
 							if (en_ang) dxf_attr_change(new_ent, 50, &ang);
 							if (en_h) dxf_attr_change(new_ent, 40, &txt_h);
-							if(strcmp(new_ent->obj.name, "TEXT") == 0){
+							
+              if (dxf_ident_ent_type (new_ent) == DXF_TEXT){
 								if (en_al_h) dxf_attr_change(new_ent, 72, &t_al_h);
 								if (en_al_v) dxf_attr_change(new_ent, 73, &t_al_v);
 							}

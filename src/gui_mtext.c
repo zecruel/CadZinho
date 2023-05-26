@@ -9,19 +9,22 @@ int gui_mtext_interactive(gui_obj *gui){
 			gui->free_sel = 1;
 			gui->draw_tmp = 1;
 			/* create a new DXF text */
-			//dxf_node * dxf_new_mtext (double x0, double y0, double z0, double h,char *txt[], int num_txt, int color, char *layer, char *ltype, int lw, int paper)
 			char *teste[] = {""};
 			
 			new_el = (dxf_node *) dxf_new_mtext (
 				gui->step_x[gui->step], gui->step_y[gui->step], 0.0, gui->txt_h, /* pt1, height */
 				teste, 1, /* text, */
-				gui->color_idx, gui->drawing->layers[gui->layer_idx].name, /* color, layer */
-				gui->drawing->ltypes[gui->ltypes_idx].name, dxf_lw[gui->lw_idx], /* line type, line weight */
+				gui->color_idx, /* color, layer */
+        (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+				/* line type, line weight */
+        (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+        dxf_lw[gui->lw_idx],
 				0, DWG_LIFE); /* paper space */
 			gui->element = new_el;
 			//dxf_attr_change_i(new_el, 72, &gui->t_al_h, -1);
 			//dxf_attr_change_i(new_el, 73, &gui->t_al_v, -1);
-			dxf_attr_change(new_el, 7, gui->drawing->text_styles[gui->t_sty_idx].name);
+			dxf_attr_change(new_el, 7,
+        (void *) strpool_cstr2( &name_pool, gui->drawing->text_styles[gui->t_sty_idx].name));
 			dxf_attr_change(new_el, 71, &attch_pt);
 			gui->step = 1;
 			gui_next_step(gui);
@@ -38,21 +41,14 @@ int gui_mtext_interactive(gui_obj *gui){
 				//dxf_attr_change(new_el, 1, gui->txt);
 				//dxf_attr_change_i(new_el, 72, &gui->t_al_h, -1);
 				//dxf_attr_change_i(new_el, 73, &gui->t_al_v, -1);
-				/*
-				printf("before = %d\n", dxf_count_attr(new_el, 3));
-				
-				dxf_node *final_str = dxf_find_attr2(new_el, 1);
-				dxf_attr_insert_before(final_str, 3, (void *)"ins");
-				
-				printf("after = %d\n", dxf_count_attr(new_el, 3));
-				*/
 				
 				char *text = nk_str_get(&(gui->text_edit.string));
 				int len = nk_str_len_char(&(gui->text_edit.string));
 				if (!text) text = blank;
 				mtext_change_text (new_el, text, len, DWG_LIFE);
 				
-				dxf_attr_change(new_el, 7, gui->drawing->text_styles[gui->t_sty_idx].name);
+				dxf_attr_change(new_el, 7,
+          (void *) strpool_cstr2( &name_pool, gui->drawing->text_styles[gui->t_sty_idx].name));
 				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
 				drawing_ent_append(gui->drawing, new_el);
 				
@@ -83,13 +79,16 @@ int gui_mtext_interactive(gui_obj *gui){
 				mtext_change_text (new_el, text, len, DWG_LIFE);
 				
 				
-				dxf_attr_change(new_el, 6, gui->drawing->ltypes[gui->ltypes_idx].name);
-				dxf_attr_change(new_el, 8, gui->drawing->layers[gui->layer_idx].name);
+				dxf_attr_change(new_el, 6,
+          (void *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name));
+				dxf_attr_change(new_el, 8,
+          (void *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name));
 				dxf_attr_change(new_el, 370, &dxf_lw[gui->lw_idx]);
 				dxf_attr_change(new_el, 62, &gui->color_idx);
 				//dxf_attr_change_i(new_el, 72, &gui->t_al_h, -1);
 				//dxf_attr_change_i(new_el, 73, &gui->t_al_v, -1);
-				dxf_attr_change(new_el, 7, gui->drawing->text_styles[gui->t_sty_idx].name);
+				dxf_attr_change(new_el, 7,
+          (void *) strpool_cstr2( &name_pool, gui->drawing->text_styles[gui->t_sty_idx].name));
 				
 				new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 1);
 			}
@@ -113,13 +112,17 @@ int gui_mtext_info (gui_obj *gui){
 		
 		int h = num_tstyles * 25 + 5;
 		h = (h < 200)? h : 200;
-		if (nk_combo_begin_label(gui->ctx,  t_sty[gui->t_sty_idx].name, nk_vec2(220, h))){
+		if (nk_combo_begin_label(gui->ctx,
+      strpool_cstr2( &name_pool, t_sty[gui->t_sty_idx].name),
+      nk_vec2(220, h))){
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			int j = 0;
 			for (j = 0; j < num_tstyles; j++){
-				
-				if (nk_button_label(gui->ctx, t_sty[j].name)){
+				if (!t_sty[j].name) continue; /* show only the named styles */
+				if (nk_button_label(gui->ctx,
+          strpool_cstr2( &name_pool, t_sty[j].name)))
+        {
 					gui->t_sty_idx = j; /* select current style */
 					
 					nk_combo_close(gui->ctx);

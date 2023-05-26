@@ -4,6 +4,8 @@
 int gui_vertex_interactive(gui_obj *gui){
 	if (gui->modal != VERTEX) return 0;
 	
+  gui->phanton = NULL;
+  
 	static dxf_node * vert_x, * vert_y, * vert_z, * bulge;
 	
 	if (gui->step == 0) {
@@ -88,14 +90,14 @@ int gui_vertex_interactive(gui_obj *gui){
 		if (gui->ev & EV_MOTION){
 			vert_x->value.d_data = gui->step_x[gui->step];
 			vert_y->value.d_data = gui->step_y[gui->step];
-			gui->draw_phanton = 1;
-			gui->phanton = dxf_graph_parse(gui->drawing, gui->element, 0 , FRAME_LIFE);
 		}
 		if (gui->ev & EV_ENTER){
 			vert_x->value.d_data = gui->step_x[gui->step];
 			vert_y->value.d_data = gui->step_y[gui->step];
 			gui->step = 6;
 		}
+    gui->draw_phanton = 1;
+    gui->phanton = dxf_graph_parse(gui->drawing, gui->element, 0 , FRAME_LIFE);
 	}
 	
 	return 1;
@@ -105,6 +107,8 @@ int gui_vertex_info (gui_obj *gui){
 	/* view and modify entities vertex */
 	if (gui->modal != VERTEX) return 0;
 	static dxf_node *ent = NULL, *new_ent = NULL;
+  
+  gui->phanton = NULL;
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, _l("Edit Vertex"), NK_TEXT_LEFT);
@@ -137,7 +141,9 @@ int gui_vertex_info (gui_obj *gui){
 		nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){40, 120});
 		/* show entity type */
 		nk_label(gui->ctx, _l("Type:"), NK_TEXT_RIGHT);
-		nk_label_colored(gui->ctx, ent->obj.name, NK_TEXT_LEFT, nk_rgb(255,255,0));
+		nk_label_colored(gui->ctx,
+      strpool_cstr2( &obj_pool, ent->obj.id),
+      NK_TEXT_LEFT, nk_rgb(255,255,0));
 		
 		if (gui->vert_idx > -1){
 			/* show selected vertex information */

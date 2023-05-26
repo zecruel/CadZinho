@@ -5,7 +5,7 @@ list_node * dxf_dim_make(dxf_drawing *drawing, dxf_node * ent){
 	if(!ent) return NULL;
 	if (ent->type != DXF_ENT) return NULL;
 	if (!ent->obj.content) return NULL;
-	if (strcmp(ent->obj.name, "DIMENSION") != 0) return NULL;
+  if (dxf_ident_ent_type(ent) != DXF_DIMENSION) return NULL;
 	
 	int flags = 0;
 	
@@ -31,7 +31,7 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent){
 	if(!ent) return NULL;
 	if (ent->type != DXF_ENT) return NULL;
 	if (!ent->obj.content) return NULL;
-	if (strcmp(ent->obj.name, "DIMENSION") != 0) return NULL;
+  if (dxf_ident_ent_type(ent) != DXF_DIMENSION) return NULL;
 	
 	dxf_node *current = NULL;
 	
@@ -54,7 +54,7 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent){
 	char result_str[DXF_MAX_CHARS+1] = "";
 	
 	dxf_dimsty dim_sty;
-	strncpy(dim_sty.name, "STANDARD", DXF_MAX_CHARS);
+  dim_sty.name = strpool_inject( &name_pool, "STANDARD", strlen("STANDARD") );
 	
 	enum { FILLED, OPEN, OPEN30, OPEN90, CLOSED, OBLIQUE, ARCHTICK, NONE } term_typ = FILLED;
 	
@@ -105,11 +105,12 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent){
 					break;
 				/* user text */
 				case 1:
-					strncpy(user_txt, current->value.s_data, DXF_MAX_CHARS);
+					strncpy(user_txt, strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					break;
 				/* dim style */
 				case 3:
-					strncpy(dim_sty.name, current->value.s_data, DXF_MAX_CHARS);
+          { const char * str = strpool_cstr2( &value_pool, current->value.str);
+          dim_sty.name = strpool_inject( &name_pool, str, strlen(str)); }
 					break;
 				/* flags*/
 				case 70:
@@ -129,7 +130,7 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent){
 					break;
 				
 				case 101:
-					strncpy(tmp_str, current->value.s_data, DXF_MAX_CHARS);
+					strncpy(tmp_str, strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					str_upp(tmp_str);
 					char *tmp = trimwhitespace(tmp_str);
 					if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -274,7 +275,8 @@ list_node * dxf_dim_linear_make(dxf_drawing *drawing, dxf_node * ent){
 	obj = dxf_new_mtext (0.0, 0.0, 0.0, 1.0, (char*[]){result_str}, 1, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_attr_change(obj, 71, &an_place);
 	if (dim_sty.tstyle >= 0){
-		dxf_attr_change(obj, 7, drawing->text_styles[dim_sty.tstyle].name);
+		dxf_attr_change(obj, 7,
+      (void *) strpool_cstr2( &name_pool, drawing->text_styles[dim_sty.tstyle].name));
 	}
 	dxf_edit_scale (obj, dim_sty.scale * dim_sty.txt_size, dim_sty.scale * dim_sty.txt_size, dim_sty.scale * dim_sty.txt_size);
 	dxf_edit_rot (obj, rot);
@@ -306,7 +308,7 @@ list_node * dxf_dim_angular_make(dxf_drawing *drawing, dxf_node * ent){
 	if(!ent) return NULL;
 	if (ent->type != DXF_ENT) return NULL;
 	if (!ent->obj.content) return NULL;
-	if (strcmp(ent->obj.name, "DIMENSION") != 0) return NULL;
+  if (dxf_ident_ent_type(ent) != DXF_DIMENSION) return NULL;
 	
 	dxf_node *current = NULL;
 	
@@ -335,7 +337,7 @@ list_node * dxf_dim_angular_make(dxf_drawing *drawing, dxf_node * ent){
 	char result_str[DXF_MAX_CHARS+1] = "";
 	
 	dxf_dimsty dim_sty;
-	strncpy(dim_sty.name, "STANDARD", DXF_MAX_CHARS);
+  dim_sty.name = strpool_inject( &name_pool, "STANDARD", strlen("STANDARD") );
 	
 	enum { FILLED, OPEN, OPEN30, OPEN90, CLOSED, OBLIQUE, ARCHTICK, NONE } term_typ = FILLED;
 	
@@ -405,11 +407,13 @@ list_node * dxf_dim_angular_make(dxf_drawing *drawing, dxf_node * ent){
 					break;
 				/* user text */
 				case 1:
-					strncpy(user_txt, current->value.s_data, DXF_MAX_CHARS);
+					strncpy(user_txt,
+            strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					break;
 				/* dim style */
 				case 3:
-					strncpy(dim_sty.name, current->value.s_data, DXF_MAX_CHARS);
+          { const char * str = strpool_cstr2( &value_pool, current->value.str);
+          dim_sty.name = strpool_inject( &name_pool, str, strlen(str)); }
 					break;
 				/* flags*/
 				case 70:
@@ -425,7 +429,8 @@ list_node * dxf_dim_angular_make(dxf_drawing *drawing, dxf_node * ent){
 					break;
 				
 				case 101:
-					strncpy(tmp_str, current->value.s_data, DXF_MAX_CHARS);
+					strncpy(tmp_str,
+            strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					str_upp(tmp_str);
 					char *tmp = trimwhitespace(tmp_str);
 					if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -604,7 +609,8 @@ list_node * dxf_dim_angular_make(dxf_drawing *drawing, dxf_node * ent){
 	obj = dxf_new_mtext (0.0, 0.0, 0.0, 1.0, (char*[]){result_str}, 1, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_attr_change(obj, 71, &an_place);
 	if (dim_sty.tstyle >= 0){
-		dxf_attr_change(obj, 7, drawing->text_styles[dim_sty.tstyle].name);
+		dxf_attr_change(obj, 7,
+      (void *) strpool_cstr2( &name_pool, drawing->text_styles[dim_sty.tstyle].name));
 	}
 	dxf_edit_scale (obj, dim_sty.scale * dim_sty.txt_size, dim_sty.scale * dim_sty.txt_size, dim_sty.scale * dim_sty.txt_size);
 	//dxf_edit_rot (obj, rot);
@@ -635,7 +641,7 @@ list_node * dxf_dim_radial_make(dxf_drawing *drawing, dxf_node * ent){
 	if(!ent) return NULL;
 	if (ent->type != DXF_ENT) return NULL;
 	if (!ent->obj.content) return NULL;
-	if (strcmp(ent->obj.name, "DIMENSION") != 0) return NULL;
+  if (dxf_ident_ent_type(ent) != DXF_DIMENSION) return NULL;
 	
 	dxf_node *current = NULL;
 	
@@ -658,7 +664,7 @@ list_node * dxf_dim_radial_make(dxf_drawing *drawing, dxf_node * ent){
 	char result_str[DXF_MAX_CHARS+1] = "";
 	
 	dxf_dimsty dim_sty;
-	strncpy(dim_sty.name, "STANDARD", DXF_MAX_CHARS);
+  dim_sty.name = strpool_inject( &name_pool, "STANDARD", strlen("STANDARD") );
 	
 	enum { FILLED, OPEN, OPEN30, OPEN90, CLOSED, OBLIQUE, ARCHTICK, NONE } term_typ = FILLED;
 	
@@ -700,11 +706,13 @@ list_node * dxf_dim_radial_make(dxf_drawing *drawing, dxf_node * ent){
 					break;
 				/* user text */
 				case 1:
-					strncpy(user_txt, current->value.s_data, DXF_MAX_CHARS);
+					strncpy(user_txt,
+            strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					break;
 				/* dim style */
 				case 3:
-					strncpy(dim_sty.name, current->value.s_data, DXF_MAX_CHARS);
+          { const char * str = strpool_cstr2( &value_pool, current->value.str);
+          dim_sty.name = strpool_inject( &name_pool, str, strlen(str)); }
 					break;
 				/* flags*/
 				case 70:
@@ -724,7 +732,8 @@ list_node * dxf_dim_radial_make(dxf_drawing *drawing, dxf_node * ent){
 					break;
 				
 				case 101:
-					strncpy(tmp_str, current->value.s_data, DXF_MAX_CHARS);
+					strncpy(tmp_str,
+            strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					str_upp(tmp_str);
 					char *tmp = trimwhitespace(tmp_str);
 					if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -844,7 +853,8 @@ list_node * dxf_dim_radial_make(dxf_drawing *drawing, dxf_node * ent){
 	obj = dxf_new_mtext (0.0, 0.0, 0.0, 1.0, (char*[]){result_str}, 1, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_attr_change(obj, 71, &an_place);
 	if (dim_sty.tstyle >= 0){
-		dxf_attr_change(obj, 7, drawing->text_styles[dim_sty.tstyle].name);
+		dxf_attr_change(obj, 7,
+      (void *) strpool_cstr2( &name_pool, drawing->text_styles[dim_sty.tstyle].name));
 	}
 	dxf_edit_scale (obj, dim_sty.scale * dim_sty.txt_size, dim_sty.scale * dim_sty.txt_size, dim_sty.scale * dim_sty.txt_size);
 	dxf_edit_move (obj, an_pt[0], an_pt[1], an_pt[2]);
@@ -861,7 +871,7 @@ list_node * dxf_dim_ordinate_make(dxf_drawing *drawing, dxf_node * ent){
 	if(!ent) return NULL;
 	if (ent->type != DXF_ENT) return NULL;
 	if (!ent->obj.content) return NULL;
-	if (strcmp(ent->obj.name, "DIMENSION") != 0) return NULL;
+  if (dxf_ident_ent_type(ent) != DXF_DIMENSION) return NULL;
 	
 	dxf_node *current = NULL;
 	
@@ -884,7 +894,8 @@ list_node * dxf_dim_ordinate_make(dxf_drawing *drawing, dxf_node * ent){
 	char result_str[DXF_MAX_CHARS+1] = "";
 	
 	dxf_dimsty dim_sty;
-	strncpy(dim_sty.name, "STANDARD", DXF_MAX_CHARS);
+  dim_sty.name = strpool_inject( &name_pool, "STANDARD", strlen("STANDARD") );
+  
 	
 	enum { FILLED, OPEN, OPEN30, OPEN90, CLOSED, OBLIQUE, ARCHTICK, NONE } term_typ = FILLED;
 	
@@ -926,11 +937,13 @@ list_node * dxf_dim_ordinate_make(dxf_drawing *drawing, dxf_node * ent){
 					break;
 				/* user text */
 				case 1:
-					strncpy(user_txt, current->value.s_data, DXF_MAX_CHARS);
+					strncpy(user_txt,
+            strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					break;
 				/* dim style */
 				case 3:
-					strncpy(dim_sty.name, current->value.s_data, DXF_MAX_CHARS);
+          { const char * str = strpool_cstr2( &value_pool, current->value.str);
+          dim_sty.name = strpool_inject( &name_pool, str, strlen(str)); }
 					break;
 				/* flags*/
 				case 70:
@@ -946,7 +959,8 @@ list_node * dxf_dim_ordinate_make(dxf_drawing *drawing, dxf_node * ent){
 					break;
 				
 				case 101:
-					strncpy(tmp_str, current->value.s_data, DXF_MAX_CHARS);
+					strncpy(tmp_str,
+            strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					str_upp(tmp_str);
 					char *tmp = trimwhitespace(tmp_str);
 					if (strcmp (tmp, "EMBEDDED OBJECT") == 0 ){
@@ -999,7 +1013,8 @@ list_node * dxf_dim_ordinate_make(dxf_drawing *drawing, dxf_node * ent){
 	obj = dxf_new_mtext (0.0, 0.0, 0.0, 1.0, (char*[]){result_str}, 1, 0, "0", "BYBLOCK", -2, 0, FRAME_LIFE);
 	dxf_attr_change(obj, 71, &an_place);
 	if (dim_sty.tstyle >= 0){
-		dxf_attr_change(obj, 7, drawing->text_styles[dim_sty.tstyle].name);
+		dxf_attr_change(obj, 7,
+      (void *) strpool_cstr2( &name_pool, drawing->text_styles[dim_sty.tstyle].name));
 	}
 	dxf_edit_scale (obj, dim_sty.scale * dim_sty.txt_size, dim_sty.scale * dim_sty.txt_size, dim_sty.scale * dim_sty.txt_size);
 	dxf_edit_rot (obj, rot);
@@ -1026,11 +1041,13 @@ int dxf_find_last_dim (dxf_drawing *drawing){
 	current = drawing->blks->obj.content->next;
 	while (current){
 		if (current->type == DXF_ENT){ /* look for dxf entities */
-			if(strcmp(current->obj.name, "BLOCK") == 0){ /* match blocks */
+			/* match blocks */
+      if (dxf_ident_ent_type(current) == DXF_BLK){
 				descr_attr = dxf_find_attr2(current, 2); /* look for descriptor in group 2 attribute */
 				if (descr_attr){ /* found attribute */
 					/* copy strings for secure manipulation */
-					strncpy(test_descr, descr_attr->value.s_data, DXF_MAX_CHARS);
+					strncpy(test_descr,
+            strpool_cstr2( &name_pool, descr_attr->value.str), DXF_MAX_CHARS);
 					/* change to upper case */
 					str_upp(test_descr);
 					/* look for Block name starting by "*D"*/
@@ -1065,16 +1082,18 @@ int dxf_dim_get_blk (dxf_drawing *drawing, dxf_node * ent, dxf_node **blk, dxf_n
 	if(!ent) return 0;
 	if (ent->type != DXF_ENT) return 0;
 	if (!ent->obj.content) return 0;
-	if (strcmp(ent->obj.name, "DIMENSION") != 0) return 0;
+  if (dxf_ident_ent_type(ent) != DXF_DIMENSION) return 0;
 	
 	dxf_node *blk_name = dxf_find_attr2(ent, 2); /* get block name */
 	
 	/* find relative block */
 	if(!blk_name) return 0;
-	*blk = dxf_find_obj_descr2(drawing->blks, "BLOCK", blk_name->value.s_data);
+	*blk = dxf_find_obj_descr2(drawing->blks, "BLOCK",
+    (char*) strpool_cstr2( &name_pool, blk_name->value.str));
 	if(!*blk) return 0;
 	
-	*blk_rec = dxf_find_obj_descr2(drawing->blks_rec, "BLOCK_RECORD", blk_name->value.s_data);
+	*blk_rec = dxf_find_obj_descr2(drawing->blks_rec, "BLOCK_RECORD",
+   (char*) strpool_cstr2( &name_pool, blk_name->value.str));
 	return 1;
 }
 
@@ -1091,7 +1110,7 @@ int dxf_dim_make_blk (dxf_drawing *drawing, dxf_node * ent, dxf_node **blk, dxf_
 	if(!ent) return 0;
 	if (ent->type != DXF_ENT) return 0;
 	if (!ent->obj.content) return 0;
-	if (strcmp(ent->obj.name, "DIMENSION") != 0) return 0;
+  if (dxf_ident_ent_type(ent) != DXF_DIMENSION) return 0;
 	
 	/* create dimension block contents as a list of entities ("render" the dimension "picture") */
 	list_node *list = dxf_dim_make(drawing, ent);
@@ -1131,17 +1150,19 @@ int dxf_dim_rewrite (dxf_drawing *drawing, dxf_node *ent, dxf_node **blk, dxf_no
 	if(!ent) return 0;
 	if (ent->type != DXF_ENT) return 0;
 	if (!ent->obj.content) return 0;
-	if (strcmp(ent->obj.name, "DIMENSION") != 0) return 0;
+  if (dxf_ident_ent_type(ent) != DXF_DIMENSION) return 0;
 	
 	dxf_node *blk_name = dxf_find_attr2(ent, 2); /* get block name */
 	
 	/* find relative block */
 	if(!blk_name) return 0;
-	*blk_old = dxf_find_obj_descr2(drawing->blks, "BLOCK", blk_name->value.s_data);
+	*blk_old = dxf_find_obj_descr2(drawing->blks, "BLOCK",
+    (char*) strpool_cstr2( &name_pool, blk_name->value.str));
 	if(!*blk_old) return 0;
 	dxf_obj_subst(*blk_old, NULL); /* detach block from its structure */
 	
-	*blk_rec_old = dxf_find_obj_descr2(drawing->blks_rec, "BLOCK_RECORD", blk_name->value.s_data);
+	*blk_rec_old = dxf_find_obj_descr2(drawing->blks_rec, "BLOCK_RECORD",
+    (char*) strpool_cstr2( &name_pool, blk_name->value.str));
 	if(*blk_rec_old) dxf_obj_subst(*blk_rec_old, NULL); /* detach block record from its structure */
 	
 	return dxf_dim_make_blk (drawing, ent, blk, blk_rec);
@@ -1166,11 +1187,13 @@ int dxf_dim_get_sty(dxf_drawing *drawing, dxf_dimsty *dim_sty){
 	dim_sty->an_scale = 1.0; /* annotation scale - apply to measure */
 	dim_sty->gap = 0.0625; /* space between text and base line */
 	dim_sty->dec = 4; /* number of decimal places */
-	dim_sty->tstyle = dxf_tstyle_idx(drawing, "STANDARD"); /* text style (index) */
+	dim_sty->tstyle = dxf_tstyle_idx(drawing, /* text style (index) */
+    strpool_inject( &name_pool, "STANDARD", strlen("STANDARD") ), 0);
 	dim_sty->obj = NULL;
 	
-	if (!(dsty_obj = dxf_find_obj_descr2(drawing->t_dimst, "DIMSTYLE", dim_sty->name)))
-		return -1; /* not found */
+	if (!(dsty_obj = dxf_find_obj_descr2(drawing->t_dimst, "DIMSTYLE",
+    (char*) strpool_cstr2( &name_pool, dim_sty->name))))
+      return -1; /* not found */
 	
 	dim_sty->obj = dsty_obj;
 	
@@ -1181,10 +1204,12 @@ int dxf_dim_get_sty(dxf_drawing *drawing, dxf_dimsty *dim_sty){
 		if (current->type == DXF_ATTR){ /* DXF attibute */
 			switch (current->value.group){
 				case 3:
-					strncpy(dim_sty->post, current->value.s_data, DXF_MAX_CHARS);
+					strncpy(dim_sty->post,
+            strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					break;
 				case 5:
-					strncpy(dim_sty->a_type, current->value.s_data, DXF_MAX_CHARS);
+					strncpy(dim_sty->a_type,
+            strpool_cstr2( &value_pool, current->value.str), DXF_MAX_CHARS);
 					break;
 				case 40:
 					dim_sty->scale = current->value.d_data;
@@ -1211,7 +1236,8 @@ int dxf_dim_get_sty(dxf_drawing *drawing, dxf_dimsty *dim_sty){
 					dim_sty->dec = current->value.i_data;
 					break;
 				case 340: {
-					long id = strtol(current->value.s_data, NULL, 16); /* convert string handle to integer */
+					long id = strtol( /* convert string handle to integer */
+            strpool_cstr2( &value_pool, current->value.str), NULL, 16);
 					/* look for correspondent style object */
 					dxf_node *t_obj = dxf_find_handle(drawing->t_style, id);
 					if (t_obj){
@@ -1224,7 +1250,8 @@ int dxf_dim_get_sty(dxf_drawing *drawing, dxf_dimsty *dim_sty){
 						}
 					}
 					else{
-						dim_sty->tstyle = dxf_tstyle_idx(drawing, "STANDARD"); /* text style (index) */
+						dim_sty->tstyle = dxf_tstyle_idx(drawing, /* text style (index) */
+              strpool_inject( &name_pool, "STANDARD", strlen("STANDARD") ), 0);
 					}
 				}
 					break;
@@ -1243,7 +1270,8 @@ int dxf_dim_update_sty(dxf_drawing *drawing, dxf_dimsty *dim_sty){
 	
 	dxf_node *dsty_obj;
 	
-	if (!(dsty_obj = dxf_find_obj_descr2(drawing->t_dimst, "DIMSTYLE", dim_sty->name)))
+	if (!(dsty_obj = dxf_find_obj_descr2(drawing->t_dimst, "DIMSTYLE",
+    (char*) strpool_cstr2( &name_pool, dim_sty->name))))
 		return -1; /* not found */
 	
 	//dim_sty->obj = dsty_obj;
@@ -1265,7 +1293,8 @@ int dxf_dim_update_sty(dxf_drawing *drawing, dxf_dimsty *dim_sty){
 		dxf_node *tsty_obj = drawing->text_styles[dim_sty->tstyle].obj;
 		tsty_obj = dxf_find_attr2(tsty_obj, 5);
 		if (tsty_obj){
-			dxf_attr_change(dsty_obj, 340, tsty_obj->value.s_data);
+			dxf_attr_change(dsty_obj, 340,
+        (char*) strpool_cstr2( &value_pool, tsty_obj->value.str));
 		}
 	}
 	
@@ -1288,22 +1317,19 @@ int dxf_dimsty_use(dxf_drawing *drawing){
 	}
 	else return 0;
 	
+  STRPOOL_U64 std = strpool_inject( &name_pool, "STANDARD", strlen("STANDARD"));
 	/* init dimstyles count */
 	current = drawing->t_dimst->obj.content;
 	while (current){ /* sweep elements in section */
 		if (current->type == DXF_ENT){
-			if (strcmp(current->obj.name, "DIMSTYLE") == 0){
+      if (dxf_ident_ent_type(current) == DXF_DIMSTYLE){
 				/* uses DIMSTYLE's layer index to count */
 				current->obj.layer= 0;
 				
 				/* get name of current DIMSTYLE */
 				dxf_node * blk_nm = dxf_find_attr2(current, 2);
 				if (blk_nm){
-					char name[DXF_MAX_CHARS + 1];
-					strncpy(name, blk_nm->value.s_data, DXF_MAX_CHARS);
-					str_upp(name);
-					/* mark used if is a system DIMSTYLE*/
-					if (strcmp(name, "STANDARD") == 0) current->obj.layer= 1;
+          if (blk_nm->value.str == std) current->obj.layer= 1;
 				}
 			}
 		}
@@ -1317,11 +1343,12 @@ int dxf_dimsty_use(dxf_drawing *drawing){
 			ok = 1;
 			prev = current;
 			if (current->type == DXF_ENT){
-				if (strcmp(current->obj.name, "DIMENSION") == 0){
+        if (dxf_ident_ent_type(current) == DXF_DIMENSION){
 					dxf_node *dsty = NULL, *dsty_name = NULL;
 					dsty_name = dxf_find_attr2(current, 3);
 					if(dsty_name) {
-						dsty = dxf_find_obj_descr2(drawing->t_dimst, "DIMSTYLE", dsty_name->value.s_data);
+						dsty = dxf_find_obj_descr2(drawing->t_dimst, "DIMSTYLE",
+              (char*) strpool_cstr2( &name_pool, dsty_name->value.str));
 						if(dsty) {
 							/* uses DIMSTYLE's layer index to count */
 							dsty->obj.layer++;
@@ -1347,7 +1374,7 @@ int dxf_dimsty_use(dxf_drawing *drawing){
 			while (current == NULL){
 				/* end of list sweeping */
 				if ((prev == NULL) || (prev == obj)){ /* stop the search if back on initial entity */
-					//printf("para\n");
+					
 					current = NULL;
 					break;
 				}

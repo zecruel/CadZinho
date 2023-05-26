@@ -529,7 +529,7 @@ double *start_ang, double *end_ang){
 }
 
 int dxf_text_get(dxf_drawing *drawing, dxf_node * obj,
-char *text, int *fnt_idx, double *above, double *below,
+int *fnt_idx, double *above, double *below,
 double *ins_x, double *ins_y, double *ins_z, 
 double *alin_x, double *alin_y, double *alin_z, 
 double *w, double *h, double *rot, 
@@ -542,17 +542,12 @@ int *alin_v, int *alin_h){
 		double pt2_x = 0, pt2_y = 0, pt2_z = 0;
 		double elev = 0, size = 0, scale_x = 1.0;
 		double extru_x = 0.0, extru_y = 0.0, extru_z = 1.0, normal[3];
-		char t_style[DXF_MAX_CHARS];
-		char tmp_str[DXF_MAX_CHARS];
 		
 		char *pos_st, *pos_curr, *pos_tmp, special;
 		int under_l, over_l;
 		double fnt_size, txt_size;
 		//shape *shx_font = NULL;
-		
-		t_style[0] = 0;
-		tmp_str[0] = 0;
-		
+			
 		/*flags*/
 		int pt1 = 0, pt2 = 0;
 				
@@ -564,12 +559,6 @@ int *alin_v, int *alin_h){
 		while (current){
 			if (current->type == DXF_ATTR){ /* DXF attibute */
 				switch (current->value.group){
-					case 1:
-						strcpy(text, current->value.s_data);
-						break;
-					case 7:
-						strcpy(t_style, current->value.s_data);
-						break;
 					case 10:
 						pt1_x = current->value.d_data;
 						pt1 = 1; /* set flag */
@@ -625,92 +614,6 @@ int *alin_v, int *alin_h){
 			}
 			current = current->next; /* go to the next in the list */
 		}
-		#if (0)
-		/* find the tstyle index and font*/
-		*fnt_idx = dxf_tstyle_idx(drawing, t_style);
-		shx_font = drawing->text_styles[*fnt_idx].shx_font;
-		
-		if(shx_font == NULL){ /* if font not loaded*/
-			/* use the deafault font*/
-			shx_font = drawing->text_styles[0].shx_font;
-		}
-		
-		/* find the dimentions of SHX font */
-		if(shx_font){ /* if the font exists */
-			if(shx_font->next){ /* the font descriptor is stored in first iten of list */
-				if(shx_font->next->cmd_size > 1){ /* check if the font is valid */
-					*above = shx_font->next->cmds[0]; /* size above the base line of text */
-					*below = shx_font->next->cmds[1]; /* size below the base line of text */
-					if((*above + *below) > 0){
-						fnt_size = *above + *below;
-						ok = 1;
-					}
-				}
-			}
-		}
-		
-		/* find and replace special symbols in the text*/
-		under_l = 0; /* under line flag*/
-		over_l = 0; /* over line flag*/
-		pos_curr = strstr(text, "%%");
-		pos_st = text;
-		pos_tmp = tmp_str;
-		while (pos_curr){
-			/* copy the part of text until the control string */
-			strncpy(pos_tmp, pos_st, pos_curr - pos_st);
-			/*control string is stripped in new string */
-			pos_tmp += pos_curr - pos_st;
-			/*get the control character */
-			special = *(pos_curr + 2);
-			/* verify the action to do */
-			switch (special){
-				/* put the  diameter simbol (unicode D8 Hex) in text*/
-				case 'c':
-					pos_tmp += wctomb(pos_tmp, L'\xd8');
-					break;
-				case 'C':
-					pos_tmp += wctomb(pos_tmp, L'\xd8');
-					break;
-				/* put the degrees simbol in text*/
-				case 'd':
-					pos_tmp += wctomb(pos_tmp, L'\xb0');
-					break;
-				case 'D':
-					pos_tmp += wctomb(pos_tmp, L'\xb0');
-					break;
-				/* put the plus/minus tolerance simbol in text*/
-				case 'p':
-					pos_tmp += wctomb(pos_tmp, L'\xb1');
-					break;
-				case 'P':
-					pos_tmp += wctomb(pos_tmp, L'\xb1');
-					break;
-				/* under line */
-				case 'u':
-					under_l = 1;
-					break;
-				case 'U':
-					under_l = 1;
-					break;
-				/* over line */
-				case 'o':
-					over_l = 1;
-					break;
-				case 'O':
-					over_l = 1;
-					break;
-			}
-			/*try to find new  control sequences in the rest of text*/
-			pos_curr += 3;
-			pos_st = pos_curr;
-			pos_curr = strstr(pos_curr, "%%");
-		}
-		/* copy the rest of text after the last control string */
-		strcpy(pos_tmp, pos_st);
-		
-		/* find the dimentions of text */
-		txt_size = size/(*above);
-		#endif
 		
 		/* convert OCS to WCS */
 		normal[0] = extru_x;
@@ -1329,8 +1232,6 @@ int *init_dist, double *min_dist){
 				/* rotation of ref point to align to ellipse axis */ 
 				xnew = cosine*x - sine*y + center_x;
 				ynew = sine*x + cosine*y + center_y;
-					
-				//printf("perp  =  %0.2f, %0.2f\n", xnew, ynew);
 			
 				/* check if point pass on distance criteria */
 				curr_dist = sqrt(pow(xnew - pos_x, 2) + pow(ynew - pos_y, 2));
@@ -2047,7 +1948,7 @@ int *init_dist, double *min_dist){
 	for (i = 0; i < num_inter; i++){
 		curr_dist = sqrt(pow(inter_x[i] - pos_x, 2) + pow(inter_y[i] - pos_y, 2));
 		if (curr_dist < sensi){
-			//printf("INTER %0.2f, %0.2f\n", inter_x[i], inter_y[i]);
+			
 			if (*init_dist == 0){
 				*init_dist = 1;
 				*min_dist = curr_dist;
@@ -2078,8 +1979,8 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 	
 	enum dxf_graph ent_type = DXF_NONE;
 	
-	char name1[DXF_MAX_CHARS], name2[DXF_MAX_CHARS];
-	name1[0] = 0; name2[0] = 0;
+	char name1[DXF_MAX_CHARS + 1];
+	name1[0] = 0;
 	double pt1_x = 0, pt1_y = 0, pt1_z = 0;
 	int pt1 = 0; /* flag */
 	double t_rot = 0, rot = 0, elev = 0;
@@ -2136,7 +2037,7 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 		ins_stack[0] = ins_zero;
 		ins_flag = 0;
 		ent_type = DXF_NONE;
-		name1[0] = 0; name2[0] = 0;
+		name1[0] = 0;
 		pt1_x = 0; pt1_y = 0; pt1_z = 0;
 		pt1 = 0;
 		t_rot = 0; rot = 0; elev = 0;
@@ -2173,7 +2074,7 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 							num_inter++;
 						}
 					}
-					//printf("line %d\n", found);
+					
 				}
 				else if (ent_type == DXF_CIRCLE){
 					double center_x, center_y, center_z, radius;
@@ -2262,7 +2163,7 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 				else if (ent_type ==  DXF_INSERT){
 					insert_ent = current;
 					ins_flag = 1;
-					//printf("insert %d\n", current->obj.content);
+					
 					if (current->obj.content){
 						/* starts the content sweep */
 						current = current->obj.content->next;
@@ -2276,7 +2177,7 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 					double pt2_x = 0, pt2_y = 0, pt2_z = 0, prev_bulge = 0;
 					dxf_node * next_vert = NULL;
 					if(dxf_lwpline_get_pt(current, &next_vert, &pt2_x, &pt2_y, &pt2_z, &bulge)){
-						//printf("%0.f,%0.2f  -  %d\n",pt2_x, pt2_y, next_vert);
+						
 						transform(&pt2_x, &pt2_y, ins_stack[ins_stack_pos]);
 						/* transform coordinates, according insert space */
 						while (next_vert){
@@ -2335,14 +2236,13 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 					}
 				}
 				else if (ent_type == DXF_TEXT){
-					char text[DXF_MAX_CHARS];
 					double ins_x, ins_y, ins_z;
 					double alin_x, alin_y, alin_z; 
 					double w, h, rot, above, below;
 					int alin_v, alin_h, fnt_idx;
 					
 					if (dxf_text_get (drawing, current, 
-					text, &fnt_idx, &above, &below,
+          &fnt_idx, &above, &below,
 					&ins_x, &ins_y, &ins_z, 
 					&alin_x, &alin_y, &alin_z, 
 					&w, &h, &rot, 
@@ -2350,8 +2250,7 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 						/* transform coordinates, according insert space */
 						transform(&ins_x, &ins_y, ins_stack[ins_stack_pos]);
 						transform(&alin_x, &alin_y, ins_stack[ins_stack_pos]);
-						
-						//printf ("text w=%0.2f, h=%0.2f\n", w, h);
+    
 					
 						if (found = dxf_text_attract (ins_x, ins_y, alin_x, alin_y, w, h, rot, alin_v, alin_h, above, below, type, pos_x, pos_y, sensi, ret_x, ret_y, &init_dist, &min_dist)){
 							ret = found;
@@ -2370,7 +2269,7 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 							num_inter++;
 						}*/
 					}
-					//printf("line %d\n", found);
+					
 				}
 				else if (ent_type == DXF_DIMENSION){
 					if (found = dxf_dim_attract(current, type, pos_x, pos_y, sensi, ret_x, ret_y, &init_dist, &min_dist)){
@@ -2385,13 +2284,9 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 			}
 			/* ============================================================= */
 			else if ((current->type == DXF_ATTR) && (ins_flag != 0)){ /* read DXF attibutes of insert block */
-				//printf("%d\n", current->value.group);
 				switch (current->value.group){
 					case 2:
-						strcpy(name1, current->value.s_data);
-						break;
-					case 3:
-						strcpy(name2, current->value.s_data);
+						strncpy(name1, strpool_cstr2( &name_pool, current->value.str), DXF_MAX_CHARS);
 						break;
 					case 10:
 						pt1_x = current->value.d_data;
@@ -2444,9 +2339,7 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 				ins_flag = 0;
 				/* look for block */
 				blk = dxf_find_obj_descr2(drawing->blks, "BLOCK", name1);
-				if (blk) { 
-					
-					//printf ("bloco %s\n", name1);
+				if (blk) {
 					
 					/* save current entity for future process */
 					ins_stack_pos++;
@@ -2504,7 +2397,6 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 					
 					/* clear the strings */
 					name1[0] = 0;
-					name2[0] = 0;
 					
 					/*clear flags*/
 					pt1 = 0;
@@ -2545,7 +2437,7 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 							prev = ins_stack[ins_stack_pos].prev;
 							ins_stack_pos--;
 							//prev = ins_stack[ins_stack_pos].ins_ent;
-							//printf("retorna %d\n", ins_stack_pos);
+							
 							current = prev->next;
 						}
 					}
@@ -2579,6 +2471,5 @@ double pos_x, double pos_y, double ref_x, double ref_y, double sensi, double *re
 			}
 		}
 	}
-	//printf("%d\n", ret);
 	return ret;
 }

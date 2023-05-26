@@ -70,7 +70,7 @@ bmp_img * dxf_image_def_list(dxf_drawing *drawing, dxf_node *img_def){
 	/* get IMAGE_DEF id handle */
 	current = dxf_find_attr2(img_def, 5); 
 	if (current)
-		id = strtol(current->value.s_data, NULL, 16);
+		id = strtol(strpool_cstr2( &value_pool, current->value.str), NULL, 16);
 	if (!id) return NULL;
 	
 	/* verify if image is already loaded */
@@ -85,7 +85,7 @@ bmp_img * dxf_image_def_list(dxf_drawing *drawing, dxf_node *img_def){
 	if (!img) return NULL;
 	
 	/* load image */
-	img->img = bmp_load_img(current->value.s_data);
+	img->img = bmp_load_img((char*) strpool_cstr2( &value_pool, current->value.str));
 	if (!img->img){ 
 		/*fail */
 		free(img);

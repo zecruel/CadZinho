@@ -1337,7 +1337,31 @@ int nk_gl_render(gui_obj *gui) {
 			
 		}
 		else if  (cmd->type == NK_COMMAND_RECT_MULTI_COLOR) {
-			
+			const struct nk_command_rect_multi_color *r = (const struct nk_command_rect_multi_color *)cmd;
+      
+      GLubyte tl[4], tr[4],br[4], bl[4];
+      bl[0] = r->left.r;
+      bl[1] = r->left.g;
+      bl[2] = r->left.b;
+      bl[3] = r->left.a;
+      
+      br[0] = r->top.r;
+      br[1] = r->top.g;
+      br[2] = r->top.b;
+      br[3] = r->top.a;
+      
+      tr[0] = r->right.r;
+      tr[1] = r->right.g;
+      tr[2] = r->right.b;
+      tr[3] = r->right.a;
+      
+      tl[0] = r->bottom.r;
+      tl[1] = r->bottom.g;
+      tl[2] = r->bottom.b;
+      tl[3] = r->bottom.a;
+      
+      draw_gl_rect_color (gl_ctx, r->x, r->y, 0, r->w, r->h, tl, tr, br, bl);
+      
 		}
 		
 		
@@ -1873,7 +1897,6 @@ int gui_start(gui_obj *gui){
 	memset (&gui->plugins_script, 0, sizeof(struct script_obj));
 	gui->plugins_script.timeout = 1.0;
 	
-	//strncpy(gui->curr_script, "D:\\documentos\\cadzinho\\lua\\test.lua", MAX_PATH_LEN - 1);
 	gui->curr_script[0] = 0;
 	gui->image_path[0] = 0;
 	
@@ -1922,10 +1945,10 @@ int gui_start(gui_obj *gui){
 	gui->recent_drwg = list_new(NULL, PRG_LIFE);
 	/*init file pool */
 	strpool_config_t str_pool_conf = strpool_default_config;
-        //str_pool_conf.ignore_case = true;
+  //str_pool_conf.ignore_case = true;
 	str_pool_conf.counter_bits = 16;
 	str_pool_conf.index_bits = 16;
-        strpool_init( &gui->file_pool, &str_pool_conf );
+  strpool_init( &gui->file_pool, &str_pool_conf );
 	
 	
 	
@@ -1998,17 +2021,20 @@ int gui_tstyle(gui_obj *gui){
 	struct tfont * font;
 		
 	for (i = 0; i < num_tstyles; i++){
-		if(font = add_font_list(gui->font_list, t_sty[i].file, gui->dwg_dir)){
+		if(font = add_font_list(gui->font_list,
+      (char*) strpool_cstr2( &value_pool, t_sty[i].file), gui->dwg_dir)){
 			t_sty[i].font = font;
 			//if (font->type == FONT_SHP) shp_font_print((shp_typ *) font->data);
 		}
-		else if(font = add_font_list(gui->font_list, t_sty[i].file, gui->dflt_fonts_path)){
+		else if(font = add_font_list(gui->font_list,
+      (char*) strpool_cstr2( &value_pool, t_sty[i].file), gui->dflt_fonts_path)){
 			t_sty[i].font = font;
 			//if (font->type == FONT_SHP) shp_font_print((shp_typ *) font->data);
 		}
 		else{
 			t_sty[i].font = gui->dflt_font;
-			strncpy(t_sty[i].subst_file, gui->dflt_font->name, DXF_MAX_CHARS);
+      t_sty[i].subst_file = strpool_inject( &value_pool, 
+        (char const*) gui->dflt_font->name, strlen(gui->dflt_font->name) );
 		}
 		
 	}
@@ -2652,7 +2678,7 @@ void gui_draw_vert_gl(gui_obj *gui, dxf_node *obj){
 		while (current == NULL){
 			/* end of list sweeping */
 			if ((prev == NULL) || (prev == stop)){ /* stop the search if back on initial entity */
-				//printf("para\n");
+				
 				current = NULL;
 				break;
 			}

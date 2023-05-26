@@ -201,9 +201,9 @@ int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
 		glEnable(GL_BLEND); 
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		
-		// Enable depth test
+		/* Enable depth test */
 		glEnable(GL_DEPTH_TEST);
-		// Accept fragment if it closer to the camera than the former one
+		/* Accept fragment if it closer to the camera than the former one */
 		glDepthFunc(GL_LESS);
     
   #ifdef GLES2
@@ -523,6 +523,111 @@ int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int z, int w, int h){
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
 	gl_ctx->verts[j].col[3] = gl_ctx->fg[3];
+	gl_ctx->verts[j].uv[0] =  scale_u;
+	gl_ctx->verts[j].uv[1] = (float)(gl_ctx->flip_y) * scale_v;
+	gl_ctx->vert_count ++;
+	/* store vertex indexes in elements buffer - 2 triangles that share vertices  */
+	/* 0 */
+	j = gl_ctx->elem_count * 3;
+	gl_ctx->elems[j] = gl_ctx->vert_count - 4;
+	gl_ctx->elems[j+1] = gl_ctx->vert_count - 3;
+	gl_ctx->elems[j+2] = gl_ctx->vert_count - 2;
+	/* 1 */
+	gl_ctx->elems[j+3] = gl_ctx->vert_count - 3;
+	gl_ctx->elems[j+4] = gl_ctx->vert_count - 2;
+	gl_ctx->elems[j+5] = gl_ctx->vert_count - 1;
+	gl_ctx->elem_count+= 2;
+	
+	return 1;
+}
+
+int draw_gl_rect_color (struct ogl *gl_ctx, int x, int y, int z, int w, int h,
+  GLubyte tl[4], GLubyte tr[4], GLubyte br[4], GLubyte bl[4]){
+	/* emulate drawing a filled and convex quadrilateral, using triangles in openGL */
+	
+	/* verify struct and buffers */
+	if (!gl_ctx) return 0;
+	if (!gl_ctx->verts) return 0;
+	if (!gl_ctx->elems) return 0;
+	
+	/* check if elements buffer is full,
+	and draw waiting elements to clear buffer if necessary */
+	draw_gl (gl_ctx, 0);
+  #ifndef GLES2
+	if (gl_ctx->elems == NULL){
+		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	}
+  #endif
+	/* */
+	
+	/* orientation in drawing area */
+	float flip_y = (gl_ctx->flip_y) ? -1.0 : 1.0;
+	float scale_u = 1.0;
+	float scale_v = 1.0;
+	
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, gl_ctx->tex);
+	
+	if (w > gl_ctx->tex_w || h > gl_ctx->tex_h){
+		
+		scale_u = 1.0;
+		scale_v = 1.0;
+		gl_ctx->tex_w = w;
+		gl_ctx->tex_h = h;
+	}
+	else {
+		
+		scale_u = (float) w / (float) gl_ctx->tex_w;
+		scale_v = (float) h / (float) gl_ctx->tex_h;
+	}
+	
+	/* convert input coordinates, in pixles (int), to openGL units and store vertices - 4 vertices */
+	/* 0 */
+	int j = gl_ctx->vert_count;
+	gl_ctx->verts[j].pos[0] = (float) x;
+	gl_ctx->verts[j].pos[1] = (float) y;
+	gl_ctx->verts[j].pos[2] = (float) z;
+	gl_ctx->verts[j].col[0] = bl[0];
+	gl_ctx->verts[j].col[1] = bl[1];
+	gl_ctx->verts[j].col[2] = bl[2];
+	gl_ctx->verts[j].col[3] = bl[3];
+	gl_ctx->verts[j].uv[0] = 0.0;
+	gl_ctx->verts[j].uv[1] = (float)(1 - gl_ctx->flip_y) * scale_v;
+	gl_ctx->vert_count ++;
+	/* 1 */
+	j = gl_ctx->vert_count;
+	gl_ctx->verts[j].pos[0] = (float) x;
+	gl_ctx->verts[j].pos[1] = (float) (y + h);
+	gl_ctx->verts[j].pos[2] = (float) z;
+	gl_ctx->verts[j].col[0] = tl[0];
+	gl_ctx->verts[j].col[1] = tl[1];
+	gl_ctx->verts[j].col[2] = tl[2];
+	gl_ctx->verts[j].col[3] = tl[3];
+	gl_ctx->verts[j].uv[0] = 0.0;
+	gl_ctx->verts[j].uv[1] = (float)(gl_ctx->flip_y) * scale_v;
+	gl_ctx->vert_count ++;
+	/* 2 */
+	j = gl_ctx->vert_count;
+	gl_ctx->verts[j].pos[0] = (float) (x + w);
+	gl_ctx->verts[j].pos[1] = (float) y;
+	gl_ctx->verts[j].pos[2] = (float) z;
+	gl_ctx->verts[j].col[0] = br[0];
+	gl_ctx->verts[j].col[1] = br[1];
+	gl_ctx->verts[j].col[2] = br[2];
+	gl_ctx->verts[j].col[3] = br[3];
+	gl_ctx->verts[j].uv[0] = scale_u;
+	gl_ctx->verts[j].uv[1] = (float)(1 - gl_ctx->flip_y) * scale_v;
+	gl_ctx->vert_count ++;
+	/* 3 */
+	j = gl_ctx->vert_count;
+	gl_ctx->verts[j].pos[0] = (float) (x + w);
+	gl_ctx->verts[j].pos[1] = (float) (y + h);
+	gl_ctx->verts[j].pos[2] = (float) z;
+	gl_ctx->verts[j].col[0] = tr[0];
+	gl_ctx->verts[j].col[1] = tr[1];
+	gl_ctx->verts[j].col[2] = tr[2];
+	gl_ctx->verts[j].col[3] = tr[3];
 	gl_ctx->verts[j].uv[0] =  scale_u;
 	gl_ctx->verts[j].uv[1] = (float)(gl_ctx->flip_y) * scale_v;
 	gl_ctx->vert_count ++;
@@ -1050,13 +1155,11 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 		
 		if (i > 2){
 			if (i < 4){
-				//int draw_gl_triang (struct ogl *gl_ctx, int p0[3], int p1[3], int p2[3]);
 				draw_gl_triang (gl_ctx, (int []){edges[0].x0, edges[0].y0, edges[0].z0},
 					(int []){edges[1].x0, edges[1].y0, edges[1].z0},
 					(int []){edges[2].x0, edges[2].y0, edges[2].z0});
 			}
 			else if (i < 5) {
-				//int draw_gl_quad (struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3]);
 				draw_gl_quad (gl_ctx, (int []){edges[0].x0, edges[0].y0, edges[0].z0},
 					(int []){edges[1].x0, edges[1].y0, edges[1].z0},
 					(int []){edges[3].x0, edges[3].y0, edges[3].z0},

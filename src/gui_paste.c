@@ -9,8 +9,6 @@ int gui_paste_interactive(gui_obj *gui){
 			gui->draw_tmp = 1;
 			/* phantom object */
 			//dxf_ents_parse(gui->clip_drwg);
-			//dxf_ent_print2 (gui->clip_drwg->ents);
-			//dxf_ents_parse2(dxf_drawing *drawing, int p_space, int pool_idx)
 			gui->clip_drwg->font_list = gui->font_list;
 			gui->clip_drwg->dflt_font = gui->dflt_font;
 			//list_node * ents_list = dxf_ents_list(gui->clip_drwg, ONE_TIME);
@@ -18,7 +16,6 @@ int gui_paste_interactive(gui_obj *gui){
 			
 			gui->phanton = dxf_ents_parse2(gui->clip_drwg, 0, FRAME_LIFE);
 			if (!gui->phanton) gui_default_modal(gui);
-			//dxf_ents_ext(dxf_drawing *drawing, double * min_x, double * min_y, double * max_x, double * max_y)
 			
 			dxf_ents_ext(gui->clip_drwg, &min_x, &min_y, &min_z, &max_x, &max_y, &max_z);
 			center_x = min_x + (max_x - min_x)/2.0;
@@ -42,7 +39,6 @@ int gui_paste_interactive(gui_obj *gui){
 		else{
 			gui->free_sel = 0;
 			if (gui->ev & EV_ENTER){
-				//list_node * dxf_drwg_ent_cpy_all(dxf_drawing *source, dxf_drawing *dest, int pool_idx){
 				list_node * list = dxf_drwg_ent_cpy_all(gui->clip_drwg, gui->drawing, DWG_LIFE);
 				if (!list) gui_default_modal(gui);
 				dxf_cpy_lay_drwg(gui->clip_drwg, gui->drawing);

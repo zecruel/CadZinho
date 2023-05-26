@@ -18,7 +18,7 @@
 #define DXF_MAX_PAT 12
 #define DXF_POOL_PAGES 1000
 
-#define CZ_VERSION "0.3.0 - 2023"
+#define CZ_VERSION "0.4.0 - 2023"
 
 
 extern strpool_t obj_pool;

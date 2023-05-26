@@ -60,7 +60,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: configure
-      run: sudo apt-get install --yes libsdl2-dev libglvnd-dev libglew-dev fuse libfuse2
+      run: sudo apt-get install --yes libsdl2-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev libglew-dev fuse libfuse2
     - name: download lua source
       run: curl -R -O http://www.lua.org/ftp/lua-5.4.4.tar.gz
     - name: extract lua

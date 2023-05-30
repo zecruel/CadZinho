@@ -4513,6 +4513,7 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 		current = ent;
 		
 		dxf_node * spline = NULL; /* dumb entity to parse SPLINE */
+    dxf_node * prev_spline = NULL; /* dumb entity to parse SPLINE */
 		
 		
 		while (current){
@@ -4562,6 +4563,8 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 					case 72:
 						if (!(bound_type & 2)){
 							edge_type = current->value.i_data;
+              prev_spline = spline;
+              spline = NULL;
 							if (edge_type == EDGE_SPLINE){
 								spline = dxf_obj_new ("SPLINE", FRAME_LIFE);
 							}
@@ -4679,8 +4682,8 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 						graph_ellipse(*curr_graph, curr_x, pt1_y, 0.0, pt2_x, pt2_y, 0.0, radius, start_ang, end_ang);
 					}
 				}
-				else if (prev_edge_type == EDGE_SPLINE){
-					graph_obj *spline_g = dxf_spline_parse(NULL, spline, 0, FRAME_LIFE);
+				else if (prev_edge_type == EDGE_SPLINE && prev_spline){
+					graph_obj *spline_g = dxf_spline_parse(NULL, prev_spline, 0, FRAME_LIFE);
 					if (spline_g && *curr_graph){
 						graph_merge(*curr_graph, spline_g);
 					}
@@ -4771,8 +4774,9 @@ int dxf_hatch_get_bound(graph_obj **curr_graph, dxf_node * ent, dxf_node **next,
 					}
 				}
 				else if (prev_edge_type == EDGE_SPLINE){
-					if (prev_edge != curr_edge){
-						graph_obj *spline_g = dxf_spline_parse(NULL, spline, 0, FRAME_LIFE);
+					if (prev_edge != curr_edge && prev_spline){
+            graph_obj *spline_g = dxf_spline_parse(NULL, prev_spline, 0, FRAME_LIFE);
+						//graph_obj *spline_g = dxf_spline_parse(NULL, spline, 0, FRAME_LIFE);
 						if (spline_g && *curr_graph){
 							graph_merge(*curr_graph, spline_g);
 						}

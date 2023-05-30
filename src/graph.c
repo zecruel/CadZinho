@@ -1167,9 +1167,7 @@ void graph_arc(graph_obj * master, double c_x, double c_y, double c_z, double ra
 			x1 = c_x + radius * cos(step * i * sig + ang_start);
 			y1 = c_y + radius * sin(step * i * sig + ang_start);
 			
-			
 			line_add(master, x0, y0, c_z, x1, y1, c_z);
-			//printf("(%0.2f,%0.2f),", x1, y1);
 			x0=x1;
 			y0=y1;
 		}
@@ -1177,7 +1175,6 @@ void graph_arc(graph_obj * master, double c_x, double c_y, double c_z, double ra
 		x1 = c_x + radius * cos(ang_end);
 		y1 = c_y + radius * sin(ang_end);
 		line_add(master, x0, y0, c_z, x1, y1, c_z);
-		//printf("(%0.2f,%0.2f)\n", x1, y1);
 	}
 }
 
@@ -1186,7 +1183,7 @@ void graph_arc_bulge(graph_obj * master,
 			double pt2_x, double pt2_y, double pt2_z, 
 			double bulge){
 	
-	if (fabs(bulge) > TOLERANCE){ /*bulge is non zero*/
+	if (fabs(bulge) > TOLERANCE){ /* bulge is non zero */
 		double theta, alfa, d, radius, ang_c, ang_start, ang_end, center_x, center_y;
 		int sig;
 		
@@ -1226,7 +1223,7 @@ void graph_ellipse(graph_obj * master,
 		double p2_x, double p2_y, double p2_z,
 		double minor_ax, double ang_start, double ang_end){
 	if (master){
-		int n = 32; //numero de vertices do polígono regular que aproxima o circulo ->bom numero 
+		int n = 32; /* number of interpolation vertices - good fit */
 		double ang, major_ax, cosine, sine, step;
 		int steps, i;
 		double x0, y0, x1, y1;
@@ -1242,21 +1239,16 @@ void graph_ellipse(graph_obj * master,
 		cosine = cos(atan2(p2_y, p2_x));
 		sine = sin(atan2(p2_y, p2_x));
 		
-		//printf("major = %0.2f, minor = %0.2f\n", major_ax, minor_ax);
-		//printf("ang_start = %0.2f, ang_end = %0.2f\n", ang_start, ang_end);
-		
 		ang = (ang_end - ang_start); //angulo do arco
 		if (ang <= 0){ ang = ang + 2*M_PI;}
 		
-		//descobre quantos passos para o laço a seguir
+		/* get step increment in loop */
 		//steps = (int) floor(fabs(ang*n/(2*M_PI))); //numero de vertices do arco
 		step = ang/(double) n;
 		
 		/* first vertex */
 		x0 = p1_x + major_ax * cos(ang_start);
 		y0 = p1_y + minor_ax * sin(ang_start);
-		
-		//printf("Arco, stp = %d, r = %0.2f, ang = %0.2f\n pts = )", steps, radius, ang);
 		
 		/* 2nd vertex and so */
 		for (i = 1; i < n; i++){
@@ -1268,11 +1260,10 @@ void graph_ellipse(graph_obj * master,
 			xx1 = cosine*(x1-p1_x) - sine*(y1-p1_y) + p1_x;
 			yy1 = sine*(x1-p1_x) + cosine*(y1-p1_y) + p1_y;
 			line_add(master, xx0, yy0, p1_z, xx1, yy1, p1_z);
-			//printf("(%0.2f,%0.2f),", x1, y1);
 			x0=x1;
 			y0=y1;
 		}
-		// o ultimo vertice do arco eh o ponto final, nao calculado no laço
+    /* last vertex obtained from end angle */
 		x1 = p1_x + major_ax * cos(ang_end);
 		y1 = p1_y + minor_ax * sin(ang_end);
 		
@@ -1281,8 +1272,6 @@ void graph_ellipse(graph_obj * master,
 		xx1 = cosine*(x1-p1_x) - sine*(y1-p1_y) + p1_x;
 		yy1 = sine*(x1-p1_x) + cosine*(y1-p1_y) + p1_y;
 		line_add(master, xx0, yy0, p1_z, xx1, yy1, p1_z);
-		
-		//printf("(%0.2f,%0.2f)\n", x1, y1);
 	}
 }
 
@@ -1290,7 +1279,7 @@ void graph_ellipse2(graph_obj * master,
 		double major_ax, double minor_ax, 
 		double ang_start, double ang_end){
 	if (master){
-		int n = 32; //numero de vertices do polígono regular que aproxima o circulo ->bom numero 
+		int n = 32; /* number of interpolation vertices - good fit */
 		double ang, step;
 		int steps, i;
 		double x0, y0, x1, y1;
@@ -1301,37 +1290,29 @@ void graph_ellipse2(graph_obj * master,
 		//major_ax = sqrt(pow(p2_x, 2) + pow(p2_y, 2)) ;
 		minor_ax *= major_ax;
 		
-		//printf("major = %0.2f, minor = %0.2f\n", major_ax, minor_ax);
-		//printf("ang_start = %0.2f, ang_end = %0.2f\n", ang_start, ang_end);
-		
 		ang = (ang_end - ang_start); //angulo do arco
 		if (ang <= 0){ ang = ang + 2*M_PI;}
 		
-		//descobre quantos passos para o laço a seguir
+		/* get step increment in loop */
 		//steps = (int) floor(fabs(ang*n/(2*M_PI))); //numero de vertices do arco
 		step = ang/(double) n;
 		
 		x0 = major_ax * cos(ang_start);
 		y0 = minor_ax * sin(ang_start);
 		
-		//printf("Arco, stp = %d, r = %0.2f, ang = %0.2f\n pts = )", steps, radius, ang);
-		
-		//já começa do segundo vértice
+		/* 2nd vertex and so */
 		for (i = 1; i < n; i++){
 			x1 = major_ax * cos(step * i + ang_start);
 			y1 = minor_ax * sin(step * i + ang_start);
 			
 			line_add(master, x0, y0, 0.0, x1, y1, 0.0);
-			//printf("(%0.2f,%0.2f),", x1, y1);
 			x0=x1;
 			y0=y1;
 		}
-		// o ultimo vertice do arco eh o ponto final, nao calculado no laço
+		/* last vertex obtained from end angle */
 		x1 = major_ax * cos(ang_end);
 		y1 = minor_ax * sin(ang_end);
 		line_add(master, x0, y0, 0.0, x1, y1, 0.0);
-		
-		//printf("(%0.2f,%0.2f)\n", x1, y1);
 	}
 }
 
@@ -1343,6 +1324,11 @@ void graph_modify(graph_obj * master, double ofs_x, double ofs_y, double scale_x
 			double min_x, min_y, min_z, max_x, max_y, max_z;
 			line_node *current = master->list->next;
 			master->flags &= ~(EXT_INI);
+      
+      /* scale line tickness */
+      if(!(master->flags & THICK_CONST)){
+        master->tick = master->tick * scale_x;
+      }
 			
 			/* rotation constants */
 			cosine = cos(rot*M_PI/180);
@@ -1966,15 +1952,15 @@ int graph_list_color(list_node *list, bmp_color color){
 	return ok;
 }
 
-double pt_dist(double x0, double y0, double x1, double y1){
-	return sqrt(pow(x1-x0, 2) + pow(y1-y0, 2));
-}
-
-int pt_lies_seg (double ln_x0, double ln_y0, double ln_x1 , double ln_y1, double pt_x, double pt_y){
-	double ln = pt_dist(ln_x0, ln_y0, ln_x1, ln_y1);
-	double seg1 = pt_dist(ln_x0, ln_y0, pt_x, pt_y);
-	double seg2 = pt_dist(pt_x, pt_y, ln_x1, ln_y1);
-	return fabs(ln - seg1 - seg2) < TOLERANCE;
+int pt_lies_seg (double ax, double ay, double bx , double by, double cx, double cy){
+  /* https://stackoverflow.com/questions/328107/how-can-you-determine-a-point-is-between-two-other-points-on-a-line-segment */
+  double crossproduct = (cy - ay) * (bx - ax) - (cx - ax) * (by - ay);
+  if (fabs(crossproduct) > TOLERANCE) return 0;
+  double dotproduct = (cx - ax) * (bx - ax) + (cy - ay) * (by - ay);
+  if (dotproduct < 0) return 0;
+  double squaredlengthba = (bx - ax)*(bx - ax) + (by - ay)*(by - ay);
+  if (dotproduct > squaredlengthba) return 0;
+  return 1;
 }
 
 int graph_is_closed(graph_obj * master){
@@ -2190,13 +2176,16 @@ int pool_idx){
 	int nodes = 0, steps = 0;
 	
 	double  start, end, swap;
-	double node_x[1000], node_y[1000];
-	double pos[1000];
-	struct sort_by_idx sort_vert[1000];
+	double node_x[10000], node_y[10000];
+	double pos[10000];
+	struct sort_by_idx sort_vert[10000];
 	
 	double a = sin(angle);
 	double b = -cos(angle);
 	double c = -(a*orig_x+b*orig_y);
+  
+  double sine = sin(-angle);
+  double cosine = cos(-angle);
 	
 	double delta = -(a * delta_x + b * delta_y); /* distance between hatch lines */
 	double skew = -b * delta_x + a * delta_y; /* dash skew in hatch line direction*/
@@ -2247,7 +2236,7 @@ int pool_idx){
 				
 				/* calcule intersections between hatch line and boundary segment*/
 				double den =b*a2-b2*a;
-				if ( (fabs(den) > TOLERANCE) && (nodes < 1000)){
+				if ( (fabs(den) > TOLERANCE) && (nodes < 10000)){
 					double x = (b*c2-b2*c)/-den;
 					double y = (a*c2-a2*c)/den;
 					
@@ -2257,11 +2246,7 @@ int pool_idx){
 						node_y[nodes] = y;
 						
 						/* parameters for sorting vertices */
-						if (fabs(b) > TOLERANCE)
-							pos[nodes] = (x + c * a) / b;
-						else if (fabs(a) > TOLERANCE)
-							pos[nodes] = -(y + c * b) / a;
-						//else pos[nodes] = 0.0;
+            pos[nodes] = -(x*cosine - y*sine);
 						sort_vert[nodes].idx = nodes;
 						sort_vert[nodes].data = &pos[nodes];
 						
@@ -2282,8 +2267,7 @@ int pool_idx){
 			while (j < nodes - 1){
 				idx0 = sort_vert[j].idx;
 				idx1 = sort_vert[j+1].idx;
-				if  ((fabs(node_x[idx0] - node_x[idx1]) < TOLERANCE) &&
-					(fabs(node_y[idx0] - node_y[idx1]) < TOLERANCE)){
+        if (fabs(sort_vert[j].data - sort_vert[j+1].data) < TOLERANCE){
 					/* ignore duplicated nodes */
 					j++;
 				}

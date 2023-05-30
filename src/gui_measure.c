@@ -3,7 +3,9 @@
 int gui_measure_interactive(gui_obj *gui){
 	int i;
 	if (gui->modal == MEASURE){
-		
+		gui->draw_phanton = 0;
+    gui->phanton = NULL;
+    
 		if (gui->step == 0){
 			gui->free_sel = 0;
 			if (gui->ev & EV_ENTER){ /* first point entered */

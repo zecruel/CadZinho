@@ -41,7 +41,7 @@ jobs:
         cp -r ./linux/CadZinho/share/ ./pkg/usr/share/
         cp ./LICENSE.txt ./pkg/usr/share/cadzinho/
         cp -r ./lang/ ./pkg/usr/share/cadzinho/
-    - name: debian linux package
+    - name: Debian linux package
       run: |
         cd ./pkg
         fpm -s dir -t deb \
@@ -53,12 +53,42 @@ jobs:
           --description "CadZinho - Minimalist computer aided design (CAD) software" \
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
+        cd
+        mv ./pkg/*.deb ./
+        dpkg -c cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_amd64.deb
+    - name: RedHat linux package
+      run: |
+        cd ./pkg
+        fpm -s dir -t rpm \
+          --name cadzinho \
+          --license MIT \
+          --version $MAJOR.$MINOR.$MAN \
+          --architecture native \
+          --depends sdl2 --depends glew \
+          --description "CadZinho - Minimalist computer aided design (CAD) software" \
+          --url "https://github.com/zecruel/CadZinho" \
+          --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
+        cd
+        mv ./pkg/*.rpm ./
+    - name: Arch linux package
+      run: |
+        cd ./pkg
+        fpm -s dir -t pacman \
+          --name cadzinho \
+          --license MIT \
+          --version $MAJOR.$MINOR.$MAN \
+          --architecture native \
+          --depends sdl2 --depends glew \
+          --description "CadZinho - Minimalist computer aided design (CAD) software" \
+          --url "https://github.com/zecruel/CadZinho" \
+          --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
+        cd
+        mv ./pkg/*.zst ./
         ls
-        dpkg -c cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_all.deb
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
         name: uploads
         path: |
-          ./pkg/cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_all.deb
+          ./pkg/cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_amd64.deb
         retention-days: 5

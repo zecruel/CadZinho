@@ -54,7 +54,8 @@ jobs:
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
         cd
-        mv ./pkg/*.deb ./
+        cp ./pkg/*.deb ./
+        rm ./pkg/*.deb
         dpkg -c cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_amd64.deb
     - name: RedHat linux package
       run: |
@@ -69,7 +70,8 @@ jobs:
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
         cd
-        mv ./pkg/*.rpm ./
+        cp ./pkg/*.rpm ./
+        rm ./pkg/*.rpm
     - name: Arch linux package
       run: |
         cd ./pkg
@@ -83,7 +85,8 @@ jobs:
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
         cd
-        mv ./pkg/*.zst ./
+        cp ./pkg/*.zst ./
+        rm ./pkg/*.zst
         ls
     - name: Upload the result
       uses: actions/upload-artifact@v3

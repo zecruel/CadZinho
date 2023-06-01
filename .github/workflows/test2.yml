@@ -8,46 +8,18 @@ env:
   MAN: 1
   YEAR: 2023
 jobs:
-  up-version:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Update version in information files
+      - name: configure
         run: |
-          sed -i -e "/CZ_VERSION/s/[[:digit:]]\{4\}/$YEAR/" \
-            -e "/CZ_VERSION/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/$MAJOR.\2.\3/" \
-            -e "/CZ_VERSION/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.$MINOR.\3/" \
-            -e "/CZ_VERSION/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.\2.$MAN/" \
-            ./src/dxf.h
-          sed -i -e "/Comments/s/[[:digit:]]\{4\}/$YEAR/" \
-            -e "/FILEVERSION/s/\([[:digit:]]\+\),\([[:digit:]]\+\),\([[:digit:]]\+\),0/$MAJOR,\2,\3,0/" \
-            -e "/FILEVERSION/s/\([[:digit:]]\+\),\([[:digit:]]\+\),\([[:digit:]]\+\),0/\1,$MINOR,\3,0/" \
-            -e "/FILEVERSION/s/\([[:digit:]]\+\),\([[:digit:]]\+\),\([[:digit:]]\+\),0/\1,\2,$MAN,0/" \
-            -e "/PRODUCTVERSION/s/\([[:digit:]]\+\),\([[:digit:]]\+\),\([[:digit:]]\+\),0/$MAJOR,\2,\3,0/" \
-            -e "/PRODUCTVERSION/s/\([[:digit:]]\+\),\([[:digit:]]\+\),\([[:digit:]]\+\),0/\1,$MINOR,\3,0/" \
-            -e "/PRODUCTVERSION/s/\([[:digit:]]\+\),\([[:digit:]]\+\),\([[:digit:]]\+\),0/\1,\2,$MAN,0/" \
-            -e "/LegalCopyright/s/[[:digit:]]\{4\}/$YEAR/" \
-            -e "/FileVersion/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/$MAJOR.\2.\3/" \
-            -e "/FileVersion/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.$MINOR.\3/" \
-            -e "/FileVersion/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.\2.$MAN/" \
-            -e "/ProductVersion/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/$MAJOR.\2.\3/" \
-            -e "/ProductVersion/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.$MINOR.\3/" \
-            -e "/ProductVersion/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.\2.$MAN/" \
-            ./windows/cz.rc
-          sed -i -e "/NSHumanReadableCopyright/,+1s/[[:digit:]]\{4\}/$YEAR/" \
-            -e "/CFBundleShortVersionString/,+1s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/$MAJOR.\2.\3/" \
-            -e "/CFBundleShortVersionString/,+1s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.$MINOR.\3/" \
-            -e "/CFBundleShortVersionString/,+1s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.\2.$MAN/" \
-            -e "/CFBundleVersion/,+1s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/$MAJOR.\2.\3/" \
-            -e "/CFBundleVersion/,+1s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.$MINOR.\3/" \
-            -e "/CFBundleVersion/,+1s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.\2.$MAN/" \
-            ./macos/CadZinho.app/Contents/Info.plist
-      - name: Commit
-        run: |
-          git config --global user.name 'zecruel'
-          git config --global user.email 'zecruel@users.noreply.github.com'
-          git add .
-          git commit -q -m "Update version to $MAJOR.$MINOR.$MAN - $YEAR"
-          git push
-        continue-on-error: true
+          sudo apt-get update
+          sudo apt-get install --yes scrot
+      - run: scrot screenshot.png
+      - name: Upload the result
+        uses: actions/upload-artifact@v3
+        with:
+          name: uploads
+          path: screenshot.png
+          retention-days: 5

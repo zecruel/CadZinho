@@ -73,6 +73,7 @@ jobs:
     - name: regular linux package
       run: |
         ls
+        dpkg -c cadzinho_0.4.0_all.deb
         mkdir ./linux/CadZinho/share/cadzinho
         cp ./cadzinho ./linux/CadZinho
         cp ./LICENSE.txt ./linux/CadZinho/share/cadzinho
@@ -87,4 +88,5 @@ jobs:
         path: |
           linux_appimage.zip
           linux.zip
+          cadzinho_0.4.0_all.deb
         retention-days: 5

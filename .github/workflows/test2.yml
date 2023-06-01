@@ -16,6 +16,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes scrot
+      - run: startx
       - run: scrot screenshot.png
       - name: Upload the result
         uses: actions/upload-artifact@v3

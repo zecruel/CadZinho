@@ -13,15 +13,5 @@ jobs:
 
     steps:
       - name: configure
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes scrot imagemagick
-      - uses: OrbitalOwen/desktop-screenshot-action@0.1
-        with:
-          file-name: 'screenshot.png'
-      - name: Upload the result
-        uses: actions/upload-artifact@v3
-        with:
-          name: uploads
-          path: screenshot.png
-          retention-days: 5
+        run: gem install fpm
+      - run: fpm --version

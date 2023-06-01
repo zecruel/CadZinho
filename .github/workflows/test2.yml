@@ -4,8 +4,8 @@ on: workflow_dispatch
 
 env:
   MAJOR: 0
-  MINOR: 2
-  MAN: 1
+  MINOR: 4
+  MAN: 0
   YEAR: 2023
 jobs:
  test:
@@ -30,62 +30,34 @@ jobs:
       run: cp linux/Makefile ./Makefile
     - name: make
       run: make
-    - name: download AppImageTool
-      uses: suisei-cn/actions-download-file@v1.3.0
-      with:
-        url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
-        target: .
-    - name: download AppImage asset
-      uses: suisei-cn/actions-download-file@v1.3.0
-      with:
-        url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64"
-        target: .
-    - name: configure AppImageKit
+    - name: configure for fpm
       run: |
-        mkdir CadZinho.AppDir
-        mkdir CadZinho.AppDir/usr/
-        mkdir CadZinho.AppDir/usr/lib
-        mkdir CadZinho.AppDir/usr/bin
-        mkdir CadZinho.AppDir/usr/bin/share
-        mkdir CadZinho.AppDir/usr/bin/share/cadzinho
-        mv AppRun-x86_64 CadZinho.AppDir/AppRun
-        chmod u+x ./CadZinho.AppDir/AppRun
-        cp ./linux/cadzinho.desktop ./CadZinho.AppDir
-        cp ./linux/cadzinho.png ./CadZinho.AppDir
-        cp ./cadzinho ./CadZinho.AppDir/usr/bin
-        cp -r ./lang/ ./CadZinho.AppDir/usr/bin/share/cadzinho/
-        cp $(ldd cadzinho | grep -o '\W/[^ ]*' | grep 'SDL2\|GLEW\|decor') ./CadZinho.AppDir/usr/lib
-        chmod u+x ./appimagetool-x86_64.AppImage
-        ./appimagetool-x86_64.AppImage CadZinho.AppDir
-    - name: create archive
+        mkdir pkg/usr/
+        mkdir pkg/usr/bin
+        mkdir pkg/usr/share
+        mkdir pkg/usr/share/cadzinho
+        cp ./cadzinho ./pkg/usr/bin/
+        cp -r ./linux/CadZinho/share/ ./pkg/usr/share/
+        cp ./LICENSE.txt .pkg/usr/share/cadzinho
+        cp -r ./lang/ ./pkg/usr/share/cadzinho/
+    - name: debian linux package
       run: |
-        zip -r linux_appimage CadZinho-x86_64.AppImage LICENSE.txt
-    - name: regular linux package
-      run: |
-        mkdir ./linux/CadZinho/share/cadzinho
-        cp ./cadzinho ./linux/CadZinho
-        cp ./LICENSE.txt ./linux/CadZinho/share/cadzinho
-        cp -r ./lang/ ./linux/CadZinho/share/cadzinho/
-        cd ./linux/CadZinho
+        cd ./pkg
         fpm -s dir -t deb \
           --name cadzinho \
           --license MIT \
-          --version 0.4.0 \
+          --version $MAJOR.$MINOR.$MAN \
           --architecture all \
           --depends sdl2 --depends glew \
           --description "CadZinho - Minimalist computer aided design (CAD) software" \
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
         ls
-        dpkg -c cadzinho_0.4.0_all.deb
-        zip -r linux *
-    - run: cp ./linux/CadZinho/linux.zip ./
+        dpkg -c cadzinho_$MAJOR.$MINOR.$MAN_all.deb
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
         name: uploads
         path: |
-          linux_appimage.zip
-          linux.zip
-          cadzinho_0.4.0_all.deb
+          cadzinho_$MAJOR.$MINOR.$MAN_all.deb
         retention-days: 5

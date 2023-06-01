@@ -60,5 +60,5 @@ jobs:
       with:
         name: uploads
         path: |
-          cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_all.deb
+          ./pkg/cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_all.deb
         retention-days: 5

@@ -83,7 +83,6 @@ jobs:
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
         cd ..
-        mv ./pkg/*.zst ./
         ls
     - name: Upload the result
       uses: actions/upload-artifact@v3

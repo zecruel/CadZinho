@@ -54,11 +54,11 @@ jobs:
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
         ls
-        dpkg -c cadzinho_$MAJOR.$MINOR.$MAN_all.deb
+        dpkg -c cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_all.deb
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
         name: uploads
         path: |
-          cadzinho_$MAJOR.$MINOR.$MAN_all.deb
+          cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_all.deb
         retention-days: 5

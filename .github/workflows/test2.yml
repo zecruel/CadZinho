@@ -32,7 +32,8 @@ jobs:
       run: make
     - name: configure for fpm
       run: |
-        mkdir pkg/usr/
+        mkdir pkg
+        mkdir pkg/usr
         mkdir pkg/usr/bin
         mkdir pkg/usr/share
         mkdir pkg/usr/share/cadzinho

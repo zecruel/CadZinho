@@ -48,7 +48,7 @@ jobs:
           --name cadzinho \
           --license MIT \
           --version $MAJOR.$MINOR.$MAN \
-          --architecture all \
+          --architecture native \
           --depends sdl2 --depends glew \
           --description "CadZinho - Minimalist computer aided design (CAD) software" \
           --url "https://github.com/zecruel/CadZinho" \

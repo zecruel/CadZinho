@@ -13,5 +13,5 @@ jobs:
 
     steps:
       - name: configure
-        run: gem install fpm
+        run: sudo gem install fpm
       - run: fpm --version

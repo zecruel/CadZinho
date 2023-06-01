@@ -70,7 +70,6 @@ jobs:
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
         cd ..
         mv ./pkg/*.rpm ./
-        ls
     - name: Arch linux package
       run: |
         cd ./pkg
@@ -84,11 +83,13 @@ jobs:
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
         cd ..
-        ls
+        mv ./pkg/*.zst ./
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
         name: uploads
         path: |
           ./pkg/cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_amd64.deb
+          ./pkg/cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}-1.x86_64.rpm
+          ./pkg/cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}-1-x86_64.pkg.tar.zst
         retention-days: 5

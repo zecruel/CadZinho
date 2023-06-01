@@ -53,9 +53,8 @@ jobs:
           --description "CadZinho - Minimalist computer aided design (CAD) software" \
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
-        cd
-        cp ./pkg/*.deb ./
-        rm ./pkg/*.deb
+        cd ..
+        mv ./pkg/*.deb ./
         dpkg -c cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_amd64.deb
     - name: RedHat linux package
       run: |
@@ -69,9 +68,8 @@ jobs:
           --description "CadZinho - Minimalist computer aided design (CAD) software" \
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
-        cd
-        cp ./pkg/*.rpm ./
-        rm ./pkg/*.rpm
+        cd ..
+        mv ./pkg/*.rpm ./
     - name: Arch linux package
       run: |
         cd ./pkg
@@ -84,9 +82,8 @@ jobs:
           --description "CadZinho - Minimalist computer aided design (CAD) software" \
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
-        cd
-        cp ./pkg/*.zst ./
-        rm ./pkg/*.zst
+        cd ..
+        mv ./pkg/*.zst ./
         ls
     - name: Upload the result
       uses: actions/upload-artifact@v3

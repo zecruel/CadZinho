@@ -54,16 +54,7 @@ jobs:
         cp ./linux/cadzinho.png ./CadZinho.AppDir
         cp ./cadzinho ./CadZinho.AppDir/usr/bin
         cp -r ./lang/ ./CadZinho.AppDir/usr/bin/share/cadzinho/
-        fpm -s dir -t deb \
-          --name cadzinho \
-          --license MIT \
-          --version 0.4.0 \
-          --architecture all \
-          --depends sdl2 --depends glew \
-          --description "CadZinho - Minimalist computer aided design (CAD) software" \
-          --url "https://github.com/zecruel/CadZinho" \
-          --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" \
-          --directories CadZinho.AppDir
+        fpm -s dir -t deb --name cadzinho --license MIT --version 0.4.0 --architecture all --depends sdl2 --depends glew --description "CadZinho - Minimalist computer aided design (CAD) software" --url "https://github.com/zecruel/CadZinho" --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" --directories CadZinho.AppDir
         cp $(ldd cadzinho | grep -o '\W/[^ ]*' | grep 'SDL2\|GLEW\|decor') ./CadZinho.AppDir/usr/lib
         chmod u+x ./appimagetool-x86_64.AppImage
         ./appimagetool-x86_64.AppImage CadZinho.AppDir

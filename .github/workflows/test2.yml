@@ -89,7 +89,7 @@ jobs:
       with:
         name: uploads
         path: |
+          cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}-1-x86_64.pkg.tar.zst
           cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_amd64.deb
           cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}-1.x86_64.rpm
-          cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}-1-x86_64.pkg.tar.zst
         retention-days: 5

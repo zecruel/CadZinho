@@ -84,6 +84,8 @@ jobs:
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
         cd ..
         mv ./pkg/*.zst ./
+    - name: List files
+      run: ls
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:

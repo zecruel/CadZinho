@@ -1,0 +1,40 @@
+# Maintainer: -=De/\/=-
+# Author: Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>
+# Contributor: Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>
+
+pkgname=cadzinho
+pkgver=0.3.0
+pkgrel=1
+pkgdesc="Minimalist computer aided design (CAD) software"
+arch=('x86_64')
+url='https://github.com/zecruel/CadZinho'
+license=('MIT')
+
+depends=('sdl2' 'glew' 'libglvnd')
+
+source=('https://github.com/zecruel/CadZinho/archive/refs/tags/0.4.0.tar.gz'
+        'http://www.lua.org/ftp/lua-5.4.6.tar.gz')
+sha256sums=('0f7ca0c3958950ce18340a210bfa04c4ec2e7256f9bdceb2864f7291a464b08a'
+            '7d5ea1b9cb6aa0b59ca3dde1c6adcb57ef83a1ba8e5432c0ecd06bf439b3ad88')
+
+prepare() {
+  rm lua-5.4.6/src/lua.c lua-5.4.6/src/luac.c
+  cp lua-5.4.6/src/* CadZinho-$pkgver/src/
+  cd CadZinho-$pkgver
+  cp linux/Makefile ./Makefile
+}
+
+build() {
+  cd CadZinho-$pkgver
+  make
+}
+
+package() {
+  cd ${srcdir}
+  install -dm755 ${pkgdir}/usr/share/{cadzinho,applications,icons}
+  cp -r ${srcdir}/CadZinho-$pkgver/linux/CadZinho/share/* ${pkgdir}/usr/share
+  install -Dm644 ${srcdir}/CadZinho-$pkgver/LICENSE.txt "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -m644 ${srcdir}/CadZinho-$pkgver/lang/*.lua "$pkgdir"/usr/share/$pkgname/lang/
+  install -D -m755 ${srcdir}/CadZinho-$pkgver/cadzinho ${pkgdir}/usr/bin/cadzinho
+}
+

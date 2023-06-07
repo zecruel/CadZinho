@@ -10,7 +10,7 @@ env:
   LUA_V: 5.4.6
   MESA_V: 23.1.1
   GLEW_V: 2.2.0
-  SDL_V: 2.26.6
+  SDL_V: 2.26.5
   
 jobs:
   up-version:
@@ -67,6 +67,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install --yes libsdl2-dev libglvnd-dev libglew-dev fuse libfuse2 libarchive-tools
+        sudo gem install fpm
     - name: download lua source
       run: curl -R -O http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz
     - name: extract lua
@@ -276,6 +277,10 @@ jobs:
         cp windows/cadzinho.ico CadZinho/
         cp /mingw64/bin/SDL2.dll CadZinho/
         cp /mingw64/bin/glew32.dll CadZinho/
+        cp x64/opengl32.dll CadZinho/
+        cp x64/libgallium_wgl.dll CadZinho/
+        cp x64/libglapi.dll CadZinho/
+        cp x64/dxil.dll CadZinho/
         cp LICENSE.txt CadZinho/
     - name: create archive
       run: 7z a windows.zip CadZinho
@@ -348,6 +353,10 @@ jobs:
         cp ./glew-${{ env.GLEW_V }}/bin/Release/x64/glew32.dll CadZinho/
         cp ./cadzinho.exe CadZinho/
         cp -r ./lang/ CadZinho/
+        cp x64/opengl32.dll CadZinho/
+        cp x64/libgallium_wgl.dll CadZinho/
+        cp x64/libglapi.dll CadZinho/
+        cp x64/dxil.dll CadZinho/
         cp LICENSE.txt CadZinho/
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho
@@ -415,4 +424,7 @@ jobs:
             windows.zip
             windows_msvc.zip
             emscripten.zip
+            cadzinho-${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}-1-x86_64.pkg.tar.zst
+            cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_amd64.deb
+            cadzinho-${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}-1.x86_64.rpm
 

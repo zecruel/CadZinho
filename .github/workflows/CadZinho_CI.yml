@@ -340,11 +340,14 @@ jobs:
     - run: |
         mkdir ./glew-${{ env.GLEW_V }}/include/SDL2
         mkdir ./CadZinho
+        mkdir ./include
+        mkdir ./lib
         cp ./SDL2-${{ env.SDL_V }}/include/* ./glew-${{ env.GLEW_V }}/include/SDL2/
         cp -r ./SDL2-${{ env.SDL_V }}/include/ ./include/
         cp -r ./SDL2-${{ env.SDL_V }}/lib/ ./lib/
         cp -r ./glew-${{ env.GLEW_V }}/include/ ./include/
         cp -r ./glew-${{ env.GLEW_V }}/lib/ ./lib/
+        ls
     - name: get make file and resources
       run: cp windows/* ./
 

@@ -343,8 +343,8 @@ jobs:
         mkdir ./SDL2
         mkdir ./glew
         cp ./SDL2-${{ env.SDL_V }}/include/* ./glew-${{ env.GLEW_V }}/include/SDL2/
-        cp ./SDL2-${{ env.SDL_V }}/* ./SDL2/
-        cp ./glew-${{ env.GLEW_V }}/* ./glew/
+        cp -r ./SDL2-${{ env.SDL_V }}/ ./SDL2/
+        cp -r ./glew-${{ env.GLEW_V }}/ ./glew/
         ls
     - name: get make file and resources
       run: cp windows/* ./

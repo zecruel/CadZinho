@@ -25,7 +25,7 @@ EXE=$(DIR_BIN)\cadzinho.exe
 #   and https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip
 # for lua, it will build directly from sources at http://www.lua.org/ftp/lua-5.4.4.tar.gz
 
-INCLUDES = -I $(ZSDK)/include -I ./SDL2/include/  -I ./glew/include/
+INCLUDES = -I $(ZSDK)/include -I ./glew/include/ -I ./SDL2/include/
 LIBRARIES = ./glew/lib/Release/x64/glew32.lib \
             ./SDL2/lib/x64/SDL2.lib ./SDL2/lib/x64/SDL2main.lib
 

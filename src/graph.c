@@ -2267,7 +2267,7 @@ int pool_idx){
 			while (j < nodes - 1){
 				idx0 = sort_vert[j].idx;
 				idx1 = sort_vert[j+1].idx;
-        if (fabs(sort_vert[j].data - sort_vert[j+1].data) < TOLERANCE){
+        if (fabs(*(double *)sort_vert[j].data - *(double *)sort_vert[j+1].data) < TOLERANCE){
 					/* ignore duplicated nodes */
 					j++;
 				}

@@ -345,7 +345,7 @@ jobs:
         cp ./SDL2-${{ env.SDL_V }}/include/* ./glew-${{ env.GLEW_V }}/include/SDL2/
         cp -r ./SDL2-${{ env.SDL_V }}/ ./SDL2/
         cp -r ./glew-${{ env.GLEW_V }}/ ./glew/
-        ls
+        ls -R ./glew/
     - name: get make file and resources
       run: cp windows/* ./
 

@@ -291,6 +291,7 @@ int gui_main_win(gui_obj *gui){
 				//gui->show_app_file = 1;
 				gui->show_save = 1;
 				gui->path_ok = 0;
+        gui->hist_new = 1;
 			}
 			nk_group_end(gui->ctx);
 		}

@@ -746,6 +746,10 @@ int gui_main_loop (gui_obj *gui) {
   
   
     if (dxf_save (gui->curr_path, gui->drawing)){
+      if (strncmp (gui->dwg_dir, get_dir(gui->curr_path) , PATH_MAX_CHARS) == 0 &&
+        strncmp (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS) == 0 )
+      { gui->hist_new = 0; }
+      
       strncpy (gui->dwg_dir, get_dir(gui->curr_path) , PATH_MAX_CHARS);
       strncpy (gui->dwg_file, get_filename(gui->curr_path) , DXF_MAX_CHARS);
       
@@ -766,6 +770,7 @@ int gui_main_loop (gui_obj *gui) {
         gui->script_resume = -1;
       }
     }
+    gui->hist_new = 0;
   
   }
   else if((gui->action == EXPORT) && (gui->path_ok)) {

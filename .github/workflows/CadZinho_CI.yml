@@ -87,6 +87,7 @@ jobs:
         mkdir pkg/usr/bin
         cp ./cadzinho ./pkg/usr/bin/
         cp -r ./linux/CadZinho/share/ ./pkg/usr/
+        mkdir pkg/usr/share/cadzinho
         cp ./LICENSE.txt ./pkg/usr/share/cadzinho/
         cp -r ./lang/ ./pkg/usr/share/cadzinho/
     - name: Debian linux package

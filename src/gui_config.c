@@ -72,8 +72,8 @@ void gui_load_lang (gui_obj *gui){
 	if (!strcmp(platform, "unix") /* Handle Linux, Unix, posix */
 	|| !strcmp(platform, "linux") 
 	|| !strcmp(platform, "freeBSD")) {
-		snprintf(new_path, PATH_MAX_CHARS, "%sshare/cadzinho/lang/%s.lua", 
-      gui->base_dir, gui->main_lang);
+		snprintf(new_path, PATH_MAX_CHARS, "/usr/share/cadzinho/lang/%s.lua", 
+      gui->main_lang);
 	} else {
     snprintf(new_path, PATH_MAX_CHARS, "%slang%c%s.lua", 
       gui->base_dir, DIR_SEPARATOR, gui->main_lang);
@@ -759,8 +759,7 @@ int config_win (gui_obj *gui){
         if (!strcmp(platform, "unix") /* Handle Linux, Unix, posix */
         || !strcmp(platform, "linux") 
         || !strcmp(platform, "freeBSD")) {
-          snprintf(new_path, PATH_MAX_CHARS, "%sshare/cadzinho/lang/", 
-            gui->base_dir);
+          snprintf(new_path, PATH_MAX_CHARS, "/usr/share/cadzinho/lang/");
         } else {
           snprintf(new_path, PATH_MAX_CHARS, "%slang%c", 
             gui->base_dir, DIR_SEPARATOR);

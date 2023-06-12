@@ -709,6 +709,15 @@ int gui_main_loop (gui_obj *gui) {
       gui->drawing->dflt_font = get_font_list(gui->font_list, "txt.shx");
       gui->drawing->dflt_fonts_path = gui->dflt_fonts_path;
       
+      while (dxf_read (gui->drawing, (char *)dxf_seed_2007, strlen(dxf_seed_2007), &gui->progress) > 0){
+        
+      }
+      
+      gui->drawing->font_list = gui->font_list;
+      gui->drawing->dflt_font = get_font_list(gui->font_list, "txt.shx");
+      gui->drawing->dflt_fonts_path = gui->dflt_fonts_path;
+      
+      gui->progress = 0;
       open_prg = dxf_read(gui->drawing, gui->file_buf->buffer, gui->file_size, &gui->progress);
       
       gui->low_proc = 0;

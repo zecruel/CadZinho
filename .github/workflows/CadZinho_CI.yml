@@ -149,14 +149,14 @@ jobs:
         mkdir CadZinho.AppDir/usr/
         mkdir CadZinho.AppDir/usr/lib
         mkdir CadZinho.AppDir/usr/bin
-        mkdir CadZinho.AppDir/usr/bin/share
-        mkdir CadZinho.AppDir/usr/bin/share/cadzinho
+        mkdir CadZinho.AppDir/usr/share
+        mkdir CadZinho.AppDir/usr/share/cadzinho
         mv AppRun-x86_64 CadZinho.AppDir/AppRun
         chmod u+x ./CadZinho.AppDir/AppRun
         cp ./linux/cadzinho.desktop ./CadZinho.AppDir
         cp ./linux/cadzinho.png ./CadZinho.AppDir
         cp ./cadzinho ./CadZinho.AppDir/usr/bin
-        cp -r ./lang/ ./CadZinho.AppDir/usr/bin/share/cadzinho/
+        cp -r ./lang/ ./CadZinho.AppDir/usr/share/cadzinho/
         cp $(ldd cadzinho | grep -o '\W/[^ ]*' | grep 'SDL2\|GLEW\|decor') ./CadZinho.AppDir/usr/lib
         chmod u+x ./appimagetool-x86_64.AppImage
         ./appimagetool-x86_64.AppImage CadZinho.AppDir

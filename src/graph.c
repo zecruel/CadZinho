@@ -2267,17 +2267,17 @@ int pool_idx){
 			while (j < nodes - 1){
 				idx0 = sort_vert[j].idx;
 				idx1 = sort_vert[j+1].idx;
-        if (fabs(*(double *)sort_vert[j].data - *(double *)sort_vert[j+1].data) < TOLERANCE){
-					/* ignore duplicated nodes */
-					j++;
-				}
-				else {
+        //if (fabs(*(double *)sort_vert[j].data - *(double *)sort_vert[j+1].data) < TOLERANCE){
+				//	/* ignore duplicated nodes */
+				//	j++;
+				//}
+				//else {
 					graph_dash(ret_graph, node_x[idx0], node_y[idx0],
 					node_x[idx1], node_y[idx1],
 					curr_skew, dash, num_dash);
 					
 					j += 2;
-				}
+				//}
 			}
 		}
 		/* update the next line parameters */

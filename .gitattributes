@@ -1,3 +1,8 @@
+.gitattributes export-ignore
+.gitignore export-ignore
 demo export-ignore
 view.gif export-ignore
 screenshot.png export-ignore
+samples/*.pdf export-ignore
+samples/*.svg export-ignore
+samples/*.ps export-ignore

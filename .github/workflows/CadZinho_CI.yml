@@ -384,13 +384,14 @@ jobs:
         cd CadZinho
         ../candle.exe cadzinho.wxs
         ../light.exe cadzinho.wixobj
+        mv cadzinho.msi ../
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
         name: uploads
         path: |
           windows_msvc.zip
-          CadZinho/cadzinho.msi
+          cadzinho.msi
         retention-days: 5
         
   emscripten-built:

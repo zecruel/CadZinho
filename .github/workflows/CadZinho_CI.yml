@@ -449,6 +449,7 @@ jobs:
             macos.zip
             windows.zip
             windows_msvc.zip
+            cadzinho.msi
             emscripten.zip
             cadzinho-${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}-1-x86_64.pkg.tar.zst
             cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_amd64.deb

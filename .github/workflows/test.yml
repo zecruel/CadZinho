@@ -85,9 +85,10 @@ jobs:
         cp x64/libglapi.dll CadZinho/
         cp x64/dxil.dll CadZinho/
         cp LICENSE.txt CadZinho/
-        cp cadzinho.wxs CadZinho/
     - name: create MSI installer
       run: |
+        cp cadzinho.wxs CadZinho/
+        cp cadzinho.wixproj CadZinho/
         msbuild CadZinho/cadzinho.wixproj
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho

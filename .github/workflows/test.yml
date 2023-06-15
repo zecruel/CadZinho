@@ -17,6 +17,7 @@ jobs:
    runs-on: windows-latest
 
    steps:
+    - uses: microsoft/setup-msbuild@v1.1
     - uses: actions/checkout@v3
     
     - name: download lua source
@@ -86,12 +87,8 @@ jobs:
         cp LICENSE.txt CadZinho/
         cp cadzinho.wxs CadZinho/
     - name: create MSI installer
-      uses: utilitywarehouse/ghaction-wix@v1
-      with:
-        name: cadzinho
-        sourceFiles: CadZinho/component.wxs
-        outputDir: CadZinho
-        architecture: x64
+      run: |
+        msbuild CadZinho/cadzinho.wixproj
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho
     - name: Upload the result

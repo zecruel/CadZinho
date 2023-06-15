@@ -40,6 +40,11 @@ jobs:
             -e "/ProductVersion/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.$MINOR.\3/" \
             -e "/ProductVersion/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.\2.$MAN/" \
             ./windows/cz.rc
+          sed -i -e "/Version/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/$MAJOR.\2.\3/" \
+            -e "/Version/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.$MINOR.\3/" \
+            -e "/Version/s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.\2.$MAN/" \
+            -e "/Comments/s/[[:digit:]]\{4\}/$YEAR/" \
+            ./windows/cadzinho.wxs
           sed -i -e "/NSHumanReadableCopyright/,+1s/[[:digit:]]\{4\}/$YEAR/" \
             -e "/CFBundleShortVersionString/,+1s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/$MAJOR.\2.\3/" \
             -e "/CFBundleShortVersionString/,+1s/\([[:digit:]]\+\).\([[:digit:]]\+\).\([[:digit:]]\+\)/\1.$MINOR.\3/" \
@@ -363,11 +368,29 @@ jobs:
         cp LICENSE.txt CadZinho/
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho
+    - name: download wix3
+      uses: suisei-cn/actions-download-file@v1.3.0
+      with:
+        url: "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip"
+        target: .
+    - name: Unzip wix3
+      shell: cmd
+      run: |
+        7z x -y wix311-binaries.zip
+        ls
+    - name: create MSI installer
+      run: |
+        cp cadzinho.wxs CadZinho/
+        cd CadZinho
+        ../candle.exe cadzinho.wxs
+        ../light.exe cadzinho.wixobj
     - name: Upload the result
       uses: actions/upload-artifact@v3
       with:
         name: uploads
-        path: windows_msvc.zip
+        path: |
+          windows_msvc.zip
+          CadZinho/cadzinho.msi
         retention-days: 5
         
   emscripten-built:

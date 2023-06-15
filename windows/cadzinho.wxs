@@ -1,0 +1,92 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+  <Product Name='CadZinho' Id='D4D6A189-FC59-4998-84FD-9005EA06E9B9'
+    UpgradeCode='9A28C552-6350-4365-AA48-8FAC35452A42'
+    Language='2057' Codepage='65001' Version='0.4.0' Manufacturer='ZeCruel'>
+
+    <Package Id='*' Keywords='Installer' Description="CadZinho Installer"
+      Comments='CadZinho - MIT Licence - 2023' Manufacturer='ZeCruel'
+      InstallerVersion='100' Languages='2057' Compressed='yes' 
+      SummaryCodepage='1252' />
+
+    <Media Id='1' Cabinet='cz.cab' EmbedCab='yes' />
+    <Icon Id="cz_icon.ico" SourceFile="cadzinho.ico" />
+    <Property Id="ARPPRODUCTICON" Value="cz_icon.ico"/>
+
+    <Directory Id='TARGETDIR' Name='SourceDir'>
+      <Directory Id='ProgramFilesFolder' Name='PFiles'>
+        <Directory Id='CadZinho' Name='CadZinho'>
+
+          <Component Id='MainExecutable' Guid='B0E218E8-51DF-499C-89C0-89C35CD87C25'>
+            <File Id='cadzinho.exe' Name='cadzinho.exe' DiskId='1' Source='cadzinho.exe' KeyPath='yes' Vital='yes' >
+              <Shortcut Id="startmenuCZ" Directory="ProgramMenuDir"
+                  Name="CadZinho" WorkingDirectory='INSTALLDIR' Icon="cz_icon.ico" IconIndex="0" Advertise="yes" />
+              <Shortcut Id="desktopCZ" Directory="DesktopFolder" Name="CadZinho" WorkingDirectory='INSTALLDIR' Icon="cz_icon.ico" IconIndex="0" Advertise="yes" />
+            </File>
+          </Component>
+
+          <Component Id='dxil' Guid='073CA6C2-7D6E-462E-8B7F-9BB42EC68209'>
+            <File DiskId='1' Source='dxil.dll' KeyPath='yes' Vital='yes' />
+          </Component>
+          
+          <Component Id='glew' Guid='B1445295-A66B-45B9-AEEE-5F7C774D4544'>
+            <File DiskId='1' Source='glew32.dll' KeyPath='yes' Vital='yes' />
+          </Component>
+          
+          <Component Id='libgallium_wgl' Guid='AA1AD6CD-7579-488F-84A9-5ABE08F42803'>
+            <File DiskId='1' Source='libgallium_wgl.dll' KeyPath='yes' Vital='yes' />
+          </Component>
+          
+          <Component Id='libglapi' Guid='640B38C2-48D9-443A-88DA-D79EABDCEB68'>
+            <File DiskId='1' Source='libglapi.dll' KeyPath='yes' Vital='yes' />
+          </Component>
+          
+          <Component Id='opengl32' Guid='C258F601-C97E-4EC5-B84F-81CBB7881E24'>
+            <File DiskId='1' Source='opengl32.dll' KeyPath='yes' Vital='yes' />
+          </Component>
+          
+          <Component Id='SDL2' Guid='9A598353-E94B-48F2-8000-D41CE347D607'>
+            <File DiskId='1' Source='SDL2.dll' KeyPath='yes' Vital='yes' />
+          </Component>
+          
+          <Component Id='license' Guid='ED6A6420-42C3-49E5-A72F-C017E2A2F0E1'>
+            <File DiskId='1' Source='LICENSE.txt' KeyPath='yes' />
+          </Component>
+          
+          <Directory Id='lang' Name='lang'>
+            <Component Id='translate' Guid='6EF336AF-E0A3-4843-A794-5E8D215C6AB6'>
+              <File DiskId='1' Source='lang/en_GB.lua' />
+              <File DiskId='1' Source='lang/pt_BR.lua' />
+            </Component>
+          </Directory>
+
+        </Directory>
+      </Directory>
+
+      <Directory Id="ProgramMenuFolder" Name="Programs">
+        <Directory Id="ProgramMenuDir" Name="CadZinho">
+          <Component Id="ProgramMenuDir" Guid="7F7639E0-E2A7-424A-B29B-2D446BD254A0">
+            <RemoveFolder Id='ProgramMenuDir' On='uninstall' />
+            <RegistryValue Root='HKCU' Key='Software\[ProductName]' Type='string' Value='' KeyPath='yes' />
+          </Component>
+        </Directory>
+      </Directory>
+
+      <Directory Id="DesktopFolder" Name="Desktop" />
+    </Directory>
+
+    <Feature Id='Complete' Level='1'>
+      <ComponentRef Id='MainExecutable' />
+      <ComponentRef Id='dxil' />
+      <ComponentRef Id='glew' />
+      <ComponentRef Id='libgallium_wgl' />
+      <ComponentRef Id='libglapi' />
+      <ComponentRef Id='opengl32' />
+      <ComponentRef Id='SDL2' />
+      <ComponentRef Id='license' />
+      <ComponentRef Id='translate' />
+      <ComponentRef Id='ProgramMenuDir' />
+    </Feature>
+
+  </Product>
+</Wix>

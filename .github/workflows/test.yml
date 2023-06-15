@@ -60,6 +60,16 @@ jobs:
       run: |
         7z x -y mesa3d-${{ env.MESA_V }}-release-msvc.7z
         ls
+    - name: download wix3
+      uses: suisei-cn/actions-download-file@v1.3.0
+      with:
+        url: "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip"
+        target: .
+    - name: Unzip wix3
+      shell: cmd
+      run: |
+        7z x -y wix311-binaries.zip
+        ls
     - run: |
         mkdir ./glew-${{ env.GLEW_V }}/include/SDL2
         mkdir ./CadZinho
@@ -88,8 +98,8 @@ jobs:
     - name: create MSI installer
       run: |
         cp cadzinho.wxs CadZinho/
-        cp cadzinho.wixproj CadZinho/
-        msbuild CadZinho/cadzinho.wixproj
+        candle.exe CadZinho/cadzinho.wxs
+        light.exe CadZinho/cadzinho.wixobj
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho
     - name: Upload the result

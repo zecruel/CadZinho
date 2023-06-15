@@ -98,8 +98,8 @@ jobs:
     - name: create MSI installer
       run: |
         cp cadzinho.wxs CadZinho/
-        candle.exe CadZinho/cadzinho.wxs
-        light.exe CadZinho/cadzinho.wixobj
+        ./candle.exe CadZinho/cadzinho.wxs
+        ./light.exe CadZinho/cadzinho.wixobj
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho
     - name: Upload the result

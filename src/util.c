@@ -495,6 +495,8 @@ const char * operating_system() {
 			/* define something for Windows (32-bit only) */
 			return "win32";
 		#endif
+  #elif __EMSCRIPTEN__
+    return "emscripten";
 	#elif __APPLE__ || __MACH__
 		#include <TargetConditionals.h>
 		#if TARGET_IPHONE_SIMULATOR

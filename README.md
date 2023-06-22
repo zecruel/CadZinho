@@ -8,11 +8,18 @@
 
 ![CadZinho](/logo.png)
 
-(SDL 2.0 and OpenGL 3.2 port)
+**CadZinho** is a Computer Aided Design (CAD) software, aimed at a desktop application for 2D technical drawings.
 
-## New Release! - [0.3.0](https://github.com/zecruel/CadZinho/releases/)
+Cadzinho is **free**, **portable** and **extensible**, which can:
+* Natively open, view, create and modify DXF files ("modern" DXF standard - 2007 version)
+* Create print files (PDF, SVG, PS and image formats)
+* Export to G-code and HPGL formats
+* Scripting language to create macros, custom tolls and custom interface
+
+## New Release! - [0.4.0](https://github.com/zecruel/CadZinho/releases/)
 ## Documentation: [**Wiki**](https://github.com/zecruel/CadZinho/wiki)
 ## Try it: [**In Browser**](https://zecruel.github.io/CadZinho-in-browser/cadzinho.html)
+## Please send interface language translations: [How to contribute](https://github.com/zecruel/CadZinho/wiki/Translations#how-to-create-a-translation)
 
 ![Screen shot](/screenshot.png)
 

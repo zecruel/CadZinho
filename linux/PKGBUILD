@@ -3,7 +3,7 @@
 # Contributor: Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>
 
 pkgname=cadzinho
-pkgver=0.3.0
+pkgver=0.4.0
 luaver=5.4.6
 pkgrel=1
 pkgdesc="Minimalist computer aided design (CAD) software"
@@ -15,7 +15,7 @@ depends=('sdl2' 'glew' 'libglvnd')
 
 source=(https://github.com/zecruel/CadZinho/archive/refs/tags/$pkgver.tar.gz
         http://www.lua.org/ftp/lua-$luaver.tar.gz)
-sha256sums=('311a6e3441d8f74600b8466a810e752b820b4ab08fccd109cea4fc94c7399f80'
+sha256sums=('14605b7de85d00b5290be758ab420808547234d1b80fadc2a396538388d325ee'
             '7d5ea1b9cb6aa0b59ca3dde1c6adcb57ef83a1ba8e5432c0ecd06bf439b3ad88')
 
 prepare() {

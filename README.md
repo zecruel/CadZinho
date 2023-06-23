@@ -14,7 +14,7 @@ Cadzinho is **free**, **portable** and **extensible**, which can:
 * Natively open, view, create and modify DXF files ("modern" DXF standard - 2007 version)
 * Create print files (PDF, SVG, PS and image formats)
 * Export to G-code and HPGL formats
-* Scripting language to create macros, custom tolls and custom interface
+* Scripting language to create macros, custom tools and custom interface
 
 ## New Release! - [0.4.0](https://github.com/zecruel/CadZinho/releases/)
 ## Documentation: [**Wiki**](https://github.com/zecruel/CadZinho/wiki)

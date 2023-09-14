@@ -30,6 +30,7 @@ jobs:
       shell: cmd
       run: |
         7z x -y harfbuzz.zip
+        ls
     - name: compile harfbuzz as static lib
       run: |
         cd harfbuzz-${{ env.HARFBUZZ_V }}\src

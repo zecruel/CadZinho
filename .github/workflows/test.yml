@@ -27,8 +27,7 @@ jobs:
         url: "https://github.com/harfbuzz/harfbuzz/releases/download/${{ env.HARFBUZZ_V }}/harfbuzz-${{ env.HARFBUZZ_V }}.tar.xz"
         target: .
     - name: Unzip harfbuzz
-      run: |
-        tar zxf harfbuzz-${{ env.HARFBUZZ_V }}.tar.xz
+      run: tar -xf harfbuzz-${{ env.HARFBUZZ_V }}.tar.xz
     - name: compile harfbuzz as static lib
       run: |
         cd harfbuzz-${{ env.HARFBUZZ_V }}\src

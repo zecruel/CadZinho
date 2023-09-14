@@ -24,10 +24,12 @@ jobs:
     - name: download harfbuzz
       uses: suisei-cn/actions-download-file@v1.3.0
       with:
-        url: "https://github.com/harfbuzz/harfbuzz/releases/download/${{ env.HARFBUZZ_V }}/harfbuzz-${{ env.HARFBUZZ_V }}.tar.xz"
-        target: .
+        url: "https://github.com/harfbuzz/harfbuzz/archive/refs/tags/${{ env.HARFBUZZ_V }}.zip"
+        target: ./harfbuzz.zip
     - name: Unzip harfbuzz
-      run: tar -xf harfbuzz-${{ env.HARFBUZZ_V }}.tar.xz
+      shell: cmd
+      run: |
+        7z x -y harfbuzz.zip
     - name: compile harfbuzz as static lib
       run: |
         cd harfbuzz-${{ env.HARFBUZZ_V }}\src

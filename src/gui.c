@@ -917,6 +917,16 @@ int nk_gl_render(gui_obj *gui) {
 	gl_ctx->transf[3][1] = 0.0;
 	gl_ctx->transf[3][2] = 0.0;
 	gl_ctx->transf[3][3] = 1.0;
+  
+  gl_ctx->model[0][0] = 1.0;
+  gl_ctx->model[0][1] = 0.0;
+  gl_ctx->model[0][2] = 0.0;
+  gl_ctx->model[1][0] = 0.0;
+  gl_ctx->model[1][1] = 1.0;
+  gl_ctx->model[1][2] = 0.0;
+  gl_ctx->model[2][0] = 0.0;
+  gl_ctx->model[2][1] = 0.0;
+  gl_ctx->model[2][2] = 1.0;
 	glDepthFunc(GL_ALWAYS);
 	
 	
@@ -1979,6 +1989,16 @@ int gui_start(gui_obj *gui){
 	gui->drwg_view[3][1] = 0.0;
 	gui->drwg_view[3][2] = 0.0;
 	gui->drwg_view[3][3] = 1.0;
+  
+  gui->model_view[0][0] = 1.0;
+	gui->model_view[0][1] = 0.0;
+	gui->model_view[0][2] = 0.0;
+	gui->model_view[1][0] = 0.0;
+	gui->model_view[1][1] = 1.0;
+	gui->model_view[1][2] = 0.0;
+	gui->model_view[2][0] = 0.0;
+	gui->model_view[2][1] = 0.0;
+	gui->model_view[2][2] = 1.0;
 	
 	gui->drwg_view_i[0][0] = 1.0;
 	gui->drwg_view_i[0][1] = 0.0;

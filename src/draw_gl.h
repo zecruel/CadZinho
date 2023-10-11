@@ -39,6 +39,7 @@
 
 struct Vertex {	/*use a struct to represent a vertex in openGL */
     GLfloat pos[3];  /*vertex position - x, y, z*/
+    GLfloat norm[3];  /*vertex normal - x, y, z*/
     GLfloat uv[2];  /*texture coordinates */
     GLubyte col[4]; /* vertex color - RGBA each 0-255d */
 };
@@ -61,6 +62,8 @@ struct ogl { /* openGL context to pass main parameters */
 	
 	GLint transf_uni;
 	GLfloat transf[4][4];
+  GLint model_uni;
+  GLfloat model[3][3];
 
 };
 

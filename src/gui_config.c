@@ -1246,6 +1246,17 @@ int config_win (gui_obj *gui){
 			mat_b[3][1] = 0.0;
 			mat_b[3][2] = 0.0;
 			mat_b[3][3] = 1.0;
+      
+      gui->model_view[0][0] = mat_b[0][0];
+      gui->model_view[0][1] = mat_b[0][1];
+      gui->model_view[0][2] = mat_b[0][2];
+      gui->model_view[1][0] = mat_b[1][0];
+      gui->model_view[1][1] = mat_b[1][1];
+      gui->model_view[1][2] = mat_b[1][2];
+      gui->model_view[2][0] = mat_b[2][0];
+      gui->model_view[2][1] = mat_b[2][1];
+      gui->model_view[2][2] = mat_b[2][2];
+      
 			
 			matrix4_mul(mat_b[0], mat_a[0], res[0]);
 			

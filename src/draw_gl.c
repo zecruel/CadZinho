@@ -30,6 +30,25 @@ static int cmp_node (const void * a, const void * b) {
 	else return (aa->low - bb->low);
 }
 
+static void normal_triang (
+  float p1x, float p1y, float p1z,
+  float p2x, float p2y, float p2z,
+  float p3x, float p3y, float p3z,
+  float *Nx, float *Ny, float *Nz)
+{
+  float Ax = p2x - p1x;
+  float Ay = p2y - p1y;
+  float Az = p2z - p1z;
+  
+  float Bx = p3x - p1x;
+  float By = p3y - p1y;
+  float Bz = p3z - p1z;
+  
+  *Nx = Ay * Bz - Az * By;
+  *Ny = Az * Bx - Ax * Bz;
+  *Nz = Ax * By - Ay * Bx;
+}
+
 int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
 	gui_obj *gui = data;
 	
@@ -42,6 +61,7 @@ int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
 		/* buffer setup */
 		GLsizei vs = sizeof(struct Vertex);
 		size_t vp = offsetof(struct Vertex, pos);
+    size_t vn = offsetof(struct Vertex, norm);
 		size_t vt = offsetof(struct Vertex, uv);
 		size_t vc = offsetof(struct Vertex, col);
 		
@@ -72,56 +92,77 @@ int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
     #ifdef GLES2
     const char* vertexSource = "#version 100\n"
       "attribute vec3 position;\n"
+      "attribute vec3 normal;\n"
       "attribute vec2 uv;\n"
       "attribute vec4 color;\n"
+      "varying vec3 fnormal;\n"
       "varying vec4 vertexColor;\n"
       "varying vec2 texcoord;\n"
       "uniform mat4 transform;\n"
+      "uniform mat3 model;\n"
       "void main() {\n"
       "	vertexColor = color;\n"
       "	texcoord = uv;\n"
+      "	fnormal = model * normal;\n"
       "	gl_Position = transform * vec4(position, 1.0);\n"
       "}\n"; /* =========== vertex shader */
       
     const char* fragmentSource = "#version 100\n"
       "precision mediump float;\n"
+      "varying vec3 fnormal;\n"
       "varying vec4 vertexColor;\n"
       "varying vec2 texcoord;\n"
       "uniform sampler2D tex;\n\n"
       "void main() {\n"
-      "	gl_FragColor = texture2D(tex, texcoord) * vertexColor;\n"
+      " vec3 L = vec3(0.0, 0.0, 1.0); // direction to the light source\n"
+      " vec3 norm = normalize(fnormal);\n"
+      " float NdotL = abs(dot(norm, L));\n"
+      " vec4 diffuse_color = vec4(vertexColor.rgb * NdotL, vertexColor.a);\n"
+      "	gl_FragColor = texture2D(tex, texcoord) * diffuse_color;\n"
       "}\n"; /* ========== fragment shader */
   #else
     const char* vertexSource = "#version 150 core\n"
       "in vec3 position;\n"
+      "in vec3 normal;\n"
       "in vec2 uv;\n"
       "in vec4 color;\n"
+      "out vec3 fnormal;\n"
       "out vec4 vertexColor;\n"
       "out vec2 texcoord;\n"
       "uniform mat4 transform;\n"
+      "uniform mat3 model;\n"
       "void main() {\n"
-      "	gl_Position = transform * vec4(position, 1.0);\n"
+      " gl_Position = transform * vec4(position, 1.0);\n"
+      "	fnormal = model * normal;\n"
       "	vertexColor = color;\n"
       "	texcoord = uv;\n"
       "}\n"; /* =========== vertex shader */
       
     const char* fragmentSource = "#version 150 core\n"
+      "in vec3 fnormal;\n"
       "in vec4 vertexColor;\n"
       "in vec2 texcoord;\n"
       "out vec4 outColor;\n"
       "uniform sampler2D tex;\n\n"
       "void main() {\n"
-      "	outColor = texture(tex, texcoord) * vertexColor;\n"
+      " vec3 L = vec3(0.0, 0.0, 1.0); // direction to the light source\n"
+      " vec3 norm = normalize(fnormal);\n"
+      " float NdotL = abs(dot(norm, L));\n"
+      " vec4 diffuse_color = vec4(vertexColor.rgb * NdotL, vertexColor.a);\n"
+      "	outColor = texture(tex, texcoord) * diffuse_color;\n"
       "}\n"; /* ========== fragment shader */
    #endif
-
+    //GLchar shader_log[256];
+    //GLsizei shader_log_len;
 		vertexShader = glCreateShader(GL_VERTEX_SHADER);
 		glShaderSource(vertexShader, 1, &vertexSource, NULL);
 		glCompileShader(vertexShader);
+    //glGetShaderInfoLog(vertexShader, 255, &shader_log_len, shader_log);
 
 		fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 		glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
 		glCompileShader(fragmentShader);
+    //glGetShaderInfoLog(fragmentShader, 255, &shader_log_len, shader_log);
 
 		/* Link the vertex and fragment shader into a shader program */
 		shaderProgram = glCreateProgram();
@@ -180,20 +221,36 @@ int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
 		gui->gl_ctx.transf[3][1] = 0.0;
 		gui->gl_ctx.transf[3][2] = 0.0;
 		gui->gl_ctx.transf[3][3] = 1.0;
+    
+    gui->gl_ctx.model[0][0] = 1.0;
+		gui->gl_ctx.model[0][1] = 0.0;
+		gui->gl_ctx.model[0][2] = 0.0;
+		gui->gl_ctx.model[1][0] = 0.0;
+		gui->gl_ctx.model[1][1] = 1.0;
+		gui->gl_ctx.model[1][2] = 0.0;
+		gui->gl_ctx.model[2][0] = 0.0;
+		gui->gl_ctx.model[2][1] = 0.0;
+		gui->gl_ctx.model[2][2] = 1.0;
 		
 		gui->gl_ctx.transf_uni = glGetUniformLocation(shaderProgram, "transform");
 		glUniformMatrix4fv(gui->gl_ctx.transf_uni, 1,  GL_FALSE, &gui->gl_ctx.transf[0][0]);
+    
+    gui->gl_ctx.model_uni = glGetUniformLocation(shaderProgram, "model");
+		glUniformMatrix3fv(gui->gl_ctx.model_uni, 1,  GL_FALSE, &gui->gl_ctx.model[0][0]);
 
 		/* Specify the layout of the vertex data */
 		GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
+    GLint normAttrib = glGetAttribLocation(shaderProgram, "normal");
 		GLint uvAttrib = glGetAttribLocation(shaderProgram, "uv");
 		GLint colorAttrib = glGetAttribLocation(shaderProgram, "color");
 		
 		glEnableVertexAttribArray(posAttrib);
+    glEnableVertexAttribArray(normAttrib);
 		glEnableVertexAttribArray(uvAttrib);
 		glEnableVertexAttribArray(colorAttrib);
 		
 		glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, vs, (void*)vp);
+    glVertexAttribPointer(normAttrib, 3, GL_FLOAT, GL_FALSE, vs, (void*)vn);
 		glVertexAttribPointer(uvAttrib, 2, GL_FLOAT, GL_FALSE, vs, (void*)vt);
 		glVertexAttribPointer(colorAttrib, 4, GL_UNSIGNED_BYTE, GL_TRUE, vs, (void*)vc);
 		
@@ -285,13 +342,32 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[3], int p1[3], int thick){
 	
 	/* orientation in drawing area */
 	float flip_y = (gl_ctx->flip_y) ? -1.0 : 1.0;
+  
+  float Nx = 0.0, Ny = 0.0, Nz = 1.0;
+  
+  float p1x = x0 - sine * tx;
+  float p1y = y0 + cosine * ty;
+  float p1z = z0;
+  float p2x = x0 + sine * tx;
+  float p2y = y0 - cosine * ty;
+  float p2z = z0;
+  float p3x = x1 - sine * tx;
+  float p3y = y1 + cosine * ty;
+  float p3z = z1;
+  
+  normal_triang ( p3x,  p3y,  p3z,
+  p2x,  p2y,  p2z, p1x,  p1y,  p1z,
+  &Nx, &Ny, &Nz);
 	
 	/* store vertices - 4 vertices */
 	/* 0 */
 	int j = gl_ctx->vert_count;
-	gl_ctx->verts[j].pos[0] = x0 - sine * tx;
-	gl_ctx->verts[j].pos[1] = y0 + cosine * ty;
-	gl_ctx->verts[j].pos[2] = z0;
+	gl_ctx->verts[j].pos[0] = p1x;
+	gl_ctx->verts[j].pos[1] = p1y;
+	gl_ctx->verts[j].pos[2] = p1z;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -301,9 +377,12 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[3], int p1[3], int thick){
 	gl_ctx->vert_count ++;
 	/* 1 */
 	j = gl_ctx->vert_count;
-	gl_ctx->verts[j].pos[0] = x0 + sine * tx;
-	gl_ctx->verts[j].pos[1] = y0 - cosine * ty;
-	gl_ctx->verts[j].pos[2] = z0;
+	gl_ctx->verts[j].pos[0] = p2x;
+	gl_ctx->verts[j].pos[1] = p2y;
+	gl_ctx->verts[j].pos[2] = p2z;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -313,9 +392,12 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[3], int p1[3], int thick){
 	gl_ctx->vert_count ++;
 	/* 2 */
 	j = gl_ctx->vert_count;
-	gl_ctx->verts[j].pos[0] = x1 - sine * tx;
-	gl_ctx->verts[j].pos[1] = y1 + cosine * ty;
-	gl_ctx->verts[j].pos[2] = z1;
+	gl_ctx->verts[j].pos[0] = p3x;
+	gl_ctx->verts[j].pos[1] = p3y;
+	gl_ctx->verts[j].pos[2] = p3z;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -328,6 +410,9 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[3], int p1[3], int thick){
 	gl_ctx->verts[j].pos[0] = x1 + sine * tx;
 	gl_ctx->verts[j].pos[1] = y1 - cosine * ty;
 	gl_ctx->verts[j].pos[2] = z1;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -372,6 +457,12 @@ int draw_gl_quad (struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3]
 	
 	/* orientation in drawing area */
 	float flip_y = (gl_ctx->flip_y) ? -1.0 : 1.0;
+  
+  float Nx = 0.0, Ny = 0.0, Nz = 1.0;
+  
+  normal_triang (br[0],  br[1],  br[2],
+  tl[0],  tl[1],  tl[2], bl[0],  bl[1],  bl[2],
+  &Nx, &Ny, &Nz);
 	
 	/* convert input coordinates, in pixles (int), to openGL units and store vertices - 4 vertices */
 	/* 0 */
@@ -379,6 +470,9 @@ int draw_gl_quad (struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3]
 	gl_ctx->verts[j].pos[0] = (float) bl[0];
 	gl_ctx->verts[j].pos[1] = (float) bl[1];
 	gl_ctx->verts[j].pos[2] = (float) bl[2];
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -391,6 +485,9 @@ int draw_gl_quad (struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3]
 	gl_ctx->verts[j].pos[0] = (float) tl[0];
 	gl_ctx->verts[j].pos[1] = (float) tl[1];
 	gl_ctx->verts[j].pos[2] = (float) tl[2];
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -403,6 +500,9 @@ int draw_gl_quad (struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3]
 	gl_ctx->verts[j].pos[0] = (float) br[0];
 	gl_ctx->verts[j].pos[1] = (float) br[1];
 	gl_ctx->verts[j].pos[2] = (float) br[2];
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -415,6 +515,9 @@ int draw_gl_quad (struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3]
 	gl_ctx->verts[j].pos[0] = (float) tr[0];
 	gl_ctx->verts[j].pos[1] = (float) tr[1];
 	gl_ctx->verts[j].pos[2] = (float) tr[2];
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -476,6 +579,12 @@ int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int z, int w, int h){
 		scale_u = (float) w / (float) gl_ctx->tex_w;
 		scale_v = (float) h / (float) gl_ctx->tex_h;
 	}
+  
+  float Nx = 0.0, Ny = 0.0, Nz = 1.0;
+  
+  normal_triang (x,  y,  z,
+  x,  (y + h),  z, (x + w),  y,  z,
+  &Nx, &Ny, &Nz);
 	
 	/* convert input coordinates, in pixles (int), to openGL units and store vertices - 4 vertices */
 	/* 0 */
@@ -483,6 +592,9 @@ int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int z, int w, int h){
 	gl_ctx->verts[j].pos[0] = (float) x;
 	gl_ctx->verts[j].pos[1] = (float) y;
 	gl_ctx->verts[j].pos[2] = (float) z;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -495,6 +607,9 @@ int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int z, int w, int h){
 	gl_ctx->verts[j].pos[0] = (float) x;
 	gl_ctx->verts[j].pos[1] = (float) (y + h);
 	gl_ctx->verts[j].pos[2] = (float) z;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -507,6 +622,9 @@ int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int z, int w, int h){
 	gl_ctx->verts[j].pos[0] = (float) (x + w);
 	gl_ctx->verts[j].pos[1] = (float) y;
 	gl_ctx->verts[j].pos[2] = (float) z;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -519,6 +637,9 @@ int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int z, int w, int h){
 	gl_ctx->verts[j].pos[0] = (float) (x + w);
 	gl_ctx->verts[j].pos[1] = (float) (y + h);
 	gl_ctx->verts[j].pos[2] = (float) z;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -581,6 +702,12 @@ int draw_gl_rect_color (struct ogl *gl_ctx, int x, int y, int z, int w, int h,
 		scale_u = (float) w / (float) gl_ctx->tex_w;
 		scale_v = (float) h / (float) gl_ctx->tex_h;
 	}
+  
+  float Nx = 0.0, Ny = 0.0, Nz = 1.0;
+  
+  normal_triang (x,  y,  z,
+  x,  (y + h),  z, (x + w),  y,  z,
+  &Nx, &Ny, &Nz);
 	
 	/* convert input coordinates, in pixles (int), to openGL units and store vertices - 4 vertices */
 	/* 0 */
@@ -588,6 +715,9 @@ int draw_gl_rect_color (struct ogl *gl_ctx, int x, int y, int z, int w, int h,
 	gl_ctx->verts[j].pos[0] = (float) x;
 	gl_ctx->verts[j].pos[1] = (float) y;
 	gl_ctx->verts[j].pos[2] = (float) z;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = bl[0];
 	gl_ctx->verts[j].col[1] = bl[1];
 	gl_ctx->verts[j].col[2] = bl[2];
@@ -600,6 +730,9 @@ int draw_gl_rect_color (struct ogl *gl_ctx, int x, int y, int z, int w, int h,
 	gl_ctx->verts[j].pos[0] = (float) x;
 	gl_ctx->verts[j].pos[1] = (float) (y + h);
 	gl_ctx->verts[j].pos[2] = (float) z;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = tl[0];
 	gl_ctx->verts[j].col[1] = tl[1];
 	gl_ctx->verts[j].col[2] = tl[2];
@@ -612,6 +745,9 @@ int draw_gl_rect_color (struct ogl *gl_ctx, int x, int y, int z, int w, int h,
 	gl_ctx->verts[j].pos[0] = (float) (x + w);
 	gl_ctx->verts[j].pos[1] = (float) y;
 	gl_ctx->verts[j].pos[2] = (float) z;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = br[0];
 	gl_ctx->verts[j].col[1] = br[1];
 	gl_ctx->verts[j].col[2] = br[2];
@@ -624,6 +760,9 @@ int draw_gl_rect_color (struct ogl *gl_ctx, int x, int y, int z, int w, int h,
 	gl_ctx->verts[j].pos[0] = (float) (x + w);
 	gl_ctx->verts[j].pos[1] = (float) (y + h);
 	gl_ctx->verts[j].pos[2] = (float) z;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = tr[0];
 	gl_ctx->verts[j].col[1] = tr[1];
 	gl_ctx->verts[j].col[2] = tr[2];
@@ -667,6 +806,12 @@ int draw_gl_triang (struct ogl *gl_ctx, int p0[3], int p1[3], int p2[3]){
 		
 	/* orientation in drawing area */
 	float flip_y = (gl_ctx->flip_y) ? -1.0 : 1.0;
+  
+  float Nx = 0.0, Ny = 0.0, Nz = 1.0;
+  
+  normal_triang (p2[0],  p2[1],  p2[2],
+  p1[0],  p1[1],  p1[2], p0[0],  p0[1],  p0[2],
+  &Nx, &Ny, &Nz);
 	
 	/* convert input coordinates, in pixles (int), to openGL units and store vertices - 3 vertices */
 	/* 0 */
@@ -674,6 +819,9 @@ int draw_gl_triang (struct ogl *gl_ctx, int p0[3], int p1[3], int p2[3]){
 	gl_ctx->verts[j].pos[0] = (float) p0[0];
 	gl_ctx->verts[j].pos[1] = (float) p0[1];
 	gl_ctx->verts[j].pos[2] = (float) p0[2];
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -686,6 +834,9 @@ int draw_gl_triang (struct ogl *gl_ctx, int p0[3], int p1[3], int p2[3]){
 	gl_ctx->verts[j].pos[0] = (float) p1[0];
 	gl_ctx->verts[j].pos[1] = (float) p1[1];
 	gl_ctx->verts[j].pos[2] = (float) p1[2];
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -698,6 +849,9 @@ int draw_gl_triang (struct ogl *gl_ctx, int p0[3], int p1[3], int p2[3]){
 	gl_ctx->verts[j].pos[0] = (float) p2[0];
 	gl_ctx->verts[j].pos[1] = (float) p2[1];
 	gl_ctx->verts[j].pos[2] = (float) p2[2];
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -757,6 +911,11 @@ int draw_gl_image_rec (struct ogl *gl_ctx, int x, int y, int z, int w, int h, bm
 	scale_u = (float) img->width / (float) gl_ctx->tex_w;
 	scale_v = (float) img->height / (float) gl_ctx->tex_h;
 	
+  float Nx = 0.0, Ny = 0.0, Nz = 1.0;
+  
+  normal_triang (x,  y,  z,
+  x,  (y + h),  z, (x + w),  y,  z,
+  &Nx, &Ny, &Nz);
 	
 	/* convert input coordinates, in pixles (int), to openGL units and store vertices - 4 vertices */
 	/* 0 */
@@ -764,6 +923,9 @@ int draw_gl_image_rec (struct ogl *gl_ctx, int x, int y, int z, int w, int h, bm
 	gl_ctx->verts[j].pos[0] = (float) x;
 	gl_ctx->verts[j].pos[1] = (float) y;
 	gl_ctx->verts[j].pos[2] = (float) z;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -776,6 +938,9 @@ int draw_gl_image_rec (struct ogl *gl_ctx, int x, int y, int z, int w, int h, bm
 	gl_ctx->verts[j].pos[0] = (float) x;
 	gl_ctx->verts[j].pos[1] = (float) (y + h);
 	gl_ctx->verts[j].pos[2] = (float) z;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -788,6 +953,9 @@ int draw_gl_image_rec (struct ogl *gl_ctx, int x, int y, int z, int w, int h, bm
 	gl_ctx->verts[j].pos[0] = (float) (x + w);
 	gl_ctx->verts[j].pos[1] = (float) y;
 	gl_ctx->verts[j].pos[2] = (float) z;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -800,6 +968,9 @@ int draw_gl_image_rec (struct ogl *gl_ctx, int x, int y, int z, int w, int h, bm
 	gl_ctx->verts[j].pos[0] = (float) (x + w);
 	gl_ctx->verts[j].pos[1] = (float) (y + h);
 	gl_ctx->verts[j].pos[2] = (float) z;
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -861,6 +1032,12 @@ int draw_gl_image_quad(struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int 
 	/* image dimmensions in texture */
 	scale_u = (float) img->width / (float) gl_ctx->tex_w;
 	scale_v = (float) img->height / (float) gl_ctx->tex_h;
+  
+  float Nx = 0.0, Ny = 0.0, Nz = 1.0;
+  
+  normal_triang (br[0],  br[1],  br[2],
+  tl[0],  tl[1],  tl[2], bl[0],  bl[1],  bl[2],
+  &Nx, &Ny, &Nz);
 	
 	/* convert input coordinates, in pixles (int), to openGL units and store vertices - 4 vertices */
 	/* 0 */
@@ -868,6 +1045,9 @@ int draw_gl_image_quad(struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int 
 	gl_ctx->verts[j].pos[0] = (float) bl[0];
 	gl_ctx->verts[j].pos[1] = (float) bl[1];
 	gl_ctx->verts[j].pos[2] = (float) bl[2];
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -880,6 +1060,9 @@ int draw_gl_image_quad(struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int 
 	gl_ctx->verts[j].pos[0] = (float) tl[0];
 	gl_ctx->verts[j].pos[1] = (float) tl[1];
 	gl_ctx->verts[j].pos[2] = (float) tl[2];
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -892,6 +1075,9 @@ int draw_gl_image_quad(struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int 
 	gl_ctx->verts[j].pos[0] = (float) br[0];
 	gl_ctx->verts[j].pos[1] = (float) br[1];
 	gl_ctx->verts[j].pos[2] = (float) br[2];
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -904,6 +1090,9 @@ int draw_gl_image_quad(struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int 
 	gl_ctx->verts[j].pos[0] = (float) tr[0];
 	gl_ctx->verts[j].pos[1] = (float) tr[1];
 	gl_ctx->verts[j].pos[2] = (float) tr[2];
+  gl_ctx->verts[j].norm[0] = Nx;
+  gl_ctx->verts[j].norm[1] = Ny;
+  gl_ctx->verts[j].norm[2] = Nz;
 	gl_ctx->verts[j].col[0] = gl_ctx->fg[0];
 	gl_ctx->verts[j].col[1] = gl_ctx->fg[1];
 	gl_ctx->verts[j].col[2] = gl_ctx->fg[2];
@@ -1473,6 +1662,7 @@ int draw_gl (struct ogl *gl_ctx, int force){
 		matrix4_mul(win_mtx[0], gl_ctx->transf[0], res_mtx[0]);
 		
 		glUniformMatrix4fv(gl_ctx->transf_uni, 1,  GL_FALSE, res_mtx[0]);
+    glUniformMatrix3fv(gl_ctx->model_uni, 1,  GL_FALSE, &gl_ctx->model[0][0]);
   #ifndef GLES2
     if(gl_ctx->elems){
       glUnmapBuffer(GL_ARRAY_BUFFER);

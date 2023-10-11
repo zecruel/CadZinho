@@ -406,6 +406,7 @@ struct Gui_obj {
 	
 	float drwg_view[4][4];
 	float drwg_view_i[4][4];
+  float model_view[3][3];
   
   /*gui pos variables */
 	double zoom, ofs_x, ofs_y, ofs_z, mouse_z;

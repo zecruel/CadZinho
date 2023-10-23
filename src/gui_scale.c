@@ -46,6 +46,8 @@ int gui_scale_interactive(gui_obj *gui){
 				gui->step = 2;
 				gui->step_x[gui->step + 1] = gui->step_x[gui->step];
 				gui->step_y[gui->step + 1] = gui->step_y[gui->step];
+        
+        gui->phanton = NULL;
 				
 				if (gui->scale_mode != SCALE_3POINTS){
 					scale_x = gui->scale_x; /* Entered factor - default mode */
@@ -180,6 +182,8 @@ int gui_scale_interactive(gui_obj *gui){
 			}
 		}
 		else if (gui->step == 2 && gui->scale_mode == SCALE_3POINTS){
+      
+      gui->phanton = NULL;
 			/* in 3 points mode, user enter first point */
 			if (gui->ev & EV_ENTER){
 				/* make phantom list */

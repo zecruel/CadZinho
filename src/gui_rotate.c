@@ -34,6 +34,7 @@ int gui_rotate_interactive(gui_obj *gui){
 		else if (gui->step == 1){
 			/* user enters a pivot point for rotation */
 			gui->free_sel = 0;
+      gui->phanton = NULL;
 			if (gui->ev & EV_ENTER){
 				gui->draw_tmp = 1;
 				

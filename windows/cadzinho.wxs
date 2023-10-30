@@ -3,7 +3,7 @@
   <Product Name='CadZinho' Id='D4D6A189-FC59-4998-84FD-9005EA06E9B9'
     UpgradeCode='9A28C552-6350-4365-AA48-8FAC35452A42'
     Language='2057' Codepage='65001'
-    Version='0.4.0' Manufacturer='ZeCruel'>
+    Version='0.4.1' Manufacturer='ZeCruel'>
 
     <Package Id='*' Keywords='Installer' Description="CadZinho Installer"
       Comments='CadZinho - MIT Licence - 2023' Manufacturer='ZeCruel'

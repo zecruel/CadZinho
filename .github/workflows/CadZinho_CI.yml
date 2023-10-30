@@ -5,7 +5,7 @@ on: workflow_dispatch
 env:
   MAJOR: 0
   MINOR: 4
-  MAN: 0
+  MAN: 1
   YEAR: 2023
   LUA_V: 5.4.6
   MESA_V: 23.1.1

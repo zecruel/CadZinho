@@ -524,7 +524,10 @@ int main(int argc, char** argv){
 #ifdef __EMSCRIPTEN__
   /* register update as callback */
   emscripten_set_main_loop_arg(update, gui, 0, 1);
-#else 
+#else
+  
+  SDL_EnableScreenSaver();
+  
 	/* main loop */
 	while (gui_main_loop (gui)){
     

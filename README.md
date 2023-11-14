@@ -40,7 +40,7 @@ Cadzinho is **free**, **portable** and **extensible**, which can:
 * Scripting language to create macros, custom tools and custom interface
 
 ## Download 
-New release! - [0.4.0](https://github.com/zecruel/CadZinho/releases/)
+New release! - [0.4.1](https://github.com/zecruel/CadZinho/releases/)
 
 ## Documentation
 [**Wiki**](https://github.com/zecruel/CadZinho/wiki)

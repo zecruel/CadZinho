@@ -27,7 +27,6 @@ static void zoom_ext(dxf_drawing *drawing, int x, int y, int width, int height, 
 }
 
 int gui_main_loop (gui_obj *gui) {
-  int running = 1;
   int ev_type;
 	
 	int leftMouseButtonDown = 0;
@@ -80,14 +79,14 @@ int gui_main_loop (gui_obj *gui) {
   nk_input_begin(gui->ctx);
   if(SDL_PollEvent(&event)){
     if (event.type == SDL_QUIT) {
-      //running = 0;
+      //gui->running = 0;
       if (gui->changed){
         gui->discard_changes = 1;
         gui->desired_action = EXIT;
         gui->hist_action = HIST_NONE;
       }
       else{
-        running = 0;
+        gui->running = 0;
       }
     }
     nk_sdl_handle_event(gui, gui->window, &event);
@@ -631,7 +630,7 @@ int gui_main_loop (gui_obj *gui) {
   
   /*===============================*/
   if(gui->action == EXIT) {
-    running = 0;
+    gui->running = 0;
   }
   else if(gui->action == FILE_NEW && (wait_open == 0)) {
     gui->action = NONE;
@@ -1424,5 +1423,5 @@ int gui_main_loop (gui_obj *gui) {
     }
   }
   
-  return running;
+  return gui->running;
 }

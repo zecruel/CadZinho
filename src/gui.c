@@ -1643,6 +1643,7 @@ void nk_sdl_shutdown(gui_obj *gui)
 
 int gui_start(gui_obj *gui){
 	if(!gui) return 0;
+  gui->running = 1;
 	
 	gui->ui_font_list = gui_new_font (NULL);
 	

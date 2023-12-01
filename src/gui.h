@@ -250,6 +250,7 @@ struct func_key {
 };
 
 struct Gui_obj {
+  int running;
   int low_proc;
   int changed;
   int near_count;

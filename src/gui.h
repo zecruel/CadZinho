@@ -84,10 +84,10 @@ enum Modal {
 	LINE,
 	POLYLINE,
 	CIRCLE,
-	RECT,
+	RECTANGLE,
 	TEXT,
 	MTEXT,
-	POINT, /*ARC, */
+	SINGLE_POINT, /*ARC, */
 	DUPLI,
 	MOVE,
 	SCALE,
@@ -502,6 +502,12 @@ struct Gui_obj {
   struct script_obj lua_script[MAX_SCRIPTS];
   
   struct script_brk_pt brk_pts[BRK_PTS_MAX];
+  
+  SDL_Thread* debug_thread_id;
+  char debug_host[DXF_MAX_CHARS + 1];
+  char debug_port[11];
+  int debug_connected;
+	
   
 };
 typedef struct Gui_obj gui_obj;

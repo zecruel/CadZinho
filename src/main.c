@@ -92,102 +92,6 @@ void update(void *arg){
 #else
 #include <SDL_net.h>
 
-int client_thread(void* data){
-  gui_obj *gui = (gui_obj *) data;
-  
-  
-  IPaddress ip; /* Server address */
-  TCPsocket sd; /* Socket descriptor */
-  int len, ok = 0;
-  char buffer[512];
-  char host[] = "127.0.0.1";
-  int port = 8172;
-  SDLNet_SocketSet set;
-  
-  char default_response[] = "200 OK\n";
-  int dflt_res_len = strlen(default_response);
-  
-  if (SDLNet_ResolveHost(&ip, host, port) >= 0) {
-    if (!(sd = SDLNet_TCP_Open(&ip))) {
-      printf ("open\n");
-      return 0;
-    }
-    else{
-      if (!(set = SDLNet_AllocSocketSet(1))) {
-        SDLNet_TCP_Close(sd);
-        return 0;
-      }
-      if (SDLNet_TCP_AddSocket(set, sd) < 1) {
-        SDLNet_FreeSocketSet(set);
-        SDLNet_TCP_Close(sd);
-        return 0;
-      }
-    }
-  }
-  else {
-    printf ("resolve\n");
-    return 0;
-  }
-  
-  
-  char script[] = "print (\"Running\")";
-  
-  /* init the Lua instance, to run client debugger interpreter */
-	struct script_obj client_script;
-	client_script.L = NULL;
-	client_script.T = NULL;
-	client_script.active = 0;
-	client_script.dynamic = 0;
-	
-	/* try to init script */
-	if (gui_script_init (gui, &client_script, NULL, script) == 1){
-		client_script.time = clock();
-		client_script.timeout = 1.0; /* default timeout value */
-		client_script.do_init = 0;
-    client_script.active = 1;
-    lua_getglobal(client_script.T, "cz_main_func");
-	}
-  
-  while (gui->running){
-    
-    if (ok = SDLNet_CheckSockets(set, 0) > 0) {
-      SDLNet_TCP_Recv(sd, buffer, 512);
-      printf("Server say: %s\n", buffer);
-      
-      if (ok = SDLNet_TCP_Send(sd, (void *)default_response, dflt_res_len) < dflt_res_len) { 
-        printf ("send=%d\n", ok);
-      }
-    } else {
-      printf ("rec=%d\n", ok);
-    }
-    
-    if(client_script.active){
-      client_script.time = clock();
-      client_script.timeout = 1.0; /* default timeout value */
-      client_script.do_init = 0;
-      lua_pushvalue(client_script.T, 1);
-      int n_results = 0; /* for Lua 5.4*/
-      client_script.status = lua_resume(client_script.T, NULL, 0, &n_results); /* start thread */
-      if (client_script.status != LUA_OK){
-      	client_script.active = 0; /* error */			
-      }
-    }
-    //printf ("Running\n");
-    SDL_Delay(2000);
-  }
-  SDLNet_FreeSocketSet(set);
-  SDLNet_TCP_Close(sd);
-  
-  /* close script and clean instance*/
-  if (client_script.L) lua_close(client_script.L);
-  client_script.L = NULL;
-  client_script.T = NULL;
-  client_script.active = 0;
-  client_script.dynamic = 0;
-
-  return 0;
-}
-
 #endif
 
 int main(int argc, char** argv){
@@ -625,9 +529,7 @@ int main(int argc, char** argv){
   /* register update as callback */
   emscripten_set_main_loop_arg(update, gui, 0, 1);
 #else
-  
-  SDL_Thread* client_threadID = SDL_CreateThread( client_thread, "client_socket", (void*)gui );
-  SDLNet_Init();
+  SDLNet_Init(); /* start socket engine - to debugger client connection */
   
   SDL_EnableScreenSaver();
   
@@ -640,8 +542,9 @@ int main(int argc, char** argv){
     }
 	}
   
-  //Wait for thread to finish
-  SDL_WaitThread( client_threadID, NULL );
+  /* Wait for thread to finish */
+  SDL_WaitThread(gui->debug_thread_id, NULL);
+  
   SDLNet_Quit();
 	
 	/* safe quit */

@@ -1,7 +1,7 @@
 #include "gui_use.h"
 
 int gui_rect_interactive(gui_obj *gui){
-	if (gui->modal == RECT){
+	if (gui->modal == RECTANGLE){
 		static dxf_node *new_el;
 		
 		if (gui->step == 0){
@@ -71,7 +71,7 @@ int gui_rect_interactive(gui_obj *gui){
 }
 
 int gui_rect_info (gui_obj *gui){
-	if (gui->modal == RECT) {
+	if (gui->modal == RECTANGLE) {
 		nk_layout_row_dynamic(gui->ctx, 20, 1);
 		nk_label(gui->ctx, _l("Place a rectangle"), NK_TEXT_LEFT);
 		if (gui->step == 0){

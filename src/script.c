@@ -4214,7 +4214,7 @@ int script_set_modal (lua_State *L) {
 		return 1;
 	}
 	else if (strcmp(new_modal, "RECT") == 0){
-		gui->modal = RECT;
+		gui->modal = RECTANGLE;
 		gui->step = 0;
 		lua_pushboolean(L, 1); /* return success */
 		return 1;
@@ -4238,7 +4238,7 @@ int script_set_modal (lua_State *L) {
 		return 1;
 	}
 	else if (strcmp(new_modal, "POINT") == 0){
-		gui->modal = POINT;
+		gui->modal = SINGLE_POINT;
 		gui->step = 0;
 		lua_pushboolean(L, 1); /* return success */
 		return 1;

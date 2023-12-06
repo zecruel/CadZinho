@@ -1,5 +1,127 @@
 #include "gui_script.h"
 
+
+#ifndef __EMSCRIPTEN__
+
+#include <SDL_net.h>
+
+int debug_client_thread(void* data){
+  gui_obj *gui = (gui_obj *) data;
+  
+  gui->debug_connected = 1;
+  
+  IPaddress ip; /* Server address */
+  TCPsocket sd; /* Socket descriptor */
+  int len, ok = 0;
+  char buffer[512];
+  //char host[] = "127.0.0.1";
+  //int port = 8172;
+  SDLNet_SocketSet set;
+  
+  long port = strtol(gui->debug_port, NULL, 10);
+  
+  char default_response[] = "200 OK\n";
+  int dflt_res_len = strlen(default_response);
+  
+  if (SDLNet_ResolveHost(&ip, gui->debug_host, port) >= 0) {
+    if (!(sd = SDLNet_TCP_Open(&ip))) {
+      printf ("open\n");
+      gui->debug_connected = 0;
+      return 0;
+    }
+    else{
+      if (!(set = SDLNet_AllocSocketSet(1))) {
+        SDLNet_TCP_Close(sd);
+        gui->debug_connected = 0;
+        return 0;
+      }
+      if (SDLNet_TCP_AddSocket(set, sd) < 1) {
+        SDLNet_FreeSocketSet(set);
+        SDLNet_TCP_Close(sd);
+        gui->debug_connected = 0;
+        return 0;
+      }
+    }
+  }
+  else {
+    printf ("resolve\n");
+    gui->debug_connected = 0;
+    return 0;
+  }
+  
+  
+  char script[] = "print (\"Running\")";
+  
+  /* init the Lua instance, to run client debugger interpreter */
+	struct script_obj client_script;
+	client_script.L = NULL;
+	client_script.T = NULL;
+	client_script.active = 0;
+	client_script.dynamic = 0;
+	
+	/* try to init script */
+	if (gui_script_init (gui, &client_script, NULL, script) == 1){
+		client_script.time = clock();
+		client_script.timeout = 1.0; /* default timeout value */
+		client_script.do_init = 0;
+    client_script.active = 1;
+    lua_getglobal(client_script.T, "cz_main_func");
+	}
+  
+  while (gui->running && gui->debug_connected == 1){
+    
+    if (ok = SDLNet_CheckSockets(set, 0) > 0) {
+      len = SDLNet_TCP_Recv(sd, buffer, 512);
+      printf("Server say: (bytes: %d)\n%s\n", len, buffer);
+      
+      if (ok = SDLNet_TCP_Send(sd, (void *)default_response, dflt_res_len) < dflt_res_len) { 
+        printf ("send=%d\n", ok);
+        gui->debug_connected = 0;
+      }
+      
+      memset (buffer, 0, 512); /* clear buffer */
+    } else {
+      printf ("rec=%d\n", ok);
+    }
+    
+    if (ok = SDLNet_TCP_Send(sd, (void *)default_response, dflt_res_len) == dflt_res_len) { 
+      printf ("Ready\n");
+    } else {
+      gui->debug_connected = 0;
+    }
+    
+    if(client_script.active){
+      client_script.time = clock();
+      client_script.timeout = 1.0; /* default timeout value */
+      client_script.do_init = 0;
+      lua_pushvalue(client_script.T, 1);
+      int n_results = 0; /* for Lua 5.4*/
+      client_script.status = lua_resume(client_script.T, NULL, 0, &n_results); /* start thread */
+      if (client_script.status != LUA_OK){
+      	client_script.active = 0; /* error */	
+        gui->debug_connected = 0;        
+      }
+    }
+    //printf ("Running\n");
+    SDL_Delay(2000);
+  }
+  printf ("Quit debug\n");
+  gui->debug_connected = 0;
+  SDLNet_FreeSocketSet(set);
+  SDLNet_TCP_Close(sd);
+  
+  /* close script and clean instance*/
+  if (client_script.L) lua_close(client_script.L);
+  client_script.L = NULL;
+  client_script.T = NULL;
+  client_script.active = 0;
+  client_script.dynamic = 0;
+
+  return 0;
+}
+
+#endif
+
 static int print_lua_var(char * value, lua_State * L){
 	int type = lua_type(L, -1);
 
@@ -643,7 +765,8 @@ int script_win (gui_obj *gui){
 	enum Script_tab {
 		EXECUTE,
 		BREAKS,
-		VARS
+		VARS,
+    REMOTE
 	} static script_tab = EXECUTE;
 	
 	if (!init){ /* initialize static vars */
@@ -666,10 +789,11 @@ int script_win (gui_obj *gui){
 			- Manage breakpoints in code;
 			- View set variables; */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
-		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 3);
+		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
 		if (gui_tab (gui, _l("Execute"), script_tab == EXECUTE)) script_tab = EXECUTE;
 		if (gui_tab (gui, _l("Breakpoints"), script_tab == BREAKS)) script_tab = BREAKS;
 		if (gui_tab (gui, _l("Variables"), script_tab == VARS)) script_tab = VARS;
+    if (gui_tab (gui, _l("Remote"), script_tab == REMOTE)) script_tab = REMOTE;
 		nk_style_pop_vec2(gui->ctx);
 		nk_layout_row_end(gui->ctx);
 		
@@ -933,6 +1057,37 @@ int script_win (gui_obj *gui){
 					}
 					nk_group_end(gui->ctx);
 				}
+			}
+      /* remote connection tab */
+			else if (script_tab == REMOTE){
+				
+				nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 4, (float[]){0.18f, 0.45f, 0.12f, 0.25f});
+				nk_label(gui->ctx, _l("Host:"), NK_TEXT_RIGHT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->debug_host, DXF_MAX_CHARS, nk_filter_default);
+				nk_label(gui->ctx, _l("Port:"), NK_TEXT_RIGHT);
+				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->debug_port, 10, nk_filter_decimal);
+				
+				nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 2, (float[]){.1f, 0.9f});
+        
+        char *b_label = _l("Connect");
+        if ( gui->debug_connected ) {
+          b_label = _l("Disconnect");
+          nk_button_color(gui->ctx, nk_rgb(0,255,0));
+        } else {
+          nk_button_color(gui->ctx, nk_rgb(255,0,0));
+        }
+				if (nk_button_label(gui->ctx, b_label)){
+					long port = strtol(gui->debug_port, NULL, 10);
+					#ifndef __EMSCRIPTEN__
+          if ( !gui->debug_connected ) {
+            /* create thread and try connection */
+            gui->debug_thread_id = SDL_CreateThread( debug_client_thread,
+              "debug_client", (void*)gui );
+          } else {
+            gui->debug_connected = 2; /* request client disconnection */
+          }
+          #endif
+        }
 			}
 			
 			nk_group_end(gui->ctx);

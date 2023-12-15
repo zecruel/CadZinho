@@ -12,7 +12,7 @@ int debug_client_thread(void* data){
   
   IPaddress ip; /* Server address */
   TCPsocket sd; /* Socket descriptor */
-  int len, ok = 0;
+  int len, ok = 0, count = 0;
   char buffer[512];
   //char host[] = "127.0.0.1";
   //int port = 8172;
@@ -60,7 +60,7 @@ int debug_client_thread(void* data){
 	client_script.dynamic = 0;
 	
 	/* try to init script */
-	if (gui_script_init (gui, &client_script, NULL, script) == 1){
+	if (gui_script_init (gui, &client_script, "debug.lua", NULL) == 1){
 		client_script.time = clock();
 		client_script.timeout = 1.0; /* default timeout value */
 		client_script.do_init = 0;
@@ -70,25 +70,36 @@ int debug_client_thread(void* data){
   
   while (gui->running && gui->debug_connected == 1){
     
+    if(client_script.active){
+      lua_pushnil (client_script.T);
+      lua_setglobal (client_script.T, "received");
+    }
+    
     if (ok = SDLNet_CheckSockets(set, 0) > 0) {
       len = SDLNet_TCP_Recv(sd, buffer, 512);
-      printf("Server say: (bytes: %d)\n%s\n", len, buffer);
-      
+      //printf("Server say: (bytes: %d)\n%s\n", len, buffer);
+      if(client_script.active){
+        lua_pushlstring (client_script.T, buffer, len);
+        lua_setglobal (client_script.T, "received");
+      }
+      /*
       if (ok = SDLNet_TCP_Send(sd, (void *)default_response, dflt_res_len) < dflt_res_len) { 
         printf ("send=%d\n", ok);
         gui->debug_connected = 0;
       }
+      */
       
       memset (buffer, 0, 512); /* clear buffer */
     } else {
-      printf ("rec=%d\n", ok);
+      //printf ("rec=%d\n", ok);
     }
     
-    if (ok = SDLNet_TCP_Send(sd, (void *)default_response, dflt_res_len) == dflt_res_len) { 
-      printf ("Ready\n");
+    /*if (ok = SDLNet_TCP_Send(sd, (void *)default_response, dflt_res_len) == dflt_res_len) { 
+      //printf ("Ready\n");
     } else {
       gui->debug_connected = 0;
     }
+    */
     
     if(client_script.active){
       client_script.time = clock();
@@ -100,6 +111,99 @@ int debug_client_thread(void* data){
       if (client_script.status != LUA_OK){
       	client_script.active = 0; /* error */	
         gui->debug_connected = 0;        
+      } else {
+        if (lua_getglobal (client_script.T, "response") == LUA_TSTRING){
+          const char *response = lua_tostring(client_script.T, -1);
+          if (ok = SDLNet_TCP_Send(sd, (void *)response, strlen(response)) < strlen(response)) { 
+            printf ("send=%d\n", ok);
+            gui->debug_connected = 0;
+          }
+        
+        
+          printf (response);
+        }
+        lua_pop(client_script.T, 1);
+        
+        if (lua_getglobal (client_script.T, "status") == LUA_TNUMBER){
+          int status = lua_tointeger(client_script.T, -1);
+          
+          if (status == 1) { /* SETB */
+            
+            status = 0;
+          }
+          else if (status == 2) { /* DELB */
+            
+            status = 0;
+          }
+          else if (status == 3) { /* EXEC */
+            
+            status = 0;
+          }
+          else if (status == 4) { /* LOAD */
+            
+            status = 0;
+          }
+          else if (status == 5) { /* SETW */
+            
+            status = 0;
+          }
+          else if (status == 6) { /* DELW */
+            
+            status = 0;
+          }
+          else if (status == 7) { /* RUN */
+            if (count > 0) {
+              const char *response = "202 Paused C:/util/lua-5.4.4/hello.lua 4\n";
+              //const char *response = "204 Output stdout 14\nTesting Output";
+              if (ok = SDLNet_TCP_Send(sd, (void *)response, strlen(response)) < strlen(response)) { 
+                printf ("send=%d\n", ok);
+                gui->debug_connected = 0;
+              }
+              
+              status = 0;
+              count = 0;
+            } else count++;
+          }
+          else if (status == 8) { /* STEP */
+            
+            status = 0;
+          }
+          else if (status == 9) { /* OVER */
+            
+            status = 0;
+          }
+          else if (status == 10) { /* BASEDIR */
+            
+            status = 0;
+          }
+          else if (status == 11) { /* SUSPEND */
+            
+            status = 0;
+          }
+          else if (status == 12) { /* DONE */
+            
+            status = 0;
+          }
+          else if (status == 13) { /* STACK */
+            
+            status = 0;
+          }
+          else if (status == 14) { /* OUTPUT */
+            
+            status = 0;
+          }
+          else if (status == 15) { /* EXIT */
+            gui->debug_connected = 0;
+            status = 0;
+          }
+          
+          if (status == 0){
+            lua_pushnil (client_script.T);
+            lua_setglobal (client_script.T, "status");
+          }
+          
+        }
+        lua_pop(client_script.T, 1);
       }
     }
     //printf ("Running\n");
@@ -585,11 +689,13 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	if (fname){
 		script->status = luaL_loadfile(T, (const char *) fname);
 		if ( script->status == LUA_ERRFILE ) { /* try to look in pref folder */
+      lua_pop(T, 1); /* pop error message from Lua stack */
 			char new_path[PATH_MAX_CHARS+1] = "";
 			snprintf(new_path, PATH_MAX_CHARS, "%sscript%c%s", gui->pref_path, DIR_SEPARATOR, fname);
 			script->status = luaL_loadfile(T, (const char *) new_path);
 		}
 		if ( script->status == LUA_ERRFILE ) { /* try to look in base folder (executable dir)*/
+      lua_pop(T, 1); /* pop error message from Lua stack */
 			char new_path[PATH_MAX_CHARS+1] = "";
 			snprintf(new_path, PATH_MAX_CHARS, "%sscript%c%s", gui->base_dir, DIR_SEPARATOR, fname);
 			script->status = luaL_loadfile(T, (const char *) new_path);

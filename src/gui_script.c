@@ -152,17 +152,25 @@ int debug_client_thread(void* data){
             status = 0;
           }
           else if (status == 7) { /* RUN */
-            if (count > 0) {
-              const char *response = "202 Paused C:/util/lua-5.4.4/hello.lua 4\n";
-              //const char *response = "204 Output stdout 14\nTesting Output";
+            if (count > 10) {
+              
+              gui->debug_connected = 0;
+              
+              status = 0;
+              count = 0;
+              
+            } else {
+              
+              const char *response = "204 Output stdout 15\nTesting Output\n";
+              
               if (ok = SDLNet_TCP_Send(sd, (void *)response, strlen(response)) < strlen(response)) { 
                 printf ("send=%d\n", ok);
                 gui->debug_connected = 0;
               }
               
-              status = 0;
-              count = 0;
-            } else count++;
+              
+              count++;
+            }
           }
           else if (status == 8) { /* STEP */
             
@@ -207,9 +215,12 @@ int debug_client_thread(void* data){
       }
     }
     //printf ("Running\n");
-    SDL_Delay(2000);
+    SDL_Delay(100);
   }
   printf ("Quit debug\n");
+  const char *response = "200 OK 0\n";
+  SDLNet_TCP_Send(sd, (void *)response, strlen(response));
+  
   gui->debug_connected = 0;
   SDLNet_FreeSocketSet(set);
   SDLNet_TCP_Close(sd);
@@ -270,7 +281,7 @@ static int print_lua_var(char * value, lua_State * L){
 }
 
 /* Routine to check break points and script execution time ( timeout in stuck scripts)*/
-void script_check(lua_State *L, lua_Debug *ar){
+void debug_hook(lua_State *L, lua_Debug *ar){
 	
 	/* listen to "Hook Lines" events to verify debug breakpoints */
 	if(ar->event == LUA_HOOKLINE){
@@ -310,6 +321,49 @@ void script_check(lua_State *L, lua_Debug *ar){
 	
 	/* listen to "Hook Count" events to verify execution time and timeout */
 	else if(ar->event == LUA_HOOKCOUNT){
+		/* get script object from Lua instance */
+		lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+		lua_gettable(L, LUA_REGISTRYINDEX); 
+		struct script_obj *script = lua_touserdata (L, -1);
+		lua_pop(L, 1);
+		
+		if (!script){ /* error in gui object access */
+			lua_pushstring(L, "Auto check: no access to CadZinho script object");
+			lua_error(L);
+			return;
+		}
+		
+		clock_t end_t;
+		double diff_t;
+		/* get the elapsed time since script starts or continue */
+		end_t = clock();
+		diff_t = (double)(end_t - script->time) / CLOCKS_PER_SEC;
+		
+		/* verify if timeout is reachead. Its made to prevent user script stuck main program*/
+		if (diff_t >= script->timeout){
+			char msg[DXF_MAX_CHARS];
+			lua_getinfo(L, "Sl", ar); /* fill debug informations */
+			
+			/* stop script execution */
+			snprintf(msg, DXF_MAX_CHARS-1, "script timeout exceeded in %s, line %d, exec time %f s\n", ar->source, ar->currentline, diff_t);
+			//nk_str_append_str_char(&gui->debug_edit.string, msg);
+			
+			script->active = 0;
+			script->dynamic = 0;
+			
+			lua_pushstring(L, msg);
+			lua_error(L);
+			return;
+		}
+	}
+}
+
+
+/* Routine to check break points and script execution time ( timeout in stuck scripts)*/
+void script_check(lua_State *L, lua_Debug *ar){
+	
+	/* listen to "Hook Count" events to verify execution time and timeout */
+	if(ar->event == LUA_HOOKCOUNT){
 		/* get script object from Lua instance */
 		lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
 		lua_gettable(L, LUA_REGISTRYINDEX); 
@@ -683,7 +737,8 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	lua_pop( T, 1); /* get rid of package table from top of stack */
 	
 	/* hook function to breakpoints and  timeout verification*/
-	lua_sethook(T, script_check, LUA_MASKCOUNT|LUA_MASKLINE, 500);
+	//lua_sethook(T, debug_hook, LUA_MASKCALL|LUA_MASKRET|LUA_MASKCOUNT|LUA_MASKLINE, 500);
+  lua_sethook(T, script_check, LUA_MASKCOUNT, 500);
 	
 	/* load lua script file */
 	if (fname){
@@ -743,6 +798,11 @@ int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
 	
 	/* run Lua script*/
 	else if (st){
+    
+    /* ------------ verify if is the debuggable script --------*/
+    if (script == &gui->lua_script[0]){
+      lua_sethook(script->T, debug_hook, LUA_MASKCALL|LUA_MASKRET|LUA_MASKCOUNT|LUA_MASKLINE, 500);
+    }
 		
 		/* set start time of script execution */
 		script->time = clock();

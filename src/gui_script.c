@@ -14,6 +14,7 @@ int debug_client_thread(void* data){
   TCPsocket sd; /* Socket descriptor */
   int len, ok = 0, count = 0;
   char buffer[512];
+  char msg[512];
   //char host[] = "127.0.0.1";
   //int port = 8172;
   SDLNet_SocketSet set;
@@ -22,35 +23,37 @@ int debug_client_thread(void* data){
   
   char default_response[] = "200 OK\n";
   int dflt_res_len = strlen(default_response);
+
   
   if (SDLNet_ResolveHost(&ip, gui->debug_host, port) >= 0) {
     if (!(sd = SDLNet_TCP_Open(&ip))) {
-      printf ("open\n");
+      snprintf(gui->log_msg, 63, _l("DB client error: Open connection"));
       gui->debug_connected = 0;
       return 0;
     }
     else{
       if (!(set = SDLNet_AllocSocketSet(1))) {
         SDLNet_TCP_Close(sd);
+        snprintf(gui->log_msg, 63, _l("DB client error: Init connection"));
         gui->debug_connected = 0;
         return 0;
       }
       if (SDLNet_TCP_AddSocket(set, sd) < 1) {
         SDLNet_FreeSocketSet(set);
         SDLNet_TCP_Close(sd);
+        snprintf(gui->log_msg, 63, _l("DB client error: Init connection"));
         gui->debug_connected = 0;
         return 0;
       }
     }
   }
   else {
-    printf ("resolve\n");
+    snprintf(gui->log_msg, 63, _l("DB client error: Resolve host"));
     gui->debug_connected = 0;
     return 0;
   }
   
-  
-  char script[] = "print (\"Running\")";
+  int out_len, out_pos = nk_str_len_char(&gui->debug_edit.string);
   
   /* init the Lua instance, to run client debugger interpreter */
 	struct script_obj client_script;
@@ -69,6 +72,29 @@ int debug_client_thread(void* data){
 	}
   
   while (gui->running && gui->debug_connected == 1){
+    
+    out_len = nk_str_len_char(&gui->debug_edit.string);
+    
+    if (out_len > out_pos){
+      char *out = nk_str_get(&gui->debug_edit.string);
+      out += out_pos;
+      int len = out_len - out_pos;
+      
+      snprintf (msg, 511, "204 Output stdout %d\n", len);
+      
+      if (ok = SDLNet_TCP_Send(sd, (void *)msg, strlen(msg)) < strlen(msg)) { 
+        snprintf(gui->log_msg, 63, _l("DB client error: Send data to server"));
+        gui->debug_connected = 0;
+      }
+      
+      if (ok = SDLNet_TCP_Send(sd, (void *)out, len) < len) { 
+        snprintf(gui->log_msg, 63, _l("DB client error: Send data to server"));
+        gui->debug_connected = 0;
+      }
+      out_pos = out_len;
+    } else if (out_pos > out_len) {
+      out_pos = out_len;
+    }
     
     if(client_script.active){
       lua_pushnil (client_script.T);
@@ -115,7 +141,7 @@ int debug_client_thread(void* data){
         if (lua_getglobal (client_script.T, "response") == LUA_TSTRING){
           const char *response = lua_tostring(client_script.T, -1);
           if (ok = SDLNet_TCP_Send(sd, (void *)response, strlen(response)) < strlen(response)) { 
-            printf ("send=%d\n", ok);
+            snprintf(gui->log_msg, 63, _l("DB client error: Send data to server"));
             gui->debug_connected = 0;
           }
         
@@ -164,7 +190,7 @@ int debug_client_thread(void* data){
               const char *response = "204 Output stdout 15\nTesting Output\n";
               
               if (ok = SDLNet_TCP_Send(sd, (void *)response, strlen(response)) < strlen(response)) { 
-                printf ("send=%d\n", ok);
+                snprintf(gui->log_msg, 63, _l("DB client error: Send data to server"));
                 gui->debug_connected = 0;
               }
               
@@ -1226,7 +1252,8 @@ int script_win (gui_obj *gui){
 			}
       /* remote connection tab */
 			else if (script_tab == REMOTE){
-				
+				nk_layout_row_dynamic(gui->ctx, 20, 1);
+        nk_label(gui->ctx, _l("Remote Debugger:"), NK_TEXT_LEFT);
 				nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 4, (float[]){0.18f, 0.45f, 0.12f, 0.25f});
 				nk_label(gui->ctx, _l("Host:"), NK_TEXT_RIGHT);
 				nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE | NK_EDIT_CLIPBOARD, gui->debug_host, DXF_MAX_CHARS, nk_filter_default);

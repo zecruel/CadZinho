@@ -322,7 +322,7 @@ void debug_hook(lua_State *L, lua_Debug *ar){
 			//lua_error(L);
 			return;
 		}
-		
+		#if(0)
 		int i;
 		/* sweep the breakpoints list */
 		for (i = 0; i < gui->num_brk_pts; i++){
@@ -343,6 +343,26 @@ void debug_hook(lua_State *L, lua_Debug *ar){
 				}
 			}
 		}
+    #endif
+    //lua_sethook(L, debug_hook, 0,0);
+    
+    lua_getinfo (L, "Sl", ar); /* fill debug informations */
+    
+    if (lua_getglobal (L, "has_breakpoint") == LUA_TFUNCTION){
+      lua_pushstring (L, get_filename(ar->short_src) );
+      lua_pushinteger(L, ar->currentline);
+      if (lua_pcall (L, 2, 1, 0) == LUA_OK) {
+        if (lua_type (L, -1) == LUA_TBOOLEAN) {
+          printf("break\n");
+        }
+        
+      }
+    } 
+    lua_pop (L, 1);
+    
+    
+    
+    //lua_sethook(L, debug_hook, LUA_MASKCALL|LUA_MASKRET|LUA_MASKCOUNT|LUA_MASKLINE, 10000);
 	}
 	
 	/* listen to "Hook Count" events to verify execution time and timeout */
@@ -474,6 +494,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	static const luaL_Reg cz_lib[] = {
 		{"exec_file", gui_script_exec_file},
 		{"db_print",   debug_print},
+    {"check_timeout", check_timeout},
 		{"set_timeout", set_timeout},
 		{"get_sel", script_get_sel},
 		{"clear_sel", script_clear_sel},
@@ -764,7 +785,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	
 	/* hook function to breakpoints and  timeout verification*/
 	//lua_sethook(T, debug_hook, LUA_MASKCALL|LUA_MASKRET|LUA_MASKCOUNT|LUA_MASKLINE, 500);
-  lua_sethook(T, script_check, LUA_MASKCOUNT, 500);
+  lua_sethook(T, script_check, LUA_MASKCOUNT, 10000);
 	
 	/* load lua script file */
 	if (fname){
@@ -827,7 +848,7 @@ int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {
     
     /* ------------ verify if is the debuggable script --------*/
     if (script == &gui->lua_script[0]){
-      lua_sethook(script->T, debug_hook, LUA_MASKCALL|LUA_MASKRET|LUA_MASKCOUNT|LUA_MASKLINE, 500);
+      lua_sethook(script->T, debug_hook, LUA_MASKCALL|LUA_MASKRET|LUA_MASKCOUNT|LUA_MASKLINE, 10000);
     }
 		
 		/* set start time of script execution */

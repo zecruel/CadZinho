@@ -62,6 +62,40 @@ void print_lua_stack(lua_State * L){
 
 /* --------Lua functions------- */
 
+/* check if timeout is elapsed - for debug purposes */
+/* given parameters:
+	- none
+returns:
+	- elapsed, as boolean
+*/
+int check_timeout (lua_State *L) {
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if script is valid */
+	if (!script){
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	clock_t end_t;
+  double diff_t;
+  /* get the elapsed time since script starts or continue */
+  end_t = clock();
+  diff_t = (double)(end_t - script->time) / CLOCKS_PER_SEC;
+  
+  /* verify if timeout is reachead */
+  if (diff_t >= script->timeout){
+    lua_pushboolean(L, 1); /* return elapsed */
+    return 1;
+  }
+	lua_pushboolean(L, 0); /* return OK */
+	return 1;
+}
+
 /* set timeout variable */
 /* given parameters:
 	- time in seconds, as number

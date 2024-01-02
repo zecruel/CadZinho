@@ -12,7 +12,7 @@ int debug_client_thread(void* data){
   
   IPaddress ip; /* Server address */
   TCPsocket sd; /* Socket descriptor */
-  int len, ok = 0, count = 0;
+  int len, ok = 0, count = 0, wait = 0;
   char buffer[512];
   char msg[512];
   //char host[] = "127.0.0.1";
@@ -149,8 +149,15 @@ int debug_client_thread(void* data){
           printf (response);
         }
         lua_pop(client_script.T, 1);
+	wait = 0;
+	if (lua_getglobal (client_script.T, "wait_recv") != LUA_TNIL){
+		lua_pop(client_script.T, 1);
+		wait = 1;
+	}
         
-        if (lua_getglobal (client_script.T, "status") == LUA_TNUMBER){
+        if (lua_getglobal (client_script.T, "status") == LUA_TNUMBER && !wait
+		//lua_getglobal (client_script.T, "wait_recv") == LUA_TNIL)
+	){
           int status = lua_tointeger(client_script.T, -1);
           
           if (status == 1) { /* SETB */
@@ -166,7 +173,20 @@ int debug_client_thread(void* data){
             status = 0;
           }
           else if (status == 4) { /* LOAD */
-            
+             if (lua_getglobal (client_script.T, "chunk") == LUA_TSTRING){
+		const char * chunk =  lua_tostring(client_script.T, -1);
+		
+		if (lua_getglobal (client_script.T, "name") == LUA_TSTRING){
+			const char * name=  lua_tostring(client_script.T, -1);
+			printf("%s\n\n\n\n\n\n", chunk );
+			if (!gui->lua_script[0].active && !gui->lua_script[0].dynamic){
+			//int luaL_loadbuffer (lua_State *L,
+			//	chunk, strlen (chunk), name);
+			}
+		}
+		lua_pop(client_script.T, 1);
+	     }
+	     lua_pop(client_script.T, 1);
             status = 0;
           }
           else if (status == 5) { /* SETW */
@@ -241,7 +261,7 @@ int debug_client_thread(void* data){
       }
     }
     //printf ("Running\n");
-    SDL_Delay(100);
+    if (!wait) SDL_Delay(100);
   }
   printf ("Quit debug\n");
   const char *response = "200 OK 0\n";

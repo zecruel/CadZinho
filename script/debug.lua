@@ -185,7 +185,22 @@ if received then
       chunk = string.sub (buffer, 1, wait_recv)
       buffer = string.sub (buffer, wait_recv+1)
       wait_recv = nil
-      response = "200 OK 0\n"
+      if status == 4 then
+	  local func, res = load(chunk, "@"..name)
+          if func then
+            response = "200 OK 0\n"
+            --debugee = func
+            --coroyield("load")
+          else
+            response = "401 Error in Expression " .. tostring(#res) .. "\n" .. res
+	    status = 0
+	    chunk = nil
+          end
+      
+      end
+      
+      
+      --response = "200 OK 0\n"
     end
   else
     s, e = string.find (buffer, "\n")
@@ -266,25 +281,38 @@ if line then
       response = "400 Bad Request\n"
     end
   elseif command == "LOAD" then
-    local _, _, size, name = string.find(line, "^[A-Z]+%s+(%d+)%s+(%S.-)%s*$")
+    _, _, size, name = string.find(line, "^[A-Z]+%s+(%d+)%s+(%S.-)%s*$")
     size = tonumber(size)
     
     if size and name then
       response = nil
+      status = 4
+    
+	    if size <= string.len(buffer) then
+	      chunk = string.sub (buffer, 1, size)
+	      buffer = string.sub (buffer, size+1)
+	      wait_recv = nil
+	      
+	      --response = "200 OK 0\n"
+	      local func, res = load(chunk, "@"..name)
+		  if func then
+		    response = "200 OK 0\n"
+		    --debugee = func
+		    --coroyield("load")
+		  else
+		    response = "401 Error in Expression " .. tostring(#res) .. "\n" .. res
+		    status = 0
+		    chunk = nil
+		  end
+	    else
+	      wait_recv = size
+	    end
     else
+      name = nil
       response = "400 Bad Request\n"
     end
     
-    status = 4
     
-    if size <= string.len(buffer) then
-      chunk = string.sub (buffer, 1, size)
-      buffer = string.sub (buffer, size+1)
-      wait_recv = nil
-      response = "200 OK 0\n"
-    else
-      wait_recv = size
-    end
     
     --[[
 

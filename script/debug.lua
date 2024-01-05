@@ -186,11 +186,9 @@ if received then
       buffer = string.sub (buffer, wait_recv+1)
       wait_recv = nil
       if status == 4 then
-	  local func, res = load(chunk, "@"..name)
+	  local func, res = load(chunk, name)
           if func then
             response = "200 OK 0\n"
-            --debugee = func
-            --coroyield("load")
           else
             response = "401 Error in Expression " .. tostring(#res) .. "\n" .. res
 	    status = 0
@@ -284,6 +282,8 @@ if line then
     _, _, size, name = string.find(line, "^[A-Z]+%s+(%d+)%s+(%S.-)%s*$")
     size = tonumber(size)
     
+    name = '@' .. string.gsub (name, "/", fs.dir_sep)
+    
     if size and name then
       response = nil
       status = 4
@@ -292,13 +292,9 @@ if line then
 	      chunk = string.sub (buffer, 1, size)
 	      buffer = string.sub (buffer, size+1)
 	      wait_recv = nil
-	      
-	      --response = "200 OK 0\n"
-	      local func, res = load(chunk, "@"..name)
+	      local func, res = load(chunk, name)
 		  if func then
 		    response = "200 OK 0\n"
-		    --debugee = func
-		    --coroyield("load")
 		  else
 		    response = "401 Error in Expression " .. tostring(#res) .. "\n" .. res
 		    status = 0
@@ -311,45 +307,6 @@ if line then
       name = nil
       response = "400 Bad Request\n"
     end
-    
-    
-    
-    --[[
-
-    if abort == nil then -- no LOAD/RELOAD allowed inside start()
-      --if size > 0 then server:receive(size) end
-      if sfile and sline then
-        response = "201 Started " .. sfile .. " " .. tostring(sline) .. "\n"
-      else
-        response = "200 OK 0\n"
-      end
-    else
-      -- reset environment to allow required modules to load again
-      -- remove those packages that weren't loaded when debugger started
-      for k in pairs(package.loaded) do
-        if not loaded[k] then package.loaded[k] = nil end
-      end
-
-      if size == 0 and name == '-' then -- RELOAD the current script being debugged
-        response = "200 OK 0\n"
-        --coroyield("load")
-      else
-        -- receiving 0 bytes blocks (at least in luasocket 2.0.2), so skip reading
-        --local chunk = size == 0 and "" or server:receive(size)
-        if chunk then -- LOAD a new script for debugging
-          --local func, res = mobdebug.loadstring(chunk, "@"..name)
-          if func then
-            response = "200 OK 0\n"
-            debugee = func
-            --coroyield("load")
-          else
-            response = "401 Error in Expression " .. tostring(#res) .. "\n" .. res
-          end
-        else
-          response = "400 Bad Request\n"
-        end
-      end
-    end ]]--
   elseif command == "SETW" then
     local _, _, exp = string.find(line, "^[A-Z]+%s+(.+)%s*$")
     if exp then
@@ -447,9 +404,10 @@ if line then
   elseif command == "BASEDIR" then
     local _, _, dir = string.find(line, "^[A-Z]+%s+(.+)%s*$")
     if dir then
-      basedir = iscasepreserving and string.lower(dir) or dir
+      --basedir = iscasepreserving and string.lower(dir) or dir
       -- reset cached source as it may change with basedir
-      lastsource = nil
+      --lastsource = nil
+      basedir = string.gsub (dir, "/", fs.dir_sep)
       status = 10
       response = "200 OK\n"
     else

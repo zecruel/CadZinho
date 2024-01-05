@@ -13,6 +13,7 @@ int debug_client_thread(void* data){
   IPaddress ip; /* Server address */
   TCPsocket sd; /* Socket descriptor */
   int len, ok = 0, count = 0, wait = 0;
+  int ready = 0;
   char buffer[512];
   char msg[512];
   //char host[] = "127.0.0.1";
@@ -149,15 +150,15 @@ int debug_client_thread(void* data){
           printf (response);
         }
         lua_pop(client_script.T, 1);
-	wait = 0;
-	if (lua_getglobal (client_script.T, "wait_recv") != LUA_TNIL){
-		lua_pop(client_script.T, 1);
-		wait = 1;
-	}
+        wait = 0;
+        if (lua_getglobal (client_script.T, "wait_recv") != LUA_TNIL){
+          lua_pop(client_script.T, 1);
+          wait = 1;
+        }
         
         if (lua_getglobal (client_script.T, "status") == LUA_TNUMBER && !wait
-		//lua_getglobal (client_script.T, "wait_recv") == LUA_TNIL)
-	){
+        //lua_getglobal (client_script.T, "wait_recv") == LUA_TNIL)
+        ){
           int status = lua_tointeger(client_script.T, -1);
           
           if (status == 1) { /* SETB */
@@ -173,20 +174,25 @@ int debug_client_thread(void* data){
             status = 0;
           }
           else if (status == 4) { /* LOAD */
-             if (lua_getglobal (client_script.T, "chunk") == LUA_TSTRING){
-		const char * chunk =  lua_tostring(client_script.T, -1);
-		
-		if (lua_getglobal (client_script.T, "name") == LUA_TSTRING){
-			const char * name=  lua_tostring(client_script.T, -1);
-			printf("%s\n\n\n\n\n\n", chunk );
-			if (!gui->lua_script[0].active && !gui->lua_script[0].dynamic){
-			//int luaL_loadbuffer (lua_State *L,
-			//	chunk, strlen (chunk), name);
-			}
-		}
-		lua_pop(client_script.T, 1);
-	     }
-	     lua_pop(client_script.T, 1);
+            ready = 0;
+            int typ = lua_getglobal (client_script.T, "chunk");
+            if (typ == LUA_TSTRING){
+              char * chunk = (char*) lua_tostring(client_script.T, -1);
+              char * name = NULL;
+              char * basedir = NULL;
+              
+              int ty = lua_getglobal (client_script.T, "name");
+              if (ty == LUA_TSTRING) name = (char*) lua_tostring(client_script.T, -1);
+              else if (ty != LUA_TNIL) lua_pop(client_script.T, 1);
+              
+              ty = lua_getglobal (client_script.T, "basedir");
+              if (ty == LUA_TSTRING) basedir = (char*) lua_tostring(client_script.T, -1);
+              else if (ty != LUA_TNIL) lua_pop(client_script.T, 1);
+              
+              ready = gui_script_init_remote (gui, basedir, name, chunk);
+              
+              }
+            else if (typ != LUA_TNIL) lua_pop(client_script.T, 1);
             status = 0;
           }
           else if (status == 5) { /* SETW */
@@ -198,25 +204,42 @@ int debug_client_thread(void* data){
             status = 0;
           }
           else if (status == 7) { /* RUN */
-            if (count > 10) {
+            struct script_obj *script = &gui->lua_script[0];
+            
+            if (script->status == LUA_YIELD && 
+              script->active == 0 && ready == 1 &&
+              script->dynamic == 0 && script->T){
               
-              gui->debug_connected = 0;
+              /* set start time of script execution */
+              script->time = clock();
+              script->timeout = 10.0; /* default timeout value */
+              script->do_init = 0;
               
-              status = 0;
-              count = 0;
+              /* add main entry to do/redo list */
+              //do_add_entry(&gui->list_do, "SCRIPT");
               
-            } else {
-              
-              const char *response = "204 Output stdout 15\nTesting Output\n";
-              
-              if (ok = SDLNet_TCP_Send(sd, (void *)response, strlen(response)) < strlen(response)) { 
-                snprintf(gui->log_msg, 63, _l("DB client error: Send data to server"));
-                gui->debug_connected = 0;
+              lua_getglobal(script->T, "cz_main_func");
+              script->n_results = 0; /* for Lua 5.4*/
+              script->status = lua_resume(script->T, NULL, 0, &script->n_results); /* start thread */
+              if (script->status != LUA_OK && script->status != LUA_YIELD){
+                /* execution error */
+                snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(script->T, -1));
+                nk_str_append_str_char(&gui->debug_edit.string, msg);
+                
+                lua_pop(script->T, 1); /* pop error message from Lua stack */
               }
-              
-              
-              count++;
+              /* clear variable if thread is no yielded*/
+              if ((script->status != LUA_YIELD && script->active == 0 && script->dynamic == 0) ||
+                (script->status != LUA_YIELD && script->status != LUA_OK)) {
+                lua_close(script->L);
+                script->L = NULL;
+                script->T = NULL;
+                script->active = 0;
+                script->dynamic = 0;
+              }
             }
+            
+            status = 0;
           }
           else if (status == 8) { /* STEP */
             
@@ -467,11 +490,10 @@ void script_check(lua_State *L, lua_Debug *ar){
 	}
 }
 
-/* init script from file or alternative string chunk */
-int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char *alt_chunk) {
+/* prepare script, load libraries */
+int gui_script_prepare (gui_obj *gui, struct script_obj *script) {
 	if(!gui) return 0;
 	if(!script) return 0;
-	if (!fname && !alt_chunk) return 0;
 	
   /* close previous Lua state */
   if(script->L) lua_close(script->L);
@@ -486,7 +508,6 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	//script->wait_gui_resume = 0;
 	script->groups = 0;
   script->path[0] = 0;
-	if (fname) strncpy(script->path, fname, DXF_MAX_CHARS - 1);
 	
 	script->timeout = 10.0; /* default timeout value */
 	
@@ -705,7 +726,6 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
   lua_setfield(T, -2, "os");
   
   lua_pop(T, 1);
-  
 	
 	static const struct luaL_Reg sqlite_meths[] = {
 		{"exec", script_sqlite_exec},
@@ -750,27 +770,6 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	/* adjust package path for "require" in script file*/
 	luaL_Buffer b;  /* to store parcial strings */
 	luaL_buffinit(T, &b); /* init the Lua buffer */
-	
-	/*
-  luaL_addstring(&b, ".");
-	luaL_addchar(&b, DIR_SEPARATOR);
-	luaL_addstring(&b, "?.lua;");
-	luaL_addstring(&b, ".");
-	luaL_addchar(&b, DIR_SEPARATOR);
-	luaL_addstring(&b, "?");
-	luaL_addchar(&b, DIR_SEPARATOR);
-	luaL_addstring(&b, "init.lua;");
-  */
-  if (fname) {
-    luaL_addstring(&b, get_dir(fname));
-    luaL_addchar(&b, DIR_SEPARATOR);
-    luaL_addstring(&b, "?.lua;");
-    luaL_addstring(&b, get_dir(fname));
-    luaL_addchar(&b, DIR_SEPARATOR);
-    luaL_addstring(&b, "?");
-    luaL_addchar(&b, DIR_SEPARATOR);
-    luaL_addstring(&b, "init.lua;");
-  }
 
 	if (strcmp (gui->base_dir, gui->pref_path) != 0){
 		luaL_addstring(&b, gui->pref_path);
@@ -800,8 +799,115 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	
 	lua_getglobal( T, "package");
 	lua_insert( T, 1 ); /* setup stack  for next operation*/
-	lua_setfield( T, -2, "path"); 
+	lua_setfield( T, -2, "path");
 	lua_pop( T, 1); /* get rid of package table from top of stack */
+	
+	return 1;
+	
+}
+
+/* init script from file or alternative string chunk */
+int gui_script_init_remote (gui_obj *gui, char *basedir, char *fname, char *chunk) {
+	if(!gui) return 0;
+	if (!chunk) return 0;
+
+  struct script_obj *script = &gui->lua_script[0];
+  if (!gui_script_prepare (gui, script)) return 0;
+  
+  lua_State *T = script->T;
+  
+  if (basedir) {    
+    /* adjust package path for "require" in script file*/
+    luaL_Buffer b;  /* to store parcial strings */
+    luaL_buffinit(T, &b); /* init the Lua buffer */
+    luaL_addstring(&b, basedir);
+    luaL_addstring(&b, "?.lua;");
+    luaL_addstring(&b, basedir);
+    luaL_addstring(&b, "?");
+    luaL_addchar(&b, DIR_SEPARATOR);
+    luaL_addstring(&b, "init.lua;");
+    luaL_pushresult(&b); /* finalize string and put on Lua stack  - new package path */
+    lua_getglobal( T, "package");
+    lua_insert( T, 1 ); /* setup stack  for next operation*/
+    lua_getfield( T, -2, "path");
+    lua_concat (T, 2);
+    lua_setfield( T, -2, "path");
+    lua_pop( T, 1); /* get rid of package table from top of stack */
+  }
+
+  if (fname) {
+    strncpy(script->path, fname, DXF_MAX_CHARS - 1);
+    
+    /* adjust package path for "require" in script file*/
+    luaL_Buffer b;  /* to store parcial strings */
+    luaL_buffinit(T, &b); /* init the Lua buffer */
+    luaL_addstring(&b, get_dir(fname));
+    luaL_addstring(&b, "?.lua;");
+    luaL_addstring(&b, get_dir(fname));
+    luaL_addstring(&b, "?");
+    luaL_addchar(&b, DIR_SEPARATOR);
+    luaL_addstring(&b, "init.lua;");
+    luaL_pushresult(&b); /* finalize string and put on Lua stack  - new package path */
+    lua_getglobal( T, "package");
+    lua_insert( T, 1 ); /* setup stack  for next operation*/
+    lua_getfield( T, -2, "path");
+    lua_concat (T, 2);
+    lua_setfield( T, -2, "path");
+    lua_pop( T, 1); /* get rid of package table from top of stack */
+  }
+	
+	/* hook function to breakpoints and  timeout verification*/
+	lua_sethook(T, debug_hook, LUA_MASKCALL|LUA_MASKRET|LUA_MASKCOUNT|LUA_MASKLINE, 500);
+  //lua_sethook(T, script_check, LUA_MASKCOUNT, 10000);
+	
+	/* load lua script file */
+	if (fname){
+		script->status = luaL_loadbuffer(T, (const char *) chunk, strlen(chunk), get_filename(fname));
+	}
+	else {
+		script->status = luaL_loadstring(T, (const char *) chunk);
+	}
+	
+	if ( script->status == LUA_OK)  {
+		lua_setglobal(T, "cz_main_func"); /* store main function in global variable */
+    script->status = LUA_YIELD;
+
+		return 1;
+	}
+	
+	return -1;
+	
+}
+
+/* init script from file or alternative string chunk */
+int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char *alt_chunk) {
+	if(!gui) return 0;
+	if(!script) return 0;
+	if (!fname && !alt_chunk) return 0;
+	
+  if (!gui_script_prepare (gui, script)) return 0;
+  
+  lua_State *T = script->T;
+  if (fname) {
+    strncpy(script->path, fname, DXF_MAX_CHARS - 1);
+    
+    /* adjust package path for "require" in script file*/
+    luaL_Buffer b;  /* to store parcial strings */
+    luaL_buffinit(T, &b); /* init the Lua buffer */
+    luaL_addstring(&b, get_dir(fname));
+    luaL_addstring(&b, "?.lua;");
+    luaL_addstring(&b, get_dir(fname));
+    luaL_addstring(&b, "?");
+    luaL_addchar(&b, DIR_SEPARATOR);
+    luaL_addstring(&b, "init.lua;");
+    luaL_pushresult(&b); /* finalize string and put on Lua stack  - new package path */
+    lua_getglobal( T, "package");
+    lua_insert( T, 1 ); /* setup stack  for next operation*/
+    lua_getfield( T, -2, "path");
+    lua_concat (T, 2);
+    lua_setfield( T, -2, "path");
+    lua_pop( T, 1); /* get rid of package table from top of stack */
+  }
 	
 	/* hook function to breakpoints and  timeout verification*/
 	//lua_sethook(T, debug_hook, LUA_MASKCALL|LUA_MASKRET|LUA_MASKCOUNT|LUA_MASKLINE, 500);
@@ -839,6 +945,7 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
 	return -1;
 	
 }
+
 
 /* run script from file */
 int gui_script_run (gui_obj *gui, struct script_obj *script, char *fname) {

@@ -272,9 +272,9 @@ if line then
       end
       ]]
       status = 3
-      local status, res = stringify_results(params, true, "testing output")
+      --local status, res = stringify_results(params, true, "testing output")
       --print (res)
-      response = "200 OK " .. tostring(#res) .. "\n" .. res
+      --response = "200 OK " .. tostring(#res) .. "\n" .. res
     else
       response = "400 Bad Request\n"
     end
@@ -282,7 +282,8 @@ if line then
     _, _, size, name = string.find(line, "^[A-Z]+%s+(%d+)%s+(%S.-)%s*$")
     size = tonumber(size)
     
-    name = '@' .. string.gsub (name, "/", fs.dir_sep)
+    --name = '@' .. string.gsub (name, "/", fs.dir_sep)
+    name = string.gsub (name, "/", fs.dir_sep)
     
     if size and name then
       response = nil
@@ -368,7 +369,7 @@ if line then
     status = 8
     response = "200 OK\n"
     step_into = true
-
+--[[
     local ev, vars, file, line, idx_watch = coroyield()
     eval_env = vars
     if ev == events.BREAK then
@@ -380,11 +381,12 @@ if line then
     else
       response = "401 Error in Execution " .. tostring(#file) .. "\n" .. file
     end
+    ]]
   elseif command == "OVER" or command == "OUT" then
     status = 9
     response = "200 OK\n"
     step_over = true
-
+--[[
     -- OVER and OUT are very similar except for
     -- the stack level value at which to stop
     if command == "OUT" then step_level = stack_level - 1
@@ -401,6 +403,7 @@ if line then
     else
       response = "401 Error in Execution " .. tostring(#file) .. "\n".. file
     end
+    ]]
   elseif command == "BASEDIR" then
     local _, _, dir = string.find(line, "^[A-Z]+%s+(.+)%s*$")
     if dir then

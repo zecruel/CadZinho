@@ -507,7 +507,8 @@ struct Gui_obj {
   char debug_host[DXF_MAX_CHARS + 1];
   char debug_port[11];
   int debug_connected;
-	
+  int debug_step;
+  int debug_pause;
   
 };
 typedef struct Gui_obj gui_obj;

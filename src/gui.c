@@ -1971,6 +1971,8 @@ int gui_start(gui_obj *gui){
   strncpy(gui->debug_host, "127.0.0.1", DXF_MAX_CHARS);
   strncpy(gui->debug_port, "8172", 10);
   gui->debug_connected = 0;
+  gui->debug_step = 0;
+  gui->debug_pause = 0;
 	
 	memset(gui->blank_tex, 0, 4*20*600);
 	

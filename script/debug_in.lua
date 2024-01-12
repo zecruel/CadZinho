@@ -1,3 +1,5 @@
+cz_debug_breakpoints = {}
+
 cz_debug_serpent = (function() ---- include Serpent module for serialization
 local n, v = "serpent", "0.302" -- (C) 2012-18 Paul Kulchenko; MIT License
 local c, d = "Paul Kulchenko", "Lua serializer and pretty printer"
@@ -185,4 +187,28 @@ function cz_debug_exec (cz_debug_line)
   end
   
   return cz_debug_response
+end
+
+function cz_debug_command (cz_debug_line)
+  local _, _, command = string.find(cz_debug_line, "^([A-Z]+)")
+  if command == "SETB" then
+    local _, _, _, file, line = string.find(cz_debug_line, "^([A-Z]+)%s+(.-)%s+(%d+)%s*$")
+    if file and line and type(cz_debug_breakpoints) == 'table' then
+      line = tonumber(line)
+      if not cz_debug_breakpoints[line] then cz_debug_breakpoints[line] = {} end
+      cz_debug_breakpoints[line][file] = true
+    end
+  elseif command == "DELB" then
+    local _, _, _, file, line = string.find(cz_debug_line, "^([A-Z]+)%s+(.-)%s+(%d+)%s*$")
+    if file and line and type(cz_debug_breakpoints) == 'table' then
+      line = tonumber(line)
+      if file == '*' and line == 0 then cz_debug_breakpoints = {} end
+      if cz_debug_breakpoints[line] then cz_debug_breakpoints[line][file] = nil end
+    end
+  end
+end
+
+function cz_debug_hasb (file, line)
+  if type(cz_debug_breakpoints) ~= 'table' then return nil end
+  return cz_debug_breakpoints[line] and cz_debug_breakpoints[line][file]
 end

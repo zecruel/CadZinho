@@ -205,12 +205,40 @@ int debug_client_thread(void* data){
         ){
           int status = lua_tointeger(client_script.T, -1);
           
-          if (status == 1) { /* SETB */
-            
-            status = 0;
-          }
-          else if (status == 2) { /* DELB */
-            
+          if (status == 1 || status == 2) { /* SETB or DELB */
+            if (script->status == LUA_YIELD && 
+              ready == 1 && script->T)
+            {
+              /* execute pending commands */
+              if (lua_getglobal (client_script.T, "queue_com") != LUA_TNIL){
+                int n_lines = lua_rawlen (client_script.T, -1);
+                int i;
+                for (i = 1; i <= n_lines; i++) {
+                  lua_rawgeti (client_script.T, -1, i);
+                  const char * line = lua_tostring (client_script.T, -1);
+                  
+                  int typ = lua_getglobal(script->L, "cz_debug_command");
+                  
+                  if (typ == LUA_TFUNCTION){
+                    lua_pushstring (script->L, line);
+                    if (lua_pcall (script->L, 1, 0, 0) != LUA_OK){
+                      /* execution error */
+                      //snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(script->L, -1));
+                      //nk_str_append_str_char(&gui->debug_edit.string, msg);
+                      printf("error: %s\n", lua_tostring(script->L, -1));
+                      lua_pop(script->L, 1); /* pop error message from Lua stack */
+                    }
+                  } 
+                  else if (typ != LUA_TNIL) lua_pop (script->L, 1);
+                  
+                  lua_pop (client_script.T, 1);
+                }
+                lua_pop (client_script.T, 1);
+                lua_newtable (client_script.T);
+                lua_setglobal (client_script.T, "queue_com");
+              }
+              
+            }
             status = 0;
           }
           else if (status == 3) { /* EXEC */
@@ -257,43 +285,93 @@ int debug_client_thread(void* data){
               char * name = NULL;
               char * basedir = NULL;
               
-              int ty = lua_getglobal (client_script.T, "name");
-              if (ty == LUA_TSTRING) name = (char*) lua_tostring(client_script.T, -1);
-              else if (ty != LUA_TNIL) lua_pop(client_script.T, 1);
+              int chunk_len = strlen(chunk);
               
-              ty = lua_getglobal (client_script.T, "basedir");
-              if (ty == LUA_TSTRING) basedir = (char*) lua_tostring(client_script.T, -1);
-              else if (ty != LUA_TNIL) lua_pop(client_script.T, 1);
+              char * safe_chunk = (char *) malloc (chunk_len + 1);
               
-              ready = gui_script_init_remote (gui, basedir, name, chunk);
-              gui->debug_step = 1;
-              running = 1;
-              
-              lua_getglobal(script->T, "cz_main_func");
-              script->n_results = 0; /* for Lua 5.4*/
-              script->status = lua_resume(script->T, NULL, 0, &script->n_results); /* start thread */
-              if (script->status != LUA_OK && script->status != LUA_YIELD){
-                /* execution error */
-                snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(script->T, -1));
-                nk_str_append_str_char(&gui->debug_edit.string, msg);
+              if (safe_chunk) {
+                strcpy(safe_chunk, chunk);
                 
-                lua_pop(script->T, 1); /* pop error message from Lua stack */
-                ready = 0;
-                running = 0;
+                char *safe_name = NULL;
+                int ty = lua_getglobal (client_script.T, "name");
+                if (ty == LUA_TSTRING) {
+                  name = (char*) lua_tostring(client_script.T, -1);
+                  safe_name = (char *) malloc (strlen(name) + 1);
+                  if (safe_name) strcpy (safe_name, name);
+                }
+                if (ty != LUA_TNIL) lua_pop(client_script.T, 1);
+                
+                char *safe_basedir = NULL;
+                ty = lua_getglobal (client_script.T, "basedir");
+                if (ty == LUA_TSTRING) {
+                  basedir = (char*) lua_tostring(client_script.T, -1);
+                  safe_basedir = (char *) malloc (strlen(basedir) + 1);
+                  if (safe_basedir) strcpy (safe_basedir, basedir);
+                } basedir = (char*) lua_tostring(client_script.T, -1);
+                if (ty != LUA_TNIL) lua_pop(client_script.T, 1);
+                
+                if (ready = gui_script_init_remote (gui, safe_basedir, safe_name, safe_chunk) == 1){
+                  gui->debug_step = 1;
+                  running = 1;
+                  
+                  lua_getglobal(script->T, "cz_main_func");
+                  script->n_results = 0; /* for Lua 5.4*/
+                  script->status = lua_resume(script->T, NULL, 0, &script->n_results); /* start thread */
+                  if (script->status != LUA_OK && script->status != LUA_YIELD){
+                    /* execution error */
+                    snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(script->T, -1));
+                    nk_str_append_str_char(&gui->debug_edit.string, msg);
+                    
+                    lua_pop(script->T, 1); /* pop error message from Lua stack */
+                    ready = 0;
+                    running = 0;
+                  }
+                  /* clear variable if thread is no yielded*/
+                  if ((script->status != LUA_YIELD && script->active == 0 && script->dynamic == 0) ||
+                    (script->status != LUA_YIELD && script->status != LUA_OK)) {
+                    lua_close(script->L);
+                    script->L = NULL;
+                    script->T = NULL;
+                    script->active = 0;
+                    script->dynamic = 0;
+                    ready = 0;
+                    running = 0;
+                  }
+                  free(safe_chunk);
+                  if (safe_name) free(safe_name);
+                  if (safe_basedir) free(safe_basedir);
+                }
+                
+                /* execute pending commands */
+                if (lua_getglobal (client_script.T, "queue_com") != LUA_TNIL){
+                  int n_lines = lua_rawlen (client_script.T, -1);
+                  int i;
+                  for (i = 1; i <= n_lines; i++) {
+                    lua_rawgeti (client_script.T, -1, i);
+                    const char * line = lua_tostring (client_script.T, -1);
+                    
+                    int typ = lua_getglobal(script->L, "cz_debug_command");
+                    
+                    if (typ == LUA_TFUNCTION){
+                      lua_pushstring (script->L, line);
+                      if (lua_pcall (script->L, 1, 0, 0) != LUA_OK){
+                        /* execution error */
+                        //snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(script->L, -1));
+                        //nk_str_append_str_char(&gui->debug_edit.string, msg);
+                        printf("error: %s\n", lua_tostring(script->L, -1));
+                        lua_pop(script->L, 1); /* pop error message from Lua stack */
+                      }
+                    } 
+                    else if (typ != LUA_TNIL) lua_pop (script->L, 1);
+                    
+                    lua_pop (client_script.T, 1);
+                  }
+                  lua_pop (client_script.T, 1);
+                  lua_newtable (client_script.T);
+                  lua_setglobal (client_script.T, "queue_com");
+                }
               }
-              /* clear variable if thread is no yielded*/
-              if ((script->status != LUA_YIELD && script->active == 0 && script->dynamic == 0) ||
-                (script->status != LUA_YIELD && script->status != LUA_OK)) {
-                lua_close(script->L);
-                script->L = NULL;
-                script->T = NULL;
-                script->active = 0;
-                script->dynamic = 0;
-                ready = 0;
-                running = 0;
-              }
-              
-              }
+            }
             else if (typ != LUA_TNIL) lua_pop(client_script.T, 1);
             status = 0;
           }
@@ -524,13 +602,16 @@ void debug_hook(lua_State *L, lua_Debug *ar){
     //lua_sethook(L, debug_hook, 0,0);
     
     lua_getinfo (L, "Sl", ar); /* fill debug informations */
-    int typ = lua_getglobal (L, "has_breakpoint");
+    int typ = lua_getglobal (L, "cz_debug_hasb");
     if (typ == LUA_TFUNCTION){
-      lua_pushstring (L, get_filename(ar->short_src) );
+      //lua_pushstring (L, ar->source );
+      const char p[] = {DIR_SEPARATOR, 0};
+      luaL_gsub(L, ar->source, p, "/");
       lua_pushinteger(L, ar->currentline);
       if (lua_pcall (L, 2, 1, 0) == LUA_OK) {
         if (lua_type (L, -1) == LUA_TBOOLEAN) {
           printf("break\n");
+          gui->debug_step = 1;
         }
         
       }
@@ -1685,7 +1766,8 @@ int gui_script_interactive(gui_obj *gui){
 			}
 			
 			if((gui->lua_script[i].status != LUA_YIELD && gui->lua_script[i].active == 0 && gui->lua_script[i].dynamic == 0) ||
-				(gui->lua_script[i].status != LUA_YIELD && gui->lua_script[i].status != LUA_OK))
+				(gui->lua_script[i].status != LUA_YIELD && gui->lua_script[i].status != LUA_OK)//)
+        && !(gui->debug_connected && i == 0)) /* <== to avoid race condition with client debbuger thread */
 			{
 				/* clear inactive script slots */
 				lua_close(gui->lua_script[i].L);

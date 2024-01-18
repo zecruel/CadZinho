@@ -509,6 +509,8 @@ struct Gui_obj {
   int debug_connected;
   int debug_step;
   int debug_pause;
+  int debug_level;
+  int debug_step_level;
   
 };
 typedef struct Gui_obj gui_obj;

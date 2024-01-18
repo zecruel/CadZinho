@@ -1973,6 +1973,8 @@ int gui_start(gui_obj *gui){
   gui->debug_connected = 0;
   gui->debug_step = 0;
   gui->debug_pause = 0;
+  gui->debug_level = 0;
+  gui->debug_step_level = 0;
 	
 	memset(gui->blank_tex, 0, 4*20*600);
 	

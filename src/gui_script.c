@@ -72,6 +72,10 @@ int debug_client_thread(void* data){
     lua_getglobal(client_script.T, "cz_main_func");
 	}
   
+  
+  gui->debug_level = 0;
+  gui->debug_step_level = 0;
+  
   struct script_obj *script = &gui->lua_script[0];
   
   while (gui->running && gui->debug_connected == 1){
@@ -100,7 +104,11 @@ int debug_client_thread(void* data){
     }
     
     if (script->status == LUA_YIELD && running && gui->debug_pause){
-      if (running == 1) running = 2;
+      if (running == 1) {
+        running = 2;
+        gui->debug_level = 1;
+        gui->debug_step_level = 0;
+      }
       else if (running == 3) {
         running = 2;
         
@@ -313,6 +321,8 @@ int debug_client_thread(void* data){
                 if (ready = gui_script_init_remote (gui, safe_basedir, safe_name, safe_chunk) == 1){
                   gui->debug_step = 1;
                   running = 1;
+                  gui->debug_level = 0;
+                  gui->debug_step_level = 0;
                   
                   lua_getglobal(script->T, "cz_main_func");
                   script->n_results = 0; /* for Lua 5.4*/
@@ -325,6 +335,8 @@ int debug_client_thread(void* data){
                     lua_pop(script->T, 1); /* pop error message from Lua stack */
                     ready = 0;
                     running = 0;
+                    gui->debug_level = 0;
+                    gui->debug_step_level = 0;
                   }
                   /* clear variable if thread is no yielded*/
                   if ((script->status != LUA_YIELD && script->active == 0 && script->dynamic == 0) ||
@@ -336,6 +348,8 @@ int debug_client_thread(void* data){
                     script->dynamic = 0;
                     ready = 0;
                     running = 0;
+                    gui->debug_level = 0;
+                    gui->debug_step_level = 0;
                   }
                   free(safe_chunk);
                   if (safe_name) free(safe_name);
@@ -410,6 +424,8 @@ int debug_client_thread(void* data){
                 lua_pop(script->T, 1); /* pop error message from Lua stack */
                 ready = 0;
                 running = 0;
+                gui->debug_level = 0;
+                gui->debug_step_level = 0;
               }
               /* clear variable if thread is no yielded*/
               if ((script->status != LUA_YIELD && script->active == 0 && script->dynamic == 0) ||
@@ -421,6 +437,8 @@ int debug_client_thread(void* data){
                 script->dynamic = 0;
                 ready = 0;
                 running = 0;
+                gui->debug_level = 0;
+                gui->debug_step_level = 0;
               }
             }
             
@@ -442,6 +460,8 @@ int debug_client_thread(void* data){
                 lua_pop(script->T, 1); /* pop error message from Lua stack */
                 ready = 0;
                 running = 0;
+                gui->debug_level = 0;
+                gui->debug_step_level = 0;
               }
               /* clear variable if thread is no yielded*/
               if ((script->status != LUA_YIELD && script->active == 0 && script->dynamic == 0) ||
@@ -453,35 +473,107 @@ int debug_client_thread(void* data){
                 script->dynamic = 0;
                 ready = 0;
                 running = 0;
+                gui->debug_level = 0;
+                gui->debug_step_level = 0;
               }
             }
             status = 0;
           }
           else if (status == 9) { /* OVER */
+            if (script->status == LUA_YIELD && ready == 1 && script->T){
+              //gui->debug_step = 1;
+              gui->debug_step_level = gui->debug_level;
+              running = 3;
+              
+              lua_getglobal(script->T, "cz_main_func");
+              script->n_results = 0; /* for Lua 5.4*/
+              script->status = lua_resume(script->T, NULL, 0, &script->n_results); /* start thread */
+              if (script->status != LUA_OK && script->status != LUA_YIELD){
+                /* execution error */
+                snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(script->T, -1));
+                nk_str_append_str_char(&gui->debug_edit.string, msg);
+                
+                lua_pop(script->T, 1); /* pop error message from Lua stack */
+                ready = 0;
+                running = 0;
+                gui->debug_level = 0;
+                gui->debug_step_level = 0;
+              }
+              /* clear variable if thread is no yielded*/
+              if ((script->status != LUA_YIELD && script->active == 0 && script->dynamic == 0) ||
+                (script->status != LUA_YIELD && script->status != LUA_OK)) {
+                lua_close(script->L);
+                script->L = NULL;
+                script->T = NULL;
+                script->active = 0;
+                script->dynamic = 0;
+                ready = 0;
+                running = 0;
+                gui->debug_level = 0;
+                gui->debug_step_level = 0;
+              }
+            }
+            status = 0;
+          }
+          
+          else if (status == 10) { /* OUT */
+            if (script->status == LUA_YIELD && ready == 1 && script->T){
+              //gui->debug_step = 1;
+              gui->debug_step_level = gui->debug_level - 1;
+              running = 3;
+              
+              lua_getglobal(script->T, "cz_main_func");
+              script->n_results = 0; /* for Lua 5.4*/
+              script->status = lua_resume(script->T, NULL, 0, &script->n_results); /* start thread */
+              if (script->status != LUA_OK && script->status != LUA_YIELD){
+                /* execution error */
+                snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(script->T, -1));
+                nk_str_append_str_char(&gui->debug_edit.string, msg);
+                
+                lua_pop(script->T, 1); /* pop error message from Lua stack */
+                ready = 0;
+                running = 0;
+                gui->debug_level = 0;
+                gui->debug_step_level = 0;
+              }
+              /* clear variable if thread is no yielded*/
+              if ((script->status != LUA_YIELD && script->active == 0 && script->dynamic == 0) ||
+                (script->status != LUA_YIELD && script->status != LUA_OK)) {
+                lua_close(script->L);
+                script->L = NULL;
+                script->T = NULL;
+                script->active = 0;
+                script->dynamic = 0;
+                ready = 0;
+                running = 0;
+                gui->debug_level = 0;
+                gui->debug_step_level = 0;
+              }
+            }
+            status = 0;
+          }
+          
+          else if (status == 11) { /* BASEDIR */
             
             status = 0;
           }
-          else if (status == 10) { /* BASEDIR */
+          else if (status == 12) { /* SUSPEND */
             
             status = 0;
           }
-          else if (status == 11) { /* SUSPEND */
+          else if (status == 13) { /* DONE */
             
             status = 0;
           }
-          else if (status == 12) { /* DONE */
+          else if (status == 14) { /* STACK */
             
             status = 0;
           }
-          else if (status == 13) { /* STACK */
+          else if (status == 15) { /* OUTPUT */
             
             status = 0;
           }
-          else if (status == 14) { /* OUTPUT */
-            
-            status = 0;
-          }
-          else if (status == 15) { /* EXIT */
+          else if (status == 16) { /* EXIT */
             gui->debug_connected = 0;
             status = 0;
           }
@@ -563,9 +655,8 @@ static int print_lua_var(char * value, lua_State * L){
 
 /* Routine to check break points and script execution time ( timeout in stuck scripts)*/
 void debug_hook(lua_State *L, lua_Debug *ar){
-	
-	/* listen to "Hook Lines" events to verify debug breakpoints */
-	if(ar->event == LUA_HOOKLINE){
+  
+  if(ar->event == LUA_HOOKLINE){
 		/* get gui object from Lua instance */
 		lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
 		lua_gettable(L, LUA_REGISTRYINDEX); 
@@ -599,7 +690,13 @@ void debug_hook(lua_State *L, lua_Debug *ar){
 			}
 		}
     #endif
-    //lua_sethook(L, debug_hook, 0,0);
+    
+    /* finds out what level the function is in the chain */
+    int i = 1; /* base level (main) */
+    lua_Debug dummy_ar;
+    while (lua_getstack (L, i, &dummy_ar)) i++; /* look for depth */
+    gui->debug_level = i;
+    /* ****** */
     
     lua_getinfo (L, "Sl", ar); /* fill debug informations */
     int typ = lua_getglobal (L, "cz_debug_hasb");
@@ -617,6 +714,11 @@ void debug_hook(lua_State *L, lua_Debug *ar){
       }
     } 
     else if (typ != LUA_TNIL) lua_pop (L, 1);
+    
+    if (gui->debug_step_level && gui->debug_step_level == gui->debug_level){
+      gui->debug_step = 1;
+      gui->debug_step_level = 0;
+    }
     
     if (gui->debug_step) {
       gui->debug_step = 0;
@@ -1765,8 +1867,8 @@ int gui_script_interactive(gui_obj *gui){
 				gui->lua_script[i].do_init = 0; /* reinit script do list */
 			}
 			
-			if((gui->lua_script[i].status != LUA_YIELD && gui->lua_script[i].active == 0 && gui->lua_script[i].dynamic == 0) ||
-				(gui->lua_script[i].status != LUA_YIELD && gui->lua_script[i].status != LUA_OK)//)
+			if(((gui->lua_script[i].status != LUA_YIELD && gui->lua_script[i].active == 0 && gui->lua_script[i].dynamic == 0) ||
+				(gui->lua_script[i].status != LUA_YIELD && gui->lua_script[i].status != LUA_OK))
         && !(gui->debug_connected && i == 0)) /* <== to avoid race condition with client debbuger thread */
 			{
 				/* clear inactive script slots */

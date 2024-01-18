@@ -132,25 +132,29 @@ if line then
   elseif command == "STEP" then
     status = 8
     response = "200 OK\n"
-    step_into = true
-  elseif command == "OVER" or command == "OUT" then
+    
+  elseif command == "OVER" then
     status = 9
     response = "200 OK\n"
-    step_over = true
+    
+  elseif command == "OUT" then
+    status = 10
+    response = "200 OK\n"
+    
   elseif command == "BASEDIR" then
     local _, _, dir = string.find(line, "^[A-Z]+%s+(.+)%s*$")
     if dir then
       basedir = string.gsub (dir, "/", fs.dir_sep)
-      status = 10
+      status = 11
       response = "200 OK\n"
     else
       response = "400 Bad Request\n"
     end
   elseif command == "SUSPEND" then
     -- do nothing; it already fulfilled its role
-    status = 11
-  elseif command == "DONE" then
     status = 12
+  elseif command == "DONE" then
+    status = 13
     --coroyield("done")
     --return -- done with all the debugging
   elseif command == "STACK" then
@@ -176,7 +180,7 @@ if line then
 
       local ok, res = pcall(mobdebug.dump, vars, params)
       if ok then
-        status = 13
+        status = 14
         response = "200 OK " .. tostring(res) .. "\n"
       else
         response = "401 Error in Execution " .. tostring(#res) .. "\n" ..  res
@@ -186,13 +190,13 @@ if line then
     local _, _, stream, mode = string.find(line, "^[A-Z]+%s+(%w+)%s+([dcr])%s*$")
     if stream and mode and stream == "stdout" then
       
-      status = 14
+      status = 15
       response = "200 OK\n"
     else
       response = "400 Bad Request\n"
     end
   elseif command == "EXIT" then
-    status = 15
+    status = 16
     response = "200 OK\n"
     --coroyield("exit")
   else

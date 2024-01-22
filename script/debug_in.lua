@@ -1,4 +1,6 @@
 cz_debug_breakpoints = {}
+cz_debug_basedir = ""
+cz_debug_stack = {}
 
 cz_debug_serpent = (function() ---- include Serpent module for serialization
 local n, v = "serpent", "0.302" -- (C) 2012-18 Paul Kulchenko; MIT License
@@ -162,6 +164,84 @@ function cz_debug_stringify_results(params, status, ...)
   return pcall(cz_debug_serpent.dump, t, {sparse = false})
 end
 
+local function cz_debug_removebasedir(path, basedir)
+  return string.gsub(path, '^'.. string.gsub(basedir, '([%(%)%.%%%+%-%*%?%[%^%$%]])','%%%1'), '')
+end
+
+function cz_debug_get_stack()
+  local function vars(f)
+    local func = debug.getinfo(f, "f").func
+    local i = 1
+    local locals = {}
+    -- get locals
+    while true do
+      local name, value = debug.getlocal(f, i)
+      if not name then break end
+      if string.sub(name, 1, 1) ~= '(' then
+        locals[name] = {value, select(2,pcall(tostring,value))}
+      end
+      i = i + 1
+    end
+    -- get varargs (these use negative indices)
+    i = 1
+    while true do
+      local name, value = debug.getlocal(f, -i)
+      if not name then break end
+      locals[name:gsub("%)$"," "..i..")")] = {value, select(2,pcall(tostring,value))}
+      i = i + 1
+    end
+    -- get upvalues
+    i = 1
+    local ups = {}
+    while func and debug.getupvalue do -- check for func as it may be nil for tail calls
+      local name, value = debug.getupvalue(func, i)
+      if not name then break end
+      ups[name] = {value, select(2,pcall(tostring,value))}
+      i = i + 1
+    end
+    return locals, ups
+  end
+
+  cz_debug_stack = {}
+  for i = 2, 100 do
+    local source = debug.getinfo(i, "Snl")
+    if not source then break end
+
+    local src = source.source
+    --if src:find("@") == 1 then
+      src = src:sub(2):gsub("\\", "/")
+      if src:find("%./") == 1 then src = src:sub(3) end
+    --end
+
+    table.insert(cz_debug_stack, { -- remove basedir from source
+      {source.name, cz_debug_removebasedir(src, cz_debug_basedir),
+       source.linedefined,
+       source.currentline,
+       source.what, source.namewhat, source.source},
+      vars(i+1)})
+  end
+end
+
+
+function cz_debug_stack_send (cz_debug_line)
+  local cz_debug_response = "400 Bad Request\n"
+  -- extract any optional parameters
+  local cz_debug_params = string.match(cz_debug_line, "--%s*(%b{})%s*$")
+  
+  local cz_debug_pfunc = cz_debug_params and load("return ".. cz_debug_params) -- use internal function
+  cz_debug_params = cz_debug_pfunc and cz_debug_pfunc()
+  cz_debug_params = (type(cz_debug_params) == "table" and cz_debug_params or {})
+  if cz_debug_params.nocode == nil then cz_debug_params.nocode = true end
+  if cz_debug_params.sparse == nil then cz_debug_params.sparse = false end
+  
+  cz_debug_params.maxlevel = cz_debug_params.maxlevel + 1
+  
+  local cz_debug_status, cz_debug_res = pcall(cz_debug_serpent.dump, cz_debug_stack, cz_debug_params)
+  
+  cz_debug_response = "200 OK " .. tostring(cz_debug_res) .. "\n"
+  
+  return cz_debug_response
+end
 
 function cz_debug_exec (cz_debug_line)
   local cz_debug_response = "400 Bad Request\n"
@@ -171,17 +251,12 @@ function cz_debug_exec (cz_debug_line)
   _, _, cz_debug_chunk = string.find(cz_debug_line, "^[A-Z]+%s+(.+)$")
   if cz_debug_chunk then
     cz_debug_chunk = cz_debug_chunk:gsub("\r?".. SAFEWS, "\n") -- convert safe whitespace back to new line
-    --print (cz_debug_chunk)
-    
-    
     local cz_debug_pfunc = cz_debug_params and load("return ".. cz_debug_params) -- use internal function
     cz_debug_params = cz_debug_pfunc and cz_debug_pfunc()
-    --print (cz_debug_params)
     
     cz_debug_pfunc = load(cz_debug_chunk) -- use internal function
     if type(cz_debug_pfunc) == 'function' then
       local cz_debug_status, cz_debug_res = cz_debug_stringify_results(cz_debug_params, true, cz_debug_pfunc())
-      --print (res)
       cz_debug_response = "200 OK " .. tostring(#cz_debug_res) .. "\n" .. cz_debug_res
     end
   end

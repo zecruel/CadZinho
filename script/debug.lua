@@ -158,34 +158,9 @@ if line then
     --coroyield("done")
     --return -- done with all the debugging
   elseif command == "STACK" then
-    -- first check if we can execute the stack command
-    -- as it requires yielding back to debug_hook it cannot be executed
-    -- if we have not seen the hook yet as happens after start().
-    -- in this case we simply return an empty result
-    local vars, ev = {}
-    if seen_hook then
-      ev, vars = coroyield("stack")
-    end
-    if ev and ev ~= events.STACK then
-      response = "401 Error in Execution " .. tostring(#vars) .. "\n" .. vars
-    else
-      local params = string.match(line, "--%s*(%b{})%s*$")
-      local pfunc = params and loadstring("return "..params) -- use internal function
-      params = pfunc and pfunc()
-      params = (type(params) == "table" and params or {})
-      if params.nocode == nil then params.nocode = true end
-      if params.sparse == nil then params.sparse = false end
-      -- take into account additional levels for the stack frames and data management
-      if tonumber(params.maxlevel) then params.maxlevel = tonumber(params.maxlevel)+4 end
-
-      local ok, res = pcall(mobdebug.dump, vars, params)
-      if ok then
-        status = 14
-        response = "200 OK " .. tostring(res) .. "\n"
-      else
-        response = "401 Error in Execution " .. tostring(#res) .. "\n" ..  res
-      end
-    end
+    --response = '200 OK do local _={"nil"};return _;end\n'
+    status = 14
+    
   elseif command == "OUTPUT" then
     local _, _, stream, mode = string.find(line, "^[A-Z]+%s+(%w+)%s+([dcr])%s*$")
     if stream and mode and stream == "stdout" then

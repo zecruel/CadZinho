@@ -277,7 +277,7 @@ int debug_client_thread(void* data){
                     printf("error: %s\n", lua_tostring(script->L, -1));
                     lua_pop(script->L, 1); /* pop error message from Lua stack */
                   }
-                } 
+                }
                 else if (typ != LUA_TNIL) lua_pop (script->L, 1);
                 
                 lua_pop (client_script.T, 1);
@@ -295,30 +295,31 @@ int debug_client_thread(void* data){
               
               int chunk_len = strlen(chunk);
               
-              char * safe_chunk = (char *) malloc (chunk_len + 1);
+              //char * safe_chunk = (char *) malloc (chunk_len + 1);
               
-              if (safe_chunk) {
-                strcpy(safe_chunk, chunk);
+              //if (safe_chunk) {
+                //strcpy(safe_chunk, chunk);
                 
-                char *safe_name = NULL;
+                //char *safe_name = NULL;
                 int ty = lua_getglobal (client_script.T, "name");
                 if (ty == LUA_TSTRING) {
                   name = (char*) lua_tostring(client_script.T, -1);
-                  safe_name = (char *) malloc (strlen(name) + 1);
-                  if (safe_name) strcpy (safe_name, name);
+                  //safe_name = (char *) malloc (strlen(name) + 1);
+                  //if (safe_name) strcpy (safe_name, name);
                 }
                 if (ty != LUA_TNIL) lua_pop(client_script.T, 1);
                 
-                char *safe_basedir = NULL;
+                //char *safe_basedir = NULL;
                 ty = lua_getglobal (client_script.T, "basedir");
                 if (ty == LUA_TSTRING) {
                   basedir = (char*) lua_tostring(client_script.T, -1);
-                  safe_basedir = (char *) malloc (strlen(basedir) + 1);
-                  if (safe_basedir) strcpy (safe_basedir, basedir);
-                } basedir = (char*) lua_tostring(client_script.T, -1);
+                  //safe_basedir = (char *) malloc (strlen(basedir) + 1);
+                  //if (safe_basedir) strcpy (safe_basedir, basedir);
+                } //basedir = (char*) lua_tostring(client_script.T, -1);
                 if (ty != LUA_TNIL) lua_pop(client_script.T, 1);
                 
-                if (ready = gui_script_init_remote (gui, safe_basedir, safe_name, safe_chunk) == 1){
+                if (//ready = gui_script_init_remote (gui, safe_basedir, safe_name, safe_chunk) == 1){
+                  ready = gui_script_init_remote (gui, basedir, name, chunk) == 1){
                   gui->debug_step = 1;
                   running = 1;
                   gui->debug_level = 0;
@@ -351,9 +352,9 @@ int debug_client_thread(void* data){
                     gui->debug_level = 0;
                     gui->debug_step_level = 0;
                   }
-                  free(safe_chunk);
-                  if (safe_name) free(safe_name);
-                  if (safe_basedir) free(safe_basedir);
+                  //free(safe_chunk);
+                  //if (safe_name) free(safe_name);
+                  //if (safe_basedir) free(safe_basedir);
                 }
                 
                 /* execute pending commands */
@@ -384,7 +385,7 @@ int debug_client_thread(void* data){
                   lua_newtable (client_script.T);
                   lua_setglobal (client_script.T, "queue_com");
                 }
-              }
+              //}
             }
             else if (typ != LUA_TNIL) lua_pop(client_script.T, 1);
             status = 0;
@@ -450,6 +451,7 @@ int debug_client_thread(void* data){
               running = 3;
               
               lua_getglobal(script->T, "cz_main_func");
+              script->time = clock();
               script->n_results = 0; /* for Lua 5.4*/
               script->status = lua_resume(script->T, NULL, 0, &script->n_results); /* start thread */
               if (script->status != LUA_OK && script->status != LUA_YIELD){
@@ -486,6 +488,7 @@ int debug_client_thread(void* data){
               running = 3;
               
               lua_getglobal(script->T, "cz_main_func");
+              script->time = clock();
               script->n_results = 0; /* for Lua 5.4*/
               script->status = lua_resume(script->T, NULL, 0, &script->n_results); /* start thread */
               if (script->status != LUA_OK && script->status != LUA_YIELD){
@@ -523,6 +526,7 @@ int debug_client_thread(void* data){
               running = 3;
               
               lua_getglobal(script->T, "cz_main_func");
+              script->time = clock();
               script->n_results = 0; /* for Lua 5.4*/
               script->status = lua_resume(script->T, NULL, 0, &script->n_results); /* start thread */
               if (script->status != LUA_OK && script->status != LUA_YIELD){
@@ -566,6 +570,39 @@ int debug_client_thread(void* data){
             status = 0;
           }
           else if (status == 14) { /* STACK */
+            if (script->status == LUA_YIELD && 
+              ready == 1 && script->T)
+            {
+              if (lua_getglobal (client_script.T, "line") != LUA_TNIL){
+                const char * line = lua_tostring (client_script.T, -1);
+                
+                
+                int typ = lua_getglobal(script->L, "cz_debug_stack_send");
+                
+                if (typ == LUA_TFUNCTION){
+                  lua_pushstring (script->L, line);
+                  if (lua_pcall (script->L, 1, 1, 0) == LUA_OK) {
+                    const char *response = lua_tostring(script->L, -1);
+                    if (ok = SDLNet_TCP_Send(sd, (void *)response, strlen(response)) < strlen(response)) { 
+                      snprintf(gui->log_msg, 63, _l("DB client error: Send data to server"));
+                      gui->debug_connected = 0;
+                    }
+                  
+                    lua_pop (script->L, 1);
+                  }
+                  else {
+                    /* execution error */
+                    //snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(script->L, -1));
+                    //nk_str_append_str_char(&gui->debug_edit.string, msg);
+                    printf("error: %s\n", lua_tostring(script->L, -1));
+                    lua_pop(script->L, 1); /* pop error message from Lua stack */
+                  }
+                }
+                else if (typ != LUA_TNIL) lua_pop (script->L, 1);
+                
+                lua_pop (client_script.T, 1);
+              }
+            }
             
             status = 0;
           }
@@ -707,7 +744,7 @@ void debug_hook(lua_State *L, lua_Debug *ar){
       lua_pushinteger(L, ar->currentline);
       if (lua_pcall (L, 2, 1, 0) == LUA_OK) {
         if (lua_type (L, -1) == LUA_TBOOLEAN) {
-          printf("break\n");
+          //printf("break\n");
           gui->debug_step = 1;
         }
         
@@ -732,6 +769,28 @@ void debug_hook(lua_State *L, lua_Debug *ar){
       lua_setglobal(L, "cz_debug_msg");
       //printf(msg);
       //printf("source = %s\nlen = %d\n", ar->source, ar->srclen);
+      
+      
+      int typ = lua_getglobal(L, "cz_debug_get_stack");
+      
+      if (typ == LUA_TFUNCTION){
+        if (lua_pcall (L, 0, 0, 0) == LUA_OK) {
+          printf("stack\n");
+        }
+        else {
+          /* execution error */
+          //snprintf(msg, DXF_MAX_CHARS-1, "error: %s", lua_tostring(L, -1));
+          //nk_str_append_str_char(&gui->debug_edit.string, msg);
+          printf("error: %s\n", lua_tostring(L, -1));
+          lua_pop(L, 1); /* pop error message from Lua stack */
+        }
+      }
+      else if (typ != LUA_TNIL) lua_pop (L, 1);
+      
+      
+      
+      
+      
       
       lua_yield (L, 0);
     }
@@ -1151,13 +1210,21 @@ int gui_script_init_remote (gui_obj *gui, char *basedir, char *fname, char *chun
   
   script->status = luaL_loadfile(script->L, "C:\\Users\\c055897\\AppData\\Roaming\\CadZinho\\CadZinho\\script\\debug_in.lua");
   if ( script->status != LUA_OK){
+    printf("error: %s\n", lua_tostring(script->L, -1));
+    lua_pop(script->L, 1); /* pop error message from Lua stack */
     return 0;
   }
   if (lua_pcall (script->L, 0, 0, 0) != LUA_OK) {
+    printf("error: %s\n", lua_tostring(script->L, -1));
+    lua_pop(script->L, 1); /* pop error message from Lua stack */
     return 0;
   }
   
-  if (basedir) {    
+  if (basedir) {
+    
+    lua_pushstring(script->L, basedir);
+    lua_setglobal(script->L, "cz_debug_basedir");
+    
     /* adjust package path for "require" in script file*/
     luaL_Buffer b;  /* to store parcial strings */
     luaL_buffinit(T, &b); /* init the Lua buffer */

@@ -1006,6 +1006,7 @@ int gui_script_prepare (gui_obj *gui, struct script_obj *script) {
 		{"stop_dynamic", script_stop_dynamic},
 		{"ent_draw", script_ent_draw},
 		
+    {"svg_curves", script_svg_curves},
     {"svg_image", script_svg_image},
     
     {"unique_id", script_unique_id},

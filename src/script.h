@@ -174,6 +174,7 @@ int script_fs_chdir (lua_State *L);
 int script_fs_cwd (lua_State *L);
 int script_fs_script_path(lua_State *L);
 
+int script_svg_curves(lua_State *L);
 int script_svg_image(lua_State *L);
 int script_rast_image_gc(lua_State *L);
 

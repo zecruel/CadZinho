@@ -7675,6 +7675,95 @@ int script_sqlite_close(lua_State *L){
 
 /* ------------ SVG Image ------------- */
 
+
+/* Get raw data of SVG image */
+/* given parameters:
+	- SVG data, as string
+returns:
+	- a table with SVG data, or nil if fail
+*/
+int script_svg_curves(lua_State *L){
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "image: invalid number of arguments");
+		lua_error(L);
+	}
+	luaL_argcheck(L, lua_isstring(L, 1), 1, "string expected");
+	
+  size_t len = 0;
+  const char *data = lua_tolstring(L, 1, &len);
+  char *svg_data = malloc(len + 1);
+  
+  /* init image */
+  NSVGimage *curves =NULL;
+  if (svg_data){  /* get vectorized data from SVG */
+    strncpy(svg_data, data, len); /* copy string to allow modification */
+    curves = nsvgParse(svg_data, "px", 96.0f);
+    free(svg_data);
+  }
+  if (curves){ /* success on parse */
+    if (curves->shapes){
+    
+      lua_newtable(L); /* main table to store data */
+      
+      /* default width and height from SVG */
+      lua_pushstring(L, "width");
+      lua_pushinteger(L, curves->width);
+      lua_rawset(L, -3);
+      
+      lua_pushstring(L, "height");
+      lua_pushinteger(L, curves->height);
+      lua_rawset(L, -3);
+      
+      NSVGshape* shape;
+      NSVGpath* path;
+      
+      int n_shapes = 1, n_paths;
+      
+      for (shape = curves->shapes; shape != NULL; shape = shape->next) {
+        lua_newtable(L); /* table to store shape data */
+        lua_pushstring(L, "strokeWidth");
+        lua_pushnumber(L, shape->strokeWidth);
+        lua_rawset(L, -3);
+        
+        n_paths = 1;
+        for (path = shape->paths; path != NULL; path = path->next) {
+          lua_newtable(L); /* table to store path data */
+          lua_pushstring(L, "closed");
+          lua_pushboolean(L, path->closed);
+          lua_rawset(L, -3);
+          /* control points */
+          int i;
+          for (i = 0; i < path->npts; i ++){
+            lua_newtable(L); /* table to store control point */
+            lua_pushstring(L, "x");
+            lua_pushnumber(L, path->pts[i*2]);
+            lua_rawset(L, -3);
+            lua_pushstring(L, "y");
+            lua_pushnumber(L, curves->height - path->pts[i*2+1]);
+            lua_rawset(L, -3);
+            lua_rawseti(L, -2, i+1); /*store point in path table */
+          }
+          lua_rawseti(L, -2, n_paths); /*store in shape table */
+          n_paths++;
+        }
+        lua_rawseti(L, -2, n_shapes); /*store in main table */
+        n_shapes++;
+      }
+      
+      
+      nsvgDelete(curves);
+    }
+  }
+	else{
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	return 1;
+}
+
 /* Rasterize a SVG image */
 /* given parameters:
 	- SVG data, as string

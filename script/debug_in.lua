@@ -196,7 +196,9 @@ function cz_debug_get_stack()
     while func and debug.getupvalue do -- check for func as it may be nil for tail calls
       local name, value = debug.getupvalue(func, i)
       if not name then break end
-      ups[name] = {value, select(2,pcall(tostring,value))}
+      if string.sub(name, 1, 4) ~= '_ENV' then
+        ups[name] = {value, select(2,pcall(tostring,value))}
+      end
       i = i + 1
     end
     return locals, ups

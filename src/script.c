@@ -6981,7 +6981,16 @@ int script_yxml_read (lua_State *L) {
 	
 	luaL_argcheck(L, lua_isstring(L, 2), 2, "string expected");
 	
-	luaL_Buffer b;  /* to store parcial strings */
+  /* buffer to store parcial strings */
+	static struct txt_buf buf;
+	struct Mem_buffer *mem1 = manage_buffer(PDF_BUF_SIZE + 1, BUF_GET, 2);
+	if (!mem1) {
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	buf.data = mem1->buffer;
+	buf.pos = 0; buf.data[0] = 0; /* init buffer */
+  
 	int content = 0, attr = 0, attrval = 0;
 	
 	char *doc = (char*) lua_tostring(L, 2);  /*get document to parse */
@@ -7012,7 +7021,7 @@ int script_yxml_read (lua_State *L) {
 				lua_pushstring(L, "id");
 				lua_pushstring(L, state->x->elem);
 				lua_rawset(L, -3);
-				/*reset flags */
+				/* reset flags */
 				content = 0;
 				attr = 0;
 				attrval = 0;
@@ -7031,7 +7040,7 @@ int script_yxml_read (lua_State *L) {
 				}
 				/* store content string with key "cont" in element owner table */
 				if (content){
-					luaL_pushresult(&b); /* finalize string and put on Lua stack */
+          lua_pushstring(L, buf.data);
 					if (lua_istable(L, -2)){
 						lua_pushstring(L, "cont");
 						lua_insert (L, lua_gettop(L) - 1); /* setup Lua stack to next operation */
@@ -7065,10 +7074,12 @@ int script_yxml_read (lua_State *L) {
 							lua_rawset(L, -3);
 						}
 					}
-					luaL_buffinit(L, &b); /* init the Lua buffer */
+					
+          buf.pos = 0; buf.data[0] = 0; /* zero buffer */
 				}
 				/* store parcial string */
-				luaL_addstring(&b, state->x->data);
+        buf.pos +=snprintf(buf.data + buf.pos,
+          PDF_BUF_SIZE - buf.pos, state->x->data);
 				break;
 			case YXML_ATTRSTART:
 				if (!attr){ /* init attributes */
@@ -7079,17 +7090,19 @@ int script_yxml_read (lua_State *L) {
 			case YXML_ATTRVAL:
 				if (!attrval){ /*init attribute value */
 					attrval = 1;
-					luaL_buffinit(L, &b); /* init the Lua buffer */
+					
+          buf.pos = 0; buf.data[0] = 0; /* zero buffer */
 				}
 				/* store parcial string */
-				luaL_addstring(&b, state->x->data);
+        buf.pos +=snprintf(buf.data + buf.pos,
+          PDF_BUF_SIZE - buf.pos, state->x->data);
 				break;
 			case YXML_ATTREND:
 				/* Now we have a full attribute. Its name is in x->attr, 
 				and its value is in Lua buffer "b". */
 				if (attrval){
 					attrval = 0;
-					luaL_pushresult(&b); /* finalize string and put on Lua stack */
+          lua_pushstring(L, buf.data);
 					if (lua_istable(L, -2)){
 						/* store in its owner table, where its name is the key */
 						lua_pushstring(L, state->x->attr);
@@ -7100,6 +7113,8 @@ int script_yxml_read (lua_State *L) {
 				break;
 		}
 	}
+  manage_buffer(0, BUF_RELEASE, 2);
+  
 	/* end parsing */
 	yxml_eof(state->x);
 	/* restart parser */

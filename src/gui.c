@@ -1970,6 +1970,8 @@ int gui_start(gui_obj *gui){
   gui->debug_thread_id = NULL;
   strncpy(gui->debug_host, "127.0.0.1", DXF_MAX_CHARS);
   strncpy(gui->debug_port, "8172", 10);
+  gui->debug_out[0] = 0;
+  gui->debug_out_pos = 0;
   gui->debug_connected = 0;
   gui->debug_step = 0;
   gui->debug_pause = 0;

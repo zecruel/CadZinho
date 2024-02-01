@@ -128,6 +128,15 @@ int set_timeout (lua_State *L) {
 	return 1;
 }
 
+/* print to internal debug buffer */
+void print_internal (void *data, char* str){
+  gui_obj *gui = (gui_obj *) data;
+  if (gui->debug_out_pos < DEBUG_OUT){
+    gui->debug_out_pos += snprintf(gui->debug_out + gui->debug_out_pos,
+      DEBUG_OUT - gui->debug_out_pos, str);
+  }
+}
+
 /* equivalent to a "print" lua function, that outputs to a text edit widget */
 int debug_print (lua_State *L) {
 	/* get gui object from Lua instance */
@@ -151,43 +160,57 @@ int debug_print (lua_State *L) {
 		type = lua_type(L, i); /* identify Lua variable type */
 		
 		/* print variables separator (4 spaces) */
-		if (i > 1) nk_str_append_str_char(&gui->debug_edit.string, "    ");
-		
+		if (i > 1) {
+      nk_str_append_str_char(&gui->debug_edit.string, "    ");
+      print_internal (gui, "    ");
+    }
+    
 		switch(type) {
 			case LUA_TSTRING: {
-				snprintf(msg, DXF_MAX_CHARS - 1, "%s", lua_tostring(L, i));
+        char *str = (char*) lua_tostring(L, i);
+				snprintf(msg, DXF_MAX_CHARS - 1, "%s", str);
+        print_internal (gui, str);
 				break;
 			}
 			case LUA_TNUMBER: {
 			/* LUA_NUMBER may be double or integer */
 				snprintf(msg, DXF_MAX_CHARS - 1, "%.9g", lua_tonumber(L, i));
+        print_internal (gui, msg);
 				break;
 			}
 			case LUA_TTABLE: {
 				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_topointer(L, i));
+        print_internal (gui, msg);
 				break;
 			}
 			case LUA_TFUNCTION: {
 				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_topointer(L, i));
-				break;		}
+        print_internal (gui, msg);
+				break;
+      }
 			case LUA_TUSERDATA: {
 				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_touserdata(L, i));
+        print_internal (gui, msg);
 				break;
 			}
 			case LUA_TLIGHTUSERDATA: {
 				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_touserdata(L, i));
+        print_internal (gui, msg);
 				break;
 			}
 			case LUA_TBOOLEAN: {
 				snprintf(msg, DXF_MAX_CHARS - 1, "%s", lua_toboolean(L, i) ? "true" : "false");
+        print_internal (gui, msg);
 				break;
 			}
 			case LUA_TTHREAD: {
 				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_topointer(L, i));
+        print_internal (gui, msg);
 				break;
 			}
 			case LUA_TNIL: {
 				snprintf(msg, DXF_MAX_CHARS - 1, "nil");
+        print_internal (gui, msg);
 				break;
 			}
 		}
@@ -195,6 +218,7 @@ int debug_print (lua_State *L) {
 	}
 	/*enter a new line*/
 	nk_str_append_str_char(&gui->debug_edit.string, "\n");
+  print_internal (gui, "\n");
 	
 	lua_pushboolean(L, 1); /* return success */
 	return 1;
@@ -6983,7 +7007,7 @@ int script_yxml_read (lua_State *L) {
 	
   /* buffer to store parcial strings */
 	static struct txt_buf buf;
-	struct Mem_buffer *mem1 = manage_buffer(PDF_BUF_SIZE + 1, BUF_GET, 2);
+	struct Mem_buffer *mem1 = manage_buffer(PDF_BUF_SIZE + 1, BUF_GET, 1);
 	if (!mem1) {
 		lua_pushboolean(L, 0); /* return fail */
 		return 1;
@@ -7113,7 +7137,7 @@ int script_yxml_read (lua_State *L) {
 				break;
 		}
 	}
-  manage_buffer(0, BUF_RELEASE, 2);
+  manage_buffer(0, BUF_RELEASE, 1);
   
 	/* end parsing */
 	yxml_eof(state->x);

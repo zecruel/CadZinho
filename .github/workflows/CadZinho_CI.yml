@@ -75,7 +75,10 @@ jobs:
         sudo apt-get install --yes libsdl2-dev libsdl2-net-dev libglvnd-dev libglew-dev fuse libfuse2 libarchive-tools
         sudo gem install fpm
     - name: download lua source
-      run: curl -R -O http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz
+      uses: suisei-cn/actions-download-file@v1.3.0
+      with:
+        url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
+        target: .
     - name: extract lua
       run: tar zxf lua-${{ env.LUA_V }}.tar.gz
     - name: remove main in lua
@@ -199,7 +202,10 @@ jobs:
     - name: configure
       run: brew install sdl2 sdl2_net lua mesa-glu glew dylibbundler
     - name: download lua source
-      run: curl -R -O http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz
+      uses: suisei-cn/actions-download-file@v1.3.0
+      with:
+        url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
+        target: .
     - name: extract lua
       run: tar zxf lua-${{ env.LUA_V }}.tar.gz
     - name: remove main in lua
@@ -251,7 +257,10 @@ jobs:
             mingw64/mingw-w64-x86_64-glew
     - uses: actions/checkout@v3
     - name: download lua source
-      run: curl -R -O http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz
+      uses: suisei-cn/actions-download-file@v1.3.0
+      with:
+        url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
+        target: .
     - name: extract lua
       run: tar zxf lua-${{ env.LUA_V }}.tar.gz
     - name: remove main in lua
@@ -304,7 +313,10 @@ jobs:
     - uses: actions/checkout@v3
     
     - name: download lua source
-      run: curl -R -O http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz
+      uses: suisei-cn/actions-download-file@v1.3.0
+      with:
+        url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
+        target: .
     - name: extract lua
       run: tar zxf lua-${{ env.LUA_V }}.tar.gz
     - name: remove main in lua
@@ -416,7 +428,10 @@ jobs:
     - name: configure SDK
       uses: mymindstorm/setup-emsdk@v12
     - name: download lua source
-      run: curl -R -O http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz
+      uses: suisei-cn/actions-download-file@v1.3.0
+      with:
+        url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
+        target: .
     - name: extract lua
       run: tar zxf lua-${{ env.LUA_V }}.tar.gz
     - name: remove main in lua

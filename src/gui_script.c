@@ -742,8 +742,23 @@ void debug_hook(lua_State *L, lua_Debug *ar){
     gui->debug_level = i;
     /* ****** */
     
-    /* check for breakpoints directly in debugged program */
+    /* check for breakpoints */
     lua_getinfo (L, "Sl", ar); /* fill debug informations */
+    /* sweep the breakpoints list */
+		for (i = 0; i < gui->num_brk_pts; i++){
+			/* verify if break conditions matchs with current line */
+			if ((ar->currentline == gui->brk_pts[i].line) && gui->brk_pts[i].enable){	
+				/* get the source name */
+				char source[DXF_MAX_CHARS];
+				strncpy(source, get_filename(ar->source), DXF_MAX_CHARS - 1);
+				
+				if (strcmp(source, gui->brk_pts[i].source) == 0){
+					/* pause execution*/
+					gui->debug_step = 1;
+				}
+			}
+    }
+		/* check for breakpoints directly in debugged program */
     int typ = lua_getglobal (L, "cz_debug_hasb");
     if (typ == LUA_TFUNCTION){
       const char p[] = {DIR_SEPARATOR, 0};

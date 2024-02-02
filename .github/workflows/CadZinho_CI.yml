@@ -4,13 +4,14 @@ on: workflow_dispatch
 
 env:
   MAJOR: 0
-  MINOR: 4
-  MAN: 1
-  YEAR: 2023
+  MINOR: 5
+  MAN: 0
+  YEAR: 2024
   LUA_V: 5.4.6
-  MESA_V: 23.1.1
+  MESA_V: 23.3.5
   GLEW_V: 2.2.0
-  SDL_V: 2.26.5
+  SDL_V: 2.30.0
+  SDL_NET_V: 2.2.0
   
 jobs:
   up-version:
@@ -71,7 +72,7 @@ jobs:
     - name: configure
       run: |
         sudo apt-get update
-        sudo apt-get install --yes libsdl2-dev libglvnd-dev libglew-dev fuse libfuse2 libarchive-tools
+        sudo apt-get install --yes libsdl2-dev libsdl2-net-dev libglvnd-dev libglew-dev fuse libfuse2 libarchive-tools
         sudo gem install fpm
     - name: download lua source
       run: curl -R -O http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz
@@ -103,7 +104,7 @@ jobs:
           --license MIT \
           --version $MAJOR.$MINOR.$MAN \
           --architecture native \
-          --depends sdl2 --depends glew \
+          --depends sdl2 --depends glew --depends sdl2-net \
           --description "CadZinho - Minimalist computer aided design (CAD) software" \
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
@@ -118,7 +119,7 @@ jobs:
           --license MIT \
           --version $MAJOR.$MINOR.$MAN \
           --architecture native \
-          --depends sdl2 --depends glew \
+          --depends sdl2 --depends glew --depends sdl2_net \
           --description "CadZinho - Minimalist computer aided design (CAD) software" \
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
@@ -132,7 +133,7 @@ jobs:
           --license MIT \
           --version $MAJOR.$MINOR.$MAN \
           --architecture native \
-          --depends sdl2 --depends glew \
+          --depends sdl2 --depends glew --depends sdl2_net \
           --description "CadZinho - Minimalist computer aided design (CAD) software" \
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
@@ -196,7 +197,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: configure
-      run: brew install sdl2 lua mesa-glu glew dylibbundler
+      run: brew install sdl2 sdl2_net lua mesa-glu glew dylibbundler
     - name: download lua source
       run: curl -R -O http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz
     - name: extract lua
@@ -246,6 +247,7 @@ jobs:
             p7zip
             mingw-w64-x86_64-toolchain
             mingw64/mingw-w64-x86_64-SDL2
+            mingw64/mingw-w64-x86_64-SDL2_net
             mingw64/mingw-w64-x86_64-glew
     - uses: actions/checkout@v3
     - name: download lua source
@@ -327,10 +329,19 @@ jobs:
       with:
         url: "https://github.com/libsdl-org/SDL/releases/download/release-${{ env.SDL_V }}/SDL2-devel-${{ env.SDL_V }}-VC.zip"
         target: .
+    - name: Download SDL2_net
+      uses: suisei-cn/actions-download-file@v1.3.0
+      with:
+        url: "https://github.com/libsdl-org/SDL_net/releases/download/release-${{ env.SDL_NET_V }}/SDL2-devel-${{ env.SDL_NET_V }}-VC.zip"
+        target: .
     - name: Unzip SDL2
       shell: cmd
       run: |
         7z x -y SDL2-devel-${{ env.SDL_V }}-VC.zip
+    - name: Unzip SDL2_net
+      shell: cmd
+      run: |
+        7z x -y SDL2-devel-${{ env.SDL_NET_V }}-VC.zip
     - name: download mesa3d
       uses: suisei-cn/actions-download-file@v1.3.0
       with:
@@ -346,6 +357,7 @@ jobs:
         mkdir ./CadZinho
         cp ./SDL2-${{ env.SDL_V }}/include/* ./glew-${{ env.GLEW_V }}/include/SDL2/
         mv ./SDL2-${{ env.SDL_V }} ./SDL2
+        mv ./SDL2_net-${{ env.SDL_NET_V }} ./SDL2
         mv ./glew-${{ env.GLEW_V }} ./glew
         ls -R ./glew/
         

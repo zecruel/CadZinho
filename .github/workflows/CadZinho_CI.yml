@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
       - name: Update version in information files
         run: |
           sed -i -e "/CZ_VERSION/s/[[:digit:]]\{4\}/$YEAR/" \
@@ -68,14 +68,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
     - name: configure
       run: |
         sudo apt-get update
         sudo apt-get install --yes libsdl2-dev libsdl2-net-dev libglvnd-dev libglew-dev fuse libfuse2 libarchive-tools
         sudo gem install fpm
     - name: download lua source
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
         target: .
@@ -143,12 +143,12 @@ jobs:
         cd ..
         mv ./pkg/*.zst ./
     - name: download AppImageTool
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
         target: .
     - name: download AppImage asset
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64"
         target: .
@@ -182,7 +182,7 @@ jobs:
         zip -r linux *
     - run: cp ./linux/CadZinho/linux.zip ./
     - name: Upload the result
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: uploads
         path: |
@@ -198,11 +198,11 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
     - name: configure
       run: brew install sdl2 sdl2_net lua mesa-glu glew dylibbundler
     - name: download lua source
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
         target: .
@@ -227,7 +227,7 @@ jobs:
         cd macos
         zip -r macos ./CadZinho.app/ LICENSE.txt
     - name: Upload the result
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: uploads
         path: macos/macos.zip
@@ -255,9 +255,9 @@ jobs:
             mingw64/mingw-w64-x86_64-SDL2
             mingw64/mingw-w64-x86_64-SDL2_net
             mingw64/mingw-w64-x86_64-glew
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
     - name: download lua source
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
         target: .
@@ -276,7 +276,7 @@ jobs:
     - name: make
       run: make
     - name: download mesa3d
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "https://github.com/pal1000/mesa-dist-win/releases/download/${{ env.MESA_V }}/mesa3d-${{ env.MESA_V }}-release-mingw.7z"
         target: .
@@ -300,7 +300,7 @@ jobs:
     - name: create archive
       run: 7z a windows.zip CadZinho
     - name: Upload the result
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: uploads
         path: windows.zip
@@ -310,10 +310,10 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
     
     - name: download lua source
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
         target: .
@@ -328,7 +328,7 @@ jobs:
     - name: copy lua sources 
       run: cp ./lua-${{ env.LUA_V }}/src/* ./src/
     - name: download glew
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "https://github.com/nigels-com/glew/releases/download/glew-${{ env.GLEW_V }}/glew-${{ env.GLEW_V }}-win32.zip"
         target: .
@@ -337,12 +337,12 @@ jobs:
       run: |
         7z x -y glew-${{ env.GLEW_V }}-win32.zip
     - name: Download SDL2
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "https://github.com/libsdl-org/SDL/releases/download/release-${{ env.SDL_V }}/SDL2-devel-${{ env.SDL_V }}-VC.zip"
         target: .
     - name: Download SDL2_net
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "https://github.com/libsdl-org/SDL_net/releases/download/release-${{ env.SDL_NET_V }}/SDL2_net-devel-${{ env.SDL_NET_V }}-VC.zip"
         target: .
@@ -355,7 +355,7 @@ jobs:
       run: |
         7z x -y SDL2_net-devel-${{ env.SDL_NET_V }}-VC.zip
     - name: download mesa3d
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "https://github.com/pal1000/mesa-dist-win/releases/download/${{ env.MESA_V }}/mesa3d-${{ env.MESA_V }}-release-msvc.7z"
         target: .
@@ -376,7 +376,7 @@ jobs:
     - name: get make file and resources
       run: cp windows/* ./
 
-    - uses: ilammy/msvc-dev-cmd@v1.12.1
+    - uses: ilammy/msvc-dev-cmd@v1.13.0
     - name: Build using CL.EXE
       run: nmake WIN64=1 -f Makefile.msvc
     - run: |
@@ -393,7 +393,7 @@ jobs:
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho
     - name: download wix3
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip"
         target: .
@@ -410,7 +410,7 @@ jobs:
         ../light.exe cadzinho.wixobj
         mv cadzinho.msi ../
     - name: Upload the result
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: uploads
         path: |
@@ -424,11 +424,11 @@ jobs:
 
     steps:
     
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
     - name: configure SDK
-      uses: mymindstorm/setup-emsdk@v12
+      uses: mymindstorm/setup-emsdk@v14
     - name: download lua source
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
         target: .
@@ -454,7 +454,7 @@ jobs:
       run: |
         zip -r emscripten cadzinho.js cadzinho.wasm cadzinho.html cadzinho.data
     - name: Upload the result
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.0
       with:
         name: uploads
         path: emscripten.zip
@@ -463,7 +463,7 @@ jobs:
     needs: [linux-build, macos-build, windows-build, msvc-build, emscripten-built]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
       - uses: actions/download-artifact@v3
         with:
           name: uploads

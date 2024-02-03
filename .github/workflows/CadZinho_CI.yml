@@ -344,7 +344,7 @@ jobs:
     - name: Download SDL2_net
       uses: suisei-cn/actions-download-file@v1.3.0
       with:
-        url: "https://github.com/libsdl-org/SDL_net/releases/download/release-${{ env.SDL_NET_V }}/SDL2-devel-${{ env.SDL_NET_V }}-VC.zip"
+        url: "https://github.com/libsdl-org/SDL_net/releases/download/release-${{ env.SDL_NET_V }}/SDL2_net-devel-${{ env.SDL_NET_V }}-VC.zip"
         target: .
     - name: Unzip SDL2
       shell: cmd
@@ -353,7 +353,7 @@ jobs:
     - name: Unzip SDL2_net
       shell: cmd
       run: |
-        7z x -y SDL2-devel-${{ env.SDL_NET_V }}-VC.zip
+        7z x -y SDL2_net-devel-${{ env.SDL_NET_V }}-VC.zip
     - name: download mesa3d
       uses: suisei-cn/actions-download-file@v1.3.0
       with:
@@ -369,7 +369,7 @@ jobs:
         mkdir ./CadZinho
         cp ./SDL2-${{ env.SDL_V }}/include/* ./glew-${{ env.GLEW_V }}/include/SDL2/
         mv ./SDL2-${{ env.SDL_V }} ./SDL2
-        mv ./SDL2_net-${{ env.SDL_NET_V }} ./SDL2
+        mv ./SDL2_net-${{ env.SDL_NET_V }} ./
         mv ./glew-${{ env.GLEW_V }} ./glew
         ls -R ./glew/
         

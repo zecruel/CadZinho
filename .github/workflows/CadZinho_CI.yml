@@ -369,7 +369,8 @@ jobs:
         mkdir ./CadZinho
         cp ./SDL2-${{ env.SDL_V }}/include/* ./glew-${{ env.GLEW_V }}/include/SDL2/
         mv ./SDL2-${{ env.SDL_V }} ./SDL2
-        mv ./SDL2_net-${{ env.SDL_NET_V }}/* ./
+        mv ./SDL2_net-${{ env.SDL_NET_V }}/include ./include
+        mv ./SDL2_net-${{ env.SDL_NET_V }}/lib ./lib
         mv ./glew-${{ env.GLEW_V }} ./glew
         ls -R ./
         
@@ -382,6 +383,7 @@ jobs:
     - run: |
         cp windows/cadzinho.ico CadZinho/
         cp ./SDL2/lib/x64/SDL2.dll CadZinho/
+        cp ./lib/x64/SDL2_net.dll CadZinho/
         cp ./glew/bin/Release/x64/glew32.dll CadZinho/
         cp ./cadzinho.exe CadZinho/
         cp -r ./lang/ CadZinho/

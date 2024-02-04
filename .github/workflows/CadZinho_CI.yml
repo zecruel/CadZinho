@@ -184,7 +184,7 @@ jobs:
     - name: Upload the result
       uses: actions/upload-artifact@v4.3.0
       with:
-        name: uploads
+        name: linux
         path: |
           linux_appimage.zip
           linux.zip
@@ -229,7 +229,7 @@ jobs:
     - name: Upload the result
       uses: actions/upload-artifact@v4.3.0
       with:
-        name: uploads
+        name: macos
         path: macos/macos.zip
         retention-days: 5
   
@@ -302,7 +302,7 @@ jobs:
     - name: Upload the result
       uses: actions/upload-artifact@v4.3.0
       with:
-        name: uploads
+        name: windows
         path: windows.zip
         retention-days: 5
   msvc-build:
@@ -412,7 +412,7 @@ jobs:
     - name: Upload the result
       uses: actions/upload-artifact@v4.3.0
       with:
-        name: uploads
+        name: msvc
         path: |
           windows_msvc.zip
           cadzinho.msi
@@ -456,7 +456,7 @@ jobs:
     - name: Upload the result
       uses: actions/upload-artifact@v4.3.0
       with:
-        name: uploads
+        name: emscripten
         path: emscripten.zip
         retention-days: 5
   release:
@@ -464,9 +464,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.1.1
-      - uses: actions/download-artifact@v3
-        with:
-          name: uploads
+      - uses: actions/download-artifact@v4.1.1
       - uses: softprops/action-gh-release@v0.1.15
         with:
           tag_name: ${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}

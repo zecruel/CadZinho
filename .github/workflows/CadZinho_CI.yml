@@ -369,7 +369,7 @@ jobs:
         mkdir ./CadZinho
         cp ./SDL2-${{ env.SDL_V }}/include/* ./glew-${{ env.GLEW_V }}/include/SDL2/
         mv ./SDL2-${{ env.SDL_V }} ./SDL2
-        mv ./SDL2_net-${{ env.SDL_NET_V }} ./
+        mv ./SDL2_net-${{ env.SDL_NET_V }}/* ./
         mv ./glew-${{ env.GLEW_V }} ./glew
         ls -R ./
         

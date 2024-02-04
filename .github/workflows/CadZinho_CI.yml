@@ -371,7 +371,7 @@ jobs:
         mv ./SDL2-${{ env.SDL_V }} ./SDL2
         mv ./SDL2_net-${{ env.SDL_NET_V }} ./
         mv ./glew-${{ env.GLEW_V }} ./glew
-        ls -R ./glew/
+        ls -R ./
         
     - name: get make file and resources
       run: cp windows/* ./

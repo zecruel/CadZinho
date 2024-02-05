@@ -488,7 +488,12 @@ translate["X factor"] = "Fator X"
 translate["Y factor"] = "Fator Y"
 translate["Confirm scale"] = "Confirme a escala"
 translate["Factor=%.4g"] = "Fator=%.4g"
---------- gui_script.c --------- 
+--------- gui_script.c ---------
+translate["This feature was designed to integrate with " ..
+          "ZeroBrane Studio (Lightweight IDE for your Lua needs) " ..
+          "by Paul Kulchenko, available at:"] = "Esta funcionalidade foi desenvolvida para se integrar com "..
+          "ZeroBrane Studio (IDE leve para suas necessidades Lua) " ..
+          "por Paul Kulchenko, disponível em:"
 translate["DB client error: Open connection"] = "Erro DB remoto: Abrir conexão"
 translate["DB client error: Init connection"] = "Erro DB remoto: Iniciar conexão"
 translate["DB client error: Resolve host"] = "Erro DB remoto: Resolver host"

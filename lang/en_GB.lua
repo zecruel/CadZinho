@@ -490,6 +490,11 @@ translate["Y factor"] = "Y factor"
 translate["Confirm scale"] = "Confirm scale"
 translate["Factor=%.4g"] = "Factor=%.4g"
 --------- gui_script.c ---------
+translate["This feature was designed to integrate with " ..
+          "ZeroBrane Studio (Lightweight IDE for your Lua needs) " ..
+          "by Paul Kulchenko, available at:"] = "This feature was designed to integrate with "..
+          "ZeroBrane Studio (Lightweight IDE for your Lua needs) " ..
+          "by Paul Kulchenko, available at:"
 translate["DB client error: Open connection"] = "DB client error: Open connection"
 translate["DB client error: Init connection"] = "DB client error: Init connection"
 translate["DB client error: Resolve host"] = "DB client error: Resolve host"

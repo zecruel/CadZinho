@@ -2,7 +2,7 @@
 
 #ifndef __EMSCRIPTEN__
 
-#include <SDL_net.h>
+#include "SDL_net.h"
 
 /* this function was designed to integrate with:
 ZeroBrane Studio (Lightweight IDE for your Lua needs) by Paul Kulchenko

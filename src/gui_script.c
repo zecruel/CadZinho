@@ -750,7 +750,7 @@ void debug_hook(lua_State *L, lua_Debug *ar){
 			if ((ar->currentline == gui->brk_pts[i].line) && gui->brk_pts[i].enable){	
 				/* get the source name */
 				char source[DXF_MAX_CHARS];
-				strncpy(source, get_filename(ar->source), DXF_MAX_CHARS - 1);
+				strncpy(source, get_filename((char*)ar->source), DXF_MAX_CHARS - 1);
 				
 				if (strcmp(source, gui->brk_pts[i].source) == 0){
 					/* pause execution*/
@@ -2032,6 +2032,9 @@ int script_win (gui_obj *gui){
       #ifndef __EMSCRIPTEN__
       /* remote connection tab */
 			else if (script_tab == REMOTE){
+        
+        const char* site = "https://studio.zerobrane.com/";
+        
 				nk_layout_row_dynamic(gui->ctx, 20, 1);
         nk_label(gui->ctx, _l("Remote Debugger:"), NK_TEXT_LEFT);
 				nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 4, (float[]){0.18f, 0.45f, 0.12f, 0.25f});
@@ -2060,6 +2063,17 @@ int script_win (gui_obj *gui){
             gui->debug_connected = 2; /* request client disconnection */
           }
         }
+        
+        nk_layout_row_dynamic(gui->ctx, 10, 1);
+        nk_layout_row_dynamic(gui->ctx, 50, 1);
+				nk_label_wrap(gui->ctx, _l(
+          "This feature was designed to integrate with "
+          "ZeroBrane Studio (Lightweight IDE for your Lua needs) "
+          "by Paul Kulchenko, available at:"));
+        nk_layout_row_dynamic(gui->ctx, 20, 1);
+				if (nk_button_label(gui->ctx, site)){
+					opener(site);
+				}
 			}
       #endif
 			

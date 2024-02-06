@@ -24,18 +24,17 @@ miniz - MIT license (https://github.com/richgel999/miniz)
 strpool - by Mattias Gustavsson - MIT license (https://github.com/mattiasgustavsson/libs)
 yxml - by Yoran Heling - MIT license (https://dev.yorhel.nl/yxml)
 SQLite - Public domain license (https://www.sqlite.org/index.html)
-
-
-
+os.c - by Carlos Abraham - MIT license (https://github.com/abranhe/os.c)
+MobDebug - by Paul Kulchenko - MIT license (https://github.com/pkulchenko/MobDebug)
 
 
 ======================================================
 MIT License
 
-CadZinho - Copyright (c) 2018 Ezequiel Rabelo de Aguiar
+CadZinho - Copyright (c) 2018-2024 Ezequiel Rabelo de Aguiar
 Nuklear - Copyright (c) 2017 Micha Mettke
 stb - Copyright (c) 2017 Sean Barrett
-Lua -  Copyright (c) 1994-2021 Lua.org, PUC-Rio.
+Lua -  Copyright (c) 1994-2023 Lua.org, PUC-Rio.
 OpenGL - Copyright (c) 2007 The Khronos Group Inc.
 Dirent - Copyright (C) 1998-2019 Toni Ronkko
 kgflags - Copyright (c) 2020 Krzysztof Gabis
@@ -44,6 +43,8 @@ miniz - Copyright 2013-2014 RAD Game Tools and Valve Software
 strpool - Copyright (c) 2015 Mattias Gustavsson
 yxml - Copyright (c) 2013-2014 Yoran Heling
 Nerd Fonts - Copyright (c) 2014 Ryan L McIntyre
+os.c - Copyright (c) Carlos Abraham Hernandez <abraham@abranhe.com> (abranhe.com)
+MobDebug - Copyright (C) 2011-2018 Paul Kulchenko
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

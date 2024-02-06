@@ -88,6 +88,10 @@ void update(void *arg){
   gui_obj *gui = (gui_obj *) arg;
   gui_main_loop (gui);
 }
+
+#else
+#include "SDL_net.h"
+
 #endif
 
 int main(int argc, char** argv){
@@ -525,6 +529,7 @@ int main(int argc, char** argv){
   /* register update as callback */
   emscripten_set_main_loop_arg(update, gui, 0, 1);
 #else
+  SDLNet_Init(); /* start socket engine - to debugger client connection */
   
   SDL_EnableScreenSaver();
   
@@ -536,6 +541,11 @@ int main(int argc, char** argv){
       SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEMOTION);
     }
 	}
+  
+  /* Wait for thread to finish */
+  SDL_WaitThread(gui->debug_thread_id, NULL);
+  
+  SDLNet_Quit();
 	
 	/* safe quit */
   

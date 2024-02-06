@@ -1,7 +1,7 @@
 #include "gui_use.h"
 
 int gui_point_info (gui_obj *gui){
-	if (gui->modal != POINT) return 0;
+	if (gui->modal != SINGLE_POINT) return 0;
 	
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, _l("Place a single point"), NK_TEXT_LEFT);

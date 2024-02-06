@@ -71,8 +71,9 @@ struct script_rast_image { /* image user object */
 };
 
 #include "gui.h"
-
+int check_timeout (lua_State *L);
 int set_timeout (lua_State *L);
+void print_internal (void *data, char* str);
 int debug_print (lua_State *L);
 int script_get_sel (lua_State *L);
 int script_clear_sel (lua_State *L);
@@ -174,6 +175,7 @@ int script_fs_chdir (lua_State *L);
 int script_fs_cwd (lua_State *L);
 int script_fs_script_path(lua_State *L);
 
+int script_svg_curves(lua_State *L);
 int script_svg_image(lua_State *L);
 int script_rast_image_gc(lua_State *L);
 

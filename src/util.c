@@ -557,6 +557,8 @@ int opener(const char *url) {
 	strncat(script, url, PATH_MAX_CHARS - 1 - strlen(script));
 	
 	system(script);
+  //WinExec("your cmd command", SW_HIDE); instead of system("cmd command").
+  //ShellExecute(0,"open", "notepad", "c:\\debug.txt", NULL, SW_SHOW);
 
 	return 1;
 }

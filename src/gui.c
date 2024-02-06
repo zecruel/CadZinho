@@ -447,10 +447,10 @@ int gui_create_modal_cur(gui_obj *gui){
 	cur_img[LINE] = SVG_LINE;
 	cur_img[POLYLINE] = SVG_PLINE;
 	cur_img[CIRCLE] = SVG_CIRCLE;
-	cur_img[RECT] = SVG_RECT;
+	cur_img[RECTANGLE] = SVG_RECT;
 	cur_img[TEXT] = SVG_TEXT;
 	cur_img[MTEXT] = SVG_I_TEXT;
-	cur_img[POINT] = SVG_POINT;
+	cur_img[SINGLE_POINT] = SVG_POINT;
 	cur_img[DUPLI] = SVG_DUPLI;
 	cur_img[MOVE] = SVG_MOVE;
 	cur_img[SCALE] = SVG_SCALE;
@@ -1966,6 +1966,17 @@ int gui_start(gui_obj *gui){
 	gui->num_brk_pts = 0;
 	gui->script_resume_reason = YIELD_NONE;
 	gui->script_resume = 0;
+  
+  gui->debug_thread_id = NULL;
+  strncpy(gui->debug_host, "127.0.0.1", DXF_MAX_CHARS);
+  strncpy(gui->debug_port, "8172", 10);
+  gui->debug_out[0] = 0;
+  gui->debug_out_pos = 0;
+  gui->debug_connected = 0;
+  gui->debug_step = 0;
+  gui->debug_pause = 0;
+  gui->debug_level = 0;
+  gui->debug_step_level = 0;
 	
 	memset(gui->blank_tex, 0, 4*20*600);
 	

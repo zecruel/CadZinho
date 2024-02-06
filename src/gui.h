@@ -48,6 +48,7 @@
 #define MAX_SCRIPTS 32
 
 #define ICON_SIZE 24
+#define DEBUG_OUT 262143
 
 #define SMART_STEP(x) pow(10.0, floor(log10(fabs(x) + 1.0e-8)) - 1.0)
 
@@ -84,10 +85,10 @@ enum Modal {
 	LINE,
 	POLYLINE,
 	CIRCLE,
-	RECT,
+	RECTANGLE,
 	TEXT,
 	MTEXT,
-	POINT, /*ARC, */
+	SINGLE_POINT, /*ARC, */
 	DUPLI,
 	MOVE,
 	SCALE,
@@ -502,6 +503,17 @@ struct Gui_obj {
   struct script_obj lua_script[MAX_SCRIPTS];
   
   struct script_brk_pt brk_pts[BRK_PTS_MAX];
+  
+  SDL_Thread* debug_thread_id;
+  char debug_host[DXF_MAX_CHARS + 1];
+  char debug_port[11];
+  char debug_out[DEBUG_OUT + 1];
+  int debug_out_pos;
+  int debug_connected;
+  int debug_step;
+  int debug_pause;
+  int debug_level;
+  int debug_step_level;
   
 };
 typedef struct Gui_obj gui_obj;

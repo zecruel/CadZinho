@@ -62,6 +62,40 @@ void print_lua_stack(lua_State * L){
 
 /* --------Lua functions------- */
 
+/* check if timeout is elapsed - for debug purposes */
+/* given parameters:
+	- none
+returns:
+	- elapsed, as boolean
+*/
+int check_timeout (lua_State *L) {
+	/* get script object from Lua instance */
+	lua_pushstring(L, "cz_script"); /* is indexed as  "cz_script" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	struct script_obj *script = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if script is valid */
+	if (!script){
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	clock_t end_t;
+  double diff_t;
+  /* get the elapsed time since script starts or continue */
+  end_t = clock();
+  diff_t = (double)(end_t - script->time) / CLOCKS_PER_SEC;
+  
+  /* verify if timeout is reachead */
+  if (diff_t >= script->timeout){
+    lua_pushboolean(L, 1); /* return elapsed */
+    return 1;
+  }
+	lua_pushboolean(L, 0); /* return OK */
+	return 1;
+}
+
 /* set timeout variable */
 /* given parameters:
 	- time in seconds, as number
@@ -94,6 +128,15 @@ int set_timeout (lua_State *L) {
 	return 1;
 }
 
+/* print to internal debug buffer */
+void print_internal (void *data, char* str){
+  gui_obj *gui = (gui_obj *) data;
+  if (gui->debug_out_pos < DEBUG_OUT){
+    gui->debug_out_pos += snprintf(gui->debug_out + gui->debug_out_pos,
+      DEBUG_OUT - gui->debug_out_pos, str);
+  }
+}
+
 /* equivalent to a "print" lua function, that outputs to a text edit widget */
 int debug_print (lua_State *L) {
 	/* get gui object from Lua instance */
@@ -117,43 +160,57 @@ int debug_print (lua_State *L) {
 		type = lua_type(L, i); /* identify Lua variable type */
 		
 		/* print variables separator (4 spaces) */
-		if (i > 1) nk_str_append_str_char(&gui->debug_edit.string, "    ");
-		
+		if (i > 1) {
+      nk_str_append_str_char(&gui->debug_edit.string, "    ");
+      print_internal (gui, "    ");
+    }
+    
 		switch(type) {
 			case LUA_TSTRING: {
-				snprintf(msg, DXF_MAX_CHARS - 1, "%s", lua_tostring(L, i));
+        char *str = (char*) lua_tostring(L, i);
+				snprintf(msg, DXF_MAX_CHARS - 1, "%s", str);
+        print_internal (gui, str);
 				break;
 			}
 			case LUA_TNUMBER: {
 			/* LUA_NUMBER may be double or integer */
 				snprintf(msg, DXF_MAX_CHARS - 1, "%.9g", lua_tonumber(L, i));
+        print_internal (gui, msg);
 				break;
 			}
 			case LUA_TTABLE: {
 				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_topointer(L, i));
+        print_internal (gui, msg);
 				break;
 			}
 			case LUA_TFUNCTION: {
 				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_topointer(L, i));
-				break;		}
+        print_internal (gui, msg);
+				break;
+      }
 			case LUA_TUSERDATA: {
 				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_touserdata(L, i));
+        print_internal (gui, msg);
 				break;
 			}
 			case LUA_TLIGHTUSERDATA: {
 				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_touserdata(L, i));
+        print_internal (gui, msg);
 				break;
 			}
 			case LUA_TBOOLEAN: {
 				snprintf(msg, DXF_MAX_CHARS - 1, "%s", lua_toboolean(L, i) ? "true" : "false");
+        print_internal (gui, msg);
 				break;
 			}
 			case LUA_TTHREAD: {
 				snprintf(msg, DXF_MAX_CHARS - 1, "0x%08x", lua_topointer(L, i));
+        print_internal (gui, msg);
 				break;
 			}
 			case LUA_TNIL: {
 				snprintf(msg, DXF_MAX_CHARS - 1, "nil");
+        print_internal (gui, msg);
 				break;
 			}
 		}
@@ -161,6 +218,7 @@ int debug_print (lua_State *L) {
 	}
 	/*enter a new line*/
 	nk_str_append_str_char(&gui->debug_edit.string, "\n");
+  print_internal (gui, "\n");
 	
 	lua_pushboolean(L, 1); /* return success */
 	return 1;
@@ -4214,7 +4272,7 @@ int script_set_modal (lua_State *L) {
 		return 1;
 	}
 	else if (strcmp(new_modal, "RECT") == 0){
-		gui->modal = RECT;
+		gui->modal = RECTANGLE;
 		gui->step = 0;
 		lua_pushboolean(L, 1); /* return success */
 		return 1;
@@ -4238,7 +4296,7 @@ int script_set_modal (lua_State *L) {
 		return 1;
 	}
 	else if (strcmp(new_modal, "POINT") == 0){
-		gui->modal = POINT;
+		gui->modal = SINGLE_POINT;
 		gui->step = 0;
 		lua_pushboolean(L, 1); /* return success */
 		return 1;
@@ -6947,7 +7005,16 @@ int script_yxml_read (lua_State *L) {
 	
 	luaL_argcheck(L, lua_isstring(L, 2), 2, "string expected");
 	
-	luaL_Buffer b;  /* to store parcial strings */
+  /* buffer to store parcial strings */
+	static struct txt_buf buf;
+	struct Mem_buffer *mem1 = manage_buffer(PDF_BUF_SIZE + 1, BUF_GET, 1);
+	if (!mem1) {
+		lua_pushboolean(L, 0); /* return fail */
+		return 1;
+	}
+	buf.data = mem1->buffer;
+	buf.pos = 0; buf.data[0] = 0; /* init buffer */
+  
 	int content = 0, attr = 0, attrval = 0;
 	
 	char *doc = (char*) lua_tostring(L, 2);  /*get document to parse */
@@ -6978,7 +7045,7 @@ int script_yxml_read (lua_State *L) {
 				lua_pushstring(L, "id");
 				lua_pushstring(L, state->x->elem);
 				lua_rawset(L, -3);
-				/*reset flags */
+				/* reset flags */
 				content = 0;
 				attr = 0;
 				attrval = 0;
@@ -6997,7 +7064,7 @@ int script_yxml_read (lua_State *L) {
 				}
 				/* store content string with key "cont" in element owner table */
 				if (content){
-					luaL_pushresult(&b); /* finalize string and put on Lua stack */
+          lua_pushstring(L, buf.data);
 					if (lua_istable(L, -2)){
 						lua_pushstring(L, "cont");
 						lua_insert (L, lua_gettop(L) - 1); /* setup Lua stack to next operation */
@@ -7031,10 +7098,12 @@ int script_yxml_read (lua_State *L) {
 							lua_rawset(L, -3);
 						}
 					}
-					luaL_buffinit(L, &b); /* init the Lua buffer */
+					
+          buf.pos = 0; buf.data[0] = 0; /* zero buffer */
 				}
 				/* store parcial string */
-				luaL_addstring(&b, state->x->data);
+        buf.pos +=snprintf(buf.data + buf.pos,
+          PDF_BUF_SIZE - buf.pos, state->x->data);
 				break;
 			case YXML_ATTRSTART:
 				if (!attr){ /* init attributes */
@@ -7045,17 +7114,19 @@ int script_yxml_read (lua_State *L) {
 			case YXML_ATTRVAL:
 				if (!attrval){ /*init attribute value */
 					attrval = 1;
-					luaL_buffinit(L, &b); /* init the Lua buffer */
+					
+          buf.pos = 0; buf.data[0] = 0; /* zero buffer */
 				}
 				/* store parcial string */
-				luaL_addstring(&b, state->x->data);
+        buf.pos +=snprintf(buf.data + buf.pos,
+          PDF_BUF_SIZE - buf.pos, state->x->data);
 				break;
 			case YXML_ATTREND:
 				/* Now we have a full attribute. Its name is in x->attr, 
 				and its value is in Lua buffer "b". */
 				if (attrval){
 					attrval = 0;
-					luaL_pushresult(&b); /* finalize string and put on Lua stack */
+          lua_pushstring(L, buf.data);
 					if (lua_istable(L, -2)){
 						/* store in its owner table, where its name is the key */
 						lua_pushstring(L, state->x->attr);
@@ -7066,6 +7137,8 @@ int script_yxml_read (lua_State *L) {
 				break;
 		}
 	}
+  manage_buffer(0, BUF_RELEASE, 1);
+  
 	/* end parsing */
 	yxml_eof(state->x);
 	/* restart parser */
@@ -7640,6 +7713,95 @@ int script_sqlite_close(lua_State *L){
 }
 
 /* ------------ SVG Image ------------- */
+
+
+/* Get raw data of SVG image */
+/* given parameters:
+	- SVG data, as string
+returns:
+	- a table with SVG data, or nil if fail
+*/
+int script_svg_curves(lua_State *L){
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushliteral(L, "image: invalid number of arguments");
+		lua_error(L);
+	}
+	luaL_argcheck(L, lua_isstring(L, 1), 1, "string expected");
+	
+  size_t len = 0;
+  const char *data = lua_tolstring(L, 1, &len);
+  char *svg_data = malloc(len + 1);
+  
+  /* init image */
+  NSVGimage *curves =NULL;
+  if (svg_data){  /* get vectorized data from SVG */
+    strncpy(svg_data, data, len); /* copy string to allow modification */
+    curves = nsvgParse(svg_data, "px", 96.0f);
+    free(svg_data);
+  }
+  if (curves){ /* success on parse */
+    if (curves->shapes){
+    
+      lua_newtable(L); /* main table to store data */
+      
+      /* default width and height from SVG */
+      lua_pushstring(L, "width");
+      lua_pushinteger(L, curves->width);
+      lua_rawset(L, -3);
+      
+      lua_pushstring(L, "height");
+      lua_pushinteger(L, curves->height);
+      lua_rawset(L, -3);
+      
+      NSVGshape* shape;
+      NSVGpath* path;
+      
+      int n_shapes = 1, n_paths;
+      
+      for (shape = curves->shapes; shape != NULL; shape = shape->next) {
+        lua_newtable(L); /* table to store shape data */
+        lua_pushstring(L, "strokeWidth");
+        lua_pushnumber(L, shape->strokeWidth);
+        lua_rawset(L, -3);
+        
+        n_paths = 1;
+        for (path = shape->paths; path != NULL; path = path->next) {
+          lua_newtable(L); /* table to store path data */
+          lua_pushstring(L, "closed");
+          lua_pushboolean(L, path->closed);
+          lua_rawset(L, -3);
+          /* control points */
+          int i;
+          for (i = 0; i < path->npts; i ++){
+            lua_newtable(L); /* table to store control point */
+            lua_pushstring(L, "x");
+            lua_pushnumber(L, path->pts[i*2]);
+            lua_rawset(L, -3);
+            lua_pushstring(L, "y");
+            lua_pushnumber(L, curves->height - path->pts[i*2+1]);
+            lua_rawset(L, -3);
+            lua_rawseti(L, -2, i+1); /*store point in path table */
+          }
+          lua_rawseti(L, -2, n_paths); /*store in shape table */
+          n_paths++;
+        }
+        lua_rawseti(L, -2, n_shapes); /*store in main table */
+        n_shapes++;
+      }
+      
+      
+      nsvgDelete(curves);
+    }
+  }
+	else{
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	
+	return 1;
+}
 
 /* Rasterize a SVG image */
 /* given parameters:

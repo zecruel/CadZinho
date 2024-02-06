@@ -4,20 +4,21 @@ on: workflow_dispatch
 
 env:
   MAJOR: 0
-  MINOR: 4
-  MAN: 1
-  YEAR: 2023
+  MINOR: 5
+  MAN: 0
+  YEAR: 2024
   LUA_V: 5.4.6
-  MESA_V: 23.1.1
+  MESA_V: 23.3.5
   GLEW_V: 2.2.0
-  SDL_V: 2.26.5
+  SDL_V: 2.30.0
+  SDL_NET_V: 2.2.0
   
 jobs:
   up-version:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
       - name: Update version in information files
         run: |
           sed -i -e "/CZ_VERSION/s/[[:digit:]]\{4\}/$YEAR/" \
@@ -67,14 +68,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
     - name: configure
       run: |
         sudo apt-get update
-        sudo apt-get install --yes libsdl2-dev libglvnd-dev libglew-dev fuse libfuse2 libarchive-tools
+        sudo apt-get install --yes libsdl2-dev libsdl2-net-dev libglvnd-dev libglew-dev fuse libfuse2 libarchive-tools
         sudo gem install fpm
     - name: download lua source
-      run: curl -R -O http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz
+      uses: suisei-cn/actions-download-file@v1.6.0
+      with:
+        url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
+        target: .
     - name: extract lua
       run: tar zxf lua-${{ env.LUA_V }}.tar.gz
     - name: remove main in lua
@@ -103,7 +107,7 @@ jobs:
           --license MIT \
           --version $MAJOR.$MINOR.$MAN \
           --architecture native \
-          --depends sdl2 --depends glew \
+          --depends sdl2 --depends glew --depends sdl2-net \
           --description "CadZinho - Minimalist computer aided design (CAD) software" \
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
@@ -118,7 +122,7 @@ jobs:
           --license MIT \
           --version $MAJOR.$MINOR.$MAN \
           --architecture native \
-          --depends sdl2 --depends glew \
+          --depends sdl2 --depends glew --depends sdl2_net \
           --description "CadZinho - Minimalist computer aided design (CAD) software" \
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
@@ -132,19 +136,19 @@ jobs:
           --license MIT \
           --version $MAJOR.$MINOR.$MAN \
           --architecture native \
-          --depends sdl2 --depends glew \
+          --depends sdl2 --depends glew --depends sdl2_net \
           --description "CadZinho - Minimalist computer aided design (CAD) software" \
           --url "https://github.com/zecruel/CadZinho" \
           --maintainer "Ezequiel Rabelo de Aguiar <ezeq.cruel@gmail.com>" ./
         cd ..
         mv ./pkg/*.zst ./
     - name: download AppImageTool
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
         target: .
     - name: download AppImage asset
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64"
         target: .
@@ -178,9 +182,9 @@ jobs:
         zip -r linux *
     - run: cp ./linux/CadZinho/linux.zip ./
     - name: Upload the result
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.0
       with:
-        name: uploads
+        name: linux
         path: |
           linux_appimage.zip
           linux.zip
@@ -194,11 +198,14 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
     - name: configure
-      run: brew install sdl2 lua mesa-glu glew dylibbundler
+      run: brew install sdl2 sdl2_net lua mesa-glu glew dylibbundler
     - name: download lua source
-      run: curl -R -O http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz
+      uses: suisei-cn/actions-download-file@v1.6.0
+      with:
+        url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
+        target: .
     - name: extract lua
       run: tar zxf lua-${{ env.LUA_V }}.tar.gz
     - name: remove main in lua
@@ -220,9 +227,9 @@ jobs:
         cd macos
         zip -r macos ./CadZinho.app/ LICENSE.txt
     - name: Upload the result
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.0
       with:
-        name: uploads
+        name: macos
         path: macos/macos.zip
         retention-days: 5
   
@@ -246,10 +253,14 @@ jobs:
             p7zip
             mingw-w64-x86_64-toolchain
             mingw64/mingw-w64-x86_64-SDL2
+            mingw64/mingw-w64-x86_64-SDL2_net
             mingw64/mingw-w64-x86_64-glew
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
     - name: download lua source
-      run: curl -R -O http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz
+      uses: suisei-cn/actions-download-file@v1.6.0
+      with:
+        url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
+        target: .
     - name: extract lua
       run: tar zxf lua-${{ env.LUA_V }}.tar.gz
     - name: remove main in lua
@@ -265,7 +276,7 @@ jobs:
     - name: make
       run: make
     - name: download mesa3d
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "https://github.com/pal1000/mesa-dist-win/releases/download/${{ env.MESA_V }}/mesa3d-${{ env.MESA_V }}-release-mingw.7z"
         target: .
@@ -280,6 +291,7 @@ jobs:
         cp -r ./lang/ CadZinho/
         cp windows/cadzinho.ico CadZinho/
         cp /mingw64/bin/SDL2.dll CadZinho/
+        cp /mingw64/bin/SDL2_net.dll CadZinho/
         cp /mingw64/bin/glew32.dll CadZinho/
         cp x64/opengl32.dll CadZinho/
         cp x64/libgallium_wgl.dll CadZinho/
@@ -289,9 +301,9 @@ jobs:
     - name: create archive
       run: 7z a windows.zip CadZinho
     - name: Upload the result
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.0
       with:
-        name: uploads
+        name: windows
         path: windows.zip
         retention-days: 5
   msvc-build:
@@ -299,10 +311,13 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
     
     - name: download lua source
-      run: curl -R -O http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz
+      uses: suisei-cn/actions-download-file@v1.6.0
+      with:
+        url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
+        target: .
     - name: extract lua
       run: tar zxf lua-${{ env.LUA_V }}.tar.gz
     - name: remove main in lua
@@ -314,7 +329,7 @@ jobs:
     - name: copy lua sources 
       run: cp ./lua-${{ env.LUA_V }}/src/* ./src/
     - name: download glew
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "https://github.com/nigels-com/glew/releases/download/glew-${{ env.GLEW_V }}/glew-${{ env.GLEW_V }}-win32.zip"
         target: .
@@ -323,16 +338,25 @@ jobs:
       run: |
         7z x -y glew-${{ env.GLEW_V }}-win32.zip
     - name: Download SDL2
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "https://github.com/libsdl-org/SDL/releases/download/release-${{ env.SDL_V }}/SDL2-devel-${{ env.SDL_V }}-VC.zip"
+        target: .
+    - name: Download SDL2_net
+      uses: suisei-cn/actions-download-file@v1.6.0
+      with:
+        url: "https://github.com/libsdl-org/SDL_net/releases/download/release-${{ env.SDL_NET_V }}/SDL2_net-devel-${{ env.SDL_NET_V }}-VC.zip"
         target: .
     - name: Unzip SDL2
       shell: cmd
       run: |
         7z x -y SDL2-devel-${{ env.SDL_V }}-VC.zip
+    - name: Unzip SDL2_net
+      shell: cmd
+      run: |
+        7z x -y SDL2_net-devel-${{ env.SDL_NET_V }}-VC.zip
     - name: download mesa3d
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "https://github.com/pal1000/mesa-dist-win/releases/download/${{ env.MESA_V }}/mesa3d-${{ env.MESA_V }}-release-msvc.7z"
         target: .
@@ -346,18 +370,22 @@ jobs:
         mkdir ./CadZinho
         cp ./SDL2-${{ env.SDL_V }}/include/* ./glew-${{ env.GLEW_V }}/include/SDL2/
         mv ./SDL2-${{ env.SDL_V }} ./SDL2
+        cp ./SDL2_net-${{ env.SDL_NET_V }}/include/* ./src/
+        cp ./SDL2_net-${{ env.SDL_NET_V }}/lib/x64/* ./SDL2/
+        mv ./SDL2_net-${{ env.SDL_NET_V }}/lib ./lib
         mv ./glew-${{ env.GLEW_V }} ./glew
-        ls -R ./glew/
+        ls -R ./
         
     - name: get make file and resources
       run: cp windows/* ./
 
-    - uses: ilammy/msvc-dev-cmd@v1.12.1
+    - uses: ilammy/msvc-dev-cmd@v1.13.0
     - name: Build using CL.EXE
       run: nmake WIN64=1 -f Makefile.msvc
     - run: |
         cp windows/cadzinho.ico CadZinho/
         cp ./SDL2/lib/x64/SDL2.dll CadZinho/
+        cp ./lib/x64/SDL2_net.dll CadZinho/
         cp ./glew/bin/Release/x64/glew32.dll CadZinho/
         cp ./cadzinho.exe CadZinho/
         cp -r ./lang/ CadZinho/
@@ -369,7 +397,7 @@ jobs:
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho
     - name: download wix3
-      uses: suisei-cn/actions-download-file@v1.3.0
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
         url: "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip"
         target: .
@@ -386,9 +414,9 @@ jobs:
         ../light.exe cadzinho.wixobj
         mv cadzinho.msi ../
     - name: Upload the result
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.0
       with:
-        name: uploads
+        name: msvc
         path: |
           windows_msvc.zip
           cadzinho.msi
@@ -400,11 +428,14 @@ jobs:
 
     steps:
     
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
     - name: configure SDK
-      uses: mymindstorm/setup-emsdk@v12
+      uses: mymindstorm/setup-emsdk@v14
     - name: download lua source
-      run: curl -R -O http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz
+      uses: suisei-cn/actions-download-file@v1.6.0
+      with:
+        url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
+        target: .
     - name: extract lua
       run: tar zxf lua-${{ env.LUA_V }}.tar.gz
     - name: remove main in lua
@@ -427,32 +458,30 @@ jobs:
       run: |
         zip -r emscripten cadzinho.js cadzinho.wasm cadzinho.html cadzinho.data
     - name: Upload the result
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.0
       with:
-        name: uploads
+        name: emscripten
         path: emscripten.zip
         retention-days: 5
   release:
     needs: [linux-build, macos-build, windows-build, msvc-build, emscripten-built]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/download-artifact@v3
-        with:
-          name: uploads
+      - uses: actions/checkout@v4.1.1
+      - uses: actions/download-artifact@v4.1.1
       - uses: softprops/action-gh-release@v0.1.15
         with:
           tag_name: ${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}
           draft: true
           files: |
-            linux.zip
-            linux_appimage.zip
-            macos.zip
-            windows.zip
-            windows_msvc.zip
-            cadzinho.msi
-            emscripten.zip
-            cadzinho-${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}-1-x86_64.pkg.tar.zst
-            cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_amd64.deb
-            cadzinho-${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}-1.x86_64.rpm
+            linux/linux.zip
+            linux/linux_appimage.zip
+            macos/macos.zip
+            windows/windows.zip
+            msvc/windows_msvc.zip
+            msvc/cadzinho.msi
+            emscripten/emscripten.zip
+            linux/cadzinho-${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}-1-x86_64.pkg.tar.zst
+            linux/cadzinho_${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}_amd64.deb
+            linux/cadzinho-${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}-1.x86_64.rpm
 

@@ -66,7 +66,7 @@ int gui_tools_win (gui_obj *gui){
 				gui->step = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_RECT]))){
-				gui->modal = RECT;
+				gui->modal = RECTANGLE;
 				gui->step = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT]))){
@@ -82,7 +82,7 @@ int gui_tools_win (gui_obj *gui){
 				gui->step = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_POINT]))){
-				gui->modal = POINT;
+				gui->modal = SINGLE_POINT;
 				gui->step = 0;
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SPLINE]))){

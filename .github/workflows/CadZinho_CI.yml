@@ -291,6 +291,7 @@ jobs:
         cp -r ./lang/ CadZinho/
         cp windows/cadzinho.ico CadZinho/
         cp /mingw64/bin/SDL2.dll CadZinho/
+        cp /mingw64/bin/SDL2_net.dll CadZinho/
         cp /mingw64/bin/glew32.dll CadZinho/
         cp x64/opengl32.dll CadZinho/
         cp x64/libgallium_wgl.dll CadZinho/
@@ -468,7 +469,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.1
       - uses: actions/download-artifact@v4.1.1
-      - run: ls -R ./
       - uses: softprops/action-gh-release@v0.1.15
         with:
           tag_name: ${{ env.MAJOR }}.${{ env.MINOR }}.${{ env.MAN }}

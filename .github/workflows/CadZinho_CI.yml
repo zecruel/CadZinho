@@ -8,7 +8,7 @@ env:
   MAN: 0
   YEAR: 2024
   LUA_V: 5.4.6
-  MESA_V: 23.3.5
+  MESA_V: 23.1.1
   GLEW_V: 2.2.0
   SDL_V: 2.30.0
   SDL_NET_V: 2.2.0

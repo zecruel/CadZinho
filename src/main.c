@@ -313,6 +313,31 @@ int main(int argc, char** argv){
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
   #endif
 	
+  /* try to ajust window to fit in available frame */
+  int videos = SDL_GetNumVideoDisplays(); /* for more then one display */
+  int max_x = 0, max_y = 0;
+  for (i = 0; i < videos; i++){ /* get maximum coordinates */
+    SDL_Rect rect;
+    SDL_GetDisplayBounds(i, &rect);
+    if ((rect.x + rect.w) > max_x) max_x = rect.x + rect.w;
+    if ((rect.y + rect.h) > max_y) max_y = rect.y + rect.h;
+  }
+  /* check and adjust position and size */
+  if (gui->win_x + gui->win_w > max_x){
+    gui->win_x = max_x - gui->win_w;
+    if (gui->win_x < 0) {
+      gui->win_x = 0;
+      if (gui->win_w > max_x) gui->win_w = max_x;
+    }
+  }
+  if (gui->win_y + gui->win_h > max_y) {
+    gui->win_y = max_y - gui->win_h;
+    if (gui->win_y < 0) {
+      gui->win_y = 0;
+      if (gui->win_h > max_y) gui->win_h = max_y;
+    }
+  }
+  
 	gui->window = SDL_CreateWindow(
 		"CadZinho", /* title */
 		gui->win_x, /* x position */

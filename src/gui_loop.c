@@ -434,6 +434,39 @@ int gui_main_loop (gui_obj *gui) {
           if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED){
             gui->draw = 1;
           }
+          break;
+        case SDL_DISPLAYEVENT:
+        {
+          /* try to ajust window to fit in available frame */
+          int videos = SDL_GetNumVideoDisplays(); /* for more then one display */
+          int max_x = 0, max_y = 0;
+          for (i = 0; i < videos; i++){ /* get maximum coordinates */
+            SDL_Rect rect;
+            SDL_GetDisplayUsableBounds(i, &rect);
+            if ((rect.x + rect.w) > max_x) max_x = rect.x + rect.w;
+            if ((rect.y + rect.h) > max_y) max_y = rect.y + rect.h;
+          }
+          /* check and adjust position and size */
+          if (gui->win_x + gui->win_w > max_x){
+            gui->win_x = max_x - gui->win_w;
+            if (gui->win_x < 0) {
+              gui->win_x = 15;
+              max_x -= 15;
+              if (gui->win_w > max_x) gui->win_w = max_x;
+            }
+          }
+          if (gui->win_y + gui->win_h > max_y) {
+            gui->win_y = max_y - gui->win_h;
+            if (gui->win_y < 0) {
+              gui->win_y = 15;
+              max_y -= 15;
+              if (gui->win_h > max_y) gui->win_h = max_y;
+            }
+          }
+          SDL_SetWindowPosition(gui->window, gui->win_x, gui->win_y);
+          SDL_SetWindowSize(gui->window, gui->win_w, gui->win_h);
+          gui->draw = 1;
+        }
       }
     }
     

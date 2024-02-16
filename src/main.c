@@ -318,7 +318,7 @@ int main(int argc, char** argv){
   int max_x = 0, max_y = 0;
   for (i = 0; i < videos; i++){ /* get maximum coordinates */
     SDL_Rect rect;
-    SDL_GetDisplayBounds(i, &rect);
+    SDL_GetDisplayUsableBounds(i, &rect);
     if ((rect.x + rect.w) > max_x) max_x = rect.x + rect.w;
     if ((rect.y + rect.h) > max_y) max_y = rect.y + rect.h;
   }
@@ -326,14 +326,16 @@ int main(int argc, char** argv){
   if (gui->win_x + gui->win_w > max_x){
     gui->win_x = max_x - gui->win_w;
     if (gui->win_x < 0) {
-      gui->win_x = 0;
+      gui->win_x = 15;
+      max_x -= 15;
       if (gui->win_w > max_x) gui->win_w = max_x;
     }
   }
   if (gui->win_y + gui->win_h > max_y) {
     gui->win_y = max_y - gui->win_h;
     if (gui->win_y < 0) {
-      gui->win_y = 0;
+      gui->win_y = 15;
+      max_y -= 15;
       if (gui->win_h > max_y) gui->win_h = max_y;
     }
   }

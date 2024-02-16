@@ -82,9 +82,9 @@ struct Image {
 
 int draw_gl_init (void *data, int clear);
 
-int draw_gl_line (struct ogl *gl_ctx, int p0[3], int p1[3], int thick);
+int draw_gl_line (struct ogl *gl_ctx, float p0[3], float p1[3], float thick);
 
-int draw_gl_quad (struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3]);
+int draw_gl_quad (struct ogl *gl_ctx, float tl[3], float bl[3], float tr[3], float br[3]);
 
 int draw_gl_rect (struct ogl *gl_ctx, int x, int y, int z, int w, int h);
 

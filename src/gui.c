@@ -941,7 +941,7 @@ int nk_gl_render(gui_obj *gui) {
 		if (cmd->type == NK_COMMAND_LINE) {
 			const struct nk_command_line *l = (const struct nk_command_line *)cmd;
 			nk_to_gl_color(gl_ctx, l->color);
-			draw_gl_line (gl_ctx, (int []){l->begin.x, l->begin.y, 0}, (int []){l->end.x,l->end.y, 0}, l->line_thickness);
+			draw_gl_line (gl_ctx, (float []){l->begin.x, l->begin.y, 0}, (float []){l->end.x,l->end.y, 0}, l->line_thickness);
 		}
 		else if (cmd->type == NK_COMMAND_RECT) {
 			const struct nk_command_rect *r = (const struct nk_command_rect *)cmd;
@@ -951,7 +951,7 @@ int nk_gl_render(gui_obj *gui) {
 			
 			nk_to_gl_color(gl_ctx, r->color);
 			
-			draw_gl_line (gl_ctx, (int []){r->x + r->rounding, r->y, 0}, (int []){r->x + r->w -r->rounding, r->y, 0}, r->line_thickness);
+			draw_gl_line (gl_ctx, (float []){r->x + r->rounding, r->y, 0}, (float []){r->x + r->w -r->rounding, r->y, 0}, r->line_thickness);
 			x0 =  r->x + r->w - r->rounding;
 			cx = x0;
 			y0 = r->y;
@@ -959,11 +959,11 @@ int nk_gl_render(gui_obj *gui) {
 			for (i=13; i <= 16; i++){
 				x1 = cx +  r->rounding * cos(i * step);
 				y1 = cy +  r->rounding * sin(i * step);
-				draw_gl_line (gl_ctx, (int []){x0, y0, 0}, (int []){x1, y1, 0}, r->line_thickness);
+				draw_gl_line (gl_ctx, (float []){x0, y0, 0}, (float []){x1, y1, 0}, r->line_thickness);
 				x0 = x1;
 				y0 = y1;
 			}
-			draw_gl_line (gl_ctx, (int []){x0, y0, 0}, (int []){ r->x + r->w, r->y + r->h - r->rounding, 0}, r->line_thickness);
+			draw_gl_line (gl_ctx, (float []){x0, y0, 0}, (float []){ r->x + r->w, r->y + r->h - r->rounding, 0}, r->line_thickness);
 			cx = r->x + r->w - r->rounding;
 			x0 = r->x + r->w;
 			y0 = r->y + r->h - r->rounding;
@@ -971,11 +971,11 @@ int nk_gl_render(gui_obj *gui) {
 			for (i=1; i <= 4; i++){
 				x1 = cx +  r->rounding * cos(i * step);
 				y1 = cy +  r->rounding * sin(i * step);
-				draw_gl_line (gl_ctx, (int []){x0, y0, 0}, (int []){x1, y1, 0}, r->line_thickness);
+				draw_gl_line (gl_ctx, (float []){x0, y0, 0}, (float []){x1, y1, 0}, r->line_thickness);
 				x0 = x1;
 				y0 = y1;
 			}
-			draw_gl_line (gl_ctx, (int []){x0, y0, 0}, (int []){ r->x + r->rounding, r->y + r->h, 0}, r->line_thickness);
+			draw_gl_line (gl_ctx, (float []){x0, y0, 0}, (float []){ r->x + r->rounding, r->y + r->h, 0}, r->line_thickness);
 			x0 = r->x + r->rounding;
 			cx = x0;
 			y0 = r->y + r->h;
@@ -983,11 +983,11 @@ int nk_gl_render(gui_obj *gui) {
 			for (i=5; i <= 8; i++){
 				x1 = cx +  r->rounding * cos(i * step);
 				y1 = cy +  r->rounding * sin(i * step);
-				draw_gl_line (gl_ctx, (int []){x0, y0, 0}, (int []){ x1, y1, 0}, r->line_thickness);
+				draw_gl_line (gl_ctx, (float []){x0, y0, 0}, (float []){ x1, y1, 0}, r->line_thickness);
 				x0 = x1;
 				y0 = y1;
 			}
-			draw_gl_line (gl_ctx, (int []){x0, y0, 0}, (int []){ r->x, r->y + r->rounding, 0}, r->line_thickness);
+			draw_gl_line (gl_ctx, (float []){x0, y0, 0}, (float []){ r->x, r->y + r->rounding, 0}, r->line_thickness);
 			cx = r->x + r->rounding;
 			x0 = r->x;
 			y0 = r->y + r->rounding;
@@ -995,11 +995,11 @@ int nk_gl_render(gui_obj *gui) {
 			for (i=9; i < 12; i++){
 				x1 = cx +  r->rounding * cos(i * step);
 				y1 = cy +  r->rounding * sin(i * step);
-				draw_gl_line (gl_ctx, (int []){x0, y0, 0}, (int []){ x1, y1, 0}, r->line_thickness);
+				draw_gl_line (gl_ctx, (float []){x0, y0, 0}, (float []){ x1, y1, 0}, r->line_thickness);
 				x0 = x1;
 				y0 = y1;
 			}
-			draw_gl_line (gl_ctx, (int []){x0, y0, 0}, (int []){r->x + r->rounding, r->y, 0}, r->line_thickness);
+			draw_gl_line (gl_ctx, (float []){x0, y0, 0}, (float []){r->x + r->rounding, r->y, 0}, r->line_thickness);
 		}
 		else if (cmd->type == NK_COMMAND_RECT_FILLED) {
 			const struct nk_command_rect_filled *r = (const struct nk_command_rect_filled *)cmd;
@@ -1194,9 +1194,9 @@ int nk_gl_render(gui_obj *gui) {
 			/*change the color */
 			nk_to_gl_color(gl_ctx, t->color);
 			
-			draw_gl_line (gl_ctx, (int []){t->a.x, t->a.y, 0}, (int []){t->b.x, t->b.y, 0}, t->line_thickness);
-			draw_gl_line (gl_ctx, (int []){t->b.x, t->b.y, 0}, (int []){t->c.x, t->c.y, 0}, t->line_thickness);
-			draw_gl_line (gl_ctx, (int []){t->c.x, t->c.y, 0}, (int []){t->a.x, t->a.y, 0}, t->line_thickness);
+			draw_gl_line (gl_ctx, (float []){t->a.x, t->a.y, 0}, (float []){t->b.x, t->b.y, 0}, t->line_thickness);
+			draw_gl_line (gl_ctx, (float []){t->b.x, t->b.y, 0}, (float []){t->c.x, t->c.y, 0}, t->line_thickness);
+			draw_gl_line (gl_ctx, (float []){t->c.x, t->c.y, 0}, (float []){t->a.x, t->a.y, 0}, t->line_thickness);
 		} 
 		
 		else if  (cmd->type == NK_COMMAND_TRIANGLE_FILLED){
@@ -1230,13 +1230,13 @@ int nk_gl_render(gui_obj *gui) {
 			for (i = 1; i < 20; i++){
 				x1 = 0.5 + cx + major_ax * cos( 0.1 * M_PI * i );
 				y1 = 0.5 + cy + minor_ax * sin( 0.1 * M_PI * i );
-				draw_gl_line (gl_ctx, (int []){x0, y0, 0}, (int []){ x1, y1, 0}, c->line_thickness);
+				draw_gl_line (gl_ctx, (float []){x0, y0, 0}, (float []){ x1, y1, 0}, c->line_thickness);
 				x0 = x1;
 				y0 = y1;
 			}
 			x1 = 0.5 + cx + major_ax;
 			y1 = 0.5 + cy;
-			draw_gl_line (gl_ctx, (int []){x0, y0, 0}, (int []){ x1, y1, 0}, c->line_thickness);
+			draw_gl_line (gl_ctx, (float []){x0, y0, 0}, (float []){ x1, y1, 0}, c->line_thickness);
 		} 		
 		else if  (cmd->type == NK_COMMAND_CIRCLE_FILLED) {
 			const struct nk_command_circle_filled *c = (const struct nk_command_circle_filled *)cmd;
@@ -2156,14 +2156,14 @@ int draw_cursor_gl(gui_obj *gui, int x, int y, enum Cursor_type type) {
 	
 	/* draw cursor */
 	if (type == CURSOR_SQUARE){
-		draw_gl_line (gl_ctx, (int []){x-5, y+5, 0}, (int []){x+5, y+5, 0}, 3);
-		draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x+5, y-5, 0}, 3);
-		draw_gl_line (gl_ctx, (int []){x+5, y-5, 0}, (int []){x+5, y+5, 0}, 3);
-		draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x-5, y+5, 0}, 3);
+		draw_gl_line (gl_ctx, (float []){x-5, y+5, 0}, (float []){x+5, y+5, 0}, 3);
+		draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x+5, y-5, 0}, 3);
+		draw_gl_line (gl_ctx, (float []){x+5, y-5, 0}, (float []){x+5, y+5, 0}, 3);
+		draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x-5, y+5, 0}, 3);
 	}
 	else if (type == CURSOR_X){
-		draw_gl_line (gl_ctx, (int []){x-10, y-10, 0}, (int []){x+10, y+10, 0}, 3);
-		draw_gl_line (gl_ctx, (int []){x-10, y+10, 0}, (int []){x+10, y-10, 0}, 3);
+		draw_gl_line (gl_ctx, (float []){x-10, y-10, 0}, (float []){x+10, y+10, 0}, 3);
+		draw_gl_line (gl_ctx, (float []){x-10, y+10, 0}, (float []){x+10, y-10, 0}, 3);
 	}
 	else if (type == CURSOR_CIRCLE){
 		int x0, y0, x1, y1, i;
@@ -2190,13 +2190,13 @@ int draw_cursor_gl(gui_obj *gui, int x, int y, enum Cursor_type type) {
 		draw_gl_polygon (gl_ctx, 20, edges);
 	}
 	else{
-		draw_gl_line (gl_ctx, (int []){-gl_ctx->win_w, y, 0}, (int []){gl_ctx->win_w*2,y, 0}, 3);
-		draw_gl_line (gl_ctx, (int []){x, -gl_ctx->win_h, 0}, (int []){x, gl_ctx->win_h*2, 0}, 3);
+		draw_gl_line (gl_ctx, (float []){-gl_ctx->win_w, y, 0}, (float []){gl_ctx->win_w*2,y, 0}, 3);
+		draw_gl_line (gl_ctx, (float []){x, -gl_ctx->win_h, 0}, (float []){x, gl_ctx->win_h*2, 0}, 3);
 		
-		draw_gl_line (gl_ctx, (int []){x-5, y+5, 0}, (int []){x+5, y+5, 0}, 1);
-		draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x+5, y-5, 0}, 1);
-		draw_gl_line (gl_ctx, (int []){x+5, y-5, 0}, (int []){x+5, y+5, 0}, 1);
-		draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x-5, y+5, 0}, 1);
+		draw_gl_line (gl_ctx, (float []){x-5, y+5, 0}, (float []){x+5, y+5, 0}, 1);
+		draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x+5, y-5, 0}, 1);
+		draw_gl_line (gl_ctx, (float []){x+5, y-5, 0}, (float []){x+5, y+5, 0}, 1);
+		draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x-5, y+5, 0}, 1);
 	}
 	
 	draw_gl (gl_ctx, 0);
@@ -2228,121 +2228,121 @@ int draw_attractor_gl(gui_obj *gui, enum attract_type type, int x, int y, bmp_co
 	switch (type){
 		case ATRC_END:
 			/* draw square */
-			draw_gl_line (gl_ctx, (int []){x-5, y+5, 0}, (int []){x+5, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x+5, y-5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+5, y-5, 0}, (int []){x+5, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x-5, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y+5, 0}, (float []){x+5, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x+5, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+5, y-5, 0}, (float []){x+5, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x-5, y+5, 0}, 1);
 			break;
 		case ATRC_MID:
 			/* draw triangle */
-			draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x+5, y-5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+5, y-5, 0}, (int []){x, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x+5, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+5, y-5, 0}, (float []){x, y+5, 0}, 1);
 			break;
 		case ATRC_CENTER:
 			/* draw circle */
-			draw_gl_line (gl_ctx, (int []){x-7, y, 0}, (int []){x-5, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y+5, 0}, (int []){x, y+7, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x, y+7, 0}, (int []){x+5, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+5, y+5, 0}, (int []){x+7, y, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+7, y, 0}, (int []){x+5, y-5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+5, y-5, 0}, (int []){x, y-7, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x, y-7, 0}, (int []){x-5, y-5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x-7, y, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-7, y, 0}, (float []){x-5, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y+5, 0}, (float []){x, y+7, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x, y+7, 0}, (float []){x+5, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+5, y+5, 0}, (float []){x+7, y, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+7, y, 0}, (float []){x+5, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+5, y-5, 0}, (float []){x, y-7, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x, y-7, 0}, (float []){x-5, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x-7, y, 0}, 1);
 			break;
 		case ATRC_OCENTER:
 			/* draw a *star */
-			draw_gl_line (gl_ctx, (int []){x, y-5, 0}, (int []){x, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y, 0}, (int []){x+5, y, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x+5, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y+5, 0}, (int []){x+5, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x, y-5, 0}, (float []){x, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y, 0}, (float []){x+5, y, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x+5, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y+5, 0}, (float []){x+5, y-5, 0}, 1);
 			break;
 		case ATRC_NODE:
 			/* draw circle with x*/
-			draw_gl_line (gl_ctx, (int []){x-7, y, 0}, (int []){x-5, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y+5, 0}, (int []){x, y+7, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x, y+7, 0}, (int []){x+5, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+5, y+5, 0}, (int []){x+7, y, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+7, y, 0}, (int []){x+5, y-5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+5, y-5, 0}, (int []){x, y-7, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x, y-7, 0}, (int []){x-5, y-5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x-7, y, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-7, y, 0}, (float []){x-5, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y+5, 0}, (float []){x, y+7, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x, y+7, 0}, (float []){x+5, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+5, y+5, 0}, (float []){x+7, y, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+7, y, 0}, (float []){x+5, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+5, y-5, 0}, (float []){x, y-7, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x, y-7, 0}, (float []){x-5, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x-7, y, 0}, 1);
 			
-			draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x+5, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y+5, 0}, (int []){x+5, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x+5, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y+5, 0}, (float []){x+5, y-5, 0}, 1);
 			break;
 		case ATRC_QUAD:
 			/* draw diamond */
-			draw_gl_line (gl_ctx, (int []){x-7, y, 0}, (int []){x, y+7, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x, y+7, 0}, (int []){x+7, y, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+7, y, 0}, (int []){x, y-7, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x, y-7, 0}, (int []){x-7, y, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-7, y, 0}, (float []){x, y+7, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x, y+7, 0}, (float []){x+7, y, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+7, y, 0}, (float []){x, y-7, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x, y-7, 0}, (float []){x-7, y, 0}, 1);
 			break;
 		case ATRC_INTER:
 			/* draw x */
-			draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x+5, y+5, 0}, 3);
-			draw_gl_line (gl_ctx, (int []){x-5, y+5, 0}, (int []){x+5, y-5, 0}, 3);
+			draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x+5, y+5, 0}, 3);
+			draw_gl_line (gl_ctx, (float []){x-5, y+5, 0}, (float []){x+5, y-5, 0}, 3);
 			break;
 		case ATRC_EXT:
-			draw_gl_line (gl_ctx, (int []){x-7, y, 0}, (int []){x-2, y, 0}, 3);
-			draw_gl_line (gl_ctx, (int []){x, y, 0}, (int []){x+3, y, 0}, 3);
-			draw_gl_line (gl_ctx, (int []){x+5, y, 0}, (int []){x+7, y, 0}, 3);
+			draw_gl_line (gl_ctx, (float []){x-7, y, 0}, (float []){x-2, y, 0}, 3);
+			draw_gl_line (gl_ctx, (float []){x, y, 0}, (float []){x+3, y, 0}, 3);
+			draw_gl_line (gl_ctx, (float []){x+5, y, 0}, (float []){x+7, y, 0}, 3);
 			break;
 		case ATRC_PERP:
 			/* draw square */
-			draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x-5, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x+5, y-5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y, 0}, (int []){x, y, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x, y-5, 0}, (int []){x, y, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x-5, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x+5, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y, 0}, (float []){x, y, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x, y-5, 0}, (float []){x, y, 0}, 1);
 			break;
 		case ATRC_INS:
-			draw_gl_line (gl_ctx, (int []){x-5, y+5, 0}, (int []){x+1, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+1, y+5, 0}, (int []){x+1, y+1, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+1, y+1, 0}, (int []){x+5, y+1, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+5, y+1, 0}, (int []){x+5, y-5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+5, y-5, 0}, (int []){x-1, y-5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-1, y-5, 0}, (int []){x-1, y-1, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-1, y-1, 0}, (int []){x-5, y-1, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y-1, 0}, (int []){x-5, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y+5, 0}, (float []){x+1, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+1, y+5, 0}, (float []){x+1, y+1, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+1, y+1, 0}, (float []){x+5, y+1, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+5, y+1, 0}, (float []){x+5, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+5, y-5, 0}, (float []){x-1, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-1, y-5, 0}, (float []){x-1, y-1, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-1, y-1, 0}, (float []){x-5, y-1, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y-1, 0}, (float []){x-5, y+5, 0}, 1);
 			break;
 		case ATRC_TAN:
-			draw_gl_line (gl_ctx, (int []){x-6, y+6, 0}, (int []){x+6, y+6, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-6, y+6, 0}, (float []){x+6, y+6, 0}, 1);
 			//bmp_line(img, x-5, y+5, x+5, y+5);
 			//bmp_circle(img, x, y, 5);
-			draw_gl_line (gl_ctx, (int []){x-5, y, 0}, (int []){x-3, y+3, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-3, y+3, 0}, (int []){x, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x, y+5, 0}, (int []){x+3, y+3, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+3, y+3, 0}, (int []){x+5, y, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+5, y, 0}, (int []){x+3, y-3, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+3, y-3, 0}, (int []){x, y-5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x, y-5, 0}, (int []){x-3, y-3, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-3, y-3, 0}, (int []){x-5, y, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y, 0}, (float []){x-3, y+3, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-3, y+3, 0}, (float []){x, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x, y+5, 0}, (float []){x+3, y+3, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+3, y+3, 0}, (float []){x+5, y, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+5, y, 0}, (float []){x+3, y-3, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+3, y-3, 0}, (float []){x, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x, y-5, 0}, (float []){x-3, y-3, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-3, y-3, 0}, (float []){x-5, y, 0}, 1);
 			break;
 		case ATRC_PAR:
 			/* draw two lines */
-			draw_gl_line (gl_ctx, (int []){x-5, y-1, 0}, (int []){x+1, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-1, y-5, 0}, (int []){x+5, y+1, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y-1, 0}, (float []){x+1, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-1, y-5, 0}, (float []){x+5, y+1, 0}, 1);
 			break;
 		case ATRC_CTRL:
 			/* draw a cross */
-			draw_gl_line (gl_ctx, (int []){x, y-5, 0}, (int []){x, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y, 0}, (int []){x+5, y, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x, y-5, 0}, (float []){x, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y, 0}, (float []){x+5, y, 0}, 1);
 			break;
 		case ATRC_AINT:
 			/* draw square with x */
-			draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x-5, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y+5, 0}, (int []){x+5, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+5, y+5, 0}, (int []){x+5, y-5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x+5, y-5, 0}, (int []){x-5, y-5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x+5, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y+5, 0}, (int []){x+5, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x-5, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y+5, 0}, (float []){x+5, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+5, y+5, 0}, (float []){x+5, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x+5, y-5, 0}, (float []){x-5, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x+5, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y+5, 0}, (float []){x+5, y-5, 0}, 1);
 			break;
 		case ATRC_ANY:
 			/* draw a Hourglass */
-			draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x+5, y+5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y+5, 0}, (int []){x+5, y-5, 0}, 1);
-			draw_gl_line (gl_ctx, (int []){x-5, y+5, 0}, (int []){x+5, y+5, 0}, 2);
-			draw_gl_line (gl_ctx, (int []){x-5, y-5, 0}, (int []){x+5, y-5, 0}, 2);
+			draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x+5, y+5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y+5, 0}, (float []){x+5, y-5, 0}, 1);
+			draw_gl_line (gl_ctx, (float []){x-5, y+5, 0}, (float []){x+5, y+5, 0}, 2);
+			draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x+5, y-5, 0}, 2);
 			break;
 	}
 	
@@ -2373,7 +2373,7 @@ int gui_draw_vert_rect_gl(gui_obj *gui, double x, double y, bmp_color color){
 	int x1 = (int) round((x - gui->ofs_x) * gui->zoom);
 	int y1 = (int) round((y - gui->ofs_y) * gui->zoom);
 	
-	draw_gl_quad (gl_ctx, (int []){x1-7, y1+7, 0}, (int []){x1-7, y1-7, 0}, (int []){x1+7, y1+7, 0}, (int []){x1+7, y1-7, 0});
+	draw_gl_quad (gl_ctx, (float[]){x1-7, y1+7, 0}, (float[]){x1-7, y1-7, 0}, (float[]){x1+7, y1+7, 0}, (float[]){x1+7, y1-7, 0});
 	
 	draw_gl (gl_ctx, 0);
 	return 1;

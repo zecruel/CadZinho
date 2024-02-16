@@ -293,7 +293,7 @@ int draw_gl_init (void *data, int clear){ /* init (or de-init) OpenGL */
 	}
 }
 
-int draw_gl_line (struct ogl *gl_ctx, int p0[3], int p1[3], int thick){
+int draw_gl_line (struct ogl *gl_ctx, float p0[3], float p1[3], float thick){
 	/* emulate drawing a single line with thickness, using triangles in openGL */
 	
 	/* verify struct and buffers */
@@ -330,7 +330,7 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[3], int p1[3], int thick){
 		return 0;
 	}
 	
-	/* convert input coordinates, in pixles (int), to openGL units */
+	/* convert input coordinates, in pixles (int), to openGL units -- DEPRECATED */
 	float tx = (float) thick / 2.0;
 	float ty = tx;
 	float x0 = (float) p0[0];
@@ -436,7 +436,7 @@ int draw_gl_line (struct ogl *gl_ctx, int p0[3], int p1[3], int thick){
 	return 1;
 }
 
-int draw_gl_quad (struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3]){
+int draw_gl_quad (struct ogl *gl_ctx, float tl[3], float bl[3], float tr[3], float br[3]){
 	/* emulate drawing a filled and convex quadrilateral, using triangles in openGL */
 	
 	/* verify struct and buffers */
@@ -993,7 +993,7 @@ int draw_gl_image_rec (struct ogl *gl_ctx, int x, int y, int z, int w, int h, bm
 	return 1;
 }
 
-int draw_gl_image_quad(struct ogl *gl_ctx, int tl[3], int bl[3], int tr[3], int br[3], bmp_img *img){
+int draw_gl_image_quad(struct ogl *gl_ctx, float tl[3], float bl[3], float tr[3], float br[3], bmp_img *img){
 	/* emulate drawing a filled and convex quadrilateral, using triangles in openGL */
 	
 	/* verify struct and buffers */
@@ -1202,10 +1202,10 @@ int draw_gl_polygon (struct ogl *gl_ctx, int n, struct edge edges[]){
 					(int[]){nodes[j].up, scan_lines[i-1], nodes[j].z});
 			}
 			else { /* general case - quadrilateral polygon */
-				draw_gl_quad (gl_ctx, (int[]){nodes[j - 1].up, scan_lines[i-1], nodes[j - 1].z},
-					(int[]){nodes[j - 1].low, scan_lines[i], nodes[j - 1].z},
-					(int[]){nodes[j].up, scan_lines[i-1], nodes[j].z},
-					(int[]){nodes[j].low, scan_lines[i], nodes[j].z});
+				draw_gl_quad (gl_ctx, (float[]){nodes[j - 1].up, scan_lines[i-1], nodes[j - 1].z},
+					(float[]){nodes[j - 1].low, scan_lines[i], nodes[j - 1].z},
+					(float[]){nodes[j].up, scan_lines[i-1], nodes[j].z},
+					(float[]){nodes[j].low, scan_lines[i], nodes[j].z});
 			}
 		}
 	}
@@ -1220,7 +1220,7 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 	if (master->list->next == NULL) return 0;
 	
 	double x0, y0, z0, x1, y1, z1;
-	int xd0, yd0, zd0, xd1, yd1, zd1;
+	float xd0, yd0, zd0, xd1, yd1, zd1;
 	double dx, dy, dz, modulus, sine, cosine, uz;
 	line_node *current = master->list->next;
 	int i, iter, thick;
@@ -1263,28 +1263,28 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 		bmp_color white = {.r = 255, .g = 255, .b =255, .a = 255};
 		bmp_color transp = {.r = 255, .g = 255, .b =255, .a = 0};
 		
-		int tl[3], bl[3], tr[3], br[3];
+		float tl[3], bl[3], tr[3], br[3];
 		/* apply  offset an scale */
 		/* first vertice */
-		bl[0] = 0.5 + (current->x0 - param.ofs_x) * param.scale;
-		bl[1] = 0.5 + (current->y0 - param.ofs_y) * param.scale;
-		bl[2] = 0.5 + (current->z0 - param.ofs_z) * param.scale;
+		bl[0] = (current->x0 - param.ofs_x) * param.scale;
+		bl[1] = (current->y0 - param.ofs_y) * param.scale;
+		bl[2] = (current->z0 - param.ofs_z) * param.scale;
 		/* second vertice */
-		br[0] = 0.5 + (current->x1 - param.ofs_x) * param.scale;
-		br[1] = 0.5 + (current->y1 - param.ofs_y) * param.scale;
-		br[2] = 0.5 + (current->z1 - param.ofs_z) * param.scale;
+		br[0] = (current->x1 - param.ofs_x) * param.scale;
+		br[1] = (current->y1 - param.ofs_y) * param.scale;
+		br[2] = (current->z1 - param.ofs_z) * param.scale;
 		current = current->next;
 		if (!current) return 0;
 		/* 3# vertice */
-		tr[0] = 0.5 + (current->x1 - param.ofs_x) * param.scale;
-		tr[1] = 0.5 + (current->y1 - param.ofs_y) * param.scale;
-		tr[2] = 0.5 + (current->z1 - param.ofs_z) * param.scale;
+		tr[0] = (current->x1 - param.ofs_x) * param.scale;
+		tr[1] = (current->y1 - param.ofs_y) * param.scale;
+		tr[2] = (current->z1 - param.ofs_z) * param.scale;
 		current = current->next;
 		if (!current) return 0;
 		/* 4# vertice */
-		tl[0] = 0.5 + (current->x1 - param.ofs_x) * param.scale;
-		tl[1] = 0.5 + (current->y1 - param.ofs_y) * param.scale;
-		tl[2] = 0.5 + (current->z1 - param.ofs_z) * param.scale;
+		tl[0] = (current->x1 - param.ofs_x) * param.scale;
+		tl[1] = (current->y1 - param.ofs_y) * param.scale;
+		tl[2] = (current->z1 - param.ofs_z) * param.scale;
 		
 		/* draw a frame */
 		color = validate_color(transp, param.list, param.subst, param.len_subst);
@@ -1349,10 +1349,10 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 					(int []){edges[2].x0, edges[2].y0, edges[2].z0});
 			}
 			else if (i < 5) {
-				draw_gl_quad (gl_ctx, (int []){edges[0].x0, edges[0].y0, edges[0].z0},
-					(int []){edges[1].x0, edges[1].y0, edges[1].z0},
-					(int []){edges[3].x0, edges[3].y0, edges[3].z0},
-					(int []){edges[2].x0, edges[2].y0, edges[2].z0});
+				draw_gl_quad (gl_ctx, (float []){edges[0].x0, edges[0].y0, edges[0].z0},
+					(float []){edges[1].x0, edges[1].y0, edges[1].z0},
+					(float []){edges[3].x0, edges[3].y0, edges[3].z0},
+					(float []){edges[2].x0, edges[2].y0, edges[2].z0});
 			}
 			else {
 				draw_gl_polygon (gl_ctx, i, edges);
@@ -1464,15 +1464,15 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 									cplx_lin = cplx_gr->list->next;
 									/* draw the lines */
 									while(cplx_lin){ /*sweep the list content */
-										xd0 = 0.5 + p2x + ((cplx_lin->x0 * cosine -  cplx_lin->y0 * sine) * param.scale);
-										yd0 = 0.5 + p2y + ((cplx_lin->x0 * sine +  cplx_lin->y0 * cosine) * param.scale);
-										zd0 = 0.5 + p2z;
-										xd1 = 0.5 + p2x + ((cplx_lin->x1 * cosine -  cplx_lin->y1 * sine) * param.scale);
-										yd1 = 0.5 + p2y + ((cplx_lin->x1 * sine +  cplx_lin->y1 * cosine) * param.scale);
-										zd1 = 0.5 + p2z;
+										xd0 = p2x + ((cplx_lin->x0 * cosine -  cplx_lin->y0 * sine) * param.scale);
+										yd0 = p2y + ((cplx_lin->x0 * sine +  cplx_lin->y0 * cosine) * param.scale);
+										zd0 = p2z;
+										xd1 = p2x + ((cplx_lin->x1 * cosine -  cplx_lin->y1 * sine) * param.scale);
+										yd1 = p2y + ((cplx_lin->x1 * sine +  cplx_lin->y1 * cosine) * param.scale);
+										zd1 = p2z;
 										
 										//bmp_line(img, xd0, yd0, xd1, yd1);
-										draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, 0);
+										draw_gl_line (gl_ctx, (float []){xd0, yd0, zd0}, (float []){ xd1, yd1, zd1}, 0.0);
 										
 										cplx_lin = cplx_lin->next; /* go to next */
 									}
@@ -1487,19 +1487,21 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 						
 						if (draw){
 							//bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
-							xd0 = p1x + 0.5; yd0 = p1y + 0.5; zd0 = p1z + 0.5;
-							xd1 = p2x + 0.5; yd1 = p2y + 0.5; zd1 = p2z + 0.5;
-							if (xd0 != xd1 || yd0 != yd1 || zd0 != zd1){
-								draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
+							//xd0 = p1x + 0.5; yd0 = p1y + 0.5; zd0 = p1z + 0.5;
+							//xd1 = p2x + 0.5; yd1 = p2y + 0.5; zd1 = p2z + 0.5;
+							//if (xd0 != xd1 || yd0 != yd1 || zd0 != zd1){
+              if (p1x != p2x || p1y != p2y || p1z != p2z){
+								//draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
+                draw_gl_line (gl_ctx, (float []){p1x, p1y, p1z}, (float []){ p2x, p2y, p2z}, thick);
 							} else { /* draw a dot */
 								float t = thick, tx, ty;
 								if (t < 2.0) t = 2.0;
 								tx = t * 0.5 * cosine;
 								ty = t * 0.5 * sine;
-								draw_gl_quad (gl_ctx, (int []){p1x - tx - ty + 0.5, p1y + tx - ty, zd0}, 
-									(int []){p1x - tx + ty, p1y - tx - ty, zd0}, 
-									(int []){p1x + tx - ty, p1y + tx + ty, zd0},
-									(int []){p1x + tx + ty, p1y - tx + ty, zd0});
+								draw_gl_quad (gl_ctx, (float []){p1x - tx - ty + 0.5, p1y + tx - ty, p1z}, 
+									(float []){p1x - tx + ty, p1y - tx - ty, p1z}, 
+									(float []){p1x + tx - ty, p1y + tx + ty, p1z},
+									(float []){p1x + tx + ty, p1y - tx + ty, p1z});
 							}
 						}
 					}
@@ -1517,19 +1519,21 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 						p2z = fabs(master->pattern[patt_i]) * param.scale * uz + p1z;
 						if (draw){
 							//bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
-							xd0 = p1x + 0.5; yd0 = p1y + 0.5; zd0 = p1z + 0.5;
-							xd1 = p2x + 0.5; yd1 = p2y + 0.5; zd1 = p2z + 0.5;
-							if (xd0 != xd1 || yd0 != yd1 || zd0 != zd1){
-								draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
+							//xd0 = p1x + 0.5; yd0 = p1y + 0.5; zd0 = p1z + 0.5;
+							//xd1 = p2x + 0.5; yd1 = p2y + 0.5; zd1 = p2z + 0.5;
+							//if (xd0 != xd1 || yd0 != yd1 || zd0 != zd1){
+              if (p1x != p2x || p1y != p2y || p1z != p2z){
+								//draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
+                draw_gl_line (gl_ctx, (float []){p1x, p1y, p1z}, (float []){ p2x, p2y, p2z}, thick);
 							} else { /* draw a dot */
 								float t = thick, tx, ty;
 								if (t < 2.0) t = 2.0;
 								tx = t * 0.5 * cosine;
 								ty = t * 0.5 * sine;
-								draw_gl_quad (gl_ctx, (int []){p1x - tx - ty, p1y + tx - ty, zd0}, 
-									(int []){p1x - tx + ty, p1y - tx - ty, zd0}, 
-									(int []){p1x + tx - ty, p1y + tx + ty, zd0},
-									(int []){p1x + tx + ty, p1y - tx + ty, zd0});
+								draw_gl_quad (gl_ctx, (float []){p1x - tx - ty, p1y + tx - ty, p1z}, 
+									(float []){p1x - tx + ty, p1y - tx - ty, p1z}, 
+									(float []){p1x + tx - ty, p1y + tx + ty, p1z},
+									(float []){p1x + tx + ty, p1y - tx + ty, p1z});
 							}
 						}
 						p1x = p2x;
@@ -1553,15 +1557,15 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 									/* draw the lines */
 									while(cplx_lin){ /*sweep the list content */
 										
-										xd0 = 0.5 + p1x + ((cplx_lin->x0 * cosine -  cplx_lin->y0 * sine) * param.scale);
-										yd0 = 0.5 + p1y + ((cplx_lin->x0 * sine +  cplx_lin->y0 * cosine) * param.scale);
-										zd0 = 0.5 + p1z;
-										xd1 = 0.5 + p1x + ((cplx_lin->x1 * cosine -  cplx_lin->y1 * sine) * param.scale);
-										yd1 = 0.5 + p1y + ((cplx_lin->x1 * sine +  cplx_lin->y1 * cosine) * param.scale);
-										zd1 = 0.5 + p1z;
+										xd0 = p1x + ((cplx_lin->x0 * cosine -  cplx_lin->y0 * sine) * param.scale);
+										yd0 = p1y + ((cplx_lin->x0 * sine +  cplx_lin->y0 * cosine) * param.scale);
+										zd0 = p1z;
+										xd1 = p1x + ((cplx_lin->x1 * cosine -  cplx_lin->y1 * sine) * param.scale);
+										yd1 = p1y + ((cplx_lin->x1 * sine +  cplx_lin->y1 * cosine) * param.scale);
+										zd1 = p1z;
 										
 										//bmp_line(img, xd0, yd0, xd1, yd1);
-										draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, 0);
+										draw_gl_line (gl_ctx, (float []){xd0, yd0, zd0}, (float []){ xd1, yd1, zd1}, 0.0);
 										
 										cplx_lin = cplx_lin->next; /* go to next */
 									}
@@ -1580,9 +1584,10 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 					p2z = last * param.scale * uz + p1z;
 					draw = master->pattern[patt_i] >= 0.0;
 					if (draw) {//bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
-						xd0 = p1x + 0.5; yd0 = p1y + 0.5; zd0 = p1z + 0.5;
-						xd1 = p2x + 0.5; yd1 = p2y + 0.5; zd1 = p2z + 0.5;
-						draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
+						//xd0 = p1x + 0.5; yd0 = p1y + 0.5; zd0 = p1z + 0.5;
+						//xd1 = p2x + 0.5; yd1 = p2y + 0.5; zd1 = p2z + 0.5;
+						//draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
+            draw_gl_line (gl_ctx, (float []){p1x, p1y, p1z}, (float []){ p2x, p2y, p2z}, thick);
 					}
 				}
 				else{ /* current segment is in same past iteration pattern */
@@ -1594,9 +1599,10 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 				
 					if (draw){
 						//bmp_line_norm(img, p1x, p1y, p2x, p2y, -sine, cosine);
-						xd0 = p1x + 0.5; yd0 = p1y + 0.5; zd0 = p1z + 0.5;
-						xd1 = p2x + 0.5; yd1 = p2y + 0.5; zd1 = p2z + 0.5;
-						draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
+						//xd0 = p1x + 0.5; yd0 = p1y + 0.5; zd0 = p1z + 0.5;
+						//xd1 = p2x + 0.5; yd1 = p2y + 0.5; zd1 = p2z + 0.5;
+						//draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
+            draw_gl_line (gl_ctx, (float []){p1x, p1y, p1z}, (float []){ p2x, p2y, p2z}, thick);
 					}
 					p1x = p2x;
 					p1y = p2y;
@@ -1610,23 +1616,23 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 			while(current){ /*sweep the list content */
 				/* apply the scale and offset */
 				
-				xd0 = 0.5 + (current->x0 - param.ofs_x) * param.scale;
-				yd0 = 0.5 + (current->y0 - param.ofs_y) * param.scale;
-				zd0 = 0.5 + (current->z0 - param.ofs_z) * param.scale;
-				xd1 = 0.5 + (current->x1 - param.ofs_x) * param.scale;
-				yd1 = 0.5 + (current->y1 - param.ofs_y) * param.scale;
-				zd1 = 0.5 + (current->z1 - param.ofs_z) * param.scale;
+				xd0 = (current->x0 - param.ofs_x) * param.scale;
+				yd0 = (current->y0 - param.ofs_y) * param.scale;
+				zd0 = (current->z0 - param.ofs_z) * param.scale;
+				xd1 = (current->x1 - param.ofs_x) * param.scale;
+				yd1 = (current->y1 - param.ofs_y) * param.scale;
+				zd1 = (current->z1 - param.ofs_z) * param.scale;
 				
 				if (master->pattern[0] >= 0.0)
 					//bmp_line_norm(img, x0, y0, x1, y1, -sine, cosine);
 					//draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
-					if (xd0 != xd1 || yd0 != yd1 || zd0 != zd1){
-						draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
+					if (x0 != x1 || y0 != y1 || z0 != z1){
+						draw_gl_line (gl_ctx, (float []){xd0, yd0, zd0}, (float []){ xd1, yd1, zd1}, thick);
 					} else { /* draw a dot */
 						int t = thick * 0.5 + 0.5;
 						if (t < 1) t = 1;
-						draw_gl_quad (gl_ctx, (int []){xd0 - t, yd0 + t, zd0}, (int []){xd0 - t, yd0 - t, zd0}, 
-							(int []){xd0 + t, yd0 + t, zd0}, (int []){xd0 + t, yd0 - t, zd0});
+						draw_gl_quad (gl_ctx, (float []){xd0 - t, yd0 + t, zd0}, (float []){xd0 - t, yd0 - t, zd0}, 
+							(float []){xd0 + t, yd0 + t, zd0}, (float []){xd0 + t, yd0 - t, zd0});
 					}
 				
 				current = current->next; /* go to next */

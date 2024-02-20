@@ -993,8 +993,8 @@ void dxf_layer_assemb (dxf_drawing *drawing){
 	while (curr_layer = dxf_find_obj_nxt(drawing->t_layer, &nxt_lay, "LAYER")){ /* get the next layer */
 	
 		name = 0;
-		color = 0;
-		ltype = 0;
+		color = 7;
+		ltype = strpool_inject( &name_pool, "Continuous", strlen("Continuous") );
 		line_w = 0;
 		frozen = 0;
 		lock = 0;

@@ -1977,6 +1977,9 @@ int gui_start(gui_obj *gui){
   gui->debug_pause = 0;
   gui->debug_level = 0;
   gui->debug_step_level = 0;
+  
+  gui->grid_flags = 0;
+  gui->grid_spc = 20.0;
 	
 	memset(gui->blank_tex, 0, 4*20*600);
 	
@@ -2197,6 +2200,57 @@ int draw_cursor_gl(gui_obj *gui, int x, int y, enum Cursor_type type) {
 		draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x+5, y-5, 0}, 1);
 		draw_gl_line (gl_ctx, (float []){x+5, y-5, 0}, (float []){x+5, y+5, 0}, 1);
 		draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x-5, y+5, 0}, 1);
+	}
+	
+	draw_gl (gl_ctx, 0);
+	return 1;
+}
+
+int draw_grid_gl(gui_obj *gui) {
+	if (!gui) return 0;
+	double grid_spc = gui->grid_spc;
+  
+  double size = log10(grid_spc * gui->zoom);
+  
+  if (size < 1.0) grid_spc *= pow(10.0, ceil(fabs(size)) + 1.0);
+  
+	struct ogl *gl_ctx = &(gui->gl_ctx);
+	
+	/* init opengl context */
+  #ifndef GLES2
+	if (gl_ctx->elems == NULL){
+		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	}
+  #endif
+	/* set the color to contrast with background*/
+	gl_ctx->fg[0] = gui->background.r ^ 255;
+	gl_ctx->fg[1] = gui->background.g ^ 255;
+	gl_ctx->fg[2] = gui->background.b ^ 255;
+	int alpha = 0;
+	if (gui->background.r > 90 && gui->background.r <125) alpha += 30;
+	if (gui->background.g > 90 && gui->background.g <125) alpha += 30;
+	if (gui->background.b > 90 && gui->background.b <125) alpha += 30;
+	gl_ctx->fg[3] = 30 + alpha;
+	
+	/* draw cursor */
+  int i, n;
+  float x;
+  //(gui->mouse_x - 5)/gui->zoom + gui->ofs_x;
+  
+  n = 1 + round(gl_ctx->win_w / gui->zoom / grid_spc);
+  x = (- fmod(gui->ofs_x, grid_spc)) * gui->zoom;
+	for (i = 0; i < n; i++) {
+		draw_gl_line (gl_ctx, (float []){x, -gl_ctx->win_h, 0}, (float []){x, gl_ctx->win_h*2, 0}, 1);
+		x += grid_spc * gui->zoom;
+	}
+  
+  
+  n = 1 + round(gl_ctx->win_h / gui->zoom / grid_spc);
+  x = (- fmod(gui->ofs_y, grid_spc)) * gui->zoom;
+	for (i = 0; i < n; i++) {
+		draw_gl_line (gl_ctx, (float []){-gl_ctx->win_w, x, 0}, (float []){gl_ctx->win_w*2,x, 0}, 1);
+		x += grid_spc * gui->zoom;
 	}
 	
 	draw_gl (gl_ctx, 0);

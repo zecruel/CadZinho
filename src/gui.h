@@ -224,6 +224,19 @@ enum Prev_typ {
   PRV_SIZE
 };
 
+enum Grid_flags {
+	GRID_NONE = 0,
+	GRID_VISIBLE = 1,
+	GRID_LOCK_X = 2,
+	GRID_LOCK_Y = 4,
+	GRID_LOCK_Z = 8,
+	GRID_LOCK_ISO = 16,
+	GRID_LOCK_DIST = 32,
+	GRID_LOCK_ANG = 64,
+	GRID_ISO = 128,
+	GRID_3D = 256,
+};
+
 struct gui_glyph{
 	int code_p, x, y, w, h;
 	double adv;
@@ -515,6 +528,9 @@ struct Gui_obj {
   int debug_level;
   int debug_step_level;
   
+  int grid_flags;
+  double grid_spc;
+  
 };
 typedef struct Gui_obj gui_obj;
 
@@ -580,6 +596,8 @@ void gui_draw_vert(gui_obj *gui, bmp_img *img, dxf_node *obj);
 int nk_gl_render(gui_obj *gui) ;
 
 int draw_cursor_gl(gui_obj *gui, int x, int y, enum Cursor_type type);
+
+int draw_grid_gl(gui_obj *gui);
 
 int draw_attractor_gl(gui_obj *gui, enum attract_type type, int x, int y, bmp_color color);
 

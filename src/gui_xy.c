@@ -1,4 +1,5 @@
 #include "gui_xy.h"
+#define TOLERANCE 1e-6
 
 int gui_update_pos(gui_obj *gui){
 	double rect_pt1[2], rect_pt2[2];
@@ -54,8 +55,17 @@ int gui_update_pos(gui_obj *gui){
 		
 		if ((gui->step >= 0) && (gui->step < 1000)){
 			/* update current position by the mouse */
-			gui->step_x[gui->step] = (double) gui->mouse_x/gui->zoom + gui->ofs_x;
-			gui->step_y[gui->step] = (double) gui->mouse_y/gui->zoom + gui->ofs_y;
+			cursor_x = (double) gui->mouse_x/gui->zoom + gui->ofs_x;
+			cursor_y = (double) gui->mouse_y/gui->zoom + gui->ofs_y;
+      
+      gui->step_x[gui->step] = cursor_x;
+			gui->step_y[gui->step] = cursor_y;
+      if(gui->grid_flags > 1){
+        if (gui->grid_spc < TOLERANCE) gui->grid_spc = 20;
+        gui->step_x[gui->step] = gui->grid_spc * round(cursor_x / gui->grid_spc);
+        gui->step_y[gui->step] = gui->grid_spc * round(cursor_y / gui->grid_spc);
+      }
+      
 			gui->near_attr = ATRC_NONE;
 			
 			if (gui->step > 0) {
@@ -69,8 +79,7 @@ int gui_update_pos(gui_obj *gui){
 			if (!gui->free_sel){
 				/* update current position by the attractor of near element */
 				if (gui->near_attr = dxf_ent_attract(gui->drawing, gui->near_el, gui->curr_attr_t,
-				gui->step_x[gui->step], gui->step_y[gui->step], ref_x, ref_y,
-				(double) 20/gui->zoom, &gui->near_x , &gui->near_y)){
+				cursor_x, cursor_y, ref_x, ref_y, (double) 20/gui->zoom, &gui->near_x , &gui->near_y)){
 					gui->step_x[gui->step] = gui->near_x;
 					gui->step_y[gui->step] = gui->near_y;
 				}
@@ -129,6 +138,11 @@ int gui_update_pos(gui_obj *gui){
 				gui->step_y[gui->step] = gui->user_y;
 			}
 		}
+    
+    if (!gui->rect_polar && gui->grid_flags > 1){
+      gui->mouse_x = (gui->grid_spc * round(cursor_x / gui->grid_spc) - gui->ofs_x) * gui->zoom;
+      gui->mouse_y = (gui->grid_spc * round(cursor_y / gui->grid_spc) - gui->ofs_y) * gui->zoom;
+    }
 		
 	}
 }

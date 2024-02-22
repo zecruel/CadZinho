@@ -1343,6 +1343,9 @@ int gui_main_loop (gui_obj *gui) {
     
     dxf_ents_draw_gl(gui->drawing, &gui->gl_ctx, d_param);
     
+    /* draw grid */
+    if (gui->grid_flags) draw_grid_gl(gui);
+    
     if (!gui->pan_mode) 
       draw_cursor_gl(gui, gui->mouse_x, gui->mouse_y, gui->cursor);
     

@@ -564,7 +564,7 @@ int main(int argc, char** argv){
 	while (gui_main_loop (gui)){
     
     if (gui->low_proc){
-      SDL_Delay(20);
+      SDL_Delay(gui->delay);
       SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEMOTION);
     }
 	}

@@ -42,9 +42,9 @@ int gui_main_loop (gui_obj *gui) {
   
   static char macro[64] = "";
 	static int macro_len = 0;
-	static int macro_timer = 0;
+	static int macro_timer = 1000;
 	
-	static int refresh_timer = 0;
+	static int refresh_timer = 100;
 	
 	static char function_key[20] = "";
   
@@ -423,7 +423,7 @@ int gui_main_loop (gui_obj *gui) {
             macro[macro_len] = *event.text.text;
             if (macro_len < 63) macro_len++;
             macro[macro_len] = 0;
-            macro_timer = 0;
+            macro_timer = SDL_GetTicks();
             gui->draw = 1;
           }
           break;
@@ -1173,7 +1173,7 @@ int gui_main_loop (gui_obj *gui) {
       
       lua_getglobal(gui->macro_script.T, "accept");
       if (lua_toboolean(gui->macro_script.T, -1)){
-        macro_timer = 0;
+        macro_timer = SDL_GetTicks();
         macro_len = 0;
         macro[0] = 0;
       }
@@ -1438,26 +1438,31 @@ int gui_main_loop (gui_obj *gui) {
   nk_clear(gui->ctx); /* <-------- IMPORTANT   */
   
   /* -------- macro */
-  if (macro_timer < 40){
-    macro_timer++;
-  } else {
-    if (macro_len) gui->draw = 1;
-    macro_timer = 0;
-    macro_len = 0;
-    macro[0] = 0;
+  if (macro_len){
+    if (SDL_GetTicks() - macro_timer > 1000){
+      macro_timer = SDL_GetTicks();
+      gui->draw = 1;
+      macro_len = 0;
+      macro[0] = 0;
+    }
   }
   
   function_key[0] = 0;
   
   if (gui->script_resume_reason == YIELD_GUI_REFRESH){
-    if (refresh_timer < 3){
-      refresh_timer++;
-    } else {
-      refresh_timer = 0;
+    if (SDL_GetTicks() - refresh_timer > 100){
+      refresh_timer = SDL_GetTicks();
       gui->script_resume_reason = YIELD_NONE;
       gui->script_resume = 1;
     }
   }
+  
+  #ifdef __EMSCRIPTEN__
+  if (gui->low_proc){
+    SDL_Delay(gui->delay);
+    SDL_FlushEvents(SDL_MOUSEMOTION, SDL_MOUSEMOTION);
+  }
+  #endif
   
   return gui->running;
 }

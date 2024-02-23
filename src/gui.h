@@ -266,6 +266,7 @@ struct func_key {
 struct Gui_obj {
   int running;
   int low_proc;
+  int delay;
   int changed;
   int near_count;
 	int sel_idx;

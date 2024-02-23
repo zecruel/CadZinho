@@ -36,7 +36,9 @@ const char* gui_dflt_conf() {
   "-- Grid configuration - spacing key as number, other flags as unamed keys strings (\"visible\", \"lock x\", etc)\n"
 	"grid = { spacing=20 }\n\n"
   "-- Main language in GUI (translation)\n"
-  "language = \"%s\"\n\n";
+  "language = \"%s\"\n\n"
+  "-- Delay time for screen update, in milliseconds (values between 1-100). Decreasing its value will increase the frame rate, but also the CPU usage.\n"
+  "delay = 20\n\n";
 	
   SDL_Locale *locale = SDL_GetPreferredLocales();
   
@@ -533,6 +535,14 @@ int gui_get_conf (lua_State *L) {
 		}
 	}
 	lua_pop(L, 1);
+  
+  /* ------------------ get gui delay --------------- */
+  gui->delay = 20;
+	if (lua_getglobal(L, "delay") == LUA_TNUMBER){
+    gui->delay = lua_tonumber(L, -1);
+  }
+  lua_pop(L, 1);
+  if (gui->delay < 1 || gui->delay > 100) gui->delay = 20;
 	
 	return 1;
 }
@@ -675,10 +685,11 @@ int config_win (gui_obj *gui){
 	} cfg_grp = GRP_PREF;
   
   static struct nk_color bg_color = {100, 100, 100, 255}, hi_color = {255, 0, 255, 255};
-  static int prev_theme = 0, prev_cursor = 0;
+  static int prev_theme = 0, prev_cursor = 0, grid_show = 0, grid_lock = 0, delay = 20;
+  static double grid_spc = 20.0;
 	
 	//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "config", NK_WINDOW_CLOSABLE, nk_rect(310, 50, 200, 300))){
-	if (nk_begin(gui->ctx, _l("Config"), nk_rect(418, 88, 400, 500),
+	if (nk_begin(gui->ctx, _l("Config"), nk_rect(418, 88, 400, 550),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
     
@@ -695,6 +706,12 @@ int config_win (gui_obj *gui){
       
       prev_theme = gui->theme;
       prev_cursor = gui->cursor;
+      
+      grid_spc = gui->grid_spc;
+      grid_show = gui->grid_flags & 1;
+      grid_lock = gui->grid_flags > 1;
+      
+      delay = gui->delay;
       
       num_lang = 0;
       /* custom Lua functions to manage language config */
@@ -1171,6 +1188,41 @@ int config_win (gui_obj *gui){
           gui->hilite.b = hi_color.b;
         }
         
+      }
+      
+      /* grid */
+      nk_layout_row_dynamic(gui->ctx, 5, 1);
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+      nk_label(gui->ctx, _l("Grid:"), NK_TEXT_LEFT);
+      nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 4, (float[]){0.5, 0.05, 0.225, 0.225});
+      grid_spc = nk_propertyd(gui->ctx, _l("Spacing"), 1.0e-6, grid_spc, 1e9, SMART_STEP(grid_spc), SMART_STEP(grid_spc));
+      nk_label(gui->ctx, " ", NK_TEXT_LEFT);
+      nk_checkbox_label(gui->ctx, _l("Show"), &grid_show);
+      nk_checkbox_label(gui->ctx, _l("Lock"), &grid_lock);
+      if (grid_spc != gui->grid_spc || grid_show != (gui->grid_flags & 1) || grid_lock != (gui->grid_flags > 1)){
+        char str[50];
+        snprintf(str, 49, "{ spacing=%f", grid_spc);
+        if (grid_show) strcat (str, ", \"visible\"");
+        if (grid_lock) strcat (str, ", \"lock x\"");
+        strcat (str, " }");
+        if (gui_change_var2 (gui, cfg_scr.T, (char*) "grid", str)){
+          gui->grid_spc = grid_spc;
+          gui->grid_flags = grid_show;
+          if (grid_lock) gui->grid_flags |= 2;
+        }
+      }
+      
+      /* update delay */
+      nk_layout_row_dynamic(gui->ctx, 5, 1);
+			nk_layout_row_dynamic(gui->ctx, 20, 3);
+      nk_label(gui->ctx, _l("Update:"), NK_TEXT_LEFT);
+      delay = nk_propertyi(gui->ctx, _l("Delay"), 1, delay, 100, 1, 1);
+      if (delay != gui->delay){
+        char str[5];
+        snprintf(str, 4, "%d", delay);
+        if (gui_change_var2 (gui, cfg_scr.T, (char*) "delay", str)){
+          gui->delay = delay;
+        }
       }
       
 		}

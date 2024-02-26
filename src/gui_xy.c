@@ -60,7 +60,7 @@ int gui_update_pos(gui_obj *gui){
       
       gui->step_x[gui->step] = cursor_x;
 			gui->step_y[gui->step] = cursor_y;
-      if(gui->grid_flags > 1){
+      if(gui->grid_flags > 1){ /* lock position in grid */
         if (gui->grid_spc < TOLERANCE) gui->grid_spc = 20;
         gui->step_x[gui->step] = gui->grid_spc * round(cursor_x / gui->grid_spc);
         gui->step_y[gui->step] = gui->grid_spc * round(cursor_y / gui->grid_spc);
@@ -139,7 +139,7 @@ int gui_update_pos(gui_obj *gui){
 			}
 		}
     
-    if (!gui->rect_polar && gui->grid_flags > 1){
+    if (!gui->rect_polar && gui->grid_flags > 1){ /* lock mouse position in grid */
       gui->mouse_x = (gui->grid_spc * round(cursor_x / gui->grid_spc) - gui->ofs_x) * gui->zoom;
       gui->mouse_y = (gui->grid_spc * round(cursor_y / gui->grid_spc) - gui->ofs_y) * gui->zoom;
     }
@@ -164,8 +164,6 @@ int gui_xy(gui_obj *gui){
 		flag_x = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) >= fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
 		flag_y = fabs(gui->step_x[gui->step] - gui->step_x[gui->step - 1]) < fabs(gui->step_y[gui->step] - gui->step_y[gui->step - 1]);
 	}
-	
-	
 	
 	int space = 120;
 	

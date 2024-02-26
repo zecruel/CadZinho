@@ -2208,12 +2208,14 @@ int draw_cursor_gl(gui_obj *gui, int x, int y, enum Cursor_type type) {
 }
 
 int draw_grid_gl(gui_obj *gui) {
+  /* draw grid in window */
 	if (!gui) return 0;
 	double grid_spc = gui->grid_spc;
   
+  /* checks if grid is too small to see */
   double size = log10(grid_spc * gui->zoom);
-  
-  if (size < 1.0) grid_spc *= pow(10.0, ceil(fabs(size)) + 1.0);
+  if (size < 1.0)
+    grid_spc *= pow(10.0, ceil(fabs(size)) + 1.0); /* apply a multiplier to improve view */
   
 	struct ogl *gl_ctx = &(gui->gl_ctx);
 	
@@ -2237,18 +2239,18 @@ int draw_grid_gl(gui_obj *gui) {
 	/* draw cursor */
   int i, n;
   float x;
-  //(gui->mouse_x - 5)/gui->zoom + gui->ofs_x;
   
-  n = 1 + round(gl_ctx->win_w / gui->zoom / grid_spc);
-  x = (- fmod(gui->ofs_x, grid_spc)) * gui->zoom;
+  /* vertical lines */
+  n = 1 + round(gl_ctx->win_w / gui->zoom / grid_spc); /* number of lines in window width */
+  x = (- fmod(gui->ofs_x, grid_spc)) * gui->zoom; /* align to origin */
 	for (i = 0; i < n; i++) {
 		draw_gl_line (gl_ctx, (float []){x, -gl_ctx->win_h, 0}, (float []){x, gl_ctx->win_h*2, 0}, 1);
 		x += grid_spc * gui->zoom;
 	}
   
-  
-  n = 1 + round(gl_ctx->win_h / gui->zoom / grid_spc);
-  x = (- fmod(gui->ofs_y, grid_spc)) * gui->zoom;
+  /* horizontal lines */
+  n = 1 + round(gl_ctx->win_h / gui->zoom / grid_spc); /* number of lines in window height */
+  x = (- fmod(gui->ofs_y, grid_spc)) * gui->zoom; /* align to origin */
 	for (i = 0; i < n; i++) {
 		draw_gl_line (gl_ctx, (float []){-gl_ctx->win_w, x, 0}, (float []){gl_ctx->win_w*2,x, 0}, 1);
 		x += grid_spc * gui->zoom;
@@ -2257,6 +2259,52 @@ int draw_grid_gl(gui_obj *gui) {
 	draw_gl (gl_ctx, 0);
 	return 1;
 }
+
+int draw_orign_gl(gui_obj *gui) {
+  /* draw orign window */
+	if (!gui) return 0;
+	
+	/* init opengl context */
+  struct ogl *gl_ctx = &(gui->gl_ctx);
+  #ifndef GLES2
+	if (gl_ctx->elems == NULL){
+		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	}
+  #endif
+  float x, y, z;
+  
+  x = (-gui->ofs_x) * gui->zoom;
+  y = (-gui->ofs_y) * gui->zoom;
+  z = (-gui->ofs_z) * gui->zoom;
+  
+  
+	/* x axis */
+	gl_ctx->fg[0] = 255;
+	gl_ctx->fg[1] = 0;
+	gl_ctx->fg[2] = 0;
+	gl_ctx->fg[3] = 100;
+	draw_gl_line (gl_ctx, (float []){x, y, z}, (float []){x+30.0, y, z}, 3);
+  
+  /* y axis */
+	gl_ctx->fg[0] = 0;
+	gl_ctx->fg[1] = 255;
+	gl_ctx->fg[2] = 0;
+	gl_ctx->fg[3] = 100;
+	draw_gl_line (gl_ctx, (float []){x, y, z}, (float []){x, y+30.0, z}, 3);
+  
+  /* z axis */
+	gl_ctx->fg[0] = 0;
+	gl_ctx->fg[1] = 0;
+	gl_ctx->fg[2] = 255;
+	gl_ctx->fg[3] = 100;
+	draw_gl_line (gl_ctx, (float []){x, y, z}, (float []){x-0.1, y, z+30.0}, 3);
+	
+	draw_gl (gl_ctx, 0);
+	return 1;
+}
+
+
 
 int draw_attractor_gl(gui_obj *gui, enum attract_type type, int x, int y, bmp_color color){
 	if (!gui) return 0;

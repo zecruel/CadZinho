@@ -892,6 +892,23 @@ int config_win (gui_obj *gui){
 						font_size += 0.2;
 					}
 				}
+        
+        bg_color.r = gui->background.r;
+        bg_color.g = gui->background.g;
+        bg_color.b = gui->background.b;
+        
+        hi_color.r = gui->hilite.r;
+        hi_color.g = gui->hilite.g;
+        hi_color.b = gui->hilite.b;
+        
+        prev_theme = gui->theme;
+        prev_cursor = gui->cursor;
+        
+        grid_spc = gui->grid_spc;
+        grid_show = gui->grid_flags & 1;
+        grid_lock = gui->grid_flags > 1;
+        
+        delay = gui->delay;
 			}
       
       nk_layout_row_dynamic(gui->ctx, 5, 1);
@@ -1214,9 +1231,9 @@ int config_win (gui_obj *gui){
       
       /* update delay */
       nk_layout_row_dynamic(gui->ctx, 5, 1);
-			nk_layout_row_dynamic(gui->ctx, 20, 3);
-      nk_label(gui->ctx, _l("Update:"), NK_TEXT_LEFT);
-      delay = nk_propertyi(gui->ctx, _l("Delay"), 1, delay, 100, 1, 1);
+			nk_layout_row(gui->ctx, NK_DYNAMIC, 20, 3, (float[]){0.4, 0.3, 0.3});
+      nk_label(gui->ctx, _l("Refresh delay:"), NK_TEXT_LEFT);
+      delay = nk_propertyi(gui->ctx, _l("ms"), 1, delay, 100, 1, 1);
       if (delay != gui->delay){
         char str[5];
         snprintf(str, 4, "%d", delay);

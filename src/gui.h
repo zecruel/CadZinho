@@ -600,6 +600,8 @@ int draw_cursor_gl(gui_obj *gui, int x, int y, enum Cursor_type type);
 
 int draw_grid_gl(gui_obj *gui);
 
+int draw_orign_gl(gui_obj *gui);
+
 int draw_attractor_gl(gui_obj *gui, enum attract_type type, int x, int y, bmp_color color);
 
 void gui_draw_vert_gl(gui_obj *gui, dxf_node *obj);

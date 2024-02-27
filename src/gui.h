@@ -272,6 +272,7 @@ struct Gui_obj {
 	int sel_idx;
   int sel_count;
 	int free_sel;
+  int reload_conf;
   
   int next_win_x, next_win_y, next_win_w, next_win_h;
 	int mouse_x, mouse_y;//, mouse_z;
@@ -282,7 +283,7 @@ struct Gui_obj {
 	
 	int step, user_flag_x, user_flag_y, lock_ax_x, lock_ax_y, user_number;
 	int keyEnter;
-	int draw, draw_tmp, draw_phanton, draw_vert, vert_idx, safe_draw;
+	int draw, draw_tmp, draw_phanton, draw_vert, vert_idx;
 	int near_attr;
 	
 	int text2tag, hide_tag;

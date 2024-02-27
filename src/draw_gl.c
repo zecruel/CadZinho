@@ -317,6 +317,7 @@ int draw_gl_line (struct ogl *gl_ctx, float p0[3], float p1[3], float thick){
 	/* get polar parameters of line */
 	float dx = p1[0] - p0[0];
 	float dy = p1[1] - p0[1];
+  float dz = p1[2] - p0[2];
 	float modulus = sqrt(pow(dx, 2) + pow(dy, 2));
 	float cosine = 1.0;
 	float sine = 0.0;
@@ -324,6 +325,10 @@ int draw_gl_line (struct ogl *gl_ctx, float p0[3], float p1[3], float thick){
 		cosine = dx/modulus;
 		sine = dy/modulus;
 	}
+  else if (fabs(dz) > TOLERANCE){
+    cosine = 1.0;
+    sine = 0.0;
+  }
 	else {
 		/* a dot*/
 		//p1[0] += thick;

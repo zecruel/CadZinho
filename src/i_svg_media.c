@@ -2,6 +2,7 @@
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
+#include <string.h>
 
 char * svg_data[] = {
 	[SVG_I_SEL] = (char[]){"<svg width=\"24\" height=\"24\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\">"
@@ -589,10 +590,11 @@ NSVGimage ** i_svg_all_curves2(char *find, char *repl){
     lua_pushstring(L, find); /* pattern to find */
     lua_pushstring(L, repl); /* text or pattern to replace */
     if (lua_pcall(L, 3, 2, 0) == LUA_OK){
-      if (lua_isnumber(L, -1)) { /* success */
-        //int n = (int)lua_tonumber(L, -1); /* number of matches */
-        //if (n > 0) new_text = (char *)lua_tostring(L, -2);
-        curves[i] = nsvgParse((char *)lua_tostring(L, -2), "px", 96.0f);
+      if (lua_isnumber(L, -1) && lua_isstring(L, -2)) { /* success */
+        char *new_text = (char *)lua_tostring(L, -2);
+        int n = strlen (new_text);
+        
+        if (n > 1) curves[i] = nsvgParse(new_text, "px", 96.0f);
         
       }
       lua_pop(L, 2); /* clear Lua stack - pop returned values */

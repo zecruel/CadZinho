@@ -842,7 +842,6 @@ void set_style(gui_obj *gui, enum theme theme){
 	gui->i_cz48 = i_svg_bmp(gui->svg_curves[SVG_CZ], 48, 48);
 	gui->i_trash = i_svg_bmp(gui->svg_curves[SVG_TRASH], 16, 16);
   
-  gui->safe_draw = 1;
 }
 
 bmp_color nk_to_bmp_color(struct nk_color color){
@@ -873,12 +872,6 @@ int gui_check_draw(gui_obj *gui){
 				}
 			}
 		}
-    
-    if (gui->safe_draw) {
-      gui->safe_draw = 0;
-      gui->draw = 0;
-      draw = 0;
-    }
 	}
 	return draw;
 }
@@ -1676,6 +1669,7 @@ int gui_start(gui_obj *gui){
 	gui->sel_type = SEL_INTL;
 	gui->sel_count = 0;
 	gui->free_sel = 1;
+  gui->reload_conf = 0;
 	gui->sel_ent_filter = ~DXF_NONE;
 	
 	gui->gl_ctx.vert_count = 0;
@@ -1746,7 +1740,6 @@ int gui_start(gui_obj *gui){
 	gui->user_number = 0;
 	gui->keyEnter = 0;
 	gui->draw = 0;
-  gui->safe_draw = 0;
 	gui->draw_tmp = 0;
 	gui->draw_phanton = 0;
 	gui->draw_vert = 0;
@@ -2298,7 +2291,7 @@ int draw_orign_gl(gui_obj *gui) {
 	gl_ctx->fg[1] = 0;
 	gl_ctx->fg[2] = 255;
 	gl_ctx->fg[3] = 100;
-	draw_gl_line (gl_ctx, (float []){x, y, z}, (float []){x-0.1, y, z+30.0}, 3);
+	draw_gl_line (gl_ctx, (float []){x, y, z}, (float []){x, y, z+30.0}, 3);
 	
 	draw_gl (gl_ctx, 0);
 	return 1;

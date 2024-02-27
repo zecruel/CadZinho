@@ -146,7 +146,7 @@ void gui_load_lang (gui_obj *gui){
     }
   }
 }
-static void gui_change_lang (gui_obj *gui, lua_State *L){
+static int gui_change_lang (gui_obj *gui, lua_State *L){
   /* full path of config file */
 	char config_path[PATH_MAX_CHARS + 1];
 	config_path[0] = 0;
@@ -157,12 +157,14 @@ static void gui_change_lang (gui_obj *gui, lua_State *L){
   lua_pushstring(L, config_path); /* path to config.lua file */
   lua_pushstring(L, gui->main_lang); /* language chosen */
   if (lua_pcall(L, 2, 0, 0) == LUA_OK){ /* file changed successfully */
-    gui_load_lang(gui); /* load a new language */
+    //gui_load_lang(gui); /* load a new language */
+    return 1;
   }
   else{
     //char *error = lua_tostring(L, -1);
     lua_pop(L, 1); /* pop error message from the stack */
   }
+  return 0;
 }
 
 static int gui_change_var (gui_obj *gui, lua_State *L, char * name, char * value){
@@ -276,6 +278,39 @@ int gui_load_conf (gui_obj *gui){
 		conf_script.active = 0;
 		conf_script.dynamic = 0;
 	}
+  return 1;
+}
+
+int gui_reload_conf (gui_obj *gui){
+  int i;
+  gui_list_font_free (gui->ui_font_list);
+  gui->ui_font_list = gui_new_font (NULL);
+  
+  if (gui->seed) free(gui->seed);
+  if (gui->dflt_pat) free(gui->dflt_pat);
+  if (gui->dflt_lin) free(gui->dflt_lin);
+  if (gui->extra_lin) free(gui->extra_lin);
+  
+  gui->seed = NULL;
+  gui->dflt_pat = NULL;
+  gui->dflt_lin = NULL;
+  gui->extra_lin = NULL;
+  
+  gui_load_conf (gui);
+  set_style(gui, gui->theme);
+  
+  {
+    double font_size = 0.8;
+    for (i = 0; i < FONT_NUM_SIZE; i++){
+      gui->alt_font_sizes[i] = gui->ui_font;
+      gui->alt_font_sizes[i].height = font_size * gui->ui_font.height;
+      font_size += 0.2;
+    }
+  }
+  
+  gui->reload_conf = 0;
+  gui->draw = 1;
+  return 1;
 }
 
 int gui_get_conf (lua_State *L) {
@@ -672,7 +707,7 @@ int gui_get_ini (lua_State *L) {
 
 int config_win (gui_obj *gui){
   static struct script_obj cfg_scr;
-  static int init = 0;
+  static int init = 0, reload = 0;
   
 	int show_config = 1;
 	int i = 0;
@@ -833,6 +868,28 @@ int config_win (gui_obj *gui){
         }
       }
     }
+    if (reload){
+      reload = 0;
+      
+      bg_color.r = gui->background.r;
+      bg_color.g = gui->background.g;
+      bg_color.b = gui->background.b;
+      
+      hi_color.r = gui->hilite.r;
+      hi_color.g = gui->hilite.g;
+      hi_color.b = gui->hilite.b;
+      
+      prev_theme = gui->theme;
+      prev_cursor = gui->cursor;
+      
+      grid_spc = gui->grid_spc;
+      grid_show = gui->grid_flags & 1;
+      grid_lock = gui->grid_flags > 1;
+      
+      delay = gui->delay;
+      gui->draw = 1;
+    }
+    
 		/* Config groups - Preferences, Raw info, 3D view */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
@@ -868,47 +925,8 @@ int config_win (gui_obj *gui){
 				opener(config_path);
 			}
 			if (nk_button_label(gui->ctx, _l("Reload config"))){
-				gui_list_font_free (gui->ui_font_list);
-				gui->ui_font_list = gui_new_font (NULL);
-				
-				if (gui->seed) free(gui->seed);
-				if (gui->dflt_pat) free(gui->dflt_pat);
-				if (gui->dflt_lin) free(gui->dflt_lin);
-				if (gui->extra_lin) free(gui->extra_lin);
-				
-				gui->seed = NULL;
-				gui->dflt_pat = NULL;
-				gui->dflt_lin = NULL;
-				gui->extra_lin = NULL;
-				
-				gui_load_conf (gui);
-				set_style(gui, gui->theme);
-				
-				{
-					double font_size = 0.8;
-					for (i = 0; i < FONT_NUM_SIZE; i++){
-						gui->alt_font_sizes[i] = gui->ui_font;
-						gui->alt_font_sizes[i].height = font_size * gui->ui_font.height;
-						font_size += 0.2;
-					}
-				}
-        
-        bg_color.r = gui->background.r;
-        bg_color.g = gui->background.g;
-        bg_color.b = gui->background.b;
-        
-        hi_color.r = gui->hilite.r;
-        hi_color.g = gui->hilite.g;
-        hi_color.b = gui->hilite.b;
-        
-        prev_theme = gui->theme;
-        prev_cursor = gui->cursor;
-        
-        grid_spc = gui->grid_spc;
-        grid_show = gui->grid_flags & 1;
-        grid_lock = gui->grid_flags > 1;
-        
-        delay = gui->delay;
+        reload = 1;
+        gui->reload_conf = 1;
 			}
       
       nk_layout_row_dynamic(gui->ctx, 5, 1);
@@ -939,14 +957,20 @@ int config_win (gui_obj *gui){
                 lua_tostring(cfg_scr.T, -3), NK_TEXT_RIGHT))
               {
                 strncpy(gui->main_lang, lua_tostring(cfg_scr.T, -1), DXF_MAX_CHARS);
-                gui_change_lang(gui, cfg_scr.T); /* change in config.lua file too */
+                if (gui_change_lang(gui, cfg_scr.T)) {
+                  gui->reload_conf = 1; /* change in config.lua file too */
+                  reload = 1;
+                }
                 nk_combo_close(gui->ctx);
               }
             }
             else{
               if (nk_button_label(gui->ctx, lua_tostring(cfg_scr.T, -3))) {
                 strncpy(gui->main_lang, lua_tostring(cfg_scr.T, -1), DXF_MAX_CHARS);
-                gui_change_lang(gui, cfg_scr.T); /* change in config.lua file too */
+                if (gui_change_lang(gui, cfg_scr.T)) {
+                  gui->reload_conf = 1; /* change in config.lua file too */
+                  reload = 1;
+                }
                 nk_combo_close(gui->ctx);
               }
             }
@@ -960,14 +984,20 @@ int config_win (gui_obj *gui){
                 lua_tostring(cfg_scr.T, -1), NK_TEXT_RIGHT))
               {
                 strncpy(gui->main_lang, lua_tostring(cfg_scr.T, -1), DXF_MAX_CHARS);
-                gui_change_lang(gui, cfg_scr.T); /* change in config.lua file too */
+                if (gui_change_lang(gui, cfg_scr.T)) {
+                  gui->reload_conf = 1; /* change in config.lua file too */
+                  reload = 1;
+                }
                 nk_combo_close(gui->ctx);
               }
             }
             else{
               if (nk_button_label(gui->ctx, lua_tostring(cfg_scr.T, -1))) {
                 strncpy(gui->main_lang, lua_tostring(cfg_scr.T, -1), DXF_MAX_CHARS);
-                gui_change_lang(gui, cfg_scr.T); /* change in config.lua file too */
+                if (gui_change_lang(gui, cfg_scr.T)) {
+                  gui->reload_conf = 1; /* change in config.lua file too */
+                  reload = 1;
+                }
                 nk_combo_close(gui->ctx);
               }
             }
@@ -1074,17 +1104,16 @@ int config_win (gui_obj *gui){
             bg_color.b = 100;
           }
           
-          set_style(gui, gui->theme);
           prev_theme = gui->theme;
           
           char str[30];
           snprintf(str, 29, "{ r=%d, g=%d, b=%d }", bg_color.r, bg_color.g, bg_color.b);
           if (gui_change_var2 (gui, cfg_scr.T, (char*) "background", str)){
             
-            gui->background.r = bg_color.r;
-            gui->background.g = bg_color.g;
-            gui->background.b = bg_color.b;
           }
+          
+          gui->reload_conf = 1;
+          reload = 1;
 				}
         else {
           gui->theme = prev_theme;
@@ -1156,10 +1185,8 @@ int config_win (gui_obj *gui){
         char str[30];
         snprintf(str, 29, "{ r=%d, g=%d, b=%d }", bg_color.r, bg_color.g, bg_color.b);
         if (gui_change_var2 (gui, cfg_scr.T, (char*) "background", str)){
-          
-          gui->background.r = bg_color.r;
-          gui->background.g = bg_color.g;
-          gui->background.b = bg_color.b;
+          gui->reload_conf = 1;
+          reload = 1;
         }
         
       }
@@ -1199,10 +1226,8 @@ int config_win (gui_obj *gui){
         char str[30];
         snprintf(str, 29, "{ r=%d, g=%d, b=%d }", hi_color.r, hi_color.g, hi_color.b);
         if (gui_change_var2 (gui, cfg_scr.T, (char*) "hilite", str)){
-          
-          gui->hilite.r = hi_color.r;
-          gui->hilite.g = hi_color.g;
-          gui->hilite.b = hi_color.b;
+          gui->reload_conf = 1;
+          reload = 1;
         }
         
       }

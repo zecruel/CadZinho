@@ -74,6 +74,8 @@ int gui_main_loop (gui_obj *gui) {
   
   //SDL_ShowCursor(SDL_DISABLE);
   
+  if (gui->reload_conf) gui_reload_conf(gui);
+  
   
   /* get events for Nuklear GUI input */
   nk_input_begin(gui->ctx);
@@ -1360,6 +1362,7 @@ int gui_main_loop (gui_obj *gui) {
       gui->element->obj.graphics = dxf_graph_parse(gui->drawing, gui->element, 0 , 1);
     }
     
+    d_param.list = NULL;
     d_param.subst = &gui->hilite;
     d_param.len_subst = 1;
     d_param.inc_thick = 3;

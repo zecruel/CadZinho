@@ -1172,34 +1172,37 @@ int gui_script_prepare (gui_obj *gui, struct script_obj *script) {
 	lua_pop( T, 1);
 	
 	/* adjust package path for "require" in script file*/
-	luaL_Buffer b;  /* to store parcial strings */
-	luaL_buffinit(T, &b); /* init the Lua buffer */
+	int n = 10;
+  str_tmp[0] = DIR_SEPARATOR;
+  str_tmp[1] = 0;
 
 	if (strcmp (gui->base_dir, gui->pref_path) != 0){
-		luaL_addstring(&b, gui->pref_path);
-		luaL_addstring(&b, "script");
-		luaL_addchar(&b, DIR_SEPARATOR);
-		luaL_addstring(&b, "?.lua;");
-		luaL_addstring(&b, gui->pref_path);
-		luaL_addstring(&b, "script");
-		luaL_addchar(&b, DIR_SEPARATOR);
-		luaL_addstring(&b, "?");
-		luaL_addchar(&b, DIR_SEPARATOR);
-		luaL_addstring(&b, "init.lua;");
+		lua_pushstring(T, gui->pref_path);
+		lua_pushstring(T, "script");
+		lua_pushstring(T, str_tmp);
+		lua_pushstring(T, "?.lua;");
+		lua_pushstring(T, gui->pref_path);
+		lua_pushstring(T, "script");
+		lua_pushstring(T, str_tmp);
+		lua_pushstring(T, "?");
+		lua_pushstring(T, str_tmp);
+		lua_pushstring(T, "init.lua;");
+    n += 10;
 	}
 	
-	luaL_addstring(&b, gui->base_dir);
-	luaL_addstring(&b, "script");
-	luaL_addchar(&b, DIR_SEPARATOR);
-	luaL_addstring(&b, "?.lua;");
-	luaL_addstring(&b, gui->base_dir);
-	luaL_addstring(&b, "script");
-	luaL_addchar(&b, DIR_SEPARATOR);
-	luaL_addstring(&b, "?");
-	luaL_addchar(&b, DIR_SEPARATOR);
-	luaL_addstring(&b, "init.lua;");
+	lua_pushstring(T, gui->base_dir);
+	lua_pushstring(T, "script");
+	lua_pushstring(T, str_tmp);
+	lua_pushstring(T, "?.lua;");
+	lua_pushstring(T, gui->base_dir);
+	lua_pushstring(T, "script");
+	lua_pushstring(T, str_tmp);
+	lua_pushstring(T, "?");
+	lua_pushstring(T, str_tmp);
+	lua_pushstring(T, "init.lua;");
 	
-	luaL_pushresult(&b); /* finalize string and put on Lua stack  - new package path */
+  /* finalize string and put on Lua stack  - new package path */
+  lua_concat (T, n);
 	
 	lua_getglobal( T, "package");
 	lua_insert( T, 1 ); /* setup stack  for next operation*/
@@ -1446,15 +1449,18 @@ int gui_script_init_remote (gui_obj *gui, char *basedir, char *fname, char *chun
     lua_setglobal(script->L, "cz_debug_basedir");
     
     /* adjust package path for "require" in script file*/
-    luaL_Buffer b;  /* to store parcial strings */
-    luaL_buffinit(T, &b); /* init the Lua buffer */
-    luaL_addstring(&b, basedir);
-    luaL_addstring(&b, "?.lua;");
-    luaL_addstring(&b, basedir);
-    luaL_addstring(&b, "?");
-    luaL_addchar(&b, DIR_SEPARATOR);
-    luaL_addstring(&b, "init.lua;");
-    luaL_pushresult(&b); /* finalize string and put on Lua stack  - new package path */
+    lua_pushstring(T, basedir);
+    lua_pushstring(T, "?.lua;");
+    lua_pushstring(T, basedir);
+    lua_pushstring(T, "?");
+    char str_tmp[2];
+    str_tmp[0] = DIR_SEPARATOR;
+    str_tmp[1] = 0;
+    lua_pushstring(T, str_tmp);
+    lua_pushstring(T, "init.lua;");
+    /* finalize string and put on Lua stack  - new package path */
+    lua_concat (T, 6);
+    
     lua_getglobal( T, "package");
     lua_insert( T, 1 ); /* setup stack  for next operation*/
     lua_getfield( T, -2, "path");
@@ -1467,15 +1473,17 @@ int gui_script_init_remote (gui_obj *gui, char *basedir, char *fname, char *chun
     strncpy(script->path, fname, DXF_MAX_CHARS - 1);
     
     /* adjust package path for "require" in script file*/
-    luaL_Buffer b;  /* to store parcial strings */
-    luaL_buffinit(T, &b); /* init the Lua buffer */
-    luaL_addstring(&b, get_dir(fname));
-    luaL_addstring(&b, "?.lua;");
-    luaL_addstring(&b, get_dir(fname));
-    luaL_addstring(&b, "?");
-    luaL_addchar(&b, DIR_SEPARATOR);
-    luaL_addstring(&b, "init.lua;");
-    luaL_pushresult(&b); /* finalize string and put on Lua stack  - new package path */
+    lua_pushstring(T, get_dir(fname));
+    lua_pushstring(T, "?.lua;");
+    lua_pushstring(T, get_dir(fname));
+    lua_pushstring(T, "?");
+    char str_tmp[2];
+    str_tmp[0] = DIR_SEPARATOR;
+    str_tmp[1] = 0;
+    lua_pushstring(T, str_tmp);
+    lua_pushstring(T, "init.lua;");
+    /* finalize string and put on Lua stack  - new package path */
+    lua_concat (T, 6);
     lua_getglobal( T, "package");
     lua_insert( T, 1 ); /* setup stack  for next operation*/
     lua_getfield( T, -2, "path");
@@ -1521,15 +1529,17 @@ int gui_script_init (gui_obj *gui, struct script_obj *script, char *fname, char 
     strncpy(script->path, fname, DXF_MAX_CHARS - 1);
     
     /* adjust package path for "require" in script file*/
-    luaL_Buffer b;  /* to store parcial strings */
-    luaL_buffinit(T, &b); /* init the Lua buffer */
-    luaL_addstring(&b, get_dir(fname));
-    luaL_addstring(&b, "?.lua;");
-    luaL_addstring(&b, get_dir(fname));
-    luaL_addstring(&b, "?");
-    luaL_addchar(&b, DIR_SEPARATOR);
-    luaL_addstring(&b, "init.lua;");
-    luaL_pushresult(&b); /* finalize string and put on Lua stack  - new package path */
+    lua_pushstring(T, get_dir(fname));
+    lua_pushstring(T, "?.lua;");
+    lua_pushstring(T, get_dir(fname));
+    lua_pushstring(T, "?");
+    char str_tmp[2];
+    str_tmp[0] = DIR_SEPARATOR;
+    str_tmp[1] = 0;
+    lua_pushstring(T, str_tmp);
+    lua_pushstring(T, "init.lua;");
+    /* finalize string and put on Lua stack  - new package path */
+    lua_concat (T, 6);
     lua_getglobal( T, "package");
     lua_insert( T, 1 ); /* setup stack  for next operation*/
     lua_getfield( T, -2, "path");

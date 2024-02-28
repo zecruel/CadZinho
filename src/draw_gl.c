@@ -1276,7 +1276,7 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 		tl[2] = (current->z1 - param.ofs_z) * param.scale;
 		
 		/* draw a frame */
-		color = validate_color(transp, param.list, param.subst, param.len_subst);
+    color = transp;
 		gl_ctx->fg[0] = color.r;
 		gl_ctx->fg[1] = color.g;
 		gl_ctx->fg[2] = color.b;
@@ -1289,7 +1289,7 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 		/* draw bitmap image */
 		draw_gl (gl_ctx, 1); /* force draw previous commands and cleanup */
 		/* choose blank base color */
-		color = validate_color(white, param.list, param.subst, param.len_subst);
+    color = white;
 		gl_ctx->fg[0] = color.r;
 		gl_ctx->fg[1] = color.g;
 		gl_ctx->fg[2] = color.b;

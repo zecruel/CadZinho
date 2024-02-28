@@ -1208,9 +1208,9 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 	if (master->list == NULL) return 0;
 	if (master->list->next == NULL) return 0;
 	
-	float x0, y0, z0, x1, y1, z1;
+	double x0, y0, z0, x1, y1, z1;
 	float xd0, yd0, zd0, xd1, yd1, zd1, thick;
-	float dx, dy, dz, modulus, sine, cosine, uz;
+	double dx, dy, dz, modulus, sine, cosine, uz;
 	line_node *current = master->list->next;
 	int i, iter;
 	
@@ -1603,18 +1603,23 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 		}
 		else{ /* for continuous lines*/
 			while(current){ /*sweep the list content */
+        
+        x0 = current->x0;
+				y0 = current->y0;
+				z0 = current->z0;
+				x1 = current->x1;
+				y1 = current->y1;
+				z1 = current->z1;
 				/* apply the scale and offset */
 				
-				xd0 = (current->x0 - param.ofs_x) * param.scale;
-				yd0 = (current->y0 - param.ofs_y) * param.scale;
-				zd0 = (current->z0 - param.ofs_z) * param.scale;
-				xd1 = (current->x1 - param.ofs_x) * param.scale;
-				yd1 = (current->y1 - param.ofs_y) * param.scale;
-				zd1 = (current->z1 - param.ofs_z) * param.scale;
+				xd0 = (x0 - param.ofs_x) * param.scale;
+				yd0 = (y0 - param.ofs_y) * param.scale;
+				zd0 = (z0 - param.ofs_z) * param.scale;
+				xd1 = (x1 - param.ofs_x) * param.scale;
+				yd1 = (y1 - param.ofs_y) * param.scale;
+				zd1 = (z1 - param.ofs_z) * param.scale;
 				
-				if (master->pattern[0] >= 0.0)
-					//bmp_line_norm(img, x0, y0, x1, y1, -sine, cosine);
-					//draw_gl_line (gl_ctx, (int []){xd0, yd0, zd0}, (int []){ xd1, yd1, zd1}, thick);
+				if (master->pattern[0] >= 0.0){
 					if (x0 != x1 || y0 != y1 || z0 != z1){
 						draw_gl_line (gl_ctx, (float []){xd0, yd0, zd0}, (float []){ xd1, yd1, zd1}, thick);
 					} else { /* draw a dot */
@@ -1623,7 +1628,7 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 						draw_gl_quad (gl_ctx, (float []){xd0 - t, yd0 + t, zd0}, (float []){xd0 - t, yd0 - t, zd0}, 
 							(float []){xd0 + t, yd0 + t, zd0}, (float []){xd0 + t, yd0 - t, zd0});
 					}
-				
+				}
 				current = current->next; /* go to next */
 			}
 		}

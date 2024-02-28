@@ -1208,9 +1208,9 @@ int graph_draw_gl(graph_obj * master, struct ogl *gl_ctx, struct draw_param para
 	if (master->list == NULL) return 0;
 	if (master->list->next == NULL) return 0;
 	
-	double x0, y0, z0, x1, y1, z1;
+	float x0, y0, z0, x1, y1, z1;
 	float xd0, yd0, zd0, xd1, yd1, zd1, thick;
-	double dx, dy, dz, modulus, sine, cosine, uz;
+	float dx, dy, dz, modulus, sine, cosine, uz;
 	line_node *current = master->list->next;
 	int i, iter;
 	

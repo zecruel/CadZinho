@@ -1,5 +1,12 @@
 # This branch is EXPERIMENTAL and ON GOING - CadZinho now 3D
 
+### depends on:
+
+Manifold - [https://github.com/elalish/manifold](https://github.com/elalish/manifold)
+Clipper2 - [https://github.com/AngusJohnson/Clipper2](https://github.com/AngusJohnson/Clipper2)
+
+--------
+
 <h1 align="center">
   <br>
   <a href="https://github.com/zecruel/CadZinho/wiki"><img src="https://github.com/zecruel/CadZinho/blob/opengl/logo.png" alt="CadZinho"></a>

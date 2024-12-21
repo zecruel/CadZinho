@@ -1,3 +1,5 @@
+# This branch is EXPERIMENTAL and ON GOING - CadZinho now 3D
+
 <h1 align="center">
   <br>
   <a href="https://github.com/zecruel/CadZinho/wiki"><img src="https://github.com/zecruel/CadZinho/blob/opengl/logo.png" alt="CadZinho"></a>

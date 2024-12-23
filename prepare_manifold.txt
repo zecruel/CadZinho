@@ -1,0 +1,11 @@
+git clone -b 3D --single-branch https://github.com/zecruel/CadZinho.git
+cd CadZinho
+git clone https://github.com/elalish/manifold.git
+cd manifold
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
+cmake --build ./
+cmake --install ./ --prefix ../../
+cd ../..
+rm -rf manifold

@@ -13,6 +13,8 @@
 #include "graph.h"
 #include "dxf_hatch.h"
 #include "dxf_graph.h"
+#include "manifold/types.h"
+#include "manifold/manifoldc.h"
 
 struct do_item {
 	struct do_item *prev;
@@ -208,5 +210,7 @@ dxf_node * dxf_new_dict_var (dxf_drawing *drawing, dxf_node *owner, char *name, 
 dxf_node * dxf_new_xrecord (dxf_drawing *drawing, dxf_node *owner, char *name);
 
 int dxf_xrecord_append (dxf_node *owner, int group, void *value, int pool);
+
+dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, int color, char *layer, int pool);
 
 #endif

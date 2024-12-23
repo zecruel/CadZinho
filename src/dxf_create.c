@@ -3242,3 +3242,128 @@ int dxf_xrecord_append (dxf_node *owner, int group, void *value, int pool){
 	
   return dxf_attr_append(owner, group, (void *) value, pool);
 }
+
+dxf_node * dxf_new_face_vertex (double x0, double y0, double z0, char *layer, int pool){
+	/* create a new VERTEX entity */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbEntity";
+	const char *dxf_subclass1 = "AcDbVertex";
+	const char *dxf_subclass2 = "AcDbPolyFaceMeshVertex";
+	int ok = 1, flag = 192;
+	dxf_node * new_vertex = dxf_obj_new ("VERTEX", pool);
+	
+	ok &= dxf_attr_append(new_vertex, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_vertex, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_vertex, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_vertex, 100, (void *) dxf_subclass1, pool);
+	ok &= dxf_attr_append(new_vertex, 100, (void *) dxf_subclass2, pool);
+	
+	ok &= dxf_attr_append(new_vertex, 10, (void *) &x0, pool);
+	ok &= dxf_attr_append(new_vertex, 20, (void *) &y0, pool);
+	ok &= dxf_attr_append(new_vertex, 30, (void *) &z0, pool);
+	
+	ok &= dxf_attr_append(new_vertex, 70, (void *) &flag, pool);
+	
+	if(ok){
+		return new_vertex;
+	}
+
+	return NULL;
+}
+
+dxf_node * dxf_new_face_rec (int *index, int n, char *layer, int pool){
+	/* create a new VERTEX entity */
+	const char *handle = "0";
+	const char *dxf_subclass = "AcDbFaceRecord";
+	int ok = 1, i = 0, flag = 128;
+	double zero = 0.0;
+	dxf_node * new_vertex = dxf_obj_new ("VERTEX", pool);
+	
+	ok &= dxf_attr_append(new_vertex, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_vertex, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_vertex, 100, (void *) dxf_subclass, pool);
+	
+	ok &= dxf_attr_append(new_vertex, 10, (void *) &zero, pool);
+	ok &= dxf_attr_append(new_vertex, 20, (void *) &zero, pool);
+	ok &= dxf_attr_append(new_vertex, 30, (void *) &zero, pool);
+	
+	ok &= dxf_attr_append(new_vertex, 70, (void *) &flag, pool);
+	
+	for (i = 0; i < n; i++){
+		ok &= dxf_attr_append(new_vertex, 71 + i, (void *) &index[i], pool);
+	}
+	
+	if(ok){
+		return new_vertex;
+	}
+
+	return NULL;
+}
+
+dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, int color, char *layer, int pool){
+	/* create a new POLYLINE entity */
+	const char *handle = "0";
+	const char *dxf_class = "AcDbEntity";
+	const char *dxf_subclass = "AcDbPolyFaceMesh";
+	double zero = 0.0;
+	int ok = 1, flag = 64, i = 0;
+	dxf_node *current = NULL;
+	int indexes[3];
+	
+	int prop = manifold_meshgl64_num_prop(mesh);
+	int vert = manifold_meshgl64_num_vert(mesh);
+	int trian = manifold_meshgl64_num_tri(mesh);
+
+	double *coord = manifold_meshgl64_vert_properties(
+		malloc(sizeof(double) * prop * vert), mesh);
+	uint64_t *index = manifold_meshgl64_tri_verts(
+		malloc(sizeof(uint64_t) * 3 * trian), mesh);
+	
+	dxf_node * new_mesh = dxf_obj_new ("POLYLINE", pool);
+	
+	ok &= dxf_attr_append(new_mesh, 5, (void *) handle, pool);
+	ok &= dxf_attr_append(new_mesh, 100, (void *) dxf_class, pool);
+	ok &= dxf_attr_append(new_mesh, 8, (void *) layer, pool);
+	ok &= dxf_attr_append(new_mesh, 62, (void *) &color, pool);
+	
+	ok &= dxf_attr_append(new_mesh, 100, (void *) dxf_subclass, pool);
+	
+	ok &= dxf_attr_append(new_mesh, 66, (void *)(int[]){1}, pool);
+	
+	ok &= dxf_attr_append(new_mesh, 10, (void *) &zero, pool);
+	ok &= dxf_attr_append(new_mesh, 20, (void *) &zero, pool);
+	ok &= dxf_attr_append(new_mesh, 30, (void *) &zero, pool);
+	
+	ok &= dxf_attr_append(new_mesh, 70, (void *) &flag, pool);
+	ok &= dxf_attr_append(new_mesh, 71, (void *) &vert, pool);
+	ok &= dxf_attr_append(new_mesh, 72, (void *) &trian, pool);
+	
+	for (i = 0; i < vert; i++){
+		//printf("v%d=(%.2f,%.2f,%.2f)\n", i, coord[prop*i], coord[prop*i+1], coord[prop*i+2]);
+		current = dxf_new_face_vertex (coord[prop*i], coord[prop*i+1], coord[prop*i+2], layer, pool);
+		ent_handle(drawing, current);
+		dxf_obj_append(new_mesh, current);
+	}
+	for (i = 0; i < trian; i++){
+		//printf("t%d=[%d,%d,%d]\n", i, index[3*i], index[3*i+1], index[3*i+2]);
+		indexes[0] = index[3 * i] + 1;
+		indexes[1] = index[3 * i + 1] + 1;
+		indexes[2] = index[3 * i + 2] + 1;
+		current = dxf_new_face_rec (indexes, 3, layer, pool);
+		ent_handle(drawing, current);
+		dxf_obj_append(new_mesh, current);
+	}
+  
+	free (coord);
+	free (index);
+	
+	current = dxf_new_seqend (layer, pool);
+	ent_handle(drawing, current);
+	dxf_obj_append(new_mesh, current);
+	
+	if(ok){
+		return new_mesh;
+	}
+
+	return NULL;
+}

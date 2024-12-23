@@ -976,6 +976,7 @@ int gui_script_prepare (gui_obj *gui, struct script_obj *script) {
 		{"new_block", script_new_block},
 		{"new_block_file", script_new_block_file},
 		{"new_insert", script_new_insert},
+		{"new_mesh", script_new_mesh},
 		
 		{"get_dwg_appids", script_get_dwg_appids},
 		

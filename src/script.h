@@ -213,5 +213,5 @@ int script_set_dict (lua_State *L);
 int script_set_dict_var (lua_State *L);
 int script_set_xrec (lua_State *L);
 
-
+int script_new_mesh (lua_State *L);
 #endif

@@ -8694,3 +8694,161 @@ int script_set_xrec (lua_State *L) {
 	lua_pushboolean(L, 0); /* return fail */
 	return 1;
 }
+
+/* -------------------------------------------------------------------------------------------
+ -------------  Manifold - 3D ----------------------------------- */
+
+void *alloc_manifold_buffer() { return malloc(manifold_manifold_size()); }
+
+void *alloc_box_buffer() { return malloc(manifold_box_size()); }
+
+void *alloc_meshgl_buffer() { return malloc(manifold_meshgl_size()); }
+
+void *alloc_meshgl64_buffer() { return malloc(manifold_meshgl64_size()); }
+
+void *alloc_simple_polygon_buffer() {
+  return malloc(manifold_simple_polygon_size());
+}
+
+void *alloc_polygons_buffer() { return malloc(manifold_polygons_size()); }
+
+void *alloc_manifold_vec_buffer() {
+  return malloc(manifold_manifold_vec_size());
+}
+
+int manifold_test(int argc, char *argv[])
+{
+  printf("manifold test\n");
+  
+  int n = 25;
+  ManifoldManifold *sphere = manifold_sphere(alloc_manifold_buffer(), 1.0, 4 * 25);
+
+  int tri = manifold_num_tri(sphere);
+  
+  printf("sphere: triangles = %d\n", tri);
+  
+  ManifoldManifold *cube = manifold_cube(alloc_manifold_buffer(),
+    1.0, 2.0, 3.0, 0);
+  
+  ManifoldMeshGL *mesh =
+      manifold_get_meshgl(alloc_meshgl_buffer(), cube);
+  
+  int prop = manifold_meshgl_num_prop(mesh);
+  int vert = manifold_meshgl_num_vert(mesh);
+  int trian = manifold_meshgl_num_tri(mesh);
+  
+  float *coord = manifold_meshgl_vert_properties(
+    malloc(sizeof(float) * prop * vert), mesh);
+  uint32_t *index = manifold_meshgl_tri_verts(
+    malloc(sizeof(uint32_t) * 3 * trian), mesh);
+  
+  printf("cube: triangles = %d, vert = %d, prop = %d\n", trian, vert, prop);
+  
+  int i =0;
+  for (i = 0; i < vert; i++){
+    printf("v%d=(%.2f,%.2f,%.2f)\n", i, coord[prop*i], coord[prop*i+1], coord[prop*i+2]);
+  }
+  for (i = 0; i < trian; i++){
+    printf("t%d=[%d,%d,%d]\n", i, index[3*i], index[3*i+1], index[3*i+2]);
+  }
+  
+  manifold_destruct_meshgl(mesh);
+  manifold_destruct_manifold(sphere);
+  free(sphere);
+  manifold_destruct_manifold(cube);
+  free(cube);
+  free(mesh);
+  free (coord);
+  free (index);
+}
+
+/* create a mesh entity */
+/* given parameters:
+	- manifold commands, as string
+	- drawing parameters (layer, color, etc), as table (optional)
+returns:
+	- DXF entity, as userdata
+Notes:
+	- The returned data is for one shot use in Lua script, because
+	the alocated memory is valid in single iteration of main loop.
+	It is assumed that soon afterwards it will be appended or drawn.
+*/
+int script_new_mesh (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n = 0){
+		lua_pushliteral(L, "new_mesh: invalid number of arguments");
+		lua_error(L);
+	}
+	
+	int i;
+	/* arguments types */
+	if (!lua_isstring(L, 1)) {
+		lua_pushliteral(L, "new_mesh: incorrect argument type");
+		lua_error(L);
+	}
+	
+	/* change drawing params, temporarily */
+	int prev_color = gui->color_idx;
+	int prev_layer = gui->layer_idx;
+	int prev_ltype = gui->ltypes_idx;
+	int prev_style = gui->t_sty_idx;
+	int prev_lw = gui->lw_idx;
+	if (lua_istable(L,4)){
+		lua_getglobal(L, "cadzinho"); /* function to be called */
+		lua_getfield(L, -1, "set_param");
+		lua_pushvalue(L, 4); /* push table with param keys */
+		lua_pcall(L, 1, 1, 0); /* call function (1 arguments, 1 result) */
+		lua_pop(L, 2); /* pop returned value */
+	}
+	
+	ManifoldManifold *sphere = manifold_sphere(alloc_manifold_buffer(), 1.0, 4 * 25);
+	ManifoldMeshGL64 *mesh = manifold_get_meshgl64(alloc_meshgl64_buffer(), sphere);
+	
+	
+	
+	/* new mesh entity */
+	dxf_node * new_el = (dxf_node *) dxf_new_face_mesh (gui->drawing, mesh,
+		gui->color_idx, /* color, layer */
+		(char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+		FRAME_LIFE); 
+
+	/* restore original drawing parameters */
+	gui->color_idx = prev_color;
+	gui->layer_idx = prev_layer;
+	gui->ltypes_idx = prev_ltype;
+	gui->t_sty_idx = prev_style;
+	gui->lw_idx = prev_lw;
+	
+	manifold_destruct_meshgl64(mesh);
+	manifold_destruct_manifold(sphere);
+	free(sphere);
+	free(mesh);
+	
+	if (!new_el) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	/* return success */
+	struct ent_lua *ent = (struct ent_lua *) lua_newuserdatauv(L, sizeof(struct ent_lua), 0);  /* create a userdata object */
+	ent->curr_ent = new_el;
+	ent->orig_ent = NULL;
+	ent->sel = 0;
+	
+	ent->drawing = gui->drawing;
+	
+	luaL_getmetatable(L, "cz_ent_obj");
+	lua_setmetatable(L, -2);
+	return 1;
+}

@@ -211,6 +211,6 @@ dxf_node * dxf_new_xrecord (dxf_drawing *drawing, dxf_node *owner, char *name);
 
 int dxf_xrecord_append (dxf_node *owner, int group, void *value, int pool);
 
-dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, int color, char *layer, int pool);
+dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, char *chunk,  int color, char *layer, int pool);
 
 #endif

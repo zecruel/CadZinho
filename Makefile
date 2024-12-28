@@ -1,37 +1,27 @@
-# platform detection using OS environment variable for Windows
-# and uname output of everthing else
-ifeq ($(OS),Windows_NT)
-    PLATFORM := Windows
-else
-    PLATFORM := $(shell uname)
-endif
-
 SRC_PATH=./src/
 CC=gcc
-COMPILER_FLAGS = -g -c -DPLATFORM_$(PLATFORM)
-
-ifeq ($(PLATFORM),Darwin)
-    OPENGL_LIBS := -framework OpenGL
-    EXTRA_INCLUDE_PATHS := -I/usr/local/Cellar/lua/5.4.3/include/lua/
-else
-    OPENGL_LIBS := -lGL -lGLU
-endif
-
-LINKER_FLAGS = `sdl2-config --cflags --libs` -llua -lm $(OPENGL_LIBS) -lGLEW
-INCLUDE_PATHS = -I. -I./src/ -I/usr/include/SDL2 $(EXTRA_INCLUDE_PATHS)
-LIBRARY_PATHS = -L/usr/lib -L.
+LL=g++
+#COMPILER_FLAGS = -g -c
+COMPILER_FLAGS = -g -c -MD -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
+LINKER_FLAGS = `pkg-config --libs sdl2` -lm -lGL -lGLU -lGLEW -lSDL2_net -lmanifoldc -lmanifold -lClipper2
+INCLUDE_PATHS = -I. -I./src/ `pkg-config --cflags sdl2` -I./include
+LIBRARY_PATHS = -L/usr/lib -L. -L./lib
 EXE=cadzinho
 
 SRC=$(wildcard $(SRC_PATH)*.c)
 OBJ=$(subst ./src, ./obj, $(SRC:.c=.o))
+DEP=$(OBJ:.o=.d)
 
 all: $(SRC) $(EXE)
 
 $(EXE): $(OBJ)
-	$(CC) $(LIBRARY_PATHS) $(LINKER_FLAGS) $(OBJ) $(LINKER_FLAGS) -o $@
+	$(LL) $(LIBRARY_PATHS) $(LINKER_FLAGS) $(OBJ) $(LINKER_FLAGS) -o $@
 
 ./obj/%.o: ./src/%.c
 	$(CC) $(INCLUDE_PATHS) $(COMPILER_FLAGS) -o $@ $<
 
 clean:
 	rm -rf run $(OBJ)
+	rm -rf run $(DEP)
+
+-include $(DEP)

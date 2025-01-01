@@ -3,6 +3,7 @@
 #include "yxml.h"
 #include "gui_script.h"
 #include "i_svg_media.h"
+#include "dxf_3d.h"
 
 
 void * udata_check(lua_State *L, int idx, const char *name){
@@ -8813,13 +8814,12 @@ int script_new_mesh (lua_State *L) {
 		lua_pop(L, 2); /* pop returned value */
 	}
 	
-	ManifoldManifold *sphere = manifold_sphere(alloc_manifold_buffer(), 1.0, 4 * 5);
-	ManifoldMeshGL64 *mesh = manifold_get_meshgl64(alloc_meshgl64_buffer(), sphere);
 	
 	
 	
 	/* new mesh entity */
-	dxf_node * new_el = (dxf_node *) dxf_new_face_mesh (gui->drawing, mesh, "sphere\ncube\nslab", 
+	//dxf_node * dxf_new_mesh  (dxf_drawing *drawing, char *chunk, int color, char *layer, int pool)
+	dxf_node * new_el = (dxf_node *) dxf_new_mesh (gui->drawing, (char*)lua_tostring(L, 1), //"manifold = sphere('2')", 
 		gui->color_idx, /* color, layer */
 		(char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
 		FRAME_LIFE); 
@@ -8830,11 +8830,6 @@ int script_new_mesh (lua_State *L) {
 	gui->ltypes_idx = prev_ltype;
 	gui->t_sty_idx = prev_style;
 	gui->lw_idx = prev_lw;
-	
-	manifold_destruct_meshgl64(mesh);
-	manifold_destruct_manifold(sphere);
-	free(sphere);
-	free(mesh);
 	
 	if (!new_el) {
 		lua_pushnil(L); /* return fail */

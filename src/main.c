@@ -28,6 +28,7 @@
 #include "gui_export.h"
 #include "gui_config.h"
 #include "gui_script.h"
+#include "dxf_3d.h"
 
 #include "rref.h"
 
@@ -76,6 +77,7 @@
 struct Matrix *aux_mtx1 = NULL;
 struct tfont *dflt_font = NULL;
 unsigned int wait_open = 0;
+struct script_obj dxf_3d_engine;
 
 strpool_t obj_pool;
 strpool_t name_pool;
@@ -98,6 +100,11 @@ int main(int argc, char** argv){
   /* init globals */
 	aux_mtx1 = malloc(sizeof(struct Matrix));
   wait_open = 0;
+	dxf_3d_engine.L = NULL;
+	dxf_3d_engine.T = NULL;
+	dxf_3d_engine.active = 0;
+	dxf_3d_engine.dynamic = 0;
+	dxf_3d_init ();
   
   /*init string pools */
   strpool_config_t str_pool_conf = strpool_default_config;

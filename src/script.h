@@ -76,6 +76,9 @@ struct script_rast_image { /* image user object */
 };
 
 #include "gui.h"
+
+void * udata_check(lua_State *L, int idx, const char *name);
+
 int check_timeout (lua_State *L);
 int set_timeout (lua_State *L);
 void print_internal (void *data, char* str);

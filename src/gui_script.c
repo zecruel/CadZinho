@@ -851,7 +851,7 @@ void debug_hook(lua_State *L, lua_Debug *ar){
 }
 
 
-/* Routine to check break points and script execution time ( timeout in stuck scripts)*/
+/* Routine to check script execution time ( timeout in stuck scripts)*/
 void script_check(lua_State *L, lua_Debug *ar){
 	
 	/* listen to "Hook Count" events to verify execution time and timeout */
@@ -910,7 +910,7 @@ int gui_script_prepare (gui_obj *gui, struct script_obj *script) {
 	script->do_init = 0;
 	//script->wait_gui_resume = 0;
 	script->groups = 0;
-  script->path[0] = 0;
+	script->path[0] = 0;
 	
 	script->timeout = 10.0; /* default timeout value */
 	
@@ -931,7 +931,7 @@ int gui_script_prepare (gui_obj *gui, struct script_obj *script) {
 	
 	/* put the current script structure in lua global registry */
 	lua_pushstring(T, "cz_script");
-	lua_pushlightuserdata(T, (void *)script);
+	lua_pushlightuserdata(T, (void *) script);
 	lua_settable(T, LUA_REGISTRYINDEX);
 	
 	/* add functions in cadzinho object*/

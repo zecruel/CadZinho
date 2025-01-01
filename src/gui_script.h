@@ -21,4 +21,6 @@ int gui_script_dyn(gui_obj *gui);
 
 int gui_script_clear_dyn(gui_obj *gui);
 
+void script_check(lua_State *L, lua_Debug *ar);
+
 #endif

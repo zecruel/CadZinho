@@ -10,33 +10,27 @@ void *manifold_buffer() { return malloc(manifold_manifold_size()); }
 void *meshgl64_buffer() { return malloc(manifold_meshgl64_size()); }
 
 
-/* create a mesh entity */
+/* create a sphere manifold */
 /* given parameters:
-	- manifold commands, as string
-	- drawing parameters (layer, color, etc), as table (optional)
-returns:
-	- DXF entity, as userdata
-Notes:
-	- The returned data is for one shot use in Lua script, because
-	the alocated memory is valid in single iteration of main loop.
-	It is assumed that soon afterwards it will be appended or drawn.
+	- radius, as number (optional, dflt = 1)
+  - center x,y,z coordinates, as numbers (dflt = 0,0,0)
+	- circ segments, as number factor of 4 (dflt = 20)
+	- Manifold object, as userdata
 */
-int dxf_new_sphere (lua_State *L) {
+int dxf_3d_sphere (lua_State *L) {
+  double r = 1.0, x = 0.0, y = 0.0, z = 0.0;
+  int c_seg = 20;
 	
 	/* verify passed arguments */
-	int n = lua_gettop(L);    /* number of arguments */
-	if (n = 0){
-		lua_pushliteral(L, "sphere: invalid number of arguments");
-		lua_error(L);
-	}
 	
-	int i;
-	/* arguments types */
-	/*if (!lua_isstring(L, 1)) {
-		lua_pushliteral(L, "sphere: incorrect argument type");
-		lua_error(L);
-	}*/
-	
+	if (lua_isnumber(L, 1)) r = lua_tonumber(L, 1);
+  if (lua_isnumber(L, 2)) x = lua_tonumber(L, 2);
+  if (lua_isnumber(L, 3)) y = lua_tonumber(L, 3);
+  if (lua_isnumber(L, 4)) z = lua_tonumber(L, 4);
+  if (lua_isnumber(L, 5)) c_seg = lua_tointeger(L, 5);
+  
+  if (r <= 0.0) r = 1.0;
+  if (c_seg <= 0) c_seg = 20;
 	
 	/* create a userdata object */
 	struct manifold_obj *sphere;
@@ -45,7 +39,261 @@ int dxf_new_sphere (lua_State *L) {
 	luaL_getmetatable(L, "Manifold");
 	lua_setmetatable(L, -2);
 	
-	sphere->obj = manifold_sphere(manifold_buffer(), 1.0, 4 * 25);
+  ManifoldManifold *sph = manifold_sphere(manifold_buffer(), r, c_seg);
+  ManifoldManifold *trans = manifold_translate(manifold_buffer(), sph, x, y, z);
+  manifold_destruct_manifold(sph);
+	free(sph);
+  
+	sphere->obj = trans;
+	
+	return 1;
+}
+
+/* create a slab manifold */
+/* given parameters:
+	- edge lengths w,h,p, as numbers (dflt = 1,1,1)
+  - origin x,y,z coordinates, as numbers (dflt = 0,0,0)
+  - rotation angles x,y,z degrees, as numbers (dflt = 0,0,0)
+	- Manifold object, as userdata
+*/
+int dxf_3d_slab (lua_State *L) {
+  double w = 1.0, h = 1.0, p = 1.0, x = 0.0, y = 0.0, z = 0.0;
+  double ax = 0.0, ay = 0.0, az = 0.0;
+  int c_seg = 20;
+	
+	/* verify passed arguments */
+	
+	if (lua_isnumber(L, 1)) w = lua_tonumber(L, 1);
+  if (lua_isnumber(L, 2)) h = lua_tonumber(L, 2);
+  if (lua_isnumber(L, 3)) p = lua_tonumber(L, 3);
+  if (lua_isnumber(L, 4)) x = lua_tonumber(L, 4);
+  if (lua_isnumber(L, 5)) y = lua_tonumber(L, 5);
+  if (lua_isnumber(L, 6)) z = lua_tonumber(L, 6);
+  if (lua_isnumber(L, 7)) ax = lua_tonumber(L, 7);
+  if (lua_isnumber(L, 8)) ay = lua_tonumber(L, 8);
+  if (lua_isnumber(L, 9)) az = lua_tonumber(L, 9);
+  
+  if (w <= 0.0) w = 1.0;
+  if (h <= 0.0) h = 1.0;
+  if (p <= 0.0) p = 1.0;
+	
+	/* create a userdata object */
+	struct manifold_obj *slab;
+	
+	slab = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj *), 0); 
+	luaL_getmetatable(L, "Manifold");
+	lua_setmetatable(L, -2);
+	
+  ManifoldManifold *cube = manifold_cube(manifold_buffer(), w, h, p, 0);
+  ManifoldManifold *rot = manifold_rotate(manifold_buffer(), cube, ax, ay, az);
+  ManifoldManifold *trans = manifold_translate(manifold_buffer(), rot, x, y, z);
+  manifold_destruct_manifold(cube);
+	free(cube);
+  manifold_destruct_manifold(rot);
+	free(rot);
+  
+	slab->obj = trans;
+	
+	return 1;
+}
+
+/* create a cylinder manifold */
+/* given parameters:
+  - heigth, as number (optional, dflt = 1)
+  - bottom radius, as number (optional, dflt = 1)
+	- top radius, as number (optional, dflt = bottom radius)
+  - origin x,y,z coordinates, as numbers (dflt = 0,0,0)
+  - rotation angles x,y,z degrees, as numbers (dflt = 0,0,0)
+  - circ segments, as number factor of 4 (dflt = 20)
+	- Manifold object, as userdata
+*/
+int dxf_3d_cylinder (lua_State *L) {
+  double h = 1.0, r1 = 1.0, r2 = 1.0, x = 0.0, y = 0.0, z = 0.0;
+  double ax = 0.0, ay = 0.0, az = 0.0;
+  int c_seg = 20;
+	
+	/* verify passed arguments */
+	
+  if (lua_isnumber(L, 1)) h = lua_tonumber(L, 1);
+  if (lua_isnumber(L, 2)) r1 = lua_tonumber(L, 2);
+  if (lua_isnumber(L, 3)) r2 = lua_tonumber(L, 3);
+  else r2 = r1;
+  if (lua_isnumber(L, 4)) x = lua_tonumber(L, 4);
+  if (lua_isnumber(L, 5)) y = lua_tonumber(L, 5);
+  if (lua_isnumber(L, 6)) z = lua_tonumber(L, 6);
+  if (lua_isnumber(L, 7)) ax = lua_tonumber(L, 7);
+  if (lua_isnumber(L, 8)) ay = lua_tonumber(L, 8);
+  if (lua_isnumber(L, 9)) az = lua_tonumber(L, 9);
+  if (lua_isnumber(L, 10)) c_seg = lua_tointeger(L, 10);
+  
+  if (r1 <= 0.0) r1 = 1.0;
+  if (h <= 0.0) h = 1.0;
+  if (r2 <= 0.0) r2 = 1.0;
+  if (c_seg <= 0) c_seg = 20;
+	
+	/* create a userdata object */
+	struct manifold_obj *cylinder;
+	
+	cylinder = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj *), 0); 
+	luaL_getmetatable(L, "Manifold");
+	lua_setmetatable(L, -2);
+	
+  ManifoldManifold *cil = manifold_cylinder(manifold_buffer(), h, r1, r2, c_seg, 0);
+  ManifoldManifold *rot = manifold_rotate(manifold_buffer(), cil, ax, ay, az);
+  ManifoldManifold *trans = manifold_translate(manifold_buffer(), rot, x, y, z);
+  manifold_destruct_manifold(cil);
+	free(cil);
+  manifold_destruct_manifold(rot);
+	free(rot);
+  
+	cylinder->obj = trans;
+	
+	return 1;
+}
+
+/* Manifold union operation */
+/* given parameters:
+	- Manifold object "a", as userdata
+  - Manifold object "b", as userdata
+returns:
+	- Manifold object "a+b", as userdata
+*/
+int dxf_3d_union (lua_State *L) {
+	
+	struct manifold_obj *a, *b;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushnil(L); /* return error */
+    return 1;
+	}
+	if (!( a = udata_check(L, 1, "Manifold") )) { /* the Manifold object is a Lua userdata type*/
+		lua_pushnil(L); /* return error */
+    return 1;
+	}
+  if (!( b = udata_check(L, 2, "Manifold") )) { /* the Manifold object is a Lua userdata type*/
+		lua_pushnil(L); /* return error */
+    return 1;
+	}
+  
+  if (a->obj == NULL){
+		lua_pushnil(L); /* return error */
+    return 1;
+	}
+  
+  if (b->obj == NULL){
+		lua_pushnil(L); /* return error */
+    return 1;
+	}
+	
+	/* create a userdata object */
+	struct manifold_obj *uni;
+	
+	uni = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj *), 0); 
+	luaL_getmetatable(L, "Manifold");
+	lua_setmetatable(L, -2);
+	
+  uni->obj = manifold_union(manifold_buffer(), a->obj, b->obj);
+  
+	
+	return 1;
+}
+
+/* Manifold difference operation */
+/* given parameters:
+	- Manifold object "a", as userdata
+  - Manifold object "b", as userdata
+returns:
+	- Manifold object "a-b", as userdata
+*/
+int dxf_3d_difference (lua_State *L) {
+	
+	struct manifold_obj *a, *b;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushnil(L); /* return error */
+    return 1;
+	}
+	if (!( a = udata_check(L, 1, "Manifold") )) { /* the Manifold object is a Lua userdata type*/
+		lua_pushnil(L); /* return error */
+    return 1;
+	}
+  if (!( b = udata_check(L, 2, "Manifold") )) { /* the Manifold object is a Lua userdata type*/
+		lua_pushnil(L); /* return error */
+    return 1;
+	}
+  
+  if (a->obj == NULL){
+		lua_pushnil(L); /* return error */
+    return 1;
+	}
+  
+  if (b->obj == NULL){
+		lua_pushnil(L); /* return error */
+    return 1;
+	}
+	
+	/* create a userdata object */
+	struct manifold_obj *uni;
+	
+	uni = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj *), 0); 
+	luaL_getmetatable(L, "Manifold");
+	lua_setmetatable(L, -2);
+	
+  uni->obj = manifold_difference(manifold_buffer(), a->obj, b->obj);
+  
+	
+	return 1;
+}
+
+/* Manifold difference operation */
+/* given parameters:
+	- Manifold object "a", as userdata
+  - Manifold object "b", as userdata
+returns:
+	- Manifold object "a-b", as userdata
+*/
+int dxf_3d_intersection (lua_State *L) {
+	
+	struct manifold_obj *a, *b;
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 2){
+		lua_pushnil(L); /* return error */
+    return 1;
+	}
+	if (!( a = udata_check(L, 1, "Manifold") )) { /* the Manifold object is a Lua userdata type*/
+		lua_pushnil(L); /* return error */
+    return 1;
+	}
+  if (!( b = udata_check(L, 2, "Manifold") )) { /* the Manifold object is a Lua userdata type*/
+		lua_pushnil(L); /* return error */
+    return 1;
+	}
+  
+  if (a->obj == NULL){
+		lua_pushnil(L); /* return error */
+    return 1;
+	}
+  
+  if (b->obj == NULL){
+		lua_pushnil(L); /* return error */
+    return 1;
+	}
+	
+	/* create a userdata object */
+	struct manifold_obj *uni;
+	
+	uni = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj *), 0); 
+	luaL_getmetatable(L, "Manifold");
+	lua_setmetatable(L, -2);
+	
+  uni->obj = manifold_intersection(manifold_buffer(), a->obj, b->obj);
+  
 	
 	return 1;
 }
@@ -188,8 +436,19 @@ int dxf_3d_init (){
 	luaL_setfuncs(T, manifold_meths, 0);
 	lua_pop( T, 1);
 	
-	lua_pushcfunction(T, dxf_new_sphere);
-	lua_setglobal(T, "sphere"); 
+	lua_pushcfunction(T, dxf_3d_sphere);
+	lua_setglobal(T, "sphere");
+  lua_pushcfunction(T, dxf_3d_slab);
+	lua_setglobal(T, "slab");
+  lua_pushcfunction(T, dxf_3d_cylinder);
+	lua_setglobal(T, "cylinder");
+  
+  lua_pushcfunction(T, dxf_3d_union);
+	lua_setglobal(T, "union");
+  lua_pushcfunction(T, dxf_3d_difference);
+	lua_setglobal(T, "difference");
+  lua_pushcfunction(T, dxf_3d_intersection);
+	lua_setglobal(T, "intersection");
 	
 	lua_sethook(T, script_check, LUA_MASKCOUNT, 10000);
 	

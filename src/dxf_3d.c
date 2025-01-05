@@ -35,7 +35,7 @@ int dxf_3d_sphere (lua_State *L) {
 	/* create a userdata object */
 	struct manifold_obj *sphere;
 	
-	sphere = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj *), 0); 
+	sphere = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj), 0); 
 	luaL_getmetatable(L, "Manifold");
 	lua_setmetatable(L, -2);
   
@@ -70,7 +70,7 @@ int dxf_3d_slab (lua_State *L) {
 	/* create a userdata object */
 	struct manifold_obj *slab;
 	
-	slab = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj *), 0); 
+	slab = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj), 0); 
 	luaL_getmetatable(L, "Manifold");
 	lua_setmetatable(L, -2);
   
@@ -113,7 +113,7 @@ int dxf_3d_cylinder (lua_State *L) {
 	/* create a userdata object */
 	struct manifold_obj *cylinder;
 	
-	cylinder = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj *), 0); 
+	cylinder = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj), 0); 
 	luaL_getmetatable(L, "Manifold");
 	lua_setmetatable(L, -2);
   
@@ -165,7 +165,7 @@ int dxf_3d_union (lua_State *L) {
 	/* create a userdata object */
 	struct manifold_obj *uni;
 	
-	uni = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj *), 0); 
+	uni = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj), 0); 
 	luaL_getmetatable(L, "Manifold");
 	lua_setmetatable(L, -2);
   
@@ -218,7 +218,7 @@ int dxf_3d_difference (lua_State *L) {
 	/* create a userdata object */
 	struct manifold_obj *dif;
 	
-	dif = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj *), 0); 
+	dif = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj), 0); 
 	luaL_getmetatable(L, "Manifold");
 	lua_setmetatable(L, -2);
   
@@ -271,7 +271,7 @@ int dxf_3d_intersection (lua_State *L) {
 	/* create a userdata object */
 	struct manifold_obj *inter;
 	
-	inter = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj *), 0); 
+	inter = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj), 0); 
 	luaL_getmetatable(L, "Manifold");
 	lua_setmetatable(L, -2);
   

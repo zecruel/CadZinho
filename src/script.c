@@ -325,7 +325,7 @@ int script_clear_sel (lua_State *L) {
 
 /* enable select mode */
 /* given parameters:
-	- none
+	- Entity type specification, as string (optional, dflt = "+all")
 returns:
 	- none
 */
@@ -341,11 +341,74 @@ int script_enable_sel (lua_State *L) {
 		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
 		lua_error(L);
 	}
+  
+  int sel_type = ~DXF_NONE;
 	
+  if (lua_isstring(L, 1)) {
+		const char *typ = lua_tostring(L, 1);
+    if (strstr(typ, "+all")) sel_type = ~DXF_NONE;
+    if (strstr(typ, "-all")) sel_type = DXF_NONE;
+    
+    if (strstr(typ, "+line")) sel_type |= DXF_LINE;
+    if (strstr(typ, "+point")) sel_type |= DXF_POINT;
+    if (strstr(typ, "+circle")) sel_type |= DXF_CIRCLE;
+    if (strstr(typ, "+arc")) sel_type |= DXF_ARC;
+    if (strstr(typ, "+trace")) sel_type |= DXF_TRACE;
+    if (strstr(typ, "+solid")) sel_type |= DXF_SOLID;
+    if (strstr(typ, "+text")) sel_type |= DXF_TEXT;
+    if (strstr(typ, "+shape")) sel_type |= DXF_SHAPE;
+    if (strstr(typ, "+insert")) sel_type |= DXF_INSERT;
+    if (strstr(typ, "+attrib")) sel_type |= DXF_ATTRIB;
+    if (strstr(typ, "+polyline")) sel_type |= DXF_POLYLINE;
+    if (strstr(typ, "+vertex")) sel_type |= DXF_VERTEX;
+    if (strstr(typ, "+lwpolyline")) sel_type |= DXF_LWPOLYLINE;
+    if (strstr(typ, "+3dface")) sel_type |= DXF_3DFACE;
+    if (strstr(typ, "+viewport")) sel_type |= DXF_VIEWPORT;
+    if (strstr(typ, "+dimension")) sel_type |= DXF_DIMENSION;
+    if (strstr(typ, "+ellipse")) sel_type |= DXF_ELLIPSE;
+    if (strstr(typ, "+mtext")) sel_type |= DXF_MTEXT;
+    if (strstr(typ, "+blk")) sel_type |= DXF_BLK;
+    if (strstr(typ, "+endblk")) sel_type |= DXF_ENDBLK;
+    if (strstr(typ, "+hatch")) sel_type |= DXF_HATCH;
+    if (strstr(typ, "+dimstyle")) sel_type |= DXF_DIMSTYLE;
+    if (strstr(typ, "+image")) sel_type |= DXF_IMAGE;
+    if (strstr(typ, "+image_def")) sel_type |= DXF_IMAGE_DEF;
+    if (strstr(typ, "+spline")) sel_type |= DXF_SPLINE;
+    if (strstr(typ, "+attdef")) sel_type |= DXF_ATTDEF;
+    
+    if (strstr(typ, "-line")) sel_type &= DXF_LINE;
+    if (strstr(typ, "-point")) sel_type &= DXF_POINT;
+    if (strstr(typ, "-circle")) sel_type &= DXF_CIRCLE;
+    if (strstr(typ, "-arc")) sel_type &= DXF_ARC;
+    if (strstr(typ, "-trace")) sel_type &= DXF_TRACE;
+    if (strstr(typ, "-solid")) sel_type &= DXF_SOLID;
+    if (strstr(typ, "-text")) sel_type &= DXF_TEXT;
+    if (strstr(typ, "-shape")) sel_type &= DXF_SHAPE;
+    if (strstr(typ, "-insert")) sel_type &= DXF_INSERT;
+    if (strstr(typ, "-attrib")) sel_type &= DXF_ATTRIB;
+    if (strstr(typ, "-polyline")) sel_type &= DXF_POLYLINE;
+    if (strstr(typ, "-vertex")) sel_type &= DXF_VERTEX;
+    if (strstr(typ, "-lwpolyline")) sel_type &= DXF_LWPOLYLINE;
+    if (strstr(typ, "-3dface")) sel_type &= DXF_3DFACE;
+    if (strstr(typ, "-viewport")) sel_type &= DXF_VIEWPORT;
+    if (strstr(typ, "-dimension")) sel_type &= DXF_DIMENSION;
+    if (strstr(typ, "-ellipse")) sel_type &= DXF_ELLIPSE;
+    if (strstr(typ, "-mtext")) sel_type &= DXF_MTEXT;
+    if (strstr(typ, "-blk")) sel_type &= DXF_BLK;
+    if (strstr(typ, "-endblk")) sel_type &= DXF_ENDBLK;
+    if (strstr(typ, "-hatch")) sel_type &= DXF_HATCH;
+    if (strstr(typ, "-dimstyle")) sel_type &= DXF_DIMSTYLE;
+    if (strstr(typ, "-image")) sel_type &= DXF_IMAGE;
+    if (strstr(typ, "-image_def")) sel_type &= DXF_IMAGE_DEF;
+    if (strstr(typ, "-spline")) sel_type &= DXF_SPLINE;
+    if (strstr(typ, "-attdef")) sel_type &= DXF_ATTDEF;
+  }
+  
+  
 	gui->step = 0;
 	gui->free_sel = 1;
 	gui->en_distance = 0;
-	gui->sel_ent_filter = ~DXF_NONE;
+	gui->sel_ent_filter = sel_type;
 	gui_simple_select(gui);
 	
 	return 0;
@@ -6822,7 +6885,7 @@ int script_miniz_open (lua_State *L) {
 	struct script_miniz_arch * zip;
 	
 	/* create a userdata object */
-	zip = (struct script_miniz_arch *) lua_newuserdatauv(L, sizeof(struct script_miniz_arch *), 0); 
+	zip = (struct script_miniz_arch *) lua_newuserdatauv(L, sizeof(struct script_miniz_arch), 0); 
 	luaL_getmetatable(L, "Zip");
 	lua_setmetatable(L, -2);
 	
@@ -6988,7 +7051,7 @@ int script_yxml_new (lua_State *L) {
 	struct script_yxml_state * state;
 	
 	/* create a userdata object */
-	state = (struct script_yxml_state *) lua_newuserdatauv(L, sizeof(struct script_yxml_state *), 0); 
+	state = (struct script_yxml_state *) lua_newuserdatauv(L, sizeof(struct script_yxml_state), 0); 
 	luaL_getmetatable(L, "Yxml");
 	lua_setmetatable(L, -2);
 	

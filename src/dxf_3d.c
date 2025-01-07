@@ -9,6 +9,8 @@ struct manifold_obj {
 
 void *manifold_buffer() { return malloc(manifold_manifold_size()); }
 void *meshgl64_buffer() { return malloc(manifold_meshgl64_size()); }
+void *simple_polyg_buffer() { return malloc(manifold_simple_polygon_size()); }
+void *polygons_buffer() { return malloc(manifold_polygons_size()); }
 
 
 /* create a sphere manifold */
@@ -55,8 +57,7 @@ int dxf_3d_sphere (lua_State *L) {
 */
 int dxf_3d_slab (lua_State *L) {
   double w = 1.0, h = 1.0, p = 1.0;
-  int c_seg = 20;
-	
+  
 	/* verify passed arguments */
 	
 	if (lua_isnumber(L, 1)) w = lua_tonumber(L, 1);
@@ -122,6 +123,56 @@ int dxf_3d_cylinder (lua_State *L) {
 	
   cylinder->obj = manifold_cylinder(manifold_buffer(), h, r1, r2, c_seg, 0);
   cylinder->prev = manifold_empty(manifold_buffer());
+	
+	return 1;
+}
+
+/* create a pyramid manifold */
+/* given parameters:
+	- base edge lengths w,h, as numbers (dflt = 1,1)
+  - pyramid total heigth p, as number (dflt = 1)
+  - top scale factor relative to base, as number (dflt = 0 - complete pyramid)
+	- Manifold object, as userdata
+*/
+int dxf_3d_pyramid (lua_State *L) {
+  double w = 1.0, h = 1.0, p = 1.0, s = 0.0;
+	
+	/* verify passed arguments */
+	
+	if (lua_isnumber(L, 1)) w = lua_tonumber(L, 1);
+  if (lua_isnumber(L, 2)) h = lua_tonumber(L, 2);
+  if (lua_isnumber(L, 3)) p = lua_tonumber(L, 3);
+  if (lua_isnumber(L, 4)) s = lua_tonumber(L, 4);
+  
+  if (w <= 0.0) w = 1.0;
+  if (h <= 0.0) h = 1.0;
+  if (p <= 0.0) p = 1.0;
+  if (s < 0.0) p = 0.0;
+	
+	/* create a userdata object */
+	struct manifold_obj *pyr;
+	
+	pyr = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj), 0); 
+	luaL_getmetatable(L, "Manifold");
+	lua_setmetatable(L, -2);
+  
+  pyr->obj = NULL;
+  pyr->prev = NULL;
+	
+  
+  //ManifoldVec2 pts[] = {{0, 0}, {w, 0}, {w, h}, {0, h}};
+  ManifoldVec2 pts[] = {{-w/2.0, -h/2.0}, {w/2.0, -h/2.0}, {w/2.0, h/2.0}, {-w/2.0, h/2.0}};
+  ManifoldSimplePolygon *sq[] = {
+      manifold_simple_polygon(simple_polyg_buffer(), &pts[0], 4)};
+  ManifoldPolygons *polys = manifold_polygons(polygons_buffer(), sq, 1);
+
+  pyr->obj = manifold_extrude(manifold_buffer(), polys, p, 0, 0, s, s);
+  pyr->prev = manifold_empty(manifold_buffer());
+  
+  manifold_destruct_simple_polygon(sq[0]);
+  manifold_destruct_polygons(polys);
+  free(sq[0]);
+  free(polys);
 	
 	return 1;
 }
@@ -478,6 +529,7 @@ Notes:
 */
 dxf_node * dxf_new_mesh  (dxf_drawing *drawing, char *chunk, int color, char *layer, int pool){
 	lua_State *L = dxf_3d_engine.T;
+  dxf_3d_engine.time = clock();
   
   lua_newtable(L);
 	lua_setglobal(L, "manifold");
@@ -489,12 +541,15 @@ dxf_node * dxf_new_mesh  (dxf_drawing *drawing, char *chunk, int color, char *la
 	dxf_3d_engine.status = luaL_loadbuffer(L, chunk, strlen(chunk), "engine3d");
 	if (dxf_3d_engine.status != LUA_OK){
 		//dxf_3d_engine.active = 0; /* error */
+    printf("3D engine error  - chunk\n" );
 		return NULL;
 	}
   int n_res = 0; /* for Lua 5.4*/
   dxf_3d_engine.status = lua_resume(L, NULL, 0, &n_res); /* start thread */
 	if (dxf_3d_engine.status != LUA_OK){
 		//dxf_3d_engine.active = 0; /* error */
+    int n = lua_gettop(L);    /* number of arguments */
+    printf("3D engine error  - resume, %d , %d\n", n_res, n );
 		return NULL;
 	}
 	
@@ -502,6 +557,7 @@ dxf_node * dxf_new_mesh  (dxf_drawing *drawing, char *chunk, int color, char *la
 	lua_getglobal(L, "manifold");
 	/* verify passed arguments */
 	if(!lua_istable(L, -1)){
+    printf("3D engine error  - global\n" );
     return NULL;
   }
   
@@ -510,6 +566,7 @@ dxf_node * dxf_new_mesh  (dxf_drawing *drawing, char *chunk, int color, char *la
   lua_rawgeti (L, -1, last);
   
 	if (!( manifold = udata_check(L, -1, "Manifold") )) { /* the Manifold object is a Lua userdata type*/
+    printf("3D engine error  - metatable\n" );
 		return NULL;
 	}
 	lua_pop(L, 2);
@@ -563,7 +620,10 @@ int dxf_3d_init (){
 	}
 	dxf_3d_engine.T = T;
 	
-	
+	/* put the engine script structure in lua global registry */
+	lua_pushstring(T, "cz_script");
+	lua_pushlightuserdata(T, (void *) &dxf_3d_engine);
+	lua_settable(T, LUA_REGISTRYINDEX);
 	
 	static const struct luaL_Reg manifold_meths[] = {
     {"translate", dxf_3d_translate},
@@ -592,6 +652,8 @@ int dxf_3d_init (){
 	lua_setglobal(T, "slab");
   lua_pushcfunction(T, dxf_3d_cylinder);
 	lua_setglobal(T, "cylinder");
+  lua_pushcfunction(T, dxf_3d_pyramid);
+	lua_setglobal(T, "pyramid");
   
   lua_pushcfunction(T, dxf_3d_union);
 	lua_setglobal(T, "union");

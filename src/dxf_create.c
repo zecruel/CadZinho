@@ -3303,6 +3303,10 @@ dxf_node * dxf_new_face_rec (int *index, int n, int color, char *layer, int pool
 	return NULL;
 }
 
+#define MEMP_VEC2 4
+#define MEMP_SIMPLE_POLY 5
+#define MEMP_POLY 6
+
 dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, char *chunk, int color, char *layer, int pool){
 	/* create a new POLYLINE entity */
 	const char *handle = "0";
@@ -3319,11 +3323,15 @@ dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, char
 	int prop = manifold_meshgl64_num_prop(mesh);
 	int vert = manifold_meshgl64_num_vert(mesh);
 	int trian = manifold_meshgl64_num_tri(mesh);
-
-	double *coord = manifold_meshgl64_vert_properties(
-		malloc(sizeof(double) * prop * vert), mesh);
-	uint64_t *index = manifold_meshgl64_tri_verts(
-		malloc(sizeof(uint64_t) * 3 * trian), mesh);
+  
+  struct Mem_buffer *mem_coord = manage_buffer(sizeof(double) * prop * vert,
+    BUF_GET, MEMP_VEC2);
+  struct Mem_buffer *mem_idx = manage_buffer(sizeof(uint64_t) * 3 * trian,
+    BUF_GET, MEMP_SIMPLE_POLY);
+  if (!mem_coord || !mem_idx) return NULL; /* return fail */
+  
+	double *coord = manifold_meshgl64_vert_properties(mem_coord->buffer, mesh);
+	uint64_t *index = manifold_meshgl64_tri_verts(mem_idx->buffer, mesh);
 	
 	dxf_node * new_mesh = dxf_obj_new ("POLYLINE", pool);
 	
@@ -3393,8 +3401,8 @@ dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, char
 		dxf_obj_append(new_mesh, current);
 	}
   
-	free (coord);
-	free (index);
+	manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
+  manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
 	
 	current = dxf_new_seqend (layer, pool);
 	ent_handle(drawing, current);

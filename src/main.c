@@ -756,6 +756,9 @@ int main(int argc, char** argv){
 	manage_buffer(0, BUF_FREE, 1);
 	manage_buffer(0, BUF_FREE, 2);
 	manage_buffer(0, BUF_FREE, 3);
+  manage_buffer(0, BUF_FREE, 4);
+	manage_buffer(0, BUF_FREE, 5);
+  manage_buffer(0, BUF_FREE, 6);
   
   strpool_term( &value_pool );
   strpool_term( &name_pool );

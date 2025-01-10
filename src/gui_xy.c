@@ -332,33 +332,69 @@ int gui_xy(gui_obj *gui){
 		double pos_y = (double) gui->mouse_y/gui->zoom + gui->ofs_y;
 		double pos_z = 0.0;
 		
-		nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
-	
-		//nk_layout_row_dynamic(gui->ctx, 17, 1);
-		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 3);
-		nk_layout_row_push(gui->ctx, 292);
-		text_len = snprintf(text, 63, "(%f,  %f)", pos_x, pos_y);
-		nk_label(gui->ctx, text, NK_TEXT_CENTERED);
 		
-		#if(0)
+		
+		//#if(0)
 		/* get ray  from mouse point in screen*/
 		
 		double ray_o[3], ray_dir[3], plane[4], point[3];
-		
+		#if(0)
 		ray_o[0] = (double) gui->mouse_x * gui->drwg_view_i[0][0] +
 			(double) gui->mouse_y * gui->drwg_view_i[1][0] +
-			gui->drwg_view_i[3][0];
+			gui->drwg_view_i[2][0];
 		ray_o[1] = (double) gui->mouse_x * gui->drwg_view_i[0][1] +
 			(double) gui->mouse_y * gui->drwg_view_i[1][1] +
-			gui->drwg_view_i[3][1];
+			gui->drwg_view_i[2][1];
 		ray_o[2] = (double) gui->mouse_x * gui->drwg_view_i[0][2] +
 			(double) gui->mouse_y * gui->drwg_view_i[1][2] +
-			gui->drwg_view_i[3][2];
+			gui->drwg_view_i[2][2];
 		
-		ray_dir[0] = -gui->drwg_view_i[2][0];
-		ray_dir[1] = -gui->drwg_view_i[2][1];
-		ray_dir[2] = -gui->drwg_view_i[2][2];
-		
+		ray_dir[0] = gui->drwg_view[2][0];
+		ray_dir[1] = gui->drwg_view[2][1];
+		ray_dir[2] = gui->drwg_view[2][2];
+    #endif
+    
+    double sin_alpha, cos_alpha, sin_beta, cos_beta, sin_gamma, cos_gamma;
+			
+    sin_alpha = sin(gui->alpha * M_PI / 180.0);
+    cos_alpha = cos(gui->alpha * M_PI / 180.0);
+    sin_beta = sin(gui->beta * M_PI / 180.0);
+    cos_beta = cos(gui->beta * M_PI / 180.0);
+    sin_gamma = sin(gui->gamma * M_PI / 180.0);
+    cos_gamma = cos(gui->gamma * M_PI / 180.0);
+    
+    ray_dir[0] = cos_alpha*sin_beta*cos_gamma + sin_alpha*sin_gamma;
+		ray_dir[1] = -(sin_alpha*sin_beta*cos_gamma - cos_alpha*sin_gamma);
+		ray_dir[2] = cos_beta*cos_gamma;
+    
+    
+    double u[3],v[3], il, *n = ray_dir, o[3];
+    
+    if (fabs(n[0]) >= fabs(n[1])){
+      il = 1/sqrt(n[0]*n[0] + n[2]*n[2]);
+      u[0] = n[2] * il;
+      u[1] = 0.0;
+      u[2] = -n[0] * il;
+    } else {
+      il = 1/sqrt(n[1]*n[1] + n[2]*n[2]);
+      u[0] = 0.0;
+      u[1] = n[2] * il;
+      u[2] = -n[1] * il;
+    }
+		/* cross product */
+    v[0] = u[1] * n[2] - u[2] * n[1];
+    v[1] = u[0] * n[2] - u[2] * n[0];
+    v[2] = u[0] * n[1] - u[1] * n[0];
+    
+    o[0] = gui->ofs_x * u[0] + gui->ofs_y * v[0] + gui->ofs_z * n[0];
+    o[1] = gui->ofs_x * u[1] + gui->ofs_y * v[1] + gui->ofs_z * n[1];
+    o[2] = gui->ofs_x * u[2] + gui->ofs_y * v[2] + gui->ofs_z * n[2];
+    
+    ray_o[0] = o[0] + (double)gui->mouse_x/gui->zoom * u[0] + (double)gui->mouse_y/gui->zoom * v[0] + (double)gui->win_w/gui->zoom * n[0];
+    ray_o[1] = o[1] + (double)gui->mouse_x/gui->zoom * u[1] + (double)gui->mouse_y/gui->zoom * v[1] + (double)gui->win_w/gui->zoom * n[1];
+    ray_o[2] = o[2] + (double)gui->mouse_x/gui->zoom * u[2] + (double)gui->mouse_y/gui->zoom * v[2] + (double)gui->win_w/gui->zoom * n[2];
+    
+    #if(0)
 		/* try xy plane*/
 		plane[0] = 0.0; plane[1] = 0.0; plane[2] = 1.0; plane[3] = 0.0;
 		if( ray_plane(ray_o, ray_dir, plane, point)){
@@ -398,6 +434,14 @@ int gui_xy(gui_obj *gui){
 		nk_label(gui->ctx, text, NK_TEXT_CENTERED);
 		#endif
 		
+    
+    nk_style_push_font(gui->ctx, &(gui->alt_font_sizes[FONT_SMALL])); /* change font to tiny*/
+	
+		//nk_layout_row_dynamic(gui->ctx, 17, 1);
+		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 3);
+		nk_layout_row_push(gui->ctx, 292);
+		text_len = snprintf(text, 63, "(%.2f,%.2f)-%.2f,%.2f,%.2f-%.2f,%.2f,%.2f", pos_x, pos_y, ray_o[0], ray_o[1], ray_o[2],ray_dir[0],ray_dir[1],ray_dir[2]);
+		nk_label(gui->ctx, text, NK_TEXT_CENTERED);
 		nk_style_pop_font(gui->ctx); /* return to the default font*/
 		
 		/* select if entry mode is in absolute coordinates or relative distance*/

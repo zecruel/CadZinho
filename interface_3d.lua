@@ -11,6 +11,10 @@ extr_twist = {value = '0'}
 contour = "{{-0.5,-0.5},{0.5,-0.5},{0.5,-0.4},{-0.4,-0.4},{-0.4,0.5},{-0.5,0.5}}"
 path = "{{0.0,0.0,0.0},{10,10,0.0},{15,10,0.0},\n{25,5,0.0},{25,0.0,0.0}}"
 
+function dot (v1, v2)
+  return v1[1] * v2[1] + v1[2] * v2[2] + v1[3] * v2[3]
+
+end
 function inter3d_dyn(event)
   cadzinho.nk_layout(20, 1)
   cadzinho.nk_label("3D Object")-- Simple information: script title
@@ -237,6 +241,49 @@ function rotate_dyn(event)
   cadzinho.nk_label("rotate")-- Simple information: script title
   --cadzinho.nk_propertyd("Heigth", slab_heigth)
   
+  line = {base = {event.x, event.y, 0}, dir = {0,0,1}}
+  seg = {base = {3, 4, 5}, dir = {3,1,0}}
+  u = {line.base[1]-seg.base[1],line.base[2]-seg.base[2],line.base[3]-seg.base[3]}
+  a = dot (line.dir, line.dir)
+  b = dot (line.dir, seg.dir)
+  c = dot (seg.dir, seg.dir)
+  d = dot (line.dir, u)
+  e = dot (seg.dir, u)
+  det = a*c - b*b
+  sNum = 0
+  sDenom = det
+  tNum = 0
+  tDenom = det
+  
+  if det < 1e-6 then
+    sNum = 0
+    sDenom = 1
+    tNum = e
+    tDenom = c
+  else
+    sNum = b*e - c*d
+    tNum = a*e - b*d
+  end
+  
+  if tNum < 0 then
+    tNum = 0
+    sNum = -d
+    sDenom = a
+  elseif (tNum > tDenom) then
+    tNum = tDenom
+    sNum = -d + b
+    sDenom = a
+  end
+  
+  s = sNum / sDenom
+  t = tNum / tDenom
+  
+  v = {
+    u[1] + s*line.dir[1] - t*seg.dir[1],
+    u[2] + s*line.dir[2] - t*seg.dir[2],
+    u[3] + s*line.dir[3] - t*seg.dir[3] }
+  dist = math.sqrt(dot (v, v))
+  cadzinho.nk_label("Dist=" .. dist)
   
   local sel = cadzinho.get_sel()
   if #sel < 1 then

@@ -1412,6 +1412,47 @@ int config_win (gui_obj *gui){
 			matrix4_mul(mat_b[0], res[0], gui->drwg_view[0]);
 			
 			invert_4matrix(gui->drwg_view[0], gui->drwg_view_i[0]);
+			
+			double u[3],v[3],n[3], il;
+			
+			n[0] = gui->model_view[0][2];
+			n[1] = gui->model_view[1][2];
+			n[2] = gui->model_view[2][2];
+			
+			if (fabs(n[0]) >= fabs(n[1])){
+			      il = 1/sqrt(n[0]*n[0] + n[2]*n[2]);
+			      u[0] = n[2] * il;
+			      u[1] = 0.0;
+			      u[2] = -n[0] * il;
+			    } else {
+			      il = 1/sqrt(n[1]*n[1] + n[2]*n[2]);
+			      u[0] = 0.0;
+			      u[1] = n[2] * il;
+			      u[2] = -n[1] * il;
+			    }
+					/* cross product */
+			    v[0] = u[1] * n[2] - u[2] * n[1];
+			    v[1] = u[0] * n[2] - u[2] * n[0];
+			    v[2] = u[0] * n[1] - u[1] * n[0];
+			    
+			u[0] = gui->model_view[0][0];
+	u[1] = gui->model_view[1][0];
+	u[2] = gui->model_view[2][0];
+	
+	v[0] = gui->model_view[0][1];
+	v[1] = gui->model_view[1][1];
+	v[2] = gui->model_view[2][1];
+			    
+			char tmp_str[100] = "";
+			
+			nk_layout_row_dynamic(gui->ctx, 20, 1);
+			
+			snprintf(tmp_str, 99, "U = %.2f , %.2f , %.2f", u[0], u[1], u[2]);
+			nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
+			snprintf(tmp_str, 99, "V = %.2f , %.2f , %.2f", v[0], v[1], v[2]);
+			nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
+			snprintf(tmp_str, 99, "N = %.2f , %.2f , %.2f", n[0], n[1], n[2]);
+			nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
 		}
 	} else {
     show_config = 0;

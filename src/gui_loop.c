@@ -120,7 +120,8 @@ int gui_main_loop (gui_obj *gui) {
           gui->mouse_x = event.button.x;
           gui->mouse_y = event.button.y;
           gui->mouse_y = gui->win_h - gui->mouse_y;
-          {
+        #if(0)  
+	{
           /* get ray  from mouse point in screen*/
           double ray_o[3], ray_dir[3], plane[4], point[3];
           
@@ -170,6 +171,7 @@ int gui_main_loop (gui_obj *gui) {
           }
         
           }
+	  #endif
         
           if (event.button.button == SDL_BUTTON_LEFT){
             leftMouseButtonDown = 0;
@@ -182,7 +184,7 @@ int gui_main_loop (gui_obj *gui) {
           gui->mouse_x = event.button.x;
           gui->mouse_y = event.button.y;
           gui->mouse_y = gui->win_h - gui->mouse_y;
-          
+          #if(0)  
           {
           /* get ray  from mouse point in screen*/
           double ray_o[3], ray_dir[3], plane[4], point[3];
@@ -233,6 +235,7 @@ int gui_main_loop (gui_obj *gui) {
           }
         
           }
+	  #endif
           
           if (event.button.button == SDL_BUTTON_LEFT && !gui->pan_mode){
             leftMouseButtonDown = 1;
@@ -251,10 +254,17 @@ int gui_main_loop (gui_obj *gui) {
           break;
         case SDL_MOUSEMOTION:
           MouseMotion = 1;
-          gui->mouse_x = event.motion.x;
-          gui->mouse_y = event.motion.y;
-          gui->mouse_y = gui->win_h - gui->mouse_y;
+          //gui->mouse_x = event.motion.x;
+          //gui->mouse_y = event.motion.y;
+          //gui->mouse_y = gui->win_h - gui->mouse_y;
+	double x = event.motion.x;
+          double y = gui->win_h - event.motion.y;
+          
+	gui->mouse_x = x*gui->model_view[0][0] + y *gui->model_view[0][1];
+	gui->mouse_y = x*gui->model_view[1][0] + y *gui->model_view[1][1];
+	gui->mouse_z = x*gui->model_view[2][0] + y *gui->model_view[2][1];
           {
+		  #if(0)  
           /* get ray  from mouse point in screen*/
           double ray_o[3], ray_dir[3], plane[4], point[3];
           
@@ -302,7 +312,7 @@ int gui_main_loop (gui_obj *gui) {
               }
             }
           }
-          
+          #endif
           /* pan drawing with middle button */
           
           if (gui->pan_mode){//(event.motion.state & SDL_BUTTON_MMASK){

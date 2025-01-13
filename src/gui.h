@@ -275,8 +275,8 @@ struct Gui_obj {
   int reload_conf;
   
   int next_win_x, next_win_y, next_win_w, next_win_h;
-	int mouse_x, mouse_y;//, mouse_z;
-  int prev_mouse_x, prev_mouse_y, pan_mode;
+	int mouse_x, mouse_y, mouse_z;
+  int prev_mouse_x, prev_mouse_y, prev_mouse_z, pan_mode;
   
   int color_idx, lw_idx, t_al_v, t_al_h;
 	int layer_idx, ltypes_idx, t_sty_idx;
@@ -422,11 +422,10 @@ struct Gui_obj {
   float alpha, beta, gamma;
 	
 	float drwg_view[4][4];
-	float drwg_view_i[4][4];
-  float model_view[3][3];
+  double model_view[3][3];
   
   /*gui pos variables */
-	double zoom, ofs_x, ofs_y, ofs_z, mouse_z;
+	double zoom, ofs_x, ofs_y, ofs_z;
 	double prev_zoom;
 	
 	double user_x, user_y;
@@ -599,7 +598,7 @@ void gui_draw_vert(gui_obj *gui, bmp_img *img, dxf_node *obj);
 
 int nk_gl_render(gui_obj *gui) ;
 
-int draw_cursor_gl(gui_obj *gui, int x, int y, enum Cursor_type type);
+int draw_cursor_gl(gui_obj *gui, int x, int y, int z, enum Cursor_type type);
 
 int draw_grid_gl(gui_obj *gui);
 

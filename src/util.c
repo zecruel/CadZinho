@@ -884,6 +884,27 @@ void matrix4_mul(float *mat_a, float *mat_b, float *mat_r) {
                             + (mat_b[i + 3] * mat_a[j + 12]);
 }
 
+int invert_3matrix (double m[3][3], double inv[3][3]){
+  double det = m[0][0] * (m[1][1] * m[2][2] - m[2][1] * m[1][2]) -
+             m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
+             m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+
+  if (fabs(det) < 1.0e-9) return 0;
+  double invdet = 1 / det;
+
+  // inverse of matrix m
+  inv[0][0] = (m[1][1] * m[2][2] - m[2][1] * m[1][2]) * invdet;
+  inv[0][1] = (m[0][2] * m[2][1] - m[0][1] * m[2][2]) * invdet;
+  inv[0][2] = (m[0][1] * m[1][2] - m[0][2] * m[1][1]) * invdet;
+  inv[1][0] = (m[1][2] * m[2][0] - m[1][0] * m[2][2]) * invdet;
+  inv[1][1] = (m[0][0] * m[2][2] - m[0][2] * m[2][0]) * invdet;
+  inv[1][2] = (m[1][0] * m[0][2] - m[0][0] * m[1][2]) * invdet;
+  inv[2][0] = (m[1][0] * m[2][1] - m[2][0] * m[1][1]) * invdet;
+  inv[2][1] = (m[2][0] * m[0][1] - m[0][0] * m[2][1]) * invdet;
+  inv[2][2] = (m[0][0] * m[1][1] - m[1][0] * m[0][1]) * invdet;
+  return 1;
+}
+
 int invert_4matrix(float *m, float *m_inv){
     double inv[16], det;
     int i;

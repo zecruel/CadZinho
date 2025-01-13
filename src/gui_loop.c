@@ -50,7 +50,7 @@ int gui_main_loop (gui_obj *gui) {
   
   static int update_title = 0, changed = 0, framebuf = 1;
   
-  static double prev_ofs_x, prev_ofs_y, prev_zoom;
+  static double prev_ofs_x, prev_ofs_y, prev_ofs_z, prev_zoom;
   static float prev_model_view[3][3];
   
   static struct do_entry *prev_do = NULL; //gui->list_do.current;
@@ -65,6 +65,10 @@ int gui_main_loop (gui_obj *gui) {
   struct draw_param d_param;
 	char file_path[DXF_MAX_CHARS];
 	int file_path_len = 0;
+  static int x = 0, x0, y0;
+  static int y = 0;
+  
+  x0 = gui->win_w/2; y0 = gui->win_h/2;
   
   /* Colors in use */
 	bmp_color white = {.r = 255, .g = 255, .b =255, .a = 255};
@@ -117,61 +121,13 @@ int gui_main_loop (gui_obj *gui) {
       double wheel = 1.0;
       switch (event.type){
         case SDL_MOUSEBUTTONUP:
-          gui->mouse_x = event.button.x;
-          gui->mouse_y = event.button.y;
-          gui->mouse_y = gui->win_h - gui->mouse_y;
-        #if(0)  
-	{
-          /* get ray  from mouse point in screen*/
-          double ray_o[3], ray_dir[3], plane[4], point[3];
+          x = event.motion.x - x0;
+          y = y0 - event.motion.y;
           
-          ray_o[0] = (double) gui->mouse_x * gui->drwg_view_i[0][0] +
-            (double) gui->mouse_y * gui->drwg_view_i[1][0] +
-            gui->drwg_view_i[3][0];
-          ray_o[1] = (double) gui->mouse_x * gui->drwg_view_i[0][1] +
-            (double) gui->mouse_y * gui->drwg_view_i[1][1] +
-            gui->drwg_view_i[3][1];
-          ray_o[2] = (double) gui->mouse_x * gui->drwg_view_i[0][2] +
-            (double) gui->mouse_y * gui->drwg_view_i[1][2] +
-            gui->drwg_view_i[3][2];
-          
-          ray_dir[0] = -gui->drwg_view_i[2][0];
-          ray_dir[1] = -gui->drwg_view_i[2][1];
-          ray_dir[2] = -gui->drwg_view_i[2][2];
-          
-          /* try xy plane*/
-          plane[0] = 0.0; plane[1] = 0.0; plane[2] = 1.0; plane[3] = 0.0;
-          if( ray_plane(ray_o, ray_dir, plane, point)){
-            gui->mouse_x = point[0];
-            gui->mouse_y = point[1];
-            //gui->mouse_z = point[2];
-          }
-          else{
-            /* try xz plane*/
-            plane[0] = 0.0; plane[1] = 1.0; plane[2] = 0.0; plane[3] = 0.0;
-            if( ray_plane(ray_o, ray_dir, plane, point)){
-              gui->mouse_x = point[0];
-              gui->mouse_y = point[1];
-              //gui->mouse_z = point[2];
-            }
-            else{
-              /* try yz plane*/
-              plane[0] = 1.0; plane[1] = 0.0; plane[2] = 0.0; plane[3] = 0.0;
-              if( ray_plane(ray_o, ray_dir, plane, point)){
-                gui->mouse_x = point[0];
-                gui->mouse_y = point[1];
-                //gui->mouse_z = point[2];
-              }
-              else{
-                gui->mouse_x = ray_o[0];
-                gui->mouse_y = ray_o[1];
-                //gui->mouse_z = ray_o[2];
-              }
-            }
-          }
+          gui->mouse_x = x0 + x * gui->model_view[0][0] + y * gui->model_view[0][1];
+          gui->mouse_y = y0 + x * gui->model_view[1][0] + y * gui->model_view[1][1];
+          gui->mouse_z = x * gui->model_view[2][0] + y * gui->model_view[2][1];
         
-          }
-	  #endif
         
           if (event.button.button == SDL_BUTTON_LEFT){
             leftMouseButtonDown = 0;
@@ -181,61 +137,13 @@ int gui_main_loop (gui_obj *gui) {
           }
           break;
         case SDL_MOUSEBUTTONDOWN:
-          gui->mouse_x = event.button.x;
-          gui->mouse_y = event.button.y;
-          gui->mouse_y = gui->win_h - gui->mouse_y;
-          #if(0)  
-          {
-          /* get ray  from mouse point in screen*/
-          double ray_o[3], ray_dir[3], plane[4], point[3];
+          x = event.motion.x - x0;
+          y = y0 - event.motion.y;
           
-          ray_o[0] = (double) gui->mouse_x * gui->drwg_view_i[0][0] +
-            (double) gui->mouse_y * gui->drwg_view_i[1][0] +
-            gui->drwg_view_i[3][0];
-          ray_o[1] = (double) gui->mouse_x * gui->drwg_view_i[0][1] +
-            (double) gui->mouse_y * gui->drwg_view_i[1][1] +
-            gui->drwg_view_i[3][1];
-          ray_o[2] = (double) gui->mouse_x * gui->drwg_view_i[0][2] +
-            (double) gui->mouse_y * gui->drwg_view_i[1][2] +
-            gui->drwg_view_i[3][2];
+          gui->mouse_x = x0 + x * gui->model_view[0][0] + y * gui->model_view[0][1];
+          gui->mouse_y = y0 + x * gui->model_view[1][0] + y * gui->model_view[1][1];
+          gui->mouse_z = x * gui->model_view[2][0] + y * gui->model_view[2][1];
           
-          ray_dir[0] = -gui->drwg_view_i[2][0];
-          ray_dir[1] = -gui->drwg_view_i[2][1];
-          ray_dir[2] = -gui->drwg_view_i[2][2];
-          
-          /* try xy plane*/
-          plane[0] = 0.0; plane[1] = 0.0; plane[2] = 1.0; plane[3] = 0.0;
-          if( ray_plane(ray_o, ray_dir, plane, point)){
-            gui->mouse_x = point[0];
-            gui->mouse_y = point[1];
-            //gui->mouse_z = point[2];
-          }
-          else{
-            /* try xz plane*/
-            plane[0] = 0.0; plane[1] = 1.0; plane[2] = 0.0; plane[3] = 0.0;
-            if( ray_plane(ray_o, ray_dir, plane, point)){
-              gui->mouse_x = point[0];
-              gui->mouse_y = point[1];
-              //gui->mouse_z = point[2];
-            }
-            else{
-              /* try yz plane*/
-              plane[0] = 1.0; plane[1] = 0.0; plane[2] = 0.0; plane[3] = 0.0;
-              if( ray_plane(ray_o, ray_dir, plane, point)){
-                gui->mouse_x = point[0];
-                gui->mouse_y = point[1];
-                //gui->mouse_z = point[2];
-              }
-              else{
-                gui->mouse_x = ray_o[0];
-                gui->mouse_y = ray_o[1];
-                //gui->mouse_z = ray_o[2];
-              }
-            }
-          }
-        
-          }
-	  #endif
           
           if (event.button.button == SDL_BUTTON_LEFT && !gui->pan_mode){
             leftMouseButtonDown = 1;
@@ -254,73 +162,24 @@ int gui_main_loop (gui_obj *gui) {
           break;
         case SDL_MOUSEMOTION:
           MouseMotion = 1;
-          //gui->mouse_x = event.motion.x;
-          //gui->mouse_y = event.motion.y;
-          //gui->mouse_y = gui->win_h - gui->mouse_y;
-	double x = event.motion.x;
-          double y = gui->win_h - event.motion.y;
+          x = event.motion.x - x0;
+          y = y0 - event.motion.y;
           
-	gui->mouse_x = x*gui->model_view[0][0] + y *gui->model_view[0][1];
-	gui->mouse_y = x*gui->model_view[1][0] + y *gui->model_view[1][1];
-	gui->mouse_z = x*gui->model_view[2][0] + y *gui->model_view[2][1];
+          gui->mouse_x = x0 + x * gui->model_view[0][0] + y * gui->model_view[0][1];
+          gui->mouse_y = y0 + x * gui->model_view[1][0] + y * gui->model_view[1][1];
+          gui->mouse_z = x * gui->model_view[2][0] + y * gui->model_view[2][1];
           {
-		  #if(0)  
-          /* get ray  from mouse point in screen*/
-          double ray_o[3], ray_dir[3], plane[4], point[3];
-          
-          ray_o[0] = (double) gui->mouse_x * gui->drwg_view_i[0][0] +
-            (double) gui->mouse_y * gui->drwg_view_i[1][0] +
-            gui->drwg_view_i[3][0];
-          ray_o[1] = (double) gui->mouse_x * gui->drwg_view_i[0][1] +
-            (double) gui->mouse_y * gui->drwg_view_i[1][1] +
-            gui->drwg_view_i[3][1];
-          ray_o[2] = (double) gui->mouse_x * gui->drwg_view_i[0][2] +
-            (double) gui->mouse_y * gui->drwg_view_i[1][2] +
-            gui->drwg_view_i[3][2];
-          
-          ray_dir[0] = -gui->drwg_view_i[2][0];
-          ray_dir[1] = -gui->drwg_view_i[2][1];
-          ray_dir[2] = -gui->drwg_view_i[2][2];
-          
-          /* try xy plane*/
-          plane[0] = 0.0; plane[1] = 0.0; plane[2] = 1.0; plane[3] = 0.0;
-          if( ray_plane(ray_o, ray_dir, plane, point)){
-            gui->mouse_x = point[0];
-            gui->mouse_y = point[1];
-            //gui->mouse_z = point[2];
-          }
-          else{
-            /* try xz plane*/
-            plane[0] = 0.0; plane[1] = 1.0; plane[2] = 0.0; plane[3] = 0.0;
-            if( ray_plane(ray_o, ray_dir, plane, point)){
-              gui->mouse_x = point[0];
-              gui->mouse_y = point[1];
-              //gui->mouse_z = point[2];
-            }
-            else{
-              /* try yz plane*/
-              plane[0] = 1.0; plane[1] = 0.0; plane[2] = 0.0; plane[3] = 0.0;
-              if( ray_plane(ray_o, ray_dir, plane, point)){
-                gui->mouse_x = point[0];
-                gui->mouse_y = point[1];
-                //gui->mouse_z = point[2];
-              }
-              else{
-                gui->mouse_x = ray_o[0];
-                gui->mouse_y = ray_o[1];
-                //gui->mouse_z = ray_o[2];
-              }
-            }
-          }
-          #endif
+		  
           /* pan drawing with middle button */
           
           if (gui->pan_mode){//(event.motion.state & SDL_BUTTON_MMASK){
             gui->ofs_x -= (double) (gui->mouse_x - gui->prev_mouse_x)/gui->zoom;
             gui->ofs_y -= (double) (gui->mouse_y - gui->prev_mouse_y)/gui->zoom;
+            gui->ofs_z -= (double) (gui->mouse_z - gui->prev_mouse_z)/gui->zoom;
           }
           gui->prev_mouse_x = gui->mouse_x;
           gui->prev_mouse_y = gui->mouse_y;
+          gui->prev_mouse_z = gui->mouse_z;
           }
           gui->draw = 1;
           break;
@@ -330,11 +189,20 @@ int gui_main_loop (gui_obj *gui) {
           gui->prev_zoom = gui->zoom;
           gui->zoom = gui->zoom + wheel * 0.3 * gui->zoom;
           
-          SDL_GetMouseState(&gui->mouse_x, &gui->mouse_y);
-          gui->mouse_y = gui->win_h - gui->mouse_y;
+          SDL_GetMouseState(&x, &y);
+        
+          x = x - x0;
+          y = y0 - y;
+          {
+          gui->mouse_x = x0 + x * gui->model_view[0][0] + y * gui->model_view[0][1];
+          gui->mouse_y = y0 + x * gui->model_view[1][0] + y * gui->model_view[1][1];
+          gui->mouse_z = x * gui->model_view[2][0] + y * gui->model_view[2][1];
+          
           gui->ofs_x += ((double) gui->mouse_x)*(1/gui->prev_zoom - 1/gui->zoom);
           gui->ofs_y += ((double) gui->mouse_y)*(1/gui->prev_zoom - 1/gui->zoom);
+          gui->ofs_z += ((double) gui->mouse_z)*(1/gui->prev_zoom - 1/gui->zoom);
           gui->draw = 1;
+          }
           break;
         #if(0)
         case (SDL_DROPFILE): {      /* In case if dropped file */
@@ -1069,36 +937,62 @@ int gui_main_loop (gui_obj *gui) {
     
     gui->prev_zoom = gui->zoom;
     gui->zoom = gui->zoom + 0.2 * gui->zoom;
-    gui->ofs_x += (gui->win_w/2)*(1/gui->prev_zoom - 1/gui->zoom);
-    gui->ofs_y += (gui->win_h/2)*(1/gui->prev_zoom - 1/gui->zoom);
+    
+    x = (gui->win_w/2)*(1/gui->prev_zoom - 1/gui->zoom);
+    y = (gui->win_h/2)*(1/gui->prev_zoom - 1/gui->zoom);
+    
+    gui->ofs_x += x*gui->model_view[0][0] + y *gui->model_view[0][1];
+    gui->ofs_y += x*gui->model_view[1][0] + y *gui->model_view[1][1];
+    gui->ofs_z += x*gui->model_view[2][0] + y *gui->model_view[2][1];
     gui->draw = 1;
   }
   else if(gui->action == VIEW_ZOOM_M){
     gui->action = NONE;
     gui->prev_zoom = gui->zoom;
     gui->zoom = gui->zoom - 0.2 * gui->zoom;
-    gui->ofs_x += (gui->win_w/2)*(1/gui->prev_zoom - 1/gui->zoom);
-    gui->ofs_y += (gui->win_h/2)*(1/gui->prev_zoom - 1/gui->zoom);
+    x = (gui->win_w/2)*(1/gui->prev_zoom - 1/gui->zoom);
+    y = (gui->win_h/2)*(1/gui->prev_zoom - 1/gui->zoom);
+    
+    gui->ofs_x += x*gui->model_view[0][0] + y *gui->model_view[0][1];
+    gui->ofs_y += x*gui->model_view[1][0] + y *gui->model_view[1][1];
+    gui->ofs_z += x*gui->model_view[2][0] + y *gui->model_view[2][1];
     gui->draw = 1;
   }
   else if(gui->action == VIEW_PAN_U){
     gui->action = NONE;
-    gui->ofs_y += (gui->win_h*0.1)/gui->zoom;
+    y = (gui->win_h*0.1)/gui->zoom;
+    
+    gui->ofs_x += y *gui->model_view[0][1];
+    gui->ofs_y += y *gui->model_view[1][1];
+    gui->ofs_z += y *gui->model_view[2][1];
+    
     gui->draw = 1;
   }
   else if(gui->action == VIEW_PAN_D){
     gui->action = NONE;
-    gui->ofs_y -= (gui->win_h*0.1)/gui->zoom;
+    y = (gui->win_h*0.1)/gui->zoom;
+    
+    gui->ofs_x -= y *gui->model_view[0][1];
+    gui->ofs_y -= y *gui->model_view[1][1];
+    gui->ofs_z -= y *gui->model_view[2][1];
     gui->draw = 1;
   }
   else if(gui->action == VIEW_PAN_L){
     gui->action = NONE;
-    gui->ofs_x -= (gui->win_w*0.1)/gui->zoom;
+    x = (gui->win_w*0.1)/gui->zoom;
+    
+    gui->ofs_x -= x*gui->model_view[0][0];
+    gui->ofs_y -= x*gui->model_view[1][0];
+    gui->ofs_z -= x*gui->model_view[2][0];
     gui->draw = 1;
   }
   else if(gui->action == VIEW_PAN_R){
     gui->action = NONE;
-    gui->ofs_x += (gui->win_w*0.1)/gui->zoom;
+    x = (gui->win_w*0.1)/gui->zoom;
+    
+    gui->ofs_x += x*gui->model_view[0][0];
+    gui->ofs_y += x*gui->model_view[1][0];
+    gui->ofs_z += x*gui->model_view[2][0];
     gui->draw = 1;
   }
   else if(gui->action == REDRAW){
@@ -1513,7 +1407,7 @@ int gui_main_loop (gui_obj *gui) {
     gui->gl_ctx.win_h = gui->win_h;
     d_param.ofs_x = gui->ofs_x;
     d_param.ofs_y = gui->ofs_y;
-    d_param.ofs_z = 0;
+    d_param.ofs_z = gui->ofs_z;
     d_param.scale = gui->zoom;
     if (gui->background.r * 0.21 +  /* verify "brightness" of background color */
       gui->background.g * 0.72 + gui->background.b * 0.07 > 150) {
@@ -1563,6 +1457,7 @@ int gui_main_loop (gui_obj *gui) {
     
     /* ---------Render drawing in frame buffer ----------*/
     if (prev_ofs_x != gui->ofs_x || prev_ofs_y != gui->ofs_y ||
+      prev_ofs_z != gui->ofs_z ||
       prev_zoom != gui->zoom || prev_do != gui->list_do.current ||
       gui->draw == 2)
     { /* check if render is needed */
@@ -1695,9 +1590,10 @@ int gui_main_loop (gui_obj *gui) {
     if (gui->grid_flags) draw_grid_gl(gui);
     draw_orign_gl(gui);
     
-    if (!gui->pan_mode) 
-      draw_cursor_gl(gui, gui->mouse_x, gui->mouse_y, gui->cursor);
-    
+    if (!gui->pan_mode) {
+      
+      draw_cursor_gl(gui, gui->mouse_x, gui->mouse_y, gui->mouse_z, gui->cursor);
+    }
     draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
     //glReadPixels(gui->mouse_x, gui->mouse_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &gui->mouse_z);
     
@@ -1813,6 +1709,7 @@ int gui_main_loop (gui_obj *gui) {
   
   prev_ofs_x = gui->ofs_x;
   prev_ofs_y = gui->ofs_y;
+  prev_ofs_z = gui->ofs_z;
   prev_zoom = gui->zoom;
   prev_do = gui->list_do.current;
   memcpy(prev_model_view, gui->model_view, sizeof(prev_model_view));

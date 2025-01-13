@@ -110,6 +110,8 @@ int ray_plane(double ray_o[3], double ray_dir[3],
 	
 int invert_4matrix(float *m, float *m_inv);
 
+int invert_3matrix (double m[3][3], double inv[3][3]);
+
 double time_to_julian(time_t t);
 
 time_t julian_to_time(double jd);

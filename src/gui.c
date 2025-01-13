@@ -1711,8 +1711,10 @@ int gui_start(gui_obj *gui){
 	
 	gui->mouse_x = 0;
 	gui->mouse_y = 0;
+  gui->mouse_z = 0;
   gui->prev_mouse_x = 0;
-	gui->prev_mouse_y = 0;
+  gui->prev_mouse_y = 0;
+	gui->prev_mouse_z = 0;
   gui->pan_mode = 0;
   
 	
@@ -2027,23 +2029,6 @@ int gui_start(gui_obj *gui){
 	gui->model_view[2][1] = 0.0;
 	gui->model_view[2][2] = 1.0;
 	
-	gui->drwg_view_i[0][0] = 1.0;
-	gui->drwg_view_i[0][1] = 0.0;
-	gui->drwg_view_i[0][2] = 0.0;
-	gui->drwg_view_i[0][3] = 0.0;
-	gui->drwg_view_i[1][0] = 0.0;
-	gui->drwg_view_i[1][1] = 1.0;
-	gui->drwg_view_i[1][2] = 0.0;
-	gui->drwg_view_i[1][3] = 0.0;
-	gui->drwg_view_i[2][0] = 0.0;
-	gui->drwg_view_i[2][1] = 0.0;
-	gui->drwg_view_i[2][2] = 1.0;
-	gui->drwg_view_i[2][3] = 0.0;
-	gui->drwg_view_i[3][0] = 0.0;
-	gui->drwg_view_i[3][1] = 0.0;
-	gui->drwg_view_i[3][2] = 0.0;
-	gui->drwg_view_i[3][3] = 1.0;
-	
 	gui->discard_changes = 0;
 	gui->desired_action = NONE;
 	gui->hist_action = HIST_NONE;
@@ -2147,7 +2132,7 @@ void gui_simple_select(gui_obj *gui){
 	}
 }
 
-int draw_cursor_gl(gui_obj *gui, int x, int y, enum Cursor_type type) {
+int draw_cursor_gl(gui_obj *gui, int x, int y, int z, enum Cursor_type type) {
 	if (!gui) return 0;
 	
 	struct ogl *gl_ctx = &(gui->gl_ctx);
@@ -2205,13 +2190,17 @@ int draw_cursor_gl(gui_obj *gui, int x, int y, enum Cursor_type type) {
 		draw_gl_polygon (gl_ctx, 20, edges);
 	}
 	else{
-		draw_gl_line (gl_ctx, (float []){-gl_ctx->win_w, y, 0}, (float []){gl_ctx->win_w*2,y, 0}, 3);
-		draw_gl_line (gl_ctx, (float []){x, -gl_ctx->win_h, 0}, (float []){x, gl_ctx->win_h*2, 0}, 3);
+    float of_z = -gui->ofs_z * gui->zoom;
+		draw_gl_line (gl_ctx, (float []){-gl_ctx->win_w, y, of_z}, (float []){gl_ctx->win_w*2,y, of_z}, 3);
+		draw_gl_line (gl_ctx, (float []){x, -gl_ctx->win_h, of_z}, (float []){x, gl_ctx->win_h*2, of_z}, 3);
+    
+    
+    draw_gl_line (gl_ctx, (float []){x, y, of_z}, (float []){x, y, z+of_z}, 3);
 		
-		draw_gl_line (gl_ctx, (float []){x-5, y+5, 0}, (float []){x+5, y+5, 0}, 1);
-		draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x+5, y-5, 0}, 1);
-		draw_gl_line (gl_ctx, (float []){x+5, y-5, 0}, (float []){x+5, y+5, 0}, 1);
-		draw_gl_line (gl_ctx, (float []){x-5, y-5, 0}, (float []){x-5, y+5, 0}, 1);
+		draw_gl_line (gl_ctx, (float []){x-5, y+5, of_z}, (float []){x+5, y+5, of_z}, 1);
+		draw_gl_line (gl_ctx, (float []){x-5, y-5, of_z}, (float []){x+5, y-5, of_z}, 1);
+		draw_gl_line (gl_ctx, (float []){x+5, y-5, of_z}, (float []){x+5, y+5, of_z}, 1);
+		draw_gl_line (gl_ctx, (float []){x-5, y-5, of_z}, (float []){x-5, y+5, of_z}, 1);
 	}
 	
 	draw_gl (gl_ctx, 0);
@@ -2250,12 +2239,13 @@ int draw_grid_gl(gui_obj *gui) {
 	/* draw cursor */
   int i, n;
   float x;
+  float of_z = -gui->ofs_z * gui->zoom;
   
   /* vertical lines */
   n = 1 + round(gl_ctx->win_w / gui->zoom / grid_spc); /* number of lines in window width */
   x = (- fmod(gui->ofs_x, grid_spc)) * gui->zoom; /* align to origin */
 	for (i = 0; i < n; i++) {
-		draw_gl_line (gl_ctx, (float []){x, -gl_ctx->win_h, 0}, (float []){x, gl_ctx->win_h*2, 0}, 1);
+		draw_gl_line (gl_ctx, (float []){x, -gl_ctx->win_h, of_z}, (float []){x, gl_ctx->win_h*2, of_z}, 1);
 		x += grid_spc * gui->zoom;
 	}
   
@@ -2263,7 +2253,7 @@ int draw_grid_gl(gui_obj *gui) {
   n = 1 + round(gl_ctx->win_h / gui->zoom / grid_spc); /* number of lines in window height */
   x = (- fmod(gui->ofs_y, grid_spc)) * gui->zoom; /* align to origin */
 	for (i = 0; i < n; i++) {
-		draw_gl_line (gl_ctx, (float []){-gl_ctx->win_w, x, 0}, (float []){gl_ctx->win_w*2,x, 0}, 1);
+		draw_gl_line (gl_ctx, (float []){-gl_ctx->win_w, x, of_z}, (float []){gl_ctx->win_w*2,x, of_z}, 1);
 		x += grid_spc * gui->zoom;
 	}
 	

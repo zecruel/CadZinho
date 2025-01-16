@@ -11,7 +11,7 @@
 #include "gui_config.h"
 #include "gui_script.h"
 
-static void zoom_ext(dxf_drawing *drawing, int x, int y, int width, int height, double *zoom, double *ofs_x, double *ofs_y){
+static void zoom_ext(dxf_drawing *drawing, int x, int y, int width, int height, double *zoom, double *ofs_x, double *ofs_y, double *ofs_z){
 	double min_x = 0.0, min_y = 0.0, min_z, max_x = 20.0, max_y = 20.0, max_z;
 	double zoom_x = 1.0, zoom_y = 1.0;
 	
@@ -24,6 +24,7 @@ static void zoom_ext(dxf_drawing *drawing, int x, int y, int width, int height, 
 	
 	*ofs_x = min_x - ((fabs((max_x - min_x)*(*zoom) - width)/2)+x)/(*zoom);
 	*ofs_y = min_y - ((fabs((max_y - min_y)*(*zoom) - height)/2)+y)/(*zoom);
+  *ofs_z = 0.0;
 }
 
 int gui_main_loop (gui_obj *gui) {
@@ -576,6 +577,7 @@ int gui_main_loop (gui_obj *gui) {
         gui->zoom = 800.0 / h;
         gui->ofs_x = x - (gui->win_w - 800 * ar)/(2.0 * gui->zoom);
         gui->ofs_y = y - h / 2.0;
+        gui->ofs_z = z;
         gui->draw = 2;
       }
       else gui->action = VIEW_ZOOM_EXT;
@@ -739,6 +741,7 @@ int gui_main_loop (gui_obj *gui) {
       gui->zoom = 800.0 / h;
       gui->ofs_x = x - (gui->win_w - 800 * ar)/(2.0 * gui->zoom);
       gui->ofs_y = y - h / 2.0;
+      gui->ofs_z = z;
     }
     else gui->action = VIEW_ZOOM_EXT;
     
@@ -874,6 +877,7 @@ int gui_main_loop (gui_obj *gui) {
       h = 800.0 / gui->zoom;
       x = gui->ofs_x + (gui->win_w - 800 * ar)/(2.0 * gui->zoom);
       y = gui->ofs_y + h / 2.0;
+      z = gui->ofs_z;
       
       dxf_attr_change(start, 10, (void *) (double[]){0.0});
       dxf_attr_change(start, 20, (void *) (double[]){0.0});
@@ -929,7 +933,7 @@ int gui_main_loop (gui_obj *gui) {
   }
   else if(gui->action == VIEW_ZOOM_EXT){
     gui->action = NONE;
-    zoom_ext(gui->drawing, 0, 0, gui->win_w, gui->win_h, &gui->zoom, &gui->ofs_x, &gui->ofs_y);
+    zoom_ext(gui->drawing, 0, 0, gui->win_w, gui->win_h, &gui->zoom, &gui->ofs_x, &gui->ofs_y, &gui->ofs_z);
     gui->draw = 2;
   }
   else if(gui->action == VIEW_ZOOM_P){
@@ -1588,12 +1592,15 @@ int gui_main_loop (gui_obj *gui) {
     
     /* draw grid */
     if (gui->grid_flags) draw_grid_gl(gui);
-    draw_orign_gl(gui);
     
     if (!gui->pan_mode) {
       
       draw_cursor_gl(gui, gui->mouse_x, gui->mouse_y, gui->mouse_z, gui->cursor);
     }
+    
+    draw_orign_gl(gui);
+    
+    
     draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
     //glReadPixels(gui->mouse_x, gui->mouse_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &gui->mouse_z);
     

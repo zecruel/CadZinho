@@ -27,11 +27,26 @@ static void zoom_ext(dxf_drawing *drawing, int x, int y, int width, int height, 
   *ofs_z = 0.0;
 }
 
+static int trackball_z(int x, int y, int r){
+  int r2 = r/2;
+  int len2 = x*x + y*y;
+  int len = sqrt(len2);
+  int z;
+  
+  if (len2 > r2) {
+    z = r2/len;
+  }
+  else {
+    z = sqrt(r - len2);
+  }
+  return z;
+}
+
 int gui_main_loop (gui_obj *gui) {
   int ev_type;
 	
-	int leftMouseButtonDown = 0;
-	int rightMouseButtonDown = 0;
+	static int leftMouseButtonDown = 0;
+	static int rightMouseButtonDown = 0;
 	int leftMouseButtonClick = 0;
 	int rightMouseButtonClick = 0;
 	int MouseMotion = 0;
@@ -66,10 +81,17 @@ int gui_main_loop (gui_obj *gui) {
   struct draw_param d_param;
 	char file_path[DXF_MAX_CHARS];
 	int file_path_len = 0;
-  static int x = 0, x0, y0;
-  static int y = 0;
+  static int x = 0, x0, y0, r;
+  static int y = 0, prev_x = 0, prev_y = 0;
+  
+  static double alpha = 0;
+  static double gamma = 0;
   
   x0 = gui->win_w/2; y0 = gui->win_h/2;
+  
+  r = (x0 < y0) ? x0 : y0;
+  r = r / 3;
+  r = r * r;
   
   /* Colors in use */
 	bmp_color white = {.r = 255, .g = 255, .b =255, .a = 255};
@@ -114,6 +136,7 @@ int gui_main_loop (gui_obj *gui) {
     SDL_SetCursor(gui->dflt_cur);
   }
   else{
+    
     if (gui->pan_mode) SDL_SetCursor(gui->modal_cursor[PAN]);
     else SDL_SetCursor(gui->modal_cursor[gui->modal]);
     //SDL_ShowCursor(SDL_DISABLE);
@@ -140,6 +163,9 @@ int gui_main_loop (gui_obj *gui) {
         case SDL_MOUSEBUTTONDOWN:
           x = event.motion.x - x0;
           y = y0 - event.motion.y;
+        
+          prev_x = x;
+          prev_y = y;
           
           gui->mouse_x = x0 + x * gui->model_view[0][0] + y * gui->model_view[0][1];
           gui->mouse_y = y0 + x * gui->model_view[1][0] + y * gui->model_view[1][1];
@@ -154,11 +180,15 @@ int gui_main_loop (gui_obj *gui) {
             rightMouseButtonDown = 1;
             rightMouseButtonClick = 1;
           }
+          
+          
+          
           /* activate or toggle the pan mode */
           if (event.button.button == SDL_BUTTON_MIDDLE){
-            gui->pan_mode = !gui->pan_mode;
+            //gui->pan_mode = !gui->pan_mode;
+            gui->pan_mode ^= 1;
           }
-          else gui->pan_mode = 0;
+          //else gui->pan_mode = 0;
           gui->draw = 1;
           break;
         case SDL_MOUSEMOTION:
@@ -172,12 +202,38 @@ int gui_main_loop (gui_obj *gui) {
           {
 		  
           /* pan drawing with middle button */
-          
-          if (gui->pan_mode){//(event.motion.state & SDL_BUTTON_MMASK){
+          if (gui->pan_mode && !(gui->pan_mode & 2)){//(event.motion.state & SDL_BUTTON_MMASK){
             gui->ofs_x -= (double) (gui->mouse_x - gui->prev_mouse_x)/gui->zoom;
             gui->ofs_y -= (double) (gui->mouse_y - gui->prev_mouse_y)/gui->zoom;
             gui->ofs_z -= (double) (gui->mouse_z - gui->prev_mouse_z)/gui->zoom;
           }
+          /* rotate view */
+          else if (gui->pan_mode & 2){
+            int x1 = x-prev_x, y1 =y-prev_y;
+            int z1 = trackball_z(x1, y1, r);
+            double prev_a = gui->alpha;
+            double prev_g = gui->gamma;
+            gui->alpha -= atan2(x1, sqrt(y1*y1 + z1*z1)) * 180.0/M_PI;
+            gui->gamma += atan2(y1, sqrt(x1*x1 + z1*z1)) * 180.0/M_PI;
+            
+            if (gui->alpha < -180) gui->alpha = -180;
+            if (gui->alpha > 180) gui->alpha = 180;
+            if (gui->gamma < -180) gui->gamma = -180;
+            if (gui->gamma > 180) gui->gamma = 180;
+            
+            gui_calc_view_rot (gui);
+            
+            alpha = gui->alpha;
+            gamma = gui->gamma;
+            
+            gui->alpha = prev_a;
+            gui->gamma = prev_g;
+            //double alfa = atan2(x1, sqrt(y1*y1 + z1*z1)) * 180.0/M_PI;
+            //double gamma = atan2(y1, sqrt(x1*x1 + z1*z1)) * 180.0/M_PI;
+            //printf("alfa=%.2f, gamma=%.2f\n", alfa, gamma);
+          }
+          //prev_x = x;
+          //prev_y = y;
           gui->prev_mouse_x = gui->mouse_x;
           gui->prev_mouse_y = gui->mouse_y;
           gui->prev_mouse_z = gui->mouse_z;
@@ -368,8 +424,14 @@ int gui_main_loop (gui_obj *gui) {
   }
   
   if (MouseMotion) gui->ev |= EV_MOTION;
-  if (leftMouseButtonClick) gui->ev |= EV_ENTER;
-  if (rightMouseButtonClick || key_esc) gui->ev |= EV_CANCEL;
+  if (rightMouseButtonDown && leftMouseButtonDown){
+    gui->pan_mode |= 2;
+  } else if (gui->pan_mode & 2) {
+    gui->alpha = alpha;
+    gui->gamma = gamma;
+    gui->pan_mode ^= 2;
+  } else if (leftMouseButtonClick) gui->ev |= EV_ENTER;
+  else if (rightMouseButtonClick || key_esc) gui->ev |= EV_CANCEL;
   if (key_space) gui->ev |= EV_LOCK_AX;
   if (ctrlDown) gui->ev |= EV_ADD;
   

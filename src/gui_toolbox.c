@@ -385,6 +385,7 @@ int gui_main_win(gui_obj *gui){
 		}
 		
 		/* pan tools*/
+    /*
 		nk_layout_row_push(gui->ctx, 4*(ICON_SIZE + 4 + 4) + 13);
 		if (nk_group_begin(gui->ctx, "_pan", NK_WINDOW_NO_SCROLLBAR)) {
 			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
@@ -399,6 +400,36 @@ int gui_main_win(gui_obj *gui){
 			}
 			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_RIGTH]))){
 				gui->action = VIEW_PAN_R;
+			}
+			nk_group_end(gui->ctx);
+		}*/
+    /* 3d view tools*/
+    nk_layout_row_push(gui->ctx, 4*(ICON_SIZE + 4 + 4) + 13);
+		if (nk_group_begin(gui->ctx, "_pan", NK_WINDOW_NO_SCROLLBAR)) {
+			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_TOP]))){
+				gui->alpha = 0.0;
+				gui->beta = 0.0;
+				gui->gamma = 0.0;
+        gui_calc_view_rot (gui);
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_FRONT]))){
+				gui->alpha = 0.0;
+				gui->beta = 0.0;
+				gui->gamma = 90.0;
+        gui_calc_view_rot (gui);
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_RIGHT]))){
+				gui->alpha = 90.0;
+				gui->beta = 0.0;
+				gui->gamma = 90.0;
+        gui_calc_view_rot (gui);
+			}
+			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_ROTATE]))){
+				gui->alpha = 0.0;
+				gui->beta = 0.0;
+				gui->gamma = 0.0;
+        gui_calc_view_rot (gui);
 			}
 			nk_group_end(gui->ctx);
 		}

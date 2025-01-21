@@ -110,6 +110,10 @@ enum svg_list {
     SVG_DIM_ORDINATE,
     SVG_DIM_CONFIG,
     SVG_POINT,
+    SVG_VIEW_TOP,
+    SVG_VIEW_FRONT,
+    SVG_VIEW_RIGHT,
+    SVG_VIEW_ROTATE,
     SVG_MEDIA_SIZE
 };
 

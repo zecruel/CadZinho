@@ -560,6 +560,46 @@ char * svg_data[] = {
 	[SVG_POINT] = (char[]){"<svg width=\"24\" height=\"24\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\">"
 	"  <rect id=\"point1\" stroke-width=\"2\" stroke=\"#f9f9f9\" fill=\"none\" stroke-dasharray=\"null\" stroke-linejoin=\"null\" stroke-linecap=\"null\" x=\"8.3263\" y=\"8.3263\" width=\"3.82462\" height=\"3.75509\"/>"
 	"</svg>"},
+  
+  [SVG_VIEW_TOP] = (char[]){"<svg width=\"96.0000\" height=\"96.0000\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M6 90 L66 90 L66 30 L6 30 L6 90 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M6 30 L30 6 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M30 6 L90 6 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M90 6 L90 66 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M90 66 L66 90 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M66 30 L90 6 \"/>"
+  "<path stroke-width=\"3.6\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M17.32 30 L13.18 22.82 M31.18 30 L21.96 14.04 M45.03 30 L31.18 6 M58.89 30 L45.03 6 M70.28 25.72 L58.89 6 M79.06 16.94 L72.75 6 M87.85 8.154 L86.6 6 \"/>"
+  "</svg>"},
+  
+  [SVG_VIEW_FRONT] = (char[]){"<svg width=\"96.0000\" height=\"96.0000\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M6 90 L66 90 L66 30 L6 30 L6 90 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M6 30 L30 6 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M30 6 L90 6 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M90 6 L90 66 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M90 66 L66 90 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M66 30 L90 6 \"/>"
+  "<path stroke-width=\"3.6\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M11.39 90 L6 80.67 M25.24 90 L6 56.67 M39.1 90 L6 32.67 M52.96 90 L18.32 30 M66 88.59 L32.17 30 M66 64.59 L46.03 30 M66 40.59 L59.88 30 \"/>"
+  "</svg>"},
+  
+  [SVG_VIEW_RIGHT] = (char[]){"<svg width=\"96.0000\" height=\"96.0000\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M6 90 L66 90 L66 30 L6 30 L6 90 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M6 30 L30 6 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M30 6 L90 6 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M90 6 L90 66 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M90 66 L66 90 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M66 30 L90 6 \"/>"
+  "<path stroke-width=\"3.6\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M67.15 88.85 L66 86.87 M75.93 80.07 L66 62.87 M84.72 71.28 L66 38.87 M90 56.44 L71.54 24.46 M90 32.44 L80.32 15.68 M90 8.438 L89.11 6.892 \"/>"
+  "</svg>"},
+  
+  [SVG_VIEW_ROTATE] = (char[]){"<svg width=\"96.0000\" height=\"96.0000\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M42.02 90.89 L78.86 72.47 L60.44 35.63 L23.6 54.05 L42.02 90.89 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M23.6 54.05 L30.96 31.95 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M30.96 31.95 L67.8 13.53 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M67.8 13.53 L86.22 50.37 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M86.22 50.37 L78.86 72.47 \"/>"
+  "<path stroke-width=\"7.1\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M60.44 35.63 L67.8 13.53 \"/>"
+  "<path stroke-width=\"3.6\" stroke=\"#f9f9f9\" fill=\"none\" d=\"M11.93 69.51 L10.82 67.58 L9.823 65.6 L8.944 63.55 L8.186 61.46 L7.549 59.33 L7.037 57.17 L6.652 54.97 L6.393 52.77 L6.264 50.54 L6.263 48.32 L6.391 46.1 L6.647 43.89 L7.031 41.7 L7.541 39.53 L8.176 37.4 L8.933 35.31 L9.81 33.27 L10.8 31.28 L11.91 29.35 L13.13 27.49 L14.45 25.7 L15.88 23.99 L17.4 22.37 L19.01 20.83 L20.71 19.4 L22.49 18.06 L24.34 16.83 L26.26 15.71 L28.25 14.7 L30.28 13.81 L32.37 13.04 L34.5 12.39 L20.78 12.39 \"/>"
+  "</svg>"},
 
 };
 

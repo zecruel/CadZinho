@@ -172,13 +172,13 @@ int gui_main_loop (gui_obj *gui) {
           gui->mouse_z = x * gui->model_view[2][0] + y * gui->model_view[2][1];
           
           
-          if (event.button.button == SDL_BUTTON_LEFT && !gui->pan_mode){
+          if (event.button.button == SDL_BUTTON_LEFT){
             leftMouseButtonDown = 1;
-            leftMouseButtonClick = 1;
+            leftMouseButtonClick = event.button.clicks;
           }
-          else if(event.button.button == SDL_BUTTON_RIGHT && !gui->pan_mode){
+          else if(event.button.button == SDL_BUTTON_RIGHT){
             rightMouseButtonDown = 1;
-            rightMouseButtonClick = 1;
+            rightMouseButtonClick = event.button.clicks;
           }
           
           
@@ -228,12 +228,7 @@ int gui_main_loop (gui_obj *gui) {
             
             gui->alpha = prev_a;
             gui->gamma = prev_g;
-            //double alfa = atan2(x1, sqrt(y1*y1 + z1*z1)) * 180.0/M_PI;
-            //double gamma = atan2(y1, sqrt(x1*x1 + z1*z1)) * 180.0/M_PI;
-            //printf("alfa=%.2f, gamma=%.2f\n", alfa, gamma);
           }
-          //prev_x = x;
-          //prev_y = y;
           gui->prev_mouse_x = gui->mouse_x;
           gui->prev_mouse_y = gui->mouse_y;
           gui->prev_mouse_z = gui->mouse_z;
@@ -424,14 +419,15 @@ int gui_main_loop (gui_obj *gui) {
   }
   
   if (MouseMotion) gui->ev |= EV_MOTION;
-  if (rightMouseButtonDown && leftMouseButtonDown){
+  if ((leftMouseButtonClick > 1 || rightMouseButtonClick > 1) && gui->pan_mode) gui->pan_mode = 0;
+  if (rightMouseButtonDown && gui->pan_mode){
     gui->pan_mode |= 2;
   } else if (gui->pan_mode & 2) {
     gui->alpha = alpha;
     gui->gamma = gamma;
     gui->pan_mode ^= 2;
-  } else if (leftMouseButtonClick) gui->ev |= EV_ENTER;
-  else if (rightMouseButtonClick || key_esc) gui->ev |= EV_CANCEL;
+  } else if (leftMouseButtonClick == 1 && !gui->pan_mode) gui->ev |= EV_ENTER;
+  else if ((rightMouseButtonClick == 1 && !gui->pan_mode) || key_esc) gui->ev |= EV_CANCEL;
   if (key_space) gui->ev |= EV_LOCK_AX;
   if (ctrlDown) gui->ev |= EV_ADD;
   

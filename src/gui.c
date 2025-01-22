@@ -572,6 +572,7 @@ int gui_create_modal_cur(gui_obj *gui){
 	cur_img[DIM_ORDINATE] = SVG_DIM_ORDINATE;
 	cur_img[ZOOM] = SVG_ZOOM_W;
   cur_img[PAN] = SVG_HAND;
+  cur_img[VIEW_ROTATE] = SVG_VIEW_ROTATE;
 	int i;
 	for (i = 0; i < MODAL_SIZE; i++){
 		surface = SDL_CreateRGBSurfaceFrom(

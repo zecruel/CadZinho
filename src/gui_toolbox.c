@@ -19,6 +19,7 @@ int gui_tools_win (gui_obj *gui){
 			GRP_DIM,
 			GRP_XDATA,
 		} tool_grp = GRP_PLACE;
+    
 		
 		nk_layout_row_static(gui->ctx, 28, 28, 6);
 		
@@ -54,148 +55,7 @@ int gui_tools_win (gui_obj *gui){
 		nk_style_pop_vec2(gui->ctx);
 		nk_layout_row_end(gui->ctx);
 		
-		if(tool_grp == GRP_PLACE){
-			nk_layout_row_static(gui->ctx, 28, 28, 6);
-			
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LINE]))){
-				gui->modal = LINE;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PLINE]))){
-				gui->modal = POLYLINE;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_RECT]))){
-				gui->modal = RECTANGLE;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT]))){
-				gui->modal = TEXT;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CIRCLE]))){
-				gui->modal = CIRCLE;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ELIPSE]))){
-				gui->modal = ELLIPSE;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_POINT]))){
-				gui->modal = SINGLE_POINT;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SPLINE]))){
-				gui->modal = SPLINE;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_HATCH]))){
-				gui->modal = HATCH;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_I_TEXT]))){
-				gui->modal = MTEXT;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BOOK]))){
-				gui->modal = INSERT;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_IMAGE]))){
-				gui->modal = IMAGE;
-				gui->step = 0;
-			}
-		}
-		
-		if(tool_grp == GRP_MODIFY){
-		
-			nk_layout_row_static(gui->ctx, 28, 28, 6);
-			
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_MOVE]))){
-				gui->modal = MOVE;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DUPLI]))){
-				gui->modal = DUPLI;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SCALE]))){
-				gui->modal = SCALE;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ROT]))){
-				gui->modal = ROTATE;
-				gui->step = 0;
 				
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_MIRROR]))){
-				gui->modal = MIRROR;
-				gui->step = 0;
-			}
-			
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TRASH]))){
-				gui->action = DELETE;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPLODE]))){
-				gui->modal = EXPLODE;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TAG]))){
-				gui->modal = ADD_ATTRIB;
-				gui->step = 0;
-				sel_list_clear (gui);
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TAG_E]))){
-				gui->modal = ED_ATTR;
-				gui->step = 0;
-				sel_list_clear (gui);
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT_E]))){
-				gui->modal = ED_TEXT;
-				gui->step = 0;
-				sel_list_clear (gui);
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT_STY]))){
-				gui->modal = TXT_PROP;
-				gui->step = 0;
-			}
-			
-			
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EDIT]))){
-				gui->modal = VERTEX;
-				gui->step = 0;
-			}
-			
-		}
-		
-		if(tool_grp == GRP_DIM){
-			nk_layout_row_static(gui->ctx, 28, 28, 6);
-			
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_LINEAR]))){
-				gui->modal = DIM_LINEAR;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_ANGULAR]))){
-				gui->modal = DIM_ANGULAR;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_RADIUS]))){
-				gui->modal = DIM_RADIUS;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_ORDINATE]))){
-				gui->modal = DIM_ORDINATE;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_CONFIG]))){
-				gui->show_dim_mng = 1;
-			}
-			
-			/* another line --- temporay */
-			nk_layout_row_dynamic(gui->ctx, 28, 1); /*space*/
-		}
-		
 		nk_layout_row_dynamic(gui->ctx, 10, 1); /*space*/
 		
 		struct nk_vec2 wid_pos = nk_widget_position(gui->ctx);
@@ -241,6 +101,7 @@ int gui_tools_win (gui_obj *gui){
 			gui_dim_ordinate_info (gui);
 			
 			gui_zoom_info (gui);
+      gui_view_info (gui);
 			
 			/* execute scripts in dynamic mode*/
 			gui_script_dyn(gui);
@@ -254,339 +115,546 @@ int gui_tools_win (gui_obj *gui){
 
 int gui_main_win(gui_obj *gui){
 	int i;
+  
+  static enum Ribbon_group {
+    RIB_FILE,
+    RIB_DRAWING,
+    RIB_VIEW,
+    RIB_3D,
+    RIB_MANAGER,
+  } ribbon_grp = RIB_FILE;
 	
-	if (nk_begin(gui->ctx, "Main", nk_rect(2, 2, gui->win_w - 4, 83),
+	if (nk_begin(gui->ctx, "Main", nk_rect(2, 2, gui->win_w - 4, 160),
 	NK_WINDOW_BORDER)){
-		/* first line */
-		nk_layout_row_begin(gui->ctx, NK_STATIC, ICON_SIZE + 12, 9);
-		
-		/* file tools*/
-		nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "_file", NK_WINDOW_NO_SCROLLBAR)) {
-			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-			
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEW]))){
-				if (gui->changed){
-					gui->discard_changes = 1;
-					gui->desired_action = FILE_NEW;
-					gui->hist_action = HIST_NONE;
-				}
-				else{
-					gui->action = FILE_NEW;
-					gui->hist_new = 0; /* not add to history entries */
-				}
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_OPEN]))){
-				gui->action = FILE_OPEN;
-				//gui->show_app_file = 1;
-				gui->show_open = 1;
-				
-				gui->curr_path[0] = 0;
-				
-				gui->path_ok = 0;
-				gui->hist_new = 1;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SAVE]))){
-				gui->action = FILE_SAVE;
-				//gui->show_app_file = 1;
-				gui->show_save = 1;
-				gui->path_ok = 0;
-        gui->hist_new = 1;
-			}
-			nk_group_end(gui->ctx);
-		}
-		/* print/export tools*/
-		nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "_print", NK_WINDOW_NO_SCROLLBAR)) {
-			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PRINT]))){
-				gui->show_print = 1;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPORT]))){
-				gui->show_export = 1;
-			}
-			
-			nk_group_end(gui->ctx);
-		}
-		
-		/* clipboard tools*/
-		nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "_clipboard", NK_WINDOW_NO_SCROLLBAR)) {
-			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-			
-			
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_COPY]))){
-				gui->action = YANK;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CUT]))){
-				gui->action = CUT;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PASTE]))){
-				gui->action = START_PASTE;
-				
-			}
-			
-			nk_group_end(gui->ctx);
-		}
-		
-		/* undo/redo tools*/
-		nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "_undo-redo", NK_WINDOW_NO_SCROLLBAR)) {
-			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_UNDO]))){
-				gui->action = UNDO;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_REDO]))){
-				gui->action = REDO;
-			}
-			nk_group_end(gui->ctx);
-		}
-		
-		/* managers*/
-		nk_layout_row_push(gui->ctx, 4*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "_managers", NK_WINDOW_NO_SCROLLBAR)) {
-			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LAYERS]))){
-				gui->show_lay_mng = 1;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_FONT]))){
-				gui->show_tstyles_mng = 1;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LTYPE]))){
-				gui->show_ltyp_mng = 1;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PUZZLE]))){
-				gui->show_blk_mng = 1;
-			}
-			nk_group_end(gui->ctx);
-		}
-		
-		/* zoom tools*/
-		nk_layout_row_push(gui->ctx, 5*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "_zoom", NK_WINDOW_NO_SCROLLBAR)) {
-			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_P]))){
-				gui->action = VIEW_ZOOM_P;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_M]))){
-				gui->action = VIEW_ZOOM_M;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_W]))){
-				gui->modal = ZOOM;
-				gui->step = 0;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_A]))){
-				gui->action = VIEW_ZOOM_EXT;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BRUSH]))){
-				gui->action = REDRAW;
-			}
-			nk_group_end(gui->ctx);
-		}
-		
-		/* pan tools*/
-    /*
-		nk_layout_row_push(gui->ctx, 4*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "_pan", NK_WINDOW_NO_SCROLLBAR)) {
-			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_UP]))){
-				gui->action = VIEW_PAN_U;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DOWN]))){
-				gui->action = VIEW_PAN_D;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LEFT]))){
-				gui->action = VIEW_PAN_L;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_RIGTH]))){
-				gui->action = VIEW_PAN_R;
-			}
-			nk_group_end(gui->ctx);
-		}*/
-    /* 3d view tools*/
-    nk_layout_row_push(gui->ctx, 4*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "_pan", NK_WINDOW_NO_SCROLLBAR)) {
-			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_TOP]))){
-				gui->alpha = 0.0;
-				gui->beta = 0.0;
-				gui->gamma = 0.0;
-        gui_calc_view_rot (gui);
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_FRONT]))){
-				gui->alpha = 0.0;
-				gui->beta = 0.0;
-				gui->gamma = 90.0;
-        gui_calc_view_rot (gui);
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_RIGHT]))){
-				gui->alpha = 90.0;
-				gui->beta = 0.0;
-				gui->gamma = 90.0;
-        gui_calc_view_rot (gui);
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_ROTATE]))){
-				gui->alpha = 0.0;
-				gui->beta = 0.0;
-				gui->gamma = 0.0;
-        gui_calc_view_rot (gui);
-			}
-			nk_group_end(gui->ctx);
-		}
-		
-		/* config tools*/
-		nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "_config", NK_WINDOW_NO_SCROLLBAR)) {
-			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-			/*if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_INFO]))){
-				gui->show_info = 1;
-			}*/
-			/*
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TOOL]))){
-				//printf("Tools\n");
-				#ifdef OS_WIN
-				DebugBreak();
-				#endif
-			}*/
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SCRIPT1]))){
-				
-				gui->show_script = 1;
-			}
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_GEAR]))){
-				gui->show_config = 1;
-			}
-			nk_group_end(gui->ctx);
-		}
-		
-		/* Help - about CadZinho*/
-		nk_layout_row_push(gui->ctx, 1*(ICON_SIZE + 4 + 4) + 13);
-		if (nk_group_begin(gui->ctx, "_help", NK_WINDOW_NO_SCROLLBAR)) {
-			nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-			if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_HELP]))){
-				gui->show_app_about = 1;
-			}
-			nk_group_end(gui->ctx);
-		}
-		
-		nk_layout_row_end(gui->ctx);
-		/*------------ end first line --------------*/
-		
-		//nk_layout_row_dynamic(gui->ctx, 5, 1); /* only a blank space */
-		
-		/* second line */
-		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 8);
-		
-		static char text[64];
-		int text_len;
-			
-		/*layer*/
-		nk_layout_row_push(gui->ctx, 60);
-		nk_label(gui->ctx, _l("Layer: "), NK_TEXT_RIGHT);
-		nk_layout_row_push(gui->ctx, 200);
-		layer_prop(gui);
-		
-		
-		/*color picker */
-		int c_idx = gui->color_idx;
-		if (c_idx >255){
-			c_idx = gui->drawing->layers[gui->layer_idx].color;
-			if (c_idx >255){
-				c_idx = 0;
-			}
-		}
-		/* fill the tiny bitmap with selected color*/
-		bmp_fill(gui->color_img, dxf_colors[c_idx]);
-		
-		/* print the name (number) of color */
-		if (gui->color_idx == 0){
-			text_len = snprintf(text, 63, "%s", _l("ByB"));
-		}
-		else if (gui->color_idx < 256){
-			text_len = snprintf(text, 63, "%d", gui->color_idx);
-		}
-		else{
-			text_len = snprintf(text, 63, "%s", _l("ByL"));
-		}
-		nk_layout_row_push(gui->ctx, 70);
-		nk_label(gui->ctx, _l("Color: "), NK_TEXT_RIGHT);
-		nk_layout_row_push(gui->ctx, 80);
-		if (nk_combo_begin_image_label(gui->ctx, text, nk_image_ptr(gui->color_img), nk_vec2(215,320))){
-			nk_layout_row_dynamic(gui->ctx, 20, 2);
-			if (nk_button_label(gui->ctx, _l("By Layer"))){
-				gui->color_idx = 256;
-				gui->action = COLOR_CHANGE;
-				nk_combo_close(gui->ctx);
-			}
-			if (nk_button_label(gui->ctx, _l("By Block"))){
-				gui->color_idx = 0;
-				gui->action = COLOR_CHANGE;
-				nk_combo_close(gui->ctx);
-			}
-			nk_layout_row_static(gui->ctx, 15, 15, 10);
-			nk_label(gui->ctx, " ", NK_TEXT_RIGHT); /* for padding color alingment */
-			
-			for (i = 1; i < 256; i++){
-				struct nk_color b_color = {
-					.r = dxf_colors[i].r,
-					.g = dxf_colors[i].g,
-					.b = dxf_colors[i].b,
-					.a = dxf_colors[i].a
-				};
-				if(nk_button_color(gui->ctx, b_color)){
-					gui->color_idx = i;
-					gui->action = COLOR_CHANGE;
-					nk_combo_close(gui->ctx);
-					break;
-				}
-			}
-			
-			nk_combo_end(gui->ctx);
-		}
-		
-		/*line type*/
-		nk_layout_row_push(gui->ctx, 100);
-		nk_label(gui->ctx, _l("Line type: "), NK_TEXT_RIGHT);
-		nk_layout_row_push(gui->ctx, 200);
-		ltype_prop(gui);
-		
-		/* line weight */
-		nk_layout_row_push(gui->ctx, 120);
-		nk_label(gui->ctx, _l("Line weight: "), NK_TEXT_RIGHT);
-		nk_layout_row_push(gui->ctx, 120);
+    /* dynamic width for ribbon and fixed width for properties */
+		nk_layout_row_template_begin(gui->ctx, 138);
+		nk_layout_row_template_push_dynamic(gui->ctx);
+    nk_layout_row_template_push_static(gui->ctx, 120);
+		nk_layout_row_template_push_static(gui->ctx, 400);
+		nk_layout_row_template_end(gui->ctx);
     
-    char * lw_descr = (char *)dxf_lw_descr[gui->lw_idx];
-    if(gui->lw_idx == DXF_LW_LEN) lw_descr = _l("By Layer");
-    if(gui->lw_idx == DXF_LW_LEN + 1) lw_descr = _l("By Block");
-		
-		if (nk_combo_begin_label(gui->ctx, lw_descr, nk_vec2(200,300))){
-			nk_layout_row_dynamic(gui->ctx, 25, 2);
-			if (nk_button_label(gui->ctx, _l("By Layer"))){
-				gui->lw_idx = DXF_LW_LEN;
-				gui->action = LW_CHANGE;
-				nk_combo_close(gui->ctx);
-			}
-			if (nk_button_label(gui->ctx, _l("By Block"))){
-				gui->lw_idx = DXF_LW_LEN + 1;
-				gui->action = LW_CHANGE;
-				nk_combo_close(gui->ctx);
-			}
-			nk_layout_row_dynamic(gui->ctx, 17, 1);
-			for (i = 0; i < DXF_LW_LEN; i++){
-				if (nk_button_label(gui->ctx, dxf_lw_descr[i])){
-					gui->lw_idx = i;
-					gui->action = LW_CHANGE;
-					nk_combo_close(gui->ctx);
-					break;
-				}
-			}
-			
-			nk_combo_end(gui->ctx);
+    
+    if (nk_group_begin(gui->ctx, "Main_Ribbon", NK_WINDOW_BORDER)) {
+      
+      /* Ribbon collections */
+      nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
+      nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 5);
+      if (gui_tab (gui, _l("File"), ribbon_grp == RIB_FILE)) ribbon_grp = RIB_FILE;
+      if (gui_tab (gui, _l("Drawing"), ribbon_grp == RIB_DRAWING)) ribbon_grp = RIB_DRAWING;
+      if (gui_tab (gui, _l("View"), ribbon_grp == RIB_VIEW)) ribbon_grp = RIB_VIEW;
+      if (gui_tab (gui, _l("3D"), ribbon_grp == RIB_3D)) ribbon_grp = RIB_3D;
+      if (gui_tab (gui, _l("Managers"), ribbon_grp == RIB_MANAGER)) ribbon_grp = RIB_MANAGER;
+      nk_style_pop_vec2(gui->ctx);
+      nk_layout_row_end(gui->ctx);
+      
+      /* first line */
+      //nk_layout_row_begin(gui->ctx, NK_STATIC, ICON_SIZE + 12, 9);
+      
+      /* file tools*/
+      //nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
+      //if (nk_group_begin(gui->ctx, "_file", NK_WINDOW_NO_SCROLLBAR)) {
+      if(ribbon_grp == RIB_FILE){
+        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 15);
+        
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEW]))){
+          if (gui->changed){
+            gui->discard_changes = 1;
+            gui->desired_action = FILE_NEW;
+            gui->hist_action = HIST_NONE;
+          }
+          else{
+            gui->action = FILE_NEW;
+            gui->hist_new = 0; /* not add to history entries */
+          }
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_OPEN]))){
+          gui->action = FILE_OPEN;
+          //gui->show_app_file = 1;
+          gui->show_open = 1;
+          
+          gui->curr_path[0] = 0;
+          
+          gui->path_ok = 0;
+          gui->hist_new = 1;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SAVE]))){
+          gui->action = FILE_SAVE;
+          //gui->show_app_file = 1;
+          gui->show_save = 1;
+          gui->path_ok = 0;
+          gui->hist_new = 1;
+        }
+        //nk_group_end(gui->ctx);
+      //}
+      /* print/export tools*/
+      //nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
+      //if (nk_group_begin(gui->ctx, "_print", NK_WINDOW_NO_SCROLLBAR)) {
+        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
+        nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PRINT]))){
+          gui->show_print = 1;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPORT]))){
+          gui->show_export = 1;
+        }
+        
+        //nk_group_end(gui->ctx);
+      //}
+      
+      //nk_layout_row_end(gui->ctx);
+      
+      //nk_layout_row_begin(gui->ctx, NK_STATIC, ICON_SIZE + 12, 9);
+        
+        /* config tools*/
+      //nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
+      //if (nk_group_begin(gui->ctx, "_config", NK_WINDOW_NO_SCROLLBAR)) {
+        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
+        nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
+        /*if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_INFO]))){
+          gui->show_info = 1;
+        }*/
+        /*
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TOOL]))){
+          //printf("Tools\n");
+          #ifdef OS_WIN
+          DebugBreak();
+          #endif
+        }*/
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SCRIPT1]))){
+          
+          gui->show_script = 1;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_GEAR]))){
+          gui->show_config = 1;
+        }
+        //nk_group_end(gui->ctx);
+      //}
+      
+      /* Help - about CadZinho*/
+      //nk_layout_row_push(gui->ctx, 1*(ICON_SIZE + 4 + 4) + 13);
+      //if (nk_group_begin(gui->ctx, "_help", NK_WINDOW_NO_SCROLLBAR)) {
+        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
+        nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_HELP]))){
+          gui->show_app_about = 1;
+        }
+        //nk_group_end(gui->ctx);
+      }
+      if(ribbon_grp == RIB_MANAGER){
+      /* managers*/
+      //nk_layout_row_push(gui->ctx, 4*(ICON_SIZE + 4 + 4) + 13);
+      //if (nk_group_begin(gui->ctx, "_managers", NK_WINDOW_NO_SCROLLBAR)) {
+        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 15);
+        //nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LAYERS]))){
+          gui->show_lay_mng = 1;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_FONT]))){
+          gui->show_tstyles_mng = 1;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LTYPE]))){
+          gui->show_ltyp_mng = 1;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PUZZLE]))){
+          gui->show_blk_mng = 1;
+        }
+        //nk_group_end(gui->ctx);
+      //}
+      }
+      
+      if(ribbon_grp == RIB_VIEW){
+      /* zoom tools*/
+      //nk_layout_row_push(gui->ctx, 5*(ICON_SIZE + 4 + 4) + 13);
+      //if (nk_group_begin(gui->ctx, "_zoom", NK_WINDOW_NO_SCROLLBAR)) {
+        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 15);
+        //nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_P]))){
+          gui->action = VIEW_ZOOM_P;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_M]))){
+          gui->action = VIEW_ZOOM_M;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_W]))){
+          gui->modal = ZOOM;
+          gui->step = 0;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_A]))){
+          gui->action = VIEW_ZOOM_EXT;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BRUSH]))){
+          gui->action = REDRAW;
+        }
+        //nk_group_end(gui->ctx);
+      //}
+      
+      /* pan tools*/
+      
+      //nk_layout_row_push(gui->ctx, 4*(ICON_SIZE + 4 + 4) + 13);
+      //if (nk_group_begin(gui->ctx, "_pan", NK_WINDOW_NO_SCROLLBAR)) {
+        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
+        nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_UP]))){
+          gui->action = VIEW_PAN_U;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DOWN]))){
+          gui->action = VIEW_PAN_D;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LEFT]))){
+          gui->action = VIEW_PAN_L;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_RIGTH]))){
+          gui->action = VIEW_PAN_R;
+        }
+        //nk_group_end(gui->ctx);
+      //}
+      /* 3d view tools*/
+      //nk_layout_row_push(gui->ctx, 4*(ICON_SIZE + 4 + 4) + 13);
+      //if (nk_group_begin(gui->ctx, "_pan", NK_WINDOW_NO_SCROLLBAR)) {
+        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
+        nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_TOP]))){
+          gui->alpha = 0.0;
+          gui->beta = 0.0;
+          gui->gamma = 0.0;
+          gui_calc_view_rot (gui);
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_FRONT]))){
+          gui->alpha = 0.0;
+          gui->beta = 0.0;
+          gui->gamma = 90.0;
+          gui_calc_view_rot (gui);
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_RIGHT]))){
+          gui->alpha = 90.0;
+          gui->beta = 0.0;
+          gui->gamma = 90.0;
+          gui_calc_view_rot (gui);
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_ROTATE]))){
+          gui->modal = VIEW_ROTATE;
+          gui->step = 0;
+          
+        }
+        //nk_group_end(gui->ctx);
+      //}
+      
+      }
+      
+      if(ribbon_grp == RIB_DRAWING){
+        //if(tool_grp == GRP_PLACE)
+        {
+          nk_layout_row_static(gui->ctx, 28, 28, 12);
+          
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LINE]))){
+            gui->modal = LINE;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PLINE]))){
+            gui->modal = POLYLINE;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_RECT]))){
+            gui->modal = RECTANGLE;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT]))){
+            gui->modal = TEXT;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CIRCLE]))){
+            gui->modal = CIRCLE;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ELIPSE]))){
+            gui->modal = ELLIPSE;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_POINT]))){
+            gui->modal = SINGLE_POINT;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SPLINE]))){
+            gui->modal = SPLINE;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_HATCH]))){
+            gui->modal = HATCH;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_I_TEXT]))){
+            gui->modal = MTEXT;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BOOK]))){
+            gui->modal = INSERT;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_IMAGE]))){
+            gui->modal = IMAGE;
+            gui->step = 0;
+          }
+        }
+        
+        //if(tool_grp == GRP_MODIFY)z
+        {
+        
+          nk_layout_row_static(gui->ctx, 28, 28, 12);
+          
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_MOVE]))){
+            gui->modal = MOVE;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DUPLI]))){
+            gui->modal = DUPLI;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SCALE]))){
+            gui->modal = SCALE;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ROT]))){
+            gui->modal = ROTATE;
+            gui->step = 0;
+            
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_MIRROR]))){
+            gui->modal = MIRROR;
+            gui->step = 0;
+          }
+          
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TRASH]))){
+            gui->action = DELETE;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPLODE]))){
+            gui->modal = EXPLODE;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TAG]))){
+            gui->modal = ADD_ATTRIB;
+            gui->step = 0;
+            sel_list_clear (gui);
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TAG_E]))){
+            gui->modal = ED_ATTR;
+            gui->step = 0;
+            sel_list_clear (gui);
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT_E]))){
+            gui->modal = ED_TEXT;
+            gui->step = 0;
+            sel_list_clear (gui);
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TEXT_STY]))){
+            gui->modal = TXT_PROP;
+            gui->step = 0;
+          }
+          
+          
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EDIT]))){
+            gui->modal = VERTEX;
+            gui->step = 0;
+          }
+          
+        }
+        
+        //if(tool_grp == GRP_DIM)
+        {
+          nk_layout_row_static(gui->ctx, 28, 28, 12);
+          
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_LINEAR]))){
+            gui->modal = DIM_LINEAR;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_ANGULAR]))){
+            gui->modal = DIM_ANGULAR;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_RADIUS]))){
+            gui->modal = DIM_RADIUS;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_ORDINATE]))){
+            gui->modal = DIM_ORDINATE;
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_CONFIG]))){
+            gui->show_dim_mng = 1;
+          }
+          
+          /* another line --- temporay */
+          nk_layout_row_dynamic(gui->ctx, 28, 1); /*space*/
+        }
+
+      }
+      
+      
+      //nk_layout_row_end(gui->ctx);
+      /*------------ end first line --------------*/
+      nk_group_end(gui->ctx);
+    }
+    if (nk_group_begin(gui->ctx, "Common tools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+      nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 3);
+      
+      /* clipboard tools*/
+      //nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
+     // if (nk_group_begin(gui->ctx, "_clipboard", NK_WINDOW_NO_SCROLLBAR)) {
+        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
+        
+        
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_COPY]))){
+          gui->action = YANK;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CUT]))){
+          gui->action = CUT;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PASTE]))){
+          gui->action = START_PASTE;
+          
+        }
+        
+        //nk_group_end(gui->ctx);
+      //}
+      
+      /* undo/redo tools*/
+      //nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
+      //if (nk_group_begin(gui->ctx, "_undo-redo", NK_WINDOW_NO_SCROLLBAR)) {
+        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
+        
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_UNDO]))){
+          gui->action = UNDO;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_REDO]))){
+          gui->action = REDO;
+        }
+        //nk_group_end(gui->ctx);
+      //}
+      
+      
+      
+      nk_group_end(gui->ctx);
+    }
+		if (nk_group_begin(gui->ctx, _l("Current properties"), NK_WINDOW_BORDER|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)) {
+      //nk_layout_row_dynamic(gui->ctx, 5, 1); /* only a blank space */
+      
+      /* second line */
+      //nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 8);
+      nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){90, 290});
+      static char text[64];
+      int text_len;
+        
+      /*layer*/
+      //nk_layout_row_push(gui->ctx, 60);
+      nk_label(gui->ctx, _l("Layer: "), NK_TEXT_RIGHT);
+      //nk_layout_row_push(gui->ctx, 200);
+      layer_prop(gui);
+      
+      
+      /*color picker */
+      int c_idx = gui->color_idx;
+      if (c_idx >255){
+        c_idx = gui->drawing->layers[gui->layer_idx].color;
+        if (c_idx >255){
+          c_idx = 0;
+        }
+      }
+      /* fill the tiny bitmap with selected color*/
+      bmp_fill(gui->color_img, dxf_colors[c_idx]);
+      
+      /* print the name (number) of color */
+      if (gui->color_idx == 0){
+        text_len = snprintf(text, 63, "%s", _l("ByB"));
+      }
+      else if (gui->color_idx < 256){
+        text_len = snprintf(text, 63, "%d", gui->color_idx);
+      }
+      else{
+        text_len = snprintf(text, 63, "%s", _l("ByL"));
+      }
+      //nk_layout_row_push(gui->ctx, 70);
+      nk_label(gui->ctx, _l("Color: "), NK_TEXT_RIGHT);
+      //nk_layout_row_push(gui->ctx, 80);
+      if (nk_combo_begin_image_label(gui->ctx, text, nk_image_ptr(gui->color_img), nk_vec2(215,320))){
+        nk_layout_row_dynamic(gui->ctx, 20, 2);
+        if (nk_button_label(gui->ctx, _l("By Layer"))){
+          gui->color_idx = 256;
+          gui->action = COLOR_CHANGE;
+          nk_combo_close(gui->ctx);
+        }
+        if (nk_button_label(gui->ctx, _l("By Block"))){
+          gui->color_idx = 0;
+          gui->action = COLOR_CHANGE;
+          nk_combo_close(gui->ctx);
+        }
+        nk_layout_row_static(gui->ctx, 15, 15, 10);
+        nk_label(gui->ctx, " ", NK_TEXT_RIGHT); /* for padding color alingment */
+        
+        for (i = 1; i < 256; i++){
+          struct nk_color b_color = {
+            .r = dxf_colors[i].r,
+            .g = dxf_colors[i].g,
+            .b = dxf_colors[i].b,
+            .a = dxf_colors[i].a
+          };
+          if(nk_button_color(gui->ctx, b_color)){
+            gui->color_idx = i;
+            gui->action = COLOR_CHANGE;
+            nk_combo_close(gui->ctx);
+            break;
+          }
+        }
+        
+        nk_combo_end(gui->ctx);
+      }
+      //nk_layout_row_end(gui->ctx);
+      
+      //nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 8);
+      
+      /*line type*/
+      //nk_layout_row_push(gui->ctx, 100);
+      nk_label(gui->ctx, _l("Line type: "), NK_TEXT_RIGHT);
+      //nk_layout_row_push(gui->ctx, 200);
+      ltype_prop(gui);
+      
+      /* line weight */
+      //nk_layout_row_push(gui->ctx, 120);
+      nk_label(gui->ctx, _l("Line weight: "), NK_TEXT_RIGHT);
+      //nk_layout_row_push(gui->ctx, 120);
+      
+      char * lw_descr = (char *)dxf_lw_descr[gui->lw_idx];
+      if(gui->lw_idx == DXF_LW_LEN) lw_descr = _l("By Layer");
+      if(gui->lw_idx == DXF_LW_LEN + 1) lw_descr = _l("By Block");
+      
+      if (nk_combo_begin_label(gui->ctx, lw_descr, nk_vec2(200,300))){
+        nk_layout_row_dynamic(gui->ctx, 25, 2);
+        if (nk_button_label(gui->ctx, _l("By Layer"))){
+          gui->lw_idx = DXF_LW_LEN;
+          gui->action = LW_CHANGE;
+          nk_combo_close(gui->ctx);
+        }
+        if (nk_button_label(gui->ctx, _l("By Block"))){
+          gui->lw_idx = DXF_LW_LEN + 1;
+          gui->action = LW_CHANGE;
+          nk_combo_close(gui->ctx);
+        }
+        nk_layout_row_dynamic(gui->ctx, 17, 1);
+        for (i = 0; i < DXF_LW_LEN; i++){
+          if (nk_button_label(gui->ctx, dxf_lw_descr[i])){
+            gui->lw_idx = i;
+            gui->action = LW_CHANGE;
+            nk_combo_close(gui->ctx);
+            break;
+          }
+        }
+        
+        nk_combo_end(gui->ctx);
+      }
+      
+      //nk_layout_row_end(gui->ctx);
+      
+      /*------------ end second line --------------*/
+      nk_group_end(gui->ctx);
 		}
-		
-		nk_layout_row_end(gui->ctx);
-		
-		/*------------ end second line --------------*/
-		
 		if (gui->show_app_about){
 			/* About Cadzinho */
 			const char* site = "https://github.com/zecruel/CadZinho";

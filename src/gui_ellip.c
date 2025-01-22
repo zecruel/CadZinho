@@ -10,7 +10,8 @@ int gui_ellip_interactive(gui_obj *gui){
 	
 	static dxf_node *new_el;
 	
-	
+	gui->draw_phanton = 0;
+  gui->phanton = NULL;
 	if (gui->step == 0){
 		gui->free_sel = 0;
 		

@@ -118,6 +118,7 @@ enum Modal {
 	DIM_ORDINATE,
 	ZOOM,
   PAN,
+  VIEW_ROTATE,
 	MODAL_SIZE
 };
 

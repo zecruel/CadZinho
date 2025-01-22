@@ -137,7 +137,8 @@ int gui_main_loop (gui_obj *gui) {
   }
   else{
     
-    if (gui->pan_mode) SDL_SetCursor(gui->modal_cursor[PAN]);
+    if (gui->pan_mode && !(gui->pan_mode & 2)) SDL_SetCursor(gui->modal_cursor[PAN]);
+    else if (gui->pan_mode & 2) SDL_SetCursor(gui->modal_cursor[VIEW_ROTATE]);
     else SDL_SetCursor(gui->modal_cursor[gui->modal]);
     //SDL_ShowCursor(SDL_DISABLE);
     
@@ -452,7 +453,7 @@ int gui_main_loop (gui_obj *gui) {
   
   changed = gui->changed;
   
-  gui->next_win_h = 83;
+  gui->next_win_h = 160;
   gui->next_win_x = 2;
   gui->next_win_y = 2;
   

@@ -417,6 +417,8 @@ struct Gui_obj {
   char image_path[DXF_MAX_CHARS];
   
   char curr_script[PATH_MAX_CHARS];
+  
+  char ctx_tools_title[DXF_MAX_CHARS+1];
 	
 	unsigned char blank_tex[4*20*600]; /* blank texture */
   
@@ -559,6 +561,7 @@ void gui_calc_view_rot (gui_obj *gui);
 int gui_selectable (gui_obj *gui, const char *title, int active);
 int gui_tab (gui_obj *gui, const char *title, int active);
 int gui_tab_img (gui_obj *gui, bmp_img *img, int active, int w);
+int gui_sel_b (gui_obj *gui, bmp_img *img, int active);
 
 void set_style(gui_obj *gui, enum theme theme);
 

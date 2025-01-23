@@ -665,7 +665,7 @@ int main(int argc, char** argv){
   SDLNet_Init(); /* start socket engine - to debugger client connection */
   
   SDL_EnableScreenSaver();
-  
+  strncpy(gui->ctx_tools_title, _l("Select"), DXF_MAX_CHARS);
 	/* main loop */
 	while (gui_main_loop (gui)){
     

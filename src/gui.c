@@ -529,6 +529,19 @@ int gui_tab_img (gui_obj *gui, bmp_img *img, int active, int w){
 	return r;
 }
 
+int gui_sel_b (gui_obj *gui, bmp_img *img, int active){
+	
+	struct nk_style_button *sel_type;
+	
+	/* verify if active or not */
+	sel_type = &gui->b_icon_unsel;
+	if (active) sel_type = &gui->b_icon_sel;
+	/* do the button */
+	int r = nk_button_image_styled(gui->ctx, sel_type, nk_image_ptr(img));
+	
+	return r;
+}
+
 /* ************************************************** */
 
 int gui_create_modal_cur(gui_obj *gui){
@@ -603,6 +616,7 @@ int gui_default_modal(gui_obj *gui){
 		gui->show_blk_mng = 1;
 	
 	gui->modal = SELECT;
+  strncpy(gui->ctx_tools_title, _l("Select"), DXF_MAX_CHARS);
 	gui->sel_ent_filter = ~DXF_NONE;
 	
 	return gui_first_step(gui);
@@ -1849,6 +1863,7 @@ int gui_start(gui_obj *gui){
 	gui->action = NONE;
 	gui->modal = SELECT;
 	gui->prev_modal = SELECT;
+  
 	gui->ev = EV_NONE;
 	gui->curr_attr_t = ATRC_END|ATRC_MID|ATRC_QUAD|ATRC_INS|ATRC_NODE;
 	

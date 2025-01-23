@@ -460,7 +460,7 @@ int gui_main_loop (gui_obj *gui) {
   
   gui->next_win_y += gui->next_win_h + 3;
   gui->next_win_w = 210;
-  gui->next_win_h = 500;
+  gui->next_win_h = 400;
   
   gui_tools_win (gui);
   gui_main_win (gui);
@@ -1663,18 +1663,17 @@ int gui_main_loop (gui_obj *gui) {
     draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
     //glReadPixels(gui->mouse_x, gui->mouse_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &gui->mouse_z);
     
-    /*hilite test */
-    if((gui->draw_tmp)&&(gui->element != NULL)){
-      gui->element->obj.graphics = dxf_graph_parse(gui->drawing, gui->element, 0 , 1);
-    }
     
+    /*hilite test */
     d_param.list = NULL;
     d_param.subst = &gui->hilite;
     d_param.len_subst = 1;
     d_param.inc_thick = 3;
     
-    
-    if(gui->element != NULL){
+    if(gui->draw_tmp && gui->element != NULL){
+      gui->element->obj.graphics = dxf_graph_parse(gui->drawing, gui->element, 0 , 1);
+    }
+    if(gui->element != NULL && !gui->pan_mode){
       graph_list_draw_gl2(gui->element->obj.graphics, &gui->gl_ctx, d_param);
     }
     if((gui->draw_phanton)&&(gui->phanton)){

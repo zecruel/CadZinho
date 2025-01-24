@@ -688,7 +688,7 @@ void set_style(gui_obj *gui, enum theme theme){
 		table[NK_COLOR_TOGGLE_HOVER] = nk_rgba(45, 60, 60, 255);
 		table[NK_COLOR_TOGGLE_CURSOR] = nk_rgba(181, 45, 69, 255);
 		table[NK_COLOR_SELECT] = nk_rgba(51, 55, 67, 255);
-		table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(181, 45, 69, 255);
+		table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(100, 55, 67, 255);
 		table[NK_COLOR_SLIDER] = nk_rgba(51, 55, 67, 255);
 		table[NK_COLOR_SLIDER_CURSOR] = nk_rgba(181, 45, 69, 255);
 		table[NK_COLOR_SLIDER_CURSOR_HOVER] = nk_rgba(186, 50, 74, 255);
@@ -748,7 +748,7 @@ void set_style(gui_obj *gui, enum theme theme){
 		table[NK_COLOR_TOGGLE_HOVER] = nk_rgba(45, 53, 56, 255);
 		table[NK_COLOR_TOGGLE_CURSOR] = nk_rgba(48, 83, 111, 255);
 		table[NK_COLOR_SELECT] = nk_rgba(57, 67, 61, 255);
-		table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(48, 83, 111, 255);
+		table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(14, 62, 106, 255);
 		table[NK_COLOR_SLIDER] = nk_rgba(50, 58, 61, 255);
 		table[NK_COLOR_SLIDER_CURSOR] = nk_rgba(48, 83, 111, 245);
 		table[NK_COLOR_SLIDER_CURSOR_HOVER] = nk_rgba(53, 88, 116, 255);
@@ -778,7 +778,7 @@ void set_style(gui_obj *gui, enum theme theme){
 		table[NK_COLOR_TOGGLE_HOVER] = nk_rgba(73, 84, 72, 255);
 		table[NK_COLOR_TOGGLE_CURSOR] = nk_rgba(48, 112, 54, 255);
 		table[NK_COLOR_SELECT] = nk_rgba(58, 67, 57, 255);
-		table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(48, 112, 54, 255);
+		table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(48, 112, 120, 255);
 		table[NK_COLOR_SLIDER] = nk_rgba(50, 61, 50, 255);
 		table[NK_COLOR_SLIDER_CURSOR] = nk_rgba(48, 112, 54, 245);
 		table[NK_COLOR_SLIDER_CURSOR_HOVER] = nk_rgba(59, 115, 53, 255);
@@ -808,7 +808,7 @@ void set_style(gui_obj *gui, enum theme theme){
 		table[NK_COLOR_TOGGLE_HOVER] = nk_rgba(56, 53, 45, 255);
 		table[NK_COLOR_TOGGLE_CURSOR] = nk_rgba(111, 83, 48, 255);
 		table[NK_COLOR_SELECT] = nk_rgba(61, 67, 57, 255);
-		table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(111, 83, 48, 255);
+		table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(111, 83, 100, 255);
 		table[NK_COLOR_SLIDER] = nk_rgba(61, 58, 50, 255);
 		table[NK_COLOR_SLIDER_CURSOR] = nk_rgba(111, 83, 48, 245);
 		table[NK_COLOR_SLIDER_CURSOR_HOVER] = nk_rgba(116, 88, 53, 255);
@@ -838,7 +838,7 @@ void set_style(gui_obj *gui, enum theme theme){
 		table[NK_COLOR_TOGGLE_HOVER] = nk_rgba(53, 45, 56, 255);
 		table[NK_COLOR_TOGGLE_CURSOR] = nk_rgba(83, 48, 111, 255);
 		table[NK_COLOR_SELECT] = nk_rgba(67, 57, 61, 255);
-		table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(83, 48, 111, 255);
+		table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(111, 48, 111, 255);
 		table[NK_COLOR_SLIDER] = nk_rgba(58, 50, 61, 255);
 		table[NK_COLOR_SLIDER_CURSOR] = nk_rgba(83, 48, 111, 245);
 		table[NK_COLOR_SLIDER_CURSOR_HOVER] = nk_rgba(88, 53, 116, 255);
@@ -867,7 +867,7 @@ void set_style(gui_obj *gui, enum theme theme){
 		table[NK_COLOR_TOGGLE] = nk_rgba(40, 42, 54, 255);
 		table[NK_COLOR_TOGGLE_HOVER] = nk_rgba(255, 121, 198, 255);
 		table[NK_COLOR_TOGGLE_CURSOR] = nk_rgba(255, 85, 85, 255);
-		table[NK_COLOR_SELECT] = nk_rgba(98, 114, 164, 255);
+		table[NK_COLOR_SELECT] = nk_rgba(40, 42, 54, 255);
 		table[NK_COLOR_SELECT_ACTIVE] = nk_rgba(255, 85, 85, 255);
 		table[NK_COLOR_SLIDER] = nk_rgba(40, 42, 54, 255);
 		table[NK_COLOR_SLIDER_CURSOR] = nk_rgba(98, 114, 164, 255);
@@ -892,7 +892,9 @@ void set_style(gui_obj *gui, enum theme theme){
 	} else {
 		nk_style_default(gui->ctx);
 	}
-
+  
+  gui->ctx->style.window.group_padding = nk_vec2(3, 3);
+  
 	gui->ctx->style.edit.padding = nk_vec2(4, -6);
 	//gui->ctx->style.button.rounding = 10.0;
 	
@@ -906,12 +908,20 @@ void set_style(gui_obj *gui, enum theme theme){
 	
 	gui->b_icon_sel = gui->ctx->style.button;
 	gui->b_icon_unsel = gui->ctx->style.button;
-	
+	/*
 	//gui->b_icon_unsel.normal = nk_style_item_color(nk_rgba(58, 67, 57, 255));
 	gui->b_icon_unsel.normal = gui->ctx->style.checkbox.normal;
 	//gui->b_icon_unsel.hover = nk_style_item_color(nk_rgba(73, 84, 72, 255));
 	gui->b_icon_unsel.hover =  gui->ctx->style.checkbox.hover;
-	
+	*/
+  gui->b_icon_sel.normal = gui->ctx->style.selectable.normal_active;
+  //gui->b_icon_sel.hover = gui->ctx->style.selectable.hover_active;
+  //gui->b_icon_sel.active = gui->ctx->style.selectable.pressed_active;
+  
+  gui->b_icon_unsel.normal = gui->ctx->style.selectable.normal;
+  //gui->b_icon_unsel.hover = gui->ctx->style.selectable.hover;
+  //gui->b_icon_unsel.active = gui->ctx->style.selectable.pressed;
+  
 	//gui->b_icon_unsel.active = nk_style_item_color(nk_rgba(81, 92, 80, 255));
 	gui->b_icon_sel.image_padding.x = -4;
 	gui->b_icon_sel.image_padding.y = -4;

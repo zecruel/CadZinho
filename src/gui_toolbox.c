@@ -12,7 +12,7 @@ int gui_tools_win (gui_obj *gui){
 	if (nk_begin_titled(gui->ctx, "contextual_tools", gui->ctx_tools_title,
     nk_rect(gui->next_win_x, gui->next_win_y, gui->next_win_w, gui->next_win_h),
 		NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
-		NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE|NK_WINDOW_NO_SCROLLBAR)){
+		NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE)){
     
       /*
 		static enum Tool_group {
@@ -115,7 +115,7 @@ int gui_main_win(gui_obj *gui){
     /* dynamic width for ribbon and fixed width for common tools and properties */
 		nk_layout_row_template_begin(gui->ctx, 148);
 		nk_layout_row_template_push_dynamic(gui->ctx); /* ribbon */
-    nk_layout_row_template_push_static(gui->ctx, 110); /* common tools */
+    nk_layout_row_template_push_static(gui->ctx, 120); /* common tools */
 		nk_layout_row_template_push_static(gui->ctx, 400); /* properties */
 		nk_layout_row_template_end(gui->ctx);
     
@@ -543,12 +543,14 @@ int gui_main_win(gui_obj *gui){
       nk_group_end(gui->ctx);
     }
     if (nk_group_begin(gui->ctx, "Common tools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-      nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 3);
+      
+      nk_layout_row_dynamic(gui->ctx, 38, 1);
+      //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 3);
       
       /* clipboard tools*/
       //nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
-     // if (nk_group_begin(gui->ctx, "_clipboard", NK_WINDOW_NO_SCROLLBAR)) {
-        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
+      if (nk_group_begin(gui->ctx, "_clipboard", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 3);
         
         
         if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_COPY]))){
@@ -562,13 +564,13 @@ int gui_main_win(gui_obj *gui){
           
         }
         
-        //nk_group_end(gui->ctx);
-      //}
+        nk_group_end(gui->ctx);
+      }
       
       /* undo/redo tools*/
       //nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
-      //if (nk_group_begin(gui->ctx, "_undo-redo", NK_WINDOW_NO_SCROLLBAR)) {
-        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
+      if (nk_group_begin(gui->ctx, "_undo-redo", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 2);
         
         if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_UNDO]))){
           gui->action = UNDO;
@@ -576,23 +578,26 @@ int gui_main_win(gui_obj *gui){
         if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_REDO]))){
           gui->action = REDO;
         }
-        //nk_group_end(gui->ctx);
-      //}
-      nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 3);
-      if (gui_sel_b (gui, gui->svg_bmp[SVG_CURSOR], gui->modal == SELECT)){
-        gui->modal = SELECT;
-        strncpy(gui->ctx_tools_title, _l("Select"), DXF_MAX_CHARS);
-        gui->step = 0;
+        nk_group_end(gui->ctx);
       }
-      if (gui_sel_b (gui, gui->svg_bmp[SVG_RULER], gui->modal == MEASURE)){
-        gui->modal = MEASURE;
-        strncpy(gui->ctx_tools_title, _l("Measure"), DXF_MAX_CHARS);
-        gui->step = 0;
+      if (nk_group_begin(gui->ctx, "_sel_meas_plug", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+      
+        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 3);
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_CURSOR], gui->modal == SELECT)){
+          gui->modal = SELECT;
+          strncpy(gui->ctx_tools_title, _l("Select"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_RULER], gui->modal == MEASURE)){
+          gui->modal = MEASURE;
+          strncpy(gui->ctx_tools_title, _l("Measure"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TOOL]))){
+          gui->show_plugins = 1;
+        }
+        nk_group_end(gui->ctx);
       }
-      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TOOL]))){
-        gui->show_plugins = 1;
-      }
-		
       
       nk_group_end(gui->ctx);
     }

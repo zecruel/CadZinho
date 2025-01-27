@@ -91,6 +91,19 @@ int gui_tools_win (gui_obj *gui){
 			
 			/* execute scripts in dynamic mode*/
 			gui_script_dyn(gui);
+      
+      gui_sphere_info (gui);
+      gui_cylinder_info (gui);
+      gui_pyramid_info (gui);
+      gui_slab_info (gui);
+      gui_slice_info (gui);
+      gui_rotate_3d_info (gui);
+      gui_extrude_info (gui);
+      gui_extrude_path_info (gui);
+      gui_revolve_info (gui);
+      gui_union_info (gui);
+      gui_subtract_info (gui);
+      gui_intersection_info (gui);
 			
 			//nk_group_end(gui->ctx);
 		//}
@@ -478,7 +491,6 @@ int gui_main_win(gui_obj *gui){
             gui->modal = ROTATE;
             strncpy(gui->ctx_tools_title, _l("Rotate"), DXF_MAX_CHARS);
             gui->step = 0;
-            
           }
           if (gui_sel_b (gui, gui->svg_bmp[SVG_MIRROR], gui->modal == MIRROR)){
             gui->modal = MIRROR;
@@ -538,6 +550,82 @@ int gui_main_win(gui_obj *gui){
           nk_group_end(gui->ctx);
         }
 
+      }
+      
+      if(ribbon_grp == RIB_3D){
+        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 14);
+        
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SPHERE], gui->modal == SPHERE)){
+          gui->modal = SPHERE;
+          strncpy(gui->ctx_tools_title, _l("Sphere"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_CYLINDER], gui->modal == CYLINDER)){
+          gui->modal = CYLINDER;
+          strncpy(gui->ctx_tools_title, _l("Cylinder"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_PYRAMID], gui->modal == PYRAMID)){
+          gui->modal = PYRAMID;
+          strncpy(gui->ctx_tools_title, _l("Pyramid"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SLAB], gui->modal == SLAB)){
+          gui->modal = SLAB;
+          strncpy(gui->ctx_tools_title, _l("Slab"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_EXTRUDE], gui->modal == EXTRUDE)){
+          gui->modal = EXTRUDE;
+          strncpy(gui->ctx_tools_title, _l("Extrude"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_EXTRUDE_PATH], gui->modal == EXTRUDE_PATH)){
+          gui->modal = EXTRUDE_PATH;
+          strncpy(gui->ctx_tools_title, _l("Extrude path"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_REVOLVE], gui->modal == REVOLVE)){
+          gui->modal = REVOLVE;
+          strncpy(gui->ctx_tools_title, _l("Revolve"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_UNION], gui->modal == UNION)){
+          gui->modal = UNION;
+          strncpy(gui->ctx_tools_title, _l("Union"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SUBTRACT], gui->modal == SUBTRACT)){
+          gui->modal = SUBTRACT;
+          strncpy(gui->ctx_tools_title, _l("Subtract"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_INTERSECTION], gui->modal == INTERSECTION)){
+          gui->modal = INTERSECTION;
+          strncpy(gui->ctx_tools_title, _l("Intersection"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SLICE], gui->modal == SLICE)){
+          gui->modal = SLICE;
+          strncpy(gui->ctx_tools_title, _l("Slice"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_ROTATE], gui->modal == ROTATE_3D)){
+          gui->modal = ROTATE_3D;
+          strncpy(gui->ctx_tools_title, _l("Rotate 3D"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
       }
       
       nk_group_end(gui->ctx);

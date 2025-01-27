@@ -1424,6 +1424,19 @@ int gui_main_loop (gui_obj *gui) {
   
   gui_dim_interactive(gui);
   
+  gui_sphere_interactive(gui);
+  gui_cylinder_interactive(gui);
+  gui_pyramid_interactive(gui);
+  gui_slab_interactive(gui);
+  gui_slice_interactive(gui);
+  gui_rotate_3d_interactive(gui);
+  gui_extrude_interactive(gui);
+  gui_extrude_path_interactive(gui);
+  gui_revolve_interactive(gui);
+  gui_union_interactive(gui);
+  gui_subtract_interactive(gui);
+  gui_intersection_interactive(gui);
+  
   if (gui->prev_modal != gui->modal){
     
     gui->en_distance = 0;

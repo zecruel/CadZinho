@@ -151,4 +151,53 @@ int gui_plugins_win (gui_obj *gui);
 
 int gui_main_loop (gui_obj *gui);
 
+
+int gui_sphere_interactive(gui_obj *gui);
+
+int gui_sphere_info (gui_obj *gui);
+
+int gui_cylinder_interactive(gui_obj *gui);
+
+int gui_cylinder_info (gui_obj *gui);
+
+int gui_pyramid_interactive(gui_obj *gui);
+
+int gui_pyramid_info (gui_obj *gui);
+
+int gui_slab_interactive(gui_obj *gui);
+
+int gui_slab_info (gui_obj *gui);
+
+int gui_extrude_interactive(gui_obj *gui);
+
+int gui_extrude_info (gui_obj *gui);
+
+int gui_extrude_path_interactive(gui_obj *gui);
+
+int gui_extrude_path_info (gui_obj *gui);
+
+int gui_revolve_interactive(gui_obj *gui);
+
+int gui_revolve_info (gui_obj *gui);
+
+int gui_union_interactive(gui_obj *gui);
+
+int gui_union_info (gui_obj *gui);
+
+int gui_subtract_interactive(gui_obj *gui);
+
+int gui_subtract_info (gui_obj *gui);
+
+int gui_intersection_interactive(gui_obj *gui);
+
+int gui_intersection_info (gui_obj *gui);
+
+int gui_rotate_3d_interactive(gui_obj *gui);
+
+int gui_rotate_3d_info (gui_obj *gui);
+
+int gui_slice_interactive(gui_obj *gui);
+
+int gui_slice_info (gui_obj *gui);
+
 #endif

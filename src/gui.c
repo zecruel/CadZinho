@@ -586,6 +586,18 @@ int gui_create_modal_cur(gui_obj *gui){
 	cur_img[ZOOM] = SVG_ZOOM_W;
   cur_img[PAN] = SVG_HAND;
   cur_img[VIEW_ROTATE] = SVG_VIEW_ROTATE;
+  cur_img[SPHERE] = SVG_3D_SPHERE;
+  cur_img[CYLINDER] = SVG_3D_CYLINDER;
+  cur_img[PYRAMID] = SVG_3D_PYRAMID;
+  cur_img[SLAB] = SVG_3D_SLAB;
+  cur_img[EXTRUDE] = SVG_3D_EXTRUDE;
+  cur_img[EXTRUDE_PATH] = SVG_3D_EXTRUDE_PATH;
+  cur_img[REVOLVE] = SVG_3D_REVOLVE;
+  cur_img[UNION] = SVG_3D_UNION;
+  cur_img[SUBTRACT] = SVG_3D_SUBTRACT;
+  cur_img[INTERSECTION] = SVG_3D_INTERSECTION;
+  cur_img[SLICE] = SVG_3D_SLICE;
+  cur_img[ROTATE_3D] = SVG_3D_ROTATE;
 	int i;
 	for (i = 0; i < MODAL_SIZE; i++){
 		surface = SDL_CreateRGBSurfaceFrom(

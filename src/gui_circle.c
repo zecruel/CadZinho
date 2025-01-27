@@ -4,6 +4,9 @@ int gui_circle_interactive(gui_obj *gui){
 	
 	if (gui->modal != CIRCLE) return 0;
 	if (gui->circle_mode == CIRCLE_FULL){
+    gui->draw_phanton = 0;
+    gui->phanton = NULL;
+    
 		static dxf_node *new_el;
 		if (gui->step == 0){
 			gui->free_sel = 0;
@@ -60,6 +63,9 @@ int gui_circle_interactive(gui_obj *gui){
 		}
 	}
 	else {
+    gui->draw_phanton = 0;
+    gui->phanton = NULL;
+    
 		static int dir = 0;
 		static double prev_a = 0;
 		static double acc_a = 0;

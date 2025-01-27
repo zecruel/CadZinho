@@ -1,12 +1,11 @@
 #include "gui_use.h"
+#include "dxf_3d.h"
 
 int gui_sphere_interactive(gui_obj *gui){
 	
 	if (gui->modal != SPHERE) return 0;
-	static double start = 0.0, end = 0.0;
-	static double ratio = 1.0, major = 0.0;
-	static double rot = 0.0, sine = 0.0, cosine = 1.0;
-	static double step1_x, step1_y;
+	static double radius = 0.0;
+  static char cmd[DXF_MAX_CHARS + 1] = "";
 	
 	static dxf_node *new_el;
 	
@@ -21,6 +20,7 @@ int gui_sphere_interactive(gui_obj *gui){
 			gui->step = 1;
 			gui->step_x[gui->step] = gui->step_x[gui->step - 1];
 			gui->step_y[gui->step] = gui->step_y[gui->step - 1];
+      gui->step_z[gui->step] = gui->step_z[gui->step - 1];
 			/* next step */
 			gui->en_distance = 1;
 			gui_next_step(gui);
@@ -30,9 +30,51 @@ int gui_sphere_interactive(gui_obj *gui){
 		}
 	}
 	else{
-		
-		gui->draw_phanton = 0;
-		//gui_first_step(gui);
+    radius = sqrt( pow(gui->step_x[gui->step - 1] - gui->step_x[gui->step], 2) +
+      pow(gui->step_y[gui->step - 1] - gui->step_y[gui->step], 2) +
+      pow(gui->step_z[gui->step - 1] - gui->step_z[gui->step], 2) );
+    snprintf(cmd, DXF_MAX_CHARS, "manifold[1] = sphere(%f)\n"
+      "manifold[1]:translate(%f,%f,%f)",
+      radius, gui->step_x[gui->step - 1], gui->step_y[gui->step - 1], 
+      gui->step_z[gui->step - 1]);
+    
+	
+		if (gui->ev & EV_ENTER){
+			/* accept point */
+      
+      new_el = (dxf_node *) dxf_new_mesh (gui->drawing, 
+        cmd, //"manifold = sphere('2')", 
+        gui->color_idx, /* color, layer */
+        (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+        DWG_LIFE);
+      
+      
+      new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
+      drawing_ent_append(gui->drawing, new_el);
+      
+      do_add_entry(&gui->list_do, _l("SPHERE"));
+      do_add_item(gui->list_do.current, NULL, new_el);
+      
+			gui->draw_phanton = 0;
+      gui->phanton = NULL;
+      gui_first_step(gui);
+		}
+		else if (gui->ev & EV_CANCEL){
+      gui->draw_phanton = 0;
+      gui->phanton = NULL;
+      gui_first_step(gui);
+    }
+    else{
+      new_el = (dxf_node *) dxf_new_mesh (NULL, cmd, //"manifold = sphere('2')", 
+        gui->color_idx, /* color, layer */
+        (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+        FRAME_LIFE);
+      list_node *vec_graph = dxf_graph_parse(gui->drawing, new_el, 0, FRAME_LIFE);
+      if (vec_graph){
+        gui->phanton = vec_graph;
+        gui->draw_phanton = 1;
+      }
+    }
 	}
 	
 	return 1;

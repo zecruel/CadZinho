@@ -1842,9 +1842,10 @@ int gui_start(gui_obj *gui){
 	
 	gui->user_x = 0.0;
 	gui->user_y = 0.0;
-	for (i = 0; i <10; i++){
-		gui->step_x[i] =0.0;
-		gui->step_y[i] =0.0;
+	for (i = 0; i < 100; i++){
+		gui->step_x[i] = 0.0;
+		gui->step_y[i] = 0.0;
+    gui->step_z[i] = 0.0;
 	}
 	gui->near_x = 0.0;
 	gui->near_y = 0.0;

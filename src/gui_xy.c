@@ -3,7 +3,7 @@
 
 int gui_update_pos(gui_obj *gui){
 	double rect_pt1[2], rect_pt2[2];
-	double cursor_x = 0.0, cursor_y = 0.0;
+	double cursor_x = 0.0, cursor_y = 0.0, cursor_z = 0.0;
 	double ref_x = 0.0, ref_y = 0.0;
 	
 	/* if user hit the enter key during a drawing operation, toggle axis lock */
@@ -53,13 +53,15 @@ int gui_update_pos(gui_obj *gui){
 		gui->near_count = dxf_ents_isect2(gui->near_list, gui->drawing, rect_pt1, rect_pt2);
 		
 		
-		if ((gui->step >= 0) && (gui->step < 1000)){
+		if ((gui->step >= 0) && (gui->step < 100)){
 			/* update current position by the mouse */
 			cursor_x = (double) gui->mouse_x/gui->zoom + gui->ofs_x;
 			cursor_y = (double) gui->mouse_y/gui->zoom + gui->ofs_y;
+      cursor_z = (double) gui->mouse_z/gui->zoom + gui->ofs_z;
       
       gui->step_x[gui->step] = cursor_x;
 			gui->step_y[gui->step] = cursor_y;
+      gui->step_z[gui->step] = cursor_z;
       if(gui->grid_flags > 1){ /* lock position in grid */
         if (gui->grid_spc < TOLERANCE) gui->grid_spc = 20;
         gui->step_x[gui->step] = gui->grid_spc * round(cursor_x / gui->grid_spc);
@@ -87,7 +89,7 @@ int gui_update_pos(gui_obj *gui){
 		}
 		
 		/* compute the next point coordinates by axis distances entry */
-		if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000)){
+		if ((gui->en_distance) && (gui->step > 0) && (gui->step < 100)){
 			if (!gui->rect_polar){
 				/* verify if an axis is locked during a drawing operation */
 				if (gui->lock_ax_y != 0){
@@ -129,7 +131,7 @@ int gui_update_pos(gui_obj *gui){
 				}
 			}
 		}
-		if ((!gui->entry_relative) && (gui->step >= 0) && (gui->step < 1000)){
+		if ((!gui->entry_relative) && (gui->step >= 0) && (gui->step < 100)){
 			/* check the user entry */
 			if (gui->user_flag_x){
 				gui->step_x[gui->step] = gui->user_x;
@@ -168,7 +170,7 @@ int gui_xy(gui_obj *gui){
 	int space = 120;
 	
 	double dist = 0.0, angle = 0.0, dx = 0.0, dy = 0.0;
-	if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000)){
+	if ((gui->en_distance) && (gui->step > 0) && (gui->step < 100)){
 		dx = gui->step_x[gui->step] - gui->step_x[gui->step - 1];
 		dy = gui->step_y[gui->step] - gui->step_y[gui->step - 1];
 		dist = sqrt( dx * dx + dy * dy);
@@ -181,7 +183,7 @@ int gui_xy(gui_obj *gui){
 			nk_layout_row_push(gui->ctx, 20);
 			/* X distance */
 			/* hilite coordinate, if coord is predominant during a drawing operation*/
-			if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000) && (flag_x)){
+			if ((gui->en_distance) && (gui->step > 0) && (gui->step < 100) && (flag_x)){
 				nk_label_colored(gui->ctx, _l("X="), NK_TEXT_RIGHT, nk_rgb(255,255,0));
 			}
 			else {
@@ -194,7 +196,7 @@ int gui_xy(gui_obj *gui){
 			space = 100;
 		}
 		/* verify if the user initiate a number entry during a drawing operation */
-		if (((gui->en_distance)||(!gui->entry_relative)) && (gui->user_number) && (gui->step >= 0) && (gui->step < 1000) &&
+		if (((gui->en_distance)||(!gui->entry_relative)) && (gui->user_number) && (gui->step >= 0) && (gui->step < 100) &&
 		(!gui->user_flag_x) && (flag_x)){
 			gui->user_number = 0; /* clear user flag */
 			user_str_x[0] = 0; /* clear edit string */
@@ -218,7 +220,7 @@ int gui_xy(gui_obj *gui){
 			}
 		}
 		else { /* visualize mode */
-			if ((!gui->entry_relative) && (gui->step >= 0) && (gui->step < 1000)){
+			if ((!gui->entry_relative) && (gui->step >= 0) && (gui->step < 100)){
 				snprintf(user_str_x, 63, "%f", gui->step_x[gui->step]);
 			}
 			else if (gui->en_distance){
@@ -245,7 +247,7 @@ int gui_xy(gui_obj *gui){
 			nk_layout_row_push(gui->ctx, 20);
 			/* Y distance */
 			/* hilite coordinate, if coord is predominant during a drawing operation*/
-			if ((gui->en_distance) && (gui->step > 0) && (gui->step < 1000) && (flag_y)){
+			if ((gui->en_distance) && (gui->step > 0) && (gui->step < 100) && (flag_y)){
 				nk_label_colored(gui->ctx, _l("Y="), NK_TEXT_RIGHT, nk_rgb(255,255,0));
 			}
 			else {
@@ -256,7 +258,7 @@ int gui_xy(gui_obj *gui){
 			nk_label(gui->ctx, _l("ang="), NK_TEXT_RIGHT);
 		}
 		/* verify if the user initiate a number entry during a drawing operation */
-		if (((gui->en_distance)||(!gui->entry_relative)) && (gui->user_number) && (gui->step >= 0) && (gui->step < 1000) &&
+		if (((gui->en_distance)||(!gui->entry_relative)) && (gui->user_number) && (gui->step >= 0) && (gui->step < 100) &&
 		(!gui->user_flag_y) && (flag_y)){
 			gui->user_number = 0; /* clear user flag */
 			user_str_y[0] = 0; /* clear edit string */
@@ -280,7 +282,7 @@ int gui_xy(gui_obj *gui){
 			}
 		}
 		else { /* visualize mode */
-			if ((!gui->entry_relative) && (gui->step >= 0) && (gui->step < 1000)){
+			if ((!gui->entry_relative) && (gui->step >= 0) && (gui->step < 100)){
 				snprintf(user_str_y, 63, "%f", gui->step_y[gui->step]);
 			}
 			else if (gui->en_distance){

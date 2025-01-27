@@ -451,7 +451,7 @@ struct Gui_obj {
 	
 	double patt_scale, patt_ang;
   
-  double step_x[1000], step_y[1000];
+  double step_x[100], step_y[100], step_z[100];
   
   char * seed;
 	char * dflt_pat;

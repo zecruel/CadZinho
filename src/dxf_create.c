@@ -3354,15 +3354,6 @@ dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, char
 	
 	/* Extra data */
 	ok &= dxf_attr_append(new_mesh, 1001, (void *) appid, pool);
-	ok &= dxf_attr_append(new_mesh, 1010, (void *) &zero, pool);
-	ok &= dxf_attr_append(new_mesh, 1020, (void *) &zero, pool);
-	ok &= dxf_attr_append(new_mesh, 1030, (void *) &zero, pool);
-	ok &= dxf_attr_append(new_mesh, 1011, (void *) &zero, pool);
-	ok &= dxf_attr_append(new_mesh, 1021, (void *) &zero, pool);
-	ok &= dxf_attr_append(new_mesh, 1031, (void *) &one, pool);
-	ok &= dxf_attr_append(new_mesh, 1040, (void *) &one, pool);
-	ok &= dxf_attr_append(new_mesh, 1041, (void *) &one, pool);
-	ok &= dxf_attr_append(new_mesh, 1042, (void *) &one, pool);
 	
 	i = 0; pos = 0;
 	while ( i < str_len){
@@ -3388,7 +3379,7 @@ dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, char
 	for (i = 0; i < vert; i++){
 		
 		current = dxf_new_face_vertex (coord[prop*i], coord[prop*i+1], coord[prop*i+2], pool);
-		ent_handle(drawing, current);
+		if (drawing) ent_handle(drawing, current);
 		dxf_obj_append(new_mesh, current);
 	}
 	for (i = 0; i < trian; i++){
@@ -3397,7 +3388,7 @@ dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, char
 		indexes[1] = index[3 * i + 1] + 1;
 		indexes[2] = index[3 * i + 2] + 1;
 		current = dxf_new_face_rec (indexes, 3, color, layer, pool);
-		ent_handle(drawing, current);
+		if (drawing) ent_handle(drawing, current);
 		dxf_obj_append(new_mesh, current);
 	}
   
@@ -3405,7 +3396,7 @@ dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, char
   manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
 	
 	current = dxf_new_seqend (layer, pool);
-	ent_handle(drawing, current);
+	if (drawing) ent_handle(drawing, current);
 	dxf_obj_append(new_mesh, current);
 	
 	if(ok){

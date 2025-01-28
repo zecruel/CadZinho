@@ -295,7 +295,7 @@ struct Gui_obj {
 	int layer_idx, ltypes_idx, t_sty_idx;
 	
 	int step, user_flag_x, user_flag_y, lock_ax_x, lock_ax_y, user_number;
-	int keyEnter;
+	int keyEnter, user_flag;
 	int draw, draw_tmp, draw_phanton, draw_vert, vert_idx;
 	int near_attr;
 	
@@ -448,6 +448,7 @@ struct Gui_obj {
 	double bulge, scale_x, scale_y, angle;
 	double txt_h;
 	double rect_w;
+  double radius1, radius2, heigth1, heigth2;
 	
 	double patt_scale, patt_ang;
   

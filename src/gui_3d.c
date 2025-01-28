@@ -4,7 +4,7 @@
 int gui_sphere_interactive(gui_obj *gui){
 	
 	if (gui->modal != SPHERE) return 0;
-	static double radius = 0.0;
+	//static double radius = 0.0;
   static char cmd[DXF_MAX_CHARS + 1] = "";
 	
 	static dxf_node *new_el;
@@ -30,12 +30,15 @@ int gui_sphere_interactive(gui_obj *gui){
 		}
 	}
 	else{
-    radius = sqrt( pow(gui->step_x[gui->step - 1] - gui->step_x[gui->step], 2) +
+    if(!(gui->user_flag & 1)){
+    gui->radius1 = sqrt( pow(gui->step_x[gui->step - 1] - gui->step_x[gui->step], 2) +
       pow(gui->step_y[gui->step - 1] - gui->step_y[gui->step], 2) +
       pow(gui->step_z[gui->step - 1] - gui->step_z[gui->step], 2) );
+    }
+    
     snprintf(cmd, DXF_MAX_CHARS, "manifold[1] = sphere(%f)\n"
-      "manifold[1]:translate(%f,%f,%f)",
-      radius, gui->step_x[gui->step - 1], gui->step_y[gui->step - 1], 
+      "manifold[1]:translate(%f,%f,%f)", gui->radius1,
+      gui->step_x[gui->step - 1], gui->step_y[gui->step - 1], 
       gui->step_z[gui->step - 1]);
     
 	
@@ -81,6 +84,7 @@ int gui_sphere_interactive(gui_obj *gui){
 
 int gui_sphere_info (gui_obj *gui){
 	if (gui->modal != SPHERE) return 0;
+  static char user_str_r[64] = "0.000000";
   
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, _l("Place a sphere"), NK_TEXT_LEFT);
@@ -88,7 +92,29 @@ int gui_sphere_info (gui_obj *gui){
 	if (gui->step == 0){
 		nk_label(gui->ctx, _l("Enter center point"), NK_TEXT_LEFT);
 	} else if (gui->step == 1){
-		nk_label(gui->ctx, _l("Define radius"), NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Define radius:"), NK_TEXT_LEFT);
+    
+    /* edit to visualize or enter radius */
+		nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
+      NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT,
+      user_str_r, 63, nk_filter_float);
+		if (res & NK_EDIT_ACTIVE){ /* enter mode */
+			if (strlen(user_str_r)){
+				/* sinalize the radius of user entry */
+				gui->radius1 = atof(user_str_r);
+				gui->user_flag |= 1;
+			}
+			else{ /* if the user clear the string */
+				/* cancel the enter mode*/
+				gui->user_flag &= ~1;
+				nk_edit_unfocus(gui->ctx);
+			}
+		}
+		else if (!(gui->user_flag & 1)) { /* visualize mode */
+			
+      snprintf(user_str_r, 63, "%f", gui->radius1);
+			
+		}
 	}
 	
 	return 1;

@@ -1855,6 +1855,11 @@ int gui_start(gui_obj *gui){
 	gui->angle = 0.0;
 	gui->txt_h = 1.0;
 	gui->rect_w = 0.0;
+  
+  gui->radius1 = 0.0;
+  gui->radius2 = 0.0;
+  gui->heigth1 = 0.0;
+  gui->heigth2 = 0.0;
 	
 	gui->color_idx = 256;
 	gui->lw_idx = 0;
@@ -1867,6 +1872,7 @@ int gui_start(gui_obj *gui){
 	gui->step = 0;
 	gui->user_flag_x = 0;
 	gui->user_flag_y = 0;
+  gui->user_flag = 0;
 	gui->lock_ax_x = 0;
 	gui->lock_ax_y = 0;
 	gui->user_number = 0;

@@ -42,8 +42,7 @@ int gui_sphere_interactive(gui_obj *gui){
 		if (gui->ev & EV_ENTER){
 			/* accept point */
       
-      new_el = (dxf_node *) dxf_new_mesh (gui->drawing, 
-        cmd, //"manifold = sphere('2')", 
+      new_el = (dxf_node *) dxf_new_mesh ( cmd, //"manifold = sphere('2')", 
         gui->color_idx, /* color, layer */
         (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
         DWG_LIFE);
@@ -65,7 +64,7 @@ int gui_sphere_interactive(gui_obj *gui){
       gui_first_step(gui);
     }
     else{
-      new_el = (dxf_node *) dxf_new_mesh (NULL, cmd, //"manifold = sphere('2')", 
+      new_el = (dxf_node *) dxf_new_mesh (cmd, //"manifold = sphere('2')", 
         gui->color_idx, /* color, layer */
         (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
         FRAME_LIFE);

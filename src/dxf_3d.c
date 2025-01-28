@@ -151,7 +151,6 @@ void *polygons_buffer() {
 /* create a sphere manifold */
 /* given parameters:
 	- radius, as number (optional, dflt = 1)
-  - center x,y,z coordinates, as numbers (dflt = 0,0,0)
 	- Manifold object, as userdata
 */
 int dxf_3d_sphere (lua_State *L) {
@@ -1033,7 +1032,7 @@ Notes:
 	the alocated memory is valid in single iteration of main loop.
 	It is assumed that soon afterwards it will be appended or drawn.
 */
-dxf_node * dxf_new_mesh  (dxf_drawing *drawing, char *chunk, int color, char *layer, int pool){
+dxf_node * dxf_new_mesh  (char *chunk, int color, char *layer, int pool){
 	lua_State *L = dxf_3d_engine.T;
   dxf_3d_engine.time = clock();
   
@@ -1082,7 +1081,7 @@ dxf_node * dxf_new_mesh  (dxf_drawing *drawing, char *chunk, int color, char *la
 	
 	
 	/* new mesh entity */
-	dxf_node * new_el = (dxf_node *) dxf_new_face_mesh (drawing, mesh, chunk, 
+	dxf_node * new_el = (dxf_node *) dxf_new_face_mesh (mesh, chunk, 
 		color, layer, pool); 
 
 	

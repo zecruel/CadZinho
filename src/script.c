@@ -8813,12 +8813,8 @@ int script_new_mesh (lua_State *L) {
 		lua_pop(L, 2); /* pop returned value */
 	}
 	
-	
-	
-	
 	/* new mesh entity */
-	//dxf_node * dxf_new_mesh  (dxf_drawing *drawing, char *chunk, int color, char *layer, int pool)
-	dxf_node * new_el = (dxf_node *) dxf_new_mesh (NULL, (char*)lua_tostring(L, 1), //"manifold = sphere('2')", 
+	dxf_node * new_el = (dxf_node *) dxf_new_mesh ((char*)lua_tostring(L, 1), //"manifold = sphere('2')", 
 		gui->color_idx, /* color, layer */
 		(char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
 		FRAME_LIFE); 

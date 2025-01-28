@@ -3307,7 +3307,7 @@ dxf_node * dxf_new_face_rec (int *index, int n, int color, char *layer, int pool
 #define MEMP_SIMPLE_POLY 5
 #define MEMP_POLY 6
 
-dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, char *chunk, int color, char *layer, int pool){
+dxf_node * dxf_new_face_mesh (ManifoldMeshGL64 *mesh, char *chunk, int color, char *layer, int pool){
 	/* create a new POLYLINE entity */
 	const char *handle = "0";
 	const char *dxf_class = "AcDbEntity";
@@ -3355,9 +3355,19 @@ dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, char
 	/* Extra data */
 	ok &= dxf_attr_append(new_mesh, 1001, (void *) appid, pool);
 	
+  
+  flag = DXF_MAX_CHARS/2; /* Desirable string length */
 	i = 0; pos = 0;
 	while ( i < str_len){
-		if (chunk[i] == '\n' | chunk[i] == '\r' | chunk[i] == '\v'){
+		if ((chunk[i] == ',' || chunk[i] == ';' || chunk[i] == '{' || 
+      chunk[i] == '(') && pos > flag && pos < DXF_MAX_CHARS)
+    { /* break string to fit in desirable length */
+      str[pos] = chunk[i];
+			pos++;
+      str[pos] = 0;
+      pos = 0;
+      ok &= dxf_attr_append(new_mesh, 1000, (void *) str, pool);
+		} else if (chunk[i] == '\n' || chunk[i] == '\r' || chunk[i] == '\v'){
 			if (pos > 0){
 				str[pos] = 0;
 				pos = 0;
@@ -3379,7 +3389,6 @@ dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, char
 	for (i = 0; i < vert; i++){
 		
 		current = dxf_new_face_vertex (coord[prop*i], coord[prop*i+1], coord[prop*i+2], pool);
-		if (drawing) ent_handle(drawing, current);
 		dxf_obj_append(new_mesh, current);
 	}
 	for (i = 0; i < trian; i++){
@@ -3388,7 +3397,6 @@ dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, char
 		indexes[1] = index[3 * i + 1] + 1;
 		indexes[2] = index[3 * i + 2] + 1;
 		current = dxf_new_face_rec (indexes, 3, color, layer, pool);
-		if (drawing) ent_handle(drawing, current);
 		dxf_obj_append(new_mesh, current);
 	}
   
@@ -3396,7 +3404,6 @@ dxf_node * dxf_new_face_mesh (dxf_drawing *drawing, ManifoldMeshGL64 *mesh, char
   manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
 	
 	current = dxf_new_seqend (layer, pool);
-	if (drawing) ent_handle(drawing, current);
 	dxf_obj_append(new_mesh, current);
 	
 	if(ok){

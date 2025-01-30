@@ -1452,6 +1452,7 @@ int gui_main_loop (gui_obj *gui) {
     gui->lock_ax_y = 0;
     gui->user_flag_x = 0;
     gui->user_flag_y = 0;
+    gui->user_flag = 0;
     /*
     if (gui->prev_modal == SCRIPT){
       gui->lua_script[0].active = 0;

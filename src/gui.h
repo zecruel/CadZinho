@@ -443,8 +443,8 @@ struct Gui_obj {
 	double zoom, ofs_x, ofs_y, ofs_z;
 	double prev_zoom;
 	
-	double user_x, user_y;
-	double near_x, near_y;
+	double user_x, user_y, user_z;
+	double near_x, near_y, near_z;
 	double bulge, scale_x, scale_y, angle;
 	double txt_h;
 	double rect_w;

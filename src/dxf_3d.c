@@ -242,7 +242,7 @@ int dxf_3d_cylinder (lua_State *L) {
   
   if (r1 <= 0.0) r1 = 1.0;
   if (h <= 0.0) h = 1.0;
-  if (r2 <= 0.0) r2 = 1.0;
+  if (r2 <= 0.0) r2 = 0.0;
   if (c_seg <= 0) c_seg = 32;
 	
 	/* create a userdata object */

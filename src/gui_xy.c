@@ -84,6 +84,7 @@ int gui_update_pos(gui_obj *gui){
 				cursor_x, cursor_y, ref_x, ref_y, (double) 20/gui->zoom, &gui->near_x , &gui->near_y)){
 					gui->step_x[gui->step] = gui->near_x;
 					gui->step_y[gui->step] = gui->near_y;
+          gui->step_z[gui->step] = gui->near_z;
 				}
 			}
 		}

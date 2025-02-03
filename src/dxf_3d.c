@@ -981,6 +981,75 @@ int dxf_3d_mirror (lua_State *L) {
 	return 1;
 }
 
+/* modify a manifold object - transform */
+/* given parameters:
+	- a Manifold object (this function is called as method inside object)
+	- transformation matrix 4x3, as table (dflt = unitary matrix)
+returns:
+	- a boolean indicating success or fail
+*/
+int dxf_3d_transform (lua_State *L) {
+	
+	struct manifold_obj * manifold;
+	double matrix[4][3] = {{1,0,0},{0,1,0},{0,0,1},{0,0,0}};
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 1){
+		lua_pushboolean(L, 0); /* return fail */
+    return 1;
+	}
+	if (!( manifold = udata_check(L, 1, "Manifold") )) { /* the Manifold object is a Lua userdata type*/
+		lua_pushboolean(L, 0); /* return fail */
+    return 1;
+	}
+  
+	/* verify passed arguments */
+	if (lua_istable(L, 2)) {
+		int lines = lua_rawlen(L, 2);
+		int i,  j;
+		for (i = 0; i < lines; i++) {
+			lua_rawgeti(L, 2, i + 1);
+			if (lua_istable(L, -1) && i < 4) {
+				int cols = lua_rawlen(L, -1);
+				for (j = 0; j < cols;  j++) {
+					lua_rawgeti(L, -1, j + 1);
+					if (lua_isnumber(L, -1) && j < 3) {
+						matrix[i][j] = lua_tonumber(L, -1);
+					}
+					lua_pop (L, 1);
+				}
+			}
+			lua_pop (L, 1);
+		}
+	}
+	
+  
+	
+	/* check if it is not destroyed */
+	if (manifold->obj == NULL){
+    lua_pushboolean(L, 0); /* return fail */
+    return 1;
+  }
+  /* check if it is not destroyed */
+	if (manifold->prev == NULL){
+    lua_pushboolean(L, 0); /* return fail */
+    return 1;
+  }
+	
+  ManifoldManifold *tmp = manifold->obj;
+  manifold->prev = manifold_transform(manifold->prev, manifold->obj,
+	matrix[0][0], matrix[0][1], matrix[0][2],
+	matrix[1][0], matrix[1][1], matrix[1][2],
+	matrix[2][0], matrix[2][1], matrix[2][2],
+	matrix[3][0], matrix[3][1], matrix[3][2]);
+  manifold->obj = manifold->prev;
+  manifold->prev = tmp;
+  
+	lua_pushboolean(L, 1); /* return success */
+	return 1;
+}
+
 /* destroy a previouly created manifold object */
 /* given parameters:
 	- a Manifold object (this function is called as method inside object)
@@ -1135,6 +1204,7 @@ int dxf_3d_init (){
     {"rotate", dxf_3d_rotate},
     {"scale", dxf_3d_scale},
     {"mirror", dxf_3d_mirror},
+    {"transform", dxf_3d_transform},
 		{"__gc", manifold_destroy},
 		{NULL, NULL}
 	};

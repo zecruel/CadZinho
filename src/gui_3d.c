@@ -36,7 +36,9 @@ int gui_sphere_interactive(gui_obj *gui){
     }
     
     snprintf(cmd, DXF_MAX_CHARS, "manifold[1] = sphere(%.9g)\n"
-      "manifold[1]:translate(%.9g,%.9g,%.9g)", gui->radius1,
+     // "manifold[1]:translate(%.9g,%.9g,%.9g)",
+    "manifold[1]:transform({{1,0,0},{0,1,0},{0,0,1},{%.9g,%.9g,%.9g}})", 
+	gui->radius1,
       gui->step_x[gui->step - 1], gui->step_y[gui->step - 1], 
       gui->step_z[gui->step - 1]);
     
@@ -438,7 +440,7 @@ int gui_pyramid_interactive(gui_obj *gui){
 			/* next step */
 			gui->en_distance = 1;
       
-      gui->user_flag |= 4;
+      gui->user_flag |= 8;
 			gui_next_step(gui);
 		}
 		else if (gui->ev & EV_CANCEL){
@@ -446,16 +448,6 @@ int gui_pyramid_interactive(gui_obj *gui){
 		}
 	} 
   else if (gui->step == 1){
-		gui->free_sel = 0;
-		
-    double dx = gui->step_x[1] - gui->step_x[0];
-    double dy = gui->step_y[1] - gui->step_y[0];
-    double dz = gui->step_z[1] - gui->step_z[0];
-    double len = sqrt(dx*dx + dy*dy + dz*dz);
-    
-    if (len > 1e-9) {
-      dx /= len; dy /= len; dz /= len;
-    }
     
     
 		/* define pyramid ref point */
@@ -487,53 +479,37 @@ int gui_pyramid_interactive(gui_obj *gui){
       dx /= len; dy /= len; dz /= len;
     }
     
-    double d = -dx * gui->step_x[1] -dy * gui->step_y[1] -dz * gui->step_z[1];
+    double d = -dx * gui->step_x[1] - dy * gui->step_y[1] - dz * gui->step_z[1];
+    double nq = dx * gui->step_x[2] + dy * gui->step_y[2] + dz * gui->step_z[2];
     
-    double alpha = atan2(dy, dx); /* angle over z axis */
-    double gamma = atan2(dz, fabs(dx)); /* angle over y axis */
-    double beta = atan2(dz, fabs(dy)); /* angle over x axis */
+    double px = gui->step_x[2] - (nq + d) * dx;
+    double py = gui->step_y[2] - (nq + d) * dy;
+    double pz = gui->step_z[2] - (nq + d) * dz;
     
-    double dir[3]; /* height direction - normal to base circle */
-    if (fabs(gamma) < fabs(beta)){
-      dir[0] = cos(beta) * sin(gamma);
-      dir[1] = -sin(beta);
-      dir[2] = cos(beta) * cos(gamma);
-    } else {
-      dir[0] = sin(gamma);
-      dir[1] = -sin(beta) * cos(gamma);
-      dir[2] = cos(beta) * cos(gamma);
+    double dx2 = px - gui->step_x[1];
+    double dy2 = py - gui->step_y[1];
+    double dz2 = pz - gui->step_z[1];
+    double len2 = sqrt(dx2*dx2 + dy2*dy2 + dz2*dz2);
+    
+    if (len2 > 1e-9) {
+      dx2 /= len2; dy2 /= len2; dz2 /= len2;
     }
     
-    /*alpha *= 180.0/M_PI;*/
-    gamma *= 180.0/M_PI;
-    beta *= 180.0/M_PI;
+    double dx3 = dy*dz2 - dz*dy2;
+    double dy3 = dx*dz2 - dz*dx2;
+    double dz3 = dx*dy2 - dy*dx2;
     
-    if(!(gui->user_flag & 1)){ /* base radius */
-      gui->radius1 = sqrt( pow(gui->step_x[1] - gui->step_x[0], 2) +
-        pow(gui->step_y[1] - gui->step_y[0], 2) +
-        pow(gui->step_z[1] - gui->step_z[0], 2) );
+    
+    if(!(gui->user_flag & 1)){ /* base width */
+      gui->radius1 = len;
     }
     
-    if(!(gui->user_flag & 2)){ /* heigtht */
-      dx = gui->step_x[2] - gui->step_x[0];
-      dy = gui->step_y[2] - gui->step_y[0];
-      dz = gui->step_z[2] - gui->step_z[0];
-      
-      gui->heigth1 = dir[0]*dx + dir[1]*dy + dir[2]*dz;
-      
-      gui->step_x[2] = gui->step_x[0] + gui->heigth1 * dir[0];
-      gui->step_y[2] = gui->step_y[0] + gui->heigth1 * dir[1];
-      gui->step_z[2] = gui->step_z[0] + gui->heigth1 * dir[2];
-      
-      if (gui->heigth1 < 0.0){
-        if (fabs(gamma) > fabs(beta)) gamma += 180.0;
-        else beta += 180.0;
-        gui->heigth1 *= -1.0;
-      }
+    if(!(gui->user_flag & 2)){ /* base heigtht */
+      gui->heigth1 = len2;
     }
     /* top radius */
     if (gui->step < 4){
-      gui->radius2 = 0.0;
+      gui->heigth2 = 0.0;
     }
     else if(!(gui->user_flag & 4)){
       gui->radius2 = sqrt( pow(gui->step_x[3] - gui->step_x[2], 2) +
@@ -543,22 +519,14 @@ int gui_pyramid_interactive(gui_obj *gui){
     
     /* create manifold */
     
-    if (fabs(gamma) > fabs(beta))
-      snprintf(cmd, 1000, "manifold[1] = pyramid(%.9g,%.9g,%.9g)\n"
-        "manifold[1]:rotate(0,%.9g,0)\n"
-        "manifold[1]:rotate(%.9g,0,0)\n"
-        "manifold[1]:translate(%.9g,%.9g,%.9g)",
-        gui->heigth1, gui->radius1, gui->radius2,
-        gamma, beta,
+    
+      snprintf(cmd, 1000, "manifold[1] = pyramid(%.9g,%.9g,%.9g,%.9g)\n"
+        "manifold[1]:transform({{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g}})", 
+        gui->radius1,gui->heigth1, gui->heigth2, gui->radius2,
+    dx, dy, dz, dx2, dy2, dz2, dx3, dy3, dz3,
+    //dx, dx2, dx3, dy, dy2, dy3, dz, dz2, dz3,
         gui->step_x[0], gui->step_y[0], gui->step_z[0]);
-    else
-      snprintf(cmd, 1000, "manifold[1] = pyramid(%.9g,%.9g,%.9g)\n"
-        "manifold[1]:rotate(%.9g,0,0)\n"
-        "manifold[1]:rotate(0,%.9g,0)\n"
-        "manifold[1]:translate(%.9g,%.9g,%.9g)",
-        gui->heigth1, gui->radius1, gui->radius2,
-        beta, gamma,
-        gui->step_x[0], gui->step_y[0], gui->step_z[0]);
+   
     
     new_el = (dxf_node *) dxf_new_mesh (cmd,
       gui->color_idx, /* color, layer */
@@ -664,13 +632,13 @@ int gui_pyramid_info (gui_obj *gui){
       nk_edit_unfocus(gui->ctx);
     }
   } else if (gui->step == 3){
-    snprintf(user_str_r, 63, _l("Radius: %.9g"), gui->radius1);
+    snprintf(user_str_r, 63, _l("Base width: %.9g"), gui->radius1);
     nk_label(gui->ctx, user_str_r, NK_TEXT_LEFT);
-    snprintf(user_str_r, 63, _l("Heigth: %.9g"),  gui->heigth1);
+    snprintf(user_str_r, 63, _l("Base heigth: %.9g"),  gui->heigth1);
     nk_label(gui->ctx, user_str_r, NK_TEXT_LEFT);
-    nk_label(gui->ctx, _l("Define top radius:"), NK_TEXT_LEFT);
+    nk_label(gui->ctx, _l("Define top heigth:"), NK_TEXT_LEFT);
     
-    snprintf(user_str_r, 63, "%.9g", gui->radius2);
+    snprintf(user_str_r, 63, "%.9g", gui->heigth2);
     /* edit to visualize or enter heigth */
 		nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
       NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT,
@@ -678,7 +646,7 @@ int gui_pyramid_info (gui_obj *gui){
 		if (res & NK_EDIT_ACTIVE){ /* enter mode */
 			if (strlen(user_str_r)){
 				/* sinalize the radius of user entry */
-				gui->radius2 = atof(user_str_r);
+				gui->heigth2 = atof(user_str_r);
 				gui->user_flag |= 4;
 			}
 			else{ /* if the user clear the string */

@@ -460,6 +460,7 @@ struct Gui_obj {
 	double patt_scale, patt_ang;
   
   double step_x[100], step_y[100], step_z[100];
+  double param_3d[10];
   
   char * seed;
 	char * dflt_pat;

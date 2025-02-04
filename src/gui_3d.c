@@ -416,6 +416,17 @@ int gui_pyramid_interactive(gui_obj *gui){
 	static char cmd[1001] = "";
 	
 	static dxf_node *new_el;
+  
+  int x = 0, y = 1, z = 2, s = 3;
+  double matrix[3][3] = {{1.0,0.0,0.0},
+    {0.0,1.0,0.0},{0.0,0.0,1.0}};
+  double size[3] = {1,1,1}; /* sizes of pyramid */
+  
+  if (gui->extr_mode == E3D_BASE){
+    x = 0; y = 1; z = 2; s = 3;
+  } else {
+    x = 2; y = 0; z = 1; s = 3;
+  }
 	
 	gui->draw_phanton = 0;
   gui->phanton = NULL;
@@ -450,18 +461,21 @@ int gui_pyramid_interactive(gui_obj *gui){
 		else if (gui->ev & EV_CANCEL){
 			gui_default_modal(gui);
 		}
-	} 
+	}
   else if (gui->step == 1){
-    double x_dir_x = gui->step_x[1] - gui->step_x[0];
-    double x_dir_y = gui->step_y[1] - gui->step_y[0];
-    double x_dir_z = gui->step_z[1] - gui->step_z[0];
-    double width = sqrt(x_dir_x*x_dir_x + x_dir_y*x_dir_y + x_dir_z*x_dir_z);
+    matrix[x][0] = gui->step_x[1] - gui->step_x[0];
+    matrix[x][1] = gui->step_y[1] - gui->step_y[0];
+    matrix[x][2] = gui->step_z[1] - gui->step_z[0];
+    size[x] = sqrt(matrix[x][0]*matrix[x][0] + 
+      matrix[x][1]*matrix[x][1] + matrix[x][2]*matrix[x][2]);
     
-    if (width > 1e-9) {
-      x_dir_x /= width; x_dir_y /= width; x_dir_z /= width;
+    if (size[x] > 1e-9) {
+      matrix[x][0] /= size[x];
+      matrix[x][1] /= size[x];
+      matrix[x][2] /= size[x];
     }
     if(!(gui->user_flag & 1)){ /* base width */
-      gui->radius1 = width;
+      gui->param_3d[x] = size[x];
     }
     
     /* draw a line to helps user to see axis size and direction */
@@ -477,9 +491,9 @@ int gui_pyramid_interactive(gui_obj *gui){
 			graph->pattern[1] = -10 / gui->zoom;
 			
 			line_add(graph, gui->step_x[0], gui->step_y[0], gui->step_z[0],
-				gui->step_x[0] + gui->radius1 * x_dir_x,
-        gui->step_y[0] + gui->radius1 * x_dir_y,
-        gui->step_z[0] + gui->radius1 * x_dir_z);
+				gui->step_x[0] + gui->param_3d[x] * matrix[x][0],
+        gui->step_y[0] + gui->param_3d[x] * matrix[x][1],
+        gui->step_z[0] + gui->param_3d[x] * matrix[x][2]);
 			list_node * new_node = list_new(graph, FRAME_LIFE);
 			list_push(gui->phanton, new_node);
 		}
@@ -487,11 +501,11 @@ int gui_pyramid_interactive(gui_obj *gui){
 		/* define pyramid ref point */
 		if (gui->ev & EV_ENTER){
 			/* accept point */
-			if (width > 1e-9) gui->step = 2;
+			if (size[x] > 1e-9) gui->step = 2;
       
-      gui->step_x[1] = gui->step_x[0] + gui->radius1 * x_dir_x;
-			gui->step_y[1] = gui->step_y[0] + gui->radius1 * x_dir_y;
-      gui->step_z[1] = gui->step_z[0] + gui->radius1 * x_dir_z;
+      gui->step_x[1] = gui->step_x[0] + gui->param_3d[x] * matrix[x][0];
+			gui->step_y[1] = gui->step_y[0] + gui->param_3d[x] * matrix[x][1];
+      gui->step_z[1] = gui->step_z[0] + gui->param_3d[x] * matrix[x][2];
       
       
       gui->step_x[2] = gui->step_x[1];
@@ -504,80 +518,94 @@ int gui_pyramid_interactive(gui_obj *gui){
 		}
 	}
 	else{
-    double x_dir_x = gui->step_x[1] - gui->step_x[0];
-    double x_dir_y = gui->step_y[1] - gui->step_y[0];
-    double x_dir_z = gui->step_z[1] - gui->step_z[0];
-    double width = sqrt(x_dir_x*x_dir_x + x_dir_y*x_dir_y + x_dir_z*x_dir_z);
+    matrix[x][0] = gui->step_x[1] - gui->step_x[0];
+    matrix[x][1] = gui->step_y[1] - gui->step_y[0];
+    matrix[x][2] = gui->step_z[1] - gui->step_z[0];
+    size[x] = sqrt(matrix[x][0]*matrix[x][0] + 
+      matrix[x][1]*matrix[x][1] + matrix[x][2]*matrix[x][2]);
     
-    if (width > 1e-9) {
-      x_dir_x /= width; x_dir_y /= width; x_dir_z /= width;
+    if (size[x] > 1e-9) {
+      matrix[x][0] /= size[x];
+      matrix[x][1] /= size[x];
+      matrix[x][2] /= size[x];
     }
-    /* get next point in plane perpenticular to base width */
-    double d = -x_dir_x * gui->step_x[1] - x_dir_y * gui->step_y[1] - x_dir_z * gui->step_z[1];
-    double nq = x_dir_x * gui->step_x[2] + x_dir_y * gui->step_y[2] + x_dir_z * gui->step_z[2];
+    /* get next point in plane perpenticular to direction */
+    double d = -matrix[x][0] * gui->step_x[1] 
+      - matrix[x][1] * gui->step_y[1]
+      - matrix[x][2] * gui->step_z[1];
+    double nq = matrix[x][0] * gui->step_x[2] + 
+      matrix[x][1] * gui->step_y[2] + 
+      matrix[x][2] * gui->step_z[2];
     
-    double px = gui->step_x[2] - (nq + d) * x_dir_x;
-    double py = gui->step_y[2] - (nq + d) * x_dir_y;
-    double pz = gui->step_z[2] - (nq + d) * x_dir_z;
+    double px = gui->step_x[2] - (nq + d) * matrix[x][0];
+    double py = gui->step_y[2] - (nq + d) * matrix[x][1];
+    double pz = gui->step_z[2] - (nq + d) * matrix[x][2];
     
-    double y_dir_x = px - gui->step_x[1];
-    double y_dir_y = py - gui->step_y[1];
-    double y_dir_z = pz - gui->step_z[1];
-    double height = sqrt(y_dir_x*y_dir_x + y_dir_y*y_dir_y + y_dir_z*y_dir_z);
+    matrix[y][0] = px - gui->step_x[1];
+    matrix[y][1] = py - gui->step_y[1];
+    matrix[y][2] = pz - gui->step_z[1];
+    size[y] = sqrt(matrix[y][0]*matrix[y][0] +
+      matrix[y][1]*matrix[y][1] + matrix[y][2]*matrix[y][2]);
     
-    if (height > 1e-9) {
-      y_dir_x /= height; y_dir_y /= height; y_dir_z /= height;
+    if (size[y] > 1e-9) {
+      matrix[y][0] /= size[y];
+      matrix[y][1] /= size[y];
+      matrix[y][2] /= size[y];
     }
     /* cross product to get z direction */
-    double z_dir_x = x_dir_y*y_dir_z - x_dir_z*y_dir_y;
-    double z_dir_y = x_dir_z*y_dir_x - x_dir_x*y_dir_z;
-    double z_dir_z = x_dir_x*y_dir_y - x_dir_y*y_dir_x;
+    matrix[z][0] = matrix[x][1]*matrix[y][2] - matrix[x][2]*matrix[y][1];
+    matrix[z][1] = matrix[x][2]*matrix[y][0] - matrix[x][0]*matrix[y][2];
+    matrix[z][2] = matrix[x][0]*matrix[y][1] - matrix[x][1]*matrix[y][0];
     
     if(!(gui->user_flag & 1)){ /* base width */
-      gui->radius1 = 2.0 * width;
+      gui->param_3d[x] = size[x];
     }
     
-    if(!(gui->user_flag & 2)){ /* base heigtht */
-      gui->heigth1 = 2.0 * height;
+    if(!(gui->user_flag & 2)){ /* base height */
+      gui->param_3d[y] = size[y];
     }
+    
+    double dx = gui->step_x[3] - gui->step_x[0];
+    double dy = gui->step_y[3] - gui->step_y[0];
+    double dz = gui->step_z[3] - gui->step_z[0];
+    
+    size[z] = matrix[z][0]*dx + matrix[z][1]*dy + matrix[z][2]*dz;
     
     if(!(gui->user_flag & 4)){ /* pyramid height */
-      double dx = gui->step_x[3] - gui->step_x[0];
-      double dy = gui->step_y[3] - gui->step_y[0];
-      double dz = gui->step_z[3] - gui->step_z[0];
-      
-      gui->heigth2 = z_dir_x*dx + z_dir_y*dy + z_dir_z*dz;
+      gui->param_3d[z] = size[z];
     }
     
-    if (gui->heigth2 < 0.0){
-      gui->heigth2 *= -1.0;
+    if (gui->param_3d[z] < 0.0){
+      gui->param_3d[z] *= -1.0;
       /* rotate 180 degrees in x axis */
-      y_dir_x *= -1; y_dir_y *= -1; y_dir_z *= -1;
-      z_dir_x *= -1; z_dir_y *= -1; z_dir_z *= -1;
+      matrix[y][0] *= -1; matrix[y][1] *= -1; matrix[y][2] *= -1;
+      matrix[z][0] *= -1; matrix[z][1] *= -1; matrix[z][2] *= -1;
     }
     
-    gui->step_x[3] = gui->step_x[0] + gui->heigth2 * z_dir_x;
-    gui->step_y[3] = gui->step_y[0] + gui->heigth2 * z_dir_y;
-    gui->step_z[3] = gui->step_z[0] + gui->heigth2 * z_dir_z;
+    gui->step_x[3] = gui->step_x[0] + gui->param_3d[z] * matrix[z][0];
+    gui->step_y[3] = gui->step_y[0] + gui->param_3d[z] * matrix[z][1];
+    gui->step_z[3] = gui->step_z[0] + gui->param_3d[z] * matrix[z][2];
     
     /* top scale factor */
     if (gui->step < 4){
-      gui->radius2 = 0.0;
+      gui->param_3d[s] = 0.0;
     }
     else if(!(gui->user_flag & 8)){
-      double w = (gui->radius1 > 1e-9) ? gui->radius1 : 1.0;
-      gui->radius2 = sqrt( pow(gui->step_x[4] - gui->step_x[3], 2) +
+      double w = (gui->param_3d[x] > 1e-9) ? gui->param_3d[x] : 1.0;
+      gui->param_3d[s] = sqrt( pow(gui->step_x[4] - gui->step_x[3], 2) +
         pow(gui->step_y[4] - gui->step_y[3], 2) +
-        pow(gui->step_z[4] - gui->step_z[3], 2) ) / w;
+        pow(gui->step_z[4] - gui->step_z[3], 2) ) / (2*w);
     }
     
     /* create manifold */
     snprintf(cmd, 1000, "manifold[1] = pyramid(%.9g,%.9g,%.9g,%.9g)\n"
       "manifold[1]:transform({{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g},"
       "{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g}})", 
-      gui->radius1,gui->heigth1, gui->heigth2, gui->radius2,
-      x_dir_x, x_dir_y, x_dir_z, y_dir_x, y_dir_y, y_dir_z,
-      z_dir_x, z_dir_y, z_dir_z,
+      2.0 * gui->param_3d[0],2.0 * gui->param_3d[1],
+      gui->param_3d[2], gui->param_3d[3],
+      matrix[0][0], matrix[0][1], matrix[0][2],
+      matrix[1][0], matrix[1][1], matrix[1][2],
+      matrix[2][0], matrix[2][1], matrix[2][2],
       gui->step_x[0], gui->step_y[0], gui->step_z[0]);
    
     
@@ -593,7 +621,7 @@ int gui_pyramid_interactive(gui_obj *gui){
     
 		if (gui->ev & EV_ENTER){
 			/* accept point */
-      if (gui->step < 4 && width > 1e-9 && height > 1e-9) {
+      if (gui->step < 4 && size[x] > 1e-9 && size[y] > 1e-9) {
         gui->step++;
         gui->step_x[gui->step] = gui->step_x[gui->step - 1];
         gui->step_y[gui->step] = gui->step_y[gui->step - 1];
@@ -638,19 +666,39 @@ int gui_pyramid_info (gui_obj *gui){
   strncpy(mode[0], _l("Base"), DXF_MAX_CHARS);
   strncpy(mode[1], _l("Top"), DXF_MAX_CHARS);
   
+  const char *text_define[4];
+  text_define[0] = _l("Define base width:");
+  text_define[1] = _l("Define base height:");
+  text_define[2] = _l("Define pyramid height:");
+  text_define[3] = _l("Define top factor:");
+  
+  const char *text_info[4];
+  text_info[0] = _l("Base width: %.9g");
+  text_info[1] = _l("Base height: %.9g");
+  text_info[2] = _l("Pyramid height: %.9g");
+  text_info[3] = _l("Top factor: %.9g");
+  
   char *mode_addr[] = {mode[0], mode[1]};
+  
+  int x = 0, y = 1, z = 2, s = 3;
+  
+  if (gui->extr_mode == E3D_BASE){
+    x = 0; y = 1; z = 2; s = 3;
+  } else {
+    x = 2; y = 0; z = 1; s = 3;
+  }
   
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, _l("Place a pyramid"), NK_TEXT_LEFT);
   
   int h = 2 * 25 + 5;
-	gui->extr_mode = nk_combo(gui->ctx, (const char **) mode_addr, 2, gui->el_mode, 20, nk_vec2(150, h));
+	gui->extr_mode = nk_combo(gui->ctx, (const char **) mode_addr, 2, gui->extr_mode, 20, nk_vec2(150, h));
 	
 	if (gui->step == 0){
 		nk_label(gui->ctx, _l("Enter base center"), NK_TEXT_LEFT);
 	} else if (gui->step == 1){
-    if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->radius1);
-		nk_label(gui->ctx, _l("Define base width:"), NK_TEXT_LEFT);
+    if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->param_3d[x]);
+		nk_label(gui->ctx, text_define[x], NK_TEXT_LEFT);
     
     /* edit to visualize or enter radius */
 		nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
@@ -659,7 +707,7 @@ int gui_pyramid_info (gui_obj *gui){
 		if (res & NK_EDIT_ACTIVE){ /* enter mode */
 			if (strlen(user_str_r)){
 				/* sinalize the radius of user entry */
-				gui->radius1 = atof(user_str_r);
+				gui->param_3d[x] = atof(user_str_r);
 				gui->user_flag |= 1;
 			}
 			else{ /* if the user clear the string */
@@ -668,16 +716,16 @@ int gui_pyramid_info (gui_obj *gui){
 				nk_edit_unfocus(gui->ctx);
 			}
 		} else if (!(gui->user_flag & 1)) { /* visualize mode */
-      snprintf(user_str_r, 63, "%.9g", gui->radius1);
+      snprintf(user_str_r, 63, "%.9g", gui->param_3d[x]);
 		}
     if (res & NK_EDIT_COMMITED){
       nk_edit_unfocus(gui->ctx);
     }
   } else if (gui->step == 2){
-    if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->heigth1);
-    snprintf(tmp_str, 63, _l("Base width: %.9g"), gui->radius1);
+    if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->param_3d[y]);
+    snprintf(tmp_str, 63, text_info[x], gui->param_3d[x]);
     nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
-    nk_label(gui->ctx, _l("Define base heigth:"), NK_TEXT_LEFT);
+    nk_label(gui->ctx, text_define[y], NK_TEXT_LEFT);
     
     /* edit to visualize or enter heigth */
 		nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
@@ -686,7 +734,7 @@ int gui_pyramid_info (gui_obj *gui){
 		if (res & NK_EDIT_ACTIVE){ /* enter mode */
 			if (strlen(user_str_r)){
 				/* sinalize the radius of user entry */
-				gui->heigth1 = atof(user_str_r);
+				gui->param_3d[y] = atof(user_str_r);
 				gui->user_flag |= 2;
 			}
 			else{ /* if the user clear the string */
@@ -695,18 +743,18 @@ int gui_pyramid_info (gui_obj *gui){
 				nk_edit_unfocus(gui->ctx);
 			}
 		} else if (!(gui->user_flag & 2)) { /* visualize mode */
-      snprintf(user_str_r, 63, "%.9g", gui->heigth1);
+      snprintf(user_str_r, 63, "%.9g", gui->param_3d[y]);
 		}
     if (res & NK_EDIT_COMMITED){
       nk_edit_unfocus(gui->ctx);
     }
   } else if (gui->step == 3){
-    if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->heigth2);
-    snprintf(tmp_str, 63, _l("Base width: %.9g"), gui->radius1);
+    if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->param_3d[z]);
+    snprintf(tmp_str, 63, text_info[x], gui->param_3d[x]);
     nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
-    snprintf(tmp_str, 63, _l("Base heigth: %.9g"),  gui->heigth1);
+    snprintf(tmp_str, 63, text_info[y],  gui->param_3d[y]);
     nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
-    nk_label(gui->ctx, _l("Define top heigth:"), NK_TEXT_LEFT);
+    nk_label(gui->ctx, text_define[z], NK_TEXT_LEFT);
     
     /* edit to visualize or enter heigth */
 		nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
@@ -715,7 +763,7 @@ int gui_pyramid_info (gui_obj *gui){
 		if (res & NK_EDIT_ACTIVE){ /* enter mode */
 			if (strlen(user_str_r)){
 				/* sinalize the radius of user entry */
-				gui->heigth2 = atof(user_str_r);
+				gui->param_3d[z] = atof(user_str_r);
 				gui->user_flag |= 4;
 			}
 			else{ /* if the user clear the string */
@@ -724,21 +772,21 @@ int gui_pyramid_info (gui_obj *gui){
 				nk_edit_unfocus(gui->ctx);
 			}
 		} else if (!(gui->user_flag & 4)) { /* visualize mode */
-      snprintf(user_str_r, 63, "%.9g", gui->heigth2);
+      snprintf(user_str_r, 63, "%.9g", gui->param_3d[z]);
 		}
     if (res & NK_EDIT_COMMITED){
       nk_edit_unfocus(gui->ctx);
     }
   } else {
-    if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->radius2);
-    snprintf(tmp_str, 63, _l("Base width: %.9g"), gui->radius1);
+    if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->param_3d[s]);
+    snprintf(tmp_str, 63, text_info[x], gui->param_3d[x]);
     nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
-    snprintf(tmp_str, 63, _l("Base heigth: %.9g"),  gui->heigth1);
+    snprintf(tmp_str, 63, text_info[y],  gui->param_3d[y]);
     nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
-    snprintf(tmp_str, 63, _l("Top heigth: %.9g"),  gui->heigth2);
+    snprintf(tmp_str, 63, text_info[z],  gui->param_3d[z]);
     nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
     
-    nk_label(gui->ctx, _l("Top scale factor:"), NK_TEXT_LEFT);
+    nk_label(gui->ctx, text_define[s], NK_TEXT_LEFT);
     
     /* edit to visualize or enter heigth */
 		nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
@@ -747,7 +795,7 @@ int gui_pyramid_info (gui_obj *gui){
 		if (res & NK_EDIT_ACTIVE){ /* enter mode */
 			if (strlen(user_str_r)){
 				/* sinalize the radius of user entry */
-				gui->radius2 = atof(user_str_r);
+				gui->param_3d[s] = atof(user_str_r);
 				gui->user_flag |= 8;
 			}
 			else{ /* if the user clear the string */
@@ -756,7 +804,7 @@ int gui_pyramid_info (gui_obj *gui){
 				nk_edit_unfocus(gui->ctx);
 			}
 		} else if (!(gui->user_flag & 8)) { /* visualize mode */
-      snprintf(user_str_r, 63, "%.9g", gui->radius2);
+      snprintf(user_str_r, 63, "%.9g", gui->param_3d[s]);
 		}
     if (res & NK_EDIT_COMMITED){
       nk_edit_unfocus(gui->ctx);

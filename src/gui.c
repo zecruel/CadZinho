@@ -2018,6 +2018,8 @@ int gui_start(gui_obj *gui){
 	
 	gui->el_mode = EL_FULL;
 	gui->o_view = O_TOP;
+  
+  gui->extr_mode = E3D_BASE;
 	
 	gui->image_w = 0;
 	gui->image_h = 0;

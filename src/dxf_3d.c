@@ -35,7 +35,7 @@ double scalar_prod (double v_a[3], double v_b[3]){
 
 void vec_product (double v_a[3], double v_b[3], double v_r[3]){
   v_r[0] = v_a[1] * v_b[2] - v_a[2] * v_b[1];
-  v_r[1] = v_a[0] * v_b[2] - v_a[2] * v_b[0];
+  v_r[1] = v_a[2] * v_b[0] - v_a[0] * v_b[2];
   v_r[2] = v_a[0] * v_b[1] - v_a[1] * v_b[0];
 }
 
@@ -986,7 +986,7 @@ int dxf_3d_mirror (lua_State *L) {
 	- a Manifold object (this function is called as method inside object)
 	- transformation matrix 4x3, as table (dflt = unitary matrix)
 returns:
-	- a boolean indicating success or fail
+	- modified Manifold object or nil if fail
 */
 int dxf_3d_transform (lua_State *L) {
 	
@@ -994,17 +994,17 @@ int dxf_3d_transform (lua_State *L) {
 	double matrix[4][3] = {{1,0,0},{0,1,0},{0,0,1},{0,0,0}};
 	
 	/* verify passed arguments */
-	int n = lua_gettop(L);    /* number of arguments */
+	int n = lua_gettop(L); /* number of arguments */
 	if (n < 1){
-		lua_pushboolean(L, 0); /* return fail */
+		lua_pushnil(L); /* return fail */
     return 1;
 	}
 	if (!( manifold = udata_check(L, 1, "Manifold") )) { /* the Manifold object is a Lua userdata type*/
-		lua_pushboolean(L, 0); /* return fail */
+		lua_pushnil(L); /* return fail */
     return 1;
 	}
   
-	/* verify passed arguments */
+	/* Sweep the tables to get matrix values */
 	if (lua_istable(L, 2)) {
 		int lines = lua_rawlen(L, 2);
 		int i,  j;
@@ -1024,16 +1024,14 @@ int dxf_3d_transform (lua_State *L) {
 		}
 	}
 	
-  
-	
 	/* check if it is not destroyed */
 	if (manifold->obj == NULL){
-    lua_pushboolean(L, 0); /* return fail */
+    lua_pushnil(L); /* return fail */
     return 1;
   }
   /* check if it is not destroyed */
 	if (manifold->prev == NULL){
-    lua_pushboolean(L, 0); /* return fail */
+    lua_pushnil(L); /* return fail */
     return 1;
   }
 	
@@ -1046,7 +1044,7 @@ int dxf_3d_transform (lua_State *L) {
   manifold->obj = manifold->prev;
   manifold->prev = tmp;
   
-	lua_pushboolean(L, 1); /* return success */
+	lua_pushvalue(L, 1); /* return success */
 	return 1;
 }
 

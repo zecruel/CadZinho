@@ -186,6 +186,11 @@ enum Rotate_mode{
 	ROT_3POINTS
 };
 
+enum Extrude_3d_mode{
+	E3D_BASE,
+	E3D_TOP
+};
+
 enum Scale_mode{
 	SCALE_FACTOR,
 	SCALE_3POINTS
@@ -387,6 +392,8 @@ struct Gui_obj {
 	enum Modal modal, prev_modal;
 	enum Gui_ev ev;
 	enum attract_type curr_attr_t;
+  
+  enum Extrude_3d_mode extr_mode;
   
   long file_size;
   

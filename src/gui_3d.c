@@ -36,7 +36,6 @@ int gui_sphere_interactive(gui_obj *gui){
     }
     
     snprintf(cmd, DXF_MAX_CHARS, "manifold[1] = sphere(%.9g)\n"
-     // "manifold[1]:translate(%.9g,%.9g,%.9g)",
     "manifold[1]:transform({{1,0,0},{0,1,0},{0,0,1},{%.9g,%.9g,%.9g}})", 
 	gui->radius1,
       gui->step_x[gui->step - 1], gui->step_y[gui->step - 1], 
@@ -122,18 +121,28 @@ int gui_sphere_info (gui_obj *gui){
 }
 
 int gui_cylinder_interactive(gui_obj *gui){
-	
 	if (gui->modal != CYLINDER) return 0;
 	static char cmd[1001] = "";
 	
 	static dxf_node *new_el;
+  
+  int x = 0, y = 1, z = 2, s = 3;
+  double matrix[3][3] = {{1.0,0.0,0.0},
+    {0.0,1.0,0.0},{0.0,0.0,1.0}};
+  double size[3] = {1,1,1}; /* sizes of cylinder */
+  
+  if (gui->extr_mode == E3D_BASE){
+    x = 0; y = 1; z = 2; s = 3;
+  } else {
+    x = 2; y = 0; z = 1; s = 3;
+  }
 	
 	gui->draw_phanton = 0;
   gui->phanton = NULL;
 	if (gui->step == 0){
 		gui->free_sel = 0;
 		
-		/* define cylinder center */
+		/* define base center point */
 		if (gui->ev & EV_ENTER){
 			/* accept point */
 			gui->step = 1;
@@ -148,6 +157,10 @@ int gui_cylinder_interactive(gui_obj *gui){
       gui->step_x[3] = gui->step_x[0];
 			gui->step_y[3] = gui->step_y[0];
       gui->step_z[3] = gui->step_z[0];
+      
+      gui->step_x[4] = gui->step_x[0];
+			gui->step_y[4] = gui->step_y[0];
+      gui->step_z[4] = gui->step_z[0];
 			/* next step */
 			gui->en_distance = 1;
       
@@ -158,86 +171,156 @@ int gui_cylinder_interactive(gui_obj *gui){
 			gui_default_modal(gui);
 		}
 	}
+  else if (gui->step == 1){
+    matrix[x][0] = gui->step_x[1] - gui->step_x[0];
+    matrix[x][1] = gui->step_y[1] - gui->step_y[0];
+    matrix[x][2] = gui->step_z[1] - gui->step_z[0];
+    size[x] = sqrt(matrix[x][0]*matrix[x][0] + 
+      matrix[x][1]*matrix[x][1] + matrix[x][2]*matrix[x][2]);
+    
+    if (size[x] > 1e-9) {
+      matrix[x][0] /= size[x];
+      matrix[x][1] /= size[x];
+      matrix[x][2] /= size[x];
+    }
+    if(!(gui->user_flag & 1)){ /* base width */
+      gui->param_3d[x] = size[x];
+    }
+    
+    /* draw a line to helps user to see axis size and direction */
+		gui->draw_phanton = 0;
+		gui->phanton = list_new(NULL, FRAME_LIFE);
+		graph_obj *graph = graph_new(FRAME_LIFE);
+    
+		if (graph){
+			gui->draw_phanton = 1;
+			/* dashed line */
+			graph->patt_size = 2;
+			graph->pattern[0] = 10 / gui->zoom;
+			graph->pattern[1] = -10 / gui->zoom;
+			
+			line_add(graph, gui->step_x[0], gui->step_y[0], gui->step_z[0],
+				gui->step_x[0] + gui->param_3d[x] * matrix[x][0],
+        gui->step_y[0] + gui->param_3d[x] * matrix[x][1],
+        gui->step_z[0] + gui->param_3d[x] * matrix[x][2]);
+			list_node * new_node = list_new(graph, FRAME_LIFE);
+			list_push(gui->phanton, new_node);
+		}
+    
+		if (gui->ev & EV_ENTER){
+			/* accept point */
+			if (size[x] > 1e-9) gui->step = 2;
+      
+      gui->step_x[1] = gui->step_x[0] + gui->param_3d[x] * matrix[x][0];
+			gui->step_y[1] = gui->step_y[0] + gui->param_3d[x] * matrix[x][1];
+      gui->step_z[1] = gui->step_z[0] + gui->param_3d[x] * matrix[x][2];
+      
+      gui->step_x[2] = gui->step_x[1];
+			gui->step_y[2] = gui->step_y[1];
+      gui->step_z[2] = gui->step_z[1];
+      
+      gui->step_x[3] = gui->step_x[1];
+			gui->step_y[3] = gui->step_y[1];
+      gui->step_z[3] = gui->step_z[1];
+      
+			gui_next_step(gui);
+		}
+		else if (gui->ev & EV_CANCEL){
+			gui->draw_phanton = 0;
+      gui->phanton = NULL;
+      gui_first_step(gui);
+		}
+	}
 	else{
-    double dx = gui->step_x[1] - gui->step_x[0];
-    double dy = gui->step_y[1] - gui->step_y[0];
-    double dz = gui->step_z[1] - gui->step_z[0];
-    double len = sqrt(dx*dx + dy*dy + dz*dz);
+    matrix[x][0] = gui->step_x[1] - gui->step_x[0];
+    matrix[x][1] = gui->step_y[1] - gui->step_y[0];
+    matrix[x][2] = gui->step_z[1] - gui->step_z[0];
+    size[x] = sqrt(matrix[x][0]*matrix[x][0] + 
+      matrix[x][1]*matrix[x][1] + matrix[x][2]*matrix[x][2]);
     
-    if (len > 1e-9) {
-      dx /= len; dy /= len; dz /= len;
+    if (size[x] > 1e-9) {
+      matrix[x][0] /= size[x];
+      matrix[x][1] /= size[x];
+      matrix[x][2] /= size[x];
+    }
+    /* get next point in plane perpenticular to direction */
+    double d = -matrix[x][0] * gui->step_x[1] 
+      - matrix[x][1] * gui->step_y[1]
+      - matrix[x][2] * gui->step_z[1];
+    double nq = matrix[x][0] * gui->step_x[2] + 
+      matrix[x][1] * gui->step_y[2] + 
+      matrix[x][2] * gui->step_z[2];
+    
+    double px = gui->step_x[2] - (nq + d) * matrix[x][0];
+    double py = gui->step_y[2] - (nq + d) * matrix[x][1];
+    double pz = gui->step_z[2] - (nq + d) * matrix[x][2];
+    
+    matrix[y][0] = px - gui->step_x[1];
+    matrix[y][1] = py - gui->step_y[1];
+    matrix[y][2] = pz - gui->step_z[1];
+    size[y] = sqrt(matrix[y][0]*matrix[y][0] +
+      matrix[y][1]*matrix[y][1] + matrix[y][2]*matrix[y][2]);
+    
+    if (size[y] > 1e-9) {
+      matrix[y][0] /= size[y];
+      matrix[y][1] /= size[y];
+      matrix[y][2] /= size[y];
+    }
+    /* cross product to get z direction */
+    matrix[z][0] = matrix[x][1]*matrix[y][2] - matrix[x][2]*matrix[y][1];
+    matrix[z][1] = matrix[x][2]*matrix[y][0] - matrix[x][0]*matrix[y][2];
+    matrix[z][2] = matrix[x][0]*matrix[y][1] - matrix[x][1]*matrix[y][0];
+    
+    if(!(gui->user_flag & 1)){ /* base width */
+      gui->param_3d[x] = size[x];
     }
     
-    /* double alpha = atan2(dy, dx); /* angle over z axis */
-    double gamma = atan2(dz, fabs(dx)); /* angle over y axis */
-    double beta = atan2(dz, fabs(dy)); /* angle over x axis */
-    
-    double dir[3]; /* height direction - normal to base circle */
-    if (fabs(gamma) < fabs(beta)){
-      dir[0] = cos(beta) * sin(gamma);
-      dir[1] = -sin(beta);
-      dir[2] = cos(beta) * cos(gamma);
-    } else {
-      dir[0] = sin(gamma);
-      dir[1] = -sin(beta) * cos(gamma);
-      dir[2] = cos(beta) * cos(gamma);
+    if(!(gui->user_flag & 2)){ /* base height */
+      gui->param_3d[y] = size[y];
     }
     
-    /*alpha *= 180.0/M_PI;*/
-    gamma *= 180.0/M_PI;
-    beta *= 180.0/M_PI;
+    double dx = gui->step_x[3] - gui->step_x[0];
+    double dy = gui->step_y[3] - gui->step_y[0];
+    double dz = gui->step_z[3] - gui->step_z[0];
     
-    if(!(gui->user_flag & 1)){ /* base radius */
-      gui->radius1 = sqrt( pow(gui->step_x[1] - gui->step_x[0], 2) +
-        pow(gui->step_y[1] - gui->step_y[0], 2) +
-        pow(gui->step_z[1] - gui->step_z[0], 2) );
+    size[z] = matrix[z][0]*dx + matrix[z][1]*dy + matrix[z][2]*dz;
+    
+    if(!(gui->user_flag & 2)){ /* pyramid height */
+      gui->param_3d[z] = size[z];
     }
     
-    if(!(gui->user_flag & 2)){ /* heigtht */
-      dx = gui->step_x[2] - gui->step_x[0];
-      dy = gui->step_y[2] - gui->step_y[0];
-      dz = gui->step_z[2] - gui->step_z[0];
-      
-      gui->heigth1 = dir[0]*dx + dir[1]*dy + dir[2]*dz;
-      
-      gui->step_x[2] = gui->step_x[0] + gui->heigth1 * dir[0];
-      gui->step_y[2] = gui->step_y[0] + gui->heigth1 * dir[1];
-      gui->step_z[2] = gui->step_z[0] + gui->heigth1 * dir[2];
-      
-      if (gui->heigth1 < 0.0){
-        if (fabs(gamma) > fabs(beta)) gamma += 180.0;
-        else beta += 180.0;
-        gui->heigth1 *= -1.0;
-      }
+    if (gui->param_3d[z] < 0.0){
+      gui->param_3d[z] *= -1.0;
+      /* rotate 180 degrees in x axis */
+      matrix[y][0] *= -1; matrix[y][1] *= -1; matrix[y][2] *= -1;
+      matrix[z][0] *= -1; matrix[z][1] *= -1; matrix[z][2] *= -1;
     }
-    /* top radius */
-    if (gui->step < 3){
-      gui->radius2 = gui->radius1;
+    
+    gui->step_x[3] = gui->step_x[0] + gui->param_3d[z] * matrix[z][0];
+    gui->step_y[3] = gui->step_y[0] + gui->param_3d[z] * matrix[z][1];
+    gui->step_z[3] = gui->step_z[0] + gui->param_3d[z] * matrix[z][2];
+    
+    /* top scale factor */
+    if (gui->step < 4){
+      gui->param_3d[s] = gui->param_3d[0];
     }
     else if(!(gui->user_flag & 4)){
-      gui->radius2 = sqrt( pow(gui->step_x[3] - gui->step_x[2], 2) +
-        pow(gui->step_y[3] - gui->step_y[2], 2) +
-        pow(gui->step_z[3] - gui->step_z[2], 2) );
+      double w = (gui->param_3d[x] > 1e-9) ? gui->param_3d[x] : 1.0;
+      gui->param_3d[s] = sqrt( pow(gui->step_x[4] - gui->step_x[3], 2) +
+        pow(gui->step_y[4] - gui->step_y[3], 2) +
+        pow(gui->step_z[4] - gui->step_z[3], 2) ) / w;
     }
     
     /* create manifold */
-    
-    if (fabs(gamma) > fabs(beta))
-      snprintf(cmd, 1000, "manifold[1] = cylinder(%.9g,%.9g,%.9g)\n"
-        "manifold[1]:rotate(0,%.9g,0)\n"
-        "manifold[1]:rotate(%.9g,0,0)\n"
-        "manifold[1]:translate(%.9g,%.9g,%.9g)",
-        gui->heigth1, gui->radius1, gui->radius2,
-        gamma, beta,
-        gui->step_x[0], gui->step_y[0], gui->step_z[0]);
-    else
-      snprintf(cmd, 1000, "manifold[1] = cylinder(%.9g,%.9g,%.9g)\n"
-        "manifold[1]:rotate(%.9g,0,0)\n"
-        "manifold[1]:rotate(0,%.9g,0)\n"
-        "manifold[1]:translate(%.9g,%.9g,%.9g)",
-        gui->heigth1, gui->radius1, gui->radius2,
-        beta, gamma,
-        gui->step_x[0], gui->step_y[0], gui->step_z[0]);
+    snprintf(cmd, 1000, "manifold[1] = cylinder(%.9g,%.9g,%.9g)\n"
+      "manifold[1]:transform({{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g},"
+      "{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g}})", 
+      gui->param_3d[2], gui->param_3d[0], gui->param_3d[3],
+      matrix[0][0], matrix[0][1], matrix[0][2],
+      matrix[1][0], matrix[1][1], matrix[1][2],
+      matrix[2][0], matrix[2][1], matrix[2][2],
+      gui->step_x[0], gui->step_y[0], gui->step_z[0]);
+   
     
     new_el = (dxf_node *) dxf_new_mesh (cmd,
       gui->color_idx, /* color, layer */
@@ -251,11 +334,23 @@ int gui_cylinder_interactive(gui_obj *gui){
     
 		if (gui->ev & EV_ENTER){
 			/* accept point */
-      if (gui->step < 3){
-        gui->step++;
+      if (gui->step < 4 && size[x] > 1e-9 ) {
+        if (gui->extr_mode == E3D_TOP){
+          gui->step = 3;
+          gui->step_x[gui->step] = gui->step_x[gui->step - 1];
+          gui->step_y[gui->step] = gui->step_y[gui->step - 1];
+          gui->step_z[gui->step] = gui->step_z[gui->step - 1];
+          gui->step = 4;
+        } else {
+          gui->step++;
+          
+        }
+        gui->step_x[gui->step] = gui->step_x[gui->step - 1];
+        gui->step_y[gui->step] = gui->step_y[gui->step - 1];
+        gui->step_z[gui->step] = gui->step_z[gui->step - 1];
       }
       else{
-        /* add cylinder to drawing */
+        /* add pyramid to drawing */
         new_el = (dxf_node *) dxf_new_mesh ( cmd,
           gui->color_idx, /* color, layer */
           (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
@@ -278,9 +373,6 @@ int gui_cylinder_interactive(gui_obj *gui){
       gui->phanton = NULL;
       gui_first_step(gui);
     }
-    else{
-      
-    }
 	}
 	
 	return 1;
@@ -288,16 +380,48 @@ int gui_cylinder_interactive(gui_obj *gui){
 
 int gui_cylinder_info (gui_obj *gui){
 	if (gui->modal != CYLINDER) return 0;
-  static char user_str_r[64] = "0.000000";
+  char tmp_str[64];
+	static char user_str_r[64] = "0.000000";
+  static int prev_step = 0;
+  
+  static char mode[2][DXF_MAX_CHARS + 1];
+  strncpy(mode[0], _l("by base plane"), DXF_MAX_CHARS);
+  strncpy(mode[1], _l("by top direction"), DXF_MAX_CHARS);
+  
+  const char *text_define[4];
+  text_define[0] = _l("Define base radius:");
+  text_define[1] = _l("Define base plane:");
+  text_define[2] = _l("Define height:");
+  text_define[3] = _l("Define top radius:");
+  
+  const char *text_info[4];
+  text_info[0] = _l("Base radius: %.9g");
+  text_info[1] = _l("Base plane: %.9g");
+  text_info[2] = _l("Height: %.9g");
+  text_info[3] = _l("Top radius: %.9g");
+  
+  char *mode_addr[] = {mode[0], mode[1]};
+  
+  int x = 0, y = 1, z = 2, s = 3;
+  
+  if (gui->extr_mode == E3D_BASE){
+    x = 0; y = 1; z = 2; s = 3;
+  } else {
+    x = 2; y = 0; z = 1; s = 3;
+  }
   
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, _l("Place a cylinder"), NK_TEXT_LEFT);
+  
+  int h = 2 * 25 + 5;
+	gui->extr_mode = nk_combo(gui->ctx, (const char **) mode_addr, 2, gui->extr_mode, 20, nk_vec2(150, h));
 	
 	if (gui->step == 0){
-		nk_label(gui->ctx, _l("Enter center point"), NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Enter base center"), NK_TEXT_LEFT);
 	} else if (gui->step == 1){
-		nk_label(gui->ctx, _l("Define base radius:"), NK_TEXT_LEFT);
-    snprintf(user_str_r, 63, "%.9g", gui->radius1);
+    if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->param_3d[x]);
+		nk_label(gui->ctx, text_define[x], NK_TEXT_LEFT);
+    
     /* edit to visualize or enter radius */
 		nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
       NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT,
@@ -305,7 +429,7 @@ int gui_cylinder_info (gui_obj *gui){
 		if (res & NK_EDIT_ACTIVE){ /* enter mode */
 			if (strlen(user_str_r)){
 				/* sinalize the radius of user entry */
-				gui->radius1 = atof(user_str_r);
+				gui->param_3d[x] = atof(user_str_r);
 				gui->user_flag |= 1;
 			}
 			else{ /* if the user clear the string */
@@ -313,15 +437,46 @@ int gui_cylinder_info (gui_obj *gui){
 				gui->user_flag &= ~1;
 				nk_edit_unfocus(gui->ctx);
 			}
+		} else if (!(gui->user_flag & 1)) { /* visualize mode */
+      snprintf(user_str_r, 63, "%.9g", gui->param_3d[x]);
 		}
     if (res & NK_EDIT_COMMITED){
       nk_edit_unfocus(gui->ctx);
     }
   } else if (gui->step == 2){
-    snprintf(user_str_r, 63, _l("Radius: %.9g"), gui->radius1);
-    nk_label(gui->ctx, user_str_r, NK_TEXT_LEFT);
-    nk_label(gui->ctx, _l("Define heigth:"), NK_TEXT_LEFT);
-    snprintf(user_str_r, 63, "%.9g", gui->heigth1);
+    if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->param_3d[y]);
+    snprintf(tmp_str, 63, text_info[x], gui->param_3d[x]);
+    nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
+    nk_label(gui->ctx, text_define[y], NK_TEXT_LEFT);
+    if (gui->extr_mode == E3D_TOP){
+      /* edit to visualize or enter heigth */
+      nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
+        NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT,
+        user_str_r, 63, nk_filter_float);
+      if (res & NK_EDIT_ACTIVE){ /* enter mode */
+        if (strlen(user_str_r)){
+          /* sinalize the radius of user entry */
+          gui->param_3d[y] = atof(user_str_r);
+          gui->user_flag |= 2;
+        }
+        else{ /* if the user clear the string */
+          /* cancel the enter mode*/
+          gui->user_flag &= ~2;
+          nk_edit_unfocus(gui->ctx);
+        }
+      } else if (!(gui->user_flag & 2)) { /* visualize mode */
+        snprintf(user_str_r, 63, "%.9g", gui->param_3d[y]);
+      }
+      if (res & NK_EDIT_COMMITED){
+        nk_edit_unfocus(gui->ctx);
+      }
+    }
+  } else if (gui->step == 3){
+    if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->param_3d[z]);
+    snprintf(tmp_str, 63, text_info[x], gui->param_3d[x]);
+    nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
+    nk_label(gui->ctx, text_define[z], NK_TEXT_LEFT);
+    
     /* edit to visualize or enter heigth */
 		nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
       NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT,
@@ -329,7 +484,7 @@ int gui_cylinder_info (gui_obj *gui){
 		if (res & NK_EDIT_ACTIVE){ /* enter mode */
 			if (strlen(user_str_r)){
 				/* sinalize the radius of user entry */
-				gui->heigth1 = atof(user_str_r);
+				gui->param_3d[z] = atof(user_str_r);
 				gui->user_flag |= 2;
 			}
 			else{ /* if the user clear the string */
@@ -337,18 +492,24 @@ int gui_cylinder_info (gui_obj *gui){
 				gui->user_flag &= ~2;
 				nk_edit_unfocus(gui->ctx);
 			}
+		} else if (!(gui->user_flag & 2)) { /* visualize mode */
+      snprintf(user_str_r, 63, "%.9g", gui->param_3d[z]);
 		}
     if (res & NK_EDIT_COMMITED){
       nk_edit_unfocus(gui->ctx);
     }
-  } else if (gui->step == 3){
-    snprintf(user_str_r, 63, _l("Radius: %.9g"), gui->radius1);
-    nk_label(gui->ctx, user_str_r, NK_TEXT_LEFT);
-    snprintf(user_str_r, 63, _l("Heigth: %.9g"),  gui->heigth1);
-    nk_label(gui->ctx, user_str_r, NK_TEXT_LEFT);
-    nk_label(gui->ctx, _l("Define top radius:"), NK_TEXT_LEFT);
+  } else {
+    if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->param_3d[s]);
+    snprintf(tmp_str, 63, text_info[x], gui->param_3d[x]);
+    nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
+    if (gui->extr_mode == E3D_TOP)
+      snprintf(tmp_str, 63, text_info[y],  gui->param_3d[y]);
+    else
+      snprintf(tmp_str, 63, text_info[z],  gui->param_3d[z]);
+    nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
     
-    snprintf(user_str_r, 63, "%.9g", gui->radius2);
+    nk_label(gui->ctx, text_define[s], NK_TEXT_LEFT);
+    
     /* edit to visualize or enter heigth */
 		nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
       NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT,
@@ -356,7 +517,7 @@ int gui_cylinder_info (gui_obj *gui){
 		if (res & NK_EDIT_ACTIVE){ /* enter mode */
 			if (strlen(user_str_r)){
 				/* sinalize the radius of user entry */
-				gui->radius2 = atof(user_str_r);
+				gui->param_3d[s] = atof(user_str_r);
 				gui->user_flag |= 4;
 			}
 			else{ /* if the user clear the string */
@@ -364,54 +525,20 @@ int gui_cylinder_info (gui_obj *gui){
 				gui->user_flag &= ~4;
 				nk_edit_unfocus(gui->ctx);
 			}
+		} else if (!(gui->user_flag & 4)) { /* visualize mode */
+      snprintf(user_str_r, 63, "%.9g", gui->param_3d[s]);
 		}
     if (res & NK_EDIT_COMMITED){
       nk_edit_unfocus(gui->ctx);
     }
-  }
+	}
   
+  prev_step = gui->step;
   
-  #if(0)
-  double dx = gui->step_x[1] - gui->step_x[0];
-  double dy = gui->step_y[1] - gui->step_y[0];
-  double dz = gui->step_z[1] - gui->step_z[0];
-  double len = sqrt(dx*dx + dy*dy + dz*dz);
-  
-  if (len > 1e-9) {
-    dx /= len; dy /= len; dz /= len;
-  }
-  double alpha = atan2(dy, dx); /* angle over z axis */
-  double gamma = atan2(dz, fabs(dx)); /* angle over y axis */
-  double beta = atan2(dz, fabs(dy)); /* angle over x axis */
-  
-  double dir[3];
-  dir[0] = cos(beta) * sin(gamma);
-  dir[1] = -sin(beta);
-  dir[2] = cos(beta) * cos(gamma);
-  
-  alpha *= 180.0/M_PI;
-  gamma *= 180.0/M_PI;
-  beta *= 180.0/M_PI;
-  
-  snprintf(user_str_r, 63, "alpha = %.2f", alpha);
-  nk_label(gui->ctx, user_str_r, NK_TEXT_LEFT);
-  
-  snprintf(user_str_r, 63, "beta = %.2f", beta);
-  nk_label(gui->ctx, user_str_r, NK_TEXT_LEFT);
-  
-  snprintf(user_str_r, 63, "gamma = %.2f", gamma);
-  nk_label(gui->ctx, user_str_r, NK_TEXT_LEFT);
-  
-  snprintf(user_str_r, 63, "dir=[%.2f , %.2f , %.2f]", dir[0], dir[1], dir[2]);
-  nk_label(gui->ctx, user_str_r, NK_TEXT_LEFT);
-  #endif
-	
-	
 	return 1;
 }
 
 int gui_pyramid_interactive(gui_obj *gui){
-	
 	if (gui->modal != PYRAMID) return 0;
 	static char cmd[1001] = "";
 	
@@ -498,7 +625,7 @@ int gui_pyramid_interactive(gui_obj *gui){
 			list_push(gui->phanton, new_node);
 		}
     
-		/* define pyramid ref point */
+		
 		if (gui->ev & EV_ENTER){
 			/* accept point */
 			if (size[x] > 1e-9) gui->step = 2;
@@ -514,7 +641,9 @@ int gui_pyramid_interactive(gui_obj *gui){
 			gui_next_step(gui);
 		}
 		else if (gui->ev & EV_CANCEL){
-			gui_default_modal(gui);
+			gui->draw_phanton = 0;
+      gui->phanton = NULL;
+      gui_first_step(gui);
 		}
 	}
 	else{
@@ -663,8 +792,8 @@ int gui_pyramid_info (gui_obj *gui){
   static int prev_step = 0;
   
   static char mode[2][DXF_MAX_CHARS + 1];
-  strncpy(mode[0], _l("Base"), DXF_MAX_CHARS);
-  strncpy(mode[1], _l("Top"), DXF_MAX_CHARS);
+  strncpy(mode[0], _l("by base plane"), DXF_MAX_CHARS);
+  strncpy(mode[1], _l("by top direction"), DXF_MAX_CHARS);
   
   const char *text_define[4];
   text_define[0] = _l("Define base width:");

@@ -191,7 +191,7 @@ int dxf_3d_sphere (lua_State *L) {
 */
 int dxf_3d_slab (lua_State *L) {
   double w = 1.0, h = 1.0, p = 1.0;
-  
+	
 	/* verify passed arguments */
 	
 	if (lua_isnumber(L, 1)) w = lua_tonumber(L, 1);
@@ -212,9 +212,21 @@ int dxf_3d_slab (lua_State *L) {
   slab->obj = NULL;
   slab->prev = NULL;
 	
-  slab->obj = manifold_cube(manifold_buffer(), w, h, p, 0);
+  
+  //ManifoldVec2 pts[] = {{0, 0}, {w, 0}, {w, h}, {0, h}};
+  ManifoldVec2 pts[] = {{-w/2.0, -h/2.0}, {w/2.0, -h/2.0}, {w/2.0, h/2.0}, {-w/2.0, h/2.0}};
+  ManifoldSimplePolygon *sq[] = {
+      manifold_simple_polygon(simple_polyg_buffer(), &pts[0], 4)};
+  ManifoldPolygons *polys = manifold_polygons(polygons_buffer(), sq, 1);
+
+  slab->obj = manifold_extrude(manifold_buffer(), polys, p, 0, 0, 1.0, 1.0);
   slab->prev = manifold_empty(manifold_buffer());
   
+  manifold_destruct_simple_polygon(sq[0]);
+  manifold_destruct_polygons(polys);
+  
+  manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
+  manage_buffer(0, BUF_RELEASE, MEMP_POLY);
 	
 	return 1;
 }
@@ -222,27 +234,24 @@ int dxf_3d_slab (lua_State *L) {
 /* create a cylinder manifold */
 /* given parameters:
   - heigth, as number (optional, dflt = 1)
-  - bottom radius, as number (optional, dflt = 1)
-	- top radius, as number (optional, dflt = bottom radius)
+  - radius, as number (optional, dflt = 1)
 	- Manifold object, as userdata
 */
 int dxf_3d_cylinder (lua_State *L) {
-  double h = 1.0, r1 = 1.0, r2 = 1.0;
+  double h = 1.0, r = 1.0;
   int c_seg = 32;
 	
 	/* verify passed arguments */
 	
   if (lua_isnumber(L, 1)) h = lua_tonumber(L, 1);
-  if (lua_isnumber(L, 2)) r1 = lua_tonumber(L, 2);
-  if (lua_isnumber(L, 3)) r2 = lua_tonumber(L, 3);
-  else r2 = r1;
+  if (lua_isnumber(L, 2)) r = lua_tonumber(L, 2);
+  
   lua_getglobal(L, "circular_segments");
   if (lua_isnumber(L, -1)) c_seg = lua_tointeger(L, -1);
   lua_pop (L, 1);
   
-  if (r1 <= 0.0) r1 = 1.0;
+  if (r <= 0.0) r = 1.0;
   if (h <= 0.0) h = 1.0;
-  if (r2 <= 0.0) r2 = 0.0;
   if (c_seg <= 0) c_seg = 32;
 	
 	/* create a userdata object */
@@ -255,8 +264,50 @@ int dxf_3d_cylinder (lua_State *L) {
   cylinder->obj = NULL;
   cylinder->prev = NULL;
 	
-  cylinder->obj = manifold_cylinder(manifold_buffer(), h, r1, r2, c_seg, 0);
+  cylinder->obj = manifold_cylinder(manifold_buffer(), h, r, r, c_seg, 0);
   cylinder->prev = manifold_empty(manifold_buffer());
+	
+	return 1;
+}
+
+/* create a cone manifold */
+/* given parameters:
+  - heigth, as number (optional, dflt = 1)
+  - bottom radius, as number (optional, dflt = 1)
+	- top radius, as number (optional, dflt = 0 - sharp cone)
+	- Manifold object, as userdata
+*/
+int dxf_3d_cone (lua_State *L) {
+  double h = 1.0, r1 = 1.0, r2 = 0.0;
+  int c_seg = 32;
+	
+	/* verify passed arguments */
+	
+  if (lua_isnumber(L, 1)) h = lua_tonumber(L, 1);
+  if (lua_isnumber(L, 2)) r1 = lua_tonumber(L, 2);
+  if (lua_isnumber(L, 3)) r2 = lua_tonumber(L, 3);
+  
+  lua_getglobal(L, "circular_segments");
+  if (lua_isnumber(L, -1)) c_seg = lua_tointeger(L, -1);
+  lua_pop (L, 1);
+  
+  if (r1 <= 0.0) r1 = 1.0;
+  if (h <= 0.0) h = 1.0;
+  if (r2 <= 0.0) r2 = 0.0;
+  if (c_seg <= 0) c_seg = 32;
+	
+	/* create a userdata object */
+	struct manifold_obj *cone;
+	
+	cone = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj), 0); 
+	luaL_getmetatable(L, "Manifold");
+	lua_setmetatable(L, -2);
+  
+  cone->obj = NULL;
+  cone->prev = NULL;
+	
+  cone->obj = manifold_cylinder(manifold_buffer(), h, r1, r2, c_seg, 0);
+  cone->prev = manifold_empty(manifold_buffer());
 	
 	return 1;
 }
@@ -304,6 +355,164 @@ int dxf_3d_pyramid (lua_State *L) {
   pyr->prev = manifold_empty(manifold_buffer());
   
   manifold_destruct_simple_polygon(sq[0]);
+  manifold_destruct_polygons(polys);
+  
+  manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
+  manage_buffer(0, BUF_RELEASE, MEMP_POLY);
+
+	
+	return 1;
+}
+
+/* create a wedge manifold */
+/* given parameters:
+	- base edge lengths w,h, as numbers (dflt = 1,1)
+  - pyramid total heigth p, as number (dflt = 1)
+  - top scale xy factors relative to base, as numbers (dflt = 1,0 - sharp wedge)
+	- Manifold object, as userdata
+*/
+int dxf_3d_wedge (lua_State *L) {
+  double w = 1.0, h = 1.0, p = 1.0, sx = 1.0, sy = 0.0;
+  
+	/* verify passed arguments */
+	
+	if (lua_isnumber(L, 1)) w = lua_tonumber(L, 1);
+  if (lua_isnumber(L, 2)) h = lua_tonumber(L, 2);
+  if (lua_isnumber(L, 3)) p = lua_tonumber(L, 3);
+  if (lua_isnumber(L, 4)) sx = lua_tonumber(L, 4);
+  if (lua_isnumber(L, 5)) sy = lua_tonumber(L, 5);
+  
+  if (w <= 0.0) w = 1.0;
+  if (h <= 0.0) h = 1.0;
+  if (p <= 0.0) p = 1.0;
+  if (sx < 0.0) sx = 0.0;
+  if (sy < 0.0) sy = 0.0;
+  
+	/* create a userdata object */
+	struct manifold_obj *wedge;
+	
+	wedge = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj), 0); 
+	luaL_getmetatable(L, "Manifold");
+	lua_setmetatable(L, -2);
+  
+  wedge->obj = NULL;
+  wedge->prev = NULL;
+	
+  
+  //ManifoldVec2 pts[] = {{0, 0}, {w, 0}, {w, h}, {0, h}};
+  ManifoldVec2 pts[] = {{-w/2.0, -h/2.0}, {w/2.0, -h/2.0}, {w/2.0, h/2.0}, {-w/2.0, h/2.0}};
+  ManifoldSimplePolygon *sq[] = {
+      manifold_simple_polygon(simple_polyg_buffer(), &pts[0], 4)};
+  ManifoldPolygons *polys = manifold_polygons(polygons_buffer(), sq, 1);
+
+  wedge->obj = manifold_extrude(manifold_buffer(), polys, p, 0, 0, sx, sy);
+  wedge->prev = manifold_empty(manifold_buffer());
+  
+  manifold_destruct_simple_polygon(sq[0]);
+  manifold_destruct_polygons(polys);
+  
+  manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
+  manage_buffer(0, BUF_RELEASE, MEMP_POLY);
+
+	
+	return 1;
+}
+
+/* create a torus manifold */
+/* given parameters:
+	- torus radius, as number (optional, dflt = 1)
+	- profile radius, as number (optional, dflt = 0.5)
+  - revolve angle, as number (dflt = 360 - full torus)
+  - start angle of profile, as number (dflt = -180 - full circle)
+  - end angle of profile, as number (dflt = 180 - full circle)
+	- Manifold object, as userdata
+*/
+int dxf_3d_torus (lua_State *L) {
+  double tr = 1.0, pr = 0.5, ang = 360.0;
+  double ang_start = 0.0, ang_end = 360.0;
+	
+  int c_seg = 32, i, steps;
+  
+  lua_getglobal(L, "circular_segments");
+  if (lua_isnumber(L, -1)) c_seg = lua_tointeger(L, -1);
+  lua_pop (L, 1);
+  
+	/* verify passed arguments */
+	
+	if (lua_isnumber(L, 1)) tr = lua_tonumber(L, 1);
+  if (lua_isnumber(L, 2)) pr = lua_tonumber(L, 2);
+  if (lua_isnumber(L, 3)) ang = lua_tonumber(L, 3);
+  if (lua_isnumber(L, 4)) ang_start = lua_tonumber(L, 4);
+  if (lua_isnumber(L, 5)) ang_end = lua_tonumber(L, 5);
+  
+  if (tr <= 0.0) tr = 1.0;
+  if (pr <= 0.0) pr = 0.5;
+  if (ang <= 0.0) ang = 360.0;
+  else if (ang > 360.0) ang = 360.0;
+  if (ang_start < 0.0) ang_start = 0.0;
+  else if (ang_start > 360.0) ang_start = 360.0;
+  if (ang_end < 0.0) ang_end = 0.0;
+  else if (ang_end > 360.0) ang_end = 360.0;
+  
+  if (fabs(ang_end - ang_start) < 1e-9){
+    ang_end = 0.0;
+    ang_start = 360.0;
+  }
+  if (c_seg <= 0) c_seg = 32;
+
+  ManifoldVec2 pts[1002];
+  
+  /* get step increment in loop */
+  double step = 360.0 /(double) c_seg;
+  
+  steps = fabs(ang_end - ang_start)/step;
+  
+  if (steps > 1000){
+    steps = 1000;
+    step = fabs(ang_end - ang_start)/1000.0;
+  }
+  
+  ang_start *= M_PI/180;
+  ang_end *= M_PI/180;
+  step *= M_PI/180;
+  
+  /* first point */
+  pts[0].x = tr + pr * cos(ang_start);
+  pts[0].y = pr * sin(ang_start);
+  
+  /* starts loop at second point */
+  for (i = 1; i < steps; i++){
+    pts[i].x = tr + pr * cos(step * i + ang_start);
+    pts[i].y = pr * sin(step * i + ang_start);
+  }
+  /* last point, from end angle */
+  if (fabs(ang_end - ang_start)+1e-6 < 2 * M_PI){
+    pts[steps].x = tr + pr * cos(ang_end);
+    pts[steps].y = pr * sin(ang_end);
+    steps++;
+    pts[steps].x = tr;
+    pts[steps].y = 0.0;
+    steps++;
+  }
+	
+	/* create a userdata object */
+	struct manifold_obj *torus;
+	
+	torus = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj), 0); 
+	luaL_getmetatable(L, "Manifold");
+	lua_setmetatable(L, -2);
+  
+  torus->obj = NULL;
+  torus->prev = NULL;
+	
+  ManifoldSimplePolygon *prof[] = {
+      manifold_simple_polygon(simple_polyg_buffer(), &pts[0], steps)};
+  ManifoldPolygons *polys = manifold_polygons(polygons_buffer(), prof, 1);
+
+  torus->obj = manifold_revolve(manifold_buffer(), polys, c_seg, ang);
+  torus->prev = manifold_empty(manifold_buffer());
+  
+  manifold_destruct_simple_polygon(prof[0]);
   manifold_destruct_polygons(polys);
   
   manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
@@ -1226,8 +1435,14 @@ int dxf_3d_init (){
 	lua_setglobal(T, "slab");
   lua_pushcfunction(T, dxf_3d_cylinder);
 	lua_setglobal(T, "cylinder");
+  lua_pushcfunction(T, dxf_3d_cone);
+	lua_setglobal(T, "cone");
   lua_pushcfunction(T, dxf_3d_pyramid);
 	lua_setglobal(T, "pyramid");
+  lua_pushcfunction(T, dxf_3d_wedge);
+	lua_setglobal(T, "wedge");
+  lua_pushcfunction(T, dxf_3d_torus);
+	lua_setglobal(T, "torus");
   lua_pushcfunction(T, dxf_3d_extrude);
 	lua_setglobal(T, "extrude");
   lua_pushcfunction(T, dxf_3d_extrude_path);

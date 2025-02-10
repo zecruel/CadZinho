@@ -1426,6 +1426,7 @@ int gui_main_loop (gui_obj *gui) {
   
   gui_sphere_interactive(gui);
   gui_cylinder_interactive(gui);
+  gui_cone_interactive(gui);
   gui_pyramid_interactive(gui);
   gui_slab_interactive(gui);
   gui_slice_interactive(gui);

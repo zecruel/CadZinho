@@ -588,8 +588,11 @@ int gui_create_modal_cur(gui_obj *gui){
   cur_img[VIEW_ROTATE] = SVG_VIEW_ROTATE;
   cur_img[SPHERE] = SVG_3D_SPHERE;
   cur_img[CYLINDER] = SVG_3D_CYLINDER;
+  cur_img[CONE] = SVG_3D_CONE;
   cur_img[PYRAMID] = SVG_3D_PYRAMID;
   cur_img[SLAB] = SVG_3D_SLAB;
+  cur_img[WEDGE] = SVG_3D_WEDGE;
+  cur_img[TORUS] = SVG_3D_TORUS;
   cur_img[EXTRUDE] = SVG_3D_EXTRUDE;
   cur_img[EXTRUDE_PATH] = SVG_3D_EXTRUDE_PATH;
   cur_img[REVOLVE] = SVG_3D_REVOLVE;

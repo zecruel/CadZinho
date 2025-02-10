@@ -160,6 +160,10 @@ int gui_cylinder_interactive(gui_obj *gui);
 
 int gui_cylinder_info (gui_obj *gui);
 
+int gui_cone_interactive(gui_obj *gui);
+
+int gui_cone_info (gui_obj *gui);
+
 int gui_pyramid_interactive(gui_obj *gui);
 
 int gui_pyramid_info (gui_obj *gui);

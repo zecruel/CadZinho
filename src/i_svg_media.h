@@ -126,6 +126,10 @@ enum svg_list {
     SVG_3D_INTERSECTION,
     SVG_3D_SLICE,
     SVG_3D_ROTATE,
+    SVG_VIEW_ISOMETRIC,
+    SVG_3D_CONE,
+    SVG_3D_WEDGE,
+    SVG_3D_TORUS,
     SVG_MEDIA_SIZE
 };
 

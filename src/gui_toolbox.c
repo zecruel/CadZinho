@@ -94,6 +94,7 @@ int gui_tools_win (gui_obj *gui){
       
       gui_sphere_info (gui);
       gui_cylinder_info (gui);
+      gui_cone_info (gui);
       gui_pyramid_info (gui);
       gui_slab_info (gui);
       gui_slice_info (gui);
@@ -268,7 +269,7 @@ int gui_main_win(gui_obj *gui){
       /* zoom tools*/
       //nk_layout_row_push(gui->ctx, 5*(ICON_SIZE + 4 + 4) + 13);
       //if (nk_group_begin(gui->ctx, "_zoom", NK_WINDOW_NO_SCROLLBAR)) {
-        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 14);
+        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 20);
         //nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
         if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_P]))){
           gui->action = VIEW_ZOOM_P;
@@ -331,6 +332,12 @@ int gui_main_win(gui_obj *gui){
           gui->alpha = 90.0;
           gui->beta = 0.0;
           gui->gamma = 90.0;
+          gui_calc_view_rot (gui);
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_ISOMETRIC]))){
+          gui->alpha = 45.0;
+          gui->beta = 0.0;
+          gui->gamma = 90.0 - 35.264;
           gui_calc_view_rot (gui);
         }
         if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_ROTATE]))){
@@ -553,7 +560,7 @@ int gui_main_win(gui_obj *gui){
       }
       
       if(ribbon_grp == RIB_3D){
-        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 14);
+        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 20);
         
         if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SPHERE], gui->modal == SPHERE)){
           gui->modal = SPHERE;
@@ -567,15 +574,33 @@ int gui_main_win(gui_obj *gui){
           gui->step = 0;
         }
         
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_PYRAMID], gui->modal == PYRAMID)){
-          gui->modal = PYRAMID;
-          strncpy(gui->ctx_tools_title, _l("Pyramid"), DXF_MAX_CHARS);
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_CONE], gui->modal == CONE)){
+          gui->modal = CONE;
+          strncpy(gui->ctx_tools_title, _l("Cone"), DXF_MAX_CHARS);
           gui->step = 0;
         }
         
         if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SLAB], gui->modal == SLAB)){
           gui->modal = SLAB;
           strncpy(gui->ctx_tools_title, _l("Slab"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_WEDGE], gui->modal == WEDGE)){
+          gui->modal = WEDGE;
+          strncpy(gui->ctx_tools_title, _l("Wedge"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_PYRAMID], gui->modal == PYRAMID)){
+          gui->modal = PYRAMID;
+          strncpy(gui->ctx_tools_title, _l("Pyramid"), DXF_MAX_CHARS);
+          gui->step = 0;
+        }
+        
+        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_TORUS], gui->modal == TORUS)){
+          gui->modal = TORUS;
+          strncpy(gui->ctx_tools_title, _l("Torus"), DXF_MAX_CHARS);
           gui->step = 0;
         }
         

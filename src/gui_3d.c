@@ -669,20 +669,25 @@ int gui_cone_interactive(gui_obj *gui){
       matrix[z][0] *= -1; matrix[z][1] *= -1; matrix[z][2] *= -1;
     }
     
-    gui->step_x[3] = gui->step_x[0] + gui->param_3d[z] * matrix[z][0];
-    gui->step_y[3] = gui->step_y[0] + gui->param_3d[z] * matrix[z][1];
-    gui->step_z[3] = gui->step_z[0] + gui->param_3d[z] * matrix[z][2];
-    
     /* top scale factor */
     if (gui->step < 4){
       //gui->param_3d[s] = gui->param_3d[0];
       gui->param_3d[s] = 0.0;
     }
     else if(!(gui->user_flag & 4)){
-      double w = (gui->param_3d[x] > 1e-9) ? gui->param_3d[x] : 1.0;
-      gui->param_3d[s] = sqrt( pow(gui->step_x[4] - gui->step_x[3], 2) +
-        pow(gui->step_y[4] - gui->step_y[3], 2) +
-        pow(gui->step_z[4] - gui->step_z[3], 2) ) / w;
+      
+      gui->step_x[3] = gui->step_x[0] + gui->param_3d[2] * matrix[2][0];
+      gui->step_y[3] = gui->step_y[0] + gui->param_3d[2] * matrix[2][1];
+      gui->step_z[3] = gui->step_z[0] + gui->param_3d[2] * matrix[2][2];
+      
+      /* get next point in plane paralel to base */
+      dx = gui->step_x[4] - gui->step_x[3];
+      dy = gui->step_y[4] - gui->step_y[3];
+      dz = gui->step_z[4] - gui->step_z[3];
+      
+      px = matrix[0][0]*dx + matrix[0][1]*dy + matrix[0][2]*dz;
+      py = matrix[1][0]*dx + matrix[1][1]*dy + matrix[1][2]*dz;
+      gui->param_3d[s] = sqrt(px*px + py*py);
     }
     
     /* create manifold */
@@ -1085,19 +1090,29 @@ int gui_pyramid_interactive(gui_obj *gui){
       matrix[z][0] *= -1; matrix[z][1] *= -1; matrix[z][2] *= -1;
     }
     
-    gui->step_x[3] = gui->step_x[0] + gui->param_3d[z] * matrix[z][0];
-    gui->step_y[3] = gui->step_y[0] + gui->param_3d[z] * matrix[z][1];
-    gui->step_z[3] = gui->step_z[0] + gui->param_3d[z] * matrix[z][2];
-    
     /* top scale factor */
     if (gui->step < 4){
       gui->param_3d[s] = 0.0;
     }
     else if(!(gui->user_flag & 8)){
-      double w = (gui->param_3d[x] > 1e-9) ? gui->param_3d[x] : 1.0;
-      gui->param_3d[s] = sqrt( pow(gui->step_x[4] - gui->step_x[3], 2) +
-        pow(gui->step_y[4] - gui->step_y[3], 2) +
-        pow(gui->step_z[4] - gui->step_z[3], 2) ) / (2*w);
+      double w = (gui->param_3d[0] > 1e-9) ? gui->param_3d[0] : 1.0;
+      double h = (gui->param_3d[1] > 1e-9) ? gui->param_3d[1] : 1.0;
+      gui->step_x[3] = gui->step_x[0] + gui->param_3d[2] * matrix[2][0];
+      gui->step_y[3] = gui->step_y[0] + gui->param_3d[2] * matrix[2][1];
+      gui->step_z[3] = gui->step_z[0] + gui->param_3d[2] * matrix[2][2];
+      
+      /* get next point in plane paralel to base */
+      dx = gui->step_x[4] - gui->step_x[3];
+      dy = gui->step_y[4] - gui->step_y[3];
+      dz = gui->step_z[4] - gui->step_z[3];
+      
+      px = matrix[0][0]*dx + matrix[0][1]*dy + matrix[0][2]*dz;
+      py = matrix[1][0]*dx + matrix[1][1]*dy + matrix[1][2]*dz;
+      
+      double sw = fabs(px / w);
+      double sh = fabs(py / h);
+      
+      gui->param_3d[s] = (sw > sh) ? sw : sh;
     }
     
     /* create manifold */

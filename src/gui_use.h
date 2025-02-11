@@ -168,9 +168,17 @@ int gui_pyramid_interactive(gui_obj *gui);
 
 int gui_pyramid_info (gui_obj *gui);
 
+int gui_wedge_interactive(gui_obj *gui);
+
+int gui_wedge_info (gui_obj *gui);
+
 int gui_slab_interactive(gui_obj *gui);
 
 int gui_slab_info (gui_obj *gui);
+
+int gui_torus_interactive(gui_obj *gui);
+
+int gui_torus_info (gui_obj *gui);
 
 int gui_extrude_interactive(gui_obj *gui);
 

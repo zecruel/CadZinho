@@ -95,6 +95,8 @@ int gui_tools_win (gui_obj *gui){
       gui_sphere_info (gui);
       gui_cylinder_info (gui);
       gui_cone_info (gui);
+      gui_wedge_info (gui);
+      gui_torus_info (gui);
       gui_pyramid_info (gui);
       gui_slab_info (gui);
       gui_slice_info (gui);
@@ -319,20 +321,23 @@ int gui_main_win(gui_obj *gui){
         if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_TOP]))){
           gui->alpha = 0.0;
           gui->beta = 0.0;
-          gui->gamma = 0.0;
+          gui->gamma = 0.0;gui->ofs_z = 0.0;
           gui_calc_view_rot (gui);
+          
         }
         if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_FRONT]))){
           gui->alpha = 0.0;
           gui->beta = 0.0;
-          gui->gamma = 90.0;
+          gui->gamma = 90.0;gui->ofs_y = 0.0;
           gui_calc_view_rot (gui);
+          
         }
         if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_RIGHT]))){
           gui->alpha = 90.0;
           gui->beta = 0.0;
-          gui->gamma = 90.0;
+          gui->gamma = 90.0;gui->ofs_x = 0.0;
           gui_calc_view_rot (gui);
+          
         }
         if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_ISOMETRIC]))){
           gui->alpha = 45.0;

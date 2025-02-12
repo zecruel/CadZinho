@@ -2301,7 +2301,6 @@ int gui_torus_interactive(gui_obj *gui){
     if(!(gui->user_flag & 1)){ /* base width */
       gui->param_3d[0] = size[1];
     }
-    
     dx = gui->step_x[3] - gui->step_x[0];
     dy = gui->step_y[3] - gui->step_y[0];
     dz = gui->step_z[3] - gui->step_z[0];
@@ -2311,31 +2310,26 @@ int gui_torus_interactive(gui_obj *gui){
     size[1] = sqrt(px*px + py*py);
     
     
-    if(!(gui->user_flag & 2)){ /* torus height */
-      gui->param_3d[2] = fabs(size[1] - gui->param_3d[0]);
+    if(!(gui->user_flag & 2)){ /* profile radius */
+      if (gui->step < 3) gui->param_3d[2] = gui->param_3d[0]/2.0;
+      else gui->param_3d[2] = fabs(size[1] - gui->param_3d[0]);
     }
     
-    
-    
-    /* top scale factor */
+    /* torus angle */
     if (gui->step < 4){
-      //gui->param_3d[s] = gui->param_3d[0];
-      gui->param_3d[s] = 0.0;
+      gui->param_3d[s] = 360.0;
     }
     else if(!(gui->user_flag & 4)){
       
-      gui->step_x[3] = gui->step_x[0] + gui->param_3d[2] * matrix[2][0];
-      gui->step_y[3] = gui->step_y[0] + gui->param_3d[2] * matrix[2][1];
-      gui->step_z[3] = gui->step_z[0] + gui->param_3d[2] * matrix[2][2];
-      
       /* get next point in plane paralel to base */
-      dx = gui->step_x[4] - gui->step_x[3];
-      dy = gui->step_y[4] - gui->step_y[3];
-      dz = gui->step_z[4] - gui->step_z[3];
+      dx = gui->step_x[4] - gui->step_x[0];
+      dy = gui->step_y[4] - gui->step_y[0];
+      dz = gui->step_z[4] - gui->step_z[0];
       
       px = matrix[0][0]*dx + matrix[0][1]*dy + matrix[0][2]*dz;
       py = matrix[1][0]*dx + matrix[1][1]*dy + matrix[1][2]*dz;
-      gui->param_3d[s] = sqrt(px*px + py*py);
+      gui->param_3d[s] = 180.0 * atan2(dy, dx) / M_PI;
+      if(gui->param_3d[s] < 0.0) gui->param_3d[s] += 360.0;
     }
     
     /* create manifold */
@@ -2410,16 +2404,16 @@ int gui_torus_info (gui_obj *gui){
   strncpy(mode[1], _l("by axis direction"), DXF_MAX_CHARS);
   
   const char *text_define[4];
-  text_define[0] = _l("Define base radius:");
-  text_define[1] = _l("Define base plane:");
-  text_define[2] = _l("Define height:");
-  text_define[3] = _l("Define top radius:");
+  text_define[0] = _l("Define torus radius:");
+  text_define[1] = _l("Define torus direction");
+  text_define[2] = _l("Define profile radius:");
+  text_define[3] = _l("Define torus angle:");
   
   const char *text_info[4];
-  text_info[0] = _l("Base radius: %.9g");
+  text_info[0] = _l("Torus radius: %.9g");
   text_info[1] = _l("Base plane: %.9g");
-  text_info[2] = _l("Height: %.9g");
-  text_info[3] = _l("Top radius: %.9g");
+  text_info[2] = _l("Profile radius: %.9g");
+  text_info[3] = _l("Torus angle: %.9g");
   
   char *mode_addr[] = {mode[0], mode[1]};
   
@@ -2428,7 +2422,7 @@ int gui_torus_info (gui_obj *gui){
   if (gui->extr_mode == E3D_BASE){
     x = 0; y = 1; z = 2; s = 3;
   } else {
-    x = 2; y = 0; z = 1; s = 3;
+    x = 1; y = 0; z = 2; s = 3;
   }
   
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
@@ -2438,39 +2432,42 @@ int gui_torus_info (gui_obj *gui){
 	gui->extr_mode = nk_combo(gui->ctx, (const char **) mode_addr, 2, gui->extr_mode, 20, nk_vec2(150, h));
 	
 	if (gui->step == 0){
-		nk_label(gui->ctx, _l("Enter base center"), NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Enter torus center"), NK_TEXT_LEFT);
 	} else if (gui->step == 1){
     if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->param_3d[x]);
 		nk_label(gui->ctx, text_define[x], NK_TEXT_LEFT);
-    
-    /* edit to visualize or enter radius */
-		nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
-      NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT,
-      user_str_r, 63, nk_filter_float);
-		if (res & NK_EDIT_ACTIVE){ /* enter mode */
-			if (strlen(user_str_r)){
-				/* sinalize the radius of user entry */
-				gui->param_3d[x] = atof(user_str_r);
-				gui->user_flag |= 1;
-			}
-			else{ /* if the user clear the string */
-				/* cancel the enter mode*/
-				gui->user_flag &= ~1;
-				nk_edit_unfocus(gui->ctx);
-			}
-		} else if (!(gui->user_flag & 1)) { /* visualize mode */
-      snprintf(user_str_r, 63, "%.9g", gui->param_3d[x]);
-		}
-    if (res & NK_EDIT_COMMITED){
-      nk_edit_unfocus(gui->ctx);
+    if (gui->extr_mode != E3D_TOP){
+      /* edit to visualize or enter radius */
+      nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
+        NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT,
+        user_str_r, 63, nk_filter_float);
+      if (res & NK_EDIT_ACTIVE){ /* enter mode */
+        if (strlen(user_str_r)){
+          /* sinalize the radius of user entry */
+          gui->param_3d[x] = atof(user_str_r);
+          gui->user_flag |= 1;
+        }
+        else{ /* if the user clear the string */
+          /* cancel the enter mode*/
+          gui->user_flag &= ~1;
+          nk_edit_unfocus(gui->ctx);
+        }
+      } else if (!(gui->user_flag & 1)) { /* visualize mode */
+        snprintf(user_str_r, 63, "%.9g", gui->param_3d[x]);
+      }
+      if (res & NK_EDIT_COMMITED){
+        nk_edit_unfocus(gui->ctx);
+      }
     }
   } else if (gui->step == 2){
     if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->param_3d[y]);
-    snprintf(tmp_str, 63, text_info[x], gui->param_3d[x]);
-    nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
+    if (gui->extr_mode != E3D_TOP){
+      snprintf(tmp_str, 63, text_info[x], gui->param_3d[x]);
+      nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
+    }
     nk_label(gui->ctx, text_define[y], NK_TEXT_LEFT);
     if (gui->extr_mode == E3D_TOP){
-      /* edit to visualize or enter heigth */
+      /* edit to visualize or enter radius */
       nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
         NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT,
         user_str_r, 63, nk_filter_float);
@@ -2478,14 +2475,14 @@ int gui_torus_info (gui_obj *gui){
         if (strlen(user_str_r)){
           /* sinalize the radius of user entry */
           gui->param_3d[y] = atof(user_str_r);
-          gui->user_flag |= 2;
+          gui->user_flag |= 1;
         }
         else{ /* if the user clear the string */
           /* cancel the enter mode*/
-          gui->user_flag &= ~2;
+          gui->user_flag &= ~1;
           nk_edit_unfocus(gui->ctx);
         }
-      } else if (!(gui->user_flag & 2)) { /* visualize mode */
+      } else if (!(gui->user_flag & 1)) { /* visualize mode */
         snprintf(user_str_r, 63, "%.9g", gui->param_3d[y]);
       }
       if (res & NK_EDIT_COMMITED){
@@ -2494,11 +2491,14 @@ int gui_torus_info (gui_obj *gui){
     }
   } else if (gui->step == 3){
     if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->param_3d[z]);
-    snprintf(tmp_str, 63, text_info[x], gui->param_3d[x]);
+    if (gui->extr_mode != E3D_TOP)
+      snprintf(tmp_str, 63, text_info[y],  gui->param_3d[x]);
+    else
+      snprintf(tmp_str, 63, text_info[z],  gui->param_3d[y]);
     nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
     nk_label(gui->ctx, text_define[z], NK_TEXT_LEFT);
     
-    /* edit to visualize or enter heigth */
+    /* edit to visualize or enter profile radius */
 		nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
       NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT,
       user_str_r, 63, nk_filter_float);
@@ -2521,17 +2521,18 @@ int gui_torus_info (gui_obj *gui){
     }
   } else {
     if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->param_3d[s]);
-    snprintf(tmp_str, 63, text_info[x], gui->param_3d[x]);
-    nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
-    if (gui->extr_mode == E3D_TOP)
-      snprintf(tmp_str, 63, text_info[y],  gui->param_3d[y]);
+    if (gui->extr_mode != E3D_TOP)
+      snprintf(tmp_str, 63, text_info[y],  gui->param_3d[x]);
     else
-      snprintf(tmp_str, 63, text_info[z],  gui->param_3d[z]);
+      snprintf(tmp_str, 63, text_info[z],  gui->param_3d[y]);
+    nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
+    
+    snprintf(tmp_str, 63, text_info[z],  gui->param_3d[z]);
     nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
     
     nk_label(gui->ctx, text_define[s], NK_TEXT_LEFT);
     
-    /* edit to visualize or enter heigth */
+    /* edit to visualize or enter angle */
 		nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
       NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT,
       user_str_r, 63, nk_filter_float);

@@ -332,17 +332,18 @@ struct Mem_buffer * manage_buffer (long size, enum buffer_action action){
 }*/
 
 struct Mem_buffer * manage_buffer (long size, enum buffer_action action, int idx){
-	static struct Mem_buffer buf[7] = {
+	static struct Mem_buffer buf[8] = {
 		{.buffer = NULL, .size = 0, .used = 0},
 		{.buffer = NULL, .size = 0, .used = 0},
 		{.buffer = NULL, .size = 0, .used = 0},
 		{.buffer = NULL, .size = 0, .used = 0},
+    {.buffer = NULL, .size = 0, .used = 0},
     {.buffer = NULL, .size = 0, .used = 0},
     {.buffer = NULL, .size = 0, .used = 0},
     {.buffer = NULL, .size = 0, .used = 0},
 	};
 	
-	if (idx < 0 && idx > 3) return NULL;
+	if (idx < 0 || idx > 7) return NULL;
 	
 	if (action == BUF_GET){
 		if (size <= 0) return NULL;

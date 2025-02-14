@@ -559,9 +559,13 @@ int dxf_3d_extrude (lua_State *L) {
   }
   ManifoldVec2 *pts = (ManifoldVec2 *) mem_pts->buffer;
   
+  lua_getglobal(L, "check_polygon_wound");
+  lua_pushvalue(L, 1);
+  lua_call(L, 1, 1);
+  
   /* iterate over table */
   for (i = 0; i < n_pts; i++) {
-    lua_rawgeti(L, 1, i + 1);
+    lua_rawgeti(L, -1, i + 1);
     if (!lua_istable(L, -1)) {
       manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
       lua_pushnil(L); /* return fail */
@@ -1457,4 +1461,26 @@ int dxf_3d_init (){
 	
 	lua_sethook(T, script_check, LUA_MASKCOUNT, 10000);
 	
-	}
+  const char *f = 
+    "function check_polygon_wound (contour)\n"
+    "  -- verify if contour wound is CCW\n"
+    "  sum = 0\n"
+    "  for i = 1, #contour do\n"
+    "    pt1 = contour[i]\n"
+    "    pt2 = pt1\n"
+    "    if (i < #contour) then\n"
+    "      pt2 = contour[i+1]\n"
+    "    else\n"
+    "      pt2 = contour[1]\n"
+    "    end\n"
+    "    sum = sum + (pt2[1] - pt1[1])*(pt2[2] + pt1[2])\n"
+    "  end\n"
+    "  if sum > 0 then -- if not CCW, reserse the contour table\n"
+    "    for i = 1, #contour//2, 1 do\n"
+    "      contour[i], contour[#contour-i+1] = contour[#contour-i+1], contour[i]\n"
+    "    end\n"
+    "  end\n"
+    "  return contour\n"
+    "end\n";
+    luaL_dostring(T, f);
+}

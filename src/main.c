@@ -699,7 +699,13 @@ int main(int argc, char** argv){
   if (gui->main_lang_scr.L){
 		lua_close(gui->main_lang_scr.L);
 	}
+  
+  if (dxf_3d_engine.L){
+		lua_close(dxf_3d_engine.L);
+	}
 	
+  
+  
 	/* Delete allocated resources */
 	draw_gl_init ((void *)gui, 1);
 	
@@ -759,6 +765,7 @@ int main(int argc, char** argv){
   manage_buffer(0, BUF_FREE, 4);
 	manage_buffer(0, BUF_FREE, 5);
   manage_buffer(0, BUF_FREE, 6);
+  manage_buffer(0, BUF_FREE, 7);
   
   strpool_term( &value_pool );
   strpool_term( &name_pool );

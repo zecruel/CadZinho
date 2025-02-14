@@ -1,6 +1,99 @@
 #include "gui_use.h"
 #include "dxf_3d.h"
 
+#define BUF_SIZE 50*1024*1024
+
+static int get_points (list_node *graph, struct txt_buf *buf){
+  
+  double prev_x = 0.0, prev_y = 0.0, prev_z = 0.0;
+  double first_x = 0.0, first_y = 0.0, first_z = 0.0;
+  double min_x = 0.0, min_y = 0.0, min_z = 0.0;
+  
+  
+  list_node *curr_list = graph->next;
+	graph_obj *curr_graph = NULL;
+	line_node *curr_line = NULL;
+  
+  /* sweep the main list to get minimal coordinates */
+  if (curr_list != NULL){
+		if (curr_list->data){
+      curr_graph = (graph_obj *)curr_list->data;
+      /* init */
+      min_x = curr_graph->ext_min_x;
+      min_y = curr_graph->ext_min_y;
+      min_z = curr_graph->ext_min_z;
+    }
+  }
+	while (curr_list != NULL){
+		if (curr_list->data){
+			curr_graph = (graph_obj *)curr_list->data;
+      min_x = (curr_graph->ext_min_x < min_x) ? curr_graph->ext_min_x : min_x;
+      min_y = (curr_graph->ext_min_y < min_y) ? curr_graph->ext_min_y : min_y;
+      min_z = (curr_graph->ext_min_z < min_z) ? curr_graph->ext_min_z : min_z;
+      
+    }
+    curr_list = curr_list->next;
+  }
+  
+  /* sweep the main list */
+  curr_list = graph->next;
+	while (curr_list != NULL){
+		if (curr_list->data){
+			curr_graph = (graph_obj *)curr_list->data;
+			if (curr_line = curr_graph->list->next){
+        if (curr_line){
+          first_x = curr_line->x0;
+          first_y = curr_line->y0;
+          first_z = curr_line->z0;
+          prev_x = curr_line->x1;
+          prev_y = curr_line->y1;
+          prev_z = curr_line->z1;
+          buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos,
+            "{");
+        }
+				while (curr_line != NULL){
+					
+          /* check if previous point isn't a continuation */
+          if ( (fabs(prev_x - curr_line->x0) > 1e-9) ||
+            (fabs(prev_y - curr_line->y0) > 1e-9) ||
+            (fabs(prev_z - curr_line->z0) > 1e-9) ){
+            /* new polyline*/
+            //new_ent = dxf_new_lwpolyline (curr_line->x0, curr_line->y0, curr_line->z0,
+            //  0.0, color, layer, ltype, lw, 0, FRAME_LIFE);
+            /* append to list*/
+            //list_node * new_node = list_new(new_ent, FRAME_LIFE);
+            //list_push(list, new_node);
+          }
+          /* add point to polyline */
+          //dxf_lwpoly_append (new_ent, curr_line->x1, curr_line->y1, curr_line->z1, 0.0, FRAME_LIFE);
+          
+          buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos,
+            "{%.9g,%.9g,%.9g},", curr_line->x0 - min_x,
+            curr_line->y0 - min_y, curr_line->z0 - min_z);
+          
+          prev_x = curr_line->x1;
+          prev_y = curr_line->y1;
+          prev_z = curr_line->z1;
+					
+					
+					curr_line = curr_line->next;
+				}
+        if ( (fabs(first_x - prev_x) > 1e-9) ||
+          (fabs(first_y - prev_y) > 1e-9) ||
+          (fabs(first_z - prev_z) > 1e-9) ){
+          buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos,
+            "{%.9g,%.9g,%.9g},", prev_x - min_x, prev_y - min_y, prev_z - min_z);
+        }
+        
+        buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos,
+            "}");
+			}
+			
+		}
+		curr_list = curr_list->next;
+	}
+}
+
 int gui_sphere_interactive(gui_obj *gui){
 	
 	if (gui->modal != SPHERE) return 0;
@@ -2572,42 +2665,137 @@ int gui_extrude_interactive(gui_obj *gui){
 	
 	gui->draw_phanton = 0;
   gui->phanton = NULL;
-	if (gui->step == 0){
-		gui->free_sel = 0;
-		
-		/* define ellipse center */
-		if (gui->ev & EV_ENTER){
-			/* accept point */
-			gui->step = 1;
-			gui->step_x[gui->step] = gui->step_x[gui->step - 1];
-			gui->step_y[gui->step] = gui->step_y[gui->step - 1];
-			/* next step */
-			gui->en_distance = 1;
+  
+  
+  if (gui->step == 0) {
+    /* try to go to next step */
+    gui->step = 1;
+    gui->free_sel = 0;
+  }
+  /* verify if elements in selection list */
+  if (gui->step == 1 && (!gui->sel_list->next || (gui->ev & EV_ADD))){
+    /* if selection list is empty, back to first step */
+    gui->step = 0;
+    gui->free_sel = 1;
+  }
+  
+  if (gui->step == 0){
+    /* in first step, select the elements to proccess*/
+    gui->en_distance = 0;
+    gui->sel_ent_filter = ~DXF_NONE;
+    gui_simple_select(gui);
+    /* user cancel operation */
+    if (gui->ev & EV_CANCEL){
+      gui->element = NULL;
+      gui_default_modal(gui);
+      gui->step = 0;
+    }
+  }
+  else if (gui->step == 1){
+    gui->free_sel = 0;
+    if (gui->ev & EV_ENTER){
+      gui->step = 2;
 			gui_next_step(gui);
+    }
+    else if (gui->ev & EV_CANCEL){
+      gui_first_step(gui);
+    }
+  }
+  else{
+    static struct txt_buf buf;
+    struct Mem_buffer *mem1 = manage_buffer(BUF_SIZE + 1, BUF_GET, 7);
+    if (!mem1) return 0;
+    buf.data = mem1->buffer;
+    buf.pos = 0;
+    
+    
+    /* create manifold */
+    buf.pos +=snprintf(buf.data + buf.pos, BUF_SIZE - buf.pos,
+    "manifold[1] = extrude(");
+    
+    list_node *graph = dxf_list_parse(gui->drawing, gui->sel_list, 0, FRAME_LIFE);
+    
+    get_points (graph, &buf);
+    
+    /* create manifold */
+    buf.pos +=snprintf(buf.data + buf.pos, BUF_SIZE - buf.pos,
+    ",%.9g,%.9g,%.9g,%d,%.9g)\n"
+    "manifold[1]:transform({{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g},"
+    "{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g}})", 
+    //2.0 * gui->param_3d[0],2.0 * gui->param_3d[1],
+    //gui->param_3d[2], gui->param_3d[3], gui->param_3d[4],
+    //matrix[0][0], matrix[0][1], matrix[0][2],
+    //matrix[1][0], matrix[1][1], matrix[1][2],
+    //matrix[2][0], matrix[2][1], matrix[2][2],
+    10.0,1.0,1.0,0,0.0,
+    1.0,0.0,0.0,
+    0.0,1.0,0.0,
+    0.0,0.0,1.0,
+    gui->step_x[2], gui->step_y[2], gui->step_z[2]);
+    //.. math.abs(p) ..",".. sx ..",".. sy ..",".. slices ..",".. twist ..")\n"
+    
+    
+    
+    
+    
+    
+  
+		new_el = (dxf_node *) dxf_new_mesh (buf.data,
+      gui->color_idx, /* color, layer */
+      (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+      FRAME_LIFE);
+    list_node *vec_graph = dxf_graph_parse(gui->drawing, new_el, 0, FRAME_LIFE);
+    if (vec_graph){
+      gui->phanton = vec_graph;
+      gui->draw_phanton = 1;
+    }
+    
+    if (gui->ev & EV_ENTER){
+			/* accept point */
+      
+      /* add extrude to drawing */
+      new_el = (dxf_node *) dxf_new_mesh ( buf.data,
+        gui->color_idx, /* color, layer */
+        (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+        DWG_LIFE);
+      
+      
+      new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
+      drawing_ent_append(gui->drawing, new_el);
+      
+      do_add_entry(&gui->list_do, _l("EXTRUDE"));
+      do_add_item(gui->list_do.current, NULL, new_el);
+      
+      gui->draw_phanton = 0;
+      gui->phanton = NULL;
+      gui_first_step(gui);
+      
 		}
 		else if (gui->ev & EV_CANCEL){
-			gui_default_modal(gui);
-		}
-	}
-	else{
-		
-		gui->draw_phanton = 0;
-		//gui_first_step(gui);
+      gui->draw_phanton = 0;
+      gui->phanton = NULL;
+      gui_first_step(gui);
+    }
+    
+		//printf (buf.data);
+    
+    manage_buffer(0, BUF_RELEASE, 7);
 	}
 	
 	return 1;
 }
 
 int gui_extrude_info (gui_obj *gui){
+  
 	if (gui->modal != EXTRUDE) return 0;
   
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, _l("Place a extrude"), NK_TEXT_LEFT);
 	
 	if (gui->step == 0){
-		nk_label(gui->ctx, _l("Enter center point"), NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Select a element"), NK_TEXT_LEFT);
 	} else if (gui->step == 1){
-		nk_label(gui->ctx, _l("Define radius"), NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Confirm"), NK_TEXT_LEFT);
 	}
 	
 	return 1;

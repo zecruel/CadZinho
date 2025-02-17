@@ -533,60 +533,80 @@ int dxf_3d_torus (lua_State *L) {
 */
 int dxf_3d_extrude (lua_State *L) {
   double h = 1.0, sx = 1.0, sy = 1.0, twist = 0.0;
-	int i = 0, j = 0, slices = 0;
+	int i = 0, j = 0, k = 0 , slices = 0, current = 0;
+  ManifoldSimplePolygon *contour[100];
+  int poly_sz = manifold_simple_polygon_size();
+  struct Mem_buffer *mem_poly = manage_buffer(poly_sz * 100, 
+    BUF_GET, MEMP_SIMPLE_POLY);
+  if (!mem_poly){
+    lua_pushnil(L); /* return fail */
+    return 1;
+  }
+  
+  //ManifoldSimplePolygon *simp_polys[] = mem_poly->buffer[poly_sz * ];
   
 	/* verify passed arguments */
 	if (!lua_istable(L, 1)) {
     lua_pushnil(L); /* return fail */
     return 1;
   }
-  int n_pts = lua_rawlen(L, 1);
-	if (n_pts < 3){
+  
+  int n_loops = lua_rawlen(L, 1);
+	if (n_loops < 1){
     lua_pushnil(L); /* return fail */
     return 1;
   }
+  
+  lua_getglobal(L, "check_poly_loops");
+  lua_pushvalue(L, 1);
+  lua_call(L, 1, 1);
+  
   if (lua_isnumber(L, 2)) h = lua_tonumber(L, 2);
   if (lua_isnumber(L, 3)) sx = lua_tonumber(L, 3);
   if (lua_isnumber(L, 4)) sy = lua_tonumber(L, 4);
   if (lua_isnumber(L, 5)) slices = lua_tointeger(L, 5);
   if (lua_isnumber(L, 6)) twist = lua_tonumber(L, 6);
   
-  struct Mem_buffer *mem_pts = manage_buffer(n_pts * sizeof(ManifoldVec2),
-    BUF_GET, MEMP_VEC2);
-  if (!mem_pts){
-    lua_pushnil(L); /* return fail */
-    return 1;
-  }
-  ManifoldVec2 *pts = (ManifoldVec2 *) mem_pts->buffer;
-  
-  lua_getglobal(L, "check_polygon_wound");
-  lua_pushvalue(L, 1);
-  lua_call(L, 1, 1);
-  
-  /* iterate over table */
-  for (i = 0; i < n_pts; i++) {
-    lua_rawgeti(L, -1, i + 1);
-    if (!lua_istable(L, -1)) {
-      manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
-      lua_pushnil(L); /* return fail */
-      return 1;
-    }
-    int n = lua_rawlen(L, -1);
-    if (n < 2) {
-      manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
-      lua_pushnil(L); /* return fail */
-      return 1;
-    }
-    for (j = 1; j <=2; j++){
-      lua_rawgeti(L, -1, j);
-      if (!lua_isnumber(L, -1)) {
-        manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
-        lua_pushnil(L); /* return fail */
-        return 1;
+  for (k = 0; k < n_loops; k++) {
+    lua_rawgeti(L, 1, k + 1);
+    if (lua_istable(L, -1)) {
+      
+      /* iterate over table */
+      int n_pts = lua_rawlen(L, -1);
+      if (n_pts > 2){
+       struct Mem_buffer *mem_pts = manage_buffer(n_pts * sizeof(ManifoldVec2),
+          BUF_GET, MEMP_VEC2);
+        if (!mem_pts){
+          lua_pushnil(L); /* return fail */
+          return 1;
+        }
+        ManifoldVec2 *pts = (ManifoldVec2 *) mem_pts->buffer;
+        for (i = 0; i < n_pts; i++) {
+          lua_rawgeti(L, -1, i + 1);
+          if (lua_istable(L, -1)) {
+            int n = lua_rawlen(L, -1);
+            if (n > 1) {
+              for (j = 1; j <=2; j++){
+                lua_rawgeti(L, -1, j);
+                if (lua_isnumber(L, -1)) {
+                  if (j == 1) pts[i].x = lua_tonumber(L, -1);
+                  else pts[i].y = lua_tonumber(L, -1);
+                } else {
+                  if (j == 1) pts[i].x = 0.0;
+                  else pts[i].y = 0.0;
+                }
+                lua_pop (L, 1);
+              }
+            }
+          }
+          lua_pop (L, 1);
+        }
+        contour[current] = manifold_simple_polygon(
+          mem_poly->buffer+(poly_sz * current), pts, n_pts);
+        if (current < 99) current++;
+        lua_pop (L, 1);
       }
-      if (j == 1) pts[i].x = lua_tonumber(L, -1);
-      else pts[i].y = lua_tonumber(L, -1);
-      lua_pop (L, 1);
+      manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
     }
     lua_pop (L, 1);
   }
@@ -606,19 +626,19 @@ int dxf_3d_extrude (lua_State *L) {
   extr->obj = NULL;
   extr->prev = NULL;
 	
-  ManifoldSimplePolygon *contour[] = {
-      manifold_simple_polygon(simple_polyg_buffer(), pts, n_pts)};
-  ManifoldPolygons *polys = manifold_polygons(polygons_buffer(), contour, 1);
+  
+  ManifoldPolygons *polys = manifold_polygons(polygons_buffer(), contour, current);
 
   extr->obj = manifold_extrude(manifold_buffer(), polys, h, slices, twist, sx, sy);
   extr->prev = manifold_empty(manifold_buffer());
-  
-  manifold_destruct_simple_polygon(contour[0]);
+  for (i = 0; i < current; i++){
+    manifold_destruct_simple_polygon(contour[i]);
+  }
   manifold_destruct_polygons(polys);
   
   manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
   manage_buffer(0, BUF_RELEASE, MEMP_POLY);
-  manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
+  
 	
 	return 1;
 }
@@ -1463,11 +1483,11 @@ int dxf_3d_init (){
 	
   const char *f = 
     "function check_polygon_wound (contour)\n"
-    "  -- verify if contour wound is CCW\n"
-    "  sum = 0\n"
+    "  -- verify contour wound\n"
+    "  local sum = 0\n"
     "  for i = 1, #contour do\n"
-    "    pt1 = contour[i]\n"
-    "    pt2 = pt1\n"
+    "    local pt1 = contour[i]\n"
+    "    local pt2 = pt1\n"
     "    if (i < #contour) then\n"
     "      pt2 = contour[i+1]\n"
     "    else\n"
@@ -1475,12 +1495,55 @@ int dxf_3d_init (){
     "    end\n"
     "    sum = sum + (pt2[1] - pt1[1])*(pt2[2] + pt1[2])\n"
     "  end\n"
-    "  if sum > 0 then -- if not CCW, reserse the contour table\n"
+    "  if sum * contour.wound < 0 then -- if not correct wound, reserse the contour table\n"
     "    for i = 1, #contour//2, 1 do\n"
     "      contour[i], contour[#contour-i+1] = contour[#contour-i+1], contour[i]\n"
     "    end\n"
     "  end\n"
-    "  return contour\n"
+    "end\n"
+    "function inside_poly(pt, poly)\n"
+    "  -- Check if a point lies inside polygon\n"
+    "  local inside = false\n"
+    "  local prev = #poly -- prev point index\n"
+    "  -- horizontal scanline method\n"
+    "  for i = 1, #poly do\n"
+    "    if ((poly[i][2] > pt[2]) ~= (poly[prev][2] > pt[2])) and \n"
+    "    (pt[1] < (poly[prev][1] - poly[i][1]) * (pt[2] - poly[i][2]) /\n"
+    "    (poly[prev][2] - poly[i][2]) + poly[i][1]) then\n"
+    "      inside = not inside\n"
+    "    end\n"
+    "    prev = i\n"
+    "  end\n"
+    "  return inside\n"
+    "end\n"
+    "function find_inside_poly(contours)\n"
+    "  -- search for polygons inside other polygon\n"
+    "  for i = 1, #contours do\n"
+    "    -- init with default wound\n"
+    "    contours[i].wound = -1\n"
+    "  end\n"
+    "  -- sweep polygons, comparing by pairs\n"
+    "  for i = 1, #contours do\n"
+    "    for j = 1, #contours do\n"
+    "      if i ~= j then\n"
+    "        local contour = contours[i]\n"
+    "        for k = 1, #contour do\n"
+    "          -- check if any point lies inside polygon\n"
+    "          if inside_poly(contour[k], contours[j]) then\n"
+    "            -- flag with reverse wound\n"
+    "            contours[i].wound = -1 * contours[i].wound\n"
+    "            break\n"
+    "          end\n"
+    "        end\n"
+    "      end\n"
+    "    end\n"
+    "  end\n"
+    "end\n"
+    "function check_poly_loops (contours)\n"
+    "  find_inside_poly(contours)\n"
+    "  for i = 1, #contours do\n"
+    "    check_polygon_wound(contours[i])\n"
+    "  end\n"
     "end\n";
     luaL_dostring(T, f);
 }

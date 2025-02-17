@@ -39,15 +39,16 @@ static int get_points (list_node *graph, struct txt_buf *buf){
   curr_list = graph->next;
 	while (curr_list != NULL){
 		if (curr_list->data){
+      //buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos, "{");
 			curr_graph = (graph_obj *)curr_list->data;
 			if (curr_line = curr_graph->list->next){
         if (curr_line){
           first_x = curr_line->x0;
           first_y = curr_line->y0;
           first_z = curr_line->z0;
-          prev_x = curr_line->x1;
-          prev_y = curr_line->y1;
-          prev_z = curr_line->z1;
+          prev_x = curr_line->x0;
+          prev_y = curr_line->y0;
+          prev_z = curr_line->z0;
           buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos,
             "{");
         }
@@ -63,6 +64,8 @@ static int get_points (list_node *graph, struct txt_buf *buf){
             /* append to list*/
             //list_node * new_node = list_new(new_ent, FRAME_LIFE);
             //list_push(list, new_node);
+            buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos,
+            "},{");
           }
           /* add point to polyline */
           //dxf_lwpoly_append (new_ent, curr_line->x1, curr_line->y1, curr_line->z1, 0.0, FRAME_LIFE);
@@ -86,10 +89,11 @@ static int get_points (list_node *graph, struct txt_buf *buf){
         }
         
         buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos,
-            "}");
+            "},");
 			}
 			
 		}
+    //buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos, "}");
 		curr_list = curr_list->next;
 	}
 }
@@ -2711,7 +2715,7 @@ int gui_extrude_interactive(gui_obj *gui){
     
     /* create manifold */
     buf.pos +=snprintf(buf.data + buf.pos, BUF_SIZE - buf.pos,
-    "manifold[1] = extrude(");
+    "manifold[1] = extrude({");
     
     list_node *graph = dxf_list_parse(gui->drawing, gui->sel_list, 0, FRAME_LIFE);
     
@@ -2719,7 +2723,7 @@ int gui_extrude_interactive(gui_obj *gui){
     
     /* create manifold */
     buf.pos +=snprintf(buf.data + buf.pos, BUF_SIZE - buf.pos,
-    ",%.9g,%.9g,%.9g,%d,%.9g)\n"
+    "},%.9g,%.9g,%.9g,%d,%.9g)\n"
     "manifold[1]:transform({{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g},"
     "{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g}})", 
     //2.0 * gui->param_3d[0],2.0 * gui->param_3d[1],

@@ -151,7 +151,7 @@ void *polygons_buffer() {
 /* create a sphere manifold */
 /* given parameters:
 	- radius, as number (optional, dflt = 1)
-	- Manifold object, as userdata
+	Returns: Manifold object, as userdata
 */
 int dxf_3d_sphere (lua_State *L) {
   double r = 1.0;
@@ -187,7 +187,7 @@ int dxf_3d_sphere (lua_State *L) {
 /* create a slab manifold */
 /* given parameters:
 	- edge lengths w,h,p, as numbers (dflt = 1,1,1)
-	- Manifold object, as userdata
+	Returns: Manifold object, as userdata
 */
 int dxf_3d_slab (lua_State *L) {
   double w = 1.0, h = 1.0, p = 1.0;
@@ -235,7 +235,7 @@ int dxf_3d_slab (lua_State *L) {
 /* given parameters:
   - heigth, as number (optional, dflt = 1)
   - radius, as number (optional, dflt = 1)
-	- Manifold object, as userdata
+	Returns: Manifold object, as userdata
 */
 int dxf_3d_cylinder (lua_State *L) {
   double h = 1.0, r = 1.0;
@@ -275,7 +275,7 @@ int dxf_3d_cylinder (lua_State *L) {
   - heigth, as number (optional, dflt = 1)
   - bottom radius, as number (optional, dflt = 1)
 	- top radius, as number (optional, dflt = 0 - sharp cone)
-	- Manifold object, as userdata
+	Returns: Manifold object, as userdata
 */
 int dxf_3d_cone (lua_State *L) {
   double h = 1.0, r1 = 1.0, r2 = 0.0;
@@ -317,7 +317,7 @@ int dxf_3d_cone (lua_State *L) {
 	- base edge lengths w,h, as numbers (dflt = 1,1)
   - pyramid total heigth p, as number (dflt = 1)
   - top scale factor relative to base, as number (dflt = 0 - complete pyramid)
-	- Manifold object, as userdata
+	Returns: Manifold object, as userdata
 */
 int dxf_3d_pyramid (lua_State *L) {
   double w = 1.0, h = 1.0, p = 1.0, s = 0.0;
@@ -369,7 +369,7 @@ int dxf_3d_pyramid (lua_State *L) {
 	- base edge lengths w,h, as numbers (dflt = 1,1)
   - pyramid total heigth p, as number (dflt = 1)
   - top scale xy factors relative to base, as numbers (dflt = 1,0 - sharp wedge)
-	- Manifold object, as userdata
+	Returns: Manifold object, as userdata
 */
 int dxf_3d_wedge (lua_State *L) {
   double w = 1.0, h = 1.0, p = 1.0, sx = 1.0, sy = 0.0;
@@ -425,7 +425,7 @@ int dxf_3d_wedge (lua_State *L) {
   - revolve angle, as number (dflt = 360 - full torus)
   - start angle of profile, as number (dflt = -180 - full circle)
   - end angle of profile, as number (dflt = 180 - full circle)
-	- Manifold object, as userdata
+	Returns: Manifold object, as userdata
 */
 int dxf_3d_torus (lua_State *L) {
   double tr = 1.0, pr = 0.5, ang = 360.0;
@@ -524,12 +524,12 @@ int dxf_3d_torus (lua_State *L) {
 
 /* create a extruded manifold */
 /* given parameters:
-	- contour polygon points, as table of tables
+	- contours polygons points, as table of tables(3x)
   - total heigth h, as number (dflt = 1)
   - top scale factors (x and y) relative to base, as numbers (dflt = 1,1 - parallel)
   - slices, as integer (dflt = 0)
   - twist degrees angle, as number (dflt = 0)
-	- Manifold object, as userdata
+	Returns: Manifold object, as userdata
 */
 int dxf_3d_extrude (lua_State *L) {
   double h = 1.0, sx = 1.0, sy = 1.0, twist = 0.0;
@@ -543,50 +543,56 @@ int dxf_3d_extrude (lua_State *L) {
     return 1;
   }
   
-  //ManifoldSimplePolygon *simp_polys[] = mem_poly->buffer[poly_sz * ];
-  
 	/* verify passed arguments */
 	if (!lua_istable(L, 1)) {
+    manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
     lua_pushnil(L); /* return fail */
     return 1;
   }
   
+  /* get size of contours table */
   int n_loops = lua_rawlen(L, 1);
 	if (n_loops < 1){
+    manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
     lua_pushnil(L); /* return fail */
     return 1;
   }
   
+  /* organize the contours to form correct polygons (with holes) */
   lua_getglobal(L, "check_poly_loops");
   lua_pushvalue(L, 1);
   lua_call(L, 1, 1);
   
+  /* get passed arguments*/
   if (lua_isnumber(L, 2)) h = lua_tonumber(L, 2);
   if (lua_isnumber(L, 3)) sx = lua_tonumber(L, 3);
   if (lua_isnumber(L, 4)) sy = lua_tonumber(L, 4);
   if (lua_isnumber(L, 5)) slices = lua_tointeger(L, 5);
   if (lua_isnumber(L, 6)) twist = lua_tonumber(L, 6);
   
+  /* iterate over contours table */
   for (k = 0; k < n_loops; k++) {
     lua_rawgeti(L, 1, k + 1);
     if (lua_istable(L, -1)) {
-      
-      /* iterate over table */
+      /* get points from current contour */
       int n_pts = lua_rawlen(L, -1);
       if (n_pts > 2){
        struct Mem_buffer *mem_pts = manage_buffer(n_pts * sizeof(ManifoldVec2),
           BUF_GET, MEMP_VEC2);
         if (!mem_pts){
+          manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
           lua_pushnil(L); /* return fail */
           return 1;
         }
         ManifoldVec2 *pts = (ManifoldVec2 *) mem_pts->buffer;
+        /* iterate over points table */
         for (i = 0; i < n_pts; i++) {
           lua_rawgeti(L, -1, i + 1);
           if (lua_istable(L, -1)) {
             int n = lua_rawlen(L, -1);
             if (n > 1) {
               for (j = 1; j <=2; j++){
+                /* get each coordinate value */
                 lua_rawgeti(L, -1, j);
                 if (lua_isnumber(L, -1)) {
                   if (j == 1) pts[i].x = lua_tonumber(L, -1);
@@ -601,172 +607,208 @@ int dxf_3d_extrude (lua_State *L) {
           }
           lua_pop (L, 1);
         }
+        /* generate current simple polygon and add to list */
         contour[current] = manifold_simple_polygon(
           mem_poly->buffer+(poly_sz * current), pts, n_pts);
         if (current < 99) current++;
-        lua_pop (L, 1);
       }
       manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
     }
     lua_pop (L, 1);
   }
   
+  /* verify passed arguments - minimal and default parameters */
   if (h <= 0.0) h = 1.0;
   if (sx < 0.0) sx = 0.0;
   if (sy < 0.0) sy = 0.0;
   if (slices < 0) slices = 0;
 	
-	/* create a userdata object */
+	/* create a userdata object - Manifold*/
 	struct manifold_obj *extr;
-	
 	extr = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj), 0); 
 	luaL_getmetatable(L, "Manifold");
 	lua_setmetatable(L, -2);
-  
   extr->obj = NULL;
   extr->prev = NULL;
 	
-  
+  /* convert list of simple polygons to consolidated profile polygon to extrude */
   ManifoldPolygons *polys = manifold_polygons(polygons_buffer(), contour, current);
-
+  
+  /* generate final Manifold */
   extr->obj = manifold_extrude(manifold_buffer(), polys, h, slices, twist, sx, sy);
   extr->prev = manifold_empty(manifold_buffer());
+  
+  /* release allocated resources */
   for (i = 0; i < current; i++){
     manifold_destruct_simple_polygon(contour[i]);
   }
   manifold_destruct_polygons(polys);
-  
   manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
   manage_buffer(0, BUF_RELEASE, MEMP_POLY);
+  manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
   
-	
 	return 1;
 }
 
 /* create a extruded manifold along the path */
 /* given parameters:
-	- contour polygon points, as table of tables
+	- contours polygons points, as table of tables(3x)
   - path points, as table of tables
-  - total heigth h, as number (dflt = 1)
   - top scale factors (x and y) relative to base, as numbers (dflt = 1,1 - parallel)
   - twist degrees angle, as number (dflt = 0)
-	- Manifold object, as userdata
+	Returns: Manifold object, as userdata
 */
 int dxf_3d_extrude_path (lua_State *L) {
-  double h = 1.0, sx = 1.0, sy = 1.0, twist = 0.0;
-	int i = 0, j = 0, slices = 0;
+  double sx = 1.0, sy = 1.0, twist = 0.0;
+	int i = 0, j = 0, k = 0 , slices = 0, current = 0;
+  ManifoldSimplePolygon *contour[100];
+  int poly_sz = manifold_simple_polygon_size();
+  struct Mem_buffer *mem_poly = manage_buffer(poly_sz * 100, 
+    BUF_GET, MEMP_SIMPLE_POLY);
+  if (!mem_poly){
+    lua_pushnil(L); /* return fail */
+    return 1;
+  }
   
 	/* verify passed arguments */
 	if (!lua_istable(L, 1)) {
+    manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
     lua_pushnil(L); /* return fail */
     return 1;
   }
-  int n_pts = lua_rawlen(L, 1);
-	if (n_pts < 3){
+  
+  /* get size of contours table */
+  int n_loops = lua_rawlen(L, 1);
+	if (n_loops < 1){
+    manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
     lua_pushnil(L); /* return fail */
     return 1;
   }
+  
   if (!lua_istable(L, 2)) {
+    manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
     lua_pushnil(L); /* return fail */
     return 1;
   }
+  /* get size of path points table */
   int n_path = lua_rawlen(L, 2);
 	if (n_path < 2){
+    manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
     lua_pushnil(L); /* return fail */
     return 1;
   }
+  
+  /* organize the contours to form correct polygons (with holes) */
+  lua_getglobal(L, "check_poly_loops");
+  lua_pushvalue(L, 1);
+  lua_call(L, 1, 1);
   
   slices = n_path - 2;
   
-  if (lua_isnumber(L, 3)) h = lua_tonumber(L, 3);
-  if (lua_isnumber(L, 4)) sx = lua_tonumber(L, 4);
-  if (lua_isnumber(L, 5)) sy = lua_tonumber(L, 5);
-  //if (lua_isnumber(L, 6)) twist = lua_tonumber(L, 6);
+  /* get passed arguments*/
+  if (lua_isnumber(L, 3)) sx = lua_tonumber(L, 3);
+  if (lua_isnumber(L, 4)) sy = lua_tonumber(L, 4);
+  if (lua_isnumber(L, 5)) twist = lua_tonumber(L, 5);
+  int t1, t2, t3;
   
-  struct Mem_buffer *mem_pts = manage_buffer(n_pts * sizeof(ManifoldVec2),
-    BUF_GET, MEMP_VEC2);
-  if (!mem_pts){
-    lua_pushnil(L); /* return fail */
-    return 1;
-  }
-  ManifoldVec2 *pts = (ManifoldVec2 *) mem_pts->buffer;
-  
-  /* iterate over contour table */
-  for (i = 0; i < n_pts; i++) {
-    lua_rawgeti(L, 1, i + 1);
-    if (!lua_istable(L, -1)) {
-      manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
-      lua_pushnil(L); /* return fail */
-      return 1;
-    }
-    int n = lua_rawlen(L, -1);
-    if (n < 2) {
-      manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
-      lua_pushnil(L); /* return fail */
-      return 1;
-    }
-    for (j = 1; j <=2; j++){
-      lua_rawgeti(L, -1, j);
-      if (!lua_isnumber(L, -1)) {
-        manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
-        lua_pushnil(L); /* return fail */
-        return 1;
+  /* iterate over contours table */
+  for (k = 0; k < n_loops; k++) {
+    lua_rawgeti(L, 1, k + 1);
+    if (lua_istable(L, -1)) {
+      /* get points from current contour */
+      int n_pts = lua_rawlen(L, -1);
+      if (n_pts > 2){
+       struct Mem_buffer *mem_pts = manage_buffer(n_pts * sizeof(ManifoldVec2),
+          BUF_GET, MEMP_VEC2);
+        if (!mem_pts){
+          manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
+          lua_pushnil(L); /* return fail */
+          return 1;
+        }
+        ManifoldVec2 *pts = (ManifoldVec2 *) mem_pts->buffer;
+        /* iterate over points table */
+        for (i = 0; i < n_pts; i++) {
+          lua_rawgeti(L, -1, i + 1);
+          if (lua_istable(L, -1)) {
+            int n = lua_rawlen(L, -1);
+            if (n > 1) {
+              for (j = 1; j <=2; j++){
+                /* get each coordinate value */
+                lua_rawgeti(L, -1, j);
+                if (lua_isnumber(L, -1)) {
+                  if (j == 1) pts[i].x = lua_tonumber(L, -1);
+                  else pts[i].y = lua_tonumber(L, -1);
+                } else {
+                  if (j == 1) pts[i].x = 0.0;
+                  else pts[i].y = 0.0;
+                }
+                lua_pop (L, 1);
+              }
+            }
+          }
+          lua_pop (L, 1);
+        }
+        /* generate current simple polygon and add to list */
+        contour[current] = manifold_simple_polygon(
+          mem_poly->buffer+(poly_sz * current), pts, n_pts);
+        if (current < 99) current++;
       }
-      if (j == 1) pts[i].x = lua_tonumber(L, -1);
-      else pts[i].y = lua_tonumber(L, -1);
-      lua_pop (L, 1);
+      manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
     }
     lua_pop (L, 1);
   }
   
-  if (h <= 0.0) h = 1.0;
+  /* verify passed arguments - minimal and default parameters */
   if (sx < 0.0) sx = 0.0;
   if (sy < 0.0) sy = 0.0;
   if (slices < 0) slices = 0;
 	
-	/* create a userdata object */
+	/* create a userdata object - Manifold*/
 	struct manifold_obj *extr;
-	
 	extr = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj), 0); 
 	luaL_getmetatable(L, "Manifold");
 	lua_setmetatable(L, -2);
-  
   extr->obj = NULL;
   extr->prev = NULL;
 	
-  ManifoldSimplePolygon *contour[] = {
-      manifold_simple_polygon(simple_polyg_buffer(), pts, n_pts)};
-  ManifoldPolygons *polys = manifold_polygons(polygons_buffer(), contour, 1);
-
-  extr->prev = manifold_extrude(manifold_buffer(), polys, h, slices, twist, sx, sy);
-  //extr->obj = manifold_empty(manifold_buffer());
+  /* convert list of simple polygons to consolidated profile polygon to extrude */
+  ManifoldPolygons *polys = manifold_polygons(polygons_buffer(), contour, current);
   
-  manifold_destruct_simple_polygon(contour[0]);
+  /* generate Manifold to be warped */
+  extr->prev = manifold_extrude(manifold_buffer(), polys, 100.0, slices, twist, sx, sy);
+  
+  /* release allocated resources */
+  for (i = 0; i < current; i++){
+    manifold_destruct_simple_polygon(contour[i]);
+  }
   manifold_destruct_polygons(polys);
-  
   manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
   manage_buffer(0, BUF_RELEASE, MEMP_POLY);
   manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
-      
+  
+  /* now, the extruded manifold will be deformed to fit along the path */
+  
+  /* alloc resources to path */
   struct Mem_buffer *mem_sl = manage_buffer(sizeof(struct path_slice) * n_path,
     BUF_GET, MEMP_VEC2);
   double x0 = 0.0, y0 = 0.0, z0 = 0.0;
   double normal[3] = {0.0,0.0,1.0};
   double dir[3] = {0.0,0.0,1.0};
-  
   if (!mem_sl) {
     manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
     lua_pushnil(L); /* return fail */
     return 1;
   }
   
+  /* informations to pass to warp function - locate points along z axis */
   struct path_ctx ctx;
   ctx.n = n_path-1;
-  ctx.step = h/(n_path-1);
+  ctx.step = 100.0/(n_path-1);
   ctx.slices = (struct path_slice*) mem_sl->buffer;
   
-  /* iterate over path table */
+  /* iterate over path table to get points */
   for (i = 0; i < n_path; i++) {
+    /* current point */
     lua_rawgeti(L, 2, i + 1);
     if (!lua_istable(L, -1)) {
       manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
@@ -774,11 +816,12 @@ int dxf_3d_extrude_path (lua_State *L) {
       return 1;
     }
     int n = lua_rawlen(L, -1);
-    if (n < 3) {
+    if (n < 3) { /* fail if point coordinates are < 3 */
       manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
       lua_pushnil(L); /* return fail */
       return 1;
     }
+    /* get point coordinates - relative to start point*/
     for (j = 1; j <= 3; j++){
       lua_rawgeti(L, -1, j);
       if (!lua_isnumber(L, -1)) {
@@ -786,6 +829,7 @@ int dxf_3d_extrude_path (lua_State *L) {
         lua_pushnil(L); /* return fail */
         return 1;
       }
+      /* start point */
       if (i == 0){
         if (j == 1) {
           ctx.slices[i].z = 0.0;
@@ -807,13 +851,14 @@ int dxf_3d_extrude_path (lua_State *L) {
       }
       lua_pop (L, 1);
     }
-    if (i == 1){
+    /* rotate profile along the path */
+    if (i == 1){ /* first point - rotation follows the segment */
       dir[0] = ctx.slices[i].x - ctx.slices[i-1].x;
       dir[1] = ctx.slices[i].y - ctx.slices[i-1].y;
       dir[2] = ctx.slices[i].z - ctx.slices[i-1].z;
       vec_unit (dir, dir);
       rot_matrix_vec (normal, dir, ctx.slices[i-1].rot_mtx);
-    } else if (i > 1){
+    } else if (i > 1){ /* inner points - "average" rotation between segments */
       double d1[3], d2[3];
       
       d1[0] = ctx.slices[i].x - ctx.slices[i-1].x;
@@ -831,21 +876,20 @@ int dxf_3d_extrude_path (lua_State *L) {
       vec_unit (dir, dir);
       rot_matrix_vec (normal, dir, ctx.slices[i-1].rot_mtx);
     }
-    if (i == n_path - 1){
-      
+    if (i == n_path - 1){ /* last point - rotation follows the segment */
       dir[0] = ctx.slices[i].x - ctx.slices[i-1].x;
       dir[1] = ctx.slices[i].y - ctx.slices[i-1].y;
       dir[2] = ctx.slices[i].z - ctx.slices[i-1].z;
       vec_unit (dir, dir);
       rot_matrix_vec (normal, dir, ctx.slices[i].rot_mtx);
     }
-    
     lua_pop (L, 1);
   }
   
+  /* finally, warp the extruded manifold */
   extr->obj = manifold_warp(manifold_buffer(), extr->prev, path_warp, (void *) &ctx);
   
-
+  /* release allocated resources */
   manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
 	
 	return 1;

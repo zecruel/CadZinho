@@ -895,6 +895,148 @@ int dxf_3d_extrude_path (lua_State *L) {
 	return 1;
 }
 
+/* create a revolved manifold */
+/* given parameters:
+	- contours polygons points, as table of tables(3x)
+  - axis of revolution (unitary 2D vector - x,y) as numbers (dflt = 0,1)
+  - distance between profile and axis, as number (dflt = 0)
+  - revolution degrees angle, as number (dflt = 360, full revolution)
+	Returns: Manifold object, as userdata
+*/
+int dxf_3d_revolve (lua_State *L) {
+  double d = 0.0, ax_x = 0.0, ax_y = 1.0, ang = 360.0;
+	int i = 0, j = 0, k = 0 , slices = 0, current = 0, c_seg = 32;
+  
+  lua_getglobal(L, "circular_segments");
+  if (lua_isnumber(L, -1)) c_seg = lua_tointeger(L, -1);
+  lua_pop (L, 1);
+  
+  ManifoldSimplePolygon *contour[100];
+  int poly_sz = manifold_simple_polygon_size();
+  struct Mem_buffer *mem_poly = manage_buffer(poly_sz * 100, 
+    BUF_GET, MEMP_SIMPLE_POLY);
+  if (!mem_poly){
+    lua_pushnil(L); /* return fail */
+    return 1;
+  }
+  
+	/* verify passed arguments */
+	if (!lua_istable(L, 1)) {
+    manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
+    lua_pushnil(L); /* return fail */
+    return 1;
+  }
+  
+  /* get size of contours table */
+  int n_loops = lua_rawlen(L, 1);
+	if (n_loops < 1){
+    manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
+    lua_pushnil(L); /* return fail */
+    return 1;
+  }
+  
+  /* organize the contours to form correct polygons (with holes) */
+  lua_getglobal(L, "check_poly_loops");
+  lua_pushvalue(L, 1);
+  lua_call(L, 1, 1);
+  
+  /* get passed arguments*/
+  if (lua_isnumber(L, 2)) ax_x = lua_tonumber(L, 2);
+  if (lua_isnumber(L, 3)) ax_y = lua_tonumber(L, 3);
+  if (lua_isnumber(L, 4)) d = lua_tonumber(L, 4);
+  if (lua_isnumber(L, 5)) ang = lua_tonumber(L, 5);
+  
+  /* verify passed arguments - minimal and default parameters */
+  if (d < 0.0) d = 0.0;
+  double ax_len = sqrt(ax_x*ax_x + ax_y*ax_y);
+  if (ax_len > 1e-9){
+    ax_x /= ax_len; ax_y /= ax_len;
+  } else{
+    ax_x = 0.0; ax_y = 1.0;
+  }
+  if (ang <= 0.0) ang = 360.0;
+  else if (ang > 360.0) ang = 360.0;
+  
+  /* iterate over contours table */
+  for (k = 0; k < n_loops; k++) {
+    lua_rawgeti(L, 1, k + 1);
+    if (lua_istable(L, -1)) {
+      /* get points from current contour */
+      int n_pts = lua_rawlen(L, -1);
+      if (n_pts > 2){
+       struct Mem_buffer *mem_pts = manage_buffer(n_pts * sizeof(ManifoldVec2),
+          BUF_GET, MEMP_VEC2);
+        if (!mem_pts){
+          manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
+          lua_pushnil(L); /* return fail */
+          return 1;
+        }
+        ManifoldVec2 *pts = (ManifoldVec2 *) mem_pts->buffer;
+        /* iterate over points table */
+        for (i = 0; i < n_pts; i++) {
+          lua_rawgeti(L, -1, i + 1);
+          if (lua_istable(L, -1)) {
+            int n = lua_rawlen(L, -1);
+            if (n > 1) {
+              for (j = 1; j <=2; j++){
+                /* get each coordinate value */
+                lua_rawgeti(L, -1, j);
+                if (lua_isnumber(L, -1)) {
+                  if (j == 1) pts[i].x = lua_tonumber(L, -1);
+                  else pts[i].y = lua_tonumber(L, -1);
+                } else {
+                  if (j == 1) pts[i].x = 0.0;
+                  else pts[i].y = 0.0;
+                }
+                if (j == 2) {
+                  double x = d + ax_y * ( pts[i].x) - ax_x * (pts[i].y);
+                  double y = ax_x * (pts[i].x) + ax_y * (pts[i].y);
+                  pts[i].x = x;
+                  pts[i].y = y;
+                }
+                lua_pop (L, 1);
+              }
+            }
+          }
+          lua_pop (L, 1);
+        }
+        /* generate current simple polygon and add to list */
+        contour[current] = manifold_simple_polygon(
+          mem_poly->buffer+(poly_sz * current), pts, n_pts);
+        if (current < 99) current++;
+      }
+      manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
+    }
+    lua_pop (L, 1);
+  }
+  
+	/* create a userdata object - Manifold*/
+	struct manifold_obj *extr;
+	extr = (struct manifold_obj *) lua_newuserdatauv(L, sizeof(struct manifold_obj), 0); 
+	luaL_getmetatable(L, "Manifold");
+	lua_setmetatable(L, -2);
+  extr->obj = NULL;
+  extr->prev = NULL;
+	
+  /* convert list of simple polygons to consolidated profile polygon to extrude */
+  ManifoldPolygons *polys = manifold_polygons(polygons_buffer(), contour, current);
+  
+  /* generate final Manifold */
+  extr->obj = manifold_revolve(manifold_buffer(), polys, c_seg, ang);
+  extr->prev = manifold_empty(manifold_buffer());
+  
+  /* release allocated resources */
+  for (i = 0; i < current; i++){
+    manifold_destruct_simple_polygon(contour[i]);
+  }
+  manifold_destruct_polygons(polys);
+  manage_buffer(0, BUF_RELEASE, MEMP_SIMPLE_POLY);
+  manage_buffer(0, BUF_RELEASE, MEMP_POLY);
+  manage_buffer(0, BUF_RELEASE, MEMP_VEC2);
+  
+	return 1;
+}
+
 /* Manifold union operation */
 /* given parameters:
 	- Manifold object "a", as userdata
@@ -1515,6 +1657,8 @@ int dxf_3d_init (){
 	lua_setglobal(T, "extrude");
   lua_pushcfunction(T, dxf_3d_extrude_path);
 	lua_setglobal(T, "extrude_path");
+  lua_pushcfunction(T, dxf_3d_revolve);
+	lua_setglobal(T, "revolve");
   
   lua_pushcfunction(T, dxf_3d_union);
 	lua_setglobal(T, "union");

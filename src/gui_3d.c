@@ -8,7 +8,8 @@ static int get_2d_points (list_node *graph, struct txt_buf *buf){
   double prev_x = 0.0, prev_y = 0.0;
   double first_x = 0.0, first_y = 0.0;
   double min_x = 0.0, min_y = 0.0;
-  
+  double max_x = 0.0, max_y = 0.0;
+  int list_pos = 0, graph_pos = 0;
   
   list_node *curr_list = graph->next;
 	graph_obj *curr_graph = NULL;
@@ -21,6 +22,8 @@ static int get_2d_points (list_node *graph, struct txt_buf *buf){
       /* init */
       min_x = curr_graph->ext_min_x;
       min_y = curr_graph->ext_min_y;
+      max_x = curr_graph->ext_max_x;
+      max_y = curr_graph->ext_max_y;
     }
   }
 	while (curr_list != NULL){
@@ -28,26 +31,33 @@ static int get_2d_points (list_node *graph, struct txt_buf *buf){
 			curr_graph = (graph_obj *)curr_list->data;
       min_x = (curr_graph->ext_min_x < min_x) ? curr_graph->ext_min_x : min_x;
       min_y = (curr_graph->ext_min_y < min_y) ? curr_graph->ext_min_y : min_y;
-      
+      max_x = (curr_graph->ext_max_x > max_x) ? curr_graph->ext_max_x : max_x;
+      max_y = (curr_graph->ext_max_y > max_y) ? curr_graph->ext_max_y : max_y;
     }
     curr_list = curr_list->next;
   }
+  min_x = min_x + (max_x - min_x) / 2.0;
+  min_y = min_y + (max_y - min_y) / 2.0;
   
   /* sweep the main list */
   curr_list = graph->next;
 	while (curr_list != NULL){
 		if (curr_list->data){
-      //buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos, "{");
 			curr_graph = (graph_obj *)curr_list->data;
 			if (curr_line = curr_graph->list->next){
-        if (curr_line){
-          first_x = curr_line->x0;
-          first_y = curr_line->y0;
-          prev_x = curr_line->x0;
-          prev_y = curr_line->y0;
+        graph_pos = 0;
+        first_x = curr_line->x0;
+        first_y = curr_line->y0;
+        prev_x = curr_line->x0;
+        prev_y = curr_line->y0;
+        if (list_pos > 0){
           buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos,
+            ",{");
+        } else {
+            buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos,
             "{");
         }
+        
 				while (curr_line != NULL){
 					
           /* check if previous point isn't a continuation */
@@ -56,30 +66,38 @@ static int get_2d_points (list_node *graph, struct txt_buf *buf){
             /* new polyline*/
             buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos,
             "},{");
+            first_x = curr_line->x0;
+            first_y = curr_line->y0;
+            graph_pos = 0;
           }
           /* add point to polyline */
-          buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos,
-            "{%.9g,%.9g},", curr_line->x0 - min_x,
-            curr_line->y0 - min_y);
+          if (graph_pos > 0){
+            buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos,
+              ",{%.9g,%.9g}", curr_line->x0 - min_x,
+              curr_line->y0 - min_y);
+          } else {
+            buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos,
+              "{%.9g,%.9g}", curr_line->x0 - min_x,
+              curr_line->y0 - min_y);
+          }
           
           prev_x = curr_line->x1;
           prev_y = curr_line->y1;
 					
-					
+					graph_pos++;
 					curr_line = curr_line->next;
 				}
         if ( (fabs(first_x - prev_x) > 1e-9) ||
           (fabs(first_y - prev_y) > 1e-9) ){
           buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos,
-            "{%.9g,%.9g},", prev_x - min_x, prev_y - min_y);
+            ",{%.9g,%.9g}", prev_x - min_x, prev_y - min_y);
         }
         
         buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos,
-            "},");
+            "}");
 			}
-			
+			list_pos++;
 		}
-    //buf->pos +=snprintf(buf->data + buf->pos, BUF_SIZE - buf->pos, "}");
 		curr_list = curr_list->next;
 	}
 }
@@ -2646,16 +2664,25 @@ int gui_torus_info (gui_obj *gui){
 int gui_extrude_interactive(gui_obj *gui){
 	
 	if (gui->modal != EXTRUDE) return 0;
-	static double start = 0.0, end = 0.0;
-	static double ratio = 1.0, major = 0.0;
-	static double rot = 0.0, sine = 0.0, cosine = 1.0;
-	static double step1_x, step1_y;
 	
 	static dxf_node *new_el;
 	
 	gui->draw_phanton = 0;
   gui->phanton = NULL;
   
+  int x = 0, y = 1, z = 2;
+  double matrix[3][3] = {{1.0,0.0,0.0},
+    {0.0,1.0,0.0},{0.0,0.0,1.0}};
+  double size[3] = {1,1,1};
+  
+  if (gui->extr_mode == E3D_BASE){
+    x = 0; y = 1; z = 2;
+  } else {
+    x = 2; y = 0; z = 1;
+  }
+	
+	gui->draw_phanton = 0;
+  gui->phanton = NULL;
   
   if (gui->step == 0) {
     /* try to go to next step */
@@ -2766,7 +2793,83 @@ int gui_extrude_interactive(gui_obj *gui){
       gui->step = 0;
     }
     else{
+      if (gui->step == 2) {
+        matrix[0][0] = 1.0;  matrix[0][1] = 0.0;  matrix[0][2] = 0.0;
+        matrix[1][0] = 0.0;  matrix[1][1] = 1.0;  matrix[1][2] = 0.0;
+        matrix[2][0] = 0.0;  matrix[2][1] = 0.0;  matrix[2][2] = 1.0;
+      }
+      else {
+        matrix[x][0] = gui->step_x[3] - gui->step_x[2];
+        matrix[x][1] = gui->step_y[3] - gui->step_y[2];
+        matrix[x][2] = gui->step_z[3] - gui->step_z[2];
+        size[x] = sqrt(matrix[x][0]*matrix[x][0] + 
+          matrix[x][1]*matrix[x][1] + matrix[x][2]*matrix[x][2]);
         
+        if (size[x] > 1e-9) {
+          matrix[x][0] /= size[x];
+          matrix[x][1] /= size[x];
+          matrix[x][2] /= size[x];
+        }
+        /* get next point in plane perpenticular to direction */
+        double d = -matrix[x][0] * gui->step_x[3] 
+          - matrix[x][1] * gui->step_y[3]
+          - matrix[x][2] * gui->step_z[3];
+        double nq = matrix[x][0] * gui->step_x[4] + 
+          matrix[x][1] * gui->step_y[4] + 
+          matrix[x][2] * gui->step_z[4];
+        
+        double px = gui->step_x[4] - (nq + d) * matrix[x][0];
+        double py = gui->step_y[4] - (nq + d) * matrix[x][1];
+        double pz = gui->step_z[4] - (nq + d) * matrix[x][2];
+        
+        matrix[y][0] = px - gui->step_x[3];
+        matrix[y][1] = py - gui->step_y[3];
+        matrix[y][2] = pz - gui->step_z[3];
+        size[y] = sqrt(matrix[y][0]*matrix[y][0] +
+          matrix[y][1]*matrix[y][1] + matrix[y][2]*matrix[y][2]);
+        
+        if (size[y] > 1e-9) {
+          matrix[y][0] /= size[y];
+          matrix[y][1] /= size[y];
+          matrix[y][2] /= size[y];
+        }
+        /* cross product to get z direction */
+        matrix[z][0] = matrix[x][1]*matrix[y][2] - matrix[x][2]*matrix[y][1];
+        matrix[z][1] = matrix[x][2]*matrix[y][0] - matrix[x][0]*matrix[y][2];
+        matrix[z][2] = matrix[x][0]*matrix[y][1] - matrix[x][1]*matrix[y][0];
+        
+        
+        if (gui->extr_mode == E3D_BASE){
+          double dx = gui->step_x[5] - gui->step_x[2];
+          double dy = gui->step_y[5] - gui->step_y[2];
+          double dz = gui->step_z[5] - gui->step_z[2];
+          size[0] = matrix[2][0]*dx + matrix[2][1]*dy + matrix[2][2]*dz;
+        }
+        else {
+          double dx = gui->step_x[3] - gui->step_x[2];
+          double dy = gui->step_y[3] - gui->step_y[2];
+          double dz = gui->step_z[3] - gui->step_z[2];
+          size[0] = matrix[2][0]*dx + matrix[2][1]*dy + matrix[2][2]*dz;
+        }
+          
+        
+        if(!(gui->user_flag & 1)){ /* cylinder height */
+          gui->param_3d[2] = size[0];
+        }
+        
+        if (gui->param_3d[z] < 0.0){
+          gui->param_3d[z] *= -1.0;
+          /* rotate 180 degrees in x axis */
+          matrix[y][0] *= -1; matrix[y][1] *= -1; matrix[y][2] *= -1;
+          matrix[z][0] *= -1; matrix[z][1] *= -1; matrix[z][2] *= -1;
+        }
+        
+        gui->step_x[5] = gui->step_x[2] + gui->param_3d[z] * matrix[z][0];
+        gui->step_y[5] = gui->step_y[2] + gui->param_3d[z] * matrix[z][1];
+        gui->step_z[5] = gui->step_z[2] + gui->param_3d[z] * matrix[z][2];
+      }
+      
+      
       static struct txt_buf buf;
       struct Mem_buffer *mem1 = manage_buffer(BUF_SIZE + 1, BUF_GET, 7);
       if (!mem1) return 0;
@@ -2789,13 +2892,10 @@ int gui_extrude_interactive(gui_obj *gui){
       "{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g}})", 
       //2.0 * gui->param_3d[0],2.0 * gui->param_3d[1],
       //gui->param_3d[2], gui->param_3d[3], gui->param_3d[4],
-      //matrix[0][0], matrix[0][1], matrix[0][2],
-      //matrix[1][0], matrix[1][1], matrix[1][2],
-      //matrix[2][0], matrix[2][1], matrix[2][2],
-      10.0,1.0,1.0,0,0.0,
-      1.0,0.0,0.0,
-      0.0,1.0,0.0,
-      0.0,0.0,1.0,
+      gui->param_3d[2],1.0,1.0,0,0.0,
+      matrix[0][0], matrix[0][1], matrix[0][2],
+      matrix[1][0], matrix[1][1], matrix[1][2],
+      matrix[2][0], matrix[2][1], matrix[2][2],
       gui->step_x[2], gui->step_y[2], gui->step_z[2]);
       //.. math.abs(p) ..",".. sx ..",".. sy ..",".. slices ..",".. twist ..")\n"
       
@@ -2817,24 +2917,40 @@ int gui_extrude_interactive(gui_obj *gui){
       
       if (gui->ev & EV_ENTER){
         /* accept point */
-        
-        /* add extrude to drawing */
-        new_el = (dxf_node *) dxf_new_mesh ( buf.data,
-          gui->color_idx, /* color, layer */
-          (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
-          DWG_LIFE);
-        
-        
-        new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
-        drawing_ent_append(gui->drawing, new_el);
-        
-        do_add_entry(&gui->list_do, _l("EXTRUDE"));
-        do_add_item(gui->list_do.current, NULL, new_el);
-        
-        gui->draw_phanton = 0;
-        gui->phanton = NULL;
-        gui_first_step(gui);
-        
+        if (gui->step < 6 && size[x] > 1e-9 ) {
+          if (gui->extr_mode == E3D_TOP){
+            gui->step = 5;
+            gui->step_x[gui->step] = gui->step_x[gui->step - 1];
+            gui->step_y[gui->step] = gui->step_y[gui->step - 1];
+            gui->step_z[gui->step] = gui->step_z[gui->step - 1];
+            gui->step = 6;
+          } else {
+            gui->step++;
+            
+          }
+          gui->step_x[gui->step] = gui->step_x[gui->step - 1];
+          gui->step_y[gui->step] = gui->step_y[gui->step - 1];
+          gui->step_z[gui->step] = gui->step_z[gui->step - 1];
+        }
+        else{
+          /* add extrude to drawing */
+          new_el = (dxf_node *) dxf_new_mesh ( buf.data,
+            gui->color_idx, /* color, layer */
+            (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+            DWG_LIFE);
+          
+          
+          new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
+          drawing_ent_append(gui->drawing, new_el);
+          
+          do_add_entry(&gui->list_do, _l("EXTRUDE"));
+          do_add_item(gui->list_do.current, NULL, new_el);
+          
+          gui->draw_phanton = 0;
+          gui->phanton = NULL;
+          gui_first_step(gui);
+          
+        }
       }
       else if (gui->ev & EV_CANCEL){
         gui->draw_phanton = 0;
@@ -2852,11 +2968,41 @@ int gui_extrude_interactive(gui_obj *gui){
 }
 
 int gui_extrude_info (gui_obj *gui){
+  if (gui->modal != EXTRUDE) return 0;
+  char tmp_str[64];
+	static char user_str_r[64] = "0.000000";
+  static int prev_step = 0;
   
-	if (gui->modal != EXTRUDE) return 0;
+  static char mode[2][DXF_MAX_CHARS + 1];
+  strncpy(mode[0], _l("by base plane"), DXF_MAX_CHARS);
+  strncpy(mode[1], _l("by top direction"), DXF_MAX_CHARS);
+  
+  const char *text_define[3];
+  text_define[0] = _l("Define base radius:");
+  text_define[1] = _l("Define base plane:");
+  text_define[2] = _l("Define height:");
+  
+  const char *text_info[3];
+  text_info[0] = _l("Base radius: %.9g");
+  text_info[1] = _l("Base plane: %.9g");
+  text_info[2] = _l("Height: %.9g");
+  
+  char *mode_addr[] = {mode[0], mode[1]};
+  
+  int x = 0, y = 1, z = 2;
+  
+  if (gui->extr_mode == E3D_BASE){
+    x = 0; y = 1; z = 2;
+  } else {
+    x = 2; y = 0; z = 1;
+  }
   
 	nk_layout_row_dynamic(gui->ctx, 20, 1);
 	nk_label(gui->ctx, _l("Place a extrude"), NK_TEXT_LEFT);
+  
+  int h = 2 * 25 + 5;
+	gui->extr_mode = nk_combo(gui->ctx, (const char **) mode_addr, 2, gui->extr_mode, 20, nk_vec2(150, h));
+	
 	
 	if (gui->step == 0){
 		nk_label(gui->ctx, _l("Select a element"), NK_TEXT_LEFT);

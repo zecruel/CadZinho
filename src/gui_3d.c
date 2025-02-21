@@ -2797,6 +2797,11 @@ int gui_extrude_interactive(gui_obj *gui){
         matrix[0][0] = 1.0;  matrix[0][1] = 0.0;  matrix[0][2] = 0.0;
         matrix[1][0] = 0.0;  matrix[1][1] = 1.0;  matrix[1][2] = 0.0;
         matrix[2][0] = 0.0;  matrix[2][1] = 0.0;  matrix[2][2] = 1.0;
+        for (int i = 3; i < 6; i++){
+          //gui->step_x[i] = gui->step_x[2];
+          //gui->step_y[i] = gui->step_y[2];
+          //gui->step_z[i] = gui->step_z[2];
+        }
       }
       else {
         matrix[x][0] = gui->step_x[3] - gui->step_x[2];
@@ -2810,34 +2815,49 @@ int gui_extrude_interactive(gui_obj *gui){
           matrix[x][1] /= size[x];
           matrix[x][2] /= size[x];
         }
-        /* get next point in plane perpenticular to direction */
-        double d = -matrix[x][0] * gui->step_x[3] 
-          - matrix[x][1] * gui->step_y[3]
-          - matrix[x][2] * gui->step_z[3];
-        double nq = matrix[x][0] * gui->step_x[4] + 
-          matrix[x][1] * gui->step_y[4] + 
-          matrix[x][2] * gui->step_z[4];
-        
-        double px = gui->step_x[4] - (nq + d) * matrix[x][0];
-        double py = gui->step_y[4] - (nq + d) * matrix[x][1];
-        double pz = gui->step_z[4] - (nq + d) * matrix[x][2];
-        
-        matrix[y][0] = px - gui->step_x[3];
-        matrix[y][1] = py - gui->step_y[3];
-        matrix[y][2] = pz - gui->step_z[3];
-        size[y] = sqrt(matrix[y][0]*matrix[y][0] +
-          matrix[y][1]*matrix[y][1] + matrix[y][2]*matrix[y][2]);
-        
-        if (size[y] > 1e-9) {
-          matrix[y][0] /= size[y];
-          matrix[y][1] /= size[y];
-          matrix[y][2] /= size[y];
+        if (gui->step == 3 && gui->extr_mode == E3D_TOP) {
+          if ((fabs(matrix[x][0]) < 0.015625) && (fabs(matrix[x][1]) < 0.015625)){
+            //cross_product(wy_axis, normal, x_axis);
+            matrix[y][0] = -matrix[x][2];
+            matrix[y][1] = 0.0;
+            matrix[y][2] = matrix[x][0];
+          }
+          else{
+            //cross_product(wz_axis, normal, x_axis);
+            matrix[y][0] = matrix[x][1];
+            matrix[y][1] = -matrix[x][0];
+            matrix[y][2] = 0.0;
+          }
+          
+        } else {
+          /* get next point in plane perpenticular to direction */
+          double d = -matrix[x][0] * gui->step_x[3] 
+            - matrix[x][1] * gui->step_y[3]
+            - matrix[x][2] * gui->step_z[3];
+          double nq = matrix[x][0] * gui->step_x[4] + 
+            matrix[x][1] * gui->step_y[4] + 
+            matrix[x][2] * gui->step_z[4];
+          
+          double px = gui->step_x[4] - (nq + d) * matrix[x][0];
+          double py = gui->step_y[4] - (nq + d) * matrix[x][1];
+          double pz = gui->step_z[4] - (nq + d) * matrix[x][2];
+          
+          matrix[y][0] = px - gui->step_x[3];
+          matrix[y][1] = py - gui->step_y[3];
+          matrix[y][2] = pz - gui->step_z[3];
+          size[y] = sqrt(matrix[y][0]*matrix[y][0] +
+            matrix[y][1]*matrix[y][1] + matrix[y][2]*matrix[y][2]);
+          
+          if (size[y] > 1e-9) {
+            matrix[y][0] /= size[y];
+            matrix[y][1] /= size[y];
+            matrix[y][2] /= size[y];
+          }
         }
         /* cross product to get z direction */
         matrix[z][0] = matrix[x][1]*matrix[y][2] - matrix[x][2]*matrix[y][1];
         matrix[z][1] = matrix[x][2]*matrix[y][0] - matrix[x][0]*matrix[y][2];
         matrix[z][2] = matrix[x][0]*matrix[y][1] - matrix[x][1]*matrix[y][0];
-        
         
         if (gui->extr_mode == E3D_BASE){
           double dx = gui->step_x[5] - gui->step_x[2];
@@ -2851,22 +2871,21 @@ int gui_extrude_interactive(gui_obj *gui){
           double dz = gui->step_z[3] - gui->step_z[2];
           size[0] = matrix[2][0]*dx + matrix[2][1]*dy + matrix[2][2]*dz;
         }
-          
         
         if(!(gui->user_flag & 1)){ /* cylinder height */
-          gui->param_3d[2] = size[0];
+          gui->param_3d[0] = size[0];
         }
         
-        if (gui->param_3d[z] < 0.0){
-          gui->param_3d[z] *= -1.0;
+        if (gui->param_3d[0] < 0.0){
+          gui->param_3d[0] *= -1.0;
           /* rotate 180 degrees in x axis */
           matrix[y][0] *= -1; matrix[y][1] *= -1; matrix[y][2] *= -1;
           matrix[z][0] *= -1; matrix[z][1] *= -1; matrix[z][2] *= -1;
         }
         
-        gui->step_x[5] = gui->step_x[2] + gui->param_3d[z] * matrix[z][0];
-        gui->step_y[5] = gui->step_y[2] + gui->param_3d[z] * matrix[z][1];
-        gui->step_z[5] = gui->step_z[2] + gui->param_3d[z] * matrix[z][2];
+        //gui->step_x[5] = gui->step_x[2] + gui->param_3d[z] * matrix[z][0];
+        //gui->step_y[5] = gui->step_y[2] + gui->param_3d[z] * matrix[z][1];
+        //gui->step_z[5] = gui->step_z[2] + gui->param_3d[z] * matrix[z][2];
       }
       
       
@@ -2892,7 +2911,7 @@ int gui_extrude_interactive(gui_obj *gui){
       "{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g}})", 
       //2.0 * gui->param_3d[0],2.0 * gui->param_3d[1],
       //gui->param_3d[2], gui->param_3d[3], gui->param_3d[4],
-      gui->param_3d[2],1.0,1.0,0,0.0,
+      gui->param_3d[0],1.0,1.0,0,0.0,
       matrix[0][0], matrix[0][1], matrix[0][2],
       matrix[1][0], matrix[1][1], matrix[1][2],
       matrix[2][0], matrix[2][1], matrix[2][2],
@@ -2917,17 +2936,17 @@ int gui_extrude_interactive(gui_obj *gui){
       
       if (gui->ev & EV_ENTER){
         /* accept point */
-        if (gui->step < 6 && size[x] > 1e-9 ) {
-          if (gui->extr_mode == E3D_TOP){
+        if (gui->step < 6) {
+         /* if (gui->extr_mode == E3D_TOP){
             gui->step = 5;
             gui->step_x[gui->step] = gui->step_x[gui->step - 1];
             gui->step_y[gui->step] = gui->step_y[gui->step - 1];
             gui->step_z[gui->step] = gui->step_z[gui->step - 1];
             gui->step = 6;
-          } else {
+          } else {*/
             gui->step++;
             
-          }
+          //}
           gui->step_x[gui->step] = gui->step_x[gui->step - 1];
           gui->step_y[gui->step] = gui->step_y[gui->step - 1];
           gui->step_z[gui->step] = gui->step_z[gui->step - 1];
@@ -3009,6 +3028,12 @@ int gui_extrude_info (gui_obj *gui){
 	} else if (gui->step == 1){
 		nk_label(gui->ctx, _l("Confirm"), NK_TEXT_LEFT);
 	}
+  
+  snprintf(tmp_str, 63, "STEP: %d",  gui->step);
+  nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
+  
+  snprintf(tmp_str, 63, "H: %0.2f",  gui->param_3d[2]);
+  nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
 	
 	return 1;
 }

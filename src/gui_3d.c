@@ -2670,15 +2670,24 @@ int gui_extrude_interactive(gui_obj *gui){
 	gui->draw_phanton = 0;
   gui->phanton = NULL;
   
-  int x = 0, y = 1, z = 2;
+  int x = 0, y = 1, z = 2, slices = 0, step_scale = 5, step_twist = 5;
   double matrix[3][3] = {{1.0,0.0,0.0},
     {0.0,1.0,0.0},{0.0,0.0,1.0}};
-  double size[3] = {1,1,1};
+  double size[3] = {1,1,1}, twist = 0.0, scale_x = 1.0, scale_y = 1.0;
   
   if (gui->extr_mode == E3D_BASE){
     x = 0; y = 1; z = 2;
+    step_scale = 5; step_twist = 5;
   } else {
     x = 2; y = 0; z = 1;
+    step_scale = 4; step_twist = 4;
+  }
+  
+  if(gui->user_flag & 32){
+    step_scale++; step_twist++;
+  }
+  if(gui->user_flag & 16){
+    step_twist++;
   }
 	
 	gui->draw_phanton = 0;
@@ -2815,20 +2824,21 @@ int gui_extrude_interactive(gui_obj *gui){
           matrix[x][1] /= size[x];
           matrix[x][2] /= size[x];
         }
-        if (gui->step == 3 && gui->extr_mode == E3D_TOP) {
-          if ((fabs(matrix[x][0]) < 0.015625) && (fabs(matrix[x][1]) < 0.015625)){
-            //cross_product(wy_axis, normal, x_axis);
-            matrix[y][0] = -matrix[x][2];
-            matrix[y][1] = 0.0;
-            matrix[y][2] = matrix[x][0];
-          }
-          else{
-            //cross_product(wz_axis, normal, x_axis);
-            matrix[y][0] = matrix[x][1];
-            matrix[y][1] = -matrix[x][0];
-            matrix[y][2] = 0.0;
-          }
-          
+        //if (gui->extr_mode == E3D_TOP){
+          if (gui->step == 3) {
+            if ((fabs(matrix[x][0]) < 0.015625) && (fabs(matrix[x][1]) < 0.015625)){
+              //cross_product(wy_axis, normal, x_axis);
+              matrix[y][0] = -matrix[x][2];
+              matrix[y][1] = 0.0;
+              matrix[y][2] = matrix[x][0];
+            }
+            else{
+              //cross_product(wz_axis, normal, x_axis);
+              matrix[y][0] = matrix[x][1];
+              matrix[y][1] = -matrix[x][0];
+              matrix[y][2] = 0.0;
+            }
+          //}
         } else {
           /* get next point in plane perpenticular to direction */
           double d = -matrix[x][0] * gui->step_x[3] 
@@ -2879,13 +2889,53 @@ int gui_extrude_interactive(gui_obj *gui){
         if (gui->param_3d[0] < 0.0){
           gui->param_3d[0] *= -1.0;
           /* rotate 180 degrees in x axis */
-          matrix[y][0] *= -1; matrix[y][1] *= -1; matrix[y][2] *= -1;
-          matrix[z][0] *= -1; matrix[z][1] *= -1; matrix[z][2] *= -1;
+          //matrix[y][0] *= -1; matrix[y][1] *= -1; matrix[y][2] *= -1;
+          matrix[2][0] *= -1; matrix[2][1] *= -1; matrix[2][2] *= -1;
         }
         
         //gui->step_x[5] = gui->step_x[2] + gui->param_3d[z] * matrix[z][0];
         //gui->step_y[5] = gui->step_y[2] + gui->param_3d[z] * matrix[z][1];
         //gui->step_z[5] = gui->step_z[2] + gui->param_3d[z] * matrix[z][2];
+      }
+      
+      /* top scale factor */
+      if (gui->step < 4){
+        gui->param_3d[3] = 1.0;
+        gui->param_3d[4] = 0.0;
+      }
+      else if(!(gui->user_flag & 8)){
+        double w = (gui->param_3d[0] > 1e-9) ? gui->param_3d[0] : 1.0;
+        double h = (gui->param_3d[1] > 1e-9) ? gui->param_3d[1] : 1.0;
+        //gui->step_x[3] = gui->step_x[0] + gui->param_3d[2] * matrix[2][0];
+        //gui->step_y[3] = gui->step_y[0] + gui->param_3d[2] * matrix[2][1];
+        //gui->step_z[3] = gui->step_z[0] + gui->param_3d[2] * matrix[2][2];
+        
+        /* get next point in plane paralel to base */
+        double dx = gui->step_x[4] - gui->step_x[3];
+        double dy = gui->step_y[4] - gui->step_y[3];
+        double dz = gui->step_z[4] - gui->step_z[3];
+        
+        double px = matrix[0][0]*dx + matrix[0][1]*dy + matrix[0][2]*dz;
+        double py = matrix[1][0]*dx + matrix[1][1]*dy + matrix[1][2]*dz;
+        
+        gui->param_3d[3] = fabs(px / w);
+        gui->param_3d[4] = fabs(py / h);
+        
+      }
+      
+      
+      if(!(gui->user_flag & 16)){
+        twist = 0.0; slices = 0;
+      } else {
+        twist = gui->param_3d[3];
+        slices = floor(twist / 5.0);
+      }
+      
+      if(!(gui->user_flag & 32)){
+        scale_x = 1.0; scale_y = 1.0;
+      } else {
+        scale_x = gui->param_3d[1];
+        scale_y = gui->param_3d[2];
       }
       
       
@@ -2894,7 +2944,6 @@ int gui_extrude_interactive(gui_obj *gui){
       if (!mem1) return 0;
       buf.data = mem1->buffer;
       buf.pos = 0;
-      
       
       /* create manifold */
       buf.pos +=snprintf(buf.data + buf.pos, BUF_SIZE - buf.pos,
@@ -2908,19 +2957,12 @@ int gui_extrude_interactive(gui_obj *gui){
       buf.pos +=snprintf(buf.data + buf.pos, BUF_SIZE - buf.pos,
       "},%.9g,%.9g,%.9g,%d,%.9g)\n"
       "manifold[1]:transform({{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g},"
-      "{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g}})", 
-      //2.0 * gui->param_3d[0],2.0 * gui->param_3d[1],
-      //gui->param_3d[2], gui->param_3d[3], gui->param_3d[4],
-      gui->param_3d[0],1.0,1.0,0,0.0,
+      "{%.9g,%.9g,%.9g},{%.9g,%.9g,%.9g}})",
+      gui->param_3d[0], scale_x, scale_y, slices, twist,
       matrix[0][0], matrix[0][1], matrix[0][2],
       matrix[1][0], matrix[1][1], matrix[1][2],
       matrix[2][0], matrix[2][1], matrix[2][2],
       gui->step_x[2], gui->step_y[2], gui->step_z[2]);
-      //.. math.abs(p) ..",".. sx ..",".. sy ..",".. slices ..",".. twist ..")\n"
-      
-      
-      
-      
       
       
     
@@ -2936,7 +2978,7 @@ int gui_extrude_interactive(gui_obj *gui){
       
       if (gui->ev & EV_ENTER){
         /* accept point */
-        if (gui->step < 6) {
+        if (gui->step < step_twist) {
          /* if (gui->extr_mode == E3D_TOP){
             gui->step = 5;
             gui->step_x[gui->step] = gui->step_x[gui->step - 1];
@@ -2990,11 +3032,18 @@ int gui_extrude_info (gui_obj *gui){
   if (gui->modal != EXTRUDE) return 0;
   char tmp_str[64];
 	static char user_str_r[64] = "0.000000";
-  static int prev_step = 0;
+  static int prev_step = 0, extr_typ = 0;
   
   static char mode[2][DXF_MAX_CHARS + 1];
   strncpy(mode[0], _l("by base plane"), DXF_MAX_CHARS);
   strncpy(mode[1], _l("by top direction"), DXF_MAX_CHARS);
+  
+  static char typ[4][DXF_MAX_CHARS + 1];
+  strncpy(typ[0], _l("Parallel"), DXF_MAX_CHARS);
+  strncpy(typ[1], _l("Twisted"), DXF_MAX_CHARS);
+  strncpy(typ[2], _l("Wedged"), DXF_MAX_CHARS);
+  strncpy(typ[3], _l("Twisted + Wedged"), DXF_MAX_CHARS);
+  
   
   const char *text_define[3];
   text_define[0] = _l("Define base radius:");
@@ -3007,6 +3056,7 @@ int gui_extrude_info (gui_obj *gui){
   text_info[2] = _l("Height: %.9g");
   
   char *mode_addr[] = {mode[0], mode[1]};
+  char *typ_addr[] = {typ[0], typ[1], typ[2], typ[3]};
   
   int x = 0, y = 1, z = 2;
   
@@ -3020,14 +3070,85 @@ int gui_extrude_info (gui_obj *gui){
 	nk_label(gui->ctx, _l("Place a extrude"), NK_TEXT_LEFT);
   
   int h = 2 * 25 + 5;
+  nk_label(gui->ctx, _l("Direction:"), NK_TEXT_LEFT);
 	gui->extr_mode = nk_combo(gui->ctx, (const char **) mode_addr, 2, gui->extr_mode, 20, nk_vec2(150, h));
 	
+  nk_label(gui->ctx, _l("Shape:"), NK_TEXT_LEFT);
+	h = 4 * 25 + 5;
+	extr_typ = nk_combo(gui->ctx, (const char **) typ_addr, 4, extr_typ, 20, nk_vec2(150, h));
+	
+  gui->user_flag &= ~48;
+  if (extr_typ == 1) gui->user_flag |= 16;
+  else if (extr_typ == 2) gui->user_flag |= 32;
+  else if (extr_typ == 3) gui->user_flag |= 48;
 	
 	if (gui->step == 0){
-		nk_label(gui->ctx, _l("Select a element"), NK_TEXT_LEFT);
+		nk_label(gui->ctx, _l("Select planar elements"), NK_TEXT_LEFT);
 	} else if (gui->step == 1){
 		nk_label(gui->ctx, _l("Confirm"), NK_TEXT_LEFT);
+	} else if (gui->step == 2){
+		nk_label(gui->ctx, _l("Define base center"), NK_TEXT_LEFT);
+	} else if (gui->step == 3){
+    if (gui->extr_mode == E3D_BASE){
+      nk_label(gui->ctx, _l("Define base X axis"), NK_TEXT_LEFT);
+    } else{
+      nk_label(gui->ctx, _l("Define dir/height"), NK_TEXT_LEFT);
+    }
+	} else if (gui->step == 4){
+    if (gui->extr_mode == E3D_BASE){
+      nk_label(gui->ctx, _l("Define base Y axis"), NK_TEXT_LEFT);
+    } else{
+      snprintf(tmp_str, 63, _l("Height: %.9g"), gui->param_3d[0]);
+      nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
+      nk_label(gui->ctx, _l("Define base X axis"), NK_TEXT_LEFT);
+    }
+	} else if (gui->step == 5){
+    if (gui->extr_mode == E3D_BASE){
+      nk_label(gui->ctx, _l("Define height"), NK_TEXT_LEFT);
+    } else{
+      snprintf(tmp_str, 63, _l("Height: %.9g"), gui->param_3d[0]);
+      nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
+      nk_label(gui->ctx, _l("Define base X axis"), NK_TEXT_LEFT);
+    }
+	} else if (gui->step == 6){
+    if (gui->extr_mode == E3D_BASE){
+      snprintf(tmp_str, 63, _l("Height: %.9g"), gui->param_3d[0]);
+      nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
+      nk_label(gui->ctx, _l("Define base X axis"), NK_TEXT_LEFT);
+    }
+    else{
+      snprintf(tmp_str, 63, _l("Height: %.9g"), gui->param_3d[0]);
+      nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
+      nk_label(gui->ctx, _l("Define base X axis"), NK_TEXT_LEFT);
+    }
 	}
+  
+  
+  if ((gui->step == 5 && gui->extr_mode == E3D_BASE) || 
+    (gui->step == 3 && gui->extr_mode == E3D_TOP)){
+    if (prev_step != gui->step) snprintf(user_str_r, 63, "%.9g", gui->param_3d[0]);
+    /* edit to visualize or enter height */
+		nk_flags res = nk_edit_string_zero_terminated(gui->ctx,
+      NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT,
+      user_str_r, 63, nk_filter_float);
+		if (res & NK_EDIT_ACTIVE){ /* enter mode */
+			if (strlen(user_str_r)){
+				/* sinalize the radius of user entry */
+				gui->param_3d[0] = atof(user_str_r);
+				gui->user_flag |= 1;
+			}
+			else{ /* if the user clear the string */
+				/* cancel the enter mode*/
+				gui->user_flag &= ~1;
+				nk_edit_unfocus(gui->ctx);
+			}
+		} else if (!(gui->user_flag & 1)) { /* visualize mode */
+      snprintf(user_str_r, 63, "%.9g", gui->param_3d[0]);
+		}
+    if (res & NK_EDIT_COMMITED){
+      nk_edit_unfocus(gui->ctx);
+    }
+  }
   
   snprintf(tmp_str, 63, "STEP: %d",  gui->step);
   nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
@@ -3035,6 +3156,8 @@ int gui_extrude_info (gui_obj *gui){
   snprintf(tmp_str, 63, "H: %0.2f",  gui->param_3d[2]);
   nk_label(gui->ctx, tmp_str, NK_TEXT_LEFT);
 	
+  prev_step = gui->step;
+  
 	return 1;
 }
 

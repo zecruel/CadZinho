@@ -7189,7 +7189,7 @@ int script_yxml_read (lua_State *L) {
 					}
 				}
 				/* store content string with key "cont" in element owner table */
-				if (content){
+				if (content == 2){
           lua_pushstring(L, buf.data);
 					if (lua_istable(L, -2)){
 						lua_pushstring(L, "cont");
@@ -7227,9 +7227,15 @@ int script_yxml_read (lua_State *L) {
 					
           buf.pos = 0; buf.data[0] = 0; /* zero buffer */
 				}
-				/* store parcial string */
-        buf.pos +=snprintf(buf.data + buf.pos,
-          PDF_BUF_SIZE - buf.pos, state->x->data);
+        if ((state->x->data[0] != ' ' && state->x->data[0] != '\t' &&
+          state->x->data[0] != '\n' && state->x->data[0] != '\r') ||
+          content == 2)
+        { /* escape space chars until start of content */
+          content = 2;
+          /* store parcial string */
+          buf.pos +=snprintf(buf.data + buf.pos,
+            PDF_BUF_SIZE - buf.pos, state->x->data);
+        }
 				break;
 			case YXML_ATTRSTART:
 				if (!attr){ /* init attributes */
@@ -7253,13 +7259,13 @@ int script_yxml_read (lua_State *L) {
 				if (attrval){
 					attrval = 0;
           lua_pushstring(L, buf.data);
-					if (lua_istable(L, -2)){
-						/* store in its owner table, where its name is the key */
-						lua_pushstring(L, state->x->attr);
-						lua_insert (L, lua_gettop(L) - 1); /* setup Lua stack to next operation */
-						lua_rawset(L, -3);
-					}
-				}
+        } else { lua_pushstring(L, ""); }
+        if (lua_istable(L, -2)){
+          /* store in its owner table, where its name is the key */
+          lua_pushstring(L, state->x->attr);
+          lua_insert (L, lua_gettop(L) - 1); /* setup Lua stack to next operation */
+          lua_rawset(L, -3);
+        }
 				break;
 		}
 	}

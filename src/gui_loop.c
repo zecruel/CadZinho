@@ -458,7 +458,7 @@ int gui_main_loop (gui_obj *gui) {
   gui->next_win_y = 2;
   
   
-  gui->next_win_y += gui->next_win_h + 3;
+  gui->next_win_y = RIB_H;
   gui->next_win_w = 210;
   gui->next_win_h = 400;
   

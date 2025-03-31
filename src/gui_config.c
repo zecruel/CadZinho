@@ -724,7 +724,7 @@ int config_win (gui_obj *gui){
   static double grid_spc = 20.0;
 	
 	//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "config", NK_WINDOW_CLOSABLE, nk_rect(310, 50, 200, 300))){
-	if (nk_begin(gui->ctx, _l("Config"), nk_rect(418, 88, 400, 550),
+	if (nk_begin(gui->ctx, _l("Config"), nk_rect(418, RIB_H, 400, 550),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
     

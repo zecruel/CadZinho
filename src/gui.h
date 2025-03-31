@@ -50,6 +50,8 @@
 #define ICON_SIZE 24
 #define DEBUG_OUT 262143
 
+#define RIB_H 165
+
 #define SMART_STEP(x) pow(10.0, floor(log10(fabs(x) + 1.0e-8)) - 1.0)
 
 enum Action {

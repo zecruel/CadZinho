@@ -386,7 +386,7 @@ int gui_hatch_mng (gui_obj *gui){
 	struct h_family *curr_fam = gui->hatch_fam.next;
 	static double patt_scale = 1, patt_rot = 0.0;
 	
-	static struct nk_rect s = {215, 95, 420, 490};
+	static struct nk_rect s = {215, RIB_H, 420, 490};
 	
 	
 	if (nk_begin(gui->ctx, _l("Hatch Pattern"), s,

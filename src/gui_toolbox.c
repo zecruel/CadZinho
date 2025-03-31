@@ -122,11 +122,13 @@ int gui_main_win(gui_obj *gui){
     RIB_FILE,
     RIB_DRAWING,
     RIB_VIEW,
-    RIB_3D,
     RIB_MANAGER,
+    RIB_3D,
   } ribbon_grp = RIB_FILE;
+  
+  const int rib_w[5] = {800, 1200, 1400, 1600, 1800};
 	
-	if (nk_begin(gui->ctx, "Main", nk_rect(2, 2, gui->win_w - 4, 160),
+	if (nk_begin(gui->ctx, "Main", nk_rect(2, 2, gui->win_w - 4, RIB_H - 5),
     NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)){
     /* dynamic width for ribbon and fixed width for common tools and properties */
 		nk_layout_row_template_begin(gui->ctx, 148);
@@ -141,223 +143,109 @@ int gui_main_win(gui_obj *gui){
       /* Ribbon collections */
       nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
       nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 5);
-      if (gui_tab (gui, _l("File"), ribbon_grp == RIB_FILE)) ribbon_grp = RIB_FILE;
-      if (gui_tab (gui, _l("Drawing"), ribbon_grp == RIB_DRAWING)) ribbon_grp = RIB_DRAWING;
-      if (gui_tab (gui, _l("View"), ribbon_grp == RIB_VIEW)) ribbon_grp = RIB_VIEW;
-      if (gui_tab (gui, _l("3D"), ribbon_grp == RIB_3D)) ribbon_grp = RIB_3D;
-      if (gui_tab (gui, _l("Managers"), ribbon_grp == RIB_MANAGER)) ribbon_grp = RIB_MANAGER;
+      if (gui->win_w > rib_w[RIB_DRAWING]) {
+        if (gui_tab (gui, _l("Home"), ribbon_grp == RIB_DRAWING)) ribbon_grp = RIB_DRAWING;
+      }
+      else {
+        if (gui_tab (gui, _l("File"), ribbon_grp == RIB_FILE)) ribbon_grp = RIB_FILE;
+        if (gui_tab (gui, _l("Drawing"), ribbon_grp == RIB_DRAWING)) ribbon_grp = RIB_DRAWING;
+      }
+      if (gui->win_w < rib_w[RIB_VIEW]) {
+        if (gui_tab (gui, _l("View"), ribbon_grp == RIB_VIEW)) ribbon_grp = RIB_VIEW;
+      }
+      if (gui->win_w < rib_w[RIB_MANAGER]) {
+        if (gui_tab (gui, _l("Managers"), ribbon_grp == RIB_MANAGER)) ribbon_grp = RIB_MANAGER;
+      }
+      if (gui->win_w < rib_w[RIB_3D]) {
+        if (gui_tab (gui, _l("3D"), ribbon_grp == RIB_3D)) ribbon_grp = RIB_3D;
+      }
       nk_style_pop_vec2(gui->ctx);
       nk_layout_row_end(gui->ctx);
       
       /* first line */
       //nk_layout_row_begin(gui->ctx, NK_STATIC, ICON_SIZE + 12, 9);
+      nk_layout_row_begin(gui->ctx, NK_STATIC, 102, 20);
+      
       
       /* file tools*/
-      //nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
-      //if (nk_group_begin(gui->ctx, "_file", NK_WINDOW_NO_SCROLLBAR)) {
-      if(ribbon_grp == RIB_FILE){
-        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 14);
+      if(ribbon_grp == RIB_FILE || gui->win_w > rib_w[ribbon_grp]){
+        //nk_layout_row_begin(gui->ctx, NK_STATIC, 102, 9);
+        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 14);
+        nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
+        if (nk_group_begin(gui->ctx, "_filetools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+          nk_layout_row_static(gui->ctx, 28, 28, 1);
         
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEW]))){
-          if (gui->changed){
-            gui->discard_changes = 1;
-            gui->desired_action = FILE_NEW;
-            gui->hist_action = HIST_NONE;
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEW]))){
+            if (gui->changed){
+              gui->discard_changes = 1;
+              gui->desired_action = FILE_NEW;
+              gui->hist_action = HIST_NONE;
+            }
+            else{
+              gui->action = FILE_NEW;
+              gui->hist_new = 0; /* not add to history entries */
+            }
           }
-          else{
-            gui->action = FILE_NEW;
-            gui->hist_new = 0; /* not add to history entries */
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_OPEN]))){
+            gui->action = FILE_OPEN;
+            //gui->show_app_file = 1;
+            gui->show_open = 1;
+            
+            gui->curr_path[0] = 0;
+            
+            gui->path_ok = 0;
+            gui->hist_new = 1;
           }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SAVE]))){
+            gui->action = FILE_SAVE;
+            //gui->show_app_file = 1;
+            gui->show_save = 1;
+            gui->path_ok = 0;
+            gui->hist_new = 1;
+          }
+          nk_group_end(gui->ctx);
         }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_OPEN]))){
-          gui->action = FILE_OPEN;
-          //gui->show_app_file = 1;
-          gui->show_open = 1;
+        /* print/export tools*/
+        nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
+        if (nk_group_begin(gui->ctx, "_exporttools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+          nk_layout_row_static(gui->ctx, 28, 28, 1);
+          //nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PRINT]))){
+            gui->show_print = 1;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPORT]))){
+            gui->show_export = 1;
+          }
           
-          gui->curr_path[0] = 0;
+          nk_group_end(gui->ctx);
+        }
+      
+        nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
+        if (nk_group_begin(gui->ctx, "_configtools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+          nk_layout_row_static(gui->ctx, 28, 28, 1);
+          /* config tools*/
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SCRIPT1]))){
+            
+            gui->show_script = 1;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_GEAR]))){
+            gui->show_config = 1;
+          }
           
-          gui->path_ok = 0;
-          gui->hist_new = 1;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SAVE]))){
-          gui->action = FILE_SAVE;
-          //gui->show_app_file = 1;
-          gui->show_save = 1;
-          gui->path_ok = 0;
-          gui->hist_new = 1;
-        }
-        //nk_group_end(gui->ctx);
-      //}
-      /* print/export tools*/
-      //nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
-      //if (nk_group_begin(gui->ctx, "_print", NK_WINDOW_NO_SCROLLBAR)) {
-        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-        nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PRINT]))){
-          gui->show_print = 1;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPORT]))){
-          gui->show_export = 1;
-        }
-        
-        //nk_group_end(gui->ctx);
-      //}
-      
-      //nk_layout_row_end(gui->ctx);
-      
-      //nk_layout_row_begin(gui->ctx, NK_STATIC, ICON_SIZE + 12, 9);
-        
-        /* config tools*/
-      //nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
-      //if (nk_group_begin(gui->ctx, "_config", NK_WINDOW_NO_SCROLLBAR)) {
-        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-        nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
-        /*if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_INFO]))){
-          gui->show_info = 1;
-        }*/
-        /*
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TOOL]))){
-          //printf("Tools\n");
-          #ifdef OS_WIN
-          DebugBreak();
-          #endif
-        }*/
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SCRIPT1]))){
+          /* Help - about CadZinho*/
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_HELP]))){
+            gui->show_app_about = 1;
+          }
           
-          gui->show_script = 1;
+          nk_group_end(gui->ctx);
         }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_GEAR]))){
-          gui->show_config = 1;
-        }
-        //nk_group_end(gui->ctx);
-      //}
       
-      /* Help - about CadZinho*/
-      //nk_layout_row_push(gui->ctx, 1*(ICON_SIZE + 4 + 4) + 13);
-      //if (nk_group_begin(gui->ctx, "_help", NK_WINDOW_NO_SCROLLBAR)) {
-        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-        nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_HELP]))){
-          gui->show_app_about = 1;
-        }
-        //nk_group_end(gui->ctx);
-      }
-      if(ribbon_grp == RIB_MANAGER){
-      /* managers*/
-      //nk_layout_row_push(gui->ctx, 4*(ICON_SIZE + 4 + 4) + 13);
-      //if (nk_group_begin(gui->ctx, "_managers", NK_WINDOW_NO_SCROLLBAR)) {
-        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 14);
-        //nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LAYERS]))){
-          gui->show_lay_mng = 1;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_FONT]))){
-          gui->show_tstyles_mng = 1;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LTYPE]))){
-          gui->show_ltyp_mng = 1;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PUZZLE]))){
-          gui->show_blk_mng = 1;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_CONFIG]))){
-          gui->show_dim_mng = 1;
-        }
-        //nk_group_end(gui->ctx);
-      //}
+        //nk_layout_row_end(gui->ctx);
       }
       
-      if(ribbon_grp == RIB_VIEW){
-      /* zoom tools*/
-      //nk_layout_row_push(gui->ctx, 5*(ICON_SIZE + 4 + 4) + 13);
-      //if (nk_group_begin(gui->ctx, "_zoom", NK_WINDOW_NO_SCROLLBAR)) {
-        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 20);
-        //nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_P]))){
-          gui->action = VIEW_ZOOM_P;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_M]))){
-          gui->action = VIEW_ZOOM_M;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_W]))){
-          gui->modal = ZOOM;
-          strncpy(gui->ctx_tools_title, _l("Zoom"), DXF_MAX_CHARS);
-          gui->step = 0;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_A]))){
-          gui->action = VIEW_ZOOM_EXT;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BRUSH]))){
-          gui->action = REDRAW;
-        }
-        //nk_group_end(gui->ctx);
-      //}
-      
-      /* pan tools*/
-      
-      //nk_layout_row_push(gui->ctx, 4*(ICON_SIZE + 4 + 4) + 13);
-      //if (nk_group_begin(gui->ctx, "_pan", NK_WINDOW_NO_SCROLLBAR)) {
-        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-        nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_UP]))){
-          gui->action = VIEW_PAN_U;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DOWN]))){
-          gui->action = VIEW_PAN_D;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LEFT]))){
-          gui->action = VIEW_PAN_L;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_RIGTH]))){
-          gui->action = VIEW_PAN_R;
-        }
-        //nk_group_end(gui->ctx);
-      //}
-      /* 3d view tools*/
-      //nk_layout_row_push(gui->ctx, 4*(ICON_SIZE + 4 + 4) + 13);
-      //if (nk_group_begin(gui->ctx, "_pan", NK_WINDOW_NO_SCROLLBAR)) {
-        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 10);
-        nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_TOP]))){
-          gui->alpha = 0.0;
-          gui->beta = 0.0;
-          gui->gamma = 0.0;gui->ofs_z = 0.0;
-          gui_calc_view_rot (gui);
-          
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_FRONT]))){
-          gui->alpha = 0.0;
-          gui->beta = 0.0;
-          gui->gamma = 90.0;gui->ofs_y = 0.0;
-          gui_calc_view_rot (gui);
-          
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_RIGHT]))){
-          gui->alpha = 90.0;
-          gui->beta = 0.0;
-          gui->gamma = 90.0;gui->ofs_x = 0.0;
-          gui_calc_view_rot (gui);
-          
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_ISOMETRIC]))){
-          gui->alpha = 45.0;
-          gui->beta = 0.0;
-          gui->gamma = 90.0 - 35.264;
-          gui_calc_view_rot (gui);
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_ROTATE]))){
-          gui->modal = VIEW_ROTATE;
-          strncpy(gui->ctx_tools_title, _l("Rotate View"), DXF_MAX_CHARS);
-          gui->step = 0;
-          
-        }
-        //nk_group_end(gui->ctx);
-      //}
-      
-      }
-      
-      if(ribbon_grp == RIB_DRAWING){
-        nk_layout_row_begin(gui->ctx, NK_STATIC, 102, 9);
+      if(ribbon_grp == RIB_DRAWING || (gui->win_w > rib_w[RIB_DRAWING] &&
+        gui->win_w > rib_w[ribbon_grp])){
+        //nk_layout_row_begin(gui->ctx, NK_STATIC, 102, 9);
         
         /* file tools*/
         nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
@@ -533,7 +421,7 @@ int gui_main_win(gui_obj *gui){
         }
         
         
-        /* file tools*/
+        /* dimmensions */
         nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_dimmensions", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 2);
@@ -564,99 +452,251 @@ int gui_main_win(gui_obj *gui){
 
       }
       
-      if(ribbon_grp == RIB_3D){
-        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 20);
-        
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SPHERE], gui->modal == SPHERE)){
-          gui->modal = SPHERE;
-          strncpy(gui->ctx_tools_title, _l("Sphere"), DXF_MAX_CHARS);
-          gui->step = 0;
+      
+      
+      
+      
+      
+      
+      
+      if(ribbon_grp == RIB_VIEW || (gui->win_w > rib_w[RIB_VIEW] &&
+        gui->win_w > rib_w[ribbon_grp])){
+        /* zoom tools*/
+        nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
+        if (nk_group_begin(gui->ctx, "_zoomtools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+          nk_layout_row_static(gui->ctx, 28, 28, 2);
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_P]))){
+            gui->action = VIEW_ZOOM_P;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_M]))){
+            gui->action = VIEW_ZOOM_M;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_W]))){
+            gui->modal = ZOOM;
+            strncpy(gui->ctx_tools_title, _l("Zoom"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_A]))){
+            gui->action = VIEW_ZOOM_EXT;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BRUSH]))){
+            gui->action = REDRAW;
+          }
+          nk_group_end(gui->ctx);
         }
-        
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_CYLINDER], gui->modal == CYLINDER)){
-          gui->modal = CYLINDER;
-          strncpy(gui->ctx_tools_title, _l("Cylinder"), DXF_MAX_CHARS);
-          gui->step = 0;
+      
+        /* pan tools*/
+        nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
+        if (nk_group_begin(gui->ctx, "_pantools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+          nk_layout_row_static(gui->ctx, 28, 28, 2);
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_UP]))){
+            gui->action = VIEW_PAN_U;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DOWN]))){
+            gui->action = VIEW_PAN_D;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LEFT]))){
+            gui->action = VIEW_PAN_L;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_RIGTH]))){
+            gui->action = VIEW_PAN_R;
+          }
+          nk_group_end(gui->ctx);
         }
-        
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_CONE], gui->modal == CONE)){
-          gui->modal = CONE;
-          strncpy(gui->ctx_tools_title, _l("Cone"), DXF_MAX_CHARS);
-          gui->step = 0;
+        /* 3d view tools*/
+        nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
+        if (nk_group_begin(gui->ctx, "_3dviewtools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+          nk_layout_row_static(gui->ctx, 28, 28, 2);
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_TOP]))){
+            gui->alpha = 0.0;
+            gui->beta = 0.0;
+            gui->gamma = 0.0;gui->ofs_z = 0.0;
+            gui_calc_view_rot (gui);
+            
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_FRONT]))){
+            gui->alpha = 0.0;
+            gui->beta = 0.0;
+            gui->gamma = 90.0;gui->ofs_y = 0.0;
+            gui_calc_view_rot (gui);
+            
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_RIGHT]))){
+            gui->alpha = 90.0;
+            gui->beta = 0.0;
+            gui->gamma = 90.0;gui->ofs_x = 0.0;
+            gui_calc_view_rot (gui);
+            
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_ISOMETRIC]))){
+            gui->alpha = 45.0;
+            gui->beta = 0.0;
+            gui->gamma = 90.0 - 35.264;
+            gui_calc_view_rot (gui);
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_ROTATE]))){
+            gui->modal = VIEW_ROTATE;
+            strncpy(gui->ctx_tools_title, _l("Rotate View"), DXF_MAX_CHARS);
+            gui->step = 0;
+            
+          }
+          nk_group_end(gui->ctx);
         }
-        
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SLAB], gui->modal == SLAB)){
-          gui->modal = SLAB;
-          strncpy(gui->ctx_tools_title, _l("Slab"), DXF_MAX_CHARS);
-          gui->step = 0;
-        }
-        
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_WEDGE], gui->modal == WEDGE)){
-          gui->modal = WEDGE;
-          strncpy(gui->ctx_tools_title, _l("Wedge"), DXF_MAX_CHARS);
-          gui->step = 0;
-        }
-        
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_PYRAMID], gui->modal == PYRAMID)){
-          gui->modal = PYRAMID;
-          strncpy(gui->ctx_tools_title, _l("Pyramid"), DXF_MAX_CHARS);
-          gui->step = 0;
-        }
-        
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_TORUS], gui->modal == TORUS)){
-          gui->modal = TORUS;
-          strncpy(gui->ctx_tools_title, _l("Torus"), DXF_MAX_CHARS);
-          gui->step = 0;
-        }
-        
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_EXTRUDE], gui->modal == EXTRUDE)){
-          gui->modal = EXTRUDE;
-          strncpy(gui->ctx_tools_title, _l("Extrude"), DXF_MAX_CHARS);
-          gui->step = 0;
-        }
-        
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_EXTRUDE_PATH], gui->modal == EXTRUDE_PATH)){
-          gui->modal = EXTRUDE_PATH;
-          strncpy(gui->ctx_tools_title, _l("Extrude path"), DXF_MAX_CHARS);
-          gui->step = 0;
-        }
-        
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_REVOLVE], gui->modal == REVOLVE)){
-          gui->modal = REVOLVE;
-          strncpy(gui->ctx_tools_title, _l("Revolve"), DXF_MAX_CHARS);
-          gui->step = 0;
-        }
-        
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_UNION], gui->modal == UNION)){
-          gui->modal = UNION;
-          strncpy(gui->ctx_tools_title, _l("Union"), DXF_MAX_CHARS);
-          gui->step = 0;
-        }
-        
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SUBTRACT], gui->modal == SUBTRACT)){
-          gui->modal = SUBTRACT;
-          strncpy(gui->ctx_tools_title, _l("Subtract"), DXF_MAX_CHARS);
-          gui->step = 0;
-        }
-        
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_INTERSECTION], gui->modal == INTERSECTION)){
-          gui->modal = INTERSECTION;
-          strncpy(gui->ctx_tools_title, _l("Intersection"), DXF_MAX_CHARS);
-          gui->step = 0;
-        }
-        
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SLICE], gui->modal == SLICE)){
-          gui->modal = SLICE;
-          strncpy(gui->ctx_tools_title, _l("Slice"), DXF_MAX_CHARS);
-          gui->step = 0;
-        }
-        
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_ROTATE], gui->modal == ROTATE_3D)){
-          gui->modal = ROTATE_3D;
-          strncpy(gui->ctx_tools_title, _l("Rotate 3D"), DXF_MAX_CHARS);
-          gui->step = 0;
+      
+      }
+      
+      
+      if(ribbon_grp == RIB_MANAGER || (gui->win_w > rib_w[RIB_MANAGER] &&
+        gui->win_w > rib_w[ribbon_grp])){
+        /* managers*/
+        nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
+        if (nk_group_begin(gui->ctx, "_managerstools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+          nk_layout_row_static(gui->ctx, 28, 28, 2);
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LAYERS]))){
+            gui->show_lay_mng = 1;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_FONT]))){
+            gui->show_tstyles_mng = 1;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LTYPE]))){
+            gui->show_ltyp_mng = 1;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PUZZLE]))){
+            gui->show_blk_mng = 1;
+          }
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_CONFIG]))){
+            gui->show_dim_mng = 1;
+          }
+          nk_group_end(gui->ctx);
         }
       }
+      
+      
+      
+      
+      
+      if(ribbon_grp == RIB_3D || gui->win_w > rib_w[RIB_3D]){
+        /* solids */
+        nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
+        if (nk_group_begin(gui->ctx, "_solidstools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+          nk_layout_row_static(gui->ctx, 28, 28, 3);
+        
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SPHERE], gui->modal == SPHERE)){
+            gui->modal = SPHERE;
+            strncpy(gui->ctx_tools_title, _l("Sphere"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_CYLINDER], gui->modal == CYLINDER)){
+            gui->modal = CYLINDER;
+            strncpy(gui->ctx_tools_title, _l("Cylinder"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_CONE], gui->modal == CONE)){
+            gui->modal = CONE;
+            strncpy(gui->ctx_tools_title, _l("Cone"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SLAB], gui->modal == SLAB)){
+            gui->modal = SLAB;
+            strncpy(gui->ctx_tools_title, _l("Slab"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_WEDGE], gui->modal == WEDGE)){
+            gui->modal = WEDGE;
+            strncpy(gui->ctx_tools_title, _l("Wedge"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_PYRAMID], gui->modal == PYRAMID)){
+            gui->modal = PYRAMID;
+            strncpy(gui->ctx_tools_title, _l("Pyramid"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_TORUS], gui->modal == TORUS)){
+            gui->modal = TORUS;
+            strncpy(gui->ctx_tools_title, _l("Torus"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          nk_group_end(gui->ctx);
+        }
+        
+        /* extrude */
+        nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
+        if (nk_group_begin(gui->ctx, "_extrudetools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+          nk_layout_row_static(gui->ctx, 28, 28, 1);
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_EXTRUDE], gui->modal == EXTRUDE)){
+            gui->modal = EXTRUDE;
+            strncpy(gui->ctx_tools_title, _l("Extrude"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_EXTRUDE_PATH], gui->modal == EXTRUDE_PATH)){
+            gui->modal = EXTRUDE_PATH;
+            strncpy(gui->ctx_tools_title, _l("Extrude path"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_REVOLVE], gui->modal == REVOLVE)){
+            gui->modal = REVOLVE;
+            strncpy(gui->ctx_tools_title, _l("Revolve"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          nk_group_end(gui->ctx);
+        }
+        
+        /* 3D booleans */
+        nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
+        if (nk_group_begin(gui->ctx, "_3dbooltools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+          nk_layout_row_static(gui->ctx, 28, 28, 1);
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_UNION], gui->modal == UNION)){
+            gui->modal = UNION;
+            strncpy(gui->ctx_tools_title, _l("Union"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SUBTRACT], gui->modal == SUBTRACT)){
+            gui->modal = SUBTRACT;
+            strncpy(gui->ctx_tools_title, _l("Subtract"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_INTERSECTION], gui->modal == INTERSECTION)){
+            gui->modal = INTERSECTION;
+            strncpy(gui->ctx_tools_title, _l("Intersection"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          nk_group_end(gui->ctx);
+        }
+        
+        
+        
+        /* 3D transforms */
+        nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
+        if (nk_group_begin(gui->ctx, "_3dtranstools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+          nk_layout_row_static(gui->ctx, 28, 28, 1);
+          
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SLICE], gui->modal == SLICE)){
+            gui->modal = SLICE;
+            strncpy(gui->ctx_tools_title, _l("Slice"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_ROTATE], gui->modal == ROTATE_3D)){
+            gui->modal = ROTATE_3D;
+            strncpy(gui->ctx_tools_title, _l("Rotate 3D"), DXF_MAX_CHARS);
+            gui->step = 0;
+          }
+          
+          nk_group_end(gui->ctx);
+        }
+      }
+      
+      nk_layout_row_end(gui->ctx);
       
       nk_group_end(gui->ctx);
     }

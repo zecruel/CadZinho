@@ -1333,6 +1333,39 @@ int gui_main_loop (gui_obj *gui) {
     }
     gui->draw = 2;
   }
+  else if(gui->action == TRANSP_CHANGE){
+    gui->action = NONE;
+    if (gui->sel_list != NULL){
+      /* sweep the selection list */
+      list_node *current = gui->sel_list->next;
+      dxf_node *new_ent = NULL;
+      if (current != NULL){
+        do_add_entry(&gui->list_do, "CHANGE TRANSPARENCY");
+      }
+      while (current != NULL){
+        if (current->data){
+          if (((dxf_node *)current->data)->type == DXF_ENT){ // DXF entity 
+            new_ent = dxf_ent_copy((dxf_node *)current->data, 0);
+            
+            //int transp = 0x20000FF - ((float)gui->transparency * 2.55);
+            //dxf_attr_change(new_ent, 440, &transp);
+            
+            dxf_edit_transparency (new_ent, gui->transparency);
+            
+            new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0 , 0);
+            
+            dxf_obj_subst((dxf_node *)current->data, new_ent);
+            
+            do_add_item(gui->list_do.current, (dxf_node *)current->data, new_ent);
+
+            current->data = new_ent;
+          }
+        }
+        current = current->next;
+      }
+    }
+    gui->draw = 2;
+  }
   
   /**********************************/
   

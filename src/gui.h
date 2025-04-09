@@ -76,6 +76,7 @@ enum Action {
 	COLOR_CHANGE,
 	LTYPE_CHANGE,
 	LW_CHANGE,
+  TRANSP_CHANGE,
 	YANK,
 	CUT,
 	START_PASTE,
@@ -303,6 +304,7 @@ struct Gui_obj {
   
   int color_idx, lw_idx, t_al_v, t_al_h;
 	int layer_idx, ltypes_idx, t_sty_idx;
+  int transparency;
 	
 	int step, user_flag_x, user_flag_y, lock_ax_x, lock_ax_y, user_number;
 	int keyEnter, user_flag;

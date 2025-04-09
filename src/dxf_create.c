@@ -1488,6 +1488,8 @@ int dxf_new_layer (dxf_drawing *drawing, char *name, int color, char *ltype){
 	const char *plotstylename = "2B"; /* -->TRICK  -  see the handle in seed file */
 	const char *dxf_class = "AcDbSymbolTableRecord";
 	const char *dxf_subclass = "AcDbLayerTableRecord";
+  const char *transp_appid = "AcCmTransparency"; /* to set transparency in layer */
+  int transp_opaque = 0x20000ff;
 	int int_zero = 0, ok = 0;
 	
 	/* create a new LAYER */
@@ -1504,6 +1506,10 @@ int dxf_new_layer (dxf_drawing *drawing, char *name, int color, char *ltype){
 		ok &= dxf_attr_append(lay, 6, (void *) ltype, drawing->pool);
 		ok &= dxf_attr_append(lay, 370, (void *) &int_zero, drawing->pool);
 		ok &= dxf_attr_append(lay, 390, (void *) plotstylename, drawing->pool);
+    
+    /* transparency */
+    ok &= dxf_attr_append(lay, 1001, (void *) transp_appid, drawing->pool);
+    ok &= dxf_attr_append(lay, 1071, (void *) &transp_opaque, drawing->pool);
 		
 		/* get current handle and increment the handle seed*/
 		ok &= ent_handle(drawing, lay);

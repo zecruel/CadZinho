@@ -1963,3 +1963,60 @@ list_node * dxf_delete_list(dxf_drawing *drawing, list_node *input){
 	
 	return out;
 }
+
+int dxf_edit_transparency (dxf_node * obj, int transp){
+  /* Set entity transparency
+    passed arg transp in % - valid values:
+    0-100% (0 - full opaque, 100 - full transparent)
+    -1 -> transp by block
+    other -> transp by layer (default - no attribute, remove if present)
+  */
+  if (!obj) return 0;
+  if (obj->type != DXF_ENT) return 0;
+  if (!obj->obj.content) return 0;
+  
+  dxf_node *current = obj->obj.content->next;
+  dxf_node *last_attr = NULL;
+  dxf_node *transp_attr = NULL;
+
+	while (current){
+		if (current->type == DXF_ATTR){ /* DXF attribute */
+      /* look for last valid atrribute to append transparency in order */
+			if (current->value.group == 8 ||
+        current->value.group == 6 ||
+        current->value.group == 347 ||
+        current->value.group == 62 ||
+        current->value.group == 370 ||
+        current->value.group == 48 ||
+        current->value.group == 60 ||
+        current->value.group == 310 ||
+        current->value.group == 420 ||
+        current->value.group == 430
+      ){ 
+				last_attr = current;
+			}
+      /* look for previous transparency attribute */
+      if (current->value.group == 440){
+        transp_attr = current;
+      }
+    }
+		current = current->next; /* go to the next in the list */
+  }
+  int value = 0;
+  if (transp >= 0 && transp <= 100) value = 0x20000FF - ((float)transp * 2.55);
+  else if (transp == -1) value = 0x1000000; /* by block */
+  
+  if (value == 0) { /* by layer */
+    if (!transp_attr) return 1; /* nothing to do - success */
+    return dxf_attr_remove(transp_attr); /* remove attribute */
+  }
+  
+  if (transp_attr){ /* change attr, if exists */
+    transp_attr->value.i_data = value;
+    return 1; /* success */
+  }
+  
+  /* append transparency attribute */
+  if (!last_attr) return 0; /* fail */
+  return dxf_attr_insert_after(last_attr, 440, (void *) &value, obj->obj.pool) != NULL;
+}

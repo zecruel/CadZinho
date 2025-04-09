@@ -2390,6 +2390,26 @@ dxf_node * dxf_attr_insert_after(dxf_node *attr, int group, void *value, int poo
 	return NULL;
 }
 
+int dxf_attr_remove(dxf_node *attr){
+	if (attr){
+		if (attr->type == DXF_ATTR){
+      dxf_node *next = attr->next, *prev = attr->prev;
+      
+      /* link prev and next nodes, removing current node from chain */
+      if (prev){
+        prev->next = next;
+      }
+      if (next){
+        next->prev = prev;
+      }
+      attr->prev = NULL;
+      attr->next = NULL;
+      return 1;
+		}
+	}
+	return 0;
+}
+
 int dxf_attr_change(dxf_node *master, int group, void *value){
 	if (master){
 		/* find the first attribute*/

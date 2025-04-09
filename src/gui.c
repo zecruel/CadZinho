@@ -1876,6 +1876,7 @@ int gui_start(gui_obj *gui){
 	gui->layer_idx = 0;
 	gui->ltypes_idx = 0;
 	gui->t_sty_idx = 0;
+  gui->transparency = -2;
 	
 	gui->step = 0;
 	gui->user_flag_x = 0;

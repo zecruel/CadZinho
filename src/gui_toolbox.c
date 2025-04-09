@@ -124,9 +124,9 @@ int gui_main_win(gui_obj *gui){
     RIB_VIEW,
     RIB_MANAGER,
     RIB_3D,
-  } ribbon_grp = RIB_FILE;
+  } ribbon_grp = RIB_DRAWING;
   
-  const int rib_w[5] = {800, 1200, 1400, 1600, 1800};
+  const int rib_w[5] = {800, 1000, 1250, 1400, 1600};
 	
 	if (nk_begin(gui->ctx, "Main", nk_rect(2, 2, gui->win_w - 4, RIB_H - 5),
     NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)){
@@ -143,14 +143,14 @@ int gui_main_win(gui_obj *gui){
       /* Ribbon collections */
       nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
       nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 5);
-      if (gui->win_w > rib_w[RIB_DRAWING]) {
+      
+      if (gui_tab (gui, _l("File"), ribbon_grp == RIB_FILE)) ribbon_grp = RIB_FILE;
+      
+      if (gui->win_w > rib_w[RIB_VIEW]) {
         if (gui_tab (gui, _l("Home"), ribbon_grp == RIB_DRAWING)) ribbon_grp = RIB_DRAWING;
       }
       else {
-        if (gui_tab (gui, _l("File"), ribbon_grp == RIB_FILE)) ribbon_grp = RIB_FILE;
         if (gui_tab (gui, _l("Drawing"), ribbon_grp == RIB_DRAWING)) ribbon_grp = RIB_DRAWING;
-      }
-      if (gui->win_w < rib_w[RIB_VIEW]) {
         if (gui_tab (gui, _l("View"), ribbon_grp == RIB_VIEW)) ribbon_grp = RIB_VIEW;
       }
       if (gui->win_w < rib_w[RIB_MANAGER]) {
@@ -168,7 +168,7 @@ int gui_main_win(gui_obj *gui){
       
       
       /* file tools*/
-      if(ribbon_grp == RIB_FILE || gui->win_w > rib_w[ribbon_grp]){
+      if(ribbon_grp == RIB_FILE){ // || gui->win_w > rib_w[ribbon_grp]){
         //nk_layout_row_begin(gui->ctx, NK_STATIC, 102, 9);
         //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 14);
         nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
@@ -244,7 +244,7 @@ int gui_main_win(gui_obj *gui){
       }
       
       if(ribbon_grp == RIB_DRAWING || (gui->win_w > rib_w[RIB_DRAWING] &&
-        gui->win_w > rib_w[ribbon_grp])){
+        gui->win_w > rib_w[ribbon_grp] && ribbon_grp != RIB_FILE)){
         //nk_layout_row_begin(gui->ctx, NK_STATIC, 102, 9);
         
         /* file tools*/
@@ -460,7 +460,7 @@ int gui_main_win(gui_obj *gui){
       
       
       if(ribbon_grp == RIB_VIEW || (gui->win_w > rib_w[RIB_VIEW] &&
-        gui->win_w > rib_w[ribbon_grp])){
+        gui->win_w > rib_w[ribbon_grp] && ribbon_grp != RIB_FILE)){
         /* zoom tools*/
         nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_zoomtools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
@@ -547,7 +547,7 @@ int gui_main_win(gui_obj *gui){
       
       
       if(ribbon_grp == RIB_MANAGER || (gui->win_w > rib_w[RIB_MANAGER] &&
-        gui->win_w > rib_w[ribbon_grp])){
+        gui->win_w > rib_w[ribbon_grp] && ribbon_grp != RIB_FILE)){
         /* managers*/
         nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_managerstools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
@@ -575,7 +575,8 @@ int gui_main_win(gui_obj *gui){
       
       
       
-      if(ribbon_grp == RIB_3D || gui->win_w > rib_w[RIB_3D]){
+      if(ribbon_grp == RIB_3D || 
+        (gui->win_w > rib_w[RIB_3D] && ribbon_grp != RIB_FILE)){
         /* solids */
         nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_solidstools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
@@ -764,8 +765,8 @@ int gui_main_win(gui_obj *gui){
       
       /* second line */
       //nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 8);
-      nk_layout_row(gui->ctx, NK_STATIC, 20, 2, (float[]){90, 290});
-      static char text[64];
+      nk_layout_row(gui->ctx, NK_STATIC, 23, 2, (float[]){90, 290});
+      static char text[64], transp_txt[64];
       int text_len;
         
       /*layer*/
@@ -788,18 +789,18 @@ int gui_main_win(gui_obj *gui){
       
       /* print the name (number) of color */
       if (gui->color_idx == 0){
-        text_len = snprintf(text, 63, "%s", _l("ByB"));
+        text_len = snprintf(text, 63, "%s", _l("By Block"));
       }
       else if (gui->color_idx < 256){
         text_len = snprintf(text, 63, "%d", gui->color_idx);
       }
       else{
-        text_len = snprintf(text, 63, "%s", _l("ByL"));
+        text_len = snprintf(text, 63, "%s", _l("By Layer"));
       }
       //nk_layout_row_push(gui->ctx, 70);
       nk_label(gui->ctx, _l("Color: "), NK_TEXT_RIGHT);
       //nk_layout_row_push(gui->ctx, 80);
-      if (nk_combo_begin_image_label(gui->ctx, text, nk_image_ptr(gui->color_img), nk_vec2(215,320))){
+      if (nk_combo_begin_image_label(gui->ctx, text, nk_image_ptr(gui->color_img), nk_vec2(290,525))){
         nk_layout_row_dynamic(gui->ctx, 20, 2);
         if (nk_button_label(gui->ctx, _l("By Layer"))){
           gui->color_idx = 256;
@@ -811,7 +812,7 @@ int gui_main_win(gui_obj *gui){
           gui->action = COLOR_CHANGE;
           nk_combo_close(gui->ctx);
         }
-        nk_layout_row_static(gui->ctx, 15, 15, 10);
+        nk_layout_row_static(gui->ctx, 15, 22, 10);
         nk_label(gui->ctx, " ", NK_TEXT_RIGHT); /* for padding color alingment */
         
         for (i = 1; i < 256; i++){
@@ -850,7 +851,7 @@ int gui_main_win(gui_obj *gui){
       if(gui->lw_idx == DXF_LW_LEN) lw_descr = _l("By Layer");
       if(gui->lw_idx == DXF_LW_LEN + 1) lw_descr = _l("By Block");
       
-      if (nk_combo_begin_label(gui->ctx, lw_descr, nk_vec2(200,300))){
+      if (nk_combo_begin_label(gui->ctx, lw_descr, nk_vec2(290,300))){
         nk_layout_row_dynamic(gui->ctx, 25, 2);
         if (nk_button_label(gui->ctx, _l("By Layer"))){
           gui->lw_idx = DXF_LW_LEN;
@@ -871,9 +872,46 @@ int gui_main_win(gui_obj *gui){
             break;
           }
         }
-        
         nk_combo_end(gui->ctx);
       }
+      
+      static int transp_value = 0;
+      static char transp_b[64];
+      
+      nk_layout_row(gui->ctx, NK_STATIC, 23, 2, (float[]){120, 260});
+      if (gui->transparency >= 0 && gui->transparency <= 100)
+        snprintf(transp_txt, 63, "%d%%", gui->transparency);
+      else if (gui->transparency == -1)
+        snprintf(transp_txt, 63, _l("By Block"));
+      else snprintf(transp_txt, 63, _l("By Layer"));
+      nk_label(gui->ctx, _l("Transparency: "), NK_TEXT_RIGHT);
+      
+      if (nk_combo_begin_label(gui->ctx, transp_txt, nk_vec2(260, 80))){
+        nk_layout_row_dynamic(gui->ctx, 25, 2);
+        if (nk_button_label(gui ->ctx, _l("By Layer"))){
+          gui->transparency = -2;
+          gui->action = TRANSP_CHANGE;
+          nk_combo_close(gui->ctx);
+        }
+        if (nk_button_label(gui->ctx, _l("By Block"))){
+          gui->transparency = -1;
+          gui->action = TRANSP_CHANGE;
+          nk_combo_close(gui->ctx);
+        }
+        nk_layout_row(gui->ctx, NK_DYNAMIC, 40, 2, (float[]){0.6, 0.4});
+        //nk_progress(gui->ctx, &transp_value, 100, NK_MODIFIABLE);
+        nk_slider_int(gui->ctx, 0, &transp_value, 100, 1);
+        //transp_value = nk_propertyi(gui->ctx, _l("#Transp %"), 0, transp_value, 100, 1, 1.0);
+        snprintf(transp_b, 63, _l("Use: %d%%"), transp_value);
+        if (nk_button_label(gui ->ctx, transp_b)){
+          gui->transparency = transp_value;
+          gui->action = TRANSP_CHANGE;
+          nk_combo_close(gui->ctx);
+        }
+        nk_combo_end(gui->ctx);
+      }
+      
+      
       
       //nk_layout_row_end(gui->ctx);
       

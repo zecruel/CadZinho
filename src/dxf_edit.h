@@ -44,4 +44,6 @@ list_node * dxf_edit_expl_poly(dxf_drawing *drawing, dxf_node * ent, int mode);
 
 list_node * dxf_delete_list(dxf_drawing *drawing, list_node *input);
 
+int dxf_edit_transparency (dxf_node * obj, int transp);
+
 #endif

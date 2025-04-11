@@ -974,6 +974,7 @@ void dxf_layer_assemb (dxf_drawing *drawing){
 	int frozen;
 	int lock;
 	int off;
+  unsigned char alpha;
 	
 	/* always set the index 0 as the default layer*/
 	drawing->num_layers = 0;
@@ -984,6 +985,7 @@ void dxf_layer_assemb (dxf_drawing *drawing){
 	drawing->layers[0].frozen = 0;
 	drawing->layers[0].lock = 0;
 	drawing->layers[0].off = 0;
+  drawing->layers[0].alpha = 0xff;
 	
 	drawing->layers[0].num_el = 0;
 	drawing->layers[0].obj = NULL;
@@ -999,6 +1001,7 @@ void dxf_layer_assemb (dxf_drawing *drawing){
 		frozen = 0;
 		lock = 0;
 		off = 0;
+    alpha = 0xff;
 		
 		/* and sweep its content */
 		if (curr_layer->obj.content) current = curr_layer->obj.content->next;
@@ -1029,6 +1032,18 @@ void dxf_layer_assemb (dxf_drawing *drawing){
 			}
 			current = current->next;
 		}
+    
+    /* get transparency */
+    dxf_node *start, *end;
+    if(dxf_find_ext_appid(curr_layer, "AcCmTransparency", &start, &end)){
+      dxf_node *transp_obj;
+      if(transp_obj = dxf_find_attr_i2(start, end, 1071, 0)){
+        int transp = transp_obj->value.i_data;
+        if (transp >= 0x2000000 && transp <= 0x20000FF) 
+         alpha = transp & 0xff;
+      }
+    }
+    
 		if (i < DXF_MAX_LAYERS){
 			/* set the variables on the current layer in drawing structure */
       drawing->layers[i].name = name;
@@ -1038,6 +1053,7 @@ void dxf_layer_assemb (dxf_drawing *drawing){
 			drawing->layers[i].frozen = frozen;
 			drawing->layers[i].lock = lock;
 			drawing->layers[i].off = off;
+			drawing->layers[i].alpha = alpha;
 			drawing->layers[i].num_el = 0;
 			drawing->layers[i].obj = curr_layer;
 		}

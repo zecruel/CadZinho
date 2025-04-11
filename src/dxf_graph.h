@@ -15,6 +15,7 @@ struct ins_save{
 	double blk_x, blk_y, blk_z;
 	double rot, scale_x, scale_y, scale_z;
 	int color, ltype, lw;
+  unsigned char alpha;
 	int start_idx, end_idx;
 	double normal[3];
 	double elev;

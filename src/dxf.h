@@ -136,6 +136,7 @@ struct Dxf_layer{
 	int lock;
 	int off;
 	int num_el;
+  unsigned char alpha;
 	dxf_node *obj;
 };
 typedef struct Dxf_layer dxf_layer;

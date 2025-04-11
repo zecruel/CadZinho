@@ -39,6 +39,30 @@ int dxf_ent_get_color(dxf_drawing *drawing, dxf_node * ent, int ins_color){
 	return color;
 }
 
+unsigned char dxf_ent_get_alpha(dxf_drawing *drawing, dxf_node * ent, unsigned char ins_alpha){
+	unsigned char alpha = 0xFF;
+	if((ent) && (drawing)){
+		int transp = -2; /* default transp entity is by layer */
+		dxf_node *transp_obj, *layer_obj;
+		
+		if (transp_obj = dxf_find_attr2(ent, 440)){
+			transp = transp_obj->value.i_data;
+      if (transp >= 0x2000000 && transp <= 0x20000FF) 
+        return transp & 0xff;
+      else if (transp == 0x1000000) return ins_alpha; /* by block */
+		}
+		
+		/* transp is by layer */
+    if (layer_obj = dxf_find_attr2(ent, 8)){
+      STRPOOL_U64 layer = layer_obj->value.str;
+      int lay_idx = dxf_lay_idx(drawing, layer);
+      return drawing->layers[lay_idx].alpha;
+    }
+		
+	}
+	return alpha;
+}
+
 bmp_color dxf_get_color (int curr_color, int lay_color, int ins_color){
 	if (abs(curr_color) >= 256) curr_color = lay_color; /* color is by layer */
 	else if (curr_color == 0) curr_color = ins_color; /* color is by block */
@@ -3355,6 +3379,7 @@ int proc_obj_graph(dxf_drawing *drawing, dxf_node * ent, graph_obj * graph, stru
 	}
 	if (!(bypass & OBJ_COLOR)){
 		graph->color = dxf_colors[dxf_ent_get_color(drawing, ent, ins.color)];
+		graph->color.a = dxf_ent_get_alpha(drawing, ent, ins.alpha);
 	}
 	
 	if (!(bypass & OBJ_LTYPE)){
@@ -3401,7 +3426,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 		.ofs_x = 0.0, .ofs_y =0.0, .ofs_z =0.0,
 		.blk_x = 0.0, .blk_y =0.0, .blk_z =0.0,
 		.rot = 0.0, .scale_x = 1.0 , .scale_y = 1.0, .scale_z = 1.0,
-		.color = 7, .ltype = 0, .lw =0,
+		.color = 7, .ltype = 0, .lw = 0, .alpha = 0xff,
 		.normal = {0.0, 0.0, 1.0},
 		.elev = 0.0
 	};
@@ -3883,7 +3908,9 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					ins_stack[ins_stack_pos].scale_z = scale_z;
 					ins_stack[ins_stack_pos].rot = t_rot;
 					ins_stack[ins_stack_pos].color = dxf_ent_get_color(drawing, insert_ent, ins_stack[ins_stack_pos -1].color);
-					ins_stack[ins_stack_pos].ltype = dxf_ent_get_ltype(drawing, insert_ent, ins_stack[ins_stack_pos - 1].ltype);
+					ins_stack[ins_stack_pos].alpha = dxf_ent_get_alpha(drawing, insert_ent, ins_stack[ins_stack_pos -1].alpha);
+					
+          ins_stack[ins_stack_pos].ltype = dxf_ent_get_ltype(drawing, insert_ent, ins_stack[ins_stack_pos - 1].ltype);
 					ins_stack[ins_stack_pos].lw = dxf_ent_get_lw(drawing, insert_ent, ins_stack[ins_stack_pos - 1].lw);
 					ins_stack[ins_stack_pos].normal[0] = extru_x;
 					ins_stack[ins_stack_pos].normal[1] = extru_y;
@@ -3902,6 +3929,8 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 					ins_stack[ins_stack_pos].scale_z = 1.0;
 					ins_stack[ins_stack_pos].rot = 0.0;
 					ins_stack[ins_stack_pos].color = dxf_ent_get_color(drawing, insert_ent, ins_stack[ins_stack_pos -1].color);
+					ins_stack[ins_stack_pos].alpha = dxf_ent_get_alpha(drawing, insert_ent, ins_stack[ins_stack_pos -1].alpha);
+          
 					ins_stack[ins_stack_pos].ltype = dxf_ent_get_ltype(drawing, insert_ent, ins_stack[ins_stack_pos - 1].ltype);
 					ins_stack[ins_stack_pos].lw = dxf_ent_get_lw(drawing, insert_ent, ins_stack[ins_stack_pos - 1].lw);
 					ins_stack[ins_stack_pos].normal[0] = 0.0;
@@ -3925,7 +3954,7 @@ int dxf_obj_parse(list_node *list_ret, dxf_drawing *drawing, dxf_node * ent, int
 				tick = 0; elev = 0; t_rot = 0;
 				scale_x = 1.0; scale_y = 1.0; scale_z = 1.0;
 				extru_x = 0.0; extru_y = 0.0; extru_z = 1.0;
-				
+        
 				/* clear the strings */
 				layer = 0;
 				name1 = 0;

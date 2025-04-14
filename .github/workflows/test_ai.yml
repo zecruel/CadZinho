@@ -9,12 +9,14 @@ permissions:
 jobs:
   call-model:
     runs-on: ubuntu-latest
+    env:
+      USER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Call AI model
         run: |
           curl -X POST "https://models.inference.ai.azure.com/chat/completions" \
           -H "Content-Type: application/json" \
-          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Authorization: Bearer $USER_TOKEN" \
           -d '{
               "messages": [
                   {

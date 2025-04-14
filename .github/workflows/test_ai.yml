@@ -13,14 +13,21 @@ jobs:
       - name: Call AI model
         run: |
           curl -X POST "https://models.inference.ai.azure.com/chat/completions" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $" \
-            -d '{
-               "messages": [
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer ZEC_TK" \
+          -d '{
+              "messages": [
                   {
-                     "role": "user",
-                     "content": "Explain the concept of recursion."
+                      "role": "system",
+                      "content": "You are a helpful assistant."
+                  },
+                  {
+                      "role": "user",
+                      "content": "What is the capital of France?"
                   }
-               ],
-               "model": "gpt-4o"
-            }'
+              ],
+              "temperature": 1.0,
+              "top_p": 1.0,
+              "max_tokens": 1000,
+              "model": "gpt-4o"
+          }'

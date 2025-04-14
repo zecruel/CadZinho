@@ -1,0 +1,26 @@
+name: Use GitHub Models
+
+on:
+  workflow_dispatch:
+
+permissions:
+  models: read
+
+jobs:
+  call-model:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call AI model
+        run: |
+          curl -X POST "https://models.inference.ai.azure.com/chat/completions" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $" \
+            -d '{
+               "messages": [
+                  {
+                     "role": "user",
+                     "content": "Explain the concept of recursion."
+                  }
+               ],
+               "model": "gpt-4o"
+            }'

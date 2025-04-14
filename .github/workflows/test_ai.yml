@@ -14,7 +14,7 @@ jobs:
         run: |
           curl -X POST "https://models.inference.ai.azure.com/chat/completions" \
           -H "Content-Type: application/json" \
-          -H "Authorization: Bearer ZEC_TK" \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
           -d '{
               "messages": [
                   {

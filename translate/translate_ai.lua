@@ -88,7 +88,8 @@ zh-TW Chinês Taiwan
 ]]
 
 --local langs = {"ar-SA", "cs-CZ", "da-DK", "de-DE", "el-GR", "en-AU", "en-GB", "en-IE", "en-US", "en-ZA", "es-ES", "es-MX", "fi-FI", "fr-CA", "fr-FR", "he-IL", "hi-IN", "hu-HU", "id-ID", "it-IT", "ja-JP", "ko-KR", "nl-BE", "nl-NL", "no-NO", "pl-PL", "pt-BR", "pt-PT", "ro-RO", "ru-RU", "sk-SK", "sv-SE", "th-TH", "tr-TR", "zh-CN", "zh-HK", "zh-TW"}
-local langs = {"es-ES", "pt-BR"}
+local langs = {"ru-RU", "zh-CN", "ja-JP", "ko-KR"}
+--local langs = {"es-ES", "pt-BR"}
 
 local county_prompt = [=[Given an input in BCP-47 code, return the full language name in its own thonge, the corresponding writing system, and the corresponding country flag in simplified representation SVG graphic format as string.
 
@@ -199,7 +200,7 @@ for k, lang in pairs(langs) do
       str = str .. 'translate["' ..  lits[j] .. '"] = "' .. lits[j] .. '"\n'
       count = count + 1
       
-      if count >= 70 then
+      if count >= 50 then
         buffer = {}
         c = cURL.easy{
           url        = "https://models.inference.ai.azure.com/chat/completions",
@@ -237,28 +238,16 @@ for k, lang in pairs(langs) do
       
         out_json:write(str)
       
-      
-      
-      
-      
-      
         str = '\n'
         count = 0
       end
     end
     
-    
-    
-    
-    end
-    
-    
-    
   end
   
   if count > 0 then
   buffer = {}
-    c = cURL.easy{
+  c = cURL.easy{
     url        = "https://models.inference.ai.azure.com/chat/completions",
     
     post       = true,
@@ -296,5 +285,7 @@ for k, lang in pairs(langs) do
   
   
   out_json:close()
+  
+  end
 end
 

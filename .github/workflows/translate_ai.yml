@@ -16,7 +16,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes lua5.4 luarocks curl libcurl4 libcurl4-openssl-dev
-          sudo luarocks install Lua-cURL CURL_INCDIR=/usr/include/x86_64-linux-gnu/curl/
+          sudo luarocks install Lua-cURL CURL_INCDIR=/usr/include/x86_64-linux-gnu/
       - uses: actions/checkout@v4.1.1
       - name: Run Lua script
         run: |

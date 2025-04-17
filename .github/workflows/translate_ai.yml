@@ -12,13 +12,16 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - name: Prepare Lua with cURL
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes lua luarocks
+          luarocks install Lua-cURL
+      - uses: actions/checkout@v4.1.1
       - name: Run Lua script
-        uses: mileschou/lua-action@master
-        with:
-          args: |
-            luarocks install Lua-cURL
-            cd translate
-            lua translate_ai.lua
+        run: |
+          cd translate
+          lua translate_ai.lua
       - name: Generate zip file with results
         run: zip -r translate ./translate
       - name: Upload the result

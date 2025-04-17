@@ -15,7 +15,7 @@ jobs:
       - name: Prepare Lua with cURL
         run: |
           sudo apt-get update
-          sudo apt-get install --yes lua luarocks
+          sudo apt-get install --yes lua5.4 luarocks
           luarocks install Lua-cURL
       - uses: actions/checkout@v4.1.1
       - name: Run Lua script

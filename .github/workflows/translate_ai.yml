@@ -1,0 +1,30 @@
+name: Translate with AI
+# Create translations GUI terms file using AI - Github models
+on:
+  workflow_dispatch:
+
+permissions:
+  models: read
+
+jobs:
+  call-model:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Prepare Lua with cURL
+        run: |
+          luarocks install Lua-cURL
+      - uses: actions/checkout@v4.1.1
+      - name: Run Lua script
+        run: |
+          cd translate
+          lua translate_ai.lua
+      - name: Generate zip file with results
+        run: zip -r translate ./translate
+      - name: Upload the result
+        uses: actions/upload-artifact@v4.3.0
+        with:
+          name: translate
+          path: translate.zip
+          retention-days: 5

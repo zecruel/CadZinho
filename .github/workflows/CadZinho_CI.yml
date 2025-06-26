@@ -473,6 +473,7 @@ jobs:
         path: emscripten.zip
         retention-days: 5
   release:
+    if: false
     needs: [linux-build, macos-build, windows-build, msvc-build, emscripten-built]
     runs-on: ubuntu-latest
     steps:

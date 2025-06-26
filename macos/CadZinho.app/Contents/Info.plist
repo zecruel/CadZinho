@@ -19,12 +19,12 @@
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.6.1</string>
+  <string>0.7.0</string>
   <key>CFBundleSpokenName</key>
   <string>cad zinho</string>
   <key>CFBundleVersion</key>
-  <string>0.6.1</string>
+  <string>0.7.0</string>
   <key>NSHumanReadableCopyright</key>
-  <string>CadZinho 2024 by Zecruel - MIT Licence</string>
+  <string>CadZinho 2025 by Zecruel - MIT Licence</string>
 </dict>
 </plist>

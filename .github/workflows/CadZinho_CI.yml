@@ -277,9 +277,7 @@ jobs:
         cd ../..
         rm -rf manifold
     - name: get make file and resources
-      run: |
-        cp ./Makefile ./windows
-        cp windows/* ./
+      run: cp windows/* ./
     - name: make
       run: make
     - name: download mesa3d
@@ -433,6 +431,7 @@ jobs:
         retention-days: 5
         
   emscripten-built:
+    if: false
     needs: up-version
     runs-on: ubuntu-latest
 

@@ -4,9 +4,9 @@ on: workflow_dispatch
 
 env:
   MAJOR: 0
-  MINOR: 6
-  MAN: 1
-  YEAR: 2024
+  MINOR: 7
+  MAN: 0
+  YEAR: 2025
   LUA_V: 5.4.7
   MESA_V: 24.2.6
   GLEW_V: 2.2.0
@@ -64,6 +64,7 @@ jobs:
         continue-on-error: true
 
   linux-build:
+    if: false
     needs: up-version
     runs-on: ubuntu-latest
 
@@ -185,6 +186,7 @@ jobs:
         retention-days: 5
         
   macos-build:
+    if: false
     needs: up-version
     runs-on: macos-latest
 
@@ -262,8 +264,21 @@ jobs:
         del luac.c
     - name: copy lua sources 
       run: cp ./lua-${{ env.LUA_V }}/src/* ./src/
+    - name: get and prepare manifold
+      run: |
+        git clone https://github.com/elalish/manifold.git
+        cd manifold
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
+        cmake --build ./
+        cmake --install ./ --prefix ../../
+        cd ../..
+        rm -rf manifold
     - name: get make file and resources
-      run: cp windows/* ./
+      run: |
+        cp ./Makefile ./windows
+        cp windows/* ./
     - name: make
       run: make
     - name: download mesa3d
@@ -298,6 +313,7 @@ jobs:
         path: windows.zip
         retention-days: 5
   msvc-build:
+    if: false
     needs: up-version
     runs-on: windows-latest
 

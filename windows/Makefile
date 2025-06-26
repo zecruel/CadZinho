@@ -5,7 +5,7 @@ COMPILER_FLAGS = -c -MD
 LINKER_FLAGS = -Wl,-subsystem,windows -lmingw32 -lSDL2main -lSDL2 -lSDL2_net -lopengl32 -lm -lGLU32 -lGLEW32 -lmanifoldc -lmanifold -lClipper2
 #LINKER_FLAGS = -lmingw32 -lSDL2main -lSDL2 -lopengl32 -lm -lGLU32 -lGLEW32 -llua
 INCLUDE_PATHS = -I. -I./src/ -I/mingw64/include -I/mingw64/include/SDL2 -I./include
-LIBRARY_PATHS = -L/mingw64/lib -L.
+LIBRARY_PATHS = -L/mingw64/lib -L. -L./lib
 EXE=cadzinho.exe
 
 SRC=$(wildcard $(SRC_PATH)*.c)

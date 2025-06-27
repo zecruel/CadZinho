@@ -1,5 +1,6 @@
 SRC_PATH=./src/
-CC=g++
+CC=gcc
+CPP=g++
 #COMPILER_FLAGS = -g -c -MD
 COMPILER_FLAGS = -c -MD
 LINKER_FLAGS = -Wl,-subsystem,windows -lmingw32 -lSDL2main -lSDL2 -lSDL2_net -lopengl32 -lm -lGLU32 -lGLEW32 -lole32 -lmanifoldc -lmanifold
@@ -18,7 +19,7 @@ cz.res: cz.rc
 	windres cz.rc -O coff -o cz.res
 
 $(EXE): $(OBJ) cz.res
-	$(CC) $(LIBRARY_PATHS) $(LINKER_FLAGS) $(OBJ) $(LINKER_FLAGS) cz.res -o $@
+	$(CPP) $(LIBRARY_PATHS) $(LINKER_FLAGS) $(OBJ) $(LINKER_FLAGS) cz.res -o $@
 
 ./obj/%.o: ./src/%.c
 	$(CC) $(INCLUDE_PATHS) $(COMPILER_FLAGS) -o $@ $<

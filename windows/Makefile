@@ -1,5 +1,5 @@
 SRC_PATH=./src/
-CC=gcc
+CC=g++
 #COMPILER_FLAGS = -g -c -MD
 COMPILER_FLAGS = -c -MD
 LINKER_FLAGS = -Wl,-subsystem,windows -lmingw32 -lSDL2main -lSDL2 -lSDL2_net -lopengl32 -lm -lGLU32 -lGLEW32 -lole32 -lmanifoldc -lmanifold

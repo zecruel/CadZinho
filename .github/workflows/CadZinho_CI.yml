@@ -12,6 +12,8 @@ env:
   GLEW_V: 2.2.0
   SDL_V: 2.30.9
   SDL_NET_V: 2.2.0
+  MANIFOLD_V: v3.0.1
+
   
 jobs:
   up-version:
@@ -267,7 +269,7 @@ jobs:
       run: cp ./lua-${{ env.LUA_V }}/src/* ./src/
     - name: get and prepare manifold
       run: |
-        git clone https://github.com/elalish/manifold.git
+        git clone --depth 1 --branch 'v3.0.1' https://github.com/elalish/manifold.git
         cd manifold
         mkdir build
         cd build

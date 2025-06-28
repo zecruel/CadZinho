@@ -66,7 +66,6 @@ jobs:
         continue-on-error: true
 
   linux-build:
-    if: false
     needs: up-version
     runs-on: ubuntu-latest
 
@@ -88,6 +87,18 @@ jobs:
       run: rm lua-${{ env.LUA_V }}/src/lua.c lua-${{ env.LUA_V }}/src/luac.c
     - name: copy lua sources 
       run: cp lua-${{ env.LUA_V }}/src/* ./src/
+    - name: get and prepare manifold
+      run: |
+        git clone https://github.com/elalish/manifold.git
+        cd manifold
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
+        cmake --build ./
+        cmake --install ./ --prefix ../../
+        cp ./_deps/clipper2-build/libClipper2.a ../../lib/
+        cd ../..
+        rm -rf manifold
     - name: get make file
       run: cp linux/Makefile ./Makefile
     - name: make
@@ -188,7 +199,6 @@ jobs:
         retention-days: 5
         
   macos-build:
-    if: false
     needs: up-version
     runs-on: macos-latest
 
@@ -207,6 +217,18 @@ jobs:
       run: rm lua-${{ env.LUA_V }}/src/lua.c lua-${{ env.LUA_V }}/src/luac.c
     - name: copy lua sources 
       run: cp lua-${{ env.LUA_V }}/src/* ./src/
+    - name: get and prepare manifold
+      run: |
+        git clone https://github.com/elalish/manifold.git
+        cd manifold
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
+        cmake --build ./
+        cmake --install ./ --prefix ../../
+        cp ./_deps/clipper2-build/libClipper2.a ../../lib/
+        cd ../..
+        rm -rf manifold
     - name: get make file
       run: cp macos/Makefile ./Makefile
     - name: make
@@ -434,7 +456,6 @@ jobs:
         retention-days: 5
         
   emscripten-built:
-    if: false
     needs: up-version
     runs-on: ubuntu-latest
 
@@ -460,6 +481,18 @@ jobs:
         rm samples/*.svg
         rm samples/*.ps
         rm samples/*.jpg
+    - name: get and prepare manifold
+      run: |
+        git clone https://github.com/elalish/manifold.git
+        cd manifold
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
+        cmake --build ./
+        cmake --install ./ --prefix ../../
+        cp ./_deps/clipper2-build/libClipper2.a ../../lib/
+        cd ../..
+        rm -rf manifold
     - name: get make and resources files
       run: |
         cp emscripten/Makefile ./Makefile

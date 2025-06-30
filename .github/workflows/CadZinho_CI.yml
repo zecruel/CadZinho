@@ -493,10 +493,12 @@ jobs:
         cd build
         emcmake cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
         emmake make
-        ls -alR
+        cmake --install ./ --prefix ../../
         cp ./_deps/clipper2-build/libClipper2.a ../../lib/
         cd ../..
         rm -rf manifold
+        cd lib
+        ls -alR
     - name: get make and resources files
       run: |
         cp emscripten/Makefile ./Makefile

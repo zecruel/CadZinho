@@ -92,7 +92,7 @@ jobs:
         cmake-version: 4.0.2
     - name: get and prepare manifold
       run: |
-        git clone https://github.com/elalish/manifold.git
+        git clone --depth 1 --branch 'v3.0.1' https://github.com/elalish/manifold.git
         cd manifold
         mkdir build
         cd build

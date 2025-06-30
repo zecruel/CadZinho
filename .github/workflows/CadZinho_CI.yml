@@ -426,7 +426,7 @@ jobs:
         cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
         cmake --build ./
         cmake --install ./ --prefix ../../
-        cp ./_deps/clipper2-build/libClipper2.a ../../lib/
+        cp ./_deps/clipper2-build/Clipper2.lib ../../lib/
         cd ../..
         rm -rf manifold
     - name: Build using CL.EXE

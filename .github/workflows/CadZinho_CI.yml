@@ -87,6 +87,9 @@ jobs:
       run: rm lua-${{ env.LUA_V }}/src/lua.c lua-${{ env.LUA_V }}/src/luac.c
     - name: copy lua sources 
       run: cp lua-${{ env.LUA_V }}/src/* ./src/
+    - uses: jwlawson/actions-setup-cmake@v2
+      with:
+        cmake-version: 4.0.2
     - name: get and prepare manifold
       run: |
         git clone https://github.com/elalish/manifold.git
@@ -481,15 +484,17 @@ jobs:
         rm samples/*.svg
         rm samples/*.ps
         rm samples/*.jpg
+    - uses: jwlawson/actions-setup-cmake@v2
     - name: get and prepare manifold
       run: |
         git clone https://github.com/elalish/manifold.git
         cd manifold
         mkdir build
         cd build
-        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
-        cmake --build ./
-        cmake --install ./ --prefix ../../
+        emcmake cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
+        emcmake cmake --build ./
+        emcmake cmake --install ./ --prefix ../../
+        ls -alR
         cp ./_deps/clipper2-build/libClipper2.a ../../lib/
         cd ../..
         rm -rf manifold

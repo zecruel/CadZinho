@@ -12,7 +12,7 @@ env:
   GLEW_V: 2.2.0
   SDL_V: 2.30.9
   SDL_NET_V: 2.2.0
-  MANIFOLD_V: v3.1.1
+  MANIFOLD_V: 3.1.1
 
   
 jobs:

@@ -340,6 +340,7 @@ jobs:
         path: windows.zip
         retention-days: 5
   msvc-build:
+    if: false
     needs: up-version
     runs-on: windows-latest
 

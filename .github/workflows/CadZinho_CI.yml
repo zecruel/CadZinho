@@ -425,9 +425,9 @@ jobs:
         cd build
         cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
         cmake --build ./
-        cmake --install ./ --prefix ../../
-        cd ../..
+        cmake --build . --target ALL_BUILD --config Release
         ls -R ../../
+        cd ../..
         rm -rf manifold
     - name: Build using CL.EXE
       run: nmake WIN64=1 -f Makefile.msvc

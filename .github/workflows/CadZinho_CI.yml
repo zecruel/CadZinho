@@ -12,7 +12,7 @@ env:
   GLEW_V: 2.2.0
   SDL_V: 2.30.9
   SDL_NET_V: 2.2.0
-  MANIFOLD_V: 3.1.1
+  MANIFOLD_V: 3.0.1
 
   
 jobs:
@@ -99,7 +99,6 @@ jobs:
         cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
         make
         cmake --install ./ --prefix ../../
-        cp ./_deps/clipper2-build/libClipper2.a ../../lib/
         cd ../..
         rm -rf manifold
     - name: get make file
@@ -222,14 +221,13 @@ jobs:
       run: cp lua-${{ env.LUA_V }}/src/* ./src/
     - name: get and prepare manifold
       run: |
-        git clone https://github.com/elalish/manifold.git
+        git clone --depth 1 --branch 'v${{ env.MANIFOLD_V }}' https://github.com/elalish/manifold.git
         cd manifold
         mkdir build
         cd build
         cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
         cmake --build ./
         cmake --install ./ --prefix ../../
-        cp ./_deps/clipper2-build/libClipper2.a ../../lib/
         cd ../..
         rm -rf manifold
     - name: get make file
@@ -294,14 +292,13 @@ jobs:
       run: cp ./lua-${{ env.LUA_V }}/src/* ./src/
     - name: get and prepare manifold
       run: |
-        git clone https://github.com/elalish/manifold.git
+        git clone --depth 1 --branch 'v${{ env.MANIFOLD_V }}' https://github.com/elalish/manifold.git
         cd manifold
         mkdir build
         cd build
         cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
         cmake --build ./
         cmake --install ./ --prefix ../../
-        cp ./_deps/clipper2-build/libClipper2.a ../../lib/
         cd ../..
         rm -rf manifold
     - name: get make file and resources
@@ -419,15 +416,15 @@ jobs:
         cmake-version: 4.0.2
     - name: get and prepare manifold
       run: |
-        git clone https://github.com/elalish/manifold.git
+        git clone --depth 1 --branch 'v${{ env.MANIFOLD_V }}' https://github.com/elalish/manifold.git
         cd manifold
         mkdir build
         cd build
         cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
         cmake --build ./
         cmake --install ./ --prefix ../../
-        cp ./_deps/clipper2-build/Clipper2.lib ../../lib/
         cd ../..
+        ls -R ../../
         rm -rf manifold
     - name: Build using CL.EXE
       run: nmake WIN64=1 -f Makefile.msvc
@@ -500,14 +497,13 @@ jobs:
     - uses: jwlawson/actions-setup-cmake@v2
     - name: get and prepare manifold
       run: |
-        git clone https://github.com/elalish/manifold.git
+        git clone --depth 1 --branch 'v${{ env.MANIFOLD_V }}' https://github.com/elalish/manifold.git
         cd manifold
         mkdir build
         cd build
         emcmake cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
         emmake make
         cmake --install ./ --prefix ../../
-        cp ./_deps/clipper2-build/libClipper2.a ../../lib/
         cd ../..
         rm -rf manifold
         cd lib

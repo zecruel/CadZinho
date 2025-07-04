@@ -1,9 +1,9 @@
 SRC_PATH = ./src/
 EXT_SRC_PATH = ./ext_src/
 INCLUDE_PATHS = $(SRC_PATH) $(EXT_SRC_PATH) $(wildcard $(EXT_SRC_PATH)*/)
-CC = gcc
-CPP = g++
-LINKER = g++
+CC = cc
+CPP = clang++
+LINKER = clang++
 
 CPP_COMPILER_FLAGS = -c -DMANIFOLD_PAR=-1 -DMANIFOLD_CROSS_SECTION
 C_COMPILER_FLAGS = -c -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
@@ -19,7 +19,7 @@ OBJ_CPP=$(SRC_CPP:.cpp=.obj)
 
 all: $(SRC_C) $(SRC_CPP) $(EXE)
 
-$(EXE): $(OBJ_CPP) $(OBJ_C) cz.res
+$(EXE): $(OBJ_CPP) $(OBJ_C)
 	$(LINKER) $(LIBRARY_PATHS) $(LINKER_FLAGS) $(OBJ_C) $(OBJ_CPP) $(LINKER_FLAGS) -o $@
 
 $(OBJ_C):

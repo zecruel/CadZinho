@@ -7,12 +7,10 @@ env:
   MINOR: 7
   MAN: 0
   YEAR: 2025
-  LUA_V: 5.4.7
   MESA_V: 24.2.6
   GLEW_V: 2.2.0
   SDL_V: 2.30.9
   SDL_NET_V: 2.2.0
-  MANIFOLD_V: 3.0.1
 
   
 jobs:
@@ -76,32 +74,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install --yes libsdl2-dev libsdl2-net-dev libglvnd-dev libglew-dev fuse libfuse2 libarchive-tools
         sudo gem install fpm
-    - name: download lua source
-      uses: suisei-cn/actions-download-file@v1.6.0
-      with:
-        url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
-        target: .
-    - name: extract lua
-      run: tar zxf lua-${{ env.LUA_V }}.tar.gz
-    - name: remove main in lua
-      run: rm lua-${{ env.LUA_V }}/src/lua.c lua-${{ env.LUA_V }}/src/luac.c
-    - name: copy lua sources 
-      run: cp lua-${{ env.LUA_V }}/src/* ./src/
-    - uses: jwlawson/actions-setup-cmake@v2
-      with:
-        cmake-version: 4.0.2
-    - name: get and prepare manifold
-      run: |
-        git clone --depth 1 --branch 'v${{ env.MANIFOLD_V }}' https://github.com/elalish/manifold.git
-        cd manifold
-        mkdir build
-        cd build
-        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
-        make
-        cmake --install ./ --prefix ../../
-        cp ./_deps/clipper2-build/libClipper2.a ../../lib/
-        cd ../..
-        rm -rf manifold
     - name: get make file
       run: cp linux/Makefile ./Makefile
     - name: make
@@ -114,7 +86,7 @@ jobs:
         cp ./cadzinho ./pkg/usr/bin/
         cp -r ./linux/CadZinho/share/ ./pkg/usr/
         mkdir pkg/usr/share/cadzinho
-        cp ./LICENSE.txt ./pkg/usr/share/cadzinho/
+        cp ./LICENSES.txt ./pkg/usr/share/cadzinho/
         cp -r ./lang/ ./pkg/usr/share/cadzinho/
     - name: Debian linux package
       run: |
@@ -179,12 +151,12 @@ jobs:
         ./appimagetool-x86_64.AppImage CadZinho.AppDir
     - name: create archive
       run: |
-        zip -r linux_appimage CadZinho-x86_64.AppImage LICENSE.txt
+        zip -r linux_appimage CadZinho-x86_64.AppImage LICENSES.txt
     - name: regular linux package
       run: |
         mkdir ./linux/CadZinho/share/cadzinho
         cp ./cadzinho ./linux/CadZinho
-        cp ./LICENSE.txt ./linux/CadZinho/share/cadzinho
+        cp ./LICENSES.txt ./linux/CadZinho/share/cadzinho
         cp -r ./lang/ ./linux/CadZinho/share/cadzinho/
         cd ./linux/CadZinho
         zip -r linux *
@@ -208,30 +180,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4.1.1
     - name: configure
-      run: brew install sdl2 sdl2_net lua mesa-glu glew dylibbundler
-    - name: download lua source
-      uses: suisei-cn/actions-download-file@v1.6.0
-      with:
-        url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
-        target: .
-    - name: extract lua
-      run: tar zxf lua-${{ env.LUA_V }}.tar.gz
-    - name: remove main in lua
-      run: rm lua-${{ env.LUA_V }}/src/lua.c lua-${{ env.LUA_V }}/src/luac.c
-    - name: copy lua sources 
-      run: cp lua-${{ env.LUA_V }}/src/* ./src/
-    - name: get and prepare manifold
-      run: |
-        git clone --depth 1 --branch 'v${{ env.MANIFOLD_V }}' https://github.com/elalish/manifold.git
-        cd manifold
-        mkdir build
-        cd build
-        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
-        cmake --build ./
-        cmake --install ./ --prefix ../../
-        cp ./_deps/clipper2-build/libClipper2.a ../../lib/
-        cd ../..
-        rm -rf manifold
+      run: brew install sdl2 sdl2_net mesa-glu glew dylibbundler
     - name: get make file
       run: cp macos/Makefile ./Makefile
     - name: make
@@ -245,7 +194,7 @@ jobs:
       run: |
         cp LICENSE macos
         cd macos
-        zip -r macos ./CadZinho.app/ LICENSE.txt
+        zip -r macos ./CadZinho.app/ LICENSES.txt
     - name: Upload the result
       uses: actions/upload-artifact@v4.3.0
       with:
@@ -271,39 +220,11 @@ jobs:
             gcc
             make
             p7zip
-            cmake
             mingw-w64-x86_64-toolchain
             mingw64/mingw-w64-x86_64-SDL2
             mingw64/mingw-w64-x86_64-SDL2_net
             mingw64/mingw-w64-x86_64-glew
     - uses: actions/checkout@v4.1.1
-    - name: download lua source
-      uses: suisei-cn/actions-download-file@v1.6.0
-      with:
-        url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
-        target: .
-    - name: extract lua
-      run: tar zxf lua-${{ env.LUA_V }}.tar.gz
-    - name: remove main in lua
-      shell: cmd
-      run: |
-        cd lua-${{ env.LUA_V }}\src
-        del lua.c 
-        del luac.c
-    - name: copy lua sources 
-      run: cp ./lua-${{ env.LUA_V }}/src/* ./src/
-    - name: get and prepare manifold
-      run: |
-        git clone --depth 1 --branch 'v${{ env.MANIFOLD_V }}' https://github.com/elalish/manifold.git
-        cd manifold
-        mkdir build
-        cd build
-        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
-        cmake --build ./
-        cmake --install ./ --prefix ../../
-        cp ./_deps/clipper2-build/libClipper2.a ../../lib/
-        cd ../..
-        rm -rf manifold
     - name: get make file and resources
       run: cp windows/* ./
     - name: make
@@ -330,7 +251,7 @@ jobs:
         cp x64/libgallium_wgl.dll CadZinho/
         cp x64/libglapi.dll CadZinho/
         cp x64/dxil.dll CadZinho/
-        cp LICENSE.txt CadZinho/
+        cp LICENSES.txt CadZinho/
     - name: create archive
       run: 7z a windows.zip CadZinho
     - name: Upload the result
@@ -346,22 +267,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4.1.1
-    
-    - name: download lua source
-      uses: suisei-cn/actions-download-file@v1.6.0
-      with:
-        url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
-        target: .
-    - name: extract lua
-      run: tar zxf lua-${{ env.LUA_V }}.tar.gz
-    - name: remove main in lua
-      shell: cmd
-      run: |
-        cd lua-${{ env.LUA_V }}\src
-        del lua.c 
-        del luac.c
-    - name: copy lua sources 
-      run: cp ./lua-${{ env.LUA_V }}/src/* ./src/
     - name: download glew
       uses: suisei-cn/actions-download-file@v1.6.0
       with:
@@ -414,24 +319,6 @@ jobs:
     - name: get make file and resources
       run: cp windows/* ./
 
-    - uses: ilammy/msvc-dev-cmd@v1.13.0
-    - uses: jwlawson/actions-setup-cmake@v2
-      with:
-        cmake-version: 4.0.2
-    - name: get and prepare manifold
-      run: |
-        git clone --depth 1 --branch 'v${{ env.MANIFOLD_V }}' https://github.com/elalish/manifold.git
-        cd manifold
-        mkdir build
-        cd build
-        cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
-        cmake --build ./
-        cmake --build . --target ALL_BUILD --config Release
-        ls -R ./
-        cp ./_deps/clipper2-build/Release/Clipper2.lib ../..
-        cp ./lib/Release/manifold.lib ../..
-        cp ./lib/Release/manifoldc.lib ../..
-        
     - name: Build using CL.EXE
       run: nmake WIN64=1 -f Makefile.msvc
     - run: |
@@ -445,7 +332,7 @@ jobs:
         cp x64/libgallium_wgl.dll CadZinho/
         cp x64/libglapi.dll CadZinho/
         cp x64/dxil.dll CadZinho/
-        cp LICENSE.txt CadZinho/
+        cp LICENSES.txt CadZinho/
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho
     - name: download wix3
@@ -483,38 +370,12 @@ jobs:
     - uses: actions/checkout@v4.1.1
     - name: configure SDK
       uses: mymindstorm/setup-emsdk@v14
-    - name: download lua source
-      uses: suisei-cn/actions-download-file@v1.6.0
-      with:
-        url: "http://www.lua.org/ftp/lua-${{ env.LUA_V }}.tar.gz"
-        target: .
-    - name: extract lua
-      run: tar zxf lua-${{ env.LUA_V }}.tar.gz
-    - name: remove main in lua
-      run: rm lua-${{ env.LUA_V }}/src/lua.c lua-${{ env.LUA_V }}/src/luac.c
-    - name: copy lua sources 
-      run: cp lua-${{ env.LUA_V }}/src/* ./src/
     - name: clear samples
       run: |
         rm samples/*.pdf
         rm samples/*.svg
         rm samples/*.ps
         rm samples/*.jpg
-    - uses: jwlawson/actions-setup-cmake@v2
-    - name: get and prepare manifold
-      run: |
-        git clone --depth 1 --branch 'v${{ env.MANIFOLD_V }}' https://github.com/elalish/manifold.git
-        cd manifold
-        mkdir build
-        cd build
-        emcmake cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DMANIFOLD_TEST=OFF -DMANIFOLD_CBIND=ON -DMANIFOLD_PAR=OFF -DMANIFOLD_CROSS_SECTION=ON -DMANIFOLD_EXPORT=OFF -DMANIFOLD_DEBUG=OFF -DTRACY_ENABLE=OFF -DMANIFOLD_DOWNLOADS=ON ..
-        emmake make
-        cmake --install ./ --prefix ../../
-        cp ./_deps/clipper2-build/libClipper2.a ../../lib/
-        cd ../..
-        rm -rf manifold
-        cd lib
-        ls -alR
     - name: get make and resources files
       run: |
         cp emscripten/Makefile ./Makefile

@@ -1,11 +1,11 @@
 SRC_PATH = ./src/
 EXT_SRC_PATH = ./ext_src/
 INCLUDE_PATHS = $(SRC_PATH) $(EXT_SRC_PATH) $(wildcard $(EXT_SRC_PATH)*/)
-CC = gcc
-CPP = g++
-LINKER = g++
+CC = clang
+CPP = clang++
+LINKER = clang++
 
-CPP_COMPILER_FLAGS = -c -DMANIFOLD_PAR=-1 -DMANIFOLD_CROSS_SECTION
+CPP_COMPILER_FLAGS = -std=c++17 -c -DMANIFOLD_PAR=-1 -DMANIFOLD_CROSS_SECTION
 C_COMPILER_FLAGS = -c -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
 LINKER_FLAGS = `pkg-config --libs sdl2` -lm -lGL -lGLU -lGLEW -lSDL2_net
 INCLUDE = `pkg-config --cflags sdl2` $(patsubst %,-I%,. $(INCLUDE_PATHS))

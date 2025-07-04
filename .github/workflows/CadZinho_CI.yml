@@ -180,7 +180,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4.1.1
     - name: configure
-      run: brew install sdl2 sdl2_net mesa-glu glew dylibbundler
+      run: brew install gcc sdl2 sdl2_net mesa-glu glew dylibbundler
     - name: get make file
       run: cp macos/Makefile ./Makefile
     - name: make

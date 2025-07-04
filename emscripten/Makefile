@@ -8,7 +8,7 @@ LINKER = em++
 CPP_COMPILER_FLAGS = -c -DMANIFOLD_PAR=-1 -DMANIFOLD_CROSS_SECTION
 C_COMPILER_FLAGS = -c -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
 LINKER_FLAGS = -s USE_SDL=2 -s TOTAL_MEMORY=200MB -sFULL_ES2 -s STACK_SIZE=10MB -s ALLOW_MEMORY_GROWTH -s OFFSCREEN_FRAMEBUFFER --preload-file lang --preload-file script --preload-file samples --shell-file shell_minimal.html
-INCLUDE_PATHS = $(patsubst %,-I%,. $(INCLUDE_PATHS)) -s USE_SDL=2
+INCLUDE = $(patsubst %,-I%,. $(INCLUDE_PATHS)) -s USE_SDL=2
 LIBRARY_PATHS = -L.
 EXE=cadzinho.html
 
@@ -19,7 +19,7 @@ OBJ_CPP=$(SRC_CPP:.cpp=.obj)
 
 all: $(SRC_C) $(SRC_CPP) $(EXE)
 
-$(EXE): $(OBJ_CPP) $(OBJ_C) cz.res
+$(EXE): $(OBJ_CPP) $(OBJ_C)
 	$(LINKER) $(LIBRARY_PATHS) $(LINKER_FLAGS) $(OBJ_C) $(OBJ_CPP) -o $@
 
 $(OBJ_C):

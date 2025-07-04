@@ -20,7 +20,7 @@ OBJ_CPP=$(SRC_CPP:.cpp=.obj)
 all: $(SRC_C) $(SRC_CPP) $(EXE)
 
 $(EXE): $(OBJ_CPP) $(OBJ_C) cz.res
-	$(LINKER) $(LIBRARY_PATHS) $(LINKER_FLAGS) $(OBJ_C) $(OBJ_CPP) $(LINKER_FLAGS) cz.res -o $@
+	$(LINKER) $(LIBRARY_PATHS) $(LINKER_FLAGS) $(OBJ_C) $(OBJ_CPP) $(LINKER_FLAGS) -o $@
 
 $(OBJ_C):
 	$(CC) $(INCLUDE) $(C_COMPILER_FLAGS) -o $@ $(@:.o=.c)

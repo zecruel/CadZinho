@@ -1,0 +1,50 @@
+cmake_minimum_required(VERSION 3.7)
+project(CadZinho LANGUAGES C CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_PREFIX_PATH ./)
+
+file(GLOB C_SOURCES "src/*.c")
+file(GLOB EXT_C_SOURCES "ext_src/*/*.c")
+file(GLOB CPP_SOURCES "src/*.cpp")
+file(GLOB EXT_CPP_SOURCES "ext_src/*/*.cpp")
+
+add_executable(cadzinho ${C_SOURCES} ${CPP_SOURCES} ${EXT_C_SOURCES} ${EXT_CPP_SOURCES})
+target_compile_definitions(cadzinho PUBLIC
+    $<$<COMPILE_LANGUAGE:C>:SQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION>  # C-specific flags
+    $<$<COMPILE_LANGUAGE:C>:SQLITE_OMIT_LOAD_EXTENSION>  # C-specific flags
+    $<$<COMPILE_LANGUAGE:CXX>:MANIFOLD_PAR=-1 -DMANIFOLD_CROSS_SECTION> # C++-specific flags
+    $<$<COMPILE_LANGUAGE:CXX>:MANIFOLD_CROSS_SECTION> # C++-specific flags
+)
+
+target_include_directories(cadzinho PUBLIC src)
+
+file(GLOB SUBDIRS LIST_DIRECTORIES true "ext_src/*")
+foreach(dir ${SUBDIRS})
+    IF(IS_DIRECTORY ${dir})
+        target_include_directories(cadzinho PUBLIC ${dir})
+    ELSE()
+        CONTINUE()
+    ENDIF()
+endforeach()
+
+# Load the environment variable ZSDK
+set(ZSDK_PATH $ENV{ZSDK})
+
+# Add the include directory
+target_include_directories(cadzinho PUBLIC ${ZSDK_PATH})
+
+target_include_directories(cadzinho PUBLIC glew/include/)
+target_include_directories(cadzinho PUBLIC SDL2/include/)
+
+target_link_libraries(cadzinho PUBLIC glew/lib/Release/x64/glew32.lib) 
+target_link_libraries(cadzinho PUBLIC SDL2/lib/x64/SDL2.lib)
+target_link_libraries(cadzinho PUBLIC SDL2/lib/x64/SDL2main.lib)
+target_link_libraries(cadzinho PUBLIC lib/x64/SDL2_net.lib)
+target_link_libraries(cadzinho PUBLIC opengl32.lib)
+target_link_libraries(cadzinho PUBLIC Shell32.lib)
+
+
+
+#set_source_files_properties(my_c_file.c PROPERTIES COMPILE_OPTIONS -O2)

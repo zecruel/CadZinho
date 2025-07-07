@@ -326,9 +326,10 @@ jobs:
         mkdir build
         cd build
         cmake ..
+        cmake --build ./
     - run: |
         cp -r ./build/ CadZinho/
-        cp -r "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/" CadZinho/
+        cp -r "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207/" CadZinho/
         cp LICENSES.txt CadZinho/
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho

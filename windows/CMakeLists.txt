@@ -11,12 +11,10 @@ file(GLOB CPP_SOURCES "src/*.cpp")
 file(GLOB EXT_CPP_SOURCES "ext_src/*/*.cpp")
 
 add_executable(cadzinho ${C_SOURCES} ${CPP_SOURCES} ${EXT_C_SOURCES} ${EXT_CPP_SOURCES})
-target_compile_definitions(cadzinho PUBLIC
-    $<$<COMPILE_LANGUAGE:C>:SQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION>  # C-specific flags
-    $<$<COMPILE_LANGUAGE:C>:SQLITE_OMIT_LOAD_EXTENSION>  # C-specific flags
-    $<$<COMPILE_LANGUAGE:CXX>:MANIFOLD_PAR=-1 -DMANIFOLD_CROSS_SECTION> # C++-specific flags
-    $<$<COMPILE_LANGUAGE:CXX>:MANIFOLD_CROSS_SECTION> # C++-specific flags
-)
+target_compile_definitions(cadzinho PUBLIC SQLITE_THREADSAFE=0)
+target_compile_definitions(cadzinho PUBLIC SQLITE_OMIT_LOAD_EXTENSION)
+target_compile_definitions(cadzinho PUBLIC MANIFOLD_PAR=-1)
+target_compile_definitions(cadzinho PUBLIC MANIFOLD_CROSS_SECTION)
 
 target_include_directories(cadzinho PUBLIC src)
 

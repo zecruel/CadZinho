@@ -38,12 +38,16 @@ target_include_directories(cadzinho PUBLIC ${ZSDK_PATH})
 target_include_directories(cadzinho PUBLIC glew/include/)
 target_include_directories(cadzinho PUBLIC SDL2/include/)
 
-target_link_libraries(cadzinho PUBLIC glew/lib/Release/x64/glew32.lib) 
-target_link_libraries(cadzinho PUBLIC SDL2/lib/x64/SDL2.lib)
-target_link_libraries(cadzinho PUBLIC SDL2/lib/x64/SDL2main.lib)
-target_link_libraries(cadzinho PUBLIC lib/x64/SDL2_net.lib)
-target_link_libraries(cadzinho PUBLIC opengl32.lib)
-target_link_libraries(cadzinho PUBLIC Shell32.lib)
+target_link_directories(cadzinho PUBLIC glew/lib/Release/x64/)
+target_link_directories(cadzinho PUBLIC SDL2/lib/x64/)
+target_link_directories(cadzinho PUBLIC lib/x64/)
+
+target_link_libraries(cadzinho PUBLIC glew32) 
+target_link_libraries(cadzinho PUBLIC SDL2)
+target_link_libraries(cadzinho PUBLIC SDL2main)
+target_link_libraries(cadzinho PUBLIC SDL2_net)
+target_link_libraries(cadzinho PUBLIC opengl32)
+target_link_libraries(cadzinho PUBLIC Shell32)
 
 
 

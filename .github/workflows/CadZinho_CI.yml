@@ -261,7 +261,7 @@ jobs:
         path: windows.zip
         retention-days: 5
   msvc-build:
-    if: false
+    if: true
     needs: up-version
     runs-on: windows-latest
 
@@ -318,9 +318,15 @@ jobs:
         ls -R ./
     - name: get make file and resources
       run: cp windows/* ./
-
-    - name: Build using CL.EXE
-      run: nmake WIN64=1 -f Makefile.msvc
+    - uses: jwlawson/actions-setup-cmake@v2
+      with:
+        cmake-version: 4.0.2
+    - name: build
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build ./
     - run: |
         cp windows/cadzinho.ico CadZinho/
         cp ./SDL2/lib/x64/SDL2.dll CadZinho/

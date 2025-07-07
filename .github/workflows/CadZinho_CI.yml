@@ -326,45 +326,18 @@ jobs:
         mkdir build
         cd build
         cmake ..
-        cmake --build ./
     - run: |
-        cp windows/cadzinho.ico CadZinho/
-        cp ./SDL2/lib/x64/SDL2.dll CadZinho/
-        cp ./lib/x64/SDL2_net.dll CadZinho/
-        cp ./glew/bin/Release/x64/glew32.dll CadZinho/
-        cp ./cadzinho.exe CadZinho/
-        cp -r ./lang/ CadZinho/
-        cp x64/opengl32.dll CadZinho/
-        cp x64/libgallium_wgl.dll CadZinho/
-        cp x64/libglapi.dll CadZinho/
-        cp x64/dxil.dll CadZinho/
+        cp -r ./build/ CadZinho/
+        cp -r C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/ CadZinho/
         cp LICENSES.txt CadZinho/
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho
-    - name: download wix3
-      uses: suisei-cn/actions-download-file@v1.6.0
-      with:
-        url: "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip"
-        target: .
-    - name: Unzip wix3
-      shell: cmd
-      run: |
-        7z x -y wix311-binaries.zip
-        ls
-    - name: create MSI installer
-      run: |
-        cp cadzinho.wxs CadZinho/
-        cd CadZinho
-        ../candle.exe cadzinho.wxs
-        ../light.exe cadzinho.wixobj
-        mv cadzinho.msi ../
     - name: Upload the result
       uses: actions/upload-artifact@v4.3.0
       with:
         name: msvc
         path: |
           windows_msvc.zip
-          cadzinho.msi
         retention-days: 5
         
   emscripten-built:

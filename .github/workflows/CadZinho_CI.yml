@@ -321,6 +321,11 @@ jobs:
     - uses: jwlawson/actions-setup-cmake@v2
       with:
         cmake-version: 4.0.2
+    
+    - name: test
+      run: |
+        cd ext_src/Clipper2
+        del *.*
     - name: build
       run: |
         mkdir build

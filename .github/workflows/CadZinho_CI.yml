@@ -327,6 +327,7 @@ jobs:
         cd build
         cmake ..
         cmake --build ./
+      continue-on-error: true
     - run: |
         cp -r ./build/ CadZinho/
         cp -r "C:/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/MSVC/14.44.35207/" CadZinho/

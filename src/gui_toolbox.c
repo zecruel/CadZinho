@@ -729,13 +729,20 @@ int gui_main_win(gui_obj *gui){
       /* undo/redo tools*/
       //nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
       if (nk_group_begin(gui->ctx, "_undo-redo", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 2);
+        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 3);
         
         if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_UNDO]))){
           gui->action = UNDO;
         }
         if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_REDO]))){
           gui->action = REDO;
+        }
+        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SAVE]))){
+          gui->action = FILE_SAVE;
+          //gui->show_app_file = 1;
+          gui->show_save = 1;
+          gui->path_ok = 0;
+          gui->hist_new = 1;
         }
         nk_group_end(gui->ctx);
       }
@@ -1034,11 +1041,11 @@ int gui_bottom_win (gui_obj *gui){
 		
 		
 		/*----------- attractors --------------*/
-		nk_layout_row_push(gui->ctx, 16*(28) + 20);
+		nk_layout_row_push(gui->ctx, 17*(28) + 20);
 		if (nk_group_begin(gui->ctx, "attractors", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 			
 			nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
-			nk_layout_row_begin(gui->ctx, NK_STATIC, 28, 16);
+			nk_layout_row_begin(gui->ctx, NK_STATIC, 28, 17);
 			/* enable/disable attractors */
 			if (gui_tab_img (gui, gui->svg_bmp[SVG_MAGNET], en_attr, 28)){
 				en_attr = !en_attr;
@@ -1103,6 +1110,10 @@ int gui_bottom_win (gui_obj *gui){
 			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_ANY],
 				gui->curr_attr_t & ATRC_ANY, 28)){
 				gui->curr_attr_t ^= ATRC_ANY;
+			}
+			if (gui_tab_img (gui, gui->svg_bmp[SVG_LOCK],
+				gui->grid_flags > 1, 28)){
+				gui->grid_flags ^= 2;
 			}
 			
 			nk_style_pop_vec2(gui->ctx);

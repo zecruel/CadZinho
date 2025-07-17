@@ -214,7 +214,7 @@ int gui_ed_attr_info (gui_obj *gui){
 								snprintf(gui->log_msg, 63, "Error: No spaces allowed in tags");
 								continue; /* skip change */
 							}
-							attr = dxf_find_obj_i(new_ent, _l("ATTRIB"), i);
+							attr = dxf_find_obj_i(new_ent, "ATTRIB", i);
 							
 							/* update tag */
 							dxf_attr_change(attr, 2, new_str);

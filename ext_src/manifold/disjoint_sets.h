@@ -24,6 +24,8 @@
 #include <cstdint>
 #include <unordered_map>
 #include <vector>
+#include <stdio.h>
+#include <sys/types.h>
 
 class DisjointSets {
  public:

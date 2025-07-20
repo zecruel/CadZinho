@@ -134,7 +134,7 @@ jobs:
     - name: download AppImageTool
       uses: suisei-cn/actions-download-file@v1.6.0
       with:
-        url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+        url: "https://github.com/AppImage/appimagetool/releases/tag/continuous/appimagetool-x86_64.AppImage"
         target: .
     - name: download linuxdeploy's AppImage
       uses: suisei-cn/actions-download-file@v1.6.0

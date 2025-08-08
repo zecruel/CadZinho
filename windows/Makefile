@@ -9,8 +9,8 @@ LINKER = g++
 CPP_COMPILER_FLAGS = -c -DMANIFOLD_PAR=-1 -DMANIFOLD_CROSS_SECTION
 C_COMPILER_FLAGS = -c -MD -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
 LINKER_FLAGS = -Wl,-subsystem,windows -lmingw32 -lSDL2main -lSDL2 -lSDL2_net -lopengl32 -lm -lGLU32 -lGLEW32
-INCLUDE = $(patsubst %,-I%,. /ucrt64/include/ /ucrt64/include/SDL2/ $(INCLUDE_PATHS))
-LIBRARY_PATHS = -L/ucrt64/lib/ -L.
+INCLUDE = $(patsubst %,-I%,. /mingw64/include/ /mingw64/include/SDL2/ $(INCLUDE_PATHS))
+LIBRARY_PATHS = -L/mingw64/lib/ -L.
 EXE=cadzinho.exe
 
 SRC_C=$(wildcard $(SRC_PATH)*.c) $(wildcard $(EXT_SRC_PATH)*/*.c)

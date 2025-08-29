@@ -3,7 +3,7 @@
 --
 -- Copyright 2014-2015, John McNamara, jmcnamara@cpan.org
 --
-require "xlsxwriter.strict"
+
 
 local Utility   = require "xlsxwriter.utility"
 local Xmlwriter = require "xlsxwriter.xmlwriter"
@@ -1159,7 +1159,7 @@ function Worksheet:_convert_cell_args(...)
     -- Convert "A1" style cell to row, col.
     local cell = ...
     local row, col = Utility.cell_to_rowcol(cell)
-    return row, col, unpack({...}, 2)
+    return row, col, table.unpack({...}, 2)
   else
     -- Parameters are already in row, col format.
     return ...
@@ -1176,7 +1176,7 @@ function Worksheet:_convert_range_args(...)
     local range_start, range_end = range:match("(%S+):(%S+)")
     local row_1, col_1 = Utility.cell_to_rowcol(range_start)
     local row_2, col_2 = Utility.cell_to_rowcol(range_end)
-    return row_1, col_1, row_2, col_2, unpack({...}, 2)
+    return row_1, col_1, row_2, col_2, table.unpack({...}, 2)
   else
     -- Parameters are already in row, col format.
     return ...
@@ -1193,7 +1193,7 @@ function Worksheet:_convert_column_args(...)
     local range_start, range_end = range:match("(%S+):(%S+)")
     local _, col_1 = Utility.cell_to_rowcol(range_start .. "1")
     local _, col_2 = Utility.cell_to_rowcol(range_end   .. "1")
-    return col_1, col_2, unpack({...}, 2)
+    return col_1, col_2, table.unpack({...}, 2)
   else
     -- Parameters are already in col, col format.
     return ...
@@ -2155,7 +2155,7 @@ function Worksheet:_write_rows()
         if not self.set_rows[row_num] then
           self:_write_row(row_num, span)
         else
-          self:_write_row(row_num, span, unpack(self.set_rows[row_num]))
+          self:_write_row(row_num, span, table.unpack(self.set_rows[row_num]))
         end
 
         for col_num = self.dim_colmin, self.dim_colmax do
@@ -2167,10 +2167,10 @@ function Worksheet:_write_rows()
         self:_xml_end_tag("row")
 
       elseif self.comments[row_num] then
-        self:_write_empty_row(row_num, span, unpack(self.set_rows[row_num]))
+        self:_write_empty_row(row_num, span, table.unpack(self.set_rows[row_num]))
       else
         -- Row attributes only.
-        self:_write_empty_row(row_num, span, unpack(self.set_rows[row_num]))
+        self:_write_empty_row(row_num, span, table.unpack(self.set_rows[row_num]))
       end
     end
   end
@@ -2198,7 +2198,7 @@ function Worksheet:_write_single_row(current_row)
       if not self.set_rows[row_num] then
         self:_write_row(row_num)
       else
-        self:_write_row(row_num, nil, unpack(self.set_rows[row_num]))
+        self:_write_row(row_num, nil, table.unpack(self.set_rows[row_num]))
       end
 
       for col_num = self.dim_colmin, self.dim_colmax do
@@ -2210,7 +2210,7 @@ function Worksheet:_write_single_row(current_row)
       self:_xml_end_tag("row")
     else
       -- Row attributes or comments only.
-      self:_write_empty_row(row_num, nil, unpack(self.set_rows[row_num]))
+      self:_write_empty_row(row_num, nil, table.unpack(self.set_rows[row_num]))
     end
 
     -- Reset table.
@@ -2850,7 +2850,7 @@ end
 --
 function Worksheet:_write_merge_cell(merged_range)
 
-  local row_min, col_min, row_max, col_max = unpack(merged_range)
+  local row_min, col_min, row_max, col_max = table.unpack(merged_range)
 
   -- Convert the merge dimensions to a cell range.
   local cell_1 = Utility.rowcol_to_cell(row_min, col_min)
@@ -2918,9 +2918,9 @@ function Worksheet:_write_hyperlinks()
     local link_type = table.remove(hlink_data, 1)
 
     if link_type == 1 then
-      self:_write_hyperlink_external(unpack(hlink_data))
+      self:_write_hyperlink_external(table.unpack(hlink_data))
     elseif link_type == 2 then
-      self:_write_hyperlink_internal(unpack(hlink_data))
+      self:_write_hyperlink_internal(table.unpack(hlink_data))
     end
   end
 

@@ -3,7 +3,7 @@
 --
 -- Copyright 2014-2015, John McNamara, jmcnamara@cpan.org
 --
-require "xlsxwriter.strict"
+
 
 local Xmlwriter = require "xlsxwriter.xmlwriter"
 
@@ -112,7 +112,7 @@ function Rels:_write_relationships()
   self:_xml_start_tag("Relationships", attributes)
 
   for _, rel in ipairs(self.rels) do
-    self:_write_relationship(unpack(rel))
+    self:_write_relationship(table.unpack(rel))
   end
 
   self:_xml_end_tag("Relationships")

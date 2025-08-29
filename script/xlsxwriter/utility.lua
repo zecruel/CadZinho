@@ -3,7 +3,7 @@
 --
 -- Copyright 2014-2015, John McNamara, jmcnamara@cpan.org
 --
-require "xlsxwriter.strict"
+
 
 local Utility = {}
 local char_A = string.byte("A")

@@ -5,6 +5,7 @@ A Lua module for creating Excel XLSX files.
 Note: this module is no longer maintained. It is functional and if it meets
 your requirements then please use it. However, no new features will be added.
 
+Note 2: Modified to work internaly at CadZinho with Lua 5.4
 
 ## The xlsxwriter module
 
@@ -20,7 +21,7 @@ features such as:
 * Defined names.
 * Document properties.
 
-It works with Lua 5.1 and Lua 5.2.
+It works with Lua 5.4
 
 
 Here is an example:

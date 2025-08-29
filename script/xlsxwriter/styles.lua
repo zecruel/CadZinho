@@ -3,7 +3,7 @@
 --
 -- Copyright 2014-2015, John McNamara, jmcnamara@cpan.org
 --
-require "xlsxwriter.strict"
+
 
 local Xmlwriter = require "xlsxwriter.xmlwriter"
 
@@ -775,7 +775,7 @@ function Styles:_write_mru_colors(custom_colors)
 
   -- Limit the mruColors to the last 10.
   if #custom_colors > 10 then
-      custom_colors = unpack(custom_colors, 1, 10)
+      custom_colors = table.unpack(custom_colors, 1, 10)
   end
 
   self:_xml_start_tag("mruColors")

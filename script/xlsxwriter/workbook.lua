@@ -3,7 +3,7 @@
 --
 -- Copyright 2014-2015, John McNamara, jmcnamara@cpan.org
 --
-require "xlsxwriter.strict"
+
 
 local Xmlwriter     = require "xlsxwriter.xmlwriter"
 local Worksheet     = require "xlsxwriter.worksheet"
@@ -520,7 +520,7 @@ function Workbook:_prepare_num_formats()
   local num_format_count = 0
 
   -- Merge the XF and DXF tables in order to iterate over them.
-  local formats = {unpack(self.xf_formats)}
+  local formats = {table.unpack(self.xf_formats)}
   for i = 1, #self.dxf_formats do
     formats[#formats + 1] = self.dxf_formats[i]
   end

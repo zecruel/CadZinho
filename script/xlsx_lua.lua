@@ -1,12 +1,14 @@
+
+
 -- Get first element  in table that match the id key
-function get_elem(t, id)
+local function get_elem(t, id)
 	for _, elem in ipairs(t) do -- sweep elements in table (only numbered keys)
 		if elem.id == id then return elem end -- check if match and return
 	end
 end
 
 -- Get all elements  in table that match the id key. Return an array.
-function get_elems(t, id)
+local function get_elems(t, id)
 	local elems = {} -- array with match elements
 	for _, elem in ipairs(t) do  --sweep elements in table (only numbered keys)
 		if elem.id == id then  --check if match
@@ -17,13 +19,13 @@ function get_elems(t, id)
 end
 
 --Auxiliary function to convert letters reference (as in xlsx columns) in numeric
-function letter2num(str)
+local function letter2num(str)
 	local sum = 0
 	local idx = #str -- current character index in string
 	local n = #str -- string length
 	-- get each character in string, in reverse order
 	while idx > 0 do
-		val = string.byte(str:upper(), idx) - 64 -- subtract 64 to make 'A' -> 1
+		local val = string.byte(str:upper(), idx) - 64 -- subtract 64 to make 'A' -> 1
 		-- multiply character value to relative positional value and add to result
 		sum = sum + val * math.floor(26^(n-idx)) -- base 26 -> alphabet letters
 		idx = idx -1 -- update index in reverse order
@@ -32,14 +34,14 @@ function letter2num(str)
 end
 
 --Auxiliary function to convert numeric reference in letters (as in xlsx columns)
-function num2letter(num)
+local function num2letter(num)
 	local t = {}
 	
 	-- get each 'algarism' by sucessive division
 	local div = num
 	repeat
 		-- base 26 -> alphabet letters
-		rem = div % 26
+		local rem = div % 26
 		div = div // 26
 		-- store each 'algarism' in a array
 		t[#t + 1] = rem -- 'algarism' is remainder
@@ -57,12 +59,26 @@ function num2letter(num)
 	return str
 end
 
+--Auxiliary function to convert range representation (like "A1:C4") in numeric form
+local function range2num(str)
+	-- parse expression like "A1:C5" to get rows and columns range
+	local c_start, r_start, c_end, r_end = str:match('(%a+)(%d+):(%a+)(%d+)')
+	
+	-- Convert to numbers. Columns are identified by letters.
+	local col_start = letter2num(c_start)
+	local col_end = letter2num(c_end)
+	local row_start = tonumber(r_start)
+	local row_end = tonumber(r_end)
+	
+	return row_start, row_end, col_start, col_end
+end
+
 -- Get XLSX sheet data. Arguments:
 --    - file = xlsx file buffer, to read zipped data
 --    - parser = xml parser object
 --    - ss = table with shared strings
 --    - idx = sheet index
-function get_sheet (file, parser, ss, idx)
+local function get_sheet (file, parser, ss, idx)
 	-- get sheet index (in wb.sheets[name].id) and open relative file to buffer
 	local s_str = file:read(("xl/worksheets/sheet%d.xml"):format(idx))
 	local s_xml = parser:read(s_str) -- parse xml file data
@@ -73,7 +89,18 @@ function get_sheet (file, parser, ss, idx)
 	-- get rows from sheetdata element
 	local rows = get_elems(data, "row")
 	
-	local sheet = {} -- main table
+	--get merged cells information
+	local mc_t = get_elem(s_xml, "mergeCells")
+	local merged = {}
+	if type (mc_t) == 'table' then
+		local mc_els = get_elems(mc_t, "mergeCell")
+		for _, elem in ipairs(mc_els) do  --sweep elements in table (only numbered keys)
+			merged[#merged + 1] = elem.attr.ref
+		end
+	end
+	
+	local s_dim = {rows={}, cols={}} -- table with sheet dimmensions
+	local sheet = {} -- table with sheet data
 	
 	-- get sheet matrix dimension
 	if type(dim) == "table" then
@@ -81,29 +108,30 @@ function get_sheet (file, parser, ss, idx)
 		local col_start, row_start, col_end, row_end = dim.attr.ref:match('(%a+)(%d+):(%a+)(%d+)')
 		
 		-- assemble columns identification array. Columns are identified by letters.
-		columns = {}
+		local columns = {}
 		for col = letter2num(col_start), letter2num(col_end) do -- use auxiliary functions to convert letters to numbers
 			columns[#columns + 1] = num2letter(col) -- and vice-versa
 		end
 		
 		-- assemble rows identification array (numeric identification)
-		row_s = {}
-		for row = row_start, row_end do
+		local row_s = {}
+		for row = tonumber(row_start), tonumber(row_end) do
 			row_s[#row_s + 1] = row
 		end
 		
-		-- store dimension information, with 'dim' key
-		sheet.dim = {rows=row_s, cols=columns}
+		-- store dimension information
+		s_dim.rows = row_s
+		s_dim.cols = columns
 	end
 	
 	-- get sheet data -> iterate over rows
 	for i, r in ipairs(rows) do
-		r_idx = tonumber(r.attr.r) -- current row id (numeric)
-		row = {} -- table to store current row data
-		cells = get_elems(r, "c") -- look for 'c' elements in row, for cells data
+		local r_idx = tonumber(r.attr.r) -- current row id (numeric)
+		local row = {} -- table to store current row data
+		local cells = get_elems(r, "c") -- look for 'c' elements in row, for cells data
 		for j, c in ipairs(cells) do
-			c_ref = c.attr.r:match('%a+') -- current column id (letter)
-			value = get_elem(c, "v") -- look for 'v' element in cell, for cell's value
+			local c_ref = c.attr.r:match('%a+') -- current column id (letter)
+			local value = get_elem(c, "v") -- look for 'v' element in cell, for cell's value
 			if type(value) == "table" then 
 				if c.attr.t == "s" then -- verify if value is a shared string
 					-- value content is the index to look shared string in workbook
@@ -118,11 +146,13 @@ function get_sheet (file, parser, ss, idx)
 		sheet[r_idx] = row
 	end
 	
+	--sheet.merged = merged
+	
 	-- return main table
-	return sheet
+	return {idx = idx, dim = s_dim, data = sheet, merged = merged}
 end
 
-function open_xlsx(path)
+local function open_xlsx(path)
 	-- try to open file (xlsx is a ziped archive)
 	local zip = miniz.open(path)
 	if zip == nil then return nil end --fail to open file
@@ -141,19 +171,19 @@ function open_xlsx(path)
 	local shar_str = {}
 	
 	-- get shared strings
-	ss_t = parser:read(ss) -- convert xml string to Lua table
-	ssi = get_elems(ss_t, "si") -- look for 'si' elements
+	local ss_t = parser:read(ss) -- convert xml string to Lua table
+	local ssi = get_elems(ss_t, "si") -- look for 'si' elements
 	for i, s in ipairs(ssi) do
-		str = get_elem(s, "t") -- in each element, look for 't' id
+		local str = get_elem(s, "t") -- in each element, look for 't' id
 		if type(str) == "table" then 
 			shar_str[i] = str.cont -- store content in workbook
 		end
 	end
 	
 	-- get sheets information
-	wb_t = parser:read(wb) -- convert xml string to Lua table
-	sheets = get_elem(wb_t, "sheets") -- look for 'sheets' section
-	sheets_t = get_elems(sheets, "sheet") -- look for 'sheet' elements in section
+	local wb_t = parser:read(wb) -- convert xml string to Lua table
+	local sheets = get_elem(wb_t, "sheets") -- look for 'sheets' section
+	local sheets_t = get_elems(sheets, "sheet") -- look for 'sheet' elements in section
 	for _, sheet in ipairs(sheets_t) do
 		-- in each element, look for sheet name and id (index) in its attributes
 		if type(sheet.attr) == "table" then
@@ -161,9 +191,8 @@ function open_xlsx(path)
 			workbook.sheets[sheet.attr.name] = {} -- sheet's name as key
 			local idx = sheet.attr["r:id"]
 			idx = tonumber(idx:match('rId(%d+)')) -- get id index, by matching string
-			workbook.sheets[sheet.attr.name].idx = idx
 			-- get sheet data
-			workbook.sheets[sheet.attr.name].data = get_sheet (zip, parser, shar_str, idx)
+			workbook.sheets[sheet.attr.name] = get_sheet (zip, parser, shar_str, idx)
 		end
 	end
 	
@@ -174,31 +203,41 @@ function open_xlsx(path)
 
 end
 
-path = "demo.xlsx"
-
-workbook = open_xlsx(path)
-
-for key, sheet in pairs(workbook.sheets) do
-	cadzinho.db_print (("Sheet: %s, index = %s"):format(key, sheet.idx))
-	
-	-- sparse scan
-	cadzinho.db_print ("------Sparse data:-------")
-	for r_i, row in ipairs(sheet.data) do
-		if type(row) == "table" then
-			for c_i, cell in pairs (row) do
-				cadzinho.db_print (("%s%d"):format(c_i, r_i), cell)
+function expand_merge (sheet)
+	for _, merge in ipairs(sheet.merged) do
+		-- parse expression like "A1:C5" to get rows and columns range
+		local col_start, row_start, col_end, row_end = merge:match('(%a+)(%d+):(%a+)(%d+)')
+		-- first cell in range ha the value to copy to entire merged region 
+		local value = sheet.data[tonumber(row_start)][col_start]
+		for row = tonumber(row_start), tonumber(row_end) do
+			for col = letter2num(col_start), letter2num(col_end) do -- use auxiliary functions to convert letters to numbers
+				sheet.data[row][num2letter(col)] = value
+				--cadzinho.db_print (("%s%d"):format(row, col), value)
 			end
 		end
+		
+		
 	end
-	
-	-- tabular scan
-	cadzinho.db_print ("------ Tabular data:-------")
-	for _, r in ipairs(sheet.data.dim.rows) do
-		str = ""
-		for _, c in ipairs(sheet.data.dim.cols) do
-			str = str .. tostring(sheet.data[r][c]) .. "    "
-		end
-		cadzinho.db_print (str)
-	end
-	
 end
+
+function get_merge (sheet)
+  local merged = {}
+	for id, merge in ipairs(sheet.merged) do
+		-- parse expression like "A1:C5" to get rows and columns range
+		local col_start, row_start, col_end, row_end = merge:match('(%a+)(%d+):(%a+)(%d+)')
+		-- first cell in range ha the value to copy to entire merged region 
+		local value = sheet.data[tonumber(row_start)][col_start]
+		for row = tonumber(row_start), tonumber(row_end) do
+      merged[row] = merged[row] or {}
+			for col = letter2num(col_start), letter2num(col_end) do -- use auxiliary functions to convert letters to numbers
+				merged[row][num2letter(col)] = {id=id, value=value} 
+				--cadzinho.db_print (("%s%d"):format(row, col), value)
+			end
+		end
+		
+		
+	end
+  return merged
+end
+
+return {open = open_xlsx, n2l = num2letter, l2n = letter2num, range = range2num, expand_merge = expand_merge, get_merge = get_merge}

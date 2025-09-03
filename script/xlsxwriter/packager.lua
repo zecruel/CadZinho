@@ -158,9 +158,7 @@ end
 --
 function Packager:_add_to_zip(writer)
   -- **** Modified in aug/2021 by ZeCruel, to use in Cadzinho
-  --writer:_set_filehandle(assert(io.tmpfile()))
-  local tmp_file = os.tmpname () --
-  writer:_set_xml_writer(tmp_file) --
+  writer:_set_filehandle(assert(io.tmpfile()))
   
   writer:_assemble_xml_file()
 --[[ -- **** Modified in aug/2021 by ZeCruel, to use in Cadzinho
@@ -168,10 +166,8 @@ function Packager:_add_to_zip(writer)
                  self.file_descriptor,
                  writer:_get_xml_reader()) ]]--
 		 
-local fh = io.open(tmp_file, 'r') --
-local buf = fh:read('*a') --
-fh:close() --
-os.remove (tmp_file) --
+
+local buf = writer:_get_data() --
 miniz.write(self.filename, writer.filename, buf) --
 -- ***** end modification
 end

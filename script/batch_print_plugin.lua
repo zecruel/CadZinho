@@ -12,25 +12,30 @@ single_path = {value = "output.pdf"}  -- single file path output, for GUI
 list = {} -- list of drawings to print
 progress = 0 -- current progress
 
+color_opt = {value = 1, "Color", "Mono", "Dark"}  -- output colors, for GUI
+
 -- Function to get file name, without path and extension
 function GetFileName(url)
-  return url:match("^.+[\\/](.+)$")
+  return url:match("^.+[\\/]([^\\/]+)$")
 end
 
 -- Function to get file extension
 function GetFileExtension(url)
-  return url:match("^.+(%..+)$")
+  return url:match("^.+%.([^%.]+)$")
 end
 
 -- routine to print list of drawings
 function do_print()
     local single_out = fmt.value == 1 and single.value
     local pdf = nil
+    local color = "color"
+    if color_opt.value == 2 then color = "mono"
+    elseif color_opt.value == 3 then color = "dark" end
     
     if single_out then
         -- single output - only for pdf
         -- init pdf object
-        pdf = cadzinho.pdf_new(page_w.value, page_h.value, unit[unit.value])
+        pdf = cadzinho.pdf_new(page_w.value, page_h.value, unit[unit.value], nil, nil, nil, color)
     end
     
     -- iterate over list
@@ -38,12 +43,12 @@ function do_print()
         -- open drawing
         cadzinho.open_drwg(list[i].path)
         if single_out then -- single output
-            pdf:page() -- add a page
+            pdf:page(page_w.value, page_h.value, unit[unit.value], nil, nil, nil, color) -- add a page
         else
             -- replace file extension to choosen output format
             out = string.gsub(list[i].path, "(%..+)$", "."..string.lower(fmt[fmt.value]))
             -- print file
-            cadzinho.print_drwg(out, page_w.value, page_h.value, unit[unit.value])
+            cadzinho.print_drwg(out, page_w.value, page_h.value, unit[unit.value], nil, nil, nil, color)
         end
         progress = progress + 1 --update progress bar value
     end
@@ -79,10 +84,12 @@ function bprint_win()
     cadzinho.nk_layout(20, 1)
     cadzinho.nk_label("Files:")
     if cadzinho.nk_edit(file)then
-        local ext = string.upper(GetFileExtension(file.value))
-        if ext == ".DXF" then
-            local item = {path = file.value, value = false}
-            list[#list+1] = item
+        local ext = GetFileExtension(file.value)
+        if type(ext) == "string" then
+            if ext:upper() == "DXF" then
+                local item = {path = file.value, value = false}
+                list[#list+1] = item
+            end
         end
     end
     
@@ -98,8 +105,9 @@ function bprint_win()
     
     -- option to output in a single file - only for PDF
     if fmt.value == 1 then -- PDF output
-        cadzinho.nk_layout(20, 2)
+        cadzinho.nk_layout(20, 4)
         cadzinho.nk_check("Single", single)
+        cadzinho.nk_option(color_opt)
         if single.value then
             cadzinho.nk_label("Out path:")
             cadzinho.nk_layout(20, 1)

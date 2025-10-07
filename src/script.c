@@ -4911,6 +4911,7 @@ int script_save_drwg (lua_State *L) {
 	- drawing scale, as number (optional - default=fit all)
 	- drawing offset x, as number (optional - default=centralize)
 	- drawing offset y, as number (optional - default=centralize)
+  - color options, as string (optional - default="color", options = "mono", "dark")
 returns:
 	- Success/fail, as boolean 
 */
@@ -5030,6 +5031,7 @@ int script_print_drwg (lua_State *L) {
 		ofs_x = min_x - (fabs((max_x - min_x) * scale - page_w)/2) / scale;
 		ofs_y = min_y - (fabs((max_y - min_y) * scale - page_h)/2) / scale;
 	}
+
 	
 	param.w = page_w;
 	param.h = page_h;
@@ -5040,15 +5042,46 @@ int script_print_drwg (lua_State *L) {
 	param.unit = unit;
 	
 	/* basic colors */
-	bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
-	bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
+  bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
+  bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
+  bmp_color red = { .r = 255, .g = 0, .b = 0, .a = 255 };
+  bmp_color yellow = { .r = 255, .g = 255, .b = 0, .a = 255 };
+  bmp_color green = { .r = 0, .g = 255, .b = 0, .a = 255 };
+  bmp_color cyan = { .r = 0, .g = 255, .b = 255, .a = 255 };
+  bmp_color blue = { .r = 0, .g = 0, .b = 255, .a = 255 };
+  bmp_color magenta = { .r = 255, .g = 0, .b = 255, .a = 255 };
+  
+  /* colors for dark option substitution */
+  bmp_color y_dark = { .r = 150, .g = 150, .b = 0, .a = 255 };
+  bmp_color g_dark = { .r = 0, .g = 129, .b = 0, .a = 255 };
+  bmp_color c_dark = { .r = 0, .g = 129, .b = 129, .a = 255 };
 	/* default substitution list (display white -> print black) */
 	bmp_color list[] = { white, };
 	bmp_color subst[] = { black, };
+  /* dark substitution list */
+  bmp_color list_dark[] = { white, yellow, green, cyan};
+  bmp_color subst_dark[] = { black, y_dark, g_dark, c_dark};
 	param.list = list;
 	param.subst = subst;
 	param.len = 1;
 	
+  
+  if (lua_isstring(L, 8)) {
+    const char *color_opt = lua_tostring(L, 8);
+    if (strcmp(color_opt, "mono") == 0){
+      /* monochrome substituition parameters */
+			param.list = NULL;
+      param.mono = 1;
+    }
+    else if (strcmp(color_opt, "dark") == 0){
+      /* dark substitution list */
+      param.list = list_dark;
+			param.subst = subst_dark;
+			param.len = 4;
+    }
+  }
+  
+  
 	int ret = 0;
 	if (param.out_fmt == PRT_PDF)
 		ret = print_pdf(gui->drawing, param, path);
@@ -5079,6 +5112,7 @@ struct script_pdf{
 	- drawing scale, as number (optional - default=fit all)
 	- drawing offset x, as number (optional - default=centralize)
 	- drawing offset y, as number (optional - default=centralize)
+  - color options, as string (optional - default="color", options = "mono", "dark")
 returns:
 	- a pdf object, or nil if fail
 */
@@ -5150,6 +5184,14 @@ int script_pdf_new(lua_State *L){
 		}
 	}
 	pdf->param.mono = 0;
+  
+  if (lua_isstring(L, 7)) {
+    const char *color_opt = lua_tostring(L, 7);
+    if (strcmp(color_opt, "mono") == 0){
+      /* monochrome substituition parameters */
+      pdf->param.mono = 1;
+    }
+  }
 	
 	/*--------------- assemble the pdf structure to a file */
 	/* pdf info header */
@@ -5177,6 +5219,7 @@ int script_pdf_new(lua_State *L){
 	- drawing scale, as number
 	- drawing offset x, as number
 	- drawing offset y, as number
+  - color options, as string (optional - default="color", options = "mono", "dark")
 returns:
 	- a boolean indicating success or fail
 */
@@ -5316,14 +5359,44 @@ int script_pdf_page(lua_State *L){
 	
 	
 	/* basic colors */
-	bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
-	bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
+  bmp_color white = { .r = 255, .g = 255, .b = 255, .a = 255 };
+  bmp_color black = { .r = 0, .g = 0, .b = 0, .a = 255 };
+  bmp_color red = { .r = 255, .g = 0, .b = 0, .a = 255 };
+  bmp_color yellow = { .r = 255, .g = 255, .b = 0, .a = 255 };
+  bmp_color green = { .r = 0, .g = 255, .b = 0, .a = 255 };
+  bmp_color cyan = { .r = 0, .g = 255, .b = 255, .a = 255 };
+  bmp_color blue = { .r = 0, .g = 0, .b = 255, .a = 255 };
+  bmp_color magenta = { .r = 255, .g = 0, .b = 255, .a = 255 };
+  
+  /* colors for dark option substitution */
+  bmp_color y_dark = { .r = 150, .g = 150, .b = 0, .a = 255 };
+  bmp_color g_dark = { .r = 0, .g = 129, .b = 0, .a = 255 };
+  bmp_color c_dark = { .r = 0, .g = 129, .b = 129, .a = 255 };
 	/* default substitution list (display white -> print black) */
 	bmp_color list[] = { white, };
 	bmp_color subst[] = { black, };
+  /* dark substitution list */
+  bmp_color list_dark[] = { white, yellow, green, cyan};
+  bmp_color subst_dark[] = { black, y_dark, g_dark, c_dark};
 	param.list = list;
 	param.subst = subst;
 	param.len = 1;
+	
+  
+  if (lua_isstring(L, 8)) {
+    const char *color_opt = lua_tostring(L, 8);
+    if (strcmp(color_opt, "mono") == 0){
+      /* monochrome substituition parameters */
+			param.list = NULL;
+      param.mono = 1;
+    }
+    else if (strcmp(color_opt, "dark") == 0){
+      /* dark substitution list */
+      param.list = list_dark;
+			param.subst = subst_dark;
+			param.len = 4;
+    }
+  }
 	
 	/* resolution -> multiplier factor over integer units in pdf */
 	param.resolution = 20;

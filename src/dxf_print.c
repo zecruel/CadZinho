@@ -616,7 +616,8 @@ int print_ents_pdf(dxf_drawing *drawing, struct txt_buf *buf , struct print_para
 						buf->pos +=snprintf(buf->data + buf->pos,
 							PDF_BUF_SIZE - buf->pos,
 							"0.0 0.0 0.0 RG " /*set to black */
-							//"1 J " /*line cap style - round*/
+              "1.5 M "
+							//"1 J 1 j" /*line cap style - round*/
 							/* transformation matrix */
 							"%.4g 0.0 0.0 %.4g 0.0 0.0 cm\r\n", res, res);
 						init = 1;
@@ -886,7 +887,7 @@ void print_graph_svg(graph_obj * master, FILE *file, struct print_param param){
 				//if (master->thick_const) 
 				if (master->flags & THICK_CONST) tick = (master->tick);// * param.resolution);
 				else tick = (master->tick * param.scale);// * param.resolution);
-				if (tick >= 1.0) fprintf(file, "stroke-width=\"%0.1f\" ", tick);
+				if (tick >= 1.0) fprintf(file, "stroke-linejoin=\"miter-clip\" stroke-miterlimit=\"1.5\" stroke-width=\"%0.1f\" ", tick);
 				
 				/* set the color */
 				if (!param.mono){

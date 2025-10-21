@@ -960,6 +960,7 @@ int gui_script_prepare (gui_obj *gui, struct script_obj *script) {
     {"get_drwg_handle_seed", script_get_drwg_handle_seed},
     {"get_do_point", script_get_do_point},
 		
+    {"text_gsub", script_text_gsub},
 		{"edit_attr", script_edit_attr},
 		{"add_ext", script_add_ext},
 		{"edit_ext_i", script_edit_ext_i},

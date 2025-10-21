@@ -1985,6 +1985,129 @@ int script_get_drwg_handle_seed (lua_State *L) {
 
 /* ========= entity modification functions =========== */
 
+/* Global SUBstitution text of an TEXT or MTEXT entity */
+/* given parameters:
+	- DXF TEXT or MTEXT entity, as userdata
+	- pattern as string
+	- replacement as string, table or function
+  - first occurrence, as number (optional, default: all occurrences)
+  
+returns:
+	- success, as boolean
+*/
+int script_text_gsub (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 3){
+		lua_pushliteral(L, "text_gsub: invalid number of arguments");
+		lua_error(L);
+	}
+	struct ent_lua *ent_obj;
+	
+	if (!( ent_obj =  udata_check(L, 1, "cz_ent_obj") )) { /* the entity is a Lua userdata type*/
+		lua_pushliteral(L, "text_gsub: incorrect argument 1 type");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 2)) {
+		lua_pushliteral(L, "text_gsub: incorrect argument 2 type");
+		lua_error(L);
+	}
+	if (!lua_isstring(L, 3) && !lua_istable(L, 3) && !lua_isfunction(L, 3)) {
+		lua_pushliteral(L, "text_gsub: incorrect argument 3 type");
+		lua_error(L);
+	}
+	
+	/* get entity */
+	dxf_node *ent = ent_obj->curr_ent;  /*try to get current entity */
+	if (!ent) ent = ent_obj->orig_ent; /* if not current, try original entity */
+	if (!ent) {
+		lua_pushboolean(L, 0);  /* return fail */
+		return 1;
+	}
+	/* verify if it is a INSERT ent */
+  int typ = dxf_ident_ent_type (ent);
+  if (typ != DXF_TEXT && typ != DXF_MTEXT){
+		lua_pushboolean(L, 0);  /* return fail */
+		return 1;
+	}
+	
+	if(!ent_obj->curr_ent && ent_obj->orig_ent){
+		/* copy the original entity to temporary memory pool*/
+		ent_obj->curr_ent = dxf_ent_copy(ent_obj->orig_ent, FRAME_LIFE);
+		/* update other variables */
+		ent = ent_obj->curr_ent;
+	}
+  
+  dxf_node  *x = NULL;
+	luaL_Buffer b;
+	int i, len;
+  int in_p = 3, out_p = 2;
+	
+	char * new_text = NULL;
+	
+	lua_getglobal(L, "string"); /* get library */
+	lua_getfield(L, -1, "gsub"); /* and function to be called */
+	
+	/* get DXF entity text strings */
+	luaL_buffinit(L, &b); /* init the Lua buffer */
+	for (i = 0; x = dxf_find_attr_i(ent, 3, i); i++){
+		/* first, get the additional text (MTEXT ent) */
+		luaL_addstring(&b, strpool_cstr2( &value_pool, x->value.str));
+	}
+	for (i = 0; x = dxf_find_attr_i(ent, 1, i); i++){
+		/* finally, get main text */
+		luaL_addstring(&b, strpool_cstr2( &value_pool, x->value.str));
+	}
+	luaL_pushresult(&b); /* finalize string and put on Lua stack */
+	
+	/* using Lua, try to find match and replace pattern in text */
+	lua_pushvalue(L, 2); /* pattern to find */
+	lua_pushvalue(L, 3); /* text or pattern to replace */
+  if (lua_isnumber(L, 4)) {
+		lua_pushvalue(L, 4); /* index of match to replace */
+    in_p = 4; out_p = 1;
+	}
+	if (lua_pcall(L, in_p, out_p, 0) == LUA_OK){
+		if (out_p == 2 && lua_isnumber(L, -1)) { /* success */
+			int n = (int)lua_tonumber(L, -1); /* number of matches */
+			if (n > 0) new_text = (char *)lua_tolstring(L, -2, (size_t *)&len);
+		}
+		else if (out_p == 1 && lua_isstring(L, -1)) { /* success */
+			new_text = (char *)lua_tolstring(L, -1, (size_t *)&len);
+		}
+		else {
+      lua_pushboolean(L, 0);  /* return fail */
+      return 1;
+    }
+    /* replace the text */
+    if (typ == DXF_MTEXT)
+      mtext_change_text (ent, new_text, len, DWG_LIFE);
+    else if (typ == DXF_TEXT){
+      for (i = 0; x = dxf_find_attr_i(ent, 1, i); i++){
+        /* limit of TEXT entity length */
+        len = (len < DXF_MAX_CHARS) ? len : DXF_MAX_CHARS;
+        x->value.str = strpool_inject( &value_pool, (char const*) new_text, len );
+      }
+    }
+    lua_pushboolean(L, 1); /* return success */
+    return 1; /* number of returned parrameters */
+	}
+	lua_pushboolean(L, 0);  /* return fail */
+  return 1;
+}
+
 /* edit data (tag, value and hidden flag)  of  a ATTRIB in a INSERT entity */
 /* given parameters:
 	- DXF INSERT entity, as userdata

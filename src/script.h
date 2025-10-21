@@ -104,6 +104,7 @@ int script_get_text_data (lua_State *L);
 int script_get_drwg_path (lua_State *L);
 int script_get_drwg_handle_seed (lua_State *L);
 
+int script_text_gsub (lua_State *L);
 int script_edit_attr (lua_State *L);
 int script_add_ext (lua_State *L);
 int script_edit_ext_i (lua_State *L);

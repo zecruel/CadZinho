@@ -2081,11 +2081,12 @@ int script_text_gsub (lua_State *L) {
 	}
 	if (lua_pcall(L, in_p, out_p, 0) == LUA_OK){
 		if (out_p == 2 && lua_isnumber(L, -1)) { /* success */
-			int n = (int)lua_tonumber(L, -1); /* number of matches */
-			if (n > 0) new_text = (char *)lua_tolstring(L, -2, (size_t *)&len);
+			n = lua_tointeger (L, -1); /* number of matches */
+			new_text = (char *)lua_tolstring(L, -2, (size_t *)&len);
 		}
 		else if (out_p == 1 && lua_isstring(L, -1)) { /* success */
 			new_text = (char *)lua_tolstring(L, -1, (size_t *)&len);
+      n = 1;
 		}
 		else {
       lua_pushboolean(L, 0);  /* return fail */
@@ -2101,7 +2102,7 @@ int script_text_gsub (lua_State *L) {
         x->value.str = strpool_inject( &value_pool, (char const*) new_text, len );
       }
     }
-    lua_pushboolean(L, 1); /* return success */
+    lua_pushinteger(L, n); /* return success */
     return 1; /* number of returned parrameters */
 	}
 	lua_pushboolean(L, 0);  /* return fail */

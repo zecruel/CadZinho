@@ -415,6 +415,7 @@ int gui_main_loop (gui_obj *gui) {
           gui->draw = 1;
         }
       }
+      ev_type = 0;
     }
     
   }

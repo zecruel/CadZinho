@@ -2761,6 +2761,91 @@ int script_ent_append (lua_State *L) {
 }
 #endif
 
+/* create a POINT DXF entity */
+/* given parameters:
+	- vertex x, y and z, as numbers
+  - drawing parameters (layer, color, etc), as table (optional)
+returns:
+	- DXF entity, as userdata
+Notes:
+	- The returned data is for one shot use in Lua script, because
+	the alocated memory is valid in single iteration of main loop.
+	It is assumed that soon afterwards it will be appended or drawn.
+*/
+int script_new_point (lua_State *L) {
+	/* get gui object from Lua instance */
+	lua_pushstring(L, "cz_gui"); /* is indexed as  "cz_gui" */
+	lua_gettable(L, LUA_REGISTRYINDEX); 
+	gui_obj *gui = lua_touserdata (L, -1);
+	lua_pop(L, 1);
+	
+	/* verify if gui is valid */
+	if (!gui){
+		lua_pushliteral(L, "Auto check: no access to CadZinho enviroment");
+		lua_error(L);
+	}
+	
+	/* verify passed arguments */
+	int n = lua_gettop(L);    /* number of arguments */
+	if (n < 3){
+		lua_pushliteral(L, "new_point: invalid number of arguments");
+		lua_error(L);
+	}
+	int i;
+	for (i = 1; i <= 3; i++) { /* arguments types */
+		if (!lua_isnumber(L, i)) {
+			lua_pushliteral(L, "new_point: incorrect argument type");
+			lua_error(L);
+		}
+	}
+  
+  /* change drawing params, temporarily */
+  int prev_color = gui->color_idx;
+  int prev_layer = gui->layer_idx;
+  int prev_ltype = gui->ltypes_idx;
+  int prev_style = gui->t_sty_idx;
+  int prev_lw = gui->lw_idx;
+  if (lua_istable(L,7)){
+    lua_getglobal(L, "cadzinho"); /* function to be called */
+    lua_getfield(L, -1, "set_param");
+    lua_pushvalue(L, 7); /* push table with param keys */
+    lua_pcall(L, 1, 1, 0); /* call function (1 arguments, 1 result) */
+    lua_pop(L, 2); /* pop returned value */
+  }
+	
+	/* new LINE entity */
+	dxf_node * new_el = (dxf_node *) dxf_new_point (
+		lua_tonumber(L, 1), lua_tonumber(L, 2), lua_tonumber(L, 3), /* point coordinates */
+		gui->color_idx, /* color, layer */
+    (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
+		/* line type, line weight */
+    (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
+    dxf_lw[gui->lw_idx],
+		0, FRAME_LIFE); /* paper space */
+	
+  /* restore original drawing parameters */
+  gui->color_idx = prev_color;
+  gui->layer_idx = prev_layer;
+  gui->ltypes_idx = prev_ltype;
+  gui->t_sty_idx = prev_style;
+  gui->lw_idx = prev_lw;
+  
+	if (!new_el) {
+		lua_pushnil(L); /* return fail */
+		return 1;
+	}
+	/* return success */
+	struct ent_lua *ent = (struct ent_lua *) lua_newuserdatauv(L, sizeof(struct ent_lua), 0);  /* create a userdata object */
+	ent->curr_ent = new_el;
+	ent->orig_ent = NULL;
+	
+	ent->drawing = gui->drawing;
+	
+	ent->sel = 0;
+	luaL_getmetatable(L, "cz_ent_obj");
+	lua_setmetatable(L, -2);
+	return 1;
+}
 /* create a LINE DXF entity */
 /* given parameters:
 	- first vertex x, y and z, as numbers

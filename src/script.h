@@ -112,6 +112,7 @@ int script_del_ext_i (lua_State *L);
 int script_del_ext_all (lua_State *L);
 
 //int script_ent_append (lua_State *L);
+int script_new_point (lua_State *L);
 int script_new_line (lua_State *L);
 int script_new_pline (lua_State *L);
 int script_pline_append (lua_State *L);

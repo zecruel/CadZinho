@@ -967,6 +967,7 @@ int gui_script_prepare (gui_obj *gui, struct script_obj *script) {
 		{"del_ext_i", script_del_ext_i},
 		{"del_ext_all", script_del_ext_all},
 		
+		{"new_point", script_new_point},
 		{"new_line", script_new_line},
 		{"new_pline", script_new_pline},
 		{"pline_append", script_pline_append},

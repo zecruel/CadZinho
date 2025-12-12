@@ -2805,10 +2805,10 @@ int script_new_point (lua_State *L) {
   int prev_ltype = gui->ltypes_idx;
   int prev_style = gui->t_sty_idx;
   int prev_lw = gui->lw_idx;
-  if (lua_istable(L,7)){
+  if (lua_istable(L,4)){
     lua_getglobal(L, "cadzinho"); /* function to be called */
     lua_getfield(L, -1, "set_param");
-    lua_pushvalue(L, 7); /* push table with param keys */
+    lua_pushvalue(L, 4); /* push table with param keys */
     lua_pcall(L, 1, 1, 0); /* call function (1 arguments, 1 result) */
     lua_pop(L, 2); /* pop returned value */
   }

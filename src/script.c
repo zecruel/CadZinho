@@ -8176,8 +8176,31 @@ int script_svg_curves(lua_State *L){
       
       for (shape = curves->shapes; shape != NULL; shape = shape->next) {
         lua_newtable(L); /* table to store shape data */
+        
         lua_pushstring(L, "strokeWidth");
         lua_pushnumber(L, shape->strokeWidth);
+        lua_rawset(L, -3);
+        
+        lua_pushstring(L, "stroke");
+        if (shape->stroke.type == NSVG_PAINT_COLOR){
+          char tmp[10];
+          snprintf(tmp, 9, "%08X", shape->stroke.color);
+          lua_pushstring(L, tmp);
+          //lua_pushnil(L);
+        } else {
+          lua_pushnil(L);
+        }
+        lua_rawset(L, -3);
+        
+        lua_pushstring(L, "fill");
+        if (shape->fill.type == NSVG_PAINT_COLOR){
+          char tmp[10];
+          snprintf(tmp, 9, "%08X", shape->fill.color);
+          lua_pushstring(L, tmp);
+          //lua_pushnil(L);
+        } else {
+          lua_pushnil(L);
+        }
         lua_rawset(L, -3);
         
         n_paths = 1;

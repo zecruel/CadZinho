@@ -771,18 +771,65 @@ int gui_main_win(gui_obj *gui){
       //nk_layout_row_dynamic(gui->ctx, 5, 1); /* only a blank space */
       
       /* second line */
-      //nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 8);
-      nk_layout_row(gui->ctx, NK_STATIC, 23, 2, (float[]){90, 290});
+      nk_layout_row_static(gui->ctx, 23, 23, 10);
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_NEW]))){
+        if (gui->changed){
+          gui->discard_changes = 1;
+          gui->desired_action = FILE_NEW;
+          gui->hist_action = HIST_NONE;
+        }
+        else{
+          gui->action = FILE_NEW;
+          gui->hist_new = 0; /* not add to history entries */
+        }
+      }
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_OPEN]))){
+        gui->action = FILE_OPEN;
+        //gui->show_app_file = 1;
+        gui->show_open = 1;
+        
+        gui->curr_path[0] = 0;
+        
+        gui->path_ok = 0;
+        gui->hist_new = 1;
+      }
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_SAVE]))){
+        gui->action = FILE_SAVE;
+        //gui->show_app_file = 1;
+        gui->show_save = 1;
+        gui->path_ok = 0;
+        gui->hist_new = 1;
+      }
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_PRINT]))){
+        gui->show_print = 1;
+      }
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_UNDO]))){
+        gui->action = UNDO;
+      }
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_REDO]))){
+        gui->action = REDO;
+      }
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_COPY]))){
+        gui->action = YANK;
+      }
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_CUT]))){
+        gui->action = CUT;
+      }
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_PASTE]))){
+        gui->action = START_PASTE;
+        
+      }
       static char text[64], transp_txt[64];
       int text_len;
         
       /*layer*/
-      //nk_layout_row_push(gui->ctx, 60);
-      nk_label(gui->ctx, _l("Layer: "), NK_TEXT_RIGHT);
-      //nk_layout_row_push(gui->ctx, 200);
+      nk_layout_row(gui->ctx, NK_STATIC, 23, 2, (float[]){23, 290});
+      nk_image(gui->ctx, nk_image_ptr(gui->icon_small[SVG_STACK]));
       layer_prop(gui);
       
-      
+      nk_image(gui->ctx, nk_image_ptr(gui->icon_small[SVG_LTYPE]));
+      ltype_prop(gui);
+
       /*color picker */
       int c_idx = gui->color_idx;
       if (c_idx >255){
@@ -804,9 +851,8 @@ int gui_main_win(gui_obj *gui){
       else{
         text_len = snprintf(text, 63, "%s", _l("By Layer"));
       }
-      //nk_layout_row_push(gui->ctx, 70);
-      nk_label(gui->ctx, _l("Color: "), NK_TEXT_RIGHT);
-      //nk_layout_row_push(gui->ctx, 80);
+      nk_layout_row(gui->ctx, NK_STATIC, 23, 4, (float[]){23, 140, 23, 140});
+      nk_image(gui->ctx, nk_image_ptr(gui->icon_small[SVG_BUCKET2]));
       if (nk_combo_begin_image_label(gui->ctx, text, nk_image_ptr(gui->color_img), nk_vec2(290,525))){
         nk_layout_row_dynamic(gui->ctx, 20, 2);
         if (nk_button_label(gui->ctx, _l("By Layer"))){
@@ -839,27 +885,16 @@ int gui_main_win(gui_obj *gui){
         
         nk_combo_end(gui->ctx);
       }
-      //nk_layout_row_end(gui->ctx);
-      
-      //nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 8);
-      
-      /*line type*/
-      //nk_layout_row_push(gui->ctx, 100);
-      nk_label(gui->ctx, _l("Line type: "), NK_TEXT_RIGHT);
-      //nk_layout_row_push(gui->ctx, 200);
-      ltype_prop(gui);
-      
+            
       /* line weight */
-      //nk_layout_row_push(gui->ctx, 120);
-      nk_label(gui->ctx, _l("Line weight: "), NK_TEXT_RIGHT);
-      //nk_layout_row_push(gui->ctx, 120);
-      
+      nk_image(gui->ctx, nk_image_ptr(gui->icon_small[SVG_LW]));
+     
       char * lw_descr = (char *)dxf_lw_descr[gui->lw_idx];
       if(gui->lw_idx == DXF_LW_LEN) lw_descr = _l("By Layer");
       if(gui->lw_idx == DXF_LW_LEN + 1) lw_descr = _l("By Block");
       
-      if (nk_combo_begin_label(gui->ctx, lw_descr, nk_vec2(290,300))){
-        nk_layout_row_dynamic(gui->ctx, 25, 2);
+      if (nk_combo_begin_label(gui->ctx, lw_descr, nk_vec2(140,300))){
+        nk_layout_row_dynamic(gui->ctx, 25, 1);
         if (nk_button_label(gui->ctx, _l("By Layer"))){
           gui->lw_idx = DXF_LW_LEN;
           gui->action = LW_CHANGE;
@@ -885,14 +920,13 @@ int gui_main_win(gui_obj *gui){
       static int transp_value = 0;
       static char transp_b[64];
       
-      nk_layout_row(gui->ctx, NK_STATIC, 23, 2, (float[]){120, 260});
       if (gui->transparency >= 0 && gui->transparency <= 100)
         snprintf(transp_txt, 63, "%d%%", gui->transparency);
       else if (gui->transparency == -1)
         snprintf(transp_txt, 63, _l("By Block"));
       else snprintf(transp_txt, 63, _l("By Layer"));
-      nk_label(gui->ctx, _l("Transparency: "), NK_TEXT_RIGHT);
-      
+      nk_image(gui->ctx, nk_image_ptr(gui->icon_small[SVG_TRANSP]));
+ 
       if (nk_combo_begin_label(gui->ctx, transp_txt, nk_vec2(260, 80))){
         nk_layout_row_dynamic(gui->ctx, 25, 2);
         if (nk_button_label(gui ->ctx, _l("By Layer"))){

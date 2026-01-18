@@ -743,6 +743,9 @@ int main(int argc, char** argv){
 	bmp_free(gui->i_trash);
 	
 	i_svg_free_bmp(gui->svg_bmp);
+  free(gui->svg_bmp);
+	i_svg_free_bmp(gui->icon_small);
+  free(gui->icon_small);
 	i_svg_free_curves(gui->svg_curves);
 	
 	gui_free_modal_cur(gui);

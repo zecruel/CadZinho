@@ -492,6 +492,7 @@ struct Gui_obj {
   
   NSVGimage ** svg_curves;
 	bmp_img ** svg_bmp;
+	bmp_img ** icon_small;
 	bmp_img * preview[PRV_SIZE];
 	bmp_img * color_img;
 	bmp_img * i_cz48;

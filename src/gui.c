@@ -948,13 +948,23 @@ void set_style(gui_obj *gui, enum theme theme){
   snprintf(subst_color, 24, "\"rgb(%d, %d, %d)\"",
     gui->b_icon.text_normal.r, gui->b_icon.text_normal.g, gui->b_icon.text_normal.b);
 	
-	if(gui->svg_bmp) i_svg_free_bmp(gui->svg_bmp);
+	if(gui->svg_bmp) {
+    i_svg_free_bmp(gui->svg_bmp);
+    free(gui->svg_bmp);
+    gui->svg_bmp = NULL;
+  }
+	if(gui->icon_small) {
+    i_svg_free_bmp(gui->icon_small);
+    free(gui->icon_small);
+    gui->icon_small = NULL;
+  }
 	if(gui->svg_curves) i_svg_free_curves(gui->svg_curves);
   
   /* load svg icons */
 	//gui->svg_curves = i_svg_all_curves();
   gui->svg_curves = i_svg_all_curves2(dflt_color, subst_color);
 	gui->svg_bmp = i_svg_all_bmp(gui->svg_curves, ICON_SIZE-1, ICON_SIZE-1);
+	gui->icon_small = i_svg_all_bmp(gui->svg_curves, 16, 16);
 	
 	bmp_free(gui->svg_bmp[SVG_LOCK]);
 	gui->svg_bmp[SVG_LOCK] = i_svg_bmp(gui->svg_curves[SVG_LOCK], 16, 16);
@@ -1208,7 +1218,13 @@ int nk_gl_render(gui_obj *gui) {
 				glUniform1i(gl_ctx->tex_uni, 1); /* choose second texture */
 				/* finally draw image */
 				//draw_gl_image (gl_ctx, i->x, i->y, img->width, img->height, img);
-				draw_gl_image_rec (gl_ctx, i->x, i->y, 0, i->w, i->h, img, 1);
+        if(img->width < i->w && img->height < i->h){
+          int x = i->x + (i->w - img->width) / 2;
+          int y = i->y + (i->h - img->height) / 2;
+          draw_gl_image_rec (gl_ctx, x, y, 0, img->width, img->height, img, 1);
+
+        }
+        else draw_gl_image_rec (gl_ctx, i->x, i->y, 0, i->w, i->h, img, 1);
 				draw_gl (gl_ctx, 1); /* force draw and cleanup */
 			}
 		}
@@ -1910,6 +1926,7 @@ int gui_start(gui_obj *gui){
 	
 	gui->svg_curves = NULL;
 	gui->svg_bmp = NULL;
+	gui->icon_small = NULL;
   for (i = 0; i < PRV_SIZE; i++){
     gui->preview[i] = NULL;
   }

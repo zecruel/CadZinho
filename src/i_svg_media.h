@@ -130,6 +130,10 @@ enum svg_list {
     SVG_3D_CONE,
     SVG_3D_WEDGE,
     SVG_3D_TORUS,
+    SVG_TRANSP,
+    SVG_LW,
+    SVG_BUCKET2,
+    SVG_STACK,
     SVG_MEDIA_SIZE
 };
 

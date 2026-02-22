@@ -53,6 +53,7 @@
 #define RIB_H 165
 
 #define SMART_STEP(x) pow(10.0, floor(log10(fabs(x) + 1.0e-8)) - 1.0)
+#define GUI_TIP_WAIT 400.0
 
 enum Action {
 	NONE,
@@ -76,7 +77,7 @@ enum Action {
 	COLOR_CHANGE,
 	LTYPE_CHANGE,
 	LW_CHANGE,
-  TRANSP_CHANGE,
+TRANSP_CHANGE,
 	YANK,
 	CUT,
 	START_PASTE,
@@ -566,6 +567,11 @@ struct Gui_obj {
   
   SDL_Thread* timer_thread_id;
   SDL_sem* timer_sem;
+
+  int tooltip_size;
+  int curr_tooltip;
+  int last_tooltip;
+  int tooltip_timer;
 };
 typedef struct Gui_obj gui_obj;
 
@@ -644,6 +650,8 @@ int draw_attractor_gl(gui_obj *gui, enum attract_type type, int x, int y, bmp_co
 void gui_draw_vert_gl(gui_obj *gui, dxf_node *obj);
 
 char* gui_get_literal (gui_obj *gui, const char *literal);
+
+int gui_add_tooltip (gui_obj *gui, char *str);
 
 extern int dxf_lw[];
 extern const char *dxf_lw_descr[];

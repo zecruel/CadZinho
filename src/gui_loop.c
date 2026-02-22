@@ -570,8 +570,15 @@ int gui_main_loop (gui_obj *gui) {
     
     
   }
-  
-  
+
+  if (gui->curr_tooltip != gui->last_tooltip){
+    gui->tooltip_timer = 0;
+  } else if (gui->curr_tooltip > 0){
+    gui->tooltip_timer++;
+  }
+  gui->last_tooltip = gui->curr_tooltip;
+  gui->curr_tooltip = 0;
+  gui->tooltip_size = 0;
   /*================================================
   ==================================================
   =================================================*/

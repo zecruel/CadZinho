@@ -999,18 +999,19 @@ void nk_to_gl_color(struct ogl *gl_ctx, struct nk_color color){
 }
 
 int gui_check_draw(gui_obj *gui){
-	int draw = 0;
-	
-	draw = 0;
+	static int draw = 0;
+	if (draw){ /* past iteration is marked to redraw */
+    draw = 0;
+    return 1;
+  }
+
 	if (gui){
-		//gui->draw = 0;
 		if (gui->ctx){
 			void *cmds = nk_buffer_memory(&(gui->ctx->memory));
 			if (cmds){
 				if (memcmp(cmds, gui->last, gui->ctx->memory.allocated)) {
 					memcpy(gui->last, cmds, gui->ctx->memory.allocated);
-					//gui->draw = 1;
-					draw = 1;
+					draw = 1; /* mark to redraw, too in next iteration */
 				}
 			}
 		}
@@ -2191,6 +2192,11 @@ int gui_start(gui_obj *gui){
 	gui->main_lang_scr.T = NULL;
 	gui->main_lang_scr.active = 0;
 	gui->main_lang_scr.dynamic = 0;
+
+  gui->tooltip_size = 0;
+  gui->last_tooltip = 0;
+  gui->curr_tooltip = 0;
+  gui->tooltip_timer = 0;
 	
 	return 1;
 }
@@ -3154,4 +3160,18 @@ char* gui_get_literal (gui_obj *gui, const char *literal){
     lua_pop(gui->main_lang_scr.T, 2);
     return (char*) literal;
   }
+}
+
+int gui_add_tooltip (gui_obj *gui, char *str){
+
+  const struct nk_input *in = &gui->ctx->input;
+  struct nk_rect bounds = nk_widget_bounds(gui->ctx);
+
+  if (nk_input_is_mouse_hovering_rect(in, bounds)){
+    gui->curr_tooltip = gui->tooltip_size + 1;
+    if (gui->tooltip_timer > (int) 0.5 + GUI_TIP_WAIT/gui->delay)
+      nk_tooltip(gui->ctx, str);
+  }
+  gui->tooltip_size++;
+  return 1;
 }

@@ -251,33 +251,40 @@ int gui_main_win(gui_obj *gui){
         nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_place2d", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 3);
+          gui_add_tooltip (gui, _l("Line"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_LINE], gui->modal == LINE)){
             gui->modal = LINE;
             strncpy(gui->ctx_tools_title, _l("Line"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Polyline"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_PLINE], gui->modal == POLYLINE)){
             gui->modal = POLYLINE;
             strncpy(gui->ctx_tools_title, _l("Polyline"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Spline"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_SPLINE], gui->modal == SPLINE)){
             gui->modal = SPLINE;
             strncpy(gui->ctx_tools_title, _l("Spline"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+
+          gui_add_tooltip (gui, _l("Rectangle"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_RECT], gui->modal == RECTANGLE)){
             gui->modal = RECTANGLE;
             strncpy(gui->ctx_tools_title, _l("Rectangle"), DXF_MAX_CHARS);
             gui->step = 0;
           }
           
+
+          gui_add_tooltip (gui, _l("Circle"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_CIRCLE], gui->modal == CIRCLE)){
             gui->modal = CIRCLE;
             strncpy(gui->ctx_tools_title, _l("Circle"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Ellipse"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_ELIPSE], gui->modal == ELLIPSE)){
             gui->modal = ELLIPSE;
             strncpy(gui->ctx_tools_title, _l("Ellipse"), DXF_MAX_CHARS);
@@ -322,6 +329,7 @@ int gui_main_win(gui_obj *gui){
             gui->step = 0;
             sel_list_clear (gui);
           }
+          gui_add_tooltip (gui, _l("Edit Tag"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_TAG_E], gui->modal == ED_ATTR)){
             gui->modal = ED_ATTR;
             strncpy(gui->ctx_tools_title, _l("Edit Tag"), DXF_MAX_CHARS);

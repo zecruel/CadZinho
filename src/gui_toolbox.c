@@ -14,102 +14,64 @@ int gui_tools_win (gui_obj *gui){
 		NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 		NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE)){
     
-      /*
-		static enum Tool_group {
-			GRP_PLACE,
-			GRP_MODIFY,
-			GRP_DIM,
-			GRP_XDATA,
-		} tool_grp = GRP_PLACE;
-    */
-		
-		//nk_layout_row_static(gui->ctx, 28, 28, 6);
-		
-		
-		
-    #if(0)
-		nk_layout_row_dynamic(gui->ctx, 10, 1); /*space*/
+    gui_select_info (gui);
+    gui_line_info (gui);
+    gui_pline_info (gui);
+    gui_circle_info (gui);
+    gui_rect_info (gui);
+    gui_text_info (gui);
+    gui_mtext_info (gui);
+    gui_move_info (gui);
+    gui_dupli_info (gui);
+    gui_scale_info (gui);
+    gui_rotate_info (gui);
+    gui_mirror_info (gui);
+    gui_insert_info (gui);
+    gui_block_info (gui);
+    gui_hatch_info (gui);
+    gui_paste_info (gui);
+    gui_ed_text_info (gui);
+    gui_spline_info (gui);
+    gui_point_info (gui);
+    gui_ellip_info (gui);
+    gui_image_info (gui);
+    
+    gui_ed_attr_info (gui);
+    gui_attrib_info (gui);
+    gui_expl_info (gui);
+    gui_measure_info (gui);
+    gui_find_info (gui);
+    gui_prop_info (gui);
+    gui_txt_prop_info (gui);
+    gui_vertex_info (gui);
+    
+    gui_dim_linear_info (gui);
+    gui_dim_angular_info (gui);
+    gui_dim_radial_info (gui);
+    gui_dim_ordinate_info (gui);
+    
+    gui_zoom_info (gui);
+    gui_view_info (gui);
+    
+    /* execute scripts in dynamic mode*/
+    gui_script_dyn(gui);
+    
+    gui_sphere_info (gui);
+    gui_cylinder_info (gui);
+    gui_cone_info (gui);
+    gui_wedge_info (gui);
+    gui_torus_info (gui);
+    gui_pyramid_info (gui);
+    gui_slab_info (gui);
+    gui_slice_info (gui);
+    gui_rotate_3d_info (gui);
+    gui_extrude_info (gui);
+    gui_extrude_path_info (gui);
+    gui_revolve_info (gui);
+    gui_union_info (gui);
+    gui_subtract_info (gui);
+    gui_intersection_info (gui);
 			
-		/* Tools collections - Place, Modify and Dimensions */
-		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
-		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
-		if (gui_tab (gui, _l("Place"), tool_grp == GRP_PLACE)) tool_grp = GRP_PLACE;
-		if (gui_tab (gui, _l("Modify"), tool_grp == GRP_MODIFY)) tool_grp = GRP_MODIFY;
-		if (gui_tab (gui, _l("Dimensions"), tool_grp == GRP_DIM)) tool_grp = GRP_DIM;
-		//if (gui_tab (gui, _l("XData"), too_grp == GRP_XDATA)) too_grp = GRP_XDATA;
-		nk_style_pop_vec2(gui->ctx);
-		nk_layout_row_end(gui->ctx);
-		
-				
-		nk_layout_row_dynamic(gui->ctx, 10, 1); /*space*/
-		
-		struct nk_vec2 wid_pos = nk_widget_position(gui->ctx);
-		struct nk_vec2 win_pos = nk_window_get_position(gui->ctx);
-		struct nk_rect win_cont = nk_window_get_content_region(gui->ctx);
-	
-		nk_layout_row_dynamic(gui->ctx, win_cont.h - (wid_pos.y - win_pos.y), 1);
-		if (nk_group_begin(gui->ctx, "especific", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-    #endif
-			gui_select_info (gui);
-			gui_line_info (gui);
-			gui_pline_info (gui);
-			gui_circle_info (gui);
-			gui_rect_info (gui);
-			gui_text_info (gui);
-			gui_mtext_info (gui);
-			gui_move_info (gui);
-			gui_dupli_info (gui);
-			gui_scale_info (gui);
-			gui_rotate_info (gui);
-			gui_mirror_info (gui);
-			gui_insert_info (gui);
-			gui_block_info (gui);
-			gui_hatch_info (gui);
-			gui_paste_info (gui);
-			gui_ed_text_info (gui);
-			gui_spline_info (gui);
-			gui_point_info (gui);
-			gui_ellip_info (gui);
-			gui_image_info (gui);
-			
-			gui_ed_attr_info (gui);
-			gui_attrib_info (gui);
-			gui_expl_info (gui);
-			gui_measure_info (gui);
-			gui_find_info (gui);
-			gui_prop_info (gui);
-			gui_txt_prop_info (gui);
-			gui_vertex_info (gui);
-			
-			gui_dim_linear_info (gui);
-			gui_dim_angular_info (gui);
-			gui_dim_radial_info (gui);
-			gui_dim_ordinate_info (gui);
-			
-			gui_zoom_info (gui);
-      gui_view_info (gui);
-			
-			/* execute scripts in dynamic mode*/
-			gui_script_dyn(gui);
-      
-      gui_sphere_info (gui);
-      gui_cylinder_info (gui);
-      gui_cone_info (gui);
-      gui_wedge_info (gui);
-      gui_torus_info (gui);
-      gui_pyramid_info (gui);
-      gui_slab_info (gui);
-      gui_slice_info (gui);
-      gui_rotate_3d_info (gui);
-      gui_extrude_info (gui);
-      gui_extrude_path_info (gui);
-      gui_revolve_info (gui);
-      gui_union_info (gui);
-      gui_subtract_info (gui);
-      gui_intersection_info (gui);
-			
-			//nk_group_end(gui->ctx);
-		//}
 	}
 	nk_end(gui->ctx);
 	return 1;
@@ -119,35 +81,271 @@ int gui_main_win(gui_obj *gui){
 	int i;
   
   static enum Ribbon_group {
-    RIB_FILE,
     RIB_DRAWING,
     RIB_VIEW,
     RIB_MANAGER,
     RIB_3D,
   } ribbon_grp = RIB_DRAWING;
   
-  const int rib_w[5] = {800, 1000, 1250, 1400, 1600};
+  const int rib_w[4] = {900, 1150, 1300, 1550};
 	
 	if (nk_begin(gui->ctx, "Main", nk_rect(2, 2, gui->win_w - 4, RIB_H - 5),
     NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)){
     /* dynamic width for ribbon and fixed width for common tools and properties */
 		nk_layout_row_template_begin(gui->ctx, 148);
-		nk_layout_row_template_push_dynamic(gui->ctx); /* ribbon */
-    nk_layout_row_template_push_static(gui->ctx, 120); /* common tools */
-		nk_layout_row_template_push_static(gui->ctx, 400); /* properties */
+		
+    nk_layout_row_template_push_static(gui->ctx, 360); /* properties */
+    nk_layout_row_template_push_static(gui->ctx, 60); /* common tools */
+    nk_layout_row_template_push_dynamic(gui->ctx); /* ribbon */
 		nk_layout_row_template_end(gui->ctx);
-    
-    
+    if (nk_group_begin(gui->ctx, "Current_properties", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+      
+      /* File toolbar, with small icons */
+      nk_layout_row_static(gui->ctx, 23, 23, 15);
+      gui_add_tooltip (gui, _l("New"));
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_NEW]))){
+        if (gui->changed){
+          gui->discard_changes = 1;
+          gui->desired_action = FILE_NEW;
+          gui->hist_action = HIST_NONE;
+        }
+        else{
+          gui->action = FILE_NEW;
+          gui->hist_new = 0; /* not add to history entries */
+        }
+      }
+      gui_add_tooltip (gui, _l("Open"));
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_OPEN]))){
+        gui->action = FILE_OPEN;
+        //gui->show_app_file = 1;
+        gui->show_open = 1;
+        
+        gui->curr_path[0] = 0;
+        
+        gui->path_ok = 0;
+        gui->hist_new = 1;
+      }
+      gui_add_tooltip (gui, _l("Save"));
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_SAVE]))){
+        gui->action = FILE_SAVE;
+        //gui->show_app_file = 1;
+        gui->show_save = 1;
+        gui->path_ok = 0;
+        gui->hist_new = 1;
+      }
+      gui_add_tooltip (gui, _l("Print"));
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_PRINT]))){
+        gui->show_print = 1;
+      }
+      gui_add_tooltip (gui, _l("Undo"));
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_UNDO]))){
+        gui->action = UNDO;
+      }
+      gui_add_tooltip (gui, _l("Redo"));
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_REDO]))){
+        gui->action = REDO;
+      }
+      gui_add_tooltip (gui, _l("Copy"));
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_COPY]))){
+        gui->action = YANK;
+      }
+      gui_add_tooltip (gui, _l("Cut"));
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_CUT]))){
+        gui->action = CUT;
+      }
+      gui_add_tooltip (gui, _l("Paste"));
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_PASTE]))){
+        gui->action = START_PASTE;
+        
+      }
+      nk_label(gui->ctx, " ", NK_TEXT_RIGHT); /* simple space */
+      /* config tools*/
+      gui_add_tooltip (gui, _l("Config"));
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_GEAR]))){
+        gui->show_config = 1;
+      }
+      
+      /* Help - about CadZinho*/
+      gui_add_tooltip (gui, _l("About"));
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_HELP]))){
+        gui->show_app_about = 1;
+      }
+      
+      static char text[64], transp_txt[64];
+      int text_len;
+        
+      /*layer*/
+      nk_layout_row(gui->ctx, NK_STATIC, 23, 2, (float[]){23, 290});
+      gui_add_tooltip (gui, _l("Layer"));
+      nk_image(gui->ctx, nk_image_ptr(gui->icon_small[SVG_STACK]));
+      layer_prop(gui);
+      
+      gui_add_tooltip (gui, _l("Line Style"));
+      nk_image(gui->ctx, nk_image_ptr(gui->icon_small[SVG_LTYPE]));
+      ltype_prop(gui);
+
+      /*color picker */
+      int c_idx = gui->color_idx;
+      if (c_idx >255){
+        c_idx = gui->drawing->layers[gui->layer_idx].color;
+        if (c_idx >255){
+          c_idx = 0;
+        }
+      }
+      /* fill the tiny bitmap with selected color*/
+      bmp_fill(gui->color_img, dxf_colors[c_idx]);
+      
+      /* print the name (number) of color */
+      if (gui->color_idx == 0){
+        text_len = snprintf(text, 63, "%s", _l("By Block"));
+      }
+      else if (gui->color_idx < 256){
+        text_len = snprintf(text, 63, "%d", gui->color_idx);
+      }
+      else{
+        text_len = snprintf(text, 63, "%s", _l("By Layer"));
+      }
+      nk_layout_row(gui->ctx, NK_STATIC, 23, 4, (float[]){23, 140, 23, 140});
+      gui_add_tooltip (gui, _l("Color"));
+      nk_image(gui->ctx, nk_image_ptr(gui->icon_small[SVG_BUCKET2]));
+      if (nk_combo_begin_image_label(gui->ctx, text, nk_image_ptr(gui->color_img), nk_vec2(290,525))){
+        nk_layout_row_dynamic(gui->ctx, 20, 2);
+        if (nk_button_label(gui->ctx, _l("By Layer"))){
+          gui->color_idx = 256;
+          gui->action = COLOR_CHANGE;
+          nk_combo_close(gui->ctx);
+        }
+        if (nk_button_label(gui->ctx, _l("By Block"))){
+          gui->color_idx = 0;
+          gui->action = COLOR_CHANGE;
+          nk_combo_close(gui->ctx);
+        }
+        nk_layout_row_static(gui->ctx, 15, 22, 10);
+        nk_label(gui->ctx, " ", NK_TEXT_RIGHT); /* for padding color alingment */
+        
+        for (i = 1; i < 256; i++){
+          struct nk_color b_color = {
+            .r = dxf_colors[i].r,
+            .g = dxf_colors[i].g,
+            .b = dxf_colors[i].b,
+            .a = dxf_colors[i].a
+          };
+          if(nk_button_color(gui->ctx, b_color)){
+            gui->color_idx = i;
+            gui->action = COLOR_CHANGE;
+            nk_combo_close(gui->ctx);
+            break;
+          }
+        }
+        
+        nk_combo_end(gui->ctx);
+      }
+            
+      /* line weight */
+      gui_add_tooltip (gui, _l("Thickness"));
+      nk_image(gui->ctx, nk_image_ptr(gui->icon_small[SVG_LW]));
+     
+      char * lw_descr = (char *)dxf_lw_descr[gui->lw_idx];
+      if(gui->lw_idx == DXF_LW_LEN) lw_descr = _l("By Layer");
+      if(gui->lw_idx == DXF_LW_LEN + 1) lw_descr = _l("By Block");
+      
+      if (nk_combo_begin_label(gui->ctx, lw_descr, nk_vec2(140,300))){
+        nk_layout_row_dynamic(gui->ctx, 25, 1);
+        if (nk_button_label(gui->ctx, _l("By Layer"))){
+          gui->lw_idx = DXF_LW_LEN;
+          gui->action = LW_CHANGE;
+          nk_combo_close(gui->ctx);
+        }
+        if (nk_button_label(gui->ctx, _l("By Block"))){
+          gui->lw_idx = DXF_LW_LEN + 1;
+          gui->action = LW_CHANGE;
+          nk_combo_close(gui->ctx);
+        }
+        nk_layout_row_dynamic(gui->ctx, 17, 1);
+        for (i = 0; i < DXF_LW_LEN; i++){
+          if (nk_button_label(gui->ctx, dxf_lw_descr[i])){
+            gui->lw_idx = i;
+            gui->action = LW_CHANGE;
+            nk_combo_close(gui->ctx);
+            break;
+          }
+        }
+        nk_combo_end(gui->ctx);
+      }
+      
+      static int transp_value = 0;
+      static char transp_b[64];
+      
+      if (gui->transparency >= 0 && gui->transparency <= 100)
+        snprintf(transp_txt, 63, "%d%%", gui->transparency);
+      else if (gui->transparency == -1)
+        snprintf(transp_txt, 63, _l("By Block"));
+      else snprintf(transp_txt, 63, _l("By Layer"));
+      gui_add_tooltip (gui, _l("Transparency"));
+      nk_image(gui->ctx, nk_image_ptr(gui->icon_small[SVG_TRANSP]));
+      
+      if (nk_combo_begin_label(gui->ctx, transp_txt, nk_vec2(260, 80))){
+        nk_layout_row_dynamic(gui->ctx, 25, 2);
+        if (nk_button_label(gui ->ctx, _l("By Layer"))){
+          gui->transparency = -2;
+          gui->action = TRANSP_CHANGE;
+          nk_combo_close(gui->ctx);
+        }
+        if (nk_button_label(gui->ctx, _l("By Block"))){
+          gui->transparency = -1;
+          gui->action = TRANSP_CHANGE;
+          nk_combo_close(gui->ctx);
+        }
+        nk_layout_row(gui->ctx, NK_DYNAMIC, 40, 2, (float[]){0.6, 0.4});
+        //nk_progress(gui->ctx, &transp_value, 100, NK_MODIFIABLE);
+        nk_slider_int(gui->ctx, 0, &transp_value, 100, 1);
+        //transp_value = nk_propertyi(gui->ctx, _l("#Transp %"), 0, transp_value, 100, 1, 1.0);
+        snprintf(transp_b, 63, _l("Use: %d%%"), transp_value);
+        if (nk_button_label(gui ->ctx, transp_b)){
+          gui->transparency = transp_value;
+          gui->action = TRANSP_CHANGE;
+          nk_combo_close(gui->ctx);
+        }
+        nk_combo_end(gui->ctx);
+      }
+      
+      
+      
+      //nk_layout_row_end(gui->ctx);
+      
+      /*------------ end second line --------------*/
+      nk_group_end(gui->ctx);
+		}
+    if (nk_group_begin(gui->ctx, "Common tools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+      nk_layout_row_static(gui->ctx, (int)(1.65*ICON_SIZE) + 4, (int)(1.65*ICON_SIZE) + 4, 1);
+      
+      gui_add_tooltip (gui, _l("Plugins"));
+      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TOOL]))){
+        gui->show_plugins = 1;
+      }
+      gui_add_tooltip (gui, _l("Measure"));
+      if (gui_sel_b (gui, gui->svg_bmp[SVG_RULER], gui->modal == MEASURE)){
+        gui->modal = MEASURE;
+        strncpy(gui->ctx_tools_title, _l("Measure"), DXF_MAX_CHARS);
+        gui->step = 0;
+      }
+      gui_add_tooltip (gui, _l("Select"));
+      if (gui_sel_b (gui, gui->svg_bmp[SVG_CURSOR], gui->modal == SELECT)){
+        gui->modal = SELECT;
+        strncpy(gui->ctx_tools_title, _l("Select"), DXF_MAX_CHARS);
+        gui->step = 0;
+      }
+      
+      nk_group_end(gui->ctx);
+    }
     if (nk_group_begin(gui->ctx, "Main_Ribbon", NK_WINDOW_BORDER)) {
       
-      /* Ribbon collections */
+      /* Ribbon collections - TABS*/
       nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
       nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 5);
       
-      if (gui_tab (gui, _l("File"), ribbon_grp == RIB_FILE)) ribbon_grp = RIB_FILE;
-      
       if (gui->win_w > rib_w[RIB_VIEW]) {
-        if (gui_tab (gui, _l("Home"), ribbon_grp == RIB_DRAWING)) ribbon_grp = RIB_DRAWING;
+        if (gui_tab (gui, _l("Main"), ribbon_grp == RIB_DRAWING)) ribbon_grp = RIB_DRAWING;
       }
       else {
         if (gui_tab (gui, _l("Drawing"), ribbon_grp == RIB_DRAWING)) ribbon_grp = RIB_DRAWING;
@@ -161,93 +359,13 @@ int gui_main_win(gui_obj *gui){
       }
       nk_style_pop_vec2(gui->ctx);
       nk_layout_row_end(gui->ctx);
-      
-      /* first line */
-      //nk_layout_row_begin(gui->ctx, NK_STATIC, ICON_SIZE + 12, 9);
+    
       nk_layout_row_begin(gui->ctx, NK_STATIC, 102, 20);
-      
-      
-      /* file tools*/
-      if(ribbon_grp == RIB_FILE){ // || gui->win_w > rib_w[ribbon_grp]){
-        //nk_layout_row_begin(gui->ctx, NK_STATIC, 102, 9);
-        //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 14);
-        nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
-        if (nk_group_begin(gui->ctx, "_filetools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-          nk_layout_row_static(gui->ctx, 28, 28, 1);
-        
-          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NEW]))){
-            if (gui->changed){
-              gui->discard_changes = 1;
-              gui->desired_action = FILE_NEW;
-              gui->hist_action = HIST_NONE;
-            }
-            else{
-              gui->action = FILE_NEW;
-              gui->hist_new = 0; /* not add to history entries */
-            }
-          }
-          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_OPEN]))){
-            gui->action = FILE_OPEN;
-            //gui->show_app_file = 1;
-            gui->show_open = 1;
-            
-            gui->curr_path[0] = 0;
-            
-            gui->path_ok = 0;
-            gui->hist_new = 1;
-          }
-          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SAVE]))){
-            gui->action = FILE_SAVE;
-            //gui->show_app_file = 1;
-            gui->show_save = 1;
-            gui->path_ok = 0;
-            gui->hist_new = 1;
-          }
-          nk_group_end(gui->ctx);
-        }
-        /* print/export tools*/
-        nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
-        if (nk_group_begin(gui->ctx, "_exporttools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-          nk_layout_row_static(gui->ctx, 28, 28, 1);
-          //nk_label(gui->ctx, "  ", NK_TEXT_RIGHT); /* simple space */
-          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PRINT]))){
-            gui->show_print = 1;
-          }
-          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPORT]))){
-            gui->show_export = 1;
-          }
-          
-          nk_group_end(gui->ctx);
-        }
-      
-        nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
-        if (nk_group_begin(gui->ctx, "_configtools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-          nk_layout_row_static(gui->ctx, 28, 28, 1);
-          /* config tools*/
-          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SCRIPT1]))){
-            
-            gui->show_script = 1;
-          }
-          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_GEAR]))){
-            gui->show_config = 1;
-          }
-          
-          /* Help - about CadZinho*/
-          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_HELP]))){
-            gui->show_app_about = 1;
-          }
-          
-          nk_group_end(gui->ctx);
-        }
-      
-        //nk_layout_row_end(gui->ctx);
-      }
-      
+      /* tab drawing - Place and edit 2D graphics elements */
       if(ribbon_grp == RIB_DRAWING || (gui->win_w > rib_w[RIB_DRAWING] &&
-        gui->win_w > rib_w[ribbon_grp] && ribbon_grp != RIB_FILE)){
-        //nk_layout_row_begin(gui->ctx, NK_STATIC, 102, 9);
+        gui->win_w > rib_w[ribbon_grp])){
         
-        /* file tools*/
+        /* New elements tools*/
         nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_place2d", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 3);
@@ -290,18 +408,19 @@ int gui_main_win(gui_obj *gui){
             strncpy(gui->ctx_tools_title, _l("Ellipse"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Point"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_POINT], gui->modal == SINGLE_POINT)){
             gui->modal = SINGLE_POINT;
             strncpy(gui->ctx_tools_title, _l("Single Point"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+          gui_add_tooltip (gui, _l("Hatch"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_HATCH], gui->modal == HATCH)){
             gui->modal = HATCH;
             strncpy(gui->ctx_tools_title, _l("Hatch"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+          gui_add_tooltip (gui, _l("Image"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_IMAGE], gui->modal == IMAGE)){
             gui->modal = IMAGE;
             strncpy(gui->ctx_tools_title, _l("Image"), DXF_MAX_CHARS);
@@ -312,17 +431,17 @@ int gui_main_win(gui_obj *gui){
         }
         
         
-        /* file tools*/
+        /* Inserts (blocks) and tags tools*/
         nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_inserts", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 1);
-          
+          gui_add_tooltip (gui, _l("Blocks"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_BOOK], gui->modal == INSERT)){
             gui->modal = INSERT;
             strncpy(gui->ctx_tools_title, _l("Insert"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+          gui_add_tooltip (gui, _l("Add Tag"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_TAG], gui->modal == ADD_ATTRIB)){
             gui->modal = ADD_ATTRIB;
             strncpy(gui->ctx_tools_title, _l("Add Tag"), DXF_MAX_CHARS);
@@ -341,31 +460,36 @@ int gui_main_win(gui_obj *gui){
         }
         
         
-        /* file tools*/
+        /* Text tools*/
         nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_text", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 2);
+          gui_add_tooltip (gui, _l("Text"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_TEXT], gui->modal == TEXT)){
             gui->modal = TEXT;
             strncpy(gui->ctx_tools_title, _l("Text"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Inteli Text"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_I_TEXT], gui->modal == MTEXT)){
             gui->modal = MTEXT;
             strncpy(gui->ctx_tools_title, _l("Inteli Text"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Edit text"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_TEXT_E], gui->modal == ED_TEXT)){
             gui->modal = ED_TEXT;
             strncpy(gui->ctx_tools_title, _l("Edit Text"), DXF_MAX_CHARS);
             gui->step = 0;
             sel_list_clear (gui);
           }
+          gui_add_tooltip (gui, _l("Text Prop"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_TEXT_STY], gui->modal == TXT_PROP)){
             gui->modal = TXT_PROP;
             strncpy(gui->ctx_tools_title, _l("Text Properties"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Find"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_FIND], gui->modal == FIND)){
             gui->modal = FIND;
             strncpy(gui->ctx_tools_title, _l("Find/Replace"), DXF_MAX_CHARS);
@@ -375,52 +499,60 @@ int gui_main_win(gui_obj *gui){
         }
         
         
-        /* file tools*/
+        /* Modify tools*/
         nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_modify", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 3);
-        
+          
+          gui_add_tooltip (gui, _l("Move"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_MOVE], gui->modal == MOVE)){
             gui->modal = MOVE;
             strncpy(gui->ctx_tools_title, _l("Move"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Duplicate"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_DUPLI], gui->modal == DUPLI)){
             gui->modal = DUPLI;
             strncpy(gui->ctx_tools_title, _l("Duplicate"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Scale"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_SCALE], gui->modal == SCALE)){
             gui->modal = SCALE;
             strncpy(gui->ctx_tools_title, _l("Scale"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Rotate"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_ROT], gui->modal == ROTATE)){
             gui->modal = ROTATE;
             strncpy(gui->ctx_tools_title, _l("Rotate"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Mirror"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_MIRROR], gui->modal == MIRROR)){
             gui->modal = MIRROR;
             strncpy(gui->ctx_tools_title, _l("Mirror"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Explode"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_EXPLODE], gui->modal == EXPLODE)){
             gui->modal = EXPLODE;
             strncpy(gui->ctx_tools_title, _l("Explode"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Vertex"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_EDIT], gui->modal == VERTEX)){
             gui->modal = VERTEX;
             strncpy(gui->ctx_tools_title, _l("Edit Vertex"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+          gui_add_tooltip (gui, _l("Properties"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_STYLE], gui->modal == PROP)){
             gui->modal = PROP;
             strncpy(gui->ctx_tools_title, _l("Element Properties"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Erase"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TRASH]))){
             gui->action = DELETE;
             gui->step = 0;
@@ -428,27 +560,30 @@ int gui_main_win(gui_obj *gui){
           nk_group_end(gui->ctx);
         }
         
-        
         /* dimmensions */
         nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_dimmensions", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 2);
           
+          gui_add_tooltip (gui, _l("Linear Dim"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_DIM_LINEAR], gui->modal == DIM_LINEAR)){
             gui->modal = DIM_LINEAR;
             strncpy(gui->ctx_tools_title, _l("Linear Dimmension"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Angular Dim"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_DIM_ANGULAR], gui->modal == DIM_ANGULAR)){
             gui->modal = DIM_ANGULAR;
             strncpy(gui->ctx_tools_title, _l("Angular Dimmension"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Radial Dim"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_DIM_RADIUS], gui->modal == DIM_RADIUS)){
             gui->modal = DIM_RADIUS;
             strncpy(gui->ctx_tools_title, _l("Radial Dimmension"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Ord Dim"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_DIM_ORDINATE], gui->modal == DIM_ORDINATE)){
             gui->modal = DIM_ORDINATE;
             strncpy(gui->ctx_tools_title, _l("Ordinate Dimmension"), DXF_MAX_CHARS);
@@ -459,34 +594,34 @@ int gui_main_win(gui_obj *gui){
         }
 
       }
-      
-      
-      
-      
-      
-      
-      
-      
+
+      /* Tab View */
       if(ribbon_grp == RIB_VIEW || (gui->win_w > rib_w[RIB_VIEW] &&
-        gui->win_w > rib_w[ribbon_grp] && ribbon_grp != RIB_FILE)){
+        gui->win_w > rib_w[ribbon_grp])){
         /* zoom tools*/
         nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_zoomtools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 2);
+          
+          gui_add_tooltip (gui, _l("Zoom In"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_P]))){
             gui->action = VIEW_ZOOM_P;
           }
+          gui_add_tooltip (gui, _l("Zoom Out"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_M]))){
             gui->action = VIEW_ZOOM_M;
           }
+          gui_add_tooltip (gui, _l("Zoom Rect"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_W]))){
             gui->modal = ZOOM;
             strncpy(gui->ctx_tools_title, _l("Zoom"), DXF_MAX_CHARS);
             gui->step = 0;
           }
+          gui_add_tooltip (gui, _l("Zoom Extends"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_ZOOM_A]))){
             gui->action = VIEW_ZOOM_EXT;
           }
+          gui_add_tooltip (gui, _l("Redraw"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_BRUSH]))){
             gui->action = REDRAW;
           }
@@ -497,15 +632,19 @@ int gui_main_win(gui_obj *gui){
         nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_pantools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 2);
+          gui_add_tooltip (gui, _l("Pan"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_UP]))){
             gui->action = VIEW_PAN_U;
           }
+          gui_add_tooltip (gui, _l("Pan"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DOWN]))){
             gui->action = VIEW_PAN_D;
           }
+          gui_add_tooltip (gui, _l("Pan"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LEFT]))){
             gui->action = VIEW_PAN_L;
           }
+          gui_add_tooltip (gui, _l("Pan"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_RIGTH]))){
             gui->action = VIEW_PAN_R;
           }
@@ -515,33 +654,35 @@ int gui_main_win(gui_obj *gui){
         nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_3dviewtools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 2);
+          gui_add_tooltip (gui, _l("View Top"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_TOP]))){
             gui->alpha = 0.0;
             gui->beta = 0.0;
             gui->gamma = 0.0;gui->ofs_z = 0.0;
             gui_calc_view_rot (gui);
-            
           }
+          gui_add_tooltip (gui, _l("View Front"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_FRONT]))){
             gui->alpha = 0.0;
             gui->beta = 0.0;
             gui->gamma = 90.0;gui->ofs_y = 0.0;
             gui_calc_view_rot (gui);
-            
           }
+          gui_add_tooltip (gui, _l("View Right"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_RIGHT]))){
             gui->alpha = 90.0;
             gui->beta = 0.0;
             gui->gamma = 90.0;gui->ofs_x = 0.0;
             gui_calc_view_rot (gui);
-            
           }
+          gui_add_tooltip (gui, _l("Isometric"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_ISOMETRIC]))){
             gui->alpha = 45.0;
             gui->beta = 0.0;
             gui->gamma = 90.0 - 35.264;
             gui_calc_view_rot (gui);
           }
+          gui_add_tooltip (gui, _l("Rotate View"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_VIEW_ROTATE]))){
             gui->modal = VIEW_ROTATE;
             strncpy(gui->ctx_tools_title, _l("Rotate View"), DXF_MAX_CHARS);
@@ -555,77 +696,95 @@ int gui_main_win(gui_obj *gui){
       
       
       if(ribbon_grp == RIB_MANAGER || (gui->win_w > rib_w[RIB_MANAGER] &&
-        gui->win_w > rib_w[ribbon_grp] && ribbon_grp != RIB_FILE)){
+        gui->win_w > rib_w[ribbon_grp])){
         /* managers*/
         nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_managerstools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 2);
+          gui_add_tooltip (gui, _l("Layers"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LAYERS]))){
             gui->show_lay_mng = 1;
           }
+          gui_add_tooltip (gui, _l("Text styles"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_FONT]))){
             gui->show_tstyles_mng = 1;
           }
+          gui_add_tooltip (gui, _l("Line styles"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LTYPE]))){
             gui->show_ltyp_mng = 1;
           }
+          gui_add_tooltip (gui, _l("Blocks"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PUZZLE]))){
             gui->show_blk_mng = 1;
           }
+          gui_add_tooltip (gui, _l("Dim styles"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_DIM_CONFIG]))){
             gui->show_dim_mng = 1;
           }
           nk_group_end(gui->ctx);
         }
+        
+        /* import/export tools*/
+        nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
+        if (nk_group_begin(gui->ctx, "_exporttools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
+          nk_layout_row_static(gui->ctx, 28, 28, 1);
+          
+          gui_add_tooltip (gui, _l("Export"));
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EXPORT]))){
+            gui->show_export = 1;
+          }
+          gui_add_tooltip (gui, _l("Scripts"));
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SCRIPT1]))){
+            gui->show_script = 1;
+          }
+          
+          nk_group_end(gui->ctx);
+        }
       }
       
-      
-      
-      
-      
-      if(ribbon_grp == RIB_3D || 
-        (gui->win_w > rib_w[RIB_3D] && ribbon_grp != RIB_FILE)){
+      if(ribbon_grp == RIB_3D || (gui->win_w > rib_w[RIB_3D])){
         /* solids */
         nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_solidstools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 3);
         
+          gui_add_tooltip (gui, _l("Sphere"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SPHERE], gui->modal == SPHERE)){
             gui->modal = SPHERE;
             strncpy(gui->ctx_tools_title, _l("Sphere"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+          gui_add_tooltip (gui, _l("Cylinder"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_CYLINDER], gui->modal == CYLINDER)){
             gui->modal = CYLINDER;
             strncpy(gui->ctx_tools_title, _l("Cylinder"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+          gui_add_tooltip (gui, _l("Cone"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_CONE], gui->modal == CONE)){
             gui->modal = CONE;
             strncpy(gui->ctx_tools_title, _l("Cone"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+          gui_add_tooltip (gui, _l("Slab"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SLAB], gui->modal == SLAB)){
             gui->modal = SLAB;
             strncpy(gui->ctx_tools_title, _l("Slab"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+          gui_add_tooltip (gui, _l("Wedge"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_WEDGE], gui->modal == WEDGE)){
             gui->modal = WEDGE;
             strncpy(gui->ctx_tools_title, _l("Wedge"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+          gui_add_tooltip (gui, _l("Pyramid"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_PYRAMID], gui->modal == PYRAMID)){
             gui->modal = PYRAMID;
             strncpy(gui->ctx_tools_title, _l("Pyramid"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+          gui_add_tooltip (gui, _l("Torus"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_TORUS], gui->modal == TORUS)){
             gui->modal = TORUS;
             strncpy(gui->ctx_tools_title, _l("Torus"), DXF_MAX_CHARS);
@@ -638,18 +797,19 @@ int gui_main_win(gui_obj *gui){
         nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_extrudetools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 1);
+          gui_add_tooltip (gui, _l("Extrude"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_EXTRUDE], gui->modal == EXTRUDE)){
             gui->modal = EXTRUDE;
             strncpy(gui->ctx_tools_title, _l("Extrude"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+          gui_add_tooltip (gui, _l("Extrude along"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_EXTRUDE_PATH], gui->modal == EXTRUDE_PATH)){
             gui->modal = EXTRUDE_PATH;
             strncpy(gui->ctx_tools_title, _l("Extrude path"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+          gui_add_tooltip (gui, _l("Revolve"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_REVOLVE], gui->modal == REVOLVE)){
             gui->modal = REVOLVE;
             strncpy(gui->ctx_tools_title, _l("Revolve"), DXF_MAX_CHARS);
@@ -662,18 +822,20 @@ int gui_main_win(gui_obj *gui){
         nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_3dbooltools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 1);
+          
+          gui_add_tooltip (gui, _l("Union"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_UNION], gui->modal == UNION)){
             gui->modal = UNION;
             strncpy(gui->ctx_tools_title, _l("Union"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+          gui_add_tooltip (gui, _l("Subtract"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SUBTRACT], gui->modal == SUBTRACT)){
             gui->modal = SUBTRACT;
             strncpy(gui->ctx_tools_title, _l("Subtract"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+          gui_add_tooltip (gui, _l("Intersection"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_INTERSECTION], gui->modal == INTERSECTION)){
             gui->modal = INTERSECTION;
             strncpy(gui->ctx_tools_title, _l("Intersection"), DXF_MAX_CHARS);
@@ -682,19 +844,18 @@ int gui_main_win(gui_obj *gui){
           nk_group_end(gui->ctx);
         }
         
-        
-        
         /* 3D transforms */
         nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_3dtranstools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 1);
           
+          gui_add_tooltip (gui, _l("Slice"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_SLICE], gui->modal == SLICE)){
             gui->modal = SLICE;
             strncpy(gui->ctx_tools_title, _l("Slice"), DXF_MAX_CHARS);
             gui->step = 0;
           }
-          
+          gui_add_tooltip (gui, _l("Rotate"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_3D_ROTATE], gui->modal == ROTATE_3D)){
             gui->modal = ROTATE_3D;
             strncpy(gui->ctx_tools_title, _l("Rotate 3D"), DXF_MAX_CHARS);
@@ -709,264 +870,6 @@ int gui_main_win(gui_obj *gui){
       
       nk_group_end(gui->ctx);
     }
-    if (nk_group_begin(gui->ctx, "Common tools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-      
-      nk_layout_row_dynamic(gui->ctx, 38, 1);
-      //nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 3);
-      
-      /* clipboard tools*/
-      //nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
-      if (nk_group_begin(gui->ctx, "_clipboard", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 3);
-        
-        
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_COPY]))){
-          gui->action = YANK;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_CUT]))){
-          gui->action = CUT;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_PASTE]))){
-          gui->action = START_PASTE;
-          
-        }
-        
-        nk_group_end(gui->ctx);
-      }
-      
-      /* undo/redo tools*/
-      //nk_layout_row_push(gui->ctx, 2*(ICON_SIZE + 4 + 4) + 13);
-      if (nk_group_begin(gui->ctx, "_undo-redo", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 3);
-        
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_UNDO]))){
-          gui->action = UNDO;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_REDO]))){
-          gui->action = REDO;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SAVE]))){
-          gui->action = FILE_SAVE;
-          //gui->show_app_file = 1;
-          gui->show_save = 1;
-          gui->path_ok = 0;
-          gui->hist_new = 1;
-        }
-        nk_group_end(gui->ctx);
-      }
-      if (nk_group_begin(gui->ctx, "_sel_meas_plug", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-      
-        nk_layout_row_static(gui->ctx, ICON_SIZE + 4, ICON_SIZE + 4, 3);
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_CURSOR], gui->modal == SELECT)){
-          gui->modal = SELECT;
-          strncpy(gui->ctx_tools_title, _l("Select"), DXF_MAX_CHARS);
-          gui->step = 0;
-        }
-        if (gui_sel_b (gui, gui->svg_bmp[SVG_RULER], gui->modal == MEASURE)){
-          gui->modal = MEASURE;
-          strncpy(gui->ctx_tools_title, _l("Measure"), DXF_MAX_CHARS);
-          gui->step = 0;
-        }
-        if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_TOOL]))){
-          gui->show_plugins = 1;
-        }
-        nk_group_end(gui->ctx);
-      }
-      
-      nk_group_end(gui->ctx);
-    }
-		if (nk_group_begin(gui->ctx, "Current_properties", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-      //nk_layout_row_dynamic(gui->ctx, 5, 1); /* only a blank space */
-      
-      /* second line */
-      nk_layout_row_static(gui->ctx, 23, 23, 10);
-      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_NEW]))){
-        if (gui->changed){
-          gui->discard_changes = 1;
-          gui->desired_action = FILE_NEW;
-          gui->hist_action = HIST_NONE;
-        }
-        else{
-          gui->action = FILE_NEW;
-          gui->hist_new = 0; /* not add to history entries */
-        }
-      }
-      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_OPEN]))){
-        gui->action = FILE_OPEN;
-        //gui->show_app_file = 1;
-        gui->show_open = 1;
-        
-        gui->curr_path[0] = 0;
-        
-        gui->path_ok = 0;
-        gui->hist_new = 1;
-      }
-      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_SAVE]))){
-        gui->action = FILE_SAVE;
-        //gui->show_app_file = 1;
-        gui->show_save = 1;
-        gui->path_ok = 0;
-        gui->hist_new = 1;
-      }
-      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_PRINT]))){
-        gui->show_print = 1;
-      }
-      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_UNDO]))){
-        gui->action = UNDO;
-      }
-      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_REDO]))){
-        gui->action = REDO;
-      }
-      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_COPY]))){
-        gui->action = YANK;
-      }
-      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_CUT]))){
-        gui->action = CUT;
-      }
-      if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_PASTE]))){
-        gui->action = START_PASTE;
-        
-      }
-      static char text[64], transp_txt[64];
-      int text_len;
-        
-      /*layer*/
-      nk_layout_row(gui->ctx, NK_STATIC, 23, 2, (float[]){23, 290});
-      nk_image(gui->ctx, nk_image_ptr(gui->icon_small[SVG_STACK]));
-      layer_prop(gui);
-      
-      nk_image(gui->ctx, nk_image_ptr(gui->icon_small[SVG_LTYPE]));
-      ltype_prop(gui);
-
-      /*color picker */
-      int c_idx = gui->color_idx;
-      if (c_idx >255){
-        c_idx = gui->drawing->layers[gui->layer_idx].color;
-        if (c_idx >255){
-          c_idx = 0;
-        }
-      }
-      /* fill the tiny bitmap with selected color*/
-      bmp_fill(gui->color_img, dxf_colors[c_idx]);
-      
-      /* print the name (number) of color */
-      if (gui->color_idx == 0){
-        text_len = snprintf(text, 63, "%s", _l("By Block"));
-      }
-      else if (gui->color_idx < 256){
-        text_len = snprintf(text, 63, "%d", gui->color_idx);
-      }
-      else{
-        text_len = snprintf(text, 63, "%s", _l("By Layer"));
-      }
-      nk_layout_row(gui->ctx, NK_STATIC, 23, 4, (float[]){23, 140, 23, 140});
-      nk_image(gui->ctx, nk_image_ptr(gui->icon_small[SVG_BUCKET2]));
-      if (nk_combo_begin_image_label(gui->ctx, text, nk_image_ptr(gui->color_img), nk_vec2(290,525))){
-        nk_layout_row_dynamic(gui->ctx, 20, 2);
-        if (nk_button_label(gui->ctx, _l("By Layer"))){
-          gui->color_idx = 256;
-          gui->action = COLOR_CHANGE;
-          nk_combo_close(gui->ctx);
-        }
-        if (nk_button_label(gui->ctx, _l("By Block"))){
-          gui->color_idx = 0;
-          gui->action = COLOR_CHANGE;
-          nk_combo_close(gui->ctx);
-        }
-        nk_layout_row_static(gui->ctx, 15, 22, 10);
-        nk_label(gui->ctx, " ", NK_TEXT_RIGHT); /* for padding color alingment */
-        
-        for (i = 1; i < 256; i++){
-          struct nk_color b_color = {
-            .r = dxf_colors[i].r,
-            .g = dxf_colors[i].g,
-            .b = dxf_colors[i].b,
-            .a = dxf_colors[i].a
-          };
-          if(nk_button_color(gui->ctx, b_color)){
-            gui->color_idx = i;
-            gui->action = COLOR_CHANGE;
-            nk_combo_close(gui->ctx);
-            break;
-          }
-        }
-        
-        nk_combo_end(gui->ctx);
-      }
-            
-      /* line weight */
-      nk_image(gui->ctx, nk_image_ptr(gui->icon_small[SVG_LW]));
-     
-      char * lw_descr = (char *)dxf_lw_descr[gui->lw_idx];
-      if(gui->lw_idx == DXF_LW_LEN) lw_descr = _l("By Layer");
-      if(gui->lw_idx == DXF_LW_LEN + 1) lw_descr = _l("By Block");
-      
-      if (nk_combo_begin_label(gui->ctx, lw_descr, nk_vec2(140,300))){
-        nk_layout_row_dynamic(gui->ctx, 25, 1);
-        if (nk_button_label(gui->ctx, _l("By Layer"))){
-          gui->lw_idx = DXF_LW_LEN;
-          gui->action = LW_CHANGE;
-          nk_combo_close(gui->ctx);
-        }
-        if (nk_button_label(gui->ctx, _l("By Block"))){
-          gui->lw_idx = DXF_LW_LEN + 1;
-          gui->action = LW_CHANGE;
-          nk_combo_close(gui->ctx);
-        }
-        nk_layout_row_dynamic(gui->ctx, 17, 1);
-        for (i = 0; i < DXF_LW_LEN; i++){
-          if (nk_button_label(gui->ctx, dxf_lw_descr[i])){
-            gui->lw_idx = i;
-            gui->action = LW_CHANGE;
-            nk_combo_close(gui->ctx);
-            break;
-          }
-        }
-        nk_combo_end(gui->ctx);
-      }
-      
-      static int transp_value = 0;
-      static char transp_b[64];
-      
-      if (gui->transparency >= 0 && gui->transparency <= 100)
-        snprintf(transp_txt, 63, "%d%%", gui->transparency);
-      else if (gui->transparency == -1)
-        snprintf(transp_txt, 63, _l("By Block"));
-      else snprintf(transp_txt, 63, _l("By Layer"));
-      nk_image(gui->ctx, nk_image_ptr(gui->icon_small[SVG_TRANSP]));
- 
-      if (nk_combo_begin_label(gui->ctx, transp_txt, nk_vec2(260, 80))){
-        nk_layout_row_dynamic(gui->ctx, 25, 2);
-        if (nk_button_label(gui ->ctx, _l("By Layer"))){
-          gui->transparency = -2;
-          gui->action = TRANSP_CHANGE;
-          nk_combo_close(gui->ctx);
-        }
-        if (nk_button_label(gui->ctx, _l("By Block"))){
-          gui->transparency = -1;
-          gui->action = TRANSP_CHANGE;
-          nk_combo_close(gui->ctx);
-        }
-        nk_layout_row(gui->ctx, NK_DYNAMIC, 40, 2, (float[]){0.6, 0.4});
-        //nk_progress(gui->ctx, &transp_value, 100, NK_MODIFIABLE);
-        nk_slider_int(gui->ctx, 0, &transp_value, 100, 1);
-        //transp_value = nk_propertyi(gui->ctx, _l("#Transp %"), 0, transp_value, 100, 1, 1.0);
-        snprintf(transp_b, 63, _l("Use: %d%%"), transp_value);
-        if (nk_button_label(gui ->ctx, transp_b)){
-          gui->transparency = transp_value;
-          gui->action = TRANSP_CHANGE;
-          nk_combo_close(gui->ctx);
-        }
-        nk_combo_end(gui->ctx);
-      }
-      
-      
-      
-      //nk_layout_row_end(gui->ctx);
-      
-      /*------------ end second line --------------*/
-      nk_group_end(gui->ctx);
-		}
 		if (gui->show_app_about){
 			/* About Cadzinho */
 			const char* site = "https://github.com/zecruel/CadZinho";
@@ -1083,78 +986,95 @@ int gui_bottom_win (gui_obj *gui){
 		
 		
 		/*----------- attractors --------------*/
-		nk_layout_row_push(gui->ctx, 17*(28) + 20);
+		nk_layout_row_push(gui->ctx, 9*(23) + 20);
 		if (nk_group_begin(gui->ctx, "attractors", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
 			
 			nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,0));
-			nk_layout_row_begin(gui->ctx, NK_STATIC, 28, 17);
+			nk_layout_row_begin(gui->ctx, NK_STATIC, 23, 9);
 			/* enable/disable attractors */
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_MAGNET], en_attr, 28)){
+      gui_add_tooltip (gui, _l("Enable attractors"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_MAGNET], en_attr, 23)){
 				en_attr = !en_attr;
 			}
 			/* Buttons to select attractor mode*/
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_END],
-				gui->curr_attr_t & ATRC_END, 28)){
+      gui_add_tooltip (gui, _l("End"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_END],
+				gui->curr_attr_t & ATRC_END, 23)){
 				gui->curr_attr_t ^= ATRC_END;
 			}
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_MID],
-				gui->curr_attr_t & ATRC_MID, 28)){
+      gui_add_tooltip (gui, _l("Mid"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_MID],
+				gui->curr_attr_t & ATRC_MID, 23)){
 				gui->curr_attr_t ^= ATRC_MID;
 			}
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_CENTER],
-				gui->curr_attr_t & ATRC_CENTER, 28)){
+      gui_add_tooltip (gui, _l("Center"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_CENTER],
+				gui->curr_attr_t & ATRC_CENTER, 23)){
 				gui->curr_attr_t ^= ATRC_CENTER;
 			}
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_QUAD],
-				gui->curr_attr_t & ATRC_QUAD, 28)){
+      gui_add_tooltip (gui, _l("Quadrant"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_QUAD],
+				gui->curr_attr_t & ATRC_QUAD, 23)){
 				gui->curr_attr_t ^= ATRC_QUAD;
 			}
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_INTER],
-				gui->curr_attr_t & ATRC_INTER, 28)){
+      gui_add_tooltip (gui, _l("Intersection"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_INTER],
+				gui->curr_attr_t & ATRC_INTER, 23)){
 				gui->curr_attr_t ^= ATRC_INTER;
 			}
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_AINT],
-				gui->curr_attr_t & ATRC_AINT, 28)){
+      gui_add_tooltip (gui, _l("Apparent"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_AINT],
+				gui->curr_attr_t & ATRC_AINT, 23)){
 				gui->curr_attr_t ^= ATRC_AINT;
 			}
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_EXT],
-				gui->curr_attr_t & ATRC_EXT, 28)){
+      gui_add_tooltip (gui, _l("Extension"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_EXT],
+				gui->curr_attr_t & ATRC_EXT, 23)){
 				gui->curr_attr_t ^= ATRC_EXT;
 			}
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_INS],
-				gui->curr_attr_t & ATRC_INS, 28)){
+      gui_add_tooltip (gui, _l("Reference"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_INS],
+				gui->curr_attr_t & ATRC_INS, 23)){
 				gui->curr_attr_t ^= ATRC_INS;
 			}
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_NODE],
-				gui->curr_attr_t & ATRC_NODE, 28)){
+      gui_add_tooltip (gui, _l("Node"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_NODE],
+				gui->curr_attr_t & ATRC_NODE, 23)){
 				gui->curr_attr_t ^= ATRC_NODE;
 			}
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_OCENTER],
-				gui->curr_attr_t & ATRC_OCENTER, 28)){
+      gui_add_tooltip (gui, _l("Object center"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_OCENTER],
+				gui->curr_attr_t & ATRC_OCENTER, 23)){
 				gui->curr_attr_t ^= ATRC_OCENTER;
 			}
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_PAR],
-				gui->curr_attr_t & ATRC_PAR, 28)){
+      gui_add_tooltip (gui, _l("Parallel"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_PAR],
+				gui->curr_attr_t & ATRC_PAR, 23)){
 				gui->curr_attr_t ^= ATRC_PAR;
 			}
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_PERP],
-				gui->curr_attr_t & ATRC_PERP, 28)){
+      gui_add_tooltip (gui, _l("Perpendicular"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_PERP],
+				gui->curr_attr_t & ATRC_PERP, 23)){
 				gui->curr_attr_t ^= ATRC_PERP;
 			}
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_TAN],
-				gui->curr_attr_t & ATRC_TAN, 28)){
+      gui_add_tooltip (gui, _l("Tangent"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_TAN],
+				gui->curr_attr_t & ATRC_TAN, 23)){
 				gui->curr_attr_t ^= ATRC_TAN;
 			}
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_CTRL],
-				gui->curr_attr_t & ATRC_CTRL, 28)){
+      gui_add_tooltip (gui, _l("Control"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_CTRL],
+				gui->curr_attr_t & ATRC_CTRL, 23)){
 				gui->curr_attr_t ^= ATRC_CTRL;
 			}
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_ATRC_ANY],
-				gui->curr_attr_t & ATRC_ANY, 28)){
+      gui_add_tooltip (gui, _l("Any"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_ANY],
+				gui->curr_attr_t & ATRC_ANY, 23)){
 				gui->curr_attr_t ^= ATRC_ANY;
 			}
-			if (gui_tab_img (gui, gui->svg_bmp[SVG_LOCK],
-				gui->grid_flags > 1, 28)){
+      gui_add_tooltip (gui, _l("Grid"));
+			if (gui_tab_img (gui, gui->icon_small[SVG_ATRC_GRID],
+				gui->grid_flags > 1, 23)){
 				gui->grid_flags ^= 2;
 			}
 			

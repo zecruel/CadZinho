@@ -134,6 +134,7 @@ enum svg_list {
     SVG_LW,
     SVG_BUCKET2,
     SVG_STACK,
+    SVG_ATRC_GRID,
     SVG_MEDIA_SIZE
 };
 

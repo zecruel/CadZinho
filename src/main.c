@@ -577,7 +577,6 @@ int main(int argc, char** argv){
 
 	
 	/* ****************** test cursor ************************** */
-	gui->dflt_cur = SDL_GetDefaultCursor();
 	gui_create_modal_cur(gui);
 	/* ******************************************************* */
 		

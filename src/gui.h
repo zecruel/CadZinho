@@ -484,8 +484,6 @@ struct Gui_obj {
 	struct gui_font * ui_font_list;
   
   SDL_Window * window;
-  SDL_Cursor * dflt_cur;
-  SDL_Cursor * modal_cursor[MODAL_SIZE];
   
   struct do_entry * save_pt;
   
@@ -499,6 +497,7 @@ struct Gui_obj {
 	bmp_img * i_cz48;
 	bmp_img * i_trash;
 	bmp_img * attr_vec[15];
+  bmp_img * modal_cursor[MODAL_SIZE];
 	
 	dxf_drawing * drawing; /* main drawing buffer */
   dxf_drawing * clip_drwg;
@@ -640,6 +639,8 @@ void gui_draw_vert(gui_obj *gui, bmp_img *img, dxf_node *obj);
 int nk_gl_render(gui_obj *gui) ;
 
 int draw_cursor_gl(gui_obj *gui, int x, int y, int z, enum Cursor_type type);
+
+int draw_aux_cursor (gui_obj *gui, int x, int y, int z);
 
 int draw_grid_gl(gui_obj *gui);
 

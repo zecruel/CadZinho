@@ -132,15 +132,10 @@ int gui_main_loop (gui_obj *gui) {
   
   /* ===============================*/
   if (nk_window_is_any_hovered(gui->ctx)) {
-    //SDL_ShowCursor(SDL_ENABLE);
-    SDL_SetCursor(gui->dflt_cur);
+    SDL_ShowCursor(SDL_ENABLE);
   }
   else{
-    
-    if (gui->pan_mode && !(gui->pan_mode & 2)) SDL_SetCursor(gui->modal_cursor[PAN]);
-    else if (gui->pan_mode & 2) SDL_SetCursor(gui->modal_cursor[VIEW_ROTATE]);
-    else SDL_SetCursor(gui->modal_cursor[gui->modal]);
-    //SDL_ShowCursor(SDL_DISABLE);
+    SDL_ShowCursor(SDL_DISABLE);
     
     if (ev_type != 0){
       double wheel = 1.0;
@@ -1718,7 +1713,9 @@ int gui_main_loop (gui_obj *gui) {
     draw_orign_gl(gui);
     
     
-    draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
+    //draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
+    draw_aux_cursor (gui, x + x0, y + y0, gui->mouse_z);
+    
     //glReadPixels(gui->mouse_x, gui->mouse_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &gui->mouse_z);
     
     

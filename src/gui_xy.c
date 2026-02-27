@@ -151,7 +151,7 @@ int gui_update_pos(gui_obj *gui){
 }
 
 int gui_xy(gui_obj *gui){
-	static char user_str_x[64] = "0.000000", user_str_y[64] = "0.000000";
+	static char user_str_x[64] = "0.000000", user_str_y[64] = "0.000000", user_str_z[64] = "0.000000";
 	
 	/* interface to the user visualize and enter coordinates and distances*/
 	nk_flags res;
@@ -307,6 +307,17 @@ int gui_xy(gui_obj *gui){
 			flag_y = 0;
 		}
 		
+    
+    /* ======================= ZZZZ ==================*/
+    nk_layout_row_push(gui->ctx, 20);
+    nk_label(gui->ctx, _l("Z="), NK_TEXT_RIGHT);
+    
+    nk_layout_row_push(gui->ctx, 120);
+		/* edit to visualize or enter distance */
+		res = nk_edit_string_zero_terminated(gui->ctx, NK_EDIT_SIMPLE|NK_EDIT_SIG_ENTER|NK_EDIT_SELECTABLE|NK_EDIT_AUTO_SELECT, user_str_z, 63, nk_filter_float);
+    
+    
+    
 		/* select if entry mode is in rectangular (X,Y) or polar (dist, angle)*/
 		nk_layout_row_push(gui->ctx, 100);
 		if (gui->rect_polar){
@@ -428,7 +439,7 @@ int gui_xy(gui_obj *gui){
 	
 		//nk_layout_row_dynamic(gui->ctx, 17, 1);
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 3);
-		nk_layout_row_push(gui->ctx, 292);
+		nk_layout_row_push(gui->ctx, 442);
 		text_len = snprintf(text, 63, "( %.2f , %.2f , %.2f )", pos_x, pos_y, pos_z);
 		nk_label(gui->ctx, text, NK_TEXT_CENTERED);
 		nk_style_pop_font(gui->ctx); /* return to the default font*/

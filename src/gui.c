@@ -543,11 +543,8 @@ int gui_sel_b (gui_obj *gui, bmp_img *img, int active){
 }
 
 /* ************************************************** */
-
 int gui_create_modal_cur(gui_obj *gui){
-	SDL_Surface *surface;
-	
-	int cur_img[MODAL_SIZE];
+  int cur_img[MODAL_SIZE];
 	cur_img[SELECT] = SVG_CURSOR;
 	cur_img[LINE] = SVG_LINE;
 	cur_img[POLYLINE] = SVG_PLINE;
@@ -603,15 +600,7 @@ int gui_create_modal_cur(gui_obj *gui){
   cur_img[ROTATE_3D] = SVG_3D_ROTATE;
 	int i;
 	for (i = 0; i < MODAL_SIZE; i++){
-		surface = SDL_CreateRGBSurfaceFrom(
-			(void *)gui->svg_bmp[cur_img[i]]->buf,
-			gui->svg_bmp[cur_img[i]]->width,
-			gui->svg_bmp[cur_img[i]]->height,
-			32, gui->svg_bmp[cur_img[i]]->width * 4,
-			0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
-			
-		gui->modal_cursor[i] = SDL_CreateColorCursor(surface, 0, 0);
-		SDL_FreeSurface(surface);
+		gui->modal_cursor[i] = i_svg_bmp(gui->svg_curves[cur_img[i]], 32, 32);
 	}
 	
 	return 1;
@@ -620,11 +609,12 @@ int gui_create_modal_cur(gui_obj *gui){
 int gui_free_modal_cur(gui_obj *gui){
 	int i;
 	for (i = 0; i < MODAL_SIZE; i++){
-		SDL_FreeCursor(gui->modal_cursor[i]);
+		bmp_free(gui->modal_cursor[i]);
 	}
 	
 	return 1;
 }
+
 
 int gui_default_modal(gui_obj *gui){
 	if (gui->modal == NEW_BLK)
@@ -966,18 +956,6 @@ void set_style(gui_obj *gui, enum theme theme){
 	gui->svg_bmp = i_svg_all_bmp(gui->svg_curves, ICON_SIZE-1, ICON_SIZE-1);
 	gui->icon_small = i_svg_all_bmp(gui->svg_curves, 16, 16);
 	
-	bmp_free(gui->svg_bmp[SVG_LOCK]);
-	gui->svg_bmp[SVG_LOCK] = i_svg_bmp(gui->svg_curves[SVG_LOCK], 16, 16);
-	bmp_free(gui->svg_bmp[SVG_UNLOCK]);
-	gui->svg_bmp[SVG_UNLOCK] = i_svg_bmp(gui->svg_curves[SVG_UNLOCK], 16, 16);
-	bmp_free(gui->svg_bmp[SVG_EYE]);
-	gui->svg_bmp[SVG_EYE] = i_svg_bmp(gui->svg_curves[SVG_EYE], 16, 16);
-	bmp_free(gui->svg_bmp[SVG_NO_EYE]);
-	gui->svg_bmp[SVG_NO_EYE] = i_svg_bmp(gui->svg_curves[SVG_NO_EYE], 16, 16);
-	bmp_free(gui->svg_bmp[SVG_SUN]);
-	gui->svg_bmp[SVG_SUN] = i_svg_bmp(gui->svg_curves[SVG_SUN], 16, 16);
-	bmp_free(gui->svg_bmp[SVG_FREEZE]);
-	gui->svg_bmp[SVG_FREEZE] = i_svg_bmp(gui->svg_curves[SVG_FREEZE], 16, 16);
 	bmp_free(gui->svg_bmp[SVG_CZ]);
 	gui->svg_bmp[SVG_CZ] = i_svg_bmp(gui->svg_curves[SVG_CZ], 32, 32);
 	
@@ -2303,6 +2281,7 @@ int draw_cursor_gl(gui_obj *gui, int x, int y, int z, enum Cursor_type type) {
 		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 	}
   #endif
+  
 	/* set the color to contrast with background*/
 	gl_ctx->fg[0] = gui->background.r ^ 255;
 	gl_ctx->fg[1] = gui->background.g ^ 255;
@@ -2365,9 +2344,43 @@ int draw_cursor_gl(gui_obj *gui, int x, int y, int z, enum Cursor_type type) {
 		draw_gl_line (gl_ctx, (float []){x+5, y-5, of_z}, (float []){x+5, y+5, of_z}, 1, 1);
 		draw_gl_line (gl_ctx, (float []){x-5, y-5, of_z}, (float []){x-5, y+5, of_z}, 1, 1);
 	}
-	
+  
 	draw_gl (gl_ctx, 0);
 	return 1;
+}
+
+int draw_aux_cursor (gui_obj *gui, int x, int y, int z){
+  if (!gui) return 0;
+	
+	struct ogl *gl_ctx = &(gui->gl_ctx);
+  float of_z = -gui->ofs_z * gui->zoom;
+  
+  draw_gl (gl_ctx, 1); /* force draw and cleanup */
+	
+	/* init opengl context */
+  #ifndef GLES2
+	if (gl_ctx->elems == NULL){
+		gl_ctx->verts = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		gl_ctx->elems = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	}
+  #endif
+  
+	/* set the color to contrast with background */
+  
+  gl_ctx->fg[0] = gui->b_icon.text_normal.r;
+  gl_ctx->fg[1] = gui->b_icon.text_normal.g;
+  gl_ctx->fg[2] = gui->b_icon.text_normal.b;
+  gl_ctx->fg[3] = 255;
+  
+  //draw_gl_quad (gl_ctx, (float[]){x,y,z}, (float[]){x+10,y,z}, (float[]){x+10,y+10,z}, (float[]){x,y+10,z}, 1);
+  
+  glUniform1i(gl_ctx->tex_uni, 1); /* choose second texture */
+  if (gui->pan_mode && !(gui->pan_mode & 2))
+    draw_gl_image_rec (gl_ctx, x + 3, y - 32 - 3, of_z, 32, 32, gui->modal_cursor[PAN], 1);
+  else if (gui->pan_mode & 2)
+    draw_gl_image_rec (gl_ctx, x + 3, y - 32 - 3, of_z, 32, 32, gui->modal_cursor[VIEW_ROTATE], 1);
+  else draw_gl_image_rec (gl_ctx, x + 3, y - 32 - 3, of_z, 32, 32, gui->modal_cursor[gui->modal], 1);
+  draw_gl (gl_ctx, 1); /* force draw and cleanup */
 }
 
 int draw_grid_gl(gui_obj *gui) {

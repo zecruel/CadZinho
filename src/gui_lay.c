@@ -335,7 +335,7 @@ int lay_mng (gui_obj *gui){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EYE]))){
+			}else if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_EYE]))){
 				sorted = BY_OFF;
 				sort_reverse = 0;
 			}
@@ -351,7 +351,7 @@ int lay_mng (gui_obj *gui){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SUN]))){
+			}else if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_SUN]))){
 				sorted = BY_FREEZE;
 				sort_reverse = 0;
 			}
@@ -367,7 +367,7 @@ int lay_mng (gui_obj *gui){
 						sort_reverse = 1;
 					}
 				}
-			}else if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LOCK]))){
+			}else if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_LOCK]))){
 				sorted = BY_LOCK;
 				sort_reverse = 0;
 			}
@@ -457,14 +457,14 @@ int lay_mng (gui_obj *gui){
 				}
 				/* layer on/off */
 				if (layers[lay_idx].off){
-					if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NO_EYE]))){
+					if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_NO_EYE]))){
 						layers[lay_idx].off = 0;
 						/* layer is on when its color is positive */
 						dxf_attr_change(layers[lay_idx].obj, 62, (int []){ abs(layers[lay_idx].color) });
 					}
 				}
 				else{
-					if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EYE]))){
+					if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_EYE]))){
 						layers[lay_idx].off = 1;
 						/* layer is off when its color is negative */
 						dxf_attr_change(layers[lay_idx].obj, 62, (int []){ -1 * abs(layers[lay_idx].color) });
@@ -472,7 +472,7 @@ int lay_mng (gui_obj *gui){
 				}
 				/* freeze layer */
 				if (layers[lay_idx].frozen){
-					if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_FREEZE]))){
+					if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_FREEZE]))){
 						layers[lay_idx].frozen = 0;
 						/* look for layer flags */
 						lay_flags =  dxf_find_attr2(layers[lay_idx].obj, 70);
@@ -483,7 +483,7 @@ int lay_mng (gui_obj *gui){
 					}
 				}
 				else{
-					if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SUN]))){
+					if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_SUN]))){
 						layers[lay_idx].frozen= 1;
 						/* look for layer flags */
 						lay_flags =  dxf_find_attr2(layers[lay_idx].obj, 70);
@@ -494,7 +494,7 @@ int lay_mng (gui_obj *gui){
 				}
 				/* lock layer */
 				if (layers[lay_idx].lock){
-					if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LOCK]))){
+					if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_LOCK]))){
 						layers[lay_idx].lock = 0;
 						/* look for layer flags */
 						lay_flags =  dxf_find_attr2(layers[lay_idx].obj, 70);
@@ -504,7 +504,7 @@ int lay_mng (gui_obj *gui){
 					}
 				}
 				else{
-					if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_UNLOCK]))){
+					if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_UNLOCK]))){
 						layers[lay_idx].lock = 1;
 						/* look for layer flags */
 						lay_flags =  dxf_find_attr2(layers[lay_idx].obj, 70);
@@ -910,20 +910,20 @@ int layer_prop(gui_obj *gui){
 			
 			/* toggle on/off */
 			if (gui->drawing->layers[i].off){
-				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_NO_EYE]))){
+				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_NO_EYE]))){
 					gui->drawing->layers[i].off = 0;
 					dxf_attr_change(gui->drawing->layers[i].obj, 62, (int []){ abs(gui->drawing->layers[i].color) });
 				}
 			}
 			else{
-				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_EYE]))){
+				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_EYE]))){
 					gui->drawing->layers[i].off = 1;
 					dxf_attr_change(gui->drawing->layers[i].obj, 62, (int []){ -1 * abs(gui->drawing->layers[i].color) });
 				}
 			}
 			/* toggle freeze/solarize*/
 			if (gui->drawing->layers[i].frozen){
-				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_FREEZE]))){
+				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_FREEZE]))){
 					gui->drawing->layers[i].frozen = 0;
 					lay_flags =  dxf_find_attr2(gui->drawing->layers[i].obj, 70);
 					if (lay_flags){
@@ -932,7 +932,7 @@ int layer_prop(gui_obj *gui){
 				}
 			}
 			else{
-				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SUN]))){
+				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_SUN]))){
 					gui->drawing->layers[i].frozen= 1;
 					lay_flags =  dxf_find_attr2(gui->drawing->layers[i].obj, 70);
 					if (lay_flags){
@@ -942,7 +942,7 @@ int layer_prop(gui_obj *gui){
 			}
 			/* toggle lock/unlock*/
 			if (gui->drawing->layers[i].lock){
-				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_LOCK]))){
+				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_LOCK]))){
 					gui->drawing->layers[i].lock = 0;
 					lay_flags =  dxf_find_attr2(gui->drawing->layers[i].obj, 70);
 					if (lay_flags){
@@ -951,7 +951,7 @@ int layer_prop(gui_obj *gui){
 				}
 			}
 			else{
-				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_UNLOCK]))){
+				if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->icon_small[SVG_UNLOCK]))){
 					gui->drawing->layers[i].lock = 1;
 					lay_flags =  dxf_find_attr2(gui->drawing->layers[i].obj, 70);
 					if (lay_flags){

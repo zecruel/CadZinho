@@ -461,7 +461,9 @@ float gui_str_width(nk_handle handle, float height, const char *text, int len){
 		ofs = utf8_to_codepoint((char *)text + str_start, &code_p);
 		str_start += ofs;
 		
-		if (font->type != FONT_TT) /* shape font*/{	
+    if (!ofs || !code_p) return 0.0; 
+		
+    if (font->type != FONT_TT) /* shape font*/{	
 			w = 0.0;
 			
 			/* rendering text by default general drawing engine */
@@ -477,7 +479,19 @@ float gui_str_width(nk_handle handle, float height, const char *text, int len){
 			curr_glyph = tt_find_cp ((struct tt_font *) font->data, code_p); 
 			if (curr_glyph){
 				w = curr_glyph->adv; /* get advance in stored glyph */
-			}
+			} else { /* try to add codepoint to list */
+        /*
+        struct gui_font * gfont = gui_get_font (
+          gui->ui_font_list, font);
+        if (gfont){
+          gui_glyph_add (gfont, code_p);
+          curr_glyph = tt_find_cp ((struct tt_font *) font->data, code_p); 
+          if (curr_glyph){
+            w = curr_glyph->adv;
+          }
+        }
+        */
+      }
 			/* width is proportional to height */
 			width += w * height; /* update width */
 		}
@@ -2080,9 +2094,14 @@ int gui_start(gui_obj *gui){
 	add_shp_font_list(gui->font_list, "ltypeshp.shx", (char *) shp_font_ltypeshp());
 	
 	/* ui default font */
-	struct tfont *ui_font = get_font_list(gui->font_list, "txt.shx");
+	struct tfont *ui_font = get_font_list(gui->font_list, "Cadman_Roman.ttf");
 	gui->ui_font.userdata = nk_handle_ptr(ui_font);
-	gui->ui_font.height = 10.0;
+	gui->ui_font.height = 11.0;
+  gui->ui_font.width = gui_str_width;
+  /* symbol font -> Nerd Font*/
+  gui->symb_font.userdata = nk_handle_ptr(ui_font);
+	gui->symb_font.height = 11.0;
+  gui->symb_font.width = gui_str_width;
 	
 	/* ----------- init history ------------------- */
 	for (i = 0; i < DRWG_HIST_MAX; i++)

@@ -522,6 +522,7 @@ struct Gui_obj {
   struct script_obj func_keys_script;
   
   struct nk_user_font ui_font;
+  struct nk_user_font symb_font;
 	struct nk_user_font alt_font_sizes[FONT_NUM_SIZE];
   
 	struct ogl gl_ctx;
@@ -578,7 +579,7 @@ struct gui_font * gui_new_font (struct nk_user_font *base_font);
 
 int gui_list_font_free (struct gui_font *list);
 
-
+float gui_str_width(nk_handle handle, float height, const char *text, int len);
 
 void gui_scr_coord (gui_obj *gui, int scr_x, int scr_y, double *x, double *y);
 

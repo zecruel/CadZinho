@@ -408,6 +408,7 @@ int main(int argc, char** argv){
 		for (i = 0; i < FONT_NUM_SIZE; i++){
 			gui->alt_font_sizes[i] = gui->ui_font;
 			gui->alt_font_sizes[i].height = font_size * gui->ui_font.height;
+      gui->alt_font_sizes[i].width = gui_str_width;
 			font_size += 0.2;
 		}
 	}

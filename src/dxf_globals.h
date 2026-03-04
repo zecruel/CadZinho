@@ -257,17 +257,6 @@ bmp_color dxf_colors[] = {
 	[255] = { .r = 254, .g = 254, .b = 254, .a = 255 }
 };
 
-enum Gui_Basic_Colors {
-  YELLOW,
-  GREEN,
-  RED,
-  BLUE,
-  PURPLE,
-  ORANGE,
-  GRAY,
-  CYAN
-};
-
 const int gui_basic_colors[2][8][3] = {
   /* Light colors */
   [0] = {

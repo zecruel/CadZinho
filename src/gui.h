@@ -288,6 +288,17 @@ struct func_key {
 	SDL_Keymod mod;
 };
 
+enum Gui_Basic_Colors {
+  YELLOW,
+  GREEN,
+  RED,
+  BLUE,
+  PURPLE,
+  ORANGE,
+  GRAY,
+  CYAN
+};
+
 struct Gui_obj {
   int running;
   int low_proc;
@@ -572,6 +583,8 @@ struct Gui_obj {
   int curr_tooltip;
   int last_tooltip;
   int tooltip_timer;
+  
+  int dark; /* indicate GUI text color light/dark */
 };
 typedef struct Gui_obj gui_obj;
 
@@ -655,6 +668,12 @@ char* gui_get_literal (gui_obj *gui, const char *literal);
 
 int gui_add_tooltip (gui_obj *gui, char *str);
 
+int gui_button_symb(gui_obj *gui, const char *title);
+
+void gui_label(gui_obj *gui, const char* text, nk_flags align, int *color);
+
+struct nk_color gui_bas_color(gui_obj *gui, int idx);
+
 extern int dxf_lw[];
 extern const char *dxf_lw_descr[];
 extern bmp_color dxf_colors[];
@@ -662,6 +681,7 @@ extern const char *dxf_seed_2007;
 extern struct func_key func_keys[];
 extern const int func_keys_size;
 extern unsigned int wait_open;
+extern const int gui_basic_colors[2][8][3];
 
 #ifndef DXF_LW_LEN
 	#define DXF_LW_LEN 24

@@ -976,11 +976,32 @@ void set_style(gui_obj *gui, enum theme theme){
 	gui->i_cz48 = i_svg_bmp(gui->svg_curves[SVG_CZ], 48, 48);
 	gui->i_trash = i_svg_bmp(gui->svg_curves[SVG_TRASH], 16, 16);
   
+  /* Indicate if theme text color is light (0) or dark (1) */
+  float r, g, b, l;
+	r = gui->ctx->style.button.text_normal.r / 255.0;
+	g = gui->ctx->style.button.text_normal.g / 255.0;
+	b = gui->ctx->style.button.text_normal.b / 255.0;
+  l = 0.2126*r*r + 0.7152*g*g + 0.0722*b*b;
+  if (l > 0.4) gui->dark = 0;
+  else gui->dark = 1;
+  
+  //printf("color = %f,%f,%f  dark = %d\n", r, g, b, gui->dark);
 }
 
 bmp_color nk_to_bmp_color(struct nk_color color){
 	bmp_color ret_color = {.r = color.r, .g = color.g, .b = color.b, .a = color.a };
 	return ret_color;
+}
+
+struct nk_color gui_bas_color(gui_obj *gui, int idx){
+  struct nk_color res;
+  
+  res.r = gui_basic_colors[gui->dark][idx][0];
+  res.g = gui_basic_colors[gui->dark][idx][1];
+  res.b = gui_basic_colors[gui->dark][idx][2];
+  res.a = 255;
+  
+  return res;
 }
 
 void nk_to_gl_color(struct ogl *gl_ctx, struct nk_color color){
@@ -2302,14 +2323,32 @@ int draw_cursor_gl(gui_obj *gui, int x, int y, int z, enum Cursor_type type) {
   #endif
   
 	/* set the color to contrast with background*/
-	gl_ctx->fg[0] = gui->background.r ^ 255;
+  
+  float r, g, b, l;
+	r = gui->background.r / 255.0;
+	g = gui->background.g / 255.0;
+	b = gui->background.b / 255.0;
+  l = 0.2126*r*r + 0.7152*g*g + 0.0722*b*b;
+  if (l > 0.5) {
+    gl_ctx->fg[0] = 0;
+    gl_ctx->fg[1] = 0;
+    gl_ctx->fg[2] = 0;
+  } else {
+    gl_ctx->fg[0] = 255;
+    gl_ctx->fg[1] = 255;
+    gl_ctx->fg[2] = 255;
+  }
+  gl_ctx->fg[3] = 120;
+  
+  /*
+  gl_ctx->fg[0] = gui->background.r ^ 255;
 	gl_ctx->fg[1] = gui->background.g ^ 255;
 	gl_ctx->fg[2] = gui->background.b ^ 255;
 	int alpha = 0;
 	if (gui->background.r > 90 && gui->background.r <125) alpha += 30;
 	if (gui->background.g > 90 && gui->background.g <125) alpha += 30;
 	if (gui->background.b > 90 && gui->background.b <125) alpha += 30;
-	gl_ctx->fg[3] = 100 + alpha;
+	gl_ctx->fg[3] = 100 + alpha;*/
 	
 	/* draw cursor */
 	if (type == CURSOR_SQUARE){
@@ -2386,10 +2425,21 @@ int draw_aux_cursor (gui_obj *gui, int x, int y, int z){
   
 	/* set the color to contrast with background */
   
-  gl_ctx->fg[0] = gui->b_icon.text_normal.r;
-  gl_ctx->fg[1] = gui->b_icon.text_normal.g;
-  gl_ctx->fg[2] = gui->b_icon.text_normal.b;
-  gl_ctx->fg[3] = 255;
+  float r, g, b, l;
+	r = gui->background.r / 255.0;
+	g = gui->background.g / 255.0;
+	b = gui->background.b / 255.0;
+  l = 0.2126*r*r + 0.7152*g*g + 0.0722*b*b;
+  if (l > 0.5) {
+    gl_ctx->fg[0] = 0;
+    gl_ctx->fg[1] = 0;
+    gl_ctx->fg[2] = 0;
+  } else {
+    gl_ctx->fg[0] = 255;
+    gl_ctx->fg[1] = 255;
+    gl_ctx->fg[2] = 255;
+  }
+  gl_ctx->fg[3] = 150;
   
   //draw_gl_quad (gl_ctx, (float[]){x,y,z}, (float[]){x+10,y,z}, (float[]){x+10,y+10,z}, (float[]){x,y+10,z}, 1);
   
@@ -3206,4 +3256,21 @@ int gui_add_tooltip (gui_obj *gui, char *str){
   }
   gui->tooltip_size++;
   return 1;
+}
+
+int gui_button_symb(gui_obj *gui, const char *title){
+  nk_style_set_font(gui->ctx, &(gui->symb_font));
+  int res = nk_button_label(gui->ctx, title);
+  nk_style_set_font(gui->ctx, &(gui->ui_font));
+  return res;
+}
+
+void gui_label(gui_obj *gui, const char* text, nk_flags align, int *color){
+  nk_style_set_font(gui->ctx, &(gui->symb_font));
+  if (!color){
+    nk_label(gui->ctx, text, align);
+  } else {
+    nk_label_colored(gui->ctx, text, align, nk_rgb(color[0],color[1],color[2]));
+  }
+  nk_style_set_font(gui->ctx, &(gui->ui_font));
 }

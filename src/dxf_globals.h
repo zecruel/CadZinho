@@ -257,6 +257,42 @@ bmp_color dxf_colors[] = {
 	[255] = { .r = 254, .g = 254, .b = 254, .a = 255 }
 };
 
+enum Gui_Basic_Colors {
+  YELLOW,
+  GREEN,
+  RED,
+  BLUE,
+  PURPLE,
+  ORANGE,
+  GRAY,
+  CYAN
+};
+
+const int gui_basic_colors[2][8][3] = {
+  /* Light colors */
+  [0] = {
+    [YELLOW] = {255,238,0},
+    [GREEN] = {17,255,0},
+    [RED] = {255,126,126},
+    [BLUE] = {98,153,255},
+    [PURPLE] = {206,138,255},
+    [ORANGE] = {255,119,0},
+    [GRAY] = {178,178,178},
+    [CYAN] = {0,255,187},
+  },
+  /* Dark colors */
+  [1] = {
+    [YELLOW] = {128,128,0},
+    [GREEN] = {0,104,0},
+    [RED] = {128,0,0},
+    [BLUE] = {4,0,112},
+    [PURPLE] = {112,0,80},
+    [ORANGE] = {133,55,0},
+    [GRAY] = {63,63,63},
+    [CYAN] = {0,89,89}
+  }
+};
+
 /* DXF lineweight*/
 int dxf_lw[] = {0, 5, 9, 13, 15, 18, 20, 25, 30, 35, 40, 50, 53, 60, 70, 80, 90, 100, 106, 120, 140, 158, 200, 211, -1, -2};
 const char *dxf_lw_descr[] = {

@@ -869,6 +869,13 @@ char * svg_data[] = {
     "<path stroke-linejoin=\"miter-clip\" stroke-miterlimit=\"1.5\" stroke-width=\"10.0\" stroke=\"rgb(255, 255, 0)\" fill=\"none\" d=\"M48.1 4.775 L48.1 91.74 \"/>"
     "</svg>"
   },
+  
+	[SVG_STRETCH] = (char[]){"<?xml version=\"1.0\"?>"
+    "<svg width=\"24\" height=\"24\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:svg=\"http://www.w3.org/2000/svg\">"
+    "<polygon fill=\"none\" id=\"mirror1\" opacity=\"0.5\" points=\"11.220155715942383,7.165107727050781 7.3665971755981445,12.469076156616211 1.13140869140625,10.44313907623291 1.13140869140625,3.887075662612915 7.3665971755981445,1.861140251159668 11.220155715942383,7.165107727050781 \" stroke=\"#f9f9f9\" stroke-width=\"2\"/>"
+    "<path d=\"m1.13,10.61l17.58,9.28l3.52,-4.97l-14.77,-13.06l-6.22,1.97l-0.11,6.78z\" fill=\"none\" id=\"svg_10\" opacity=\"5020.26\" stroke=\"#f9f9f9\" stroke-width=\"2\"/>"
+    "<path d=\"m4.96,15.96c-0.27,4.05 4.79,8.85 9.32,6.19l-3.82,-0.56\" fill=\"none\" id=\"svg_11\" opacity=\"5020.26\" stroke=\"#f9f9f9\" stroke-width=\"2\"/>"
+    "</svg>"},
 };
 
 

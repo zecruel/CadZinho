@@ -87,7 +87,7 @@ int gui_main_win(gui_obj *gui){
     RIB_3D,
   } ribbon_grp = RIB_DRAWING;
   
-  const int rib_w[4] = {880, 1130, 1280, 1530};
+  const int rib_w[4] = {910, 1160, 1290, 1560};
 	
 	if (nk_begin(gui->ctx, "Main", nk_rect(2, 2, gui->win_w - 4, RIB_H - 5),
     NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)){
@@ -500,9 +500,9 @@ int gui_main_win(gui_obj *gui){
         
         
         /* Modify tools*/
-        nk_layout_row_push(gui->ctx, 3*(ICON_SIZE + 4 + 4) + 13);
+        nk_layout_row_push(gui->ctx, 4*(ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_modify", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
-          nk_layout_row_static(gui->ctx, 28, 28, 3);
+          nk_layout_row_static(gui->ctx, 28, 28, 4);
           
           gui_add_tooltip (gui, _l("Move"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_MOVE], gui->modal == MOVE)){
@@ -533,6 +533,12 @@ int gui_main_win(gui_obj *gui){
             gui->modal = MIRROR;
             strncpy(gui->ctx_tools_title, _l("Mirror"), DXF_MAX_CHARS);
             gui->step = 0;
+          }
+          gui_add_tooltip (gui, _l("Stretch"));
+          if (gui_sel_b (gui, gui->svg_bmp[SVG_STRETCH],   0)){ //gui->modal == MIRROR)){
+            //gui->modal = MIRROR;
+            //strncpy(gui->ctx_tools_title, _l("Mirror"), DXF_MAX_CHARS);
+            //gui->step = 0;
           }
           gui_add_tooltip (gui, _l("Explode"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_EXPLODE], gui->modal == EXPLODE)){
@@ -724,7 +730,7 @@ int gui_main_win(gui_obj *gui){
           nk_group_end(gui->ctx);
         }
         
-        /* import/export tools*/
+        /* Advanced tools*/
         nk_layout_row_push(gui->ctx, (ICON_SIZE + 4 + 4) + 13);
         if (nk_group_begin(gui->ctx, "_exporttools", NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR)) {
           nk_layout_row_static(gui->ctx, 28, 28, 1);
@@ -736,6 +742,15 @@ int gui_main_win(gui_obj *gui){
           gui_add_tooltip (gui, _l("Scripts"));
           if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_SCRIPT1]))){
             gui->show_script = 1;
+          }
+          gui_add_tooltip (gui, _l("Raw info"));
+          if (nk_button_image_styled(gui->ctx, &gui->b_icon, nk_image_ptr(gui->svg_bmp[SVG_INFO]))){
+            /*nk_label_wrap(gui->ctx, _l("The following window is used to visualize "
+				"the raw parameters of the selected elements, according to "
+				"the DXF specification. It is useful for advanced users to debug "
+				"current file entities")); */
+            
+            gui->show_info = 1;
           }
           
           nk_group_end(gui->ctx);

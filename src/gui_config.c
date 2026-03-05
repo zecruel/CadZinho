@@ -372,6 +372,18 @@ int gui_get_conf (lua_State *L) {
 		else if (strcmp(theme, "default") == 0){
 			gui->theme = THEME_DEFAULT;
 		}
+		else if (strcmp(theme, "catppuccin_latte") == 0){
+			gui->theme = THEME_CATPPUCCIN_LATTE;
+		}
+		else if (strcmp(theme, "catppuccin_frappe") == 0){
+			gui->theme = THEME_CATPPUCCIN_FRAPPE;
+		}
+		else if (strcmp(theme, "catppuccin_macchiato") == 0){
+			gui->theme = THEME_CATPPUCCIN_MACCHIATO;
+		}
+		else if (strcmp(theme, "catppuccin_mocha") == 0){
+			gui->theme = THEME_CATPPUCCIN_MOCHA;
+		}
 	}
 	lua_pop(L, 1);
 	
@@ -724,7 +736,7 @@ int config_win (gui_obj *gui){
   static double grid_spc = 20.0;
 	
 	//if (nk_popup_begin(gui->ctx, NK_POPUP_STATIC, "config", NK_WINDOW_CLOSABLE, nk_rect(310, 50, 200, 300))){
-	if (nk_begin(gui->ctx, _l("Config"), nk_rect(418, RIB_H, 400, 550),
+	if (nk_begin(gui->ctx, _l("Config"), nk_rect(418, RIB_H, 400, 500),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
     
@@ -890,6 +902,7 @@ int config_win (gui_obj *gui){
       gui->draw = 1;
     }
     
+    #if(0)
 		/* Config groups - Preferences, Raw info, 3D view */
 		nk_style_push_vec2(gui->ctx, &gui->ctx->style.window.spacing, nk_vec2(0,5));
 		nk_layout_row_begin(gui->ctx, NK_STATIC, 20, 4);
@@ -898,8 +911,10 @@ int config_win (gui_obj *gui){
 		if (gui_tab (gui, _l("3D"), cfg_grp == GRP_3D)) cfg_grp = GRP_3D;
 		nk_style_pop_vec2(gui->ctx);
 		nk_layout_row_end(gui->ctx);
+    
 		
 		if(cfg_grp == GRP_PREF){
+    #endif
 			
 			nk_layout_row_dynamic(gui->ctx, 20, 1);
 			nk_label(gui->ctx, _l("Preferences folder:"), NK_TEXT_LEFT);
@@ -1029,7 +1044,7 @@ int config_win (gui_obj *gui){
 			//nk_layout_row_dynamic(gui->ctx, 20, 1);
       nk_layout_row(gui->ctx, NK_DYNAMIC, 25, 3, (float[]){0.3, 0.4, 0.3});
 			nk_label(gui->ctx, _l("Theme:"), NK_TEXT_LEFT);
-      static char thems_nm[10][DXF_MAX_CHARS + 1];
+      static char thems_nm[14][DXF_MAX_CHARS + 1];
       strncpy(thems_nm[0], _l("Black"), DXF_MAX_CHARS);
       strncpy(thems_nm[1], _l("White"), DXF_MAX_CHARS);
       strncpy(thems_nm[2], _l("Red"), DXF_MAX_CHARS);
@@ -1040,17 +1055,25 @@ int config_win (gui_obj *gui){
       strncpy(thems_nm[7], _l("Purple"), DXF_MAX_CHARS);
       strncpy(thems_nm[8], _l("Dracula"), DXF_MAX_CHARS);
       strncpy(thems_nm[9], _l("Nuklear"), DXF_MAX_CHARS);
+      strncpy(thems_nm[10], _l("Latte"), DXF_MAX_CHARS);
+      strncpy(thems_nm[11], _l("Frappe"), DXF_MAX_CHARS);
+      strncpy(thems_nm[12], _l("Macchiato"), DXF_MAX_CHARS);
+      strncpy(thems_nm[13], _l("Mocha"), DXF_MAX_CHARS);
       
-      char *thems[10];
+      char *thems[14];
       
-      for (i = 0; i < 10; i++){
+      for (i = 0; i < 14; i++){
         thems[i] = thems_nm[i];
       }
       
-      gui->theme = nk_combo(gui->ctx, (const char **) thems, 10, gui->theme, 20, nk_vec2(200,200));
+      gui->theme = nk_combo(gui->ctx, (const char **) thems, 14, gui->theme, 20, nk_vec2(200,200));
       
       if (gui->theme != prev_theme){
-        static const char *themes[] = {"black","white","red","blue","dark","green","brown","purple","dracula","default"};
+        static const char *themes[] = {"black","white","red","blue",
+          "dark","green","brown","purple","dracula","default",
+          "catppuccin_latte", "catppuccin_frappe",
+          "catppuccin_macchiato", "catppuccin_mocha",
+          };
         if (gui_change_var (gui, cfg_scr.T, (char*) "theme", (char*) themes[gui->theme])){
           
           if (gui->theme == THEME_BLACK){
@@ -1102,6 +1125,31 @@ int config_win (gui_obj *gui){
             bg_color.r = 100;
             bg_color.g = 100;
             bg_color.b = 100;
+          }
+          
+          else if (gui->theme == THEME_CATPPUCCIN_LATTE){
+            /*struct nk_color crust = nk_rgba(220, 224, 232, 255);*/
+            bg_color.r = 220;
+            bg_color.g = 224;
+            bg_color.b = 232;
+          }
+          else if (gui->theme == THEME_CATPPUCCIN_FRAPPE){
+            /*struct nk_color crust = nk_rgba(35, 38, 52, 255);*/
+            bg_color.r = 35;
+            bg_color.g = 38;
+            bg_color.b = 52;
+          }
+          else if (gui->theme == THEME_CATPPUCCIN_MACCHIATO){
+            /*struct nk_color crust = nk_rgba(24, 25, 38, 255);*/
+            bg_color.r = 24;
+            bg_color.g = 25;
+            bg_color.b = 38;
+          }
+          else if (gui->theme == THEME_CATPPUCCIN_MOCHA){
+            /*struct nk_color crust = nk_rgba(17, 17, 27, 255);*/
+            bg_color.r = 17;
+            bg_color.g = 17;
+            bg_color.b = 27;
           }
           
           prev_theme = gui->theme;
@@ -1266,7 +1314,7 @@ int config_win (gui_obj *gui){
           gui->delay = delay;
         }
       }
-      
+  #if(0)
 		}
 		else if(cfg_grp == GRP_INFO){
 			nk_layout_row_dynamic(gui->ctx, 60, 1);
@@ -1337,7 +1385,8 @@ int config_win (gui_obj *gui){
 			gui_calc_view_rot (gui);
 		
 		}
-	} else {
+	#endif
+  } else {
     show_config = 0;
     if (cfg_scr.L) {
 			lua_close(cfg_scr.L);

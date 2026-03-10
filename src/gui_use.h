@@ -212,4 +212,8 @@ int gui_slice_interactive(gui_obj *gui);
 
 int gui_slice_info (gui_obj *gui);
 
+int gui_stretch_interactive(gui_obj *gui);
+
+int gui_stretch_info (gui_obj *gui);
+
 #endif

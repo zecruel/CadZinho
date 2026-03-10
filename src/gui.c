@@ -612,9 +612,15 @@ int gui_create_modal_cur(gui_obj *gui){
   cur_img[INTERSECTION] = SVG_3D_INTERSECTION;
   cur_img[SLICE] = SVG_3D_SLICE;
   cur_img[ROTATE_3D] = SVG_3D_ROTATE;
+  cur_img[STRETCH] = SVG_STRETCH;
 	int i;
 	for (i = 0; i < MODAL_SIZE; i++){
-		gui->modal_cursor[i] = i_svg_bmp(gui->svg_curves[cur_img[i]], 32, 32);
+    char *dflt_color = "\"#f9f9f9\"";
+    char *subst_color = "\"#ffffff\"";
+    
+    NSVGimage *curves = i_svg_get_curves(cur_img[i], dflt_color, subst_color);
+		gui->modal_cursor[i] = i_svg_bmp(curves, 32, 32);
+    nsvgDelete(curves);
 	}
 	
 	return 1;
@@ -1191,7 +1197,9 @@ void set_style(gui_obj *gui, enum theme theme){
   char *dflt_color = "\"#f9f9f9\"";
   char subst_color[25]  = "";
   snprintf(subst_color, 24, "\"rgb(%d, %d, %d)\"",
-    gui->b_icon.text_normal.r, gui->b_icon.text_normal.g, gui->b_icon.text_normal.b);
+    gui->b_icon.text_normal.r,
+    gui->b_icon.text_normal.g,
+    gui->b_icon.text_normal.b);
 	
 	if(gui->svg_bmp) {
     i_svg_free_bmp(gui->svg_bmp);

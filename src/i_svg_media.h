@@ -139,6 +139,8 @@ enum svg_list {
     SVG_MEDIA_SIZE
 };
 
+NSVGimage * i_svg_get_curves(int idx, char *find, char *repl);
+
 NSVGimage ** i_svg_all_curves(void);
 
 NSVGimage ** i_svg_all_curves2(char *find, char *repl);

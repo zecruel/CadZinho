@@ -1475,6 +1475,7 @@ int gui_main_loop (gui_obj *gui) {
   gui_union_interactive(gui);
   gui_subtract_interactive(gui);
   gui_intersection_interactive(gui);
+  gui_stretch_interactive(gui);
   
   if (gui->prev_modal != gui->modal){
     

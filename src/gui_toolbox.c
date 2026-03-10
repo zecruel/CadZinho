@@ -71,6 +71,7 @@ int gui_tools_win (gui_obj *gui){
     gui_union_info (gui);
     gui_subtract_info (gui);
     gui_intersection_info (gui);
+    gui_stretch_info (gui);
 			
 	}
 	nk_end(gui->ctx);
@@ -536,9 +537,9 @@ int gui_main_win(gui_obj *gui){
           }
           gui_add_tooltip (gui, _l("Stretch"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_STRETCH],   0)){ //gui->modal == MIRROR)){
-            //gui->modal = MIRROR;
-            //strncpy(gui->ctx_tools_title, _l("Mirror"), DXF_MAX_CHARS);
-            //gui->step = 0;
+            gui->modal = STRETCH;
+            strncpy(gui->ctx_tools_title, _l("Stretch"), DXF_MAX_CHARS);
+            gui->step = 0;
           }
           gui_add_tooltip (gui, _l("Explode"));
           if (gui_sel_b (gui, gui->svg_bmp[SVG_EXPLODE], gui->modal == EXPLODE)){

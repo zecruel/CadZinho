@@ -138,6 +138,7 @@ enum Modal {
   INTERSECTION,
   SLICE,
   ROTATE_3D,
+  STRETCH,
 	MODAL_SIZE
 };
 

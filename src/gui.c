@@ -1181,7 +1181,7 @@ void set_style(gui_obj *gui, enum theme theme){
 	gui->b_icon_unsel.hover =  gui->ctx->style.checkbox.hover;
 	*/
   gui->b_icon_sel.normal = gui->ctx->style.selectable.normal_active;
-  //gui->b_icon_sel.hover = gui->ctx->style.selectable.hover_active;
+  gui->b_icon_sel.hover = gui->ctx->style.selectable.normal_active;
   //gui->b_icon_sel.active = gui->ctx->style.selectable.pressed_active;
   
   gui->b_icon_unsel.normal = gui->ctx->style.selectable.normal;

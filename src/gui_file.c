@@ -236,7 +236,7 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 	if (gui->filter_idx >= num_ext) gui->filter_idx = 0;
 	
 	
-	if (nk_begin_titled(gui->ctx, "file_expl", _l("File explorer"), nk_rect(550, 100, 600, 510),
+	if (nk_begin_titled(gui->ctx, "file_expl", _l("File explorer"), nk_rect(215, RIB_H, 600, 490),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		/* read the workind directory */
@@ -330,9 +330,9 @@ int file_win (gui_obj *gui, const char *ext_type[], const char *ext_descr[], int
 			/* dynamic width for dir/file name and fixed width for other informations */
 			nk_layout_row_template_begin(gui->ctx, 22);
 			nk_layout_row_template_push_dynamic(gui->ctx);
-			nk_layout_row_template_push_static(gui->ctx, 80);
-			nk_layout_row_template_push_static(gui->ctx, 145);
-			nk_layout_row_template_push_static(gui->ctx, 8);
+			nk_layout_row_template_push_static(gui->ctx, 83);
+			nk_layout_row_template_push_static(gui->ctx, 142);
+			nk_layout_row_template_push_static(gui->ctx, 5);
 			nk_layout_row_template_end(gui->ctx);
 			
 			/* sort option - by dir/file name */
@@ -614,16 +614,22 @@ int gui_file_open (gui_obj *gui, char *init_dir){
 		gui->show_file_br = 0;
 	}
 	
-	if (nk_begin(gui->ctx, _l("Open Drawing"), nk_rect(200, 150, 400, 350),
+	if (nk_begin(gui->ctx, _l("Open Drawing"), nk_rect(215, RIB_H, 400, 320),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_flags res;
 		
 		/* show current directory */
-		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label_colored(gui->ctx, _l("Current directory:"), NK_TEXT_LEFT, gui_bas_color(gui, YELLOW));
-		nk_label(gui->ctx, dir, NK_TEXT_LEFT); /* show current directory */
+    nk_layout_row_template_begin(gui->ctx, 22);
+		nk_layout_row_template_push_static(gui->ctx, 20);
+		nk_layout_row_template_push_dynamic(gui->ctx);
+		nk_layout_row_template_end(gui->ctx);
 		
+    gui_label(gui, file_browser_icons[DIR_CURR], NK_TEXT_RIGHT, b_color(YELLOW));
+    nk_label(gui->ctx, dir, NK_TEXT_LEFT); /* show current directory */
+    
+    nk_layout_row_dynamic(gui->ctx, 20, 1);
+    
 		nk_label(gui->ctx, _l("File to Open:"), NK_TEXT_CENTERED);
 		
 		/* user can type the file name/path, or paste text, or drop from system navigator */
@@ -776,15 +782,21 @@ int gui_file_save (gui_obj *gui, char *init_dir){
 		gui->show_file_br = 0;
 	}
 	
-	if (nk_begin(gui->ctx, _l("Save Drawing"), nk_rect(200, 150, 400, 180),
+	if (nk_begin(gui->ctx, _l("Save Drawing"), nk_rect(215, RIB_H, 400, 180),
 	NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
 	NK_WINDOW_CLOSABLE|NK_WINDOW_TITLE)){
 		nk_flags res;
 		
 		/* show current directory */
-		nk_layout_row_dynamic(gui->ctx, 20, 1);
-		nk_label_colored(gui->ctx, _l("Current directory:"), NK_TEXT_LEFT, gui_bas_color(gui, YELLOW));
-		nk_label(gui->ctx, dir, NK_TEXT_LEFT); /* show current directory */
+    nk_layout_row_template_begin(gui->ctx, 22);
+		nk_layout_row_template_push_static(gui->ctx, 20);
+		nk_layout_row_template_push_dynamic(gui->ctx);
+		nk_layout_row_template_end(gui->ctx);
+		
+    gui_label(gui, file_browser_icons[DIR_CURR], NK_TEXT_RIGHT, b_color(YELLOW));
+    nk_label(gui->ctx, dir, NK_TEXT_LEFT); /* show current directory */
+    
+    nk_layout_row_dynamic(gui->ctx, 20, 1);
 		
 		nk_label(gui->ctx, _l("File to Save on:"), NK_TEXT_CENTERED);
 		

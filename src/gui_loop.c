@@ -51,6 +51,7 @@ int gui_main_loop (gui_obj *gui) {
 	int rightMouseButtonClick = 0;
 	int MouseMotion = 0;
 	int ctrlDown = 0;
+  int show_cursor = 0;
 	
 	SDL_Event event;
 	gui->low_proc = 1;
@@ -133,9 +134,11 @@ int gui_main_loop (gui_obj *gui) {
   /* ===============================*/
   if (nk_window_is_any_hovered(gui->ctx)) {
     SDL_ShowCursor(SDL_ENABLE);
+    show_cursor = 0;
   }
   else{
     SDL_ShowCursor(SDL_DISABLE);
+    show_cursor = 1;
     
     if (ev_type != 0){
       double wheel = 1.0;
@@ -1715,7 +1718,7 @@ int gui_main_loop (gui_obj *gui) {
     
     
     //draw_gl (&gui->gl_ctx, 1); /* force draw and cleanup */
-    draw_aux_cursor (gui, x + x0, y + y0, gui->mouse_z);
+    
     
     //glReadPixels(gui->mouse_x, gui->mouse_y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &gui->mouse_z);
     
@@ -1776,6 +1779,8 @@ int gui_main_loop (gui_obj *gui) {
     
     gui->gl_ctx.vert_count = 0;
     gui->gl_ctx.elem_count = 0;
+    
+    if (show_cursor) draw_aux_cursor (gui, x + x0, y + y0, gui->mouse_z);
     
     /* Swap buffers */
     SDL_GL_SwapWindow(gui->window);

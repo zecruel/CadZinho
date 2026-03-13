@@ -81,7 +81,7 @@ int gui_vertex_interactive(gui_obj *gui){
 	}
 	if (gui->step == 4){
 		/* get pointers to coordinates objects directly in entity */
-		if (dxf_get_vert_idx(gui->element, gui->vert_idx, &vert_x, &vert_y, &vert_z, &bulge))
+		if (dxf_get_vert_idx(gui->element, gui->vert_idx, &vert_x, &vert_y, &vert_z, &bulge) > -1)
 			gui->step = 5;
 		else gui->step = 2;
 	}
@@ -148,7 +148,7 @@ int gui_vertex_info (gui_obj *gui){
 		if (gui->vert_idx > -1){
 			/* show selected vertex information */
 			dxf_node * vert_x, * vert_y, * vert_z, * bulge;
-			if (dxf_get_vert_idx(gui->element, gui->vert_idx, &vert_x, &vert_y, &vert_z, &bulge)){
+			if (dxf_get_vert_idx(gui->element, gui->vert_idx, &vert_x, &vert_y, &vert_z, &bulge) > -1){
 				char tmp_str[64];
 				nk_layout_row(gui->ctx, NK_STATIC, 15, 2, (float[]){110, 60});
 				snprintf(tmp_str, 63, "%d", gui->vert_idx);

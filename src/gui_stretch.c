@@ -168,6 +168,24 @@ int gui_stretch_interactive(gui_obj *gui){
 			do_add_entry(&gui->list_do, _l("STRETCH"));
 			do_add_item(gui->list_do.current, NULL, new_el);
 			#endif
+      
+      /* sort rectangle corners */
+      double rect_pt1[2], rect_pt2[2];
+      rect_pt1[0] = (x0 < x1) ? x0 : x1;
+      rect_pt1[1] = (y0 < y1) ? y0 : y1;
+      rect_pt2[0] = (x0 > x1) ? x0 : x1;
+      rect_pt2[1] = (y0 > y1) ? y0 : y1;
+      
+      /* list of objects to select */
+      list_node *list = list_new(NULL, FRAME_LIFE);
+      list_clear(list);
+      int count = 0;
+      
+      /* get inside objects and also all intersecting to rectangle */
+      count = dxf_ents_isect2(list, gui->drawing, rect_pt1, rect_pt2);
+      
+      
+      
 			/* restart the proccess */
 			gui->draw_phanton = 0;
 			gui_first_step(gui);

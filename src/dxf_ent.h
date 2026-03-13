@@ -21,4 +21,6 @@ int dxf_get_near_vert(dxf_node *obj, double pt_x, double pt_y, double clearance)
 
 int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** vert_y, dxf_node ** vert_z, dxf_node ** vert_b);
 
+int dxf_get_vert_nxt(dxf_node *obj, dxf_node ** next, dxf_node ** vert_x, dxf_node ** vert_y, dxf_node ** vert_z, dxf_node ** vert_b);
+
 #endif

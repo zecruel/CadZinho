@@ -230,11 +230,11 @@ static int test_connect(dxf_node *ent_a, dxf_node *ent_b){
 	/* get vertices of ent_a */
 	int type = dxf_ident_ent_type(ent_a);
 	if (type == DXF_LINE || type == DXF_LWPOLYLINE || type == DXF_SPLINE){
-		if (dxf_get_vert_idx(ent_a, 0, &vert_x, &vert_y, &vert_z, &bulge)){
+		if (dxf_get_vert_idx(ent_a, 0, &vert_x, &vert_y, &vert_z, &bulge) > -1){
 			x_a[0] = vert_x->value.d_data;
 			y_a[0] = vert_y->value.d_data;
 		}
-		if (dxf_get_vert_idx(ent_a, -1, &vert_x, &vert_y, &vert_z, &bulge)){
+		if (dxf_get_vert_idx(ent_a, -1, &vert_x, &vert_y, &vert_z, &bulge) > -1){
 			x_a[1] = vert_x->value.d_data;
 			y_a[1] = vert_y->value.d_data;
 		}
@@ -243,11 +243,11 @@ static int test_connect(dxf_node *ent_a, dxf_node *ent_b){
 	/* get vertices of ent_b */
 	type = dxf_ident_ent_type(ent_b);
 	if (type == DXF_LINE || type == DXF_LWPOLYLINE || type == DXF_SPLINE){
-		if (dxf_get_vert_idx(ent_b, 0, &vert_x, &vert_y, &vert_z, &bulge)){
+		if (dxf_get_vert_idx(ent_b, 0, &vert_x, &vert_y, &vert_z, &bulge) > -1){
 			x_b[0] = vert_x->value.d_data;
 			y_b[0] = vert_y->value.d_data;
 		}
-		if (dxf_get_vert_idx(ent_b, -1, &vert_x, &vert_y, &vert_z, &bulge)){
+		if (dxf_get_vert_idx(ent_b, -1, &vert_x, &vert_y, &vert_z, &bulge) > -1){
 			x_b[1] = vert_x->value.d_data;
 			y_b[1] = vert_y->value.d_data;
 		}
@@ -626,7 +626,7 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list, int t_box){
 				if (!closed){ /* verify if first and last points are coincident */
 					dxf_node * vert_x, * vert_y, * vert_z, * bulge;
 					double x0, y0, x1, y1;
-					if (dxf_get_vert_idx(obj, 0, &vert_x, &vert_y, &vert_z, &bulge)){ /* get first vertex */
+					if (dxf_get_vert_idx(obj, 0, &vert_x, &vert_y, &vert_z, &bulge) > -1){ /* get first vertex */
 						x0 = vert_x->value.d_data;
 						y0 = vert_y->value.d_data;
 						if (dxf_get_vert_idx(obj, -1, &vert_x, &vert_y, &vert_z, &bulge) > 1){ /* get last vertex */
@@ -810,7 +810,7 @@ int dxf_hatch_bound (dxf_node *hatch, list_node *list, int t_box){
 				if (!(flags  & 1)){ /* verify if first and last points are coincident */
 					dxf_node * vert_x, * vert_y, * vert_z, * bulge;
 					double x0, y0, x1, y1;
-					if (dxf_get_vert_idx(obj, 0, &vert_x, &vert_y, &vert_z, &bulge)){ /* get first vertex */
+					if (dxf_get_vert_idx(obj, 0, &vert_x, &vert_y, &vert_z, &bulge) > -1){ /* get first vertex */
 						x0 = vert_x->value.d_data;
 						y0 = vert_y->value.d_data;
 						if (dxf_get_vert_idx(obj, -1, &vert_x, &vert_y, &vert_z, &bulge) > 1){ /* get last vertex */

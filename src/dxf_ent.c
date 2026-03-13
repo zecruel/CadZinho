@@ -512,385 +512,57 @@ int dxf_tstyle_get(dxf_drawing *drawing, dxf_node * ent){
 }
 
 int dxf_get_near_vert(dxf_node *obj, double pt_x, double pt_y, double clearance){
-	dxf_node *current = NULL;
-	dxf_node *prev = NULL, *stop = NULL;
-	int pt = 0;
-	enum dxf_graph ent_type = DXF_NONE;
-	double x = 0.0, y = 0.0, z = 0.0;
-	double point[3];
-	
-	int ellip = 0;
-	
 	if (!obj) return -1;
 	if (obj->type != DXF_ENT) return -1;
-	
-	int vert_count = 0;
-	double dist = 0.0;
-	
-	//bmp_color blue = {.r = 0, .g = 0, .b =255, .a = 255};
-	
-	/*
-	point[0] = of_x;
-	point[1] = of_y;
-	point[2] = of_z;
-	
-	dxf_get_extru(obj, point);
-	
-	ofs_x = point[0];
-	ofs_y = point[1];
-	ofs_z = point[2];
-	*/
-	
-	stop = obj;
-	ent_type =  dxf_ident_ent_type (obj);
-	
-	if ((ent_type != DXF_HATCH) && (obj->obj.content)){
-		current = obj->obj.content->next;
-		prev = current;
-	}
-	else if ((ent_type == DXF_HATCH) && (obj->obj.content)){
-		current = dxf_find_attr_i(obj, 91, 0);
-		if (current){
-			current = current->next;
-			prev = current;
-		}
-		dxf_node *end_bond = dxf_find_attr_i(obj, 75, 0);
-		if (end_bond) stop = end_bond;
-	}
-	
-	while (current){
-		prev = current;
-		if (current->type == DXF_ENT){
-			/*
-			point[0] = of_x;
-			point[1] = of_y;
-			point[2] = of_z;
-			
-			dxf_get_extru(obj, point);
-			
-			ofs_x = point[0];
-			ofs_y = point[1];
-			ofs_z = point[2];
-			*/
-			if (current->obj.content){
-				ent_type =  dxf_ident_ent_type (current);
-				/* starts the content sweep */
-				current = current->obj.content->next;
-				
-				continue;
-			}
-		}
-		else {
-			if (ent_type != DXF_POLYLINE){
-				/* get the vertex coordinate set */
-				if (current->value.group == 10){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 20))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 30))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-			}
-			if (ent_type == DXF_HATCH){
-				/* hatch bondary path type */
-				if (current->value.group == 72){ 
-					if (current->value.i_data == 3)
-						ellip = 1; /* ellipse */
-				}
-			}
-			if (ent_type == DXF_LINE || ent_type == DXF_TEXT ||
-			ent_type == DXF_HATCH || ent_type == DXF_ATTRIB){
-				/* get the vertex coordinate set */
-				if (current->value.group == 11){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 21))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 31))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-			}
-			else if (ent_type == DXF_TRACE || ent_type == DXF_SOLID){
-				/* get the vertex coordinate set */
-				if (current->value.group == 11){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 21))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 31))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-				
-				
-				
-				/* get the vertex coordinate set */
-				if (current->value.group == 12){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 22))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 32))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-				
-				
-				/* get the vertex coordinate set */
-				if (current->value.group == 13){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 23))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 33))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-			}
-			else if (ent_type == DXF_DIMENSION){
-				/* get the vertex coordinate set */
-				if (current->value.group == 11){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 21))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 31))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-				
-				
-				/* get the vertex coordinate set */
-				if (current->value.group == 13){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 23))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 33))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-				
-				
-				/* get the vertex coordinate set */
-				if (current->value.group == 14){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 24))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 34))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-				
-				
-				/* get the vertex coordinate set */
-				if (current->value.group == 15){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 25))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 35))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-				
-				/* get the vertex coordinate set */
-				if (current->value.group == 16){ /* x coordinate - start set */
-					x = current->value.d_data;
-					
-					if ((current->next) && /* next should be the y coordinate */
-						(current->next->type == DXF_ATTR) &&
-						(current->next->value.group == 26))
-					{
-						current = current->next; /* update position in list */
-						y = current->value.d_data;
-						pt = 1; /* flag as valid point */
-						
-						/* get z coordinate - optional */
-						z = 0.0;
-						if ((current->next) && 
-							(current->next->type == DXF_ATTR) &&
-							(current->next->value.group == 36))
-						{
-							current = current->next; /* update position in list */
-							z = current->value.d_data;
-						}
-					}
-				}
-			}
-		}
-		if (pt){
-			pt = 0;
-			
-			dist = sqrt( pow(x - pt_x, 2) + pow(y - pt_y, 2) );
-			
-			if (dist < clearance) return vert_count;
-			
-			vert_count++;
-		}
-		
-		if ((prev == NULL) || (prev == stop)){ /* stop the search if back on initial entity */
-			current = NULL;
-			break;
-		}
-		current = current->next; /* go to the next in the list */
-		/* ============================================================= */
-		while (current == NULL){
-			/* end of list sweeping */
-			if ((prev == NULL) || (prev == stop)){ /* stop the search if back on initial entity */
-				
-				current = NULL;
-				break;
-			}
-			/* try to back in structure hierarchy */
-			prev = prev->master;
-			if (prev){ /* up in structure */
-				/* try to continue on previous point in structure */
-				current = prev->next;
-				if(prev == stop){
-					current = NULL;
-					break;
-				}
-				
-			}
-			else{ /* stop the search if structure ends */
-				current = NULL;
-				break;
-			}
-		}
-	}
-	
-	return -1;
+  
+  dxf_node * vert_x, * vert_y, * vert_z, * bulge, * next = NULL;
+  int vert_count = 0;
+  double dist = 0.0;
+  double x = 0.0, y = 0.0, z = 0.0;
+  
+  while (dxf_get_vert_nxt(obj, &next, &vert_x, &vert_y, &vert_z, &bulge)){
+    if (vert_x) x = vert_x->value.d_data;
+    if (vert_y) y = vert_y->value.d_data;
+    if (vert_z) z = vert_z->value.d_data;
+   
+    dist = sqrt( pow(x - pt_x, 2) + pow(y - pt_y, 2) );
+    if (dist < clearance) return vert_count;
+    
+    vert_count++;
+    
+    if (next == NULL) break;
+    x = 0.0; y = 0.0; z = 0.0;
+  }
+  
+  return -1;
 }
 
 int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** vert_y, dxf_node ** vert_z, dxf_node ** vert_b){
+	if (!obj) return -1;
+	if (!vert_x) return -1; if (!vert_y) return -1; if (!vert_z) return -1;
+	if (obj->type != DXF_ENT) return -1;
+  
+  dxf_node *next = NULL;
+  int vert_count = 0;
+  
+  while (dxf_get_vert_nxt(obj, &next, vert_x, vert_y, vert_z, vert_b)){
+   
+    if(vert_count == idx) return 1; /* return indexed point */
+    vert_count++;
+    
+    if (next == NULL) break;
+  }
+  if(vert_count > 0 && idx == -1) return vert_count - 1; /* return last valid point */
+  
+  return -1;
+}
+
+int dxf_get_vert_nxt(dxf_node *obj, dxf_node ** next, dxf_node ** vert_x, dxf_node ** vert_y, dxf_node ** vert_z, dxf_node ** vert_b){
 	dxf_node *current = NULL;
-	dxf_node *prev = NULL, *stop = NULL;
+	static dxf_node *prev = NULL, *stop = NULL;
 	int pt = 0;
 	enum dxf_graph ent_type = DXF_NONE;
 	dxf_node *x = NULL, *y = NULL, *z = NULL, *bulge = NULL;
-	double point[3];
 	
 	int ellip = 0;
 	
@@ -898,44 +570,36 @@ int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** ver
 	if (!vert_x) return 0; if (!vert_y) return 0; if (!vert_z) return 0;
 	if (obj->type != DXF_ENT) return 0;
 	
-	int vert_count = 0;
-	double dist = 0.0;
 	
 	*vert_x = NULL;
 	*vert_y = NULL;
 	*vert_z = NULL;
 	*vert_b = NULL;
 	
-	//bmp_color blue = {.r = 0, .g = 0, .b =255, .a = 255};
-	
-	/*
-	point[0] = of_x;
-	point[1] = of_y;
-	point[2] = of_z;
-	
-	dxf_get_extru(obj, point);
-	
-	ofs_x = point[0];
-	ofs_y = point[1];
-	ofs_z = point[2];
-	*/
-	
-	stop = obj;
 	ent_type =  dxf_ident_ent_type (obj);
 	
 	if ((ent_type != DXF_HATCH) && (obj->obj.content)){
-		current = obj->obj.content->next;
+    if (*next == NULL) current = obj->obj.content->next; /* scan from begining */
+    else current = *next; /* or from last point */
+    *next = NULL;
+    
 		prev = current;
+    stop = obj;
 	}
 	else if ((ent_type == DXF_HATCH) && (obj->obj.content)){
-		current = dxf_find_attr_i(obj, 91, 0);
-		if (current){
-			current = current->next;
-			prev = current;
-		}
-		dxf_node *end_bond = dxf_find_attr_i(obj, 75, 0);
-		if (end_bond) stop = end_bond;
+    if (*next == NULL) {
+      current = dxf_find_attr_i(obj, 91, 0);
+      if (!current) return 0;
+      current = current->next;
+      prev = current;
+      dxf_node *end_bond = dxf_find_attr_i(obj, 75, 0);
+      if (end_bond) stop = end_bond;
+    }
+    else current = *next; /* or from last point */
+    *next = NULL;
+    
 	}
+  else stop = obj; /* default stop point */
 	
 	while (current){
 		prev = current;
@@ -948,17 +612,7 @@ int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** ver
 		}
 		
 		if (current->type == DXF_ENT){
-			/*
-			point[0] = of_x;
-			point[1] = of_y;
-			point[2] = of_z;
 			
-			dxf_get_extru(obj, point);
-			
-			ofs_x = point[0];
-			ofs_y = point[1];
-			ofs_z = point[2];
-			*/
 			if (current->obj.content){
 				ent_type =  dxf_ident_ent_type (current);
 				/* starts the content sweep */
@@ -1061,8 +715,6 @@ int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** ver
 					}
 				}
 				
-				
-				
 				/* get the vertex coordinate set */
 				if (current->value.group == 12){ /* x coordinate - start set */
 					x = current;
@@ -1086,7 +738,6 @@ int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** ver
 						}
 					}
 				}
-				
 				
 				/* get the vertex coordinate set */
 				if (current->value.group == 13){ /* x coordinate - start set */
@@ -1161,7 +812,6 @@ int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** ver
 					}
 				}
 				
-				
 				/* get the vertex coordinate set */
 				if (current->value.group == 14){ /* x coordinate - start set */
 					x = current;
@@ -1185,7 +835,6 @@ int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** ver
 						}
 					}
 				}
-				
 				
 				/* get the vertex coordinate set */
 				if (current->value.group == 15){ /* x coordinate - start set */
@@ -1236,57 +885,54 @@ int dxf_get_vert_idx(dxf_node *obj, int idx, dxf_node ** vert_x, dxf_node ** ver
 				}
 			}
 		}
-		if (pt){
-			if( vert_count == idx){
-				*vert_x = x;
-				*vert_y = y;
-				*vert_z = z;
-				*vert_b = bulge;
-				
-				return 1;
-			}
-			
-			vert_count++;
-		}
 		
 		if ((prev == NULL) || (prev == stop)){ /* stop the search if back on initial entity */
 			current = NULL;
+      *next = NULL;
 			break;
 		}
+    *next = current->next;
 		current = current->next; /* go to the next in the list */
+    
 		/* ============================================================= */
 		while (current == NULL){
 			/* end of list sweeping */
 			if ((prev == NULL) || (prev == stop)){ /* stop the search if back on initial entity */
-				
+				*next = NULL;
 				current = NULL;
-				break;
+				//break;
+        goto END_VERTEX_NXT;
 			}
 			/* try to back in structure hierarchy */
 			prev = prev->master;
 			if (prev){ /* up in structure */
 				/* try to continue on previous point in structure */
 				current = prev->next;
+        *next = prev->next;
 				if(prev == stop){
+          *next = NULL;
 					current = NULL;
-					break;
+					//break;
+          goto END_VERTEX_NXT;
 				}
 				
 			}
 			else{ /* stop the search if structure ends */
 				current = NULL;
-				break;
+        *next = NULL;
+				//break;
+        goto END_VERTEX_NXT;
 			}
 		}
-	}
-	
-	if (pt && idx == -1){ /* return last valid point */
-		*vert_x = x;
-		*vert_y = y;
-		*vert_z = z;
-		*vert_b = bulge;
-		
-		return vert_count - 1; /* and its index */
+  END_VERTEX_NXT:
+    if (pt){ /* return last valid point */
+      *vert_x = x;
+      *vert_y = y;
+      *vert_z = z;
+      *vert_b = bulge;
+      
+      return 1;
+    }
 	}
 	
 	return 0;

@@ -4,7 +4,9 @@ cmake_minimum_required(VERSION 3.7)
 option(LIBS_VENDORED "Use vendored libraries" OFF)
 
 if(LIBS_VENDORED)
-    add_subdirectory(vendored/sdl EXCLUDE_FROM_ALL)
+    include(${PROJECT_SOURCE_DIR}/sdl2/cmake/sdl2-config.cmake)
+    include(${PROJECT_SOURCE_DIR}/sdl2_net/cmake/sdl2_net-config.cmake)
+    set(CMAKE_PREFIX_PATH ${PROJECT_SOURCE_DIR}/glew/)
 else()
     # 1. Look for a SDL2 package, 2. look for the SDL2 component and 3. fail if none can be found
     find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
@@ -13,8 +15,9 @@ else()
     find_package(SDL2 REQUIRED CONFIG COMPONENTS SDL2main)
     
     find_package(SDL2_net REQUIRED)
-    find_package(GLEW REQUIRED)
 endif()
+
+find_package(GLEW REQUIRED)
 
 file(GLOB C_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.c")
 

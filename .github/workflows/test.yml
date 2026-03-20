@@ -4,44 +4,89 @@ on: workflow_dispatch
 
 env:
   MAJOR: 0
-  MINOR: 4
+  MINOR: 7
   MAN: 0
-  YEAR: 2023
-  LUA_V: 5.4.6
-  MESA_V: 23.1.1
-  GLEW_V: 2.2.0
-  SDL_V: 2.26.5
-  HARFBUZZ_V: 8.2.0
+  YEAR: 2026
+  MESA_V: 26.0.1
+  GLEW_V: 2.3.1
+  SDL_V: 2.32.10
+  SDL_NET_V: 2.2.0
 
 jobs:
-  win:
-   runs-on: windows-latest
-
-   steps:
-    - uses: microsoft/setup-msbuild@v1.1
-    - uses: actions/checkout@v3
-    
-    - name: download harfbuzz
-      uses: suisei-cn/actions-download-file@v1.3.0
+  msvc-build:
+    if: true
+    runs-on: windows-latest
+  
+    steps:
+    - uses: actions/checkout@v4.1.1
+    - name: download glew
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
-        url: "https://github.com/harfbuzz/harfbuzz/archive/refs/tags/${{ env.HARFBUZZ_V }}.zip"
-        target: ./harfbuzz.zip
-    - name: Unzip harfbuzz
+        url: "https://github.com/nigels-com/glew/releases/download/glew-${{ env.GLEW_V }}/glew-${{ env.GLEW_V }}-win32.zip"
+        target: .
+    - name: Unzip glew
       shell: cmd
       run: |
-        7z x -y harfbuzz.zip
-        ls
-    - name: compile harfbuzz as static lib
-      run: |
-        cd harfbuzz-${{ env.HARFBUZZ_V }}\src
-        gcc -c harfbuzz.cc -o harf.o -DHB_TINY 
-        ar -rcs libharfbuzz.a harf.o
-    - name: copy harfbuzz static lib
-      run: cp ./harfbuzz-${{ env.HARFBUZZ_V }}/src/libharfbuzz.a ./
-
-    - name: Upload the result
-      uses: actions/upload-artifact@v3
+        7z x -y glew-${{ env.GLEW_V }}-win32.zip
+    - name: Download SDL2
+      uses: suisei-cn/actions-download-file@v1.6.0
       with:
-        name: uploads
-        path: libharfbuzz.a
+        url: "https://github.com/libsdl-org/SDL/releases/download/release-${{ env.SDL_V }}/SDL2-devel-${{ env.SDL_V }}-VC.zip"
+        target: .
+    - name: Download SDL2_net
+      uses: suisei-cn/actions-download-file@v1.6.0
+      with:
+        url: "https://github.com/libsdl-org/SDL_net/releases/download/release-${{ env.SDL_NET_V }}/SDL2_net-devel-${{ env.SDL_NET_V }}-VC.zip"
+        target: .
+    - name: Unzip SDL2
+      shell: cmd
+      run: |
+        7z x -y SDL2-devel-${{ env.SDL_V }}-VC.zip
+    - name: Unzip SDL2_net
+      shell: cmd
+      run: |
+        7z x -y SDL2_net-devel-${{ env.SDL_NET_V }}-VC.zip
+    - name: download mesa3d
+      uses: suisei-cn/actions-download-file@v1.6.0
+      with:
+        url: "https://github.com/pal1000/mesa-dist-win/releases/download/${{ env.MESA_V }}/mesa3d-${{ env.MESA_V }}-release-msvc.7z"
+        target: .
+    - name: Unzip mesa3d
+      shell: cmd
+      run: |
+        7z x -y mesa3d-${{ env.MESA_V }}-release-msvc.7z
+        ls
+    - run: |
+        mkdir ./glew-${{ env.GLEW_V }}/include/SDL2
+        mkdir ./CadZinho
+        cp ./SDL2-${{ env.SDL_V }}/include/* ./glew-${{ env.GLEW_V }}/include/SDL2/
+        mv ./SDL2-${{ env.SDL_V }} ./SDL2
+        cp ./SDL2_net-${{ env.SDL_NET_V }}/include/* ./src/
+        cp ./SDL2_net-${{ env.SDL_NET_V }}/include/* ./SDL2/include/
+        cp ./SDL2_net-${{ env.SDL_NET_V }}/include/* ./glew-${{ env.GLEW_V }}/include/SDL2/
+        cp ./SDL2_net-${{ env.SDL_NET_V }}/lib/x64/* ./SDL2/
+        mv ./SDL2_net-${{ env.SDL_NET_V }}/lib ./lib
+        mv ./glew-${{ env.GLEW_V }} ./glew
+        ls -R ./
+    - uses: jwlawson/actions-setup-cmake@v2
+      with:
+        cmake-version: 4.0.2
+    - name: build
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build ./
+      continue-on-error: true
+    - run: |
+        cp -r ./build/ CadZinho/
+        cp LICENSES.txt CadZinho/
+    - name: create archive
+      run: 7z a windows_msvc.zip CadZinho
+    - name: Upload the result
+      uses: actions/upload-artifact@v4.3.0
+      with:
+        name: msvc
+        path: |
+          windows_msvc.zip
         retention-days: 5

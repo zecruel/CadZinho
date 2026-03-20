@@ -57,16 +57,9 @@ jobs:
         7z x -y mesa3d-${{ env.MESA_V }}-release-msvc.7z
         ls
     - run: |
-        mkdir ./glew-${{ env.GLEW_V }}/include/SDL2
-        mkdir ./CadZinho
-        cp ./SDL2-${{ env.SDL_V }}/include/* ./glew-${{ env.GLEW_V }}/include/SDL2/
-        mv ./SDL2-${{ env.SDL_V }} ./SDL2
-        cp ./SDL2_net-${{ env.SDL_NET_V }}/include/* ./src/
-        cp ./SDL2_net-${{ env.SDL_NET_V }}/include/* ./SDL2/include/
-        cp ./SDL2_net-${{ env.SDL_NET_V }}/include/* ./glew-${{ env.GLEW_V }}/include/SDL2/
-        cp ./SDL2_net-${{ env.SDL_NET_V }}/lib/x64/* ./SDL2/
-        mv ./SDL2_net-${{ env.SDL_NET_V }}/lib ./lib
-        mv ./glew-${{ env.GLEW_V }} ./glew
+        ren SDL2-${{ env.SDL_V }} sdl2
+        ren SDL2_net-${{ env.SDL_NET_V }} sdl2_net
+        ren glew-${{ env.GLEW_V }} glew
         ls -R ./
     - uses: jwlawson/actions-setup-cmake@v2
       with:
@@ -75,7 +68,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake ..
+        cmake .. -DLIBS_VENDORED=true --fresh
         cmake --build ./
       continue-on-error: true
     - run: |

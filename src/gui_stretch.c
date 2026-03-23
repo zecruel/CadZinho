@@ -125,58 +125,15 @@ int gui_stretch_interactive(gui_obj *gui){
 		}
 		
 		if (gui->ev & EV_ENTER){
-      #if(0)
-			/* place image */
 			double rect_pt1[2], rect_pt2[2], u[3], v[3];
 			
 			/* sort rectangle corners */
-			rect_pt1[0] = (x < gui->step_x[gui->step - 1]) ? x : gui->step_x[gui->step - 1];
-			rect_pt1[1] = (y < gui->step_y[gui->step - 1]) ? y : gui->step_y[gui->step - 1];
-			rect_pt2[0] = (x > gui->step_x[gui->step - 1]) ? x : gui->step_x[gui->step - 1];
-			rect_pt2[1] = (y > gui->step_y[gui->step - 1]) ? y : gui->step_y[gui->step - 1];
-			
-			
-			/* get dimmension vectors */
-			u[0] = 0.0;
-			u[1] = 0.0;
-			u[2] = 0.0;
-			
-			v[0] = 0.0;
-			v[1] = 0.0;
-			v[2] = 0.0;
-			
-			u[0] = fabs(rect_pt2[0] - rect_pt1[0])/(double)gui->image_w;
-			v[1] = fabs(rect_pt2[1] - rect_pt1[1])/(double)gui->image_h;
-			
-			/* create image entity */
-			dxf_node * new_el = dxf_new_image (gui->drawing,
-				rect_pt1[0], rect_pt1[1], 0.0,
-				u, v, (double)gui->image_w, (double)gui->image_h,
-				gui->image_path,
-				gui->color_idx, /* color, layer */
-        (char *) strpool_cstr2( &name_pool, gui->drawing->layers[gui->layer_idx].name),
-				/* line type, line weight */
-        (char *) strpool_cstr2( &name_pool, gui->drawing->ltypes[gui->ltypes_idx].name),
-        dxf_lw[gui->lw_idx],
-				0, DWG_LIFE); /* paper space */
-			
-			/* draw entity */
-			new_el->obj.graphics = dxf_graph_parse(gui->drawing, new_el, 0 , 0);
-			drawing_ent_append(gui->drawing, new_el);
-			
-			/* append to undo/redo list */
-			do_add_entry(&gui->list_do, _l("STRETCH"));
-			do_add_item(gui->list_do.current, NULL, new_el);
-			#endif
+			rect_pt1[0] = (x0 < x1) ? x0 : x1;
+			rect_pt1[1] = (y0 < y1) ? y0 : y1;
+			rect_pt2[0] = (x0 > x1) ? x0 : x1;
+			rect_pt2[1] = (y0 > y1) ? y0 : y1;
       
-      /* sort rectangle corners */
-      double rect_pt1[2], rect_pt2[2];
-      rect_pt1[0] = (x0 < x1) ? x0 : x1;
-      rect_pt1[1] = (y0 < y1) ? y0 : y1;
-      rect_pt2[0] = (x0 > x1) ? x0 : x1;
-      rect_pt2[1] = (y0 > y1) ? y0 : y1;
-      
-      /* list of objects to select */
+      /* list of objects to inspect */
       list_node *list = list_new(NULL, FRAME_LIFE);
       list_clear(list);
       int count = 0;
@@ -184,8 +141,54 @@ int gui_stretch_interactive(gui_obj *gui){
       /* get inside objects and also all intersecting to rectangle */
       count = dxf_ents_isect2(list, gui->drawing, rect_pt1, rect_pt2);
       
-      
-      
+      /* sweep elements */
+      list_node *list_el = NULL;
+      if (count > 0) {
+        int vert_count = 0, init_do = 0;
+        list_el = list->next;
+        while (list_el){
+          dxf_node * ent = (dxf_node *)list_el->data;
+          dxf_node * test_ent = dxf_ent_copy(ent, FRAME_LIFE);
+          
+          dxf_node * vert_x, * vert_y, * vert_z, * bulge, * next = NULL;
+          
+          double x = 0.0, y = 0.0, z = 0.0;
+          
+          /* Sweep vertices */
+          while (dxf_get_vert_nxt(test_ent, &next, &vert_x, &vert_y, &vert_z, &bulge)){
+            if (vert_x) x = vert_x->value.d_data;
+            if (vert_y) y = vert_y->value.d_data;
+            if (vert_z) z = vert_z->value.d_data;
+           
+            /* verify if vertex is inside rectangle */
+            if (x > rect_pt1[0] && x < rect_pt2[0] &&
+              y > rect_pt1[1] && y < rect_pt2[1]){
+              /* modify vertex */
+              vert_x->value.d_data += ox;
+              vert_y->value.d_data += oy;
+              vert_count++;
+            }
+            
+            if (next == NULL) break;
+            x = 0.0; y = 0.0; z = 0.0;
+          }
+          
+          if (vert_count){ /* if has modifications */
+            /* Write new entity */
+            if (!init_do){
+              do_add_entry(&gui->list_do, _l("STRETCH"));
+              init_do = 1;
+            }
+            dxf_node * new_ent = dxf_ent_copy(test_ent, DWG_LIFE);
+            new_ent->obj.graphics = dxf_graph_parse(gui->drawing, new_ent, 0, DWG_LIFE);
+            dxf_obj_subst(ent, new_ent);
+            do_add_item(gui->list_do.current, ent, new_ent);
+          }
+          
+          vert_count = 0;
+          list_el = list_el->next;
+        }
+      }
 			/* restart the proccess */
 			gui->draw_phanton = 0;
 			gui_first_step(gui);

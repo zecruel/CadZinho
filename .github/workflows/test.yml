@@ -58,9 +58,8 @@ jobs:
         ls
     - run: |
         mkdir ./src/SDL2
-        mkdir ./src/SDL2/include
-        cp ./SDL2-${{ env.SDL_V }}/include/* ./src/SDL2/include/
-        cp ./SDL2_net-${{ env.SDL_NET_V }}/include/* ./src/SDL2/include/
+        cp ./SDL2-${{ env.SDL_V }}/include/* ./src/SDL2/
+        cp ./SDL2_net-${{ env.SDL_NET_V }}/include/* ./src/SDL2/
         ren SDL2-${{ env.SDL_V }} sdl2
         ren SDL2_net-${{ env.SDL_NET_V }} sdl2_net
         ren glew-${{ env.GLEW_V }} glew

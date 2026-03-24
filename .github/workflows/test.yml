@@ -71,8 +71,8 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. -DLIBS_VENDORED=true -DCMAKE_BUILD_TYPE=Release --fresh
-        cmake --build ./ > log.txt
+        cmake .. -DLIBS_VENDORED=true --fresh
+        cmake --build ./ --config Release > log.txt
       continue-on-error: true
     - run: |
         cp -r ./build/ CadZinho/

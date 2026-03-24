@@ -12,6 +12,7 @@ endif()
 find_package(GLEW REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(SDL2_net REQUIRED)
+find_package(OpenGL)
 
 file(GLOB C_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.c")
 
@@ -58,6 +59,7 @@ if(MINGW)
 endif()
 
 target_link_libraries(cadzinho PRIVATE GLEW::GLEW)
+target_link_libraries(cadzinho PRIVATE OpenGL::OpenGL)
 
 
 

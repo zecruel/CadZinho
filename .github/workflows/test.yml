@@ -69,7 +69,7 @@ jobs:
         mkdir build
         cd build
         cmake .. -DLIBS_VENDORED=true --fresh
-        cmake --build ./
+        cmake --build ./ > log.txt
       continue-on-error: true
     - run: |
         cp -r ./build/ CadZinho/

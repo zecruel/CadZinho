@@ -20,6 +20,9 @@
 
 #define CZ_VERSION "0.7.0 - 2025"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 extern strpool_t obj_pool;
 extern strpool_t name_pool;

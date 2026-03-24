@@ -59,9 +59,9 @@ if(MINGW)
 endif()
 
 target_link_libraries(cadzinho PRIVATE GLEW::GLEW)
-target_link_libraries(cadzinho PRIVATE OpenGL::OpenGL)
+#target_link_libraries(cadzinho PRIVATE OpenGL::OpenGL)
 
 
 
-#target_link_libraries(cadzinho PUBLIC opengl32)
+target_link_libraries(cadzinho PUBLIC opengl32)
 #target_link_libraries(cadzinho PUBLIC Shell32)

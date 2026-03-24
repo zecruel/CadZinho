@@ -17,7 +17,7 @@ find_package(OpenGL)
 file(GLOB C_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.c")
 
 if (WIN32)
-  add_executable(cadzinho ${C_SOURCES} ${PROJECT_SOURCE_DIR}/windows/cz.rc)
+  add_executable(cadzinho WIN32 ${C_SOURCES} ${PROJECT_SOURCE_DIR}/windows/cz.rc)
   target_include_directories(cadzinho PUBLIC ${PROJECT_SOURCE_DIR}/windows)
 else ()
   add_executable(cadzinho ${C_SOURCES})
@@ -62,6 +62,8 @@ target_link_libraries(cadzinho PRIVATE GLEW::GLEW)
 #target_link_libraries(cadzinho PRIVATE OpenGL::OpenGL)
 
 
-
-target_link_libraries(cadzinho PUBLIC opengl32)
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+    target_link_libraries(cadzinho PUBLIC opengl32)
+endif()
 #target_link_libraries(cadzinho PUBLIC Shell32)

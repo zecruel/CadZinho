@@ -5,21 +5,13 @@ option(LIBS_VENDORED "Use vendored libraries" OFF)
 
 if(LIBS_VENDORED)
     #include(${PROJECT_SOURCE_DIR}/sdl2/cmake/sdl2-config.cmake)
-    find_package(SDL2 REQUIRED CONFIG PATHS ${PROJECT_SOURCE_DIR}/sdl2/)
     #include(${PROJECT_SOURCE_DIR}/sdl2_net/cmake/sdl2_net-config.cmake)
-    find_package(SDL2_net REQUIRED CONFIG PATHS ${PROJECT_SOURCE_DIR}/sdl2_net/)
-    set(CMAKE_PREFIX_PATH ${PROJECT_SOURCE_DIR}/glew/)
-else()
-    # 1. Look for a SDL2 package, 2. look for the SDL2 component and 3. fail if none can be found
-    find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
-
-    # 1. Look for a SDL2 package, 2. Look for the SDL2maincomponent and 3. DO NOT fail when SDL2main is not available
-    find_package(SDL2 REQUIRED CONFIG COMPONENTS SDL2main)
-    
-    find_package(SDL2_net REQUIRED)
+    set(CMAKE_PREFIX_PATH ${PROJECT_SOURCE_DIR}/glew/;${PROJECT_SOURCE_DIR}/sdl2/;${PROJECT_SOURCE_DIR}/sdl2_net/)
 endif()
 
 find_package(GLEW REQUIRED)
+find_package(SDL2 REQUIRED)
+find_package(SDL2_net REQUIRED)
 
 file(GLOB C_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.c")
 

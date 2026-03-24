@@ -57,6 +57,8 @@ jobs:
         7z x -y mesa3d-${{ env.MESA_V }}-release-msvc.7z
         ls
     - run: |
+        cp ./SDL2-${{ env.SDL_V }}/include/* ./src/SDL2/include/
+        cp ./SDL2_net-${{ env.SDL_NET_V }}/include/* ./src/SDL2/include/
         ren SDL2-${{ env.SDL_V }} sdl2
         ren SDL2_net-${{ env.SDL_NET_V }} sdl2_net
         ren glew-${{ env.GLEW_V }} glew

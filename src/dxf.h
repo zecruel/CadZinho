@@ -18,7 +18,7 @@
 #define DXF_MAX_PAT 12
 #define DXF_POOL_PAGES 1000
 
-#define CZ_VERSION "0.7.0 - 2025"
+#define CZ_VERSION "0.7.0 - 2026"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846

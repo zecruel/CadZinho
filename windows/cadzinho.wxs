@@ -6,7 +6,7 @@
     Version='0.7.0' Manufacturer='ZeCruel'>
 
     <Package Id='*' Keywords='Installer' Description="CadZinho Installer"
-      Comments='CadZinho - MIT Licence - 2025' Manufacturer='ZeCruel'
+      Comments='CadZinho - MIT Licence - 2026' Manufacturer='ZeCruel'
       InstallerVersion='100' Languages='2057' Compressed='yes' 
       SummaryCodepage='1252' />
 

@@ -150,7 +150,7 @@ jobs:
       run: |
         chmod u+x ./appimagetool-x86_64.AppImage
         chmod u+x ./linuxdeploy-x86_64.AppImage
-        chmod u+x ./appimage-builder-x86_64.AppImage
+        chmod u+x ./appimage-builder-1.1.0-x86_64.AppImage
     - run: |
         ./linuxdeploy-x86_64.AppImage --appdir CadZinho.AppDir --executable ./cadzinho -d ./linux/cadzinho.desktop -i ./linux/cadzinho.png
         mkdir CadZinho.AppDir/usr/share/cadzinho
@@ -159,7 +159,7 @@ jobs:
         cp -r ./lang/ ./CadZinho.AppDir/usr/share/cadzinho/
     - run: |
         echo "./appimagetool-x86_64.AppImage ./CadZinho.AppDir/ ./CadZinho-x86_64.AppImage"
-        ./appimage-builder-x86_64.AppImage --generate ./CadZinho.AppDir/
+        ./appimage-builder-1.1.0-x86_64.AppImage --generate ./CadZinho.AppDir/
       continue-on-error: true
     - name: Check if file exists
       id: check_file

@@ -134,20 +134,23 @@ jobs:
     - name: download AppImageTool
       uses: suisei-cn/actions-download-file@v1.6.1
       with:
-        url: "https://github.com/AppImage/appimagetool/releases/tag/latest/appimagetool-x86_64.AppImage"
+        url: "https://github.com/AppImage/appimagetool/releases/tag/continuous/appimagetool-x86_64.AppImage"
         target: .
     - name: download linuxdeploy's AppImage
       uses: suisei-cn/actions-download-file@v1.6.1
       with:
-        url: "https://github.com/linuxdeploy/linuxdeploy/releases/download/latest/linuxdeploy-x86_64.AppImage"
+        url: "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
         target: .
     - name: configure AppImageKit
       run: |
         chmod u+x ./appimagetool-x86_64.AppImage
         chmod u+x ./linuxdeploy-x86_64.AppImage
+    - run: |
         ./linuxdeploy-x86_64.AppImage --appdir CadZinho.AppDir --executable ./cadzinho -d ./linux/cadzinho.desktop -i ./linux/cadzinho.png
         mkdir CadZinho.AppDir/usr/share/cadzinho
+    - run: |
         cp -r ./lang/ ./CadZinho.AppDir/usr/share/cadzinho/
+    - run: |
         ./appimagetool-x86_64.AppImage CadZinho.AppDir
     - name: create archive
       run: |

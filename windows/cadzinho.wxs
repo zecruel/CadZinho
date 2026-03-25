@@ -38,10 +38,6 @@
             <File DiskId='1' Source='libgallium_wgl.dll' KeyPath='yes' Vital='yes' />
           </Component>
           
-          <Component Id='libglapi' Guid='640B38C2-48D9-443A-88DA-D79EABDCEB68'>
-            <File DiskId='1' Source='libglapi.dll' KeyPath='yes' Vital='yes' />
-          </Component>
-          
           <Component Id='opengl32' Guid='C258F601-C97E-4EC5-B84F-81CBB7881E24'>
             <File DiskId='1' Source='opengl32.dll' KeyPath='yes' Vital='yes' />
           </Component>
@@ -51,7 +47,7 @@
           </Component>
           
           <Component Id='license' Guid='ED6A6420-42C3-49E5-A72F-C017E2A2F0E1'>
-            <File DiskId='1' Source='LICENSE.txt' KeyPath='yes' />
+            <File DiskId='1' Source='LICENSES.txt' KeyPath='yes' />
           </Component>
           
           <Directory Id='lang' Name='lang'>

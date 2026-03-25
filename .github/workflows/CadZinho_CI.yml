@@ -149,13 +149,13 @@ jobs:
         ./linuxdeploy-x86_64.AppImage --appdir CadZinho.AppDir --executable ./cadzinho -d ./linux/cadzinho.desktop -i ./linux/cadzinho.png
         mkdir CadZinho.AppDir/usr/share/cadzinho
     - run: |
+        rm -rf ./CadZinho.AppDir/usr/share/doc
         cp -r ./lang/ ./CadZinho.AppDir/usr/share/cadzinho/
     - run: |
-        echo "./appimagetool-x86_64.AppImage CadZinho.AppDir"
+        ./appimagetool-x86_64.AppImage CadZinho.AppDir
     - name: create archive
       run: |
-        echo "zip -r linux_appimage CadZinho-x86_64.AppImage LICENSES.txt"
-        zip -r linux_appimage CadZinho.AppDir *
+        zip -r linux_appimage CadZinho-x86_64.AppImage LICENSES.txt
     - name: regular linux package
       run: |
         mkdir ./linux/CadZinho/share/cadzinho
@@ -316,7 +316,7 @@ jobs:
         ren SDL2_net-${{ env.SDL_NET_V }} sdl2_net
         ren glew-${{ env.GLEW_V }} glew
         ls -R ./
-    - uses: jwlawson/actions-setup-cmake@v2.0.2
+    - uses: jwlawson/actions-setup-cmake@v2.2.0
       with:
         cmake-version: 3.27.0
     - name: build
@@ -340,6 +340,8 @@ jobs:
         cp LICENSES.txt CadZinho/
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho
+    - name: get resources
+      run: cp windows/* ./
     - name: download wix3
       uses: suisei-cn/actions-download-file@v1.6.1
       with:

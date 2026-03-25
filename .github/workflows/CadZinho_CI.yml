@@ -151,10 +151,11 @@ jobs:
     - run: |
         cp -r ./lang/ ./CadZinho.AppDir/usr/share/cadzinho/
     - run: |
-        ./appimagetool-x86_64.AppImage CadZinho.AppDir
+        echo "./appimagetool-x86_64.AppImage CadZinho.AppDir"
     - name: create archive
       run: |
-        zip -r linux_appimage CadZinho-x86_64.AppImage LICENSES.txt
+        echo "zip -r linux_appimage CadZinho-x86_64.AppImage LICENSES.txt"
+        zip -r linux_appimage CadZinho.AppDir *
     - name: regular linux package
       run: |
         mkdir ./linux/CadZinho/share/cadzinho
@@ -336,7 +337,7 @@ jobs:
         cp x64/opengl32.dll CadZinho/
         cp x64/libgallium_wgl.dll CadZinho/
         cp x64/dxil.dll CadZinho/
-        cp LICENSE.txt CadZinho/
+        cp LICENSES.txt CadZinho/
     - name: create archive
       run: 7z a windows_msvc.zip CadZinho
     - name: download wix3

@@ -134,12 +134,12 @@ jobs:
     - name: download AppImageTool
       uses: suisei-cn/actions-download-file@v1.6.1
       with:
-        url: "https://github.com/AppImage/appimagetool/releases/tag/continuous/appimagetool-x86_64.AppImage"
+        url: "https://github.com/AppImage/appimagetool/releases/tag/latest/appimagetool-x86_64.AppImage"
         target: .
     - name: download linuxdeploy's AppImage
       uses: suisei-cn/actions-download-file@v1.6.1
       with:
-        url: "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
+        url: "https://github.com/linuxdeploy/linuxdeploy/releases/download/latest/linuxdeploy-x86_64.AppImage"
         target: .
     - name: configure AppImageKit
       run: |
@@ -325,8 +325,8 @@ jobs:
     - run: |
         mkdir ./CadZinho
         cp windows/cadzinho.ico CadZinho/
-        cp ./SDL2/lib/x64/SDL2.dll CadZinho/
-        cp ./lib/x64/SDL2_net.dll CadZinho/
+        cp ./sdl2/lib/x64/SDL2.dll CadZinho/
+        cp ./sdl2_net/lib/x64/SDL2_net.dll CadZinho/
         cp ./glew/bin/Release/x64/glew32.dll CadZinho/
         cp ./build/src/Release/cadzinho.exe CadZinho/
         cp -r ./lang/ CadZinho/

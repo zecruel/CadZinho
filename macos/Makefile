@@ -1,6 +1,6 @@
 SRC_PATH = ./src/
 EXT_SRC_PATH = ./ext_src/
-INCLUDE_PATHS = $(SRC_PATH) $(EXT_SRC_PATH) $(wildcard $(EXT_SRC_PATH)*/)
+INCLUDE_PATHS = $(SRC_PATH) $(EXT_SRC_PATH) $(dir $(wildcard $(EXT_SRC_PATH)*/) $(wildcard $(EXT_SRC_PATH)*/include/))
 CC = clang
 CPP = clang++
 LINKER = clang++

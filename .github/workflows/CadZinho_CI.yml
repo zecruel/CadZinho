@@ -152,7 +152,7 @@ jobs:
         rm -rf ./CadZinho.AppDir/usr/share/doc
         cp -r ./lang/ ./CadZinho.AppDir/usr/share/cadzinho/
     - run: |
-        ./appimagetool-x86_64.AppImage CadZinho.AppDir
+        ./appimagetool-x86_64.AppImage ./CadZinho.AppDir/ ./CadZinho-x86_64.AppImage
     - name: create archive
       run: |
         zip -r linux_appimage CadZinho-x86_64.AppImage LICENSES.txt

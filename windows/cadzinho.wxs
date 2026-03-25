@@ -77,7 +77,6 @@
       <ComponentRef Id='dxil' />
       <ComponentRef Id='glew' />
       <ComponentRef Id='libgallium_wgl' />
-      <ComponentRef Id='libglapi' />
       <ComponentRef Id='opengl32' />
       <ComponentRef Id='SDL2' />
       <ComponentRef Id='license' />

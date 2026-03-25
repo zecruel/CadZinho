@@ -153,9 +153,29 @@ jobs:
         cp -r ./lang/ ./CadZinho.AppDir/usr/share/cadzinho/
     - run: |
         ./appimagetool-x86_64.AppImage ./CadZinho.AppDir/ ./CadZinho-x86_64.AppImage
+      continue-on-error: true
+    - name: Check if file exists
+      id: check_file
+      run: |
+        if [ -f "./CadZinho-x86_64.AppImage" ]; then
+        echo "file_exists=true" >> $GITHUB_OUTPUT
+        else
+        echo "file_exists=false" >> $GITHUB_OUTPUT
+        fi
+      
+    - name: Run if file exists
+      if: steps.check_file.outputs.file_exists == 'true'
+      run: |
+        zip linux_appimage CadZinho-x86_64.AppImage LICENSES.txt
+
+    - name: Run if file not exists
+      if: steps.check_file.outputs.file_exists == 'false'
+      run: |
+        zip -r linux_appimage ./CadZinho.AppDir/ LICENSES.txt
+        
     - name: create archive
       run: |
-        zip -r linux_appimage CadZinho-x86_64.AppImage LICENSES.txt
+        echo "zip -r linux_appimage CadZinho-x86_64.AppImage LICENSES.txt"
     - name: regular linux package
       run: |
         mkdir ./linux/CadZinho/share/cadzinho
@@ -325,7 +345,6 @@ jobs:
         cd build
         cmake .. -DLIBS_VENDORED=true --fresh
         cmake --build ./ --config Release
-      continue-on-error: true
     - run: |
         mkdir ./CadZinho
         cp windows/cadzinho.ico CadZinho/

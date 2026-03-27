@@ -39,9 +39,6 @@ Cadzinho is **free**, **portable** and **extensible**, which can:
 * Export to G-code and HPGL formats
 * Scripting language to create macros, custom tools and custom interface
 
-## Themes
-![themes](/themes.gif)
-
 ## Download 
 New release! - [0.6.0](https://github.com/zecruel/CadZinho/releases/)
 

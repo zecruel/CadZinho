@@ -1,11 +1,4 @@
-# This branch is EXPERIMENTAL and ON GOING - CadZinho now 3D
-
-### depends on:
-
-Manifold - [https://github.com/elalish/manifold](https://github.com/elalish/manifold)
-Clipper2 - [https://github.com/AngusJohnson/Clipper2](https://github.com/AngusJohnson/Clipper2)
-
---------
+# CadZinho
 
 <h1 align="center">
   <br>
@@ -49,7 +42,7 @@ Cadzinho is **free**, **portable** and **extensible**, which can:
 * Scripting language to create macros, custom tools and custom interface
 
 ## Download 
-New release! - [0.6.0](https://github.com/zecruel/CadZinho/releases/)
+New release! - [0.7.0](https://github.com/zecruel/CadZinho/releases/)
 
 ## Documentation
 [**Wiki**](https://github.com/zecruel/CadZinho/wiki)
@@ -62,8 +55,10 @@ Please send interface language translations: [How to contribute](https://github.
 
 ## Demo
 
-![view](/view.gif)
+![mini_demo](/mini_demo.gif)
 
-https://user-images.githubusercontent.com/17029180/164306370-d19051df-65f4-42a6-9c86-94a550b7e13a.mp4
+## Themes
+
+![themes](/themes.gif)
 
 [![](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/donate/?business=ECPCH6HWFKNGS&no_recurring=0&currency_code=BRL)

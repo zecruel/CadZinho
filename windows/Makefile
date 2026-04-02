@@ -7,8 +7,8 @@ CPP = g++
 LINKER = g++
 
 CPP_COMPILER_FLAGS = -c -DMANIFOLD_PAR=-1 -DMANIFOLD_CROSS_SECTION
-C_COMPILER_FLAGS = -c -MD -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
-LINKER_FLAGS = -Wl,-subsystem,windows -static-libgcc -static-libstdc++ -lmingw32 -lSDL2main -lSDL2 -lSDL2_net -lopengl32 -lm -lGLU32 -lGLEW32
+C_COMPILER_FLAGS = -c -MD -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -DGLEW_NO_GLU -DGLEW_STATIC
+LINKER_FLAGS = -Wl,-subsystem,windows -static-libgcc -static-libstdc++ -lmingw32 -lSDL2main -lSDL2 -lSDL2_net -lopengl32 -lm
 INCLUDE = $(patsubst %,-I%,. /mingw64/include/ /mingw64/include/SDL2/ $(INCLUDE_PATHS))
 LIBRARY_PATHS = -L/mingw64/lib/ -L.
 EXE=cadzinho.exe

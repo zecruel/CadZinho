@@ -32,4 +32,5 @@ add_subdirectory(ext_src/pdfgen) # The library
 add_subdirectory(ext_src/yxml) # The library
 add_subdirectory(ext_src/dirent) # The library
 add_subdirectory(ext_src/sqlite) # The library
+add_subdirectory(ext_src/glew) # The library
 add_subdirectory(src)     # The executable

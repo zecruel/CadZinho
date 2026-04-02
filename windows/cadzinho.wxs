@@ -30,10 +30,6 @@
             <File DiskId='1' Source='dxil.dll' KeyPath='yes' Vital='yes' />
           </Component>
           
-          <Component Id='glew' Guid='B1445295-A66B-45B9-AEEE-5F7C774D4544'>
-            <File DiskId='1' Source='glew32.dll' KeyPath='yes' Vital='yes' />
-          </Component>
-          
           <Component Id='libgallium_wgl' Guid='AA1AD6CD-7579-488F-84A9-5ABE08F42803'>
             <File DiskId='1' Source='libgallium_wgl.dll' KeyPath='yes' Vital='yes' />
           </Component>
@@ -75,7 +71,6 @@
     <Feature Id='Complete' Level='1'>
       <ComponentRef Id='MainExecutable' />
       <ComponentRef Id='dxil' />
-      <ComponentRef Id='glew' />
       <ComponentRef Id='libgallium_wgl' />
       <ComponentRef Id='opengl32' />
       <ComponentRef Id='SDL2' />

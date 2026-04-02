@@ -1,13 +1,13 @@
 SRC_PATH = ./src/
 EXT_SRC_PATH = ./ext_src/
-INCLUDE_PATHS = $(SRC_PATH) $(EXT_SRC_PATH) $(wildcard $(EXT_SRC_PATH)*/)
+INCLUDE_PATHS = $(SRC_PATH) $(EXT_SRC_PATH) $(dir $(wildcard $(EXT_SRC_PATH)*/) $(wildcard $(EXT_SRC_PATH)*/include/))
 CC = gcc
 CPP = g++
 LINKER = g++
 #COMPILER_FLAGS = -g -c
 CPP_COMPILER_FLAGS = -c -DMANIFOLD_PAR=-1 -DMANIFOLD_CROSS_SECTION
-C_COMPILER_FLAGS = -g -c -MD -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION
-LINKER_FLAGS = -lmingw32 -lSDL2main -lSDL2 -lSDL2_net -lopengl32 -lm -lGLU32 -lGLEW32
+C_COMPILER_FLAGS = -g -c -MD -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -DGLEW_NO_GLU -DGLEW_STATIC
+LINKER_FLAGS = -static-libgcc -static-libstdc++ -lmingw32 -lSDL2main -lSDL2 -lSDL2_net -lopengl32 -lm
 INCLUDE = $(patsubst %,-I%,. /ucrt64/include/ /ucrt64/include/SDL2/ $(INCLUDE_PATHS))
 LIBRARY_PATHS = -L/ucrt64/lib/ -L.
 EXE=cadzinho
@@ -19,6 +19,7 @@ OBJ_CPP=$(SRC_CPP:.cpp=.obj)
 DEP_C=$(OBJ_C:.o=.d)
 
 all: $(SRC_C) $(SRC_CPP) $(EXE)
+	echo "test"
 
 cz.res: cz.rc
 	windres cz.rc -O coff -o cz.res

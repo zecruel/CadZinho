@@ -6,10 +6,9 @@ option(LIBS_VENDORED "Use vendored libraries" OFF)
 if(LIBS_VENDORED)
     #include(${PROJECT_SOURCE_DIR}/sdl2/cmake/sdl2-config.cmake)
     #include(${PROJECT_SOURCE_DIR}/sdl2_net/cmake/sdl2_net-config.cmake)
-    set(CMAKE_PREFIX_PATH ${PROJECT_SOURCE_DIR}/glew/;${PROJECT_SOURCE_DIR}/sdl2/;${PROJECT_SOURCE_DIR}/sdl2_net/)
+    set(CMAKE_PREFIX_PATH ${PROJECT_SOURCE_DIR}/sdl2/;${PROJECT_SOURCE_DIR}/sdl2_net/)
 endif()
 
-find_package(GLEW REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(SDL2_net REQUIRED)
 find_package(OpenGL)
@@ -40,7 +39,14 @@ target_include_directories(cadzinho PUBLIC ${PROJECT_SOURCE_DIR}/ext_src/kgflags
 target_compile_features(cadzinho PRIVATE c_std_99)
 
 target_link_libraries(cadzinho PUBLIC clipper2
-PUBLIC manifold PUBLIC dirent PUBLIC lua PUBLIC miniz PUBLIC pdfgen PUBLIC yxml PUBLIC sqlite)
+  PUBLIC manifold
+  PUBLIC dirent
+  PUBLIC lua
+  PUBLIC miniz
+  PUBLIC pdfgen
+  PUBLIC yxml
+  PUBLIC glew
+  PUBLIC sqlite)
 
 
 
@@ -56,9 +62,10 @@ target_link_libraries(cadzinho PRIVATE SDL2_net::SDL2_net)
 
 if(MINGW)
     target_link_libraries(cadzinho PRIVATE ws2_32)
+    target_link_libraries(cadzinho PUBLIC opengl32)
 endif()
 
-target_link_libraries(cadzinho PRIVATE GLEW::GLEW)
+
 #target_link_libraries(cadzinho PRIVATE OpenGL::OpenGL)
 
 

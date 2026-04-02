@@ -15,17 +15,16 @@
   #include <SDL_opengles2.h>
   #include <GLES2/gl2.h>
 #else
+  #ifndef GLEW_NO_GLU
+    #define GLEW_NO_GLU
+  #endif
+  #ifndef GLEW_STATIC
+    #define GLEW_STATIC
+  #endif
+  
   #include <GL/glew.h>
   #include <SDL2/SDL.h>
   #include <SDL2/SDL_opengl.h>
-  
-  #ifdef PLATFORM_Darwin
-    #include <OpenGL/glu.h>
-    #include <OpenGL/gl.h>
-  #else
-    #include <GL/glu.h>
-    #include <GL/gl.h>
-  #endif
   
 #endif
  

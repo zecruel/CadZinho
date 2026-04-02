@@ -29,6 +29,8 @@ MobDebug - by Paul Kulchenko - MIT license (https://github.com/pkulchenko/MobDeb
 SDL_net - by Sam Lantinga - zlib license (https://github.com/libsdl-org/SDL_net)
 manifold - by Emmett Lalish - Apache License (https://github.com/elalish/manifold)
 Clipper2 - by Angus Johnson - Boost Software License (https://github.com/AngusJohnson/Clipper2)
+Mesa 3-D graphics library - by Brian Paul - MIT license
+mesa-dist-win - by pal1000 - MIT license (https://github.com/pal1000/mesa-dist-win)
 
 ======================================================
 MIT License
@@ -47,6 +49,8 @@ yxml - Copyright (c) 2013-2014 Yoran Heling
 Nerd Fonts - Copyright (c) 2014 Ryan L McIntyre
 os.c - Copyright (c) Carlos Abraham Hernandez <abraham@abranhe.com> (abranhe.com)
 MobDebug - Copyright (C) 2011-2018 Paul Kulchenko
+Mesa 3-D - Copyright (C) 1999-2007  Brian Paul
+mesa-dist-win - Copyright (c) 2017-2020 pal1000
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

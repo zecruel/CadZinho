@@ -35,7 +35,7 @@ mesa-dist-win - by pal1000 - MIT license (https://github.com/pal1000/mesa-dist-w
 ======================================================
 MIT License
 
-CadZinho - Copyright (c) 2018-2025 Ezequiel Rabelo de Aguiar
+CadZinho - Copyright (c) 2018-2026 Ezequiel Rabelo de Aguiar
 Nuklear - Copyright (c) 2017 Micha Mettke
 stb - Copyright (c) 2017 Sean Barrett
 Lua -  Copyright (c) 1994-2023 Lua.org, PUC-Rio.

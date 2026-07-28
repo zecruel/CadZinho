@@ -1,6 +1,6 @@
 qrencode = dofile("qrencode.lua")
 
-local ok, res = qrencode.qrcode("https://docs.google.com/document/d/1A4256vdVvITOqPhYRV9Tkcv2rPM-ap83/edit?usp=drivesdk&ouid=106716562684859056625&rtpof=true&sd=true")
+local ok, res = qrencode.qrcode("https://github.com/zecruel", 4)
 if not ok then
     cadzinho.db_print(res)
 else
